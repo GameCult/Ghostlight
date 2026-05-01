@@ -48,7 +48,8 @@ state and re-entry discipline.
 - `docs/architecture/sequential-agent-runtime.md`
   - scene-local dialogue/runtime loop where agents act from local awareness,
     generated actions become event proposals, and bounded state mutation drives
-    branchable dialogue consequences
+    branchable dialogue consequences while preserving training hooks for later
+    open-world, economic, and faction decision models
 - `docs/experiments/cold-wake-story-lab.md`
   - four-scene Cold Wake writing experiment using Ghostlight projection as a
     story-generation crutch and training-data source

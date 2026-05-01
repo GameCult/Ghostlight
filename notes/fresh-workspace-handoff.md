@@ -141,8 +141,13 @@ Remaining projection path:
   awareness, produce branchable dialogue or action, and mutate only the state it
   has authority to affect
 - keep the near-term product target to interactive dialogue trees and
-  scene-local consequences; defer world-scale simulation and autonomous
-  long-horizon plot machinery
+  scene-local consequences
+- preserve training-data hooks for future open-world behavior, iterated
+  decisions, psychologically grounded consumer choices, scarcity/reputation
+  pressure, and major faction or institution decision-making
+- defer implementing world-scale simulation loops, autonomous offscreen
+  factions, economy loops, and long-horizon plot machinery until the scene-local
+  machine works
 - use a frontier teacher model to generate/audit projection artifacts
 - train a smaller student projector only after the artifact schema, input
   slicer, and evaluator stabilize

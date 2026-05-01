@@ -4,10 +4,14 @@ Ghostlight's near-term target is not a general-purpose life simulator.
 
 The near-term product target is procedural interactive dialogue: set up a scene,
 let characters choose believable responses, expose player-facing choices, and
-propagate consequences into state, memory, and social perception. Later, the
-same machinery can help generate longer storylines, but that is not license to
-build an everything-simulator right now. The little goblin will ask for a crown.
-Do not give it one.
+propagate consequences into state, memory, and social perception.
+
+The long-term target is broader. The same classifiers, appraisers, and
+projection models should eventually operate inside a simulated game world with
+open-world contexts, iterated decisions, economic behavior, and major-faction
+decision-making. Do not train a tiny dialogue-only creature that panics the
+first time someone buys medicine, defects from a faction, or reacts to a
+shortage. Also do not build the whole economy today. Both cliffs are stupid.
 
 The runtime target for now is scene-local: choose which character is acting,
 give that character local awareness, let them act, apply consequences, mutate
@@ -42,7 +46,10 @@ For game use, the loop should be able to emit:
 - unresolved hooks for later scenes
 
 If a feature does not help produce those artifacts, it belongs in the parking
-lot until the smaller machine works.
+lot until the smaller machine works. If a field or label preserves information
+needed for later open-world behavior, consumer choice, faction pressure, or
+iterated decisions, keep it visible in the training artifact even if the first
+prototype does not simulate it.
 
 ## Local Awareness
 
@@ -195,7 +202,8 @@ already learned human interpretation from twelve examples and a strong coffee.
 
 ## Scope Boundary
 
-Build only what interactive dialogue generation needs first.
+Build interactive dialogue generation first, but shape the data for later
+open-world use.
 
 In scope now:
 
@@ -206,18 +214,35 @@ In scope now:
 - manual reviewed appraisals
 - memory, belief, relationship, and activation deltas
 - branch consequences that can be carried into later scenes
+- action intent and listener interpretation labels
+- resource, price, scarcity, obligation, reputation, and faction-pressure tags
+  when they affect the decision
+- reviewed examples of consumer-like choices and institution/faction pressure,
+  even when the prototype only records them as scene state
 
-Out of scope for now:
+Training-data obligations now:
+
+- Preserve why an agent chose, bought, refused, hoarded, traded, complied,
+  defected, concealed, punished, or helped.
+- Preserve what the agent believed the cost, risk, status effect, and social
+  consequence would be.
+- Preserve faction and institution pressures as perceived by the agent, not
+  only as objective setting lore.
+- Preserve iterated-decision context: promises, debts, prior betrayals,
+  reputation, memory, scarcity, and expected future contact.
+
+Out of implementation scope for now:
 
 - full autonomous world simulation
-- economy simulation
+- economy simulation loops
 - city-scale scheduling
 - long-horizon plot invention without author scaffolding
-- autonomous factions moving offscreen
+- autonomous factions moving offscreen as full actors
 - physical simulation beyond scene affordances
 - automatic social appraisal rules pretending to be trained classifiers
 
-The eventual storyline generator should grow out of reliable scene machinery,
+The eventual storyline generator, economic behavior model, and faction decision
+model should grow out of reliable scene machinery and reviewed decision data,
 not the other way around.
 
 ## Projection's Narrower Job

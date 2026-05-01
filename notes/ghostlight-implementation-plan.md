@@ -41,6 +41,9 @@
    - Keep the product target narrow: procedural interactive dialogue trees for
      games first, then scene-local character action with consequence
      propagation, then longer procedural storyline generation later.
+   - Do not make the training data dialogue-only. Preserve labels and state
+     hooks for open-world contexts, iterated decisions, consumer behavior,
+     scarcity, reputation, faction pressure, and institution decision-making.
    - Build local awareness from scene state, agent state, relationships,
      memories, resources, affordances, and known constraints.
    - Keep action primitives concrete: speech, silence, movement, gesture,
@@ -62,9 +65,13 @@
    - Emit game-useful artifacts: scene transcript, candidate player choices,
      NPC response branches, state/memory/social-perception deltas, and
      unresolved hooks.
-   - Keep out of scope for now: world-scale simulation, economy, city-scale
-     scheduling, autonomous offscreen factions, and long-horizon plot invention
-     without author scaffolding.
+   - Keep out of implementation scope for now: world-scale simulation loops,
+     economy simulation loops, city-scale scheduling, autonomous offscreen
+     factions as full actors, and long-horizon plot invention without author
+     scaffolding.
+   - Still record why agents buy, refuse, trade, hoard, comply, defect, conceal,
+     punish, or help when those decisions appear in scenes; those reviewed
+     decisions are seed data for later consumer-behavior and faction models.
    - First prototype: rerun one Cold Wake story-lab beat through a deterministic
      local-awareness/projection-control renderer, then apply one conservative
      state mutation and validate the resulting fixture.

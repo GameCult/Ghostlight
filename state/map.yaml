@@ -12,7 +12,8 @@ objective:
     Turn Ghostlight into a legible machine for persistent socially aware
     characters that can generate interactive dialogue trees for games, propagate
     scene consequences into state and memory, and eventually support procedural
-    storyline generation without collapsing into prompt soup.
+    storyline generation, psychologically grounded consumer behavior, and major
+    faction decision-making without collapsing into prompt soup.
   current: >
     Move from hand-authored single-turn projection artifacts toward the first
     scene-local sequential dialogue tick: local awareness, action or dialogue
@@ -103,7 +104,8 @@ accepted_design:
   - Generated action should become an event proposal resolved by mutation authority, not direct unrestricted edits to world or other-agent private state.
   - Sequential runtime action primitives should stay concrete; ask, refuse, offer, reveal, conceal, and request are communicative intentions carried by actions, while listener interpretation remains separate and may be wrong.
   - Early fuzzy social updates should be manual reviewed training data, not brittle rule-based appraisals pretending to understand relationships before the corpus exists.
-  - Scope boundary: generate interactive dialogue trees and scene-local consequences first; defer world-scale simulation, autonomous offscreen factions, economy, and long-horizon plot invention until the smaller machine works.
+  - Scope boundary: implement interactive dialogue trees and scene-local consequences first, but preserve training data hooks for open-world contexts, iterated decisions, economic behavior, scarcity, reputation, faction pressure, and institution decision-making.
+  - Do not train dialogue-only models that will be useless for later game-world simulation; reviewed scene data should preserve why agents buy, refuse, trade, hoard, comply, defect, conceal, punish, or help when those decisions appear.
 
 current_status:
   summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, a revised Aetheria lore-grounding architecture, a lore grounding digest schema, the first draft Cold Wake historical grounding digest, a Cold Wake story-lab fixture, projection controls, validated Qwen capture receipts, and a complete Cold Wake short story assembled from accepted projection outputs.
