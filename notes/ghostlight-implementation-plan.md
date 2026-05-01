@@ -38,6 +38,9 @@
 4. Build the scene-local sequential dialogue loop. New target.
    - Use `docs/architecture/sequential-agent-runtime.md` as the first runtime
      contract.
+   - Use `docs/architecture/ink-branching-scenes.md` as the branch-format
+     contract. Ink owns playable branching scenes; Ghostlight owns local
+     awareness, projection rationale, consequences, and reviewed state mutation.
    - Keep the product target narrow: procedural branching scene trees for games
      first. "Dialogue tree" means speech and non-speech actions, not only
      spoken lines.
@@ -62,8 +65,8 @@
      appraiser training data.
    - Keep author control at stage-setting and high-level constraints; do not
      require the author to script every beat.
-   - Emit game-useful artifacts: scene transcript, candidate player choices,
-     including non-speech actions, NPC response branches,
+   - Emit game-useful artifacts: Ink scene source, compiled Ink JSON, scene
+     transcript, candidate player choices, including non-speech actions, NPC response branches,
      state/memory/social-perception deltas, and unresolved hooks.
    - For protagonist scenes, generate several plausible things the protagonist
      could do from state and affordances, then generate NPC responses and branch
@@ -76,9 +79,10 @@
    - Still record why agents buy, refuse, trade, hoard, comply, defect, conceal,
      punish, or help when those decisions appear in scenes; those reviewed
      decisions are seed data for later consumer-behavior and faction models.
-   - First prototype: rerun one Cold Wake story-lab beat through a deterministic
-     local-awareness/projection-control renderer, then apply one conservative
-     state mutation and validate the resulting fixture.
+   - First prototype: express one Cold Wake story-lab beat as Ink, compile it,
+     and validate a sidecar training annotation that maps branches to
+     Ghostlight state basis, action intent, consequence surfaces, and manual
+     mutation policy.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

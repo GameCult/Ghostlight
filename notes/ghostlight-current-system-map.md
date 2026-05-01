@@ -50,6 +50,10 @@ state and re-entry discipline.
     generated actions become event proposals, and bounded state mutation drives
     branchable speech or non-speech scene consequences while preserving
     training hooks for later open-world, economic, and faction decision models
+- `docs/architecture/ink-branching-scenes.md`
+  - integration contract that makes Ink the standard playable branch format
+    while Ghostlight owns local awareness, projection rationale, consequence
+    review, and state mutation around Ink scenes
 - `docs/experiments/cold-wake-story-lab.md`
   - four-scene Cold Wake writing experiment using Ghostlight projection as a
     story-generation crutch and training-data source
@@ -99,6 +103,13 @@ state and re-entry discipline.
 - `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json`
   - first draft historical grounding digest, centered on Cold Wake Panic in the
     Ganymede/Jovian corridor
+- `examples/ink/cold-wake-sanctuary-intake.ink`
+  - first playable Ink-backed Cold Wake branching scene, using speech, gesture,
+    object revelation, and moral-pressure branches
+- `examples/ink/cold-wake-sanctuary-intake.training.json`
+  - reviewed sidecar annotation tying Ink branches to Ghostlight local
+    awareness, projection controls, branch rationale, consequence surfaces, and
+    manual mutation policy
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
@@ -114,6 +125,9 @@ state and re-entry discipline.
   - validates reviewed Qwen response capture receipts
 - `tools/validate_lore_grounding.py`
   - dependency-free validator for lore grounding digest examples
+- `tools/validate_ink_examples.py`
+  - compiles Ink examples with `inkjs` and validates sidecar training
+    annotations
 - `tools/build_cold_wake_story_lab_fixture.py`
   - generator for the verbose Cold Wake story-lab state fixture
 
@@ -127,12 +141,14 @@ state and re-entry discipline.
 - a simulation/event loop implementation
 - a relationship engine
 - a culture prior engine
+- an automatic Ink branch generator from local awareness
+- automatic promotion of Ink branch outcomes into canonical state
 
 The canonical agent-state schema, projection example schema, lore grounding
 digest schema, first draft Cold Wake grounding digest, and first Cold Wake
 story-lab Qwen captures now exist as v0 seams. The first complete Cold Wake
 story pass exists with receipts, and projection controls have been promoted as
-the architectural answer to repeated prompt leaks. The next implementation
-target is the first deterministic scene-local dialogue tick: local awareness,
-action/dialogue prompt, event proposal, conservative state mutation, and
-validation.
+the architectural answer to repeated prompt leaks. Ink is now the standard
+branching scene format; the next implementation target is projecting or
+generating Ink branches from local awareness and testing selected branch
+mutation through reviewed state, memory, and relationship updates.

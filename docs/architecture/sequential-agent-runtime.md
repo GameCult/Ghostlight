@@ -8,6 +8,10 @@ use, refusal, revelation, concealment, violence, withdrawal, trade, or any other
 scene-valid action. "Dialogue tree" does not mean a tree made only of spoken
 lines. It means an interactive branch structure for a character encounter.
 
+Ink is the branch format for that structure. Ghostlight should not invent its
+own dialogue-tree file format while Ink already exists and fits the job. See
+`docs/architecture/ink-branching-scenes.md` for the integration contract.
+
 Ghostlight should set up a scene, generate plausible things the protagonist or
 NPCs could do, generate responses from the people present, and propagate the
 consequences into world state, memory, belief, and social perception.
@@ -46,7 +50,9 @@ withdrawal, refusal, or concession. That is the point of the machine.
 For game use, the loop should be able to emit:
 
 - a scene transcript
-- candidate player choices, including speech and non-speech actions
+- Ink scenes with candidate player choices, including speech and non-speech
+  actions
+- compiled Ink JSON
 - NPC response branches
 - state/memory/social-perception deltas for each branch
 - unresolved hooks for later scenes
@@ -320,18 +326,19 @@ agent state + scene state
 
 The next implementation should not try to simulate a city. Calm down, wizard.
 
-Prototype one tiny branching-scene loop:
+Prototype one tiny Ink-backed branching scene loop:
 
 1. Load `examples/agent-state.cold-wake-story-lab.json`.
 2. Select one scene and one acting agent.
 3. Build a local awareness packet from existing state.
 4. Compile projection controls.
-5. Render a prompt that asks for an action or dialogue response.
-6. Send it to Qwen.
-7. Save the response as an event proposal.
-8. Apply a small deterministic mutation:
-   - append event
-   - apply only mechanical world/resource/object deltas the resolver can prove
+5. Generate or author an Ink scene with branch choices and NPC responses.
+6. Compile the Ink scene to JSON with `inkjs`.
+7. Save a sidecar training annotation that maps Ink branches to Ghostlight
+   state basis, actor intent, consequence surfaces, and mutation policy.
+8. Apply selected branch consequences only through reviewed mutation:
+   - Ink variables can track local playthrough facts
+   - canonical state changes require resolver/reviewer approval
 9. Manually review fuzzy state effects:
    - add one memory or belief update
    - adjust one or two `current_activation` values

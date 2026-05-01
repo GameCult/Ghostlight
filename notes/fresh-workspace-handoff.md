@@ -39,6 +39,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `docs/architecture/prompt-projection-contract.md`
   - `docs/architecture/projection-distillation-plan.md`
   - `docs/architecture/sequential-agent-runtime.md`
+  - `docs/architecture/ink-branching-scenes.md`
 - evaluation follow-up docs:
   - `docs/architecture/schema-future-mechanisms.md`
 - Aetheria lore grounding docs:
@@ -63,6 +64,11 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `tools/build_cold_wake_story_lab_fixture.py`
   - `tools/run_qwen_projection.py`
   - `tools/validate_qwen_captures.py`
+- Ink branching seam:
+  - `examples/ink/cold-wake-sanctuary-intake.ink`
+  - `examples/ink/cold-wake-sanctuary-intake.training.json`
+  - `tools/validate_ink_examples.py`
+  - `inkjs` dev dependency and `npm run ink:validate`
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
 - first projection example seam:
@@ -73,8 +79,9 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 - visitor-facing README refreshed to explain Ghostlight's goals
 
 There is still no full runtime yet. The live machine is design, state
-discipline, a cleaner repo boundary, the first executable state contract, and a
-documented projection path.
+discipline, a cleaner repo boundary, the first executable state contract, a
+documented projection path, and the first Ink-backed playable branching scene
+with reviewed training annotations.
 
 ## Current Direction
 
@@ -91,9 +98,10 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Build the first deterministic scene-local dialogue prototype: local awareness,
-projection controls, action/dialogue prompt, Qwen event proposal, conservative
-state mutation, and validation on one Cold Wake story-lab beat.
+Build the next Ink-backed scene prototype pass: generate or project branch
+choices from local awareness, compile Ink, validate sidecar training
+annotations, and test one selected branch's reviewed state/memory/relationship
+mutation.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -132,14 +140,20 @@ Completed projection path items:
   `required_semantics`, and `forbidden_resolutions`
 - add a Qwen projection runner and capture validator so response artifacts are
   reviewed training receipts, not loose logs
+- adopt Ink as the standard playable branching scene format rather than
+  inventing a parallel Ghostlight dialogue-tree format
+- add the first Cold Wake Ink scene,
+  `examples/ink/cold-wake-sanctuary-intake.ink`, with a reviewed sidecar
+  annotation tying branches to Ghostlight state, projection controls,
+  consequence surfaces, and manual mutation policy
 
 Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- build the first scene-local branching tick so an agent can act from local
-  awareness, produce branchable speech or non-speech action, trigger NPC
-  responses, and mutate only the state it has authority to affect
+- build the first local-awareness-to-Ink generation pass so an agent can act
+  from local awareness, produce branchable speech or non-speech choices, trigger
+  NPC responses, and annotate mutations without replacing Ink
 - keep the near-term product target to interactive dialogue trees and
   scene-local consequences
 - preserve training-data hooks for future open-world behavior, iterated
