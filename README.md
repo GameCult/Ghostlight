@@ -1,70 +1,140 @@
 # Ghostlight
 
-Ghostlight is where the stranger agent work gets to live.
+Ghostlight is a research and implementation home for socially persistent
+generative agents.
 
-The project is about socially persistent generative agents: layered personality,
-cultural priors, masks, memory, misreadings, incentives, and prompt projection
-that grows out of structured latent state instead of one wet persona paragraph
-trying to hold up the ceiling.
+The project is about characters and simulated people who remain coherent under
+time, pressure, memory, culture, misreading, masks, incentives, and changing
+relationships. The aim is not to make a language model sound charming for one
+scene. The aim is to build machinery that can track who someone is, what they
+believe, what they hide, how they see other people, and how their behavior
+changes when the world leans on them.
 
-The immediate goal is not a finished runtime. The immediate goal is a repo that
-can carry the architecture cleanly enough that the runtime does not become a
-beautiful little superstition.
+In practical terms, Ghostlight is building the state and projection layer for
+character-driven generation:
 
-## What Lives Here
+- durable canonical character state
+- observer-specific perceived state
+- directional relationship stance
+- cultural and institutional pressure
+- memory and goal selection
+- speaker-local prompt projection
+- evaluation targets for emergent verbal behavior
+- a future path for training smaller specialist projection models
 
-- Epiphany-style persistent state surfaces for re-entry, compaction, and
-  distilled evidence.
-- Architecture notes for agent state, signal classification, culture-shaped
-  distributions, and prompt projection.
-- Aetheria authoring targets for Call of the Void content generation,
-  dialogue scaffolding, and procedural drama across narrated timeline stories.
-- The first canonical agent-state schema, examples, and validation helper.
-- A bounded working discipline that keeps maps, scratch, evidence, and plans
-  from dissolving into one confident soup.
+The first concrete consumer is Aetheria authoring support, especially Call of
+the Void content generation, dialogue scaffolding, and procedural drama for
+narrated stories in the Aetheria timeline.
+
+## Core Idea
+
+Ghostlight separates three things that are easy to blur together:
+
+1. **Canonical state**
+   What is true about a character, relationship, event, memory, or scene.
+
+2. **Perceived state**
+   What a particular observer thinks is true, including misreadings,
+   attribution bias, suspicion, trust, projection, and partial knowledge.
+
+3. **Prompt projection**
+   A temporary speaker-local prompt surface for one scene or turn.
+
+The prompt is not the character. The prompt is a rendered slice of state.
+
+That distinction matters because believable dialogue should come from pressure,
+not vibes. Cat being sarcastic should fall out of shame sensitivity, distance
+seeking, suspicion, relationship tension, scene stakes, and dry pointed voice.
+Oz withholding information should fall out of mask rigidity, privacy pressure,
+relationship fear, and the need to stay useful. The system should be able to
+show its work.
+
+## Current Status
+
+Ghostlight is early architecture plus executable schema seams.
+
+Currently present:
+
+- v0 canonical agent-state schema
+- required variable lists for state families and relationship stance
+- Call of the Void-flavored Cat/Oz fixture
+- dependency-free fixture validator
+- prompt projection contract
+- projection distillation plan for teacher/student projector training
+- persistence surfaces for re-entry, evidence, planning, and compaction hygiene
+
+Not present yet:
+
+- runtime prompt renderer
+- projection training dataset
+- student projection model
+- event/classifier pipeline
+- simulation loop
+- relationship update engine
+- culture prior engine
+
+## How Projection Is Supposed To Work
+
+For one speaker in one scene, Ghostlight should gather speaker-local state:
+
+- what the speaker knows
+- what they believe
+- what they want
+- what they are protecting
+- what memories are active
+- how they read the listener
+- what the relationship currently feels like
+- what pressures the scene applies
+- what voice surface is active
+
+The projection layer turns that into compact pressure prose and prompt sections.
+The dialogue model then writes from that pressure model.
+
+Longer term, a frontier model can act as a teacher projector that generates
+reviewed projection artifacts. Those artifacts can train a smaller student
+projector once the projection schema, deterministic input slicer, and evaluator
+are stable.
 
 ## Repo Tour
 
 - `AGENTS.md`: operating discipline for humans and agents
-- `state/map.yaml`: canonical project map
-- `state/scratch.md`: disposable local working memory
+- `state/map.yaml`: canonical project map and current next action
+- `state/scratch.md`: disposable working memory for one bounded subgoal
 - `state/evidence.jsonl`: distilled belief-changing evidence
 - `notes/fresh-workspace-handoff.md`: compact re-entry packet
-- `notes/ghostlight-current-system-map.md`: source-grounded explanation of the
-  live repo machinery
-- `notes/ghostlight-implementation-plan.md`: current larger-organ sequence
-- `notes/architecture-rationale.md`: why the state split exists at all
+- `notes/ghostlight-current-system-map.md`: current repo machinery
+- `notes/ghostlight-implementation-plan.md`: larger implementation sequence
+- `notes/architecture-rationale.md`: why the persistence and state split exists
 - `docs/research/`: research backlog and modeling notes
-- `docs/aetheria/`: imported or local Aetheria source material used by
-  Ghostlight
-- `docs/architecture/`: world, state, and prompt-system architecture notes
+- `docs/aetheria/`: Aetheria source material used by Ghostlight
+- `docs/architecture/`: state, projection, and authoring architecture
 - `schemas/`: JSON schema contracts and required field lists
-- `examples/`: schema examples and fixtures
-- `tools/ghostlight_state.py`: compact state helper
+- `examples/`: schema fixtures and future projection examples
+- `tools/ghostlight_state.py`: state inspection and evidence helper
 - `tools/ghostlight_prepare_compaction.py`: pre-compaction audit helper
-- `tools/validate_agent_state.py`: focused agent-state fixture validator
+- `tools/validate_agent_state.py`: focused fixture validator
 
-## Quick Commands
+## Useful Commands
 
 ```powershell
 npm run state:status
 npm run state:prepare-compaction
 npm run schema:validate
-& 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' '.\tools\ghostlight_state.py' add-evidence --type research --status ok --note '...'
 ```
 
-If you are steering the repo through Codex, read `AGENTS.md` first. That is the
-operating manual. The README is just the sign on the door.
+To add distilled evidence:
 
-## Related Docs
+```powershell
+& 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' '.\tools\ghostlight_state.py' add-evidence --type design --status accepted --note '...'
+```
 
-- `docs/research/things-to-steal.md`
-- `docs/research/personality-model-roadmap.md`
-- `docs/research/personality-signal-classifier.md`
-- `docs/aetheria/call-of-the-void-brainstorm.md`
+## Best Starting Points
+
 - `docs/architecture/canonical-agent-state-schema.md`
 - `docs/architecture/agent-state-variable-glossary.md`
-- `docs/architecture/agent-state-distributions-and-prompt-projection.md`
-- `docs/architecture/aetheria-persistent-agent-architecture.md`
-- `docs/architecture/aetheria-content-generation-targets.md`
-- `docs/architecture/aetheria-agent-population-model.md`
+- `docs/architecture/prompt-projection-contract.md`
+- `docs/architecture/projection-distillation-plan.md`
+- `examples/agent-state.call-of-the-void.json`
+
+For Codex-driven work, read `AGENTS.md` before changing the repo. It contains
+the working rules that keep the project state coherent between sessions.
