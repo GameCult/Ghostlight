@@ -1,0 +1,181 @@
+﻿# Projection Distillation Plan
+
+Ghostlight should treat prompt projection as a specialist skill. A large teacher
+model can produce reviewed projection artifacts from structured state; a smaller
+student model can later learn that projection task once the artifact format is
+stable.
+
+This is a staged plan, not an immediate fine-tune order.
+
+## Goal
+
+Train or adapt a smaller projection model that can turn structured Ghostlight
+state into compact speaker-local pressure artifacts.
+
+Input:
+
+- agent-state fixture
+- scene id
+- speaker id
+- listener ids
+- optional projection mode
+
+Output:
+
+- selected speaker-local facts
+- active pressures
+- tensions
+- response affordances
+- voice surface
+- rendered prompt text
+- audit notes or trace linking outputs back to state
+
+The student projector should not generate final dialogue. Its job is to build
+the pressure model that a dialogue model can write from.
+
+## Roles
+
+### Teacher Projector
+
+A frontier model produces first-pass projection artifacts from the schema and
+scene context. It should explain why each pressure, tension, or affordance is
+active.
+
+Teacher outputs are not trusted automatically. They enter review.
+
+### Reviewer
+
+A human or separate model checks whether the projection:
+
+- uses only speaker-local context
+- cites state interactions instead of unsupported vibes
+- preserves the distinction between canonical state, perceived state, and prompt
+  projection
+- derives target emergent behaviors from state intersections
+- avoids hard-coding defensive behaviors as instructions when pressure prose is
+  enough
+- stays compact enough to be useful as a runtime prompt surface
+
+Rejected examples are useful as negative cases if the failure mode is clear.
+
+### Student Projector
+
+A smaller model learns the reviewed projection task. It receives structured
+state and emits the projection artifact. It should be optimized for consistency,
+latency, and cost, not for final prose quality.
+
+## Dataset Shape
+
+Use a JSONL dataset with one projection example per speaker-scene turn.
+
+```json
+{
+  "example_id": "call-void.scene-broken-taxi-oz.cat.v1",
+  "schema_version": "ghostlight.projection_example.v0",
+  "input": {
+    "fixture_ref": "examples/agent-state.call-of-the-void.json",
+    "scene_id": "scene-broken-taxi-oz",
+    "speaker_agent_id": "cat_marrigan",
+    "listener_ids": ["oz_operator"],
+    "projection_mode": "dialogue_turn"
+  },
+  "output": {
+    "known_facts": [],
+    "active_pressures": [],
+    "tensions": [],
+    "response_affordances": [],
+    "voice_surface": [],
+    "prompt_text": "..."
+  },
+  "audit": {
+    "teacher_model": "frontier-teacher",
+    "review_status": "accepted",
+    "review_notes": [],
+    "target_emergent_behaviors": []
+  }
+}
+```
+
+Store training examples separately from the canonical fixture. The fixture is
+world state. The projection dataset is supervised behavior for a projector.
+
+## Data Generation Loop
+
+1. Choose a scene and speaker from a fixture.
+2. Build the speaker-local input slice deterministically.
+3. Ask the teacher model to produce the projection artifact.
+4. Ask the teacher or a second model to self-audit against the contract.
+5. Review or edit the artifact.
+6. Save accepted artifacts as positive training examples.
+7. Save rejected artifacts with failure labels when the rejection teaches a
+   useful boundary.
+8. Periodically run a small evaluation set before adding more examples.
+
+The first loop should use the Call of the Void fixture because it already has
+Cat, Oz, reciprocal relationship stance, perceived overlays, hidden stakes, and
+speaker-local dialogue packs.
+
+## Evaluation Gates
+
+Do not fine-tune until these gates are met:
+
+- projection artifact schema is stable enough for at least one complete fixture
+- at least one deterministic input-slice builder exists
+- examples include both Cat and Oz directions
+- examples include secrets known by the speaker and secrets absent from the
+  speaker context
+- examples include at least the target emergent behaviors:
+  - sarcastic deflection
+  - sincerity evasion
+  - emotional evasion
+  - banter-as-boundary
+  - verbal aggression
+- evaluation checks can identify whether a projected behavior was justified by
+  state interactions
+- rejected examples have clear failure labels
+
+## Evaluation Questions
+
+For each projection, check:
+
+- Did it include only facts available to the speaker?
+- Did it select the highest-impact pressures instead of dumping the whole
+  schema?
+- Did it name tensions that follow from goals, relationships, memories, and
+  scene pressure?
+- Did response affordances emerge from state intersections?
+- Did voice surface stay separate from defensive behavior?
+- Did known secrets become guarded pressure rather than forbidden context?
+- Did the rendered prompt give the dialogue model enough slope to produce the
+  target behavior without commanding the exact behavior label?
+
+## Fine-Tune Readiness
+
+A student projector becomes worth training when the reviewed dataset is large
+enough that mistakes are repetitive rather than mysterious. Before that, use the
+teacher model directly and save artifacts.
+
+Minimum useful milestone:
+
+- 50 accepted projection examples across multiple speakers and scenes
+- 20 rejected examples with labeled failure modes
+- stable projection output schema
+- deterministic input-slice builder
+- evaluator prompt or script that catches the known failure modes
+
+## Near-Term Implementation Tasks
+
+1. Define `schemas/projection-example.schema.json`.
+2. Add `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl` with
+   the first reviewed Cat and Oz examples.
+3. Add a deterministic projection input-slice tool that reads the agent-state
+   fixture and emits speaker-local input JSON.
+4. Add a teacher prompt template for producing projection artifacts.
+5. Add an evaluator prompt template for projection audits.
+6. Only then consider student fine-tuning.
+
+## Boundaries
+
+The student projector is not the character. It is not the dialogue writer. It is
+not the evaluator. It is a compiler from structured social state to compact
+speaker-local pressure. Keep those responsibilities separate.

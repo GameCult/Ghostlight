@@ -29,7 +29,16 @@
    - Make generated moves inspectable: why this character deflects, confesses,
      threatens, softens, bargains, or lies.
 
-4. Build the first drama-scaffolding loop.
+4. Build the projection distillation loop.
+   - Use `docs/architecture/projection-distillation-plan.md` as the teacher to
+     student roadmap.
+   - Use a frontier teacher model to produce reviewed projection artifacts from
+     structured state.
+   - Save accepted and rejected projection examples as supervised data.
+   - Train or adapt a smaller student projector only after the artifact schema,
+     input slicer, and evaluator are stable.
+
+5. Build the first drama-scaffolding loop.
    - memory updates
    - relationship updates
    - goal pressure
@@ -37,7 +46,7 @@
    - cultural and institutional pressure
    - conflict beats derived from incompatible goals and values
 
-5. Build the first Aetheria authoring consumer.
+6. Build the first Aetheria authoring consumer.
    - use the Call of the Void slice described in `AetheriaLore` as the first
      concrete content-generation context
    - support dialogue scaffolding and procedural drama for narrated stories
@@ -51,6 +60,8 @@
 - Do not train a classifier before the label schema is stable enough to deserve
   the trouble.
 - Do not let prompt-writing outrun the structured state model.
+- Do not fine-tune a projector before the projection artifact schema, input
+  slicer, and evaluator have stopped sliding around.
 - Do not let elegant theory notes multiply faster than implementation seams.
 - Do not accidentally rebuild a game slice when the requested consumer is an
   authoring and story-generation organ.

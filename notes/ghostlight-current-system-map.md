@@ -42,6 +42,9 @@ state and re-entry discipline.
 - `docs/architecture/prompt-projection-contract.md`
   - contract for turning durable state into speaker-local pressure prose and
     prompt sections
+- `docs/architecture/projection-distillation-plan.md`
+  - plan for using a frontier teacher model to generate reviewed projection
+    artifacts before training a smaller student projector
 - `schemas/agent-state.schema.json`
   - v0 canonical agent-state contract for agents, relationships, events,
     scenes, perceived overlays, and dialogue context packs
@@ -61,6 +64,8 @@ state and re-entry discipline.
 
 - a classifier pipeline
 - a prompt renderer
+- a projection training dataset
+- a student projection model
 - a simulation/event loop
 - a relationship engine
 - a culture prior engine
