@@ -66,7 +66,8 @@ state and re-entry discipline.
     scenes, perceived overlays, and dialogue context packs
 - `schemas/projection-example.schema.json`
   - v0 reviewed projection artifact contract for speaker-local prompt
-    projection examples
+    projection examples, including projection controls for frame, authority,
+    object custody, required semantics, and forbidden resolutions
 - `schemas/lore-grounding-digest.schema.json`
   - v0 contract for grounding historical fixtures in source-backed cultural and
     factional pressure fields
@@ -86,6 +87,8 @@ state and re-entry discipline.
     rejected and accepted Maer/Veyr prompt revisions
 - `experiments/cold-wake-story-lab/`
   - Qwen response captures and reviews from the writing experiment
+  - `the-narrowest-possible-margin.md`, the first readable short story
+    assembled from accepted projection outputs
 - `examples/lore-grounding/historical-flashpoint.template.json`
   - fillable template for the first historical Aetheria grounding digest
 - `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json`
@@ -99,6 +102,11 @@ state and re-entry discipline.
   - dependency-free validator for the current schema fixture invariants
 - `tools/validate_projection_examples.py`
   - dependency-free validator for projection example JSONL records
+- `tools/run_qwen_projection.py`
+  - sends a projection prompt to the LAN Qwen box and saves response/capture
+    artifacts without PowerShell encoding footguns
+- `tools/validate_qwen_captures.py`
+  - validates reviewed Qwen response capture receipts
 - `tools/validate_lore_grounding.py`
   - dependency-free validator for lore grounding digest examples
 - `tools/build_cold_wake_story_lab_fixture.py`
@@ -117,7 +125,8 @@ state and re-entry discipline.
 
 The canonical agent-state schema, projection example schema, lore grounding
 digest schema, first draft Cold Wake grounding digest, and first Cold Wake
-story-lab Qwen captures now exist as v0 seams. The first Maer/Veyr projection
-has an accepted v3 prompt/output pair that preserves unresolved claimant status.
-The next implementation target is projecting another Cold Wake response turn
-before building the deterministic input slicer.
+story-lab Qwen captures now exist as v0 seams. The first complete Cold Wake
+story pass exists with receipts, and projection controls have been promoted as
+the architectural answer to repeated prompt leaks. The next implementation
+target is building a deterministic input slicer/renderer prototype that emits
+projection controls and prompt text from agent state.

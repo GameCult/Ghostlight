@@ -231,9 +231,49 @@
             "$ref": "#/$defs/sourced_text"
           }
         },
+        "projection_controls": {
+          "$ref": "#/$defs/projection_controls"
+        },
         "prompt_text": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "projection_controls": {
+      "type": "object",
+      "description": "Compiled control surfaces the renderer should preserve before prompt prose exists.",
+      "additionalProperties": false,
+      "properties": {
+        "frame_controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourced_text"
+          }
+        },
+        "authority_boundaries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourced_text"
+          }
+        },
+        "object_custody": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourced_text"
+          }
+        },
+        "required_semantics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourced_text"
+          }
+        },
+        "forbidden_resolutions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourced_text"
+          }
         }
       }
     },

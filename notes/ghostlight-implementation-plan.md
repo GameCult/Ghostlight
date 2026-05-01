@@ -61,6 +61,16 @@
      outputs are useful failed examples; v3 is the first accepted output that
      preserves unresolved claimant status while allowing controlled physical
      action.
+   - Treat repeated generation failures as projection architecture signals, not
+     only prompt wording problems. Projection examples now include controls for
+     frame ownership, authority boundaries, object custody, required semantics,
+     and forbidden resolutions.
+   - Keep Qwen captures as reviewed receipts. `tools/validate_qwen_captures.py`
+     is part of `npm run schema:validate` so unreviewed captures do not quietly
+     become training data.
+   - Use `experiments/cold-wake-story-lab/the-narrowest-possible-margin.md` as
+     the first end-to-end story artifact assembled from accepted response
+     captures plus authored connective narration.
    - Use a frontier teacher model to produce reviewed projection artifacts from
      structured state and lore grounding digests.
    - Save accepted and rejected projection examples as supervised data.

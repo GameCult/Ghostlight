@@ -1,0 +1,1 @@
+"Let the hold remain narrowed until the telemetry reconciles with a declared manifest; any ambiguity now becomes a precedent for those who wish to run quiet beneath the law. We do not grant rescue to the unknown, we merely enforce the cost of our ignorance until the data proves otherwise."

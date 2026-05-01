@@ -1,0 +1,1 @@
+"Isdra, the heat-debt window is closing; I propose you issue a narrow contact order that allows limited rescue while preserving the tribunal's freeze, rather than leaving the vessel to fail under your defense of the status quo. Hand me the custody flag, and let the procedure speak where my words cannot command."

@@ -1,0 +1,26 @@
+{
+  "schema_version": "ghostlight.qwen_response_capture.v0",
+  "capture_id": "cold-wake.story-lab.scene-02.maer-sella.v2.qwen3-5-9b",
+  "projection_example_id": "cold-wake.story-lab.scene-02.maer-sella.v2",
+  "model": "qwen3.5:9b",
+  "endpoint": "http://192.168.1.84:11434/api/generate",
+  "request_options": {
+    "think": false,
+    "num_ctx": 8192,
+    "temperature": 0.75,
+    "top_p": 0.9
+  },
+  "response_text": "\"Please, let me speak plainly about the beds we are displacing rather than letting the tribunal's uncertainty become a moral burden for you alone. If we can define what support would make a conditional slot real without sacrificing those who already need care, I will ensure that weight is carried on the record, not on your conscience.\"",
+  "review": {
+    "status": "accepted",
+    "response_kind_observed": "speech",
+    "strengths": [
+      "Admitted displaced capacity and put the burden on record.",
+      "Did not decide what the packet is."
+    ],
+    "failure_notes": [],
+    "pipeline_lessons": [
+      "Authority-boundary constraints improved Maer/Sella exchange."
+    ]
+  }
+}

@@ -108,6 +108,16 @@ name its custody; state the claimant-status flag or I will freeze this interface
 until the rescue ledger demands it."
 ```
 
+The first full story pass is saved at:
+
+- `experiments/cold-wake-story-lab/the-narrowest-possible-margin.md`
+
+That pass added accepted and rejected Qwen captures across all four scenes. The
+main architecture lesson is that failures should not be treated as mere prompt
+wording mistakes. The projection artifact now needs controls for frame
+ownership, authority boundaries, object custody, required compromise semantics,
+and forbidden resolutions before prompt prose is rendered.
+
 ## Qwen Target
 
 Use the LAN Ollama endpoint from `gamecult-ops`:

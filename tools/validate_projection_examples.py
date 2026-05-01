@@ -128,6 +128,8 @@ def validate_projection_record(record: dict[str, Any], source: Path, index: int)
     )
     validate_sourced_items(output["known_facts"], f"{path}.output.known_facts")
     validate_sourced_items(output["voice_surface"], f"{path}.output.voice_surface")
+    if "projection_controls" in output:
+        validate_projection_controls(output["projection_controls"], f"{path}.output.projection_controls")
     require(isinstance(output["prompt_text"], str) and output["prompt_text"].strip(), f"{path}.output.prompt_text must be non-empty")
 
     for pressure_index, pressure in enumerate(output["active_pressures"]):
@@ -168,6 +170,22 @@ def validate_projection_record(record: dict[str, Any], source: Path, index: int)
     )
     for key, value in checks.items():
         require(isinstance(value, bool), f"{path}.audit.checks.{key} must be boolean")
+
+
+def validate_projection_controls(controls: Any, path: str) -> None:
+    require(isinstance(controls, dict), f"{path} must be an object")
+    allowed = {
+        "frame_controls",
+        "authority_boundaries",
+        "object_custody",
+        "required_semantics",
+        "forbidden_resolutions",
+    }
+    unknown = sorted(set(controls) - allowed)
+    require(not unknown, f"{path} has unknown keys: {', '.join(unknown)}")
+    require(controls, f"{path} must not be empty when present")
+    for key, value in controls.items():
+        validate_sourced_items(value, f"{path}.{key}")
 
 
 def validate_file(path: Path) -> None:

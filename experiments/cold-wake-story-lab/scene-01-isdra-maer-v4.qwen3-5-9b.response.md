@@ -1,0 +1,1 @@
+The conditional hold stands, and a review timer is now active to evaluate whether the vessel's telemetry can clear for limited rescue contact without altering the risk category. We proceed on the narrowest possible margin until the data reconciles or the hold is formally lifted.

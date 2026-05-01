@@ -1,0 +1,1 @@
+Isdra taps the convoy board to lock the conditional risk hold, citing unresolved thermal telemetry as insufficient for Maer's rescue delay claim. "We will not convert ambiguity into abandonment until the vessel's provenance is legible, but I am closing the window for rhetorical exception."

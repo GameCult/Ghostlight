@@ -53,10 +53,15 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `examples/agent-state.cold-wake-story-lab.json`
   - `examples/projections/cold-wake-story-lab.jsonl`
   - `examples/projections/cold-wake-story-lab.pretty.json`
+  - `experiments/cold-wake-story-lab/the-narrowest-possible-margin.md`
   - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.capture.json`
   - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.v2.capture.json`
   - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.v3.capture.json`
+  - additional scene 1, 2, 3, and 4 Qwen captures under
+    `experiments/cold-wake-story-lab/`
   - `tools/build_cold_wake_story_lab_fixture.py`
+  - `tools/run_qwen_projection.py`
+  - `tools/validate_qwen_captures.py`
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
 - first projection example seam:
@@ -85,9 +90,10 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Project the next Cold Wake story-lab response turn, preferably scene 2 Sella to
-Maer or scene 4 Maer to Isdra, and keep testing whether character action emerges
-from state pressure without over-resolving hidden facts.
+Build the deterministic projection input slicer/renderer prototype that emits
+`projection_controls` and `prompt_text` from agent state, then rerun a
+story-lab beat through it instead of hand-authoring the full projection
+artifact.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -118,11 +124,19 @@ Completed projection path items:
   personhood/claimant suspicion stays unresolved in Qwen output
 - save both useful failed captures and the accepted v3 response as training
   material
+- complete the first readable Cold Wake story,
+  `experiments/cold-wake-story-lab/the-narrowest-possible-margin.md`, with a
+  receipts table tying accepted story beats to projection and capture artifacts
+- promote projection controls into the projection artifact shape:
+  `frame_controls`, `authority_boundaries`, `object_custody`,
+  `required_semantics`, and `forbidden_resolutions`
+- add a Qwen projection runner and capture validator so response artifacts are
+  reviewed training receipts, not loose logs
 
 Remaining projection path:
 
-- run additional story-lab response turns through Qwen
 - build a deterministic speaker-local input slicer
+- build a renderer that emits projection controls before prompt prose
 - use a frontier teacher model to generate/audit projection artifacts
 - train a smaller student projector only after the artifact schema, input
   slicer, and evaluator stabilize

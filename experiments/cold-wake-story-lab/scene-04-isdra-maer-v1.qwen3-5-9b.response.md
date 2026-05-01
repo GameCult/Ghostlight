@@ -1,0 +1,1 @@
+I am entering a provisional order limiting interaction to telemetry-preserving heat management and evidence preservation, effective until the tribunal resolves the vessel's provenance. This narrow exception maintains the freeze technically intact while preventing immediate loss of life, and any contact is strictly reversible upon confirmation of the threat.

@@ -127,7 +127,43 @@ the rhythm of the room. This should be rare, costly, and grounded in her care
 ethic under overload, not random spice.
 ```
 
-### 5. Render Prompt Sections
+### 5. Compile Projection Controls
+
+Some failures are not fixed by louder prompt scolding. If the response model
+keeps adopting the wrong moral frame, inverting who holds an object, giving a
+character authority they do not have, or resolving a hidden fact too early, the
+projection artifact is missing control structure.
+
+Before rendering prompt prose, compile explicit controls for:
+
+- `frame_controls`: whose language and moral frame the speaker should or should
+  not adopt
+- `authority_boundaries`: what the speaker can order, request, propose, refuse,
+  or only witness
+- `object_custody`: who currently holds the flag, weapon, terminal, document,
+  body, door, feed, or other consequential surface
+- `required_semantics`: compromise meanings that must survive compression, such
+  as "hold remains but review starts now"
+- `forbidden_resolutions`: unresolved facts or moral categories the turn must
+  not settle
+
+These controls are still speaker-local. They are not author omniscience handed
+to the response model; they are the projection layer preserving what the
+speaker's current state, scene position, and institutional role allow.
+
+The Cold Wake story lab exposed the need for this layer:
+
+- Isdra's first tribunal prompt needed a control saying she should preserve the
+  possibility of limited rescue contact without adopting Maer's abandonment
+  frame.
+- Maer's clinic prompt needed an authority boundary saying he does not own
+  Sella's beds.
+- Maer's threshold prompt needed object custody saying he holds the
+  claimant-status flag and can hand it to Isdra, not ask her for it.
+- The Maer/Veyr provenance prompt needed forbidden resolutions fencing off
+  person, passenger, victim, witness, and mind as settled nouns.
+
+### 6. Render Prompt Sections
 
 A response prompt should be compact and scene-bound.
 
@@ -145,6 +181,8 @@ Recommended sections:
 - `Tensions`: contradictions the speaker is managing
 - `Action Affordances`: what the speaker can physically do and what it would
   cost
+- `Projection Controls`: frame, authority, object-custody, required semantic,
+  and forbidden-resolution constraints that must survive rendering
 - `Voice Surface`: baseline speech texture for this moment
 - `Likely Response Moves`: ordinary-language pressure outcomes, not schema labels
 - `Do Not Invent`: boundaries about facts absent from the pack
@@ -157,7 +195,7 @@ socioeconomic, or embodiment context to write the line, put that context in the
 positive prompt text instead of hoping the model infers it from source refs it
 will not receive.
 
-### 6. Generate, Then Evaluate
+### 7. Generate, Then Evaluate
 
 Generation and evaluation are separate passes.
 
