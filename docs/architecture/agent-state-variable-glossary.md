@@ -60,8 +60,8 @@ evidence of what the target is like.
 This models fundamental attribution bias directly. A character can see someone
 behave coldly during a crisis and conclude "they are cold," not "they were
 activated toward distance under exceptional pressure." Correcting that
-impression takes work because the observer's confidence has causes, not because
-the perceived variable gets a second stickiness dial.
+impression takes work because the observer's confidence is supported by memory,
+emotion, stakes, prior assumptions, and social reinforcement.
 
 ## Label Set Policy
 

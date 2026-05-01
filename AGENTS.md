@@ -113,7 +113,9 @@ When the user says to prepare for imminent compaction:
   distilled evidence when the lesson changes future belief, refresh
   `notes/fresh-workspace-handoff.md`, and make the next action explicit.
 - In documentation, describe the live system and current rule directly. Do not
-  write victory laps, scar tours, or clever autopsies about what the project no
-  longer does. If rejected history matters, keep it short, explicit, and
+  write victory laps, scar tours, clever autopsies, or contrastive little
+  boasts about what the project no longer does. If a sentence congratulates the
+  design for not being a previous wrong design, cut it or rewrite it as a plain
+  current rule. If rejected history matters, keep it short, explicit, and
   decision-relevant; otherwise cut it. The docs are not a trophy case for
   yesterday's wrong machine.
