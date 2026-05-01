@@ -35,6 +35,10 @@ state and re-entry discipline.
   - re-entry packet
 - `notes/ghostlight-implementation-plan.md`
   - larger-organ sequence
+- `docs/research/`
+  - research backlog and social-model notes
+- `docs/architecture/`
+  - world, state, and prompt-system architecture notes
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
@@ -49,6 +53,5 @@ state and re-entry discipline.
 - a relationship engine
 - a culture prior engine
 
-That absence is not a bug. It is just the current phase. The repo knows what it
-is for before it has built the machinery.
-
+That absence is not a bug. It is just the current phase. The repo now owns the
+theory body cleanly, even if the runtime skeleton is still missing.

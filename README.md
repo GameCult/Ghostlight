@@ -31,6 +31,8 @@ beautiful little superstition.
   live repo machinery
 - `notes/ghostlight-implementation-plan.md`: current larger-organ sequence
 - `notes/architecture-rationale.md`: why the state split exists at all
+- `docs/research/`: research backlog and modeling notes
+- `docs/architecture/`: world, state, and prompt-system architecture notes
 - `tools/ghostlight_state.py`: compact state helper
 - `tools/ghostlight_prepare_compaction.py`: pre-compaction audit helper
 
@@ -45,3 +47,12 @@ npm run state:prepare-compaction
 If you are steering the repo through Codex, read `AGENTS.md` first. That is the
 operating manual. The README is just the sign on the door.
 
+## Related Docs
+
+- `docs/research/things-to-steal.md`
+- `docs/research/personality-model-roadmap.md`
+- `docs/research/personality-signal-classifier.md`
+- `docs/architecture/agent-state-distributions-and-prompt-projection.md`
+- `docs/architecture/aetheria-persistent-agent-architecture.md`
+- `docs/architecture/aetheria-cold-wake-mvp-scenario.md`
+- `docs/architecture/aetheria-agent-population-model.md`

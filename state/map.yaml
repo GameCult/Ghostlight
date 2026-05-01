@@ -49,7 +49,7 @@ data_flow:
     - move volatile proof to git history or artifacts, not durable notes
 
 active_subgoals:
-  - Consolidate the architecture notes already proven useful in VoidBot into a Ghostlight-native home.
+  - Keep Ghostlight as the canonical home for its architecture notes so consumer projects do not quietly regrow duplicate brains.
   - Define the canonical agent state model, including first-class volatility, attachment-seeking, and distance-seeking.
   - Define how culture shapes priors, incentives, masks, and economic behavior without turning populations into clones.
   - Define the boundary between canonical signal, perceived signal, and prompt projection.
@@ -64,6 +64,5 @@ accepted_design:
   - Performance, concealment, and mask maintenance are signal, not just obstruction.
 
 current_status:
-  summary: Ghostlight is a freshly spun repo with the Epiphany-style persistence spine, but no runtime organs yet.
-  next_action: Migrate or rewrite the existing Ghostlight-relevant research notes from VoidBot into this repo, then pick the first implementation organ: state schema, classifier data model, or prompt renderer.
-
+  summary: Ghostlight now has both the Epiphany-style persistence spine and the first real architecture payload: research notes for personality structure, signal classification, prompt projection, and the Aetheria corridor simulation slice. It still has no runtime organs, but it finally owns the design body it was spun up to carry.
+  next_action: Freeze the first implementation organ. The clean contenders are the canonical agent-state schema, the event or classifier data model, and the prompt-projection renderer.

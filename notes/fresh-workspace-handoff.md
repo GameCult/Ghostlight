@@ -14,7 +14,7 @@ Do not continue implementation automatically from a rehydrate-only request.
 
 ## Current Shape
 
-Ghostlight currently has only the persistence and planning spine:
+Ghostlight now has the persistence spine plus the first architecture payload:
 
 - canonical map
 - scratch
@@ -24,15 +24,18 @@ Ghostlight currently has only the persistence and planning spine:
 - system map
 - implementation plan
 - Python helpers for state summary and compaction audits
+- architecture notes for:
+  - personality structure
+  - signal classification
+  - state distributions and prompt projection
+  - Aetheria persistent-world slice design
 
-There is no runtime yet. The live machine is still mostly design and state
-discipline.
+There is still no runtime yet. The live machine is design, state discipline,
+and a cleaner repo boundary.
 
 ## Current Next Action
 
-Move the Ghostlight-specific architecture out of VoidBot and into this repo in
-a form that can grow its own organs. The first real choice after that is which
-implementation seam to cut first:
+Pick the first implementation seam to cut:
 
 - state schema
 - classifier/event data model
@@ -46,4 +49,3 @@ implementation seam to cut first:
   cut it back.
 - Keep the prompt-projection doctrine intact: prompt text is projection, not
   truth storage.
-
