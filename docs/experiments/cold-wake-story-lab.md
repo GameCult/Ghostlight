@@ -84,6 +84,30 @@ For each scene:
    should have prevented.
 7. Save accepted and rejected examples as training material.
 
+## Current Run Notes
+
+Scene 3, Maer to Veyr, is the first live projection test.
+
+- `v1` confirmed that action affordances work: Qwen chose a mixed terminal
+  blocking and dialogue beat instead of defaulting to speech. It also showed
+  that "personhood pressure" wording made the model resolve the ambiguity too
+  early.
+- `v2` improved length and avoided person/passenger/victim/mind language, but
+  still smuggled certainty through "witness."
+- `v3` is the first accepted output. The projection fences off resolved moral
+  nouns and uses claimant-status, provenance, chain-of-custody, and evidence
+  preservation instead. Qwen produced a short mixed beat that keeps the question
+  unresolved while still letting Maer apply pressure.
+
+Accepted v3 response:
+
+```text
+Maer places a steady hand on the terminal's edge to halt the closing command,
+his voice low and ritual-calm. "You will not let the chain dissolve before we
+name its custody; state the claimant-status flag or I will freeze this interface
+until the rescue ledger demands it."
+```
+
 ## Qwen Target
 
 Use the LAN Ollama endpoint from `gamecult-ops`:

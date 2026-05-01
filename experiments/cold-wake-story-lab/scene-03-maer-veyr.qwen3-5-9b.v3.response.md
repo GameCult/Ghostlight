@@ -1,0 +1,1 @@
+Maer places a steady hand on the terminal's edge to halt the closing command, his voice low and ritual-calm. "You will not let the chain dissolve before we name its custody; state the claimant-status flag or I will freeze this interface until the rescue ledger demands it."

@@ -82,7 +82,8 @@ state and re-entry discipline.
 - `examples/projections/call-of-the-void.scene-broken-taxi-oz.pretty.json`
   - pretty-printed mirror for inspecting the first projection examples
 - `examples/projections/cold-wake-story-lab.jsonl`
-  - first response-turn projection example for the Cold Wake story lab
+  - response-turn projection examples for the Cold Wake story lab, including
+    rejected and accepted Maer/Veyr prompt revisions
 - `experiments/cold-wake-story-lab/`
   - Qwen response captures and reviews from the writing experiment
 - `examples/lore-grounding/historical-flashpoint.template.json`
@@ -116,7 +117,7 @@ state and re-entry discipline.
 
 The canonical agent-state schema, projection example schema, lore grounding
 digest schema, first draft Cold Wake grounding digest, and first Cold Wake
-story-lab Qwen capture now exist as v0 seams. The next implementation target is
-tightening the first Maer/Veyr projection around unresolved personhood suspicion,
-then running the next response turn through Qwen before building the
-deterministic input slicer.
+story-lab Qwen captures now exist as v0 seams. The first Maer/Veyr projection
+has an accepted v3 prompt/output pair that preserves unresolved claimant status.
+The next implementation target is projecting another Cold Wake response turn
+before building the deterministic input slicer.

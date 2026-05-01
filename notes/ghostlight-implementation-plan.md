@@ -57,6 +57,10 @@
    - Treat projection outputs as response turns, not dialogue-only turns:
      characters may speak, act, withdraw, stay silent, use violence, or combine
      speech and action when state and scene pressure justify it.
+   - Keep failed and accepted Qwen captures together. The Maer/Veyr v1 and v2
+     outputs are useful failed examples; v3 is the first accepted output that
+     preserves unresolved claimant status while allowing controlled physical
+     action.
    - Use a frontier teacher model to produce reviewed projection artifacts from
      structured state and lore grounding digests.
    - Save accepted and rejected projection examples as supervised data.

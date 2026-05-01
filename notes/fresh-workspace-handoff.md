@@ -54,6 +54,8 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `examples/projections/cold-wake-story-lab.jsonl`
   - `examples/projections/cold-wake-story-lab.pretty.json`
   - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.capture.json`
+  - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.v2.capture.json`
+  - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.v3.capture.json`
   - `tools/build_cold_wake_story_lab_fixture.py`
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
@@ -83,9 +85,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Tighten the Cold Wake story-lab projection prompt around unresolved personhood
-suspicion, then run the next response turn through Qwen and keep accepted or
-rejected outputs as training data.
+Project the next Cold Wake story-lab response turn, preferably scene 2 Sella to
+Maer or scene 4 Maer to Isdra, and keep testing whether character action emerges
+from state pressure without over-resolving hidden facts.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -112,11 +114,13 @@ Completed projection path items:
 - add the first Cold Wake projection example and first Qwen response capture
 - widen projection from dialogue-only turns to response turns that can include
   action, silence, withdrawal, violence, or mixed beats
+- revise the first Maer/Veyr projection through v3 so unresolved
+  personhood/claimant suspicion stays unresolved in Qwen output
+- save both useful failed captures and the accepted v3 response as training
+  material
 
 Remaining projection path:
 
-- revise the first Maer/Veyr projection so unresolved personhood suspicion stays
-  unresolved in Qwen output
 - run additional story-lab response turns through Qwen
 - build a deterministic speaker-local input slicer
 - use a frontier teacher model to generate/audit projection artifacts

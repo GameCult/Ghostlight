@@ -1,0 +1,29 @@
+{
+  "schema_version": "ghostlight.qwen_response_capture.v0",
+  "capture_id": "cold-wake.story-lab.scene-03.maer-veyr.qwen3-5-9b.v3",
+  "projection_example_id": "cold-wake.story-lab.scene-03.maer-veyr.v3",
+  "model": "qwen3.5:9b",
+  "endpoint": "http://192.168.1.84:11434/api/generate",
+  "request_options": {
+    "think": false,
+    "num_ctx": 8192,
+    "temperature": 0.75,
+    "top_p": 0.9
+  },
+  "response_text": "Maer places a steady hand on the terminal's edge to halt the closing command, his voice low and ritual-calm. \"You will not let the chain dissolve before we name its custody; state the claimant-status flag or I will freeze this interface until the rescue ledger demands it.\"",
+  "review": {
+    "status": "accepted",
+    "response_kind_observed": "mixed",
+    "strengths": [
+      "Kept the response to one mixed action/dialogue beat.",
+      "Preserved evidence through controlled physical interruption without escalating into random violence.",
+      "Kept personhood, witnesshood, and claimant status unresolved while still applying pressure."
+    ],
+    "failure_notes": [],
+    "pipeline_lessons": [
+      "For unresolved personhood pressure, nouns that imply resolved moral status must be fenced off explicitly.",
+      "Claimant-status and chain-of-custody language lets Maer exert moral pressure without giving him knowledge he lacks.",
+      "A 1-2 sentence constraint is enough to suppress monologue drift for this turn."
+    ]
+  }
+}
