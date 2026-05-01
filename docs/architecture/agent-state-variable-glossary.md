@@ -165,10 +165,7 @@ quirks in the current examples.
 | `lyricism` | Uses musical, poetic, sensuous, or rhythmically heightened language. |
 | `narrative_detail` | Explains through context, sequence, anecdote, or concrete scene detail. |
 | `emotional_explicitness` | Names feelings, needs, wounds, affection, fear, or attachment directly. |
-| `sarcastic_deflection` | Uses sarcasm to redirect, dodge, or blunt sincerity, fear, gratitude, or pain. |
 | `pointedness` | Cuts directly, sharply, or with barbed precision. |
-| `sincerity_evasion` | Avoids emotionally plain or vulnerable language even when the feeling is present. |
-| `emotional_evasion` | Avoids naming, dwelling in, or accepting emotional baggage. |
 | `self_disclosure` | Volunteers personal history, inner state, motives, or private stakes. |
 | `hedging` | Softens claims with uncertainty markers, caveats, deference, or exits. |
 | `certainty_marking` | Signals confidence, finality, authority, or refusal to leave claims open. |
@@ -179,12 +176,24 @@ quirks in the current examples.
 | `dialect_marking` | Shows regional, class, occupational, subcultural, or community-specific speech markers. |
 | `theatricality` | Performs speech with heightened drama, staging, persona, flourish, or rhetorical display. |
 | `humor` | Uses jokes, wit, absurdity, teasing, or comic framing as a regular speech tool. |
-| `banter_as_boundary` | Uses joking exchange to maintain distance while staying socially engaged. |
-| `verbal_aggression` | Uses language to attack, intimidate, punish, or dominate. |
 | `conversational_dominance` | Takes, holds, redirects, or controls conversational floor and agenda. |
 | `listening_responsiveness` | Reflects, tracks, validates, or adapts to what the other person just said. |
 | `question_asking` | Uses questions to probe, invite, corner, teach, test, or keep the other person talking. |
 | `profanity` | Uses taboo, vulgar, sacred, or deliberately coarse language. |
+
+## Verbal Response Strategy
+
+Verbal response strategy describes pressure-activated speech moves. These are
+not baseline voice texture; they are ways speech manages exposure, threat,
+attachment pressure, shame, status, or control.
+
+| Label | Meaning |
+| --- | --- |
+| `sarcastic_deflection` | Uses sarcasm to redirect, dodge, or blunt sincerity, fear, gratitude, or pain. |
+| `sincerity_evasion` | Avoids emotionally plain or vulnerable language even when the feeling is present. |
+| `emotional_evasion` | Avoids naming, dwelling in, or accepting emotional baggage. |
+| `banter_as_boundary` | Uses joking exchange to maintain distance while staying socially engaged. |
+| `verbal_aggression` | Uses language to attack, intimidate, punish, or dominate. |
 
 ## Situational State
 

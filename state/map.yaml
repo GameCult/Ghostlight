@@ -77,6 +77,7 @@ accepted_design:
   - Canonical authored character variables do not carry certainty; perceived dimensions do not expose canonical mean or plasticity, and instead model observed activation, attributed disposition, and confidence.
   - Fundamental attribution bias is first-class in perceived state: observers can mistake exceptional behavior for stable character, with stubborn reads emerging from confidence drivers such as memory, stakes, emotion, prejudice, and social reinforcement.
   - Voice style is a broad required communication vector covering lyrical speech, formality, verbosity, hedging, coded politeness, theatricality, dialect, register switching, technical compression, ritualized address, and related language mechanics.
+  - Verbal response strategy is separate from voice style; pressure-activated moves like sarcastic deflection, sincerity evasion, emotional evasion, banter-as-boundary, and verbal aggression model speech defenses rather than baseline voice texture.
 
 current_status:
   summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, and the initial canonical agent-state schema seam for Call of the Void-style authoring examples. The schema is still v0 and should be hardened before building prompt projection on top of it.

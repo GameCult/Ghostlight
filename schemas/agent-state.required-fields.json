@@ -89,10 +89,7 @@
       "lyricism",
       "narrative_detail",
       "emotional_explicitness",
-      "sarcastic_deflection",
       "pointedness",
-      "sincerity_evasion",
-      "emotional_evasion",
       "self_disclosure",
       "hedging",
       "certainty_marking",
@@ -103,12 +100,17 @@
       "dialect_marking",
       "theatricality",
       "humor",
-      "banter_as_boundary",
-      "verbal_aggression",
       "conversational_dominance",
       "listening_responsiveness",
       "question_asking",
       "profanity"
+    ],
+    "verbal_response_strategy": [
+      "sarcastic_deflection",
+      "sincerity_evasion",
+      "emotional_evasion",
+      "banter_as_boundary",
+      "verbal_aggression"
     ]
   }
 }

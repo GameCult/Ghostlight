@@ -49,6 +49,7 @@ Each agent has:
 - `behavioral_dimensions`
 - `presentation_strategy`
 - `voice_style`
+- `verbal_response_strategy`
 - `situational_state`
 - `values`
 
@@ -95,7 +96,7 @@ The behavioral dimensions include the known must-not-drop set:
 
 Those are not garnish. They are load-bearing social handles.
 
-## Presentation Strategy Vs Voice Style
+## Presentation, Voice, And Response
 
 `presentation_strategy` describes the self being performed.
 
@@ -122,10 +123,7 @@ The required voice handles are:
 - `lyricism`
 - `narrative_detail`
 - `emotional_explicitness`
-- `sarcastic_deflection`
 - `pointedness`
-- `sincerity_evasion`
-- `emotional_evasion`
 - `self_disclosure`
 - `hedging`
 - `certainty_marking`
@@ -136,26 +134,31 @@ The required voice handles are:
 - `dialect_marking`
 - `theatricality`
 - `humor`
-- `banter_as_boundary`
-- `verbal_aggression`
 - `conversational_dominance`
 - `listening_responsiveness`
 - `question_asking`
 - `profanity`
+
+`verbal_response_strategy` describes pressure-activated speech moves:
+
+- `sarcastic_deflection`
+- `sincerity_evasion`
+- `emotional_evasion`
+- `banter_as_boundary`
+- `verbal_aggression`
 
 So Cat's prickliness is not only a dialogue prompt instruction. It is backed by
 canonical state:
 
 - high `presentation_strategy.abrasive_boundary`
 - high `presentation_strategy.ironic_distance`
-- high `voice_style.sarcastic_deflection`
-- high `voice_style.sincerity_evasion`
-- high `voice_style.emotional_evasion`
+- high `verbal_response_strategy.sarcastic_deflection`
+- high `verbal_response_strategy.sincerity_evasion`
+- high `verbal_response_strategy.emotional_evasion`
 
-The renderer can then translate that state into lines that dodge sincerity with
-pointed sarcasm without making her cruel at random. The goal is not "be snarky."
-The goal is "protect the soft tissue by making the other person deal with the
-spines first."
+The renderer can then combine the performed self, baseline voice, active stress,
+and response strategy into dialogue without treating every defensive move as a
+permanent voice trait.
 
 ## Perceived State
 

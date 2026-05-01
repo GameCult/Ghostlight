@@ -122,10 +122,7 @@ These describe how the performed self comes out in language:
 - lyricism
 - narrative detail
 - emotional explicitness
-- sarcastic deflection
 - pointedness
-- sincerity evasion
-- emotional evasion
 - self disclosure
 - hedging
 - certainty marking
@@ -136,21 +133,28 @@ These describe how the performed self comes out in language:
 - dialect marking
 - theatricality
 - humor
-- banter as boundary
-- verbal aggression
 - conversational dominance
 - listening responsiveness
 - question asking
 - profanity
 
-This layer matters because presentation strategy and voice are related but not
-identical. Performing a prickly self may come out as dry sarcasm, clipped
-literalism, theatrical disdain, or a flat refusal to offer emotional handles.
-If the schema only stores the performed self, the renderer has to guess the
-voice. That is how everyone becomes the same quippy little goblin with
-different hats.
+### 6. Verbal Response Strategy
 
-### 6. Situational State
+These describe pressure-activated speech moves:
+
+- sarcastic deflection
+- sincerity evasion
+- emotional evasion
+- banter as boundary
+- verbal aggression
+
+This layer matters because presentation strategy, voice, and verbal response
+are related but not identical. Performing a prickly self may come out as dry sarcasm, clipped
+literalism, theatrical disdain, or a flat refusal to offer emotional handles.
+If the schema only stores the performed self, the renderer has to infer voice
+and stress response from the same field.
+
+### 7. Situational State
 
 These are transient activations:
 
@@ -165,7 +169,7 @@ These are transient activations:
 - acute shame
 - perceived status threat
 
-### 7. Relationship State
+### 8. Relationship State
 
 Per target person, faction, group, product domain, or institution:
 
@@ -181,7 +185,7 @@ Per target person, faction, group, product domain, or institution:
 - expectation of care
 - expectation of betrayal
 
-### 8. Goals And Values
+### 9. Goals And Values
 
 - active goals
 - protected values

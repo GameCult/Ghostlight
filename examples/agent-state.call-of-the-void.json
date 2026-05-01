@@ -329,35 +329,10 @@
             "plasticity": 0.31,
             "current_activation": 0.78
           },
-          "sarcastic_deflection": {
-            "mean": 0.84,
-            "plasticity": 0.2,
-            "current_activation": 0.93
-          },
           "pointedness": {
             "mean": 0.77,
             "plasticity": 0.25,
             "current_activation": 0.82
-          },
-          "sincerity_evasion": {
-            "mean": 0.8,
-            "plasticity": 0.24,
-            "current_activation": 0.87
-          },
-          "emotional_evasion": {
-            "mean": 0.78,
-            "plasticity": 0.27,
-            "current_activation": 0.85
-          },
-          "banter_as_boundary": {
-            "mean": 0.74,
-            "plasticity": 0.31,
-            "current_activation": 0.8
-          },
-          "verbal_aggression": {
-            "mean": 0.46,
-            "plasticity": 0.42,
-            "current_activation": 0.5
           },
           "plainspoken_directness": {
             "mean": 0.62,
@@ -468,6 +443,33 @@
             "mean": 0.52,
             "plasticity": 0.38,
             "current_activation": 0.57
+          }
+        },
+        "verbal_response_strategy": {
+          "sarcastic_deflection": {
+            "mean": 0.84,
+            "plasticity": 0.2,
+            "current_activation": 0.93
+          },
+          "sincerity_evasion": {
+            "mean": 0.8,
+            "plasticity": 0.24,
+            "current_activation": 0.87
+          },
+          "emotional_evasion": {
+            "mean": 0.78,
+            "plasticity": 0.27,
+            "current_activation": 0.85
+          },
+          "banter_as_boundary": {
+            "mean": 0.74,
+            "plasticity": 0.31,
+            "current_activation": 0.8
+          },
+          "verbal_aggression": {
+            "mean": 0.46,
+            "plasticity": 0.42,
+            "current_activation": 0.5
           }
         }
       },
@@ -818,35 +820,10 @@
             "plasticity": 0.48,
             "current_activation": 0.31
           },
-          "sarcastic_deflection": {
-            "mean": 0.28,
-            "plasticity": 0.52,
-            "current_activation": 0.24
-          },
           "pointedness": {
             "mean": 0.24,
             "plasticity": 0.5,
             "current_activation": 0.22
-          },
-          "sincerity_evasion": {
-            "mean": 0.62,
-            "plasticity": 0.42,
-            "current_activation": 0.69
-          },
-          "emotional_evasion": {
-            "mean": 0.72,
-            "plasticity": 0.36,
-            "current_activation": 0.78
-          },
-          "banter_as_boundary": {
-            "mean": 0.45,
-            "plasticity": 0.48,
-            "current_activation": 0.49
-          },
-          "verbal_aggression": {
-            "mean": 0.09,
-            "plasticity": 0.52,
-            "current_activation": 0.05
           },
           "plainspoken_directness": {
             "mean": 0.4,
@@ -957,6 +934,33 @@
             "mean": 0.05,
             "plasticity": 0.39,
             "current_activation": 0.03
+          }
+        },
+        "verbal_response_strategy": {
+          "sarcastic_deflection": {
+            "mean": 0.28,
+            "plasticity": 0.52,
+            "current_activation": 0.24
+          },
+          "sincerity_evasion": {
+            "mean": 0.62,
+            "plasticity": 0.42,
+            "current_activation": 0.69
+          },
+          "emotional_evasion": {
+            "mean": 0.72,
+            "plasticity": 0.36,
+            "current_activation": 0.78
+          },
+          "banter_as_boundary": {
+            "mean": 0.45,
+            "plasticity": 0.48,
+            "current_activation": 0.49
+          },
+          "verbal_aggression": {
+            "mean": 0.09,
+            "plasticity": 0.52,
+            "current_activation": 0.05
           }
         }
       },
