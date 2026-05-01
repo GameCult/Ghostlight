@@ -19,6 +19,7 @@ beautiful little superstition.
   distributions, and prompt projection.
 - Aetheria authoring targets for Call of the Void content generation,
   dialogue scaffolding, and procedural drama across narrated timeline stories.
+- The first canonical agent-state schema, examples, and validation helper.
 - A bounded working discipline that keeps maps, scratch, evidence, and plans
   from dissolving into one confident soup.
 
@@ -37,14 +38,18 @@ beautiful little superstition.
 - `docs/aetheria/`: imported or local Aetheria source material used by
   Ghostlight
 - `docs/architecture/`: world, state, and prompt-system architecture notes
+- `schemas/`: JSON schema contracts and required field lists
+- `examples/`: schema examples and fixtures
 - `tools/ghostlight_state.py`: compact state helper
 - `tools/ghostlight_prepare_compaction.py`: pre-compaction audit helper
+- `tools/validate_agent_state.py`: focused agent-state fixture validator
 
 ## Quick Commands
 
 ```powershell
 npm run state:status
 npm run state:prepare-compaction
+npm run schema:validate
 & 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' '.\tools\ghostlight_state.py' add-evidence --type research --status ok --note '...'
 ```
 
@@ -57,6 +62,7 @@ operating manual. The README is just the sign on the door.
 - `docs/research/personality-model-roadmap.md`
 - `docs/research/personality-signal-classifier.md`
 - `docs/aetheria/call-of-the-void-brainstorm.md`
+- `docs/architecture/canonical-agent-state-schema.md`
 - `docs/architecture/agent-state-distributions-and-prompt-projection.md`
 - `docs/architecture/aetheria-persistent-agent-architecture.md`
 - `docs/architecture/aetheria-content-generation-targets.md`

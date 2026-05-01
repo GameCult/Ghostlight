@@ -1,0 +1,77 @@
+{
+  "schema_version": "ghostlight.required_fields.v0",
+  "variable_groups": {
+    "underlying_organization": [
+      "self_coherence",
+      "contingent_worth",
+      "shame_sensitivity",
+      "reciprocity_capacity",
+      "mentalization_quality",
+      "authenticity_tolerance",
+      "mask_rigidity",
+      "external_regulation_dependence"
+    ],
+    "stable_dispositions": [
+      "novelty_seeking",
+      "conformity",
+      "status_hunger",
+      "risk_tolerance",
+      "sociability",
+      "baseline_threat_sensitivity",
+      "aesthetic_appetite",
+      "ideological_rigidity"
+    ],
+    "behavioral_dimensions": [
+      "warmth",
+      "drive",
+      "grandiosity",
+      "validation_seeking",
+      "anxiety",
+      "control_pressure",
+      "hostility",
+      "suspicion",
+      "rigidity",
+      "withdrawal",
+      "volatility",
+      "attachment_seeking",
+      "distance_seeking"
+    ],
+    "presentation_strategy": [
+      "charm",
+      "compliance",
+      "superiority",
+      "detachment",
+      "seductiveness",
+      "competence_theater",
+      "moral_theater",
+      "strategic_opacity",
+      "cultivated_harmlessness"
+    ],
+    "situational_state": [
+      "exhaustion",
+      "scarcity_pressure",
+      "humiliation",
+      "panic",
+      "triumph",
+      "grief",
+      "overstimulation",
+      "grievance_activation",
+      "acute_shame",
+      "perceived_status_threat"
+    ],
+    "relationship_stance": [
+      "trust",
+      "respect",
+      "resentment",
+      "dependence",
+      "fear",
+      "fascination",
+      "obligation",
+      "envy",
+      "moral_disgust",
+      "perceived_status_gap",
+      "expectation_of_care",
+      "expectation_of_betrayal"
+    ]
+  }
+}

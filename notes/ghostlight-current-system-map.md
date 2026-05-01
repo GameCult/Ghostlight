@@ -39,19 +39,29 @@ state and re-entry discipline.
   - research backlog and social-model notes
 - `docs/architecture/`
   - world, state, and prompt-system architecture notes
+- `schemas/agent-state.schema.json`
+  - v0 canonical agent-state contract for agents, relationships, events,
+    scenes, perceived overlays, and dialogue context packs
+- `schemas/agent-state.required-fields.json`
+  - required first-class variable names for canonical state and relationship
+    stance
+- `examples/agent-state.call-of-the-void.json`
+  - first Call of the Void-flavored fixture for schema and projection work
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
   - pre-compaction audit of required files, handoff content, and git hygiene
+- `tools/validate_agent_state.py`
+  - dependency-free validator for the current schema fixture invariants
 
 ## What Does Not Exist Yet
 
-- a canonical agent-state schema
 - a classifier pipeline
 - a prompt renderer
 - a simulation/event loop
 - a relationship engine
 - a culture prior engine
 
-That absence is not a bug. It is just the current phase. The repo now owns the
-theory body cleanly, even if the runtime skeleton is still missing.
+The canonical agent-state schema now exists as a v0 seam, not as a finished
+runtime. It should be hardened before the prompt renderer or classifier pipeline
+starts treating it as bedrock. The skeleton has one bone. Try not to worship it.

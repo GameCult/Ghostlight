@@ -30,9 +30,14 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - state distributions and prompt projection
   - Aetheria content generation targets
   - population scaling for socially dense authored slices
+- first schema seam:
+  - `schemas/agent-state.schema.json`
+  - `schemas/agent-state.required-fields.json`
+  - `examples/agent-state.call-of-the-void.json`
+  - `tools/validate_agent_state.py`
 
-There is still no runtime yet. The live machine is design, state discipline,
-and a cleaner repo boundary.
+There is still no full runtime yet. The live machine is design, state
+discipline, a cleaner repo boundary, and the first executable state contract.
 
 ## Current Direction
 
@@ -56,7 +61,8 @@ Pick the first implementation seam to cut:
 - classifier/event data model
 - prompt projection renderer for authoring outputs
 
-The clean first move is still the canonical agent-state schema.
+The canonical agent-state schema now exists as v0. The next move is to validate
+and harden it before deriving perceived-state and prompt-projection fixtures.
 
 ## Warnings
 
@@ -68,3 +74,5 @@ The clean first move is still the canonical agent-state schema.
   truth storage.
 - Do not accidentally re-promote the older corridor-crisis idea into a game MVP
   because an old doc had a strong chin and good lighting.
+- Do not build prompt projection on top of the v0 schema until the schema has
+  survived at least one hardening pass. One passing fixture is not revelation.

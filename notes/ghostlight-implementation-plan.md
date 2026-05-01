@@ -2,13 +2,16 @@
 
 ## Near-Term Sequence
 
-1. Freeze the first canonical state model.
+1. Freeze the first canonical state model. In progress.
    - Define the latent variable families.
    - Define first-class dimensions, including volatility, attachment-seeking,
      and distance-seeking.
    - Define canonical state versus perceived state.
    - Keep authoring outputs explainable from the state, not just generated from
      stylish prompt fog.
+   - Maintain `schemas/agent-state.schema.json`,
+     `schemas/agent-state.required-fields.json`, and the example fixtures as
+     the first executable contract.
 
 2. Freeze the first event and classifier schema.
    - Define event labels.

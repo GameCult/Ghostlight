@@ -14,10 +14,9 @@ objective:
     procedural drama, and eventual live-world simulation without collapsing
     into prompt soup.
   current: >
-    Stand up the repo spine, consolidate the architecture we already know, and
-    prepare the first implementation slices around state modeling, cultural
-    priors, signal classification, prompt projection, and authoring-oriented
-    drama generation.
+    Freeze the first canonical agent-state schema and validation seam, then use
+    it as the contract for perceived-state overlays, classifier/event records,
+    prompt projection, and authoring-oriented drama generation.
 
 constraints:
   - Prefer explicit latent state over persona theater.
@@ -74,7 +73,8 @@ accepted_design:
   - The near-term Aetheria consumer is authoring support: Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding.
   - Ghostlight should build drama and narrative pressure, then project character-local dialogue contexts so characters can breathe and act from their own partial state.
   - Call of the Void pressure should come from Sol's whole unresolved inheritance being trapped inside Elysium, not from a lone expedition discovering there is no way home.
+  - The first schema contract lives in schemas/agent-state.schema.json with required first-class dimensions in schemas/agent-state.required-fields.json and a validator in tools/validate_agent_state.py.
 
 current_status:
-  summary: Ghostlight has the Epiphany-style persistence spine and the first architecture payload for personality structure, signal classification, prompt projection, population scale, and Aetheria authoring support. It still has no runtime organs. The first Aetheria consumer target is Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding.
-  next_action: Freeze the first implementation organ. The clean first move remains the canonical agent-state schema, followed by perceived-state overlays, event/classifier records, and prompt projection for authoring outputs.
+  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, and the initial canonical agent-state schema seam for Call of the Void-style authoring examples. The schema is still v0 and should be hardened before building prompt projection on top of it.
+  next_action: Validate and harden the v0 canonical agent-state schema, then derive the first perceived-state overlay and prompt-projection fixtures from it.
