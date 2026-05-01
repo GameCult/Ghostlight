@@ -11,6 +11,10 @@ The first example lives in:
 
 - `examples/agent-state.call-of-the-void.json`
 
+The label and numeric glossary lives in:
+
+- `docs/architecture/agent-state-variable-glossary.md`
+
 ## Objective
 
 The schema defines the minimum state Ghostlight needs before it can safely build
@@ -64,11 +68,21 @@ A person can be dispositionally suspicious without being maximally suspicious
 in every scene. A person can be highly activated right now without rewriting
 their whole soul because someone coughed near a status wound.
 
+For full meanings of `mean`, `certainty`, `plasticity`, `current_activation`,
+and every required v0 label, see
+`docs/architecture/agent-state-variable-glossary.md`.
+
 ## Required First-Class Dimensions
 
-`schemas/agent-state.required-fields.json` names the required variable families.
-The validator enforces those fields for canonical agent state and relationship
-stance.
+`schemas/agent-state.required-fields.json` names the required core variable
+families. The validator enforces those fields for canonical agent state and
+relationship stance.
+
+The required core is not exhaustive. It is the shared comparison surface. A
+character fixture currently includes all required labels, even when many are low
+or inactive, so downstream tooling can compare agents without guessing whether a
+missing value means "not applicable," "forgotten," or "quietly eating the
+floorboards."
 
 The behavioral dimensions include the known must-not-drop set:
 
@@ -100,6 +114,10 @@ For Cat, the important voice handles are explicit now:
 - `banter_as_boundary`
 - `verbal_aggression`
 - `plainspoken_directness`
+
+This list is not comprehensive. It is a v0 starter set. Future labels will
+likely need to cover formality, verbosity, lyricism, hedging, ritual politeness,
+dialect, register switching, technical compression, and other language habits.
 
 So Cat's prickliness is not only a dialogue prompt instruction. It is backed by
 canonical state:

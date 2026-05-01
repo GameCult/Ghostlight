@@ -63,6 +63,7 @@ operating manual. The README is just the sign on the door.
 - `docs/research/personality-signal-classifier.md`
 - `docs/aetheria/call-of-the-void-brainstorm.md`
 - `docs/architecture/canonical-agent-state-schema.md`
+- `docs/architecture/agent-state-variable-glossary.md`
 - `docs/architecture/agent-state-distributions-and-prompt-projection.md`
 - `docs/architecture/aetheria-persistent-agent-architecture.md`
 - `docs/architecture/aetheria-content-generation-targets.md`
