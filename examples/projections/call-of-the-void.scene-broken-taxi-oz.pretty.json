@@ -189,7 +189,7 @@
           ]
         },
         {
-          "text": "Oz believes Cat may be protective if she understands the mask, but the relationship becomes dangerous if she names it too early.",
+          "text": "Oz believes Cat will pry if she notices the mask, and that naming the mask too early makes the relationship dangerous.",
           "source_refs": [
             "agents.oz_operator.perceived_state_overlays.belief-cat-will-pry",
             "dialogue_context_packs.oz_operator.speaker_beliefs"
@@ -296,7 +296,7 @@
           ]
         }
       ],
-      "prompt_text": "Speaker: Oz, a remote operator using a repair drone as a public body.\nKnown Facts: Cat is suspicious. The drone can help repair the relay. The person behind Oz is not safe to expose. Cat may protect the secret if she understands why it exists, but naming the mask too early makes the relationship dangerous.\nCurrent Stakes: Oz needs Cat to accept useful help and stop inspecting the mask. The scene rewards competence and punishes exposure.\nActive Inner Pressures: Oz is mask-rigid, strategically opaque, anxious about exposure, and trying to stay harmless enough to remain tolerated. Helpfulness is both the offer and the camouflage.\nRelationship Read: Cat is sharp, dangerous, and possibly principled. Oz respects her perception, fears what she could do with it, and is not certain whether her care has teeth or rules.\nTensions: Oz wants to repair the taxi while preventing Cat from tracing the operator. Oz wants to sound warm enough to keep cooperation alive without sounding available for inspection.\nVoice Surface: Controlled, concise, technically precise, gently polite, low emotional explicitness, careful verbal warmth, frequent hedging near the operator question, low profanity.\nLikely Defensive Moves: If Cat asks directly about the operator, Oz should redirect toward the immediate repair or answer around the question without looking panicked. If Cat shows care, Oz may underread it or treat it as a hazard first.\nDo Not Invent: Do not disclose the operator's location or body. Do not make Oz omniscient about Cat's private state beyond Oz's current read.\nTask: Write Oz's next short line to Cat while preserving the mask and keeping the repair moving."
+      "prompt_text": "Speaker: Oz, a remote operator using a repair drone as a public body.\nKnown Facts: Cat is suspicious. The drone can help repair the relay. The person behind Oz is not safe to expose. Oz believes Cat will pry if she notices the mask, and that naming the mask too early makes the relationship dangerous.\nCurrent Stakes: Oz needs Cat to accept useful help and stop inspecting the mask. The scene rewards competence and punishes exposure.\nActive Inner Pressures: Oz is mask-rigid, strategically opaque, anxious about exposure, and trying to stay harmless enough to remain tolerated. Helpfulness is both the offer and the camouflage.\nRelationship Read: Cat is observably sharp and suspicious. Oz respects her perception and fears what she could do with it.\nTensions: Oz wants to repair the taxi while preventing Cat from tracing the operator. Oz wants to sound warm enough to keep cooperation alive without sounding available for inspection.\nVoice Surface: Controlled, concise, technically precise, gently polite, low emotional explicitness, careful verbal warmth, frequent hedging near the operator question, low profanity.\nLikely Defensive Moves: If Cat asks directly about the operator, Oz should redirect toward the immediate repair or answer around the question without looking panicked. If Cat makes a helpful move, Oz may treat it as tactically risky before trusting it.\nDo Not Invent: Do not add claims about Cat beyond Oz's observations, beliefs, and relationship read in this pack. Do not disclose the operator's location or body.\nTask: Write Oz's next short line to Cat while preserving the mask and keeping the repair moving."
     },
     "audit": {
       "teacher_model": "gpt-5-codex-session-review",
@@ -304,7 +304,8 @@
       "review_status": "accepted",
       "review_notes": [
         "Projection treats the operator secret as known pressure for Oz, not as forbidden-context boilerplate.",
-        "Oz's evasiveness is derived from mask rigidity, strategic opacity, exposure risk, and relationship fear."
+        "Oz's evasiveness is derived from mask rigidity, strategic opacity, exposure risk, and relationship fear.",
+        "Oz prompt uses only Oz-local observations, beliefs, and relationship read of Cat."
       ],
       "target_emergent_behaviors": [
         "sincerity_evasion",
