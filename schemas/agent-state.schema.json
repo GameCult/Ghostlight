@@ -569,8 +569,7 @@
         "speaker_beliefs",
         "active_memories",
         "active_goals",
-        "presentation_constraints",
-        "forbidden_context"
+        "presentation_constraints"
       ],
       "additionalProperties": false,
       "properties": {
@@ -608,12 +607,6 @@
           }
         },
         "presentation_constraints": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "forbidden_context": {
           "type": "array",
           "items": {
             "type": "string"

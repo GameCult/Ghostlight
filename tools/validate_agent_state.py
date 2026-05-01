@@ -197,7 +197,6 @@ def validate_document(document: dict[str, Any], required: dict[str, list[str]], 
                     "active_memories",
                     "active_goals",
                     "presentation_constraints",
-                    "forbidden_context",
                 ],
                 pack_path,
             )
@@ -208,11 +207,6 @@ def validate_document(document: dict[str, Any], required: dict[str, list[str]], 
                 require(goal_id in goal_ids, f"{pack_path}.active_goals references unknown goal: {goal_id}")
             for memory_id in pack["active_memories"]:
                 require(memory_id in memory_ids, f"{pack_path}.active_memories references unknown memory: {memory_id}")
-            forbidden_blob = "\n".join(pack["forbidden_context"]).lower()
-            local_blob = "\n".join(pack["speaker_local_truth"] + pack["speaker_beliefs"]).lower()
-            for forbidden in ["author-only", "future plot"]:
-                if forbidden in forbidden_blob:
-                    require(forbidden not in local_blob, f"{pack_path} leaks forbidden context into local state: {forbidden}")
 
 
 def main() -> int:

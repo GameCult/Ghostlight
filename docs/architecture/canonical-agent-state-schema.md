@@ -187,10 +187,12 @@ A pack is a character-local prompt payload for one speaker. It includes:
 - active memories
 - active goals
 - presentation constraints
-- forbidden context
 
 The point is not to make the dialogue generator smarter by shouting plot at it.
 The point is to keep each character inside their own partial reality.
+Packs are positive-context payloads: if the speaker should not know something,
+it is not included. Secrets the speaker does know but wants to withhold belong
+in goals, memories, beliefs, and presentation constraints.
 
 Ghostlight can build the trap. The character projection decides how the person
 inside the trap breathes.
@@ -212,7 +214,8 @@ currently cares about:
 - state variable components stay in `0..1`
 - goals, memories, relationships, scenes, and dialogue context packs reference
   existing IDs
-- dialogue packs do not leak obvious forbidden context into speaker-local truth
+- dialogue packs carry speaker-local context without requiring negative
+  author-only fences
 
 This gives us a real seam before we build the prompt renderer. Not perfect.
 Useful. We are allowed to be both.
