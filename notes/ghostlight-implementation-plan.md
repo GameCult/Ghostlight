@@ -36,11 +36,16 @@
 4. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to
      student roadmap.
+   - Use `docs/architecture/aetheria-lore-grounding-architecture.md` to keep
+     Aetheria grounded training separate from procedural Elysium branch
+     generation.
    - Maintain `schemas/projection-example.schema.json`,
      `examples/projections/`, and `tools/validate_projection_examples.py` as
      the first reviewed artifact seam.
+   - Use authored historical Aetheria flashpoints, not malleable Elysium
+     gameplay outcomes, as the first grounded lore-training corpus.
    - Use a frontier teacher model to produce reviewed projection artifacts from
-     structured state.
+     structured state and lore grounding digests.
    - Save accepted and rejected projection examples as supervised data.
    - Train or adapt a smaller student projector only after the artifact schema,
      input slicer, and evaluator are stable.
@@ -56,6 +61,9 @@
 6. Build the first Aetheria authoring consumer.
    - use the Call of the Void slice described in `AetheriaLore` as the first
      concrete content-generation context
+   - treat Call of the Void and other Elysium gameplay-era fixtures as
+     procedural branch material unless specific outcomes are explicitly
+     promoted
    - support dialogue scaffolding and procedural drama for narrated stories
      across the Aetheria timeline
    - do not treat an older corridor-crisis game slice as the implementation

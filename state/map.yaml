@@ -26,6 +26,7 @@ constraints:
   - Reuse proven machinery where it fits before inventing ornate nonsense.
   - Do not treat an older corridor-crisis game slice as the active Ghostlight implementation target.
   - Do not use the obsolete Call of the Void colony-fleet return-home twist; current Aetheria canon sequesters the whole Solar system into Elysium.
+  - Do not treat malleable Elysium gameplay-era outcomes as fixed lore for grounded training data unless a branch outcome is explicitly promoted.
 
 invariants:
   - The map is canonical and slow-changing.
@@ -36,6 +37,7 @@ invariants:
   - Personality must be modeled as layered organization, presentation, and situational activation, not just one bag of labels.
   - Authoring outputs must remain explainable in terms of state, relationship, pressure, memory, and goals.
   - Dialogue generation should be character-local: each prompt should restrict context to what the speaking character knows, feels, wants, remembers, hides, and perceives.
+  - Aetheria grounded training data should come from authored historical lore; procedural Elysium scenes are branch material until reviewed or promoted.
 
 data_flow:
   observe:
@@ -61,6 +63,7 @@ active_subgoals:
   - Define how culture shapes priors, incentives, masks, and economic behavior without turning populations into clones.
   - Define the boundary between canonical signal, perceived signal, and prompt projection.
   - Support content generation for the Call of the Void slice in AetheriaLore and dialogue scaffolding or procedural drama for narrated Aetheria timeline stories.
+  - Ground projection training in authored Aetheria historical flashpoints before using Ghostlight to generate Elysium branch history.
 
 accepted_design:
   - Ghostlight owns the deeper agent-state, personality, culture, relationship, and prompt-projection architecture; other projects can remain consumers instead of shrines.
@@ -87,7 +90,8 @@ accepted_design:
   - Events can carry lightweight observed exchange, private interpretation, and event-effect scaffolding so prompt projection can reason from appraisal and consequence without pretending the v0 schema is already a full transition engine.
   - Future social-simulation mechanisms should be documented and tested through projection artifacts before promotion into the canonical schema.
   - Projection examples use `ghostlight.projection_example.v0` JSONL records with traceable known facts, active pressures, tensions, response affordances, voice surface, rendered prompt text, and audit checks.
+  - Aetheria projection training has two modes: historical grounded fixtures from authored lore, and procedural Elysium branch fixtures that test generation without canonizing gameplay-era outcomes.
 
 current_status:
-  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, and a documented teacher/student distillation path for projection.
-  next_action: Build the deterministic projection input-slice tool that reads the Call of the Void fixture and emits speaker-local input JSON for one scene/speaker pair.
+  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, a revised Aetheria lore-grounding architecture, and a documented teacher/student distillation path for projection.
+  next_action: Define the lore grounding digest format for historical Aetheria projection fixtures, then choose the first authored historical flashpoint for grounded training.

@@ -49,6 +49,9 @@ state and re-entry discipline.
   - parking lot for appraisal, transition, belief, action, conversation,
     resource, dyad, institution, memory, and embodiment mechanisms not yet
     promoted into the v0 schema
+- `docs/architecture/aetheria-lore-grounding-architecture.md`
+  - boundary and plan for grounding training data in authored Aetheria history
+    while treating Elysium gameplay-era outcomes as procedural branch space
 - `schemas/agent-state.schema.json`
   - v0 canonical agent-state contract for agents, relationships, events,
     scenes, perceived overlays, and dialogue context packs
@@ -78,6 +81,7 @@ state and re-entry discipline.
 - a classifier pipeline
 - a prompt renderer
 - a full projection training corpus
+- a lore grounding digest format
 - a deterministic projection input slicer
 - a student projection model
 - a simulation/event loop
@@ -85,6 +89,7 @@ state and re-entry discipline.
 - a culture prior engine
 
 The canonical agent-state schema and first projection example schema now exist
-as v0 seams. The next implementation target is the deterministic input slicer
-that emits speaker-local state before a renderer turns that state into compact
-pressure prose.
+as v0 seams. The next implementation target is a lore grounding digest format
+for historical Aetheria training fixtures, followed by the deterministic input
+slicer that emits speaker-local state before a renderer turns that state into
+compact pressure prose.
