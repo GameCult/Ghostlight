@@ -195,7 +195,7 @@ Canonical authored state should not include epistemic uncertainty about itself.
 If a value is only an observer's read, store it as perceived state rather than
 canonical state. Perceived dimensions should not expose canonical `mean` or
 `plasticity`; they should track observed activation, attributed disposition,
-confidence, and correction resistance. This lets the model represent
+and confidence. This lets the model represent
 fundamental attribution bias: someone can behave a certain way under pressure
 and be perceived as simply being that way.
 

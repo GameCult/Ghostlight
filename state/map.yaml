@@ -74,8 +74,8 @@ accepted_design:
   - Ghostlight should build drama and narrative pressure, then project character-local dialogue contexts so characters can breathe and act from their own partial state.
   - Call of the Void pressure should come from Sol's whole unresolved inheritance being trapped inside Elysium, not from a lone expedition discovering there is no way home.
   - The first schema contract lives in schemas/agent-state.schema.json with required first-class dimensions in schemas/agent-state.required-fields.json and a validator in tools/validate_agent_state.py.
-  - Canonical authored character variables do not carry certainty; perceived dimensions do not expose canonical mean or plasticity, and instead model observed activation, attributed disposition, confidence, and correction resistance.
-  - Fundamental attribution bias is first-class in perceived state: observers can mistake exceptional behavior for stable character, and correction should require counter-evidence.
+  - Canonical authored character variables do not carry certainty; perceived dimensions do not expose canonical mean or plasticity, and instead model observed activation, attributed disposition, and confidence.
+  - Fundamental attribution bias is first-class in perceived state: observers can mistake exceptional behavior for stable character, with stubborn reads emerging from confidence drivers such as memory, stakes, emotion, prejudice, and social reinforcement.
 
 current_status:
   summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, and the initial canonical agent-state schema seam for Call of the Void-style authoring examples. The schema is still v0 and should be hardened before building prompt projection on top of it.

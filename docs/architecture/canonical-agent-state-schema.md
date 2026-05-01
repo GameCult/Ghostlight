@@ -69,7 +69,7 @@ their whole soul because someone coughed near a status wound.
 
 Canonical variables do not include confidence or certainty. Perceived variables
 do not expose canonical `mean` or `plasticity`; they store observed activation,
-attributed disposition, confidence, and correction resistance.
+attributed disposition, and confidence.
 
 For full meanings of canonical `mean`, `plasticity`, `current_activation`,
 perceived attribution fields, and every required v0 label, see

@@ -654,8 +654,7 @@
       "required": [
         "observed_activation",
         "attributed_disposition",
-        "confidence",
-        "correction_resistance"
+        "confidence"
       ],
       "additionalProperties": false,
       "properties": {
@@ -670,11 +669,6 @@
           "maximum": 1
         },
         "confidence": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "correction_resistance": {
           "type": "number",
           "minimum": 0,
           "maximum": 1

@@ -47,8 +47,7 @@ evidence of what the target is like.
 {
   "observed_activation": 0.9,
   "attributed_disposition": 0.7,
-  "confidence": 0.4,
-  "correction_resistance": 0.6
+  "confidence": 0.4
 }
 ```
 
@@ -56,13 +55,13 @@ evidence of what the target is like.
 | --- | --- |
 | `observed_activation` | How strongly the observer thinks the target expressed the dimension in the observed event or scene. |
 | `attributed_disposition` | How much the observer generalizes from the observed behavior into "this is what the target is like." |
-| `confidence` | How strongly the observer trusts this read. |
-| `correction_resistance` | How much counter-evidence is likely to be needed before the observer revises the attribution. |
+| `confidence` | How strongly the observer trusts this read. This is where evidence strength, emotional investment, prejudice, relationship stakes, prior memory, and social reinforcement show up. |
 
 This models fundamental attribution bias directly. A character can see someone
 behave coldly during a crisis and conclude "they are cold," not "they were
 activated toward distance under exceptional pressure." Correcting that
-impression takes work.
+impression takes work because the observer's confidence has causes, not because
+the perceived variable gets a second stickiness dial.
 
 ## Label Set Policy
 

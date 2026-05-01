@@ -746,14 +746,12 @@
             "warmth": {
               "observed_activation": 0.4,
               "attributed_disposition": 0.44,
-              "confidence": 0.34,
-              "correction_resistance": 0.42
+              "confidence": 0.34
             },
             "suspicion": {
               "observed_activation": 0.9,
               "attributed_disposition": 0.83,
-              "confidence": 0.71,
-              "correction_resistance": 0.64
+              "confidence": 0.71
             }
           },
           "beliefs": [
