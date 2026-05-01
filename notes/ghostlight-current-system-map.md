@@ -39,6 +39,9 @@ state and re-entry discipline.
   - research backlog and social-model notes
 - `docs/architecture/`
   - world, state, and prompt-system architecture notes
+- `docs/architecture/prompt-projection-contract.md`
+  - contract for turning durable state into speaker-local pressure prose and
+    prompt sections
 - `schemas/agent-state.schema.json`
   - v0 canonical agent-state contract for agents, relationships, events,
     scenes, perceived overlays, and dialogue context packs
@@ -62,6 +65,6 @@ state and re-entry discipline.
 - a relationship engine
 - a culture prior engine
 
-The canonical agent-state schema now exists as a v0 seam, not as a finished
-runtime. It should be hardened before the prompt renderer or classifier pipeline
-starts treating it as bedrock. The skeleton has one bone. Try not to worship it.
+The canonical agent-state schema exists as a v0 seam, and the prompt projection
+contract now defines the next implementation target. The renderer should turn
+state intersections into compact speaker-local pressure prose.

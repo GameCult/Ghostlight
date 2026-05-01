@@ -21,6 +21,8 @@
    - Define confidence, uncertainty, and evidence accumulation rules.
 
 3. Build the prompt projection layer for authoring.
+   - Use `docs/architecture/prompt-projection-contract.md` as the first
+     renderer contract.
    - Render scene and dialogue scaffolds from structured state, relevant
      memories, scene pressure, cultural defaults, and perceived state.
    - Keep the prompt renderer a projection surface instead of a second brain.

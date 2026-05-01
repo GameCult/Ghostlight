@@ -81,7 +81,8 @@ accepted_design:
   - Sarcastic deflection, sincerity evasion, emotional evasion, banter-as-boundary, and verbal aggression are target emergent behaviors for projection tests.
   - Dialogue context packs are positive-context payloads; unknown or author-only material is omitted rather than listed as forbidden context, while known secrets are handled through goals, memories, beliefs, and presentation constraints.
   - Relationship stance is directional; reciprocal agent pairs need separate edges because trust, fear, obligation, dependence, and betrayal expectations are not symmetric by default.
+  - Prompt projection should compile state into speaker-local pressure prose through input selection, active-pressure scoring, tension detection, response affordance derivation, compact prompt rendering, and post-generation evaluation.
 
 current_status:
-  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, and the initial canonical agent-state schema seam for Call of the Void-style authoring examples. The schema is still v0 and should be hardened before building prompt projection on top of it.
-  next_action: Validate and harden the v0 canonical agent-state schema, then derive the first perceived-state overlay and prompt-projection fixtures from it.
+  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, and a prompt projection contract for turning structured state into speaker-local pressure prose.
+  next_action: Build the first prompt projection renderer from the Call of the Void fixture using the prompt projection contract.
