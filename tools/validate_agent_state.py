@@ -101,7 +101,6 @@ def validate_agent(agent: dict[str, Any], required: dict[str, list[str]]) -> Non
             "behavioral_dimensions",
             "presentation_strategy",
             "voice_style",
-            "verbal_response_strategy",
             "situational_state",
             "values",
         ],
@@ -113,7 +112,6 @@ def validate_agent(agent: dict[str, Any], required: dict[str, list[str]]) -> Non
         "behavioral_dimensions",
         "presentation_strategy",
         "voice_style",
-        "verbal_response_strategy",
         "situational_state",
     ]:
         validate_variable_map(canonical[group], required[group], f"{path}.canonical_state.{group}")

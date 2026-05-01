@@ -181,19 +181,25 @@ quirks in the current examples.
 | `question_asking` | Uses questions to probe, invite, corner, teach, test, or keep the other person talking. |
 | `profanity` | Uses taboo, vulgar, sacred, or deliberately coarse language. |
 
-## Verbal Response Strategy
+## Derived Verbal Responses
 
-Verbal response strategy describes pressure-activated speech moves. These are
-not baseline voice texture; they are ways speech manages exposure, threat,
-attachment pressure, shame, status, or control.
+Defensive verbal moves are projection outcomes, not canonical labels. A renderer
+can derive sarcasm, sincerity evasion, emotional evasion, banter-as-boundary, or
+verbal aggression from the interaction between active state families.
 
-| Label | Meaning |
+Examples:
+
+| Response | Common active-state pattern |
 | --- | --- |
-| `sarcastic_deflection` | Uses sarcasm to redirect, dodge, or blunt sincerity, fear, gratitude, or pain. |
-| `sincerity_evasion` | Avoids emotionally plain or vulnerable language even when the feeling is present. |
-| `emotional_evasion` | Avoids naming, dwelling in, or accepting emotional baggage. |
-| `banter_as_boundary` | Uses joking exchange to maintain distance while staying socially engaged. |
-| `verbal_aggression` | Uses language to attack, intimidate, punish, or dominate. |
+| Sarcastic deflection | High shame sensitivity, ironic distance, threat sensitivity, and exposure pressure through a dry or pointed voice. |
+| Sincerity evasion | Low authenticity tolerance, high mask rigidity, strategic opacity, and low emotional explicitness. |
+| Emotional evasion | High distance-seeking, withdrawal, acute shame, or control pressure with low self-disclosure. |
+| Banter as boundary | High ironic distance, humor, attachment pressure, and distance-seeking in the same scene. |
+| Verbal aggression | High hostility, perceived status threat, grievance activation, and abrasive boundary. |
+
+Treat these as target emergent behaviors for projection tests. They are useful
+because the system should produce them under the right pressures, not because
+they deserve their own canonical storage slot.
 
 ## Situational State
 

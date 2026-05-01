@@ -167,7 +167,6 @@
         "behavioral_dimensions",
         "presentation_strategy",
         "voice_style",
-        "verbal_response_strategy",
         "situational_state",
         "values"
       ],
@@ -195,9 +194,6 @@
           }
         },
         "voice_style": {
-          "$ref": "#/$defs/variable_map"
-        },
-        "verbal_response_strategy": {
           "$ref": "#/$defs/variable_map"
         }
       }

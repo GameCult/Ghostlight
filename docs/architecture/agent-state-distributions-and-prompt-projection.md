@@ -138,21 +138,26 @@ These describe how the performed self comes out in language:
 - question asking
 - profanity
 
-### 6. Verbal Response Strategy
+### 6. Derived Verbal Responses
 
-These describe pressure-activated speech moves:
+Defensive verbal moves are derived during projection. The canonical state stores
+the pressures and speech mechanics that make those moves likely.
 
-- sarcastic deflection
-- sincerity evasion
-- emotional evasion
-- banter as boundary
-- verbal aggression
+Target emergent behaviors:
 
-This layer matters because presentation strategy, voice, and verbal response
-are related but not identical. Performing a prickly self may come out as dry sarcasm, clipped
-literalism, theatrical disdain, or a flat refusal to offer emotional handles.
-If the schema only stores the performed self, the renderer has to infer voice
-and stress response from the same field.
+- sarcastic deflection can emerge from shame sensitivity, ironic distance,
+  exposure pressure, suspicion, and a dry or pointed voice
+- sincerity evasion can emerge from mask rigidity, low authenticity tolerance,
+  strategic opacity, and low emotional explicitness
+- emotional evasion can emerge from distance-seeking, withdrawal, acute shame,
+  or control pressure with low self-disclosure
+- banter as boundary can emerge from humor, ironic distance, attachment
+  pressure, and distance-seeking
+- verbal aggression can emerge from hostility, perceived status threat,
+  grievance activation, and abrasive boundary
+
+These are behaviors Ghostlight should be able to produce and test for without
+storing them as authored canonical traits.
 
 ### 7. Situational State
 

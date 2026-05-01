@@ -49,7 +49,6 @@ Each agent has:
 - `behavioral_dimensions`
 - `presentation_strategy`
 - `voice_style`
-- `verbal_response_strategy`
 - `situational_state`
 - `values`
 
@@ -139,26 +138,25 @@ The required voice handles are:
 - `question_asking`
 - `profanity`
 
-`verbal_response_strategy` describes pressure-activated speech moves:
-
-- `sarcastic_deflection`
-- `sincerity_evasion`
-- `emotional_evasion`
-- `banter_as_boundary`
-- `verbal_aggression`
-
 So Cat's prickliness is not only a dialogue prompt instruction. It is backed by
 canonical state:
 
 - high `presentation_strategy.abrasive_boundary`
 - high `presentation_strategy.ironic_distance`
-- high `verbal_response_strategy.sarcastic_deflection`
-- high `verbal_response_strategy.sincerity_evasion`
-- high `verbal_response_strategy.emotional_evasion`
+- high `underlying_organization.shame_sensitivity`
+- high `underlying_organization.mask_rigidity`
+- high `behavioral_dimensions.distance_seeking`
+- high `behavioral_dimensions.suspicion`
+- high `situational_state.acute_shame` when exposed
 
-The renderer can then combine the performed self, baseline voice, active stress,
-and response strategy into dialogue without treating every defensive move as a
-permanent voice trait.
+The renderer derives defensive speech from those intersections plus voice
+style. A dry, pointed voice under shame and exposure pressure may produce
+sarcastic deflection; the schema does not store sarcasm-as-defense as its own
+canonical organ.
+
+Sarcastic deflection, sincerity evasion, emotional evasion,
+banter-as-boundary, and verbal aggression remain target emergent behaviors for
+projection tests.
 
 ## Perceived State
 
