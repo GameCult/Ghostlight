@@ -3,11 +3,19 @@
 Ghostlight should not prompt a response model with the full schema. The schema is
 state storage. A prompt is a temporary scene instrument.
 
+Projection is not the whole Ghostlight runtime. It is the local lens used by a
+sequential agent loop. The larger machine gives a character awareness of its
+surroundings, options, goals, and constraints; lets it act; resolves the action;
+mutates state; and then moves to the next agent.
+
 The projection layer turns durable state into a compact character-local pressure
 model, then into prompt prose. The prose should describe what the character
 knows, wants, fears, protects, misreads, can physically do, and sounds like right
 now. It should not recite taxonomy labels unless a debugging mode explicitly asks
 for them.
+
+For the sequential runtime target, see
+`docs/architecture/sequential-agent-runtime.md`.
 
 ## Projection Pipeline
 

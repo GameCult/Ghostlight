@@ -14,9 +14,9 @@ objective:
     procedural drama, and eventual live-world simulation without collapsing
     into prompt soup.
   current: >
-    Freeze the first canonical agent-state schema and validation seam, then use
-    it as the contract for perceived-state overlays, classifier/event records,
-    prompt projection, and authoring-oriented drama generation.
+    Move from hand-authored single-turn projection artifacts toward the first
+    sequential agent runtime tick: local awareness, action choice, event
+    proposal, conservative state mutation, and validation.
 
 constraints:
   - Prefer explicit latent state over persona theater.
@@ -37,7 +37,7 @@ invariants:
   - Listener misread is part of the model, not an error to flatten away.
   - Personality must be modeled as layered organization, presentation, and situational activation, not just one bag of labels.
   - Authoring outputs must remain explainable in terms of state, relationship, pressure, memory, and goals.
-  - Dialogue generation should be character-local: each prompt should restrict context to what the speaking character knows, feels, wants, remembers, hides, and perceives.
+  - Character generation should be agent-local: each acting turn should restrict context to what the character knows, feels, wants, remembers, hides, perceives, can attempt, and has authority to affect.
   - Aetheria grounded training data should come from authored historical lore; procedural Elysium scenes are branch material until reviewed or promoted.
 
 data_flow:
@@ -85,8 +85,8 @@ accepted_design:
   - Sarcastic deflection, sincerity evasion, emotional evasion, banter-as-boundary, and verbal aggression are target emergent behaviors for projection tests.
   - Dialogue context packs are positive-context payloads; unknown or author-only material is omitted rather than listed as forbidden context, while known secrets are handled through goals, memories, beliefs, and presentation constraints.
   - Relationship stance is directional; reciprocal agent pairs need separate edges because trust, fear, obligation, dependence, and betrayal expectations are not symmetric by default.
-  - Prompt projection should compile state into speaker-local pressure prose through input selection, active-pressure scoring, tension detection, response affordance derivation, compact prompt rendering, and post-generation evaluation.
-  - Projection must allow characters to act, not only speak; response turns can be dialogue, action, silence, withdrawal, violence, or mixed beats when state and scene pressure justify them.
+  - Prompt projection should compile state into actor-local awareness and pressure prose through input selection, active-pressure scoring, tension detection, response affordance derivation, projection controls, compact prompt rendering, and post-generation evaluation.
+  - Projection must allow characters to act, not only speak; response turns can be dialogue, action, silence, withdrawal, violence, resource use, concealment, revelation, or mixed beats when state and scene pressure justify them.
   - Projection distillation is the long-term optimization path: a frontier teacher model generates reviewed projection artifacts, and a smaller student projector is trained only after the artifact schema, deterministic input slicer, and evaluator are stable.
   - Behavioral warmth and verbal warmth are separate axes: `interpersonal_warmth` describes social care or welcome, while `verbal_warmth` describes soft or reassuring language surface.
   - Events can carry lightweight observed exchange, private interpretation, and event-effect scaffolding so prompt projection can reason from appraisal and consequence without pretending the v0 schema is already a full transition engine.
@@ -99,7 +99,9 @@ accepted_design:
   - Projection controls are now first-class in projection examples: frame_controls, authority_boundaries, object_custody, required_semantics, and forbidden_resolutions capture failure lessons before prompt prose is rendered.
   - Qwen response captures are validated training receipts, not loose logs; accepted, rejected, and useful-needs-revision outputs should keep review status, response kind, strengths, failures, and pipeline lessons.
   - The first complete Cold Wake short story, The Narrowest Possible Margin, is assembled from Ghostlight projection receipts plus in-session connective narration.
+  - Single-turn projection is a debug and training seam, not the final procedural-generation shape; the target runtime is sequential agents acting from local awareness, producing event proposals, and mutating bounded state.
+  - Generated action should become an event proposal resolved by mutation authority, not direct unrestricted edits to world or other-agent private state.
 
 current_status:
   summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, a revised Aetheria lore-grounding architecture, a lore grounding digest schema, the first draft Cold Wake historical grounding digest, a Cold Wake story-lab fixture, projection controls, validated Qwen capture receipts, and a complete Cold Wake short story assembled from accepted projection outputs.
-  next_action: Build the deterministic projection input slicer/renderer prototype that emits projection_controls and prompt_text from agent state, then rerun a story-lab beat through it instead of hand-authoring the full projection artifact.
+  next_action: Build the first deterministic sequential-agent prototype: local awareness, projection controls, action prompt, Qwen event proposal, conservative state mutation, and validation on one Cold Wake story-lab beat.

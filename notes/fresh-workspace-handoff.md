@@ -38,6 +38,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 - prompt projection and distillation docs:
   - `docs/architecture/prompt-projection-contract.md`
   - `docs/architecture/projection-distillation-plan.md`
+  - `docs/architecture/sequential-agent-runtime.md`
 - evaluation follow-up docs:
   - `docs/architecture/schema-future-mechanisms.md`
 - Aetheria lore grounding docs:
@@ -90,10 +91,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Build the deterministic projection input slicer/renderer prototype that emits
-`projection_controls` and `prompt_text` from agent state, then rerun a
-story-lab beat through it instead of hand-authoring the full projection
-artifact.
+Build the first deterministic sequential-agent prototype: local awareness,
+projection controls, action prompt, Qwen event proposal, conservative state
+mutation, and validation on one Cold Wake story-lab beat.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -137,6 +137,8 @@ Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
+- build the first sequential runtime tick so an agent can act from local
+  awareness and mutate only the state it has authority to affect
 - use a frontier teacher model to generate/audit projection artifacts
 - train a smaller student projector only after the artifact schema, input
   slicer, and evaluator stabilize

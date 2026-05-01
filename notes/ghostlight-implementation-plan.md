@@ -32,8 +32,28 @@
    - Keep the prompt renderer a projection surface instead of a second brain.
    - Make generated moves inspectable: why this character deflects, confesses,
      threatens, softens, bargains, or lies.
+   - Treat this as a debug/training seam for the larger sequential runtime, not
+     as the final product shape.
 
-4. Build the projection distillation loop. Started.
+4. Build the sequential agent loop. New target.
+   - Use `docs/architecture/sequential-agent-runtime.md` as the first runtime
+     contract.
+   - Build local awareness from scene state, agent state, relationships,
+     memories, resources, affordances, and known constraints.
+   - Let the acting agent choose speech, silence, movement, resource use,
+     concealment, revelation, violence, refusal, or other available action.
+   - Treat generated action as an event proposal, not direct truth mutation.
+   - Resolve the event against world state and mutation authority.
+   - Apply bounded state changes: event append, memory/belief updates,
+     relationship movement, current activation deltas, resource/object changes,
+     and opened or closed options.
+   - Keep author control at stage-setting and high-level constraints; do not
+     require the author to script every beat.
+   - First prototype: rerun one Cold Wake story-lab beat through a deterministic
+     local-awareness/projection-control renderer, then apply one conservative
+     state mutation and validate the resulting fixture.
+
+5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to
      student roadmap.
    - Use `docs/architecture/aetheria-lore-grounding-architecture.md` to keep
@@ -77,7 +97,7 @@
    - Train or adapt a smaller student projector only after the artifact schema,
      input slicer, and evaluator are stable.
 
-5. Build the first drama-scaffolding loop.
+6. Build the first drama-scaffolding loop.
    - memory updates
    - relationship updates
    - goal pressure
@@ -85,7 +105,7 @@
    - cultural and institutional pressure
    - conflict beats derived from incompatible goals and values
 
-6. Build the first Aetheria authoring consumer.
+7. Build the first Aetheria authoring consumer.
    - use the Call of the Void slice described in `AetheriaLore` as the first
      concrete content-generation context
    - treat Call of the Void and other Elysium gameplay-era fixtures as

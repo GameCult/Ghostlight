@@ -45,6 +45,9 @@ state and re-entry discipline.
 - `docs/architecture/projection-distillation-plan.md`
   - plan for using a frontier teacher model to generate reviewed projection
     artifacts before training a smaller student projector
+- `docs/architecture/sequential-agent-runtime.md`
+  - target runtime loop where agents act from local awareness, generated actions
+    become event proposals, and bounded state mutation drives the next turn
 - `docs/experiments/cold-wake-story-lab.md`
   - four-scene Cold Wake writing experiment using Ghostlight projection as a
     story-generation crutch and training-data source
@@ -119,7 +122,7 @@ state and re-entry discipline.
 - a full projection training corpus
 - a deterministic projection input slicer
 - a student projection model
-- a simulation/event loop
+- a simulation/event loop implementation
 - a relationship engine
 - a culture prior engine
 
@@ -128,5 +131,5 @@ digest schema, first draft Cold Wake grounding digest, and first Cold Wake
 story-lab Qwen captures now exist as v0 seams. The first complete Cold Wake
 story pass exists with receipts, and projection controls have been promoted as
 the architectural answer to repeated prompt leaks. The next implementation
-target is building a deterministic input slicer/renderer prototype that emits
-projection controls and prompt text from agent state.
+target is the first deterministic sequential-agent tick: local awareness,
+action prompt, event proposal, conservative state mutation, and validation.
