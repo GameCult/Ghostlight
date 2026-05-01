@@ -52,12 +52,18 @@ state and re-entry discipline.
 - `docs/architecture/aetheria-lore-grounding-architecture.md`
   - boundary and plan for grounding training data in authored Aetheria history
     while treating Elysium gameplay-era outcomes as procedural branch space
+- `docs/architecture/lore-grounding-digest-format.md`
+  - human-facing format guide for cultural, factional, institutional, role, and
+    speaker-boundary lore digests
 - `schemas/agent-state.schema.json`
   - v0 canonical agent-state contract for agents, relationships, events,
     scenes, perceived overlays, and dialogue context packs
 - `schemas/projection-example.schema.json`
   - v0 reviewed projection artifact contract for speaker-local prompt
     projection examples
+- `schemas/lore-grounding-digest.schema.json`
+  - v0 contract for grounding historical fixtures in source-backed cultural and
+    factional pressure fields
 - `schemas/agent-state.required-fields.json`
   - required first-class variable names for canonical state and relationship
     stance
@@ -67,6 +73,8 @@ state and re-entry discipline.
   - first reviewed Cat and Oz projection examples
 - `examples/projections/call-of-the-void.scene-broken-taxi-oz.pretty.json`
   - pretty-printed mirror for inspecting the first projection examples
+- `examples/lore-grounding/historical-flashpoint.template.json`
+  - fillable template for the first historical Aetheria grounding digest
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
@@ -75,21 +83,21 @@ state and re-entry discipline.
   - dependency-free validator for the current schema fixture invariants
 - `tools/validate_projection_examples.py`
   - dependency-free validator for projection example JSONL records
+- `tools/validate_lore_grounding.py`
+  - dependency-free validator for lore grounding digest examples
 
 ## What Does Not Exist Yet
 
 - a classifier pipeline
 - a prompt renderer
 - a full projection training corpus
-- a lore grounding digest format
 - a deterministic projection input slicer
 - a student projection model
 - a simulation/event loop
 - a relationship engine
 - a culture prior engine
 
-The canonical agent-state schema and first projection example schema now exist
-as v0 seams. The next implementation target is a lore grounding digest format
-for historical Aetheria training fixtures, followed by the deterministic input
-slicer that emits speaker-local state before a renderer turns that state into
-compact pressure prose.
+The canonical agent-state schema, first projection example schema, and first
+lore grounding digest schema now exist as v0 seams. The next implementation
+target is choosing the first authored historical Aetheria flashpoint for a real
+grounding digest, followed by the deterministic input slicer.

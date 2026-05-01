@@ -102,6 +102,12 @@ The best scenes are small, local, and socially loaded:
 Before producing training projection examples from a historical flashpoint,
 create a lore grounding digest.
 
+The digest format is defined in:
+
+- `docs/architecture/lore-grounding-digest-format.md`
+- `schemas/lore-grounding-digest.schema.json`
+- `examples/lore-grounding/historical-flashpoint.template.json`
+
 A digest should include:
 
 - source files and relevant line or section notes
@@ -115,6 +121,19 @@ A digest should include:
 - what each speaker misreads
 - author-only context that must not enter prompt text
 - open questions needing lore elaboration
+
+It should also include cultural and factional pressure fields:
+
+- internal virtues
+- internal shames
+- prestige markers
+- taboo triggers
+- emotional display norms
+- trust defaults
+- speech register cues
+- outsider stereotypes
+- factional misread patterns
+- role obligations and failure modes
 
 The digest is not a replacement for the lore vault. It is a compiled working
 slice for one fixture, so projection examples can cite grounded pressure
@@ -156,7 +175,7 @@ with confident fog.
 ## Immediate Plan
 
 1. Keep the Cat/Oz fixture as an Elysium procedural mechanics fixture.
-2. Add a lore grounding digest format.
+2. Add a lore grounding digest format. Done.
 3. Choose one authored historical flashpoint from the Aetheria archive.
 4. Build the first `historical_grounded` agent-state fixture from that slice.
 5. Produce reviewed projection examples from that fixture.

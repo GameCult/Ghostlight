@@ -91,7 +91,8 @@ accepted_design:
   - Future social-simulation mechanisms should be documented and tested through projection artifacts before promotion into the canonical schema.
   - Projection examples use `ghostlight.projection_example.v0` JSONL records with traceable known facts, active pressures, tensions, response affordances, voice surface, rendered prompt text, and audit checks.
   - Aetheria projection training has two modes: historical grounded fixtures from authored lore, and procedural Elysium branch fixtures that test generation without canonizing gameplay-era outcomes.
+  - Lore grounding digests use `ghostlight.lore_grounding_digest.v0` records to distill authored lore into cultural pressure fields, factional misread maps, role pressures, speaker knowledge boundaries, and author-only exclusions.
 
 current_status:
-  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, a revised Aetheria lore-grounding architecture, and a documented teacher/student distillation path for projection.
-  next_action: Define the lore grounding digest format for historical Aetheria projection fixtures, then choose the first authored historical flashpoint for grounded training.
+  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, a revised Aetheria lore-grounding architecture, a lore grounding digest schema, and a documented teacher/student distillation path for projection.
+  next_action: Choose the first authored historical Aetheria flashpoint for grounded training, then fill the first real lore grounding digest from the template.

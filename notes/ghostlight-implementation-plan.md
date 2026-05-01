@@ -44,6 +44,9 @@
      the first reviewed artifact seam.
    - Use authored historical Aetheria flashpoints, not malleable Elysium
      gameplay outcomes, as the first grounded lore-training corpus.
+   - Maintain `schemas/lore-grounding-digest.schema.json`,
+     `examples/lore-grounding/`, and `tools/validate_lore_grounding.py` as the
+     cultural and factional pressure seam for grounded fixtures.
    - Use a frontier teacher model to produce reviewed projection artifacts from
      structured state and lore grounding digests.
    - Save accepted and rejected projection examples as supervised data.

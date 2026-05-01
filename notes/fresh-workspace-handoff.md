@@ -42,6 +42,11 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `docs/architecture/schema-future-mechanisms.md`
 - Aetheria lore grounding docs:
   - `docs/architecture/aetheria-lore-grounding-architecture.md`
+  - `docs/architecture/lore-grounding-digest-format.md`
+- lore grounding seam:
+  - `schemas/lore-grounding-digest.schema.json`
+  - `examples/lore-grounding/historical-flashpoint.template.json`
+  - `tools/validate_lore_grounding.py`
 - first projection example seam:
   - `schemas/projection-example.schema.json`
   - `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl`
@@ -68,9 +73,8 @@ state unless explicitly revived.
 
 ## Current Next Action
 
-Define the lore grounding digest format for historical Aetheria projection
-fixtures, then use it to choose the first authored historical flashpoint for
-grounded training.
+Choose the first authored historical Aetheria flashpoint for grounded training,
+then fill the first real lore grounding digest from the template.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -92,8 +96,9 @@ Completed projection path items:
 
 Remaining projection path:
 
-- add a lore grounding digest format for historical Aetheria fixtures
 - choose the first authored historical flashpoint for grounded training
+- fill the first real lore grounding digest from
+  `examples/lore-grounding/historical-flashpoint.template.json`
 - build a deterministic speaker-local input slicer
 - use a frontier teacher model to generate/audit projection artifacts
 - train a smaller student projector only after the artifact schema, input

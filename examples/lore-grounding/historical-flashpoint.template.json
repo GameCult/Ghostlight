@@ -1,0 +1,215 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "template.historical-flashpoint.v0",
+  "source_status": "template",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "source-short-id",
+      "path": "Aetheria/path/to/source.md",
+      "title": "Source Title",
+      "line_start": 1,
+      "line_end": 1,
+      "relevance": "Why this source constrains the digest."
+    }
+  ],
+  "historical_context": {
+    "time_period": "TBD historical period",
+    "location": "TBD location or institution",
+    "summary": "Short description of the flashpoint and why it is grounded enough for training.",
+    "public_facts": [
+      {
+        "text": "Fact known to ordinary participants in this scene.",
+        "source_refs": [
+          "source-short-id"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Large institutional or material pressure shaping the scene.",
+        "source_refs": [
+          "source-short-id"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "observer-group-id",
+      "label": "Observer faction, institution, class, profession, or subculture label",
+      "group_type": "faction",
+      "institutional_logic": [
+        "What this group exists to preserve, control, repair, extract, or protect."
+      ],
+      "material_incentives": [
+        "What the group is rewarded for doing under this system."
+      ],
+      "internal_virtues": [
+        "What insiders admire."
+      ],
+      "internal_shames": [
+        "What insiders experience as disgrace or loss of standing."
+      ],
+      "prestige_markers": [
+        "Signals that read as competence, status, holiness, discipline, care, etc."
+      ],
+      "taboo_triggers": [
+        "Acts or traits that provoke disgust, fear, sanction, or exclusion."
+      ],
+      "emotional_display_norms": [
+        "What emotional expression is permitted, admired, punished, or disguised."
+      ],
+      "trust_defaults": [
+        "Who this group is primed to trust, distrust, pity, envy, use, or fear."
+      ],
+      "speech_register_cues": [
+        "Formality, compression, politeness, ritual, jargon, softness, command voice, etc."
+      ],
+      "source_refs": [
+        "source-short-id"
+      ]
+    },
+    {
+      "group_id": "target-group-id",
+      "label": "Target faction, institution, class, profession, or subculture label",
+      "group_type": "faction",
+      "institutional_logic": [
+        "What this group exists to preserve, control, repair, extract, or protect."
+      ],
+      "material_incentives": [
+        "What the group is rewarded for doing under this system."
+      ],
+      "internal_virtues": [
+        "What insiders admire."
+      ],
+      "internal_shames": [
+        "What insiders experience as disgrace or loss of standing."
+      ],
+      "prestige_markers": [
+        "Signals that read as competence, status, holiness, discipline, care, etc."
+      ],
+      "taboo_triggers": [
+        "Acts or traits that provoke disgust, fear, sanction, or exclusion."
+      ],
+      "emotional_display_norms": [
+        "What emotional expression is permitted, admired, punished, or disguised."
+      ],
+      "trust_defaults": [
+        "Who this group is primed to trust, distrust, pity, envy, use, or fear."
+      ],
+      "speech_register_cues": [
+        "Formality, compression, politeness, ritual, jargon, softness, command voice, etc."
+      ],
+      "source_refs": [
+        "source-short-id"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "observer-group-id.visible-need-as-status-leak",
+      "applies_to": [
+        "observer-group-id"
+      ],
+      "pressure_type": "shame",
+      "summary": "Describe a reusable cultural pressure without reducing the group to a flat trait.",
+      "projection_use": "How this pressure should change a speaker-local prompt under scene stress.",
+      "source_refs": [
+        "source-short-id"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "observer-group-id",
+      "target_group_id": "target-group-id",
+      "observer_read": [
+        "How the observer group tends to stereotype or misread the target."
+      ],
+      "target_self_read": [
+        "How the target group understands the same behavior internally."
+      ],
+      "misread_patterns": [
+        "Specific translation errors that can drive conflict."
+      ],
+      "likely_insults": [
+        "Loaded words, euphemisms, or social accusations likely to appear."
+      ],
+      "projection_use": "How to render this misread as pressure prose, not a command to be stereotypical.",
+      "source_refs": [
+        "source-short-id"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "role-id",
+      "summary": "Social role within the flashpoint.",
+      "obligations": [
+        "What the role must do to remain legitimate."
+      ],
+      "available_masks": [
+        "Performances this role can use under pressure."
+      ],
+      "failure_modes": [
+        "How this role breaks, corrupts, freezes, overreaches, or betrays itself."
+      ],
+      "source_refs": [
+        "source-short-id"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "speaker-id",
+      "known_context": [
+        {
+          "text": "What this speaker knows from the lore slice.",
+          "source_refs": [
+            "source-short-id"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "What this speaker believes or assumes.",
+          "source_refs": [
+            "source-short-id"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "What this speaker gets wrong or overgeneralizes.",
+          "source_refs": [
+            "source-short-id"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Author-only fact, future outcome, or other speaker's private context to exclude.",
+          "source_refs": [
+            "source-short-id"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Canon fact or planned outcome that constrains authors but must not enter speaker prompt text.",
+      "source_refs": [
+        "source-short-id"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What needs elaboration before this digest can produce training data?",
+      "blocks_training": true,
+      "notes": "Say whether this blocks examples or can wait."
+    }
+  ]
+}

@@ -203,7 +203,7 @@ Minimum useful milestone:
 2. Add `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl` with
    the first reviewed Cat and Oz examples. Done.
 3. Add a lore grounding digest format for historical Aetheria projection
-   fixtures.
+   fixtures. Done.
 4. Choose the first authored historical flashpoint for grounded training.
 5. Add a deterministic projection input-slice tool that reads the agent-state
    fixture and emits speaker-local input JSON.
