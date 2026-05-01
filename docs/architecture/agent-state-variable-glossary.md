@@ -160,7 +160,9 @@ quirks in the current examples.
 | `plainspoken_directness` | Speaks plainly, concretely, or bluntly rather than ornamenting or obscuring. |
 | `lexical_precision` | Chooses exact words, distinctions, definitions, or careful terms. |
 | `technical_density` | Packs speech with specialist terms, systems language, procedure, or analysis. |
+| `technical_compression` | Compresses technical meaning into terse expert shorthand. |
 | `figurative_language` | Uses metaphor, image, analogy, poetic compression, or symbolic framing. |
+| `lyricism` | Uses musical, poetic, sensuous, or rhythmically heightened language. |
 | `narrative_detail` | Explains through context, sequence, anecdote, or concrete scene detail. |
 | `emotional_explicitness` | Names feelings, needs, wounds, affection, fear, or attachment directly. |
 | `sarcastic_deflection` | Uses sarcasm to redirect, dodge, or blunt sincerity, fear, gratitude, or pain. |
@@ -171,9 +173,11 @@ quirks in the current examples.
 | `hedging` | Softens claims with uncertainty markers, caveats, deference, or exits. |
 | `certainty_marking` | Signals confidence, finality, authority, or refusal to leave claims open. |
 | `politeness` | Uses courtesy, mitigation, face-saving language, or social smoothing. |
+| `coded_politeness` | Uses polite phrasing to imply criticism, threat, refusal, hierarchy, or hidden meaning. |
 | `ritualized_address` | Uses formulaic greetings, titles, honorifics, oaths, prayers, or ceremonial phrases. |
 | `register_switching` | Shifts between speech registers depending on audience, status, danger, or role. |
 | `dialect_marking` | Shows regional, class, occupational, subcultural, or community-specific speech markers. |
+| `theatricality` | Performs speech with heightened drama, staging, persona, flourish, or rhetorical display. |
 | `humor` | Uses jokes, wit, absurdity, teasing, or comic framing as a regular speech tool. |
 | `banter_as_boundary` | Uses joking exchange to maintain distance while staying socially engaged. |
 | `verbal_aggression` | Uses language to attack, intimidate, punish, or dominate. |

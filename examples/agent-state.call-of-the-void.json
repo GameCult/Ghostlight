@@ -374,10 +374,20 @@
             "plasticity": 0.5,
             "current_activation": 0.34
           },
+          "technical_compression": {
+            "mean": 0.34,
+            "plasticity": 0.47,
+            "current_activation": 0.38
+          },
           "figurative_language": {
             "mean": 0.38,
             "plasticity": 0.47,
             "current_activation": 0.41
+          },
+          "lyricism": {
+            "mean": 0.16,
+            "plasticity": 0.43,
+            "current_activation": 0.12
           },
           "narrative_detail": {
             "mean": 0.24,
@@ -409,6 +419,11 @@
             "plasticity": 0.48,
             "current_activation": 0.21
           },
+          "coded_politeness": {
+            "mean": 0.31,
+            "plasticity": 0.49,
+            "current_activation": 0.28
+          },
           "ritualized_address": {
             "mean": 0.08,
             "plasticity": 0.42,
@@ -423,6 +438,11 @@
             "mean": 0.18,
             "plasticity": 0.41,
             "current_activation": 0.2
+          },
+          "theatricality": {
+            "mean": 0.24,
+            "plasticity": 0.48,
+            "current_activation": 0.19
           },
           "humor": {
             "mean": 0.69,
@@ -843,10 +863,20 @@
             "plasticity": 0.4,
             "current_activation": 0.59
           },
+          "technical_compression": {
+            "mean": 0.67,
+            "plasticity": 0.35,
+            "current_activation": 0.71
+          },
           "figurative_language": {
             "mean": 0.22,
             "plasticity": 0.5,
             "current_activation": 0.18
+          },
+          "lyricism": {
+            "mean": 0.09,
+            "plasticity": 0.44,
+            "current_activation": 0.06
           },
           "narrative_detail": {
             "mean": 0.28,
@@ -878,6 +908,11 @@
             "plasticity": 0.35,
             "current_activation": 0.7
           },
+          "coded_politeness": {
+            "mean": 0.74,
+            "plasticity": 0.32,
+            "current_activation": 0.79
+          },
           "ritualized_address": {
             "mean": 0.31,
             "plasticity": 0.45,
@@ -892,6 +927,11 @@
             "mean": 0.12,
             "plasticity": 0.43,
             "current_activation": 0.08
+          },
+          "theatricality": {
+            "mean": 0.18,
+            "plasticity": 0.47,
+            "current_activation": 0.12
           },
           "humor": {
             "mean": 0.21,

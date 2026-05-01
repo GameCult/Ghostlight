@@ -117,7 +117,9 @@ These describe how the performed self comes out in language:
 - plainspoken directness
 - lexical precision
 - technical density
+- technical compression
 - figurative language
+- lyricism
 - narrative detail
 - emotional explicitness
 - sarcastic deflection
@@ -128,9 +130,11 @@ These describe how the performed self comes out in language:
 - hedging
 - certainty marking
 - politeness
+- coded politeness
 - ritualized address
 - register switching
 - dialect marking
+- theatricality
 - humor
 - banter as boundary
 - verbal aggression

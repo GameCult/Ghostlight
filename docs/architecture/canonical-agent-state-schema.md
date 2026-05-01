@@ -117,7 +117,9 @@ The required voice handles are:
 - `plainspoken_directness`
 - `lexical_precision`
 - `technical_density`
+- `technical_compression`
 - `figurative_language`
+- `lyricism`
 - `narrative_detail`
 - `emotional_explicitness`
 - `sarcastic_deflection`
@@ -128,9 +130,11 @@ The required voice handles are:
 - `hedging`
 - `certainty_marking`
 - `politeness`
+- `coded_politeness`
 - `ritualized_address`
 - `register_switching`
 - `dialect_marking`
+- `theatricality`
 - `humor`
 - `banter_as_boundary`
 - `verbal_aggression`
