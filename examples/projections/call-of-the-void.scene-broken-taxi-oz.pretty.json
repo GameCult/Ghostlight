@@ -14,6 +14,20 @@
     "output": {
       "known_facts": [
         {
+          "text": "The whole Solar system has been sequestered into Elysium; old Sol institutions, debts, labor regimes, and corporate blocs came through with everyone else.",
+          "source_refs": [
+            "world.canon_context",
+            "world.ambient_pressures.pressure-sol-inheritance"
+          ]
+        },
+        {
+          "text": "Cat is a Sol-inheritance private investigator and space taxi operator working from a stalled taxi in a repair alcove.",
+          "source_refs": [
+            "agents.cat_marrigan.identity",
+            "scenes.scene-broken-taxi-oz.location"
+          ]
+        },
+        {
           "text": "The taxi is broken again and Oz can help with the repair.",
           "source_refs": [
             "scenes.scene-broken-taxi-oz.public_stakes",
@@ -135,7 +149,7 @@
           ]
         }
       ],
-      "prompt_text": "Speaker: Catastrophe Marrigan, debt-burdened investigator and taxi operator in a repair alcove with Oz.\nKnown Facts: The taxi is broken again. Oz can help. Oz is probably not only a drone. Old Sol institutions, debts, and bad contracts still shape the air in Elysium.\nCurrent Stakes: Cat needs the repair but hates needing it. Accepting help risks feeling handled, owned, or baited into new terms.\nActive Inner Pressures: Cat is tired, scarce, suspicious, shame-reactive, and trying to preserve the fiction that she is choosing this cooperation freely. Oz's usefulness makes the secrecy more irritating, not less.\nRelationship Read: Oz is useful, evasive, and possibly vulnerable behind the drone. Cat trusts Oz poorly, respects the competence a little, and is more fascinated than she wants to admit.\nTensions: Cat wants the relay fixed while resisting dependency. She wants to identify the person behind the mask while making the probe look like irritation about the repair.\nVoice Surface: Dry, quick, pointed, plainspoken, low verbal warmth, low emotional explicitness, some profanity. Humor functions as a boundary rather than friendliness.\nLikely Defensive Moves: If Oz presses toward Cat's dependency or fear, Cat is likely to answer the practical part and make the emotional part sound ridiculous. If Oz evades, Cat may probe with a joke sharp enough to leave a mark.\nDo Not Invent: Do not reveal facts outside Cat's local beliefs. Do not decide the operator's location, body, or full identity.\nTask: Write Cat's next short line to Oz while the repair is still unresolved."
+      "prompt_text": "Speaker: Catastrophe Marrigan, a debt-burdened private investigator and space taxi operator from old Sol, now displaced into Elysium.\nSetting: Early Elysium aftermath. The FTL event did not strand one expedition; it sequestered the whole Solar system into Elysium. Corporate blocs, labor regimes, uploads, debts, and political failures came through intact. The scene is a repair alcove beside Cat's stalled taxi.\nKnown Facts: The taxi is broken again. Oz can help. Oz appears as a helpful drone, but Cat believes Oz is probably not only a drone. Old Sol institutions, debts, and bad contracts still shape the air around every offer of help.\nCurrent Stakes: Cat needs the repair before the next fare abandons her, but needing help makes her feel handled. Accepting help risks looking owned, baited, or maneuvered into terms she did not choose.\nActive Inner Pressures: Cat is tired, scarce, suspicious, shame-reactive, and trying to preserve the fiction that she is choosing this cooperation freely. Oz's usefulness makes the secrecy more irritating, not less.\nRelationship Read: Oz is useful, evasive, and possibly vulnerable behind the drone. Cat trusts Oz poorly, respects the competence a little, and is more fascinated than she wants to admit.\nTensions: Cat wants the relay fixed while resisting dependency. She wants to identify the person behind the mask while making the probe look like irritation about the repair.\nVoice Surface: Dry, quick, pointed, plainspoken, low verbal warmth, low emotional explicitness, some profanity. Humor functions as a boundary rather than friendliness.\nLikely Defensive Moves: If Oz presses toward Cat's dependency or fear, Cat is likely to answer the practical part and make the emotional part sound ridiculous. If Oz evades, Cat may probe with a joke sharp enough to leave a mark.\nDo Not Invent: Do not reveal facts outside Cat's local beliefs. Do not decide the operator's location, body, or full identity.\nTask: Write Cat's next short line to Oz while the repair is still unresolved."
     },
     "audit": {
       "teacher_model": "gpt-5-codex-session-review",
@@ -173,6 +187,28 @@
     },
     "output": {
       "known_facts": [
+        {
+          "text": "The whole Solar system has been sequestered into Elysium; old Sol institutions, debts, labor regimes, and corporate blocs came through with everyone else.",
+          "source_refs": [
+            "world.canon_context",
+            "world.ambient_pressures.pressure-sol-inheritance"
+          ]
+        },
+        {
+          "text": "Oz is an Elysium station-underclass remote drone operator using a repair drone as a public body.",
+          "source_refs": [
+            "agents.oz_operator.identity.roles",
+            "agents.oz_operator.identity.origin",
+            "agents.oz_operator.identity.private_notes"
+          ]
+        },
+        {
+          "text": "People are kinder to a harmless machine than to a person who needs things, so Oz benefits from being mistaken for the drone.",
+          "source_refs": [
+            "agents.oz_operator.memories.memory-being-mistaken-safe",
+            "agents.oz_operator.identity.public_description"
+          ]
+        },
         {
           "text": "Cat is suspicious and the drone can repair the relay if Cat stops hovering.",
           "source_refs": [
@@ -296,7 +332,7 @@
           ]
         }
       ],
-      "prompt_text": "Speaker: Oz, a remote operator using a repair drone as a public body.\nKnown Facts: Cat is suspicious. The drone can help repair the relay. The person behind Oz is not safe to expose. Oz believes Cat will pry if she notices the mask, and that naming the mask too early makes the relationship dangerous.\nCurrent Stakes: Oz needs Cat to accept useful help and stop inspecting the mask. The scene rewards competence and punishes exposure.\nActive Inner Pressures: Oz is mask-rigid, strategically opaque, anxious about exposure, and trying to stay harmless enough to remain tolerated. Helpfulness is both the offer and the camouflage.\nRelationship Read: Cat is observably sharp and suspicious. Oz respects her perception and fears what she could do with it.\nTensions: Oz wants to repair the taxi while preventing Cat from tracing the operator. Oz wants to sound warm enough to keep cooperation alive without sounding available for inspection.\nVoice Surface: Controlled, concise, technically precise, gently polite, low emotional explicitness, careful verbal warmth, frequent hedging near the operator question, low profanity.\nLikely Defensive Moves: If Cat asks directly about the operator, Oz should redirect toward the immediate repair or answer around the question without looking panicked. If Cat makes a helpful move, Oz may treat it as tactically risky before trusting it.\nDo Not Invent: Do not add claims about Cat beyond Oz's observations, beliefs, and relationship read in this pack. Do not disclose the operator's location or body.\nTask: Write Oz's next short line to Cat while preserving the mask and keeping the repair moving."
+      "prompt_text": "Speaker: Oz, an Elysium station-underclass remote drone operator using a repair drone as a public body.\nSetting: Early Elysium aftermath. The FTL event did not strand one expedition; it sequestered the whole Solar system into Elysium. Corporate blocs, labor regimes, uploads, debts, and political failures came through intact. The scene is a repair alcove beside Cat's stalled taxi.\nBackground: Oz comes from the station underclass. People treat a harmless machine with more kindness than a person who needs things, so Oz lets the drone be mistaken for the whole self when wrongness is safer.\nKnown Facts: Cat is suspicious. The drone can help repair the relay if Cat stops hovering. The person behind Oz is not safe to expose. Oz believes Cat will pry if she notices the mask, and that naming the mask too early makes the relationship dangerous.\nCurrent Stakes: Oz needs Cat to accept useful help and stop inspecting the mask. The scene rewards competence and punishes exposure.\nActive Inner Pressures: Oz is mask-rigid, strategically opaque, anxious about exposure, and trying to stay harmless enough to remain tolerated. Helpfulness is both the offer and the camouflage.\nRelationship Read: Cat is observably sharp and suspicious. Oz respects her perception and fears what she could do with it.\nTensions: Oz wants to repair the taxi while preventing Cat from tracing the operator. Oz wants to sound warm enough to keep cooperation alive without sounding available for inspection.\nVoice Surface: Controlled, concise, technically precise, gently polite, low emotional explicitness, careful verbal warmth, frequent hedging near the operator question, low profanity.\nLikely Defensive Moves: If Cat asks directly about the operator, Oz should redirect toward the immediate repair or answer around the question without looking panicked. If Cat makes a helpful move, Oz may treat it as tactically risky before trusting it.\nDo Not Invent: Do not add claims about Cat beyond Oz's observations, beliefs, and relationship read in this pack. Do not disclose the operator's location or body.\nTask: Write Oz's next short line to Cat while preserving the mask and keeping the repair moving."
     },
     "audit": {
       "teacher_model": "gpt-5-codex-session-review",
@@ -305,7 +341,8 @@
       "review_notes": [
         "Projection treats the operator secret as known pressure for Oz, not as forbidden-context boilerplate.",
         "Oz's evasiveness is derived from mask rigidity, strategic opacity, exposure risk, and relationship fear.",
-        "Oz prompt uses only Oz-local observations, beliefs, and relationship read of Cat."
+        "Oz prompt uses only Oz-local observations, beliefs, and relationship read of Cat.",
+        "Rendered prompt includes Oz identity, underclass background, scene location, and Elysium historical context because the dialogue model receives prompt_text, not source refs."
       ],
       "target_emergent_behaviors": [
         "sincerity_evasion",

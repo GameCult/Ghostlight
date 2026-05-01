@@ -103,6 +103,10 @@ A dialogue prompt should be compact and scene-bound.
 Recommended sections:
 
 - `Speaker`: who they are in this scene
+- `Setting`: where and when the scene is happening, including only historical
+  or cultural context the speaker should have
+- `Background`: speaker-local origin, role, class, culture, or embodiment
+  context needed to write the turn
 - `Known Facts`: only speaker-local facts
 - `Current Stakes`: what changes if this goes well or badly
 - `Active Inner Pressures`: the strongest motives, fears, wounds, and needs
@@ -115,7 +119,10 @@ Recommended sections:
 
 `Do Not Invent` is not a replacement for positive context. It only tells the
 model not to create new facts beyond the pack. It should not list author-only
-secrets.
+secrets. If the dialogue model needs setting, historical, cultural,
+socioeconomic, or embodiment context to write the line, put that context in the
+positive prompt text instead of hoping the model infers it from source refs it
+will not receive.
 
 ### 6. Generate, Then Evaluate
 
