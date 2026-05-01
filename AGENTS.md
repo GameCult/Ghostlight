@@ -112,4 +112,8 @@ When the user says to prepare for imminent compaction:
 - Before handoff, compaction, or phase boundaries, sync `state/map.yaml`, add
   distilled evidence when the lesson changes future belief, refresh
   `notes/fresh-workspace-handoff.md`, and make the next action explicit.
-
+- In documentation, describe the live system and current rule directly. Do not
+  write victory laps, scar tours, or clever autopsies about what the project no
+  longer does. If rejected history matters, keep it short, explicit, and
+  decision-relevant; otherwise cut it. The docs are not a trophy case for
+  yesterday's wrong machine.

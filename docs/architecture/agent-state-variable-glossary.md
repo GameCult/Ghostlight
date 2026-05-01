@@ -35,11 +35,9 @@ This means the agent is not generally high in the variable, the baseline is not
 very easy to change, but the variable is strongly activated right now.
 Translation: this is a situation, not a personality transplant.
 
-Canonical character state does not include `certainty`. If Ghostlight is
-defining a character, uncertainty about that definition is not part of the
-character. It belongs in workflow provenance, drafts, imported-source notes, or
-review status. Otherwise the schema confuses the person with our confidence in
-our paperwork, which is how bureaucracies get haunted.
+Canonical character state does not include `certainty`. If a generated or
+imported profile is provisional, track that in workflow provenance, draft
+status, imported-source notes, or review status.
 
 Perceived or inferred state can use `confidence`, because that is explicitly
 about an observer's or classifier's read:
