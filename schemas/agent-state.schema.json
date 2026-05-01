@@ -166,6 +166,7 @@
         "stable_dispositions",
         "behavioral_dimensions",
         "presentation_strategy",
+        "voice_style",
         "situational_state",
         "values"
       ],
@@ -191,6 +192,9 @@
           "items": {
             "$ref": "#/$defs/value_commitment"
           }
+        },
+        "voice_style": {
+          "$ref": "#/$defs/variable_map"
         }
       }
     },

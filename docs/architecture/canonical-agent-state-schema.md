@@ -44,6 +44,7 @@ Each agent has:
 - `stable_dispositions`
 - `behavioral_dimensions`
 - `presentation_strategy`
+- `voice_style`
 - `situational_state`
 - `values`
 
@@ -76,6 +77,43 @@ The behavioral dimensions include the known must-not-drop set:
 - `distance_seeking`
 
 Those are not garnish. They are load-bearing social handles.
+
+## Presentation Strategy Vs Voice Style
+
+`presentation_strategy` describes the self being performed.
+
+That can include charm, detachment, competence theater, cultivated
+harmlessness, or deliberately performing someone who is abrasive or difficult.
+Sometimes that abrasive performance is not random meanness. It is a boundary,
+a threat display, a way to prevent intimacy, or a test to see who flinches.
+Human beings are regrettably efficient little porcupines.
+
+`voice_style` describes how that performed self comes out in language.
+
+For Cat, the important voice handles are explicit now:
+
+- `dryness`
+- `sarcastic_deflection`
+- `pointedness`
+- `sincerity_evasion`
+- `emotional_evasion`
+- `banter_as_boundary`
+- `verbal_aggression`
+- `plainspoken_directness`
+
+So Cat's prickliness is not only a dialogue prompt instruction. It is backed by
+canonical state:
+
+- high `presentation_strategy.abrasive_boundary`
+- high `presentation_strategy.ironic_distance`
+- high `voice_style.sarcastic_deflection`
+- high `voice_style.sincerity_evasion`
+- high `voice_style.emotional_evasion`
+
+The renderer can then translate that state into lines that dodge sincerity with
+pointed sarcasm without making her cruel at random. The goal is not "be snarky."
+The goal is "protect the soft tissue by making the other person deal with the
+spines first."
 
 ## Perceived State
 

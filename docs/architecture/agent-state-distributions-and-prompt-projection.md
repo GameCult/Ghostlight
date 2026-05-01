@@ -99,11 +99,33 @@ These describe how the self is performed:
 - moral theater
 - strategic opacity
 - cultivated harmlessness
+- abrasive boundary
+- ironic distance
 
 These are not just decorative style. In some agents they are survival
 machinery.
 
-### 5. Situational State
+### 5. Voice Style
+
+These describe how the performed self comes out in language:
+
+- dryness
+- sarcastic deflection
+- pointedness
+- sincerity evasion
+- emotional evasion
+- banter as boundary
+- verbal aggression
+- plainspoken directness
+
+This layer matters because presentation strategy and voice are related but not
+identical. Performing a prickly self may come out as dry sarcasm, clipped
+literalism, theatrical disdain, or a flat refusal to offer emotional handles.
+If the schema only stores the performed self, the renderer has to guess the
+voice. That is how everyone becomes the same quippy little goblin with
+different hats.
+
+### 6. Situational State
 
 These are transient activations:
 
@@ -118,7 +140,7 @@ These are transient activations:
 - acute shame
 - perceived status threat
 
-### 6. Relationship State
+### 7. Relationship State
 
 Per target person, faction, group, product domain, or institution:
 
@@ -134,7 +156,7 @@ Per target person, faction, group, product domain, or institution:
 - expectation of care
 - expectation of betrayal
 
-### 7. Goals And Values
+### 8. Goals And Values
 
 - active goals
 - protected values
@@ -368,6 +390,7 @@ forces instead of mere flavor text.
    - stable dispositions
    - all core behavioral dimensions, including `volatility`, `attachment-seeking`, and `distance-seeking`
    - presentation strategies
+   - voice styles
    - situational state
    - relationship state
    - goals and values

@@ -45,7 +45,9 @@
       "competence_theater",
       "moral_theater",
       "strategic_opacity",
-      "cultivated_harmlessness"
+      "cultivated_harmlessness",
+      "abrasive_boundary",
+      "ironic_distance"
     ],
     "situational_state": [
       "exhaustion",
@@ -72,6 +74,16 @@
       "perceived_status_gap",
       "expectation_of_care",
       "expectation_of_betrayal"
+    ],
+    "voice_style": [
+      "dryness",
+      "sarcastic_deflection",
+      "pointedness",
+      "sincerity_evasion",
+      "emotional_evasion",
+      "banter_as_boundary",
+      "verbal_aggression",
+      "plainspoken_directness"
     ]
   }
 }
