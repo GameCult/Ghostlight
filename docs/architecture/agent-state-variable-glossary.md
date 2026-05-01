@@ -39,20 +39,30 @@ Canonical character state does not include `certainty`. If a generated or
 imported profile is provisional, track that in workflow provenance, draft
 status, imported-source notes, or review status.
 
-Perceived or inferred state can use `confidence`, because that is explicitly
-about an observer's or classifier's read:
+Perceived state uses a different shape because observers do not know canonical
+baseline or plasticity. They see behavior, then often treat that behavior as
+evidence of what the target is like.
 
 ```json
 {
-  "mean": 0.7,
+  "observed_activation": 0.9,
+  "attributed_disposition": 0.7,
   "confidence": 0.4,
-  "plasticity": 0.5,
-  "current_activation": 0.8
+  "correction_resistance": 0.6
 }
 ```
 
-That means the observer currently reads the target as high in this dimension,
-but the read is weakly supported or uncertain.
+| Field | Meaning |
+| --- | --- |
+| `observed_activation` | How strongly the observer thinks the target expressed the dimension in the observed event or scene. |
+| `attributed_disposition` | How much the observer generalizes from the observed behavior into "this is what the target is like." |
+| `confidence` | How strongly the observer trusts this read. |
+| `correction_resistance` | How much counter-evidence is likely to be needed before the observer revises the attribution. |
+
+This models fundamental attribution bias directly. A character can see someone
+behave coldly during a crisis and conclude "they are cold," not "they were
+activated toward distance under exceptional pressure." Correcting that
+impression takes work.
 
 ## Label Set Policy
 

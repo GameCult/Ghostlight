@@ -192,10 +192,12 @@ This gives us:
 - scene-sensitive activation without rewriting the whole person every turn
 
 Canonical authored state should not include epistemic uncertainty about itself.
-If a value is only an observer's read, a classifier output, or a draft import,
-store that uncertainty as `confidence` on the perceived, inferred, or workflow
-record instead. The character is not uncertain about our spreadsheet. The
-spreadsheet may be uncertain about the character.
+If a value is only an observer's read, store it as perceived state rather than
+canonical state. Perceived dimensions should not expose canonical `mean` or
+`plasticity`; they should track observed activation, attributed disposition,
+confidence, and correction resistance. This lets the model represent
+fundamental attribution bias: someone can behave a certain way under pressure
+and be perceived as simply being that way.
 
 ## Culture As A Prior Field
 

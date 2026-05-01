@@ -652,14 +652,19 @@
     "inferred_state_variable": {
       "type": "object",
       "required": [
-        "mean",
+        "observed_activation",
+        "attributed_disposition",
         "confidence",
-        "plasticity",
-        "current_activation"
+        "correction_resistance"
       ],
       "additionalProperties": false,
       "properties": {
-        "mean": {
+        "observed_activation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "attributed_disposition": {
           "type": "number",
           "minimum": 0,
           "maximum": 1
@@ -669,12 +674,7 @@
           "minimum": 0,
           "maximum": 1
         },
-        "plasticity": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "current_activation": {
+        "correction_resistance": {
           "type": "number",
           "minimum": 0,
           "maximum": 1

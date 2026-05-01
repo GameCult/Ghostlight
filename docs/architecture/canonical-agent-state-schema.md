@@ -67,11 +67,12 @@ A person can be dispositionally suspicious without being maximally suspicious
 in every scene. A person can be highly activated right now without rewriting
 their whole soul because someone coughed near a status wound.
 
-Canonical variables do not include confidence or certainty. Perceived and
-inferred variables use `confidence` when a read can be wrong.
+Canonical variables do not include confidence or certainty. Perceived variables
+do not expose canonical `mean` or `plasticity`; they store observed activation,
+attributed disposition, confidence, and correction resistance.
 
-For full meanings of `mean`, `plasticity`, `current_activation`, perceived
-`confidence`, and every required v0 label, see
+For full meanings of canonical `mean`, `plasticity`, `current_activation`,
+perceived attribution fields, and every required v0 label, see
 `docs/architecture/agent-state-variable-glossary.md`.
 
 ## Required First-Class Dimensions
@@ -143,13 +144,15 @@ An overlay records:
 
 - observer
 - target
-- perceived dimensions
+- perceived dimensions, including observed activation and attributed disposition
 - beliefs
 - distortions
 
 This is where misunderstanding lives. Suspicious agents can overread threat.
 Attachment-hungry agents can overread warmth. Avoidant agents can underread
-care. None of that requires corrupting the canonical state.
+care. Fundamental attribution bias also lives here: an observer can mistake
+exceptional behavior for stable character. None of that requires corrupting the
+canonical state.
 
 ## Dialogue Context Packs
 

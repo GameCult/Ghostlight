@@ -51,9 +51,16 @@ def validate_state_variable(obj: Any, path: str) -> None:
 
 def validate_inferred_state_variable(obj: Any, path: str) -> None:
     require(isinstance(obj, dict), f"{path} must be an object")
-    require_keys(obj, ["mean", "confidence", "plasticity", "current_activation"], path)
+    require_keys(
+        obj,
+        ["observed_activation", "attributed_disposition", "confidence", "correction_resistance"],
+        path,
+    )
+    require("mean" not in obj, f"{path}.mean belongs in canonical state, not perceived state")
+    require("plasticity" not in obj, f"{path}.plasticity belongs in canonical state, not perceived state")
+    require("current_activation" not in obj, f"{path}.current_activation should be observed_activation in perceived state")
     require("certainty" not in obj, f"{path}.certainty should be named confidence in perceived/inferred state")
-    for key in ["mean", "confidence", "plasticity", "current_activation"]:
+    for key in ["observed_activation", "attributed_disposition", "confidence", "correction_resistance"]:
         require_0_1(obj[key], f"{path}.{key}")
 
 

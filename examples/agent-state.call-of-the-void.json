@@ -744,16 +744,16 @@
           "target_agent_id": "cat_marrigan",
           "perceived_dimensions": {
             "warmth": {
-              "mean": 0.44,
-              "plasticity": 0.55,
-              "current_activation": 0.4,
-              "confidence": 0.34
+              "observed_activation": 0.4,
+              "attributed_disposition": 0.44,
+              "confidence": 0.34,
+              "correction_resistance": 0.42
             },
             "suspicion": {
-              "mean": 0.83,
-              "plasticity": 0.28,
-              "current_activation": 0.9,
-              "confidence": 0.71
+              "observed_activation": 0.9,
+              "attributed_disposition": 0.83,
+              "confidence": 0.71,
+              "correction_resistance": 0.64
             }
           },
           "beliefs": [
