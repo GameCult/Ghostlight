@@ -43,6 +43,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 - first projection example seam:
   - `schemas/projection-example.schema.json`
   - `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl`
+  - `examples/projections/call-of-the-void.scene-broken-taxi-oz.pretty.json`
   - `tools/validate_projection_examples.py`
 - visitor-facing README refreshed to explain Ghostlight's goals
 

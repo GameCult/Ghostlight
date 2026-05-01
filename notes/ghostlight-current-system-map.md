@@ -62,6 +62,8 @@ state and re-entry discipline.
   - first Call of the Void-flavored fixture for schema and projection work
 - `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl`
   - first reviewed Cat and Oz projection examples
+- `examples/projections/call-of-the-void.scene-broken-taxi-oz.pretty.json`
+  - pretty-printed mirror for inspecting the first projection examples
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`

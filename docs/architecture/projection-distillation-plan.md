@@ -73,8 +73,11 @@ The first schema lives in:
 The first reviewed examples live in:
 
 - `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl`
+- `examples/projections/call-of-the-void.scene-broken-taxi-oz.pretty.json`
 
 Use a JSONL dataset with one projection example per speaker-scene turn.
+The JSONL file is the machine artifact. The pretty JSON file is the readable
+mirror for inspection, review, and discussion.
 
 ```json
 {
