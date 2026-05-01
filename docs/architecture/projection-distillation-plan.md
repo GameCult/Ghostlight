@@ -10,7 +10,7 @@ This is a staged plan, not an immediate fine-tune order.
 ## Goal
 
 Train or adapt a smaller projection model that can turn structured Ghostlight
-state into compact speaker-local pressure artifacts.
+state into compact character-local pressure artifacts.
 
 Input:
 
@@ -26,12 +26,14 @@ Output:
 - active pressures
 - tensions
 - response affordances
+- physical or action affordances when relevant
 - voice surface
 - rendered prompt text
 - audit notes or trace linking outputs back to state
 
-The student projector should not generate final dialogue. Its job is to build
-the pressure model that a dialogue model can write from.
+The student projector should not generate final prose. Its job is to build the
+pressure model that a response model can write from. The response may be
+dialogue, action, silence, withdrawal, violence, or a mixed beat.
 
 ## Aetheria Training Boundary
 
@@ -107,7 +109,7 @@ mirror for inspection, review, and discussion.
     "scene_id": "scene-broken-taxi-oz",
     "speaker_agent_id": "cat_marrigan",
     "listener_ids": ["oz_operator"],
-    "projection_mode": "dialogue_turn"
+    "projection_mode": "response_turn"
   },
   "output": {
     "known_facts": [],
@@ -179,8 +181,10 @@ For each projection, check:
   scene pressure?
 - Did response affordances emerge from state intersections?
 - Did voice surface stay separate from defensive behavior?
+- Did the projection allow nonverbal or physical action when the state and scene
+  made speech less likely than movement?
 - Did known secrets become guarded pressure rather than forbidden context?
-- Did the rendered prompt give the dialogue model enough slope to produce the
+- Did the rendered prompt give the response model enough slope to produce the
   target behavior without commanding the exact behavior label?
 
 ## Fine-Tune Readiness
@@ -214,5 +218,6 @@ Minimum useful milestone:
 ## Boundaries
 
 The student projector is not the character. It is not the dialogue writer. It is
-not the evaluator. It is a compiler from structured social state to compact
-speaker-local pressure. Keep those responsibilities separate.
+not the action choreographer. It is not the evaluator. It is a compiler from
+structured social state to compact character-local pressure. Keep those
+responsibilities separate.

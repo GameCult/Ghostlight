@@ -60,6 +60,8 @@
         "projection_mode": {
           "enum": [
             "dialogue_turn",
+            "response_turn",
+            "action_turn",
             "scene_beat",
             "drama_scaffold"
           ]
@@ -159,6 +161,16 @@
         "behavior": {
           "type": "string",
           "minLength": 1
+        },
+        "response_kind": {
+          "enum": [
+            "speech",
+            "action",
+            "silence",
+            "withdrawal",
+            "violence",
+            "mixed"
+          ]
         },
         "pressure_basis": {
           "type": "string",

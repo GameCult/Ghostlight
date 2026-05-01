@@ -45,6 +45,9 @@ state and re-entry discipline.
 - `docs/architecture/projection-distillation-plan.md`
   - plan for using a frontier teacher model to generate reviewed projection
     artifacts before training a smaller student projector
+- `docs/experiments/cold-wake-story-lab.md`
+  - four-scene Cold Wake writing experiment using Ghostlight projection as a
+    story-generation crutch and training-data source
 - `docs/architecture/schema-future-mechanisms.md`
   - parking lot for appraisal, transition, belief, action, conversation,
     resource, dyad, institution, memory, and embodiment mechanisms not yet
@@ -72,10 +75,16 @@ state and re-entry discipline.
     stance
 - `examples/agent-state.call-of-the-void.json`
   - first Call of the Void-flavored fixture for schema and projection work
+- `examples/agent-state.cold-wake-story-lab.json`
+  - first story-shaped historical fixture for Cold Wake projection work
 - `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl`
   - first reviewed Cat and Oz projection examples
 - `examples/projections/call-of-the-void.scene-broken-taxi-oz.pretty.json`
   - pretty-printed mirror for inspecting the first projection examples
+- `examples/projections/cold-wake-story-lab.jsonl`
+  - first response-turn projection example for the Cold Wake story lab
+- `experiments/cold-wake-story-lab/`
+  - Qwen response captures and reviews from the writing experiment
 - `examples/lore-grounding/historical-flashpoint.template.json`
   - fillable template for the first historical Aetheria grounding digest
 - `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json`
@@ -91,6 +100,8 @@ state and re-entry discipline.
   - dependency-free validator for projection example JSONL records
 - `tools/validate_lore_grounding.py`
   - dependency-free validator for lore grounding digest examples
+- `tools/build_cold_wake_story_lab_fixture.py`
+  - generator for the verbose Cold Wake story-lab state fixture
 
 ## What Does Not Exist Yet
 
@@ -103,7 +114,9 @@ state and re-entry discipline.
 - a relationship engine
 - a culture prior engine
 
-The canonical agent-state schema, first projection example schema, lore
-grounding digest schema, and first draft Cold Wake grounding digest now exist as
-v0 seams. The next implementation target is choosing one Cold Wake room for a
-grounded projection fixture, followed by the deterministic input slicer.
+The canonical agent-state schema, projection example schema, lore grounding
+digest schema, first draft Cold Wake grounding digest, and first Cold Wake
+story-lab Qwen capture now exist as v0 seams. The next implementation target is
+tightening the first Maer/Veyr projection around unresolved personhood suspicion,
+then running the next response turn through Qwen before building the
+deterministic input slicer.

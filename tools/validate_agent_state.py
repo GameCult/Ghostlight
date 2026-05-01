@@ -14,7 +14,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_FIELDS_PATH = ROOT / "schemas" / "agent-state.required-fields.json"
-DEFAULT_EXAMPLES = [ROOT / "examples" / "agent-state.call-of-the-void.json"]
+DEFAULT_EXAMPLES = sorted((ROOT / "examples").glob("agent-state*.json"))
 
 
 class ValidationError(Exception):

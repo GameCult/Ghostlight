@@ -51,6 +51,12 @@
      the first draft historical grounding digest.
    - Build the first grounded projection fixture from one specific Cold Wake
      room rather than from the whole crisis at once.
+   - Use `docs/experiments/cold-wake-story-lab.md` and
+     `examples/agent-state.cold-wake-story-lab.json` as the first story-shaped
+     writing lab.
+   - Treat projection outputs as response turns, not dialogue-only turns:
+     characters may speak, act, withdraw, stay silent, use violence, or combine
+     speech and action when state and scene pressure justify it.
    - Use a frontier teacher model to produce reviewed projection artifacts from
      structured state and lore grounding digests.
    - Save accepted and rejected projection examples as supervised data.

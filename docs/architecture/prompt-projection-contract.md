@@ -1,34 +1,38 @@
 ﻿# Prompt Projection Contract
 
-Ghostlight should not prompt a dialogue model with the full schema. The schema is
+Ghostlight should not prompt a response model with the full schema. The schema is
 state storage. A prompt is a temporary scene instrument.
 
-The projection layer turns durable state into a compact speaker-local pressure
+The projection layer turns durable state into a compact character-local pressure
 model, then into prompt prose. The prose should describe what the character
-knows, wants, fears, protects, misreads, and sounds like right now. It should not
-recite taxonomy labels unless a debugging mode explicitly asks for them.
+knows, wants, fears, protects, misreads, can physically do, and sounds like right
+now. It should not recite taxonomy labels unless a debugging mode explicitly asks
+for them.
 
 ## Projection Pipeline
 
 ### 1. Select Speaker-Local Inputs
 
-For one speaker in one scene, gather only the state that can affect this turn:
+For one acting character in one scene, gather only the state that can affect this
+turn:
 
-- speaker identity and public role
-- speaker canonical state
-- speaker goals and protected values
-- speaker memories selected by scene, relationship, and active pressure
-- speaker perceived overlay of the listener
-- speaker-to-listener relationship stance
-- listener-to-speaker relationship stance only if the speaker has reason to infer it
+- character identity and public role
+- character canonical state
+- character goals and protected values
+- character memories selected by scene, relationship, and active pressure
+- character perceived overlay of the listener or target
+- character-to-listener relationship stance
+- listener-to-character relationship stance only if the character has reason to infer it
 - scene public facts
-- scene hidden facts known to the speaker
+- scene hidden facts known to the character
 - active public and private stakes
 - culture, faction, or institution priors relevant to the scene
+- physical affordances, constraints, distance, tools, weapons, bodies, access,
+  and social permissions relevant to possible action
 
 Unknown or author-only material is omitted. Known secrets are included only as
-speaker-local pressure: what the speaker is guarding, why it matters, and what
-would happen if it leaked.
+character-local pressure: what the character is guarding, why it matters, and
+what would happen if it leaked.
 
 ### 2. Compute Active Pressure
 
@@ -73,8 +77,23 @@ Tensions are where verbal behavior starts to move.
 
 ### 4. Derive Response Affordances
 
-Do not store defensive speech moves as canonical traits. Derive likely response
-affordances from state intersections.
+Do not store defensive speech moves or action moves as canonical traits. Derive
+likely response affordances from state intersections.
+
+Responses can be:
+
+- speech
+- action
+- silence
+- withdrawal
+- violence
+- mixed speech and action
+
+The renderer must not assume a line of dialogue is the right output. Sometimes
+the right next move is leaving the room, taking someone's wrist off a console,
+opening the airlock interlock, refusing to answer, or slapping someone in the
+face because the relationship, status threat, bodily proximity, and inhibition
+profile finally made language too slow.
 
 Examples:
 
@@ -85,6 +104,9 @@ Examples:
 | Emotional evasion | Distance seeking + withdrawal + acute shame or control pressure + low self-disclosure. |
 | Banter as boundary | Humor + ironic distance + attachment pressure + distance seeking. |
 | Verbal aggression | Hostility + grievance activation + perceived status threat + abrasive boundary. |
+| Physical withdrawal | Threat sensitivity + distance seeking + low trust + available exit + low obligation to stay. |
+| Coercive interruption | Control pressure + urgency + authority role + high stakes + reachable control surface. |
+| Slap or shove | Acute shame or moral disgust + proximity + low inhibition + perceived violation + limited verbal trust. |
 
 These are test targets, not prompt commands. The rendered prompt should describe
 the pressure in ordinary language:
@@ -96,9 +118,18 @@ part of the question while making the emotional part sound ridiculous.
 
 That gives the model a behavioral slope without saying `use sarcastic_deflection`.
 
+For action, use the same rule:
+
+```text
+If Veyr calmly describes a possible person as a diagnostic residue while Sella
+is close enough to touch him, Sella may stop negotiating and physically break
+the rhythm of the room. This should be rare, costly, and grounded in her care
+ethic under overload, not random spice.
+```
+
 ### 5. Render Prompt Sections
 
-A dialogue prompt should be compact and scene-bound.
+A response prompt should be compact and scene-bound.
 
 Recommended sections:
 
@@ -112,8 +143,10 @@ Recommended sections:
 - `Active Inner Pressures`: the strongest motives, fears, wounds, and needs
 - `Relationship Read`: how the speaker currently interprets the listener
 - `Tensions`: contradictions the speaker is managing
+- `Action Affordances`: what the speaker can physically do and what it would
+  cost
 - `Voice Surface`: baseline speech texture for this moment
-- `Likely Defensive Moves`: ordinary-language pressure outcomes, not schema labels
+- `Likely Response Moves`: ordinary-language pressure outcomes, not schema labels
 - `Do Not Invent`: boundaries about facts absent from the pack
 - `Task`: the narrow generation request
 
@@ -128,15 +161,20 @@ will not receive.
 
 Generation and evaluation are separate passes.
 
-The dialogue model receives the rendered prompt and writes from the speaker's
+The response model receives the rendered prompt and writes from the character's
 local pressure model. A later evaluator can check whether target emergent
-behaviors appeared when the state predicted them.
+behaviors appeared when the state predicted them. The output may be dialogue,
+action, silence, or a beat combining them.
 
 Evaluation questions can include:
 
 - Did the line protect the speaker's known secret without naming unknown facts?
 - Did the line reflect the active relationship stance?
 - Did the line preserve the voice surface without flattening into a generic bit?
+- If the output used action, was the action justified by physical affordances,
+  relationship pressure, inhibition, and stakes?
+- If the output avoided speech, was silence or movement more plausible than
+  another line?
 - Did a target defensive behavior appear when the pressure profile called for it?
 - Did the response avoid a target behavior when the pressure profile did not call for it?
 

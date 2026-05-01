@@ -48,6 +48,13 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `examples/lore-grounding/historical-flashpoint.template.json`
   - `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json`
   - `tools/validate_lore_grounding.py`
+- Cold Wake story-lab seam:
+  - `docs/experiments/cold-wake-story-lab.md`
+  - `examples/agent-state.cold-wake-story-lab.json`
+  - `examples/projections/cold-wake-story-lab.jsonl`
+  - `examples/projections/cold-wake-story-lab.pretty.json`
+  - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.capture.json`
+  - `tools/build_cold_wake_story_lab_fixture.py`
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
 - first projection example seam:
@@ -76,8 +83,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Choose one room inside the Cold Wake Panic and build the first grounded
-projection fixture from the Ganymede corridor digest.
+Tighten the Cold Wake story-lab projection prompt around unresolved personhood
+suspicion, then run the next response turn through Qwen and keep accepted or
+rejected outputs as training data.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -99,11 +107,17 @@ Completed projection path items:
 - choose Cold Wake Panic as the first authored historical flashpoint
 - fill the first draft lore grounding digest:
   `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json`
+- define the Cold Wake story lab as a four-scene arc with Maer Tidecall as
+  protagonist
+- add the first Cold Wake projection example and first Qwen response capture
+- widen projection from dialogue-only turns to response turns that can include
+  action, silence, withdrawal, violence, or mixed beats
 
 Remaining projection path:
 
-- choose the first Cold Wake room for a grounded projection fixture
-- create speaker-local projection examples from the Cold Wake digest
+- revise the first Maer/Veyr projection so unresolved personhood suspicion stays
+  unresolved in Qwen output
+- run additional story-lab response turns through Qwen
 - build a deterministic speaker-local input slicer
 - use a frontier teacher model to generate/audit projection artifacts
 - train a smaller student projector only after the artifact schema, input

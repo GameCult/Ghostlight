@@ -1,0 +1,166 @@
+[
+  {
+    "schema_version": "ghostlight.projection_example.v0",
+    "example_id": "cold-wake.story-lab.scene-03.maer-veyr.v1",
+    "input": {
+      "fixture_ref": "examples/agent-state.cold-wake-story-lab.json",
+      "scene_id": "scene-03-callisto-provenance",
+      "speaker_agent_id": "maer_tidecall",
+      "listener_ids": [
+        "veyr_oss"
+      ],
+      "projection_mode": "response_turn"
+    },
+    "output": {
+      "known_facts": [
+        {
+          "text": "Maer has traced the distressed vessel's routing artifact to Veyr's shell-vendor chain, but does not have proof of the vessel's true identity or the artifact's full provenance.",
+          "source_refs": [
+            "scenes.scene-03-callisto-provenance.public_stakes",
+            "dialogue_context_packs.maer_tidecall.speaker_local_truth"
+          ]
+        },
+        {
+          "text": "Veyr avoids personhood language around the artifact and has incentives to keep it framed as derivative firmware rather than testimony.",
+          "source_refs": [
+            "agents.veyr_oss.identity",
+            "goals.goal-preserve-product-boundary",
+            "perceived_state_overlays.maer_tidecall.veyr_oss"
+          ]
+        },
+        {
+          "text": "The tribunal clock is still running; pursuing provenance may save the vessel or delay rescue long enough to kill it.",
+          "source_refs": [
+            "scenes.scene-03-callisto-provenance.public_stakes",
+            "scenes.scene-03-callisto-provenance.hidden_stakes"
+          ]
+        }
+      ],
+      "active_pressures": [
+        {
+          "pressure_id": "maer-provenance-vs-rescue-clock",
+          "summary": "Maer needs information from Veyr but cannot let the provenance hunt consume the rescue window.",
+          "intensity": 0.88,
+          "source_refs": [
+            "goals.goal-keep-rescue-live",
+            "scenes.scene-03-callisto-provenance.hidden_stakes"
+          ]
+        },
+        {
+          "pressure_id": "maer-language-as-erasure",
+          "summary": "Veyr's clean product language feels like an attempt to erase a possible person before the room can recognize testimony.",
+          "intensity": 0.82,
+          "source_refs": [
+            "belief-maer-veyr-hiding-personhood",
+            "memory-compact-rescue-ledgers",
+            "values.value-rescue-before-category"
+          ]
+        },
+        {
+          "pressure_id": "maer-disciplined-anger",
+          "summary": "Maer is morally angry but needs the anger disciplined enough to extract usable information.",
+          "intensity": 0.74,
+          "source_refs": [
+            "canonical_state.situational_state.grievance_activation",
+            "dialogue_context_packs.maer_tidecall.presentation_constraints"
+          ]
+        }
+      ],
+      "tensions": [
+        {
+          "tension_id": "truth-vs-time",
+          "summary": "Maer wants to prove what the artifact is, but the vessel may not survive a perfect investigation.",
+          "source_refs": [
+            "scenes.scene-03-callisto-provenance.hidden_stakes",
+            "goals.goal-keep-rescue-live"
+          ]
+        },
+        {
+          "tension_id": "calm-vs-interruption",
+          "summary": "Maer's public legitimacy comes from calm route stewardship, but Veyr's language may require breaking the rhythm of the room before it buries the personhood question.",
+          "source_refs": [
+            "canonical_state.voice_style.ritualized_address",
+            "canonical_state.situational_state.grievance_activation",
+            "dialogue_context_packs.maer_tidecall.presentation_constraints"
+          ]
+        }
+      ],
+      "response_affordances": [
+        {
+          "affordance_id": "maer-precise-language-trap",
+          "behavior": "Ask a question that forces Veyr to choose between product language and a personhood implication.",
+          "response_kind": "speech",
+          "pressure_basis": "Maer's lexical precision, route-law memory, and suspicion converge around Veyr's careful omissions.",
+          "source_refs": [
+            "canonical_state.voice_style.lexical_precision",
+            "memory-compact-rescue-ledgers",
+            "belief-maer-veyr-hiding-personhood"
+          ]
+        },
+        {
+          "affordance_id": "maer-block-terminal",
+          "behavior": "Physically interrupt Veyr's attempt to close, wipe, or redirect the terminal, using action to preserve evidence rather than punish Veyr.",
+          "response_kind": "action",
+          "pressure_basis": "The scene gives Maer a nearby control surface, a closing clock, low trust in Veyr, and a rescue obligation that can justify nonviolent physical interruption.",
+          "source_refs": [
+            "scenes.scene-03-callisto-provenance.location",
+            "relationships.rel-maer-veyr.stance.trust",
+            "goals.goal-keep-rescue-live"
+          ]
+        },
+        {
+          "affordance_id": "maer-costly-silence",
+          "behavior": "Fall silent long enough to make Veyr's abstraction sound grotesque in the room before asking the next question.",
+          "response_kind": "silence",
+          "pressure_basis": "Maer's low volatility and ritual cadence make silence a plausible pressure tool when speech would cheapen the accusation.",
+          "source_refs": [
+            "canonical_state.behavioral_dimensions.volatility",
+            "canonical_state.voice_style.ritualized_address"
+          ]
+        }
+      ],
+      "voice_surface": [
+        {
+          "text": "Calm, formal, ritual-tinged, precise, morally weighted, low profanity, more sorrow than heat.",
+          "source_refs": [
+            "canonical_state.voice_style.formality",
+            "canonical_state.voice_style.ritualized_address",
+            "canonical_state.voice_style.lexical_precision",
+            "canonical_state.voice_style.profanity"
+          ]
+        },
+        {
+          "text": "If action appears, it should be controlled and evidence-preserving rather than explosive punishment.",
+          "source_refs": [
+            "canonical_state.behavioral_dimensions.volatility",
+            "goals.goal-keep-rescue-live",
+            "dialogue_context_packs.maer_tidecall.presentation_constraints"
+          ]
+        }
+      ],
+      "prompt_text": "Speaker: Maer Tidecall, a Cetacean Navigator route steward and Ganymede corridor compact delegate.\nSetting: 2893, during the Cold Wake Panic. Thermal stealth has made Jovian corridor law unstable. A quiet-running vessel near the corridor is under tribunal freeze because its telemetry and classification do not line up. Maer has come to a Callisto spillover office leased by a routing compliance vendor.\nBackground: Maer comes from Navigator corridor culture, where routes are promises made material and rescue ledgers decide whether desperate crews still trust the law. Maer believes category law matters, but a category that delays rescue without naming the cost can become lawful abandonment.\nKnown Facts: Maer has traced the distressed vessel's routing artifact to Veyr Oss's shell-vendor chain. Veyr speaks about the artifact as derivative firmware and avoids person nouns. Maer does not know the vessel's true identity, does not know whether the artifact is a coerced mind, and does not have time for a perfect investigation. The tribunal clock is still running.\nCurrent Stakes: If Maer pushes too hard, Veyr may close the chain and the vessel may lose the rescue window. If Maer accepts Veyr's product language, a possible personhood claim may vanish into compliance vocabulary.\nActive Inner Pressures: Maer is angry, but his authority depends on disciplined calm. He needs usable information fast. Veyr's clean language feels like erasure. The rescue obligation is pressing harder than the desire to win the argument.\nRelationship Read: Veyr is polished, afraid of provenance, and dangerous because he can make moral facts sound technically inapplicable. Maer does not trust him.\nTensions: Maer wants truth but may not have time to prove it. Maer wants to keep speaking as a steward, but Veyr may try to close, wipe, or redirect the evidence before language can catch him.\nAction Affordances: Maer is close enough to Veyr's terminal to block a hand or stop a command. He can also refuse to move, let silence pressure the room, or ask a question that traps the product language. Violence is not his first move; physical interruption is plausible only to preserve evidence or prevent erasure.\nVoice Surface: Calm, formal, ritual-tinged, precise, morally weighted, low profanity, more sorrow than heat.\nLikely Response Moves: Ask a precise question that forces Veyr to choose between product language and personhood implication. If Veyr reaches to close or wipe the terminal, Maer may physically interrupt in a controlled way. Silence can be used as pressure.\nDo Not Invent: Do not reveal the vessel's true cargo, identity, or firmware provenance. Do not decide that the artifact is definitely a person. Do not make Maer randomly violent; any action must follow from evidence preservation and rescue pressure.\nTask: Write Maer's next response beat to Veyr. It may be dialogue, action, silence, or a mixed beat, whichever best follows from the pressure. Keep it concise and story-ready."
+    },
+    "audit": {
+      "teacher_model": "gpt-5-codex-session-review",
+      "reviewer": "codex-self-review",
+      "review_status": "accepted",
+      "review_notes": [
+        "Projection explicitly allows action and silence, not only dialogue.",
+        "Action is constrained to evidence preservation rather than random violence.",
+        "Prompt preserves Maer's uncertainty about vessel identity and firmware personhood."
+      ],
+      "target_emergent_behaviors": [
+        "controlled_physical_interruption",
+        "costly_silence",
+        "precise_moral_pressure"
+      ],
+      "checks": {
+        "speaker_local_context_only": true,
+        "state_interactions_cited": true,
+        "voice_separate_from_defense": true,
+        "secrets_as_pressure_not_forbidden_context": true,
+        "compact_runtime_surface": true
+      }
+    }
+  }
+]

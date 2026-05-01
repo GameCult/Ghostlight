@@ -14,9 +14,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_EXAMPLES = [
-    ROOT / "examples" / "projections" / "call-of-the-void.scene-broken-taxi-oz.jsonl"
-]
+DEFAULT_EXAMPLES = sorted((ROOT / "examples" / "projections").glob("*.jsonl"))
 
 
 class ValidationError(Exception):
@@ -99,7 +97,10 @@ def validate_projection_record(record: dict[str, Any], source: Path, index: int)
         ["fixture_ref", "scene_id", "speaker_agent_id", "listener_ids", "projection_mode"],
         f"{path}.input",
     )
-    require(input_ref["projection_mode"] in {"dialogue_turn", "scene_beat", "drama_scaffold"}, f"{path}.input.projection_mode is invalid")
+    require(
+        input_ref["projection_mode"] in {"dialogue_turn", "response_turn", "action_turn", "scene_beat", "drama_scaffold"},
+        f"{path}.input.projection_mode is invalid",
+    )
 
     fixture_path = (ROOT / input_ref["fixture_ref"]).resolve()
     require(fixture_path.exists(), f"{path}.input.fixture_ref does not exist: {input_ref['fixture_ref']}")
