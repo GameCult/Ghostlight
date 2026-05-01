@@ -55,32 +55,65 @@ problem into projection.
 
 The action model must allow more than speech.
 
-Actions can include:
+Keep the action vocabulary small and concrete. Do not turn every possible
+speech act into a separate tool. `ask`, `refuse`, `offer`, `reveal`, `conceal`,
+and `request authority action` are usually communicative intentions carried by
+`speak`, `gesture`, `show_object`, `withhold_object`, or `use_interface`.
 
-- speak
-- stay silent
-- ask a question
-- refuse
-- leave
-- follow
-- touch or block a control surface
-- comfort
-- threaten
-- attack
-- conceal evidence
-- reveal evidence
-- spend a resource
-- call for help
-- change topic
-- make a promise
-- break a promise
-- update a public record
-- create a private obligation
+Initial action primitives:
+
+- `speak`
+- `silence`
+- `move`
+- `gesture`
+- `touch_object`
+- `block_object`
+- `use_object`
+- `show_object`
+- `withhold_object`
+- `transfer_object`
+- `spend_resource`
+- `attack`
+- `wait`
 
 The agent should choose from affordances produced by the interaction of state,
 scene, role, resources, relationship, and pressure. The action should not be
 commanded by a prompt label. If a character hits someone, it should fall out of
 proximity, inhibition, grievance, fear, role permission, and exhausted trust.
+
+An action proposal may include intended function:
+
+- ask
+- refuse
+- offer
+- threaten
+- comfort
+- reveal
+- conceal
+- request
+- promise
+- accuse
+- redirect
+
+That intention is not guaranteed truth. A listener can misread it. A character
+can claim they were offering help while the listener perceives a threat. A
+character can intend restraint and still be read as contempt. The event should
+store observable action separately from actor intent and participant-local
+interpretation.
+
+Example:
+
+```json
+{
+  "action_type": "speak",
+  "spoken_text": "Name the cost before you call it caution.",
+  "actor_intent": "force_cost_acknowledgment",
+  "observable_cues": ["calm voice", "still posture", "public challenge"]
+}
+```
+
+Isdra may perceive that as procedural intimidation. Maer may experience it as
+stewardship. The classifier/appraiser later learns from those differences.
 
 ## Mutation Authority
 
@@ -123,6 +156,25 @@ The resolver should decide:
 The first implementation can be conservative and partly deterministic. A bad
 resolver will build narrative sludge faster than a bad line of dialogue will.
 No pressure. Tiny little bear trap.
+
+The fuzzy parts should stay manual at first.
+
+Do not invent a fragile rule-based social psychology engine just to feel
+automated. Early runtime passes should manually review or author:
+
+- participant appraisals
+- relationship deltas
+- belief updates
+- memory writes
+- activation changes
+- ambiguous intent classification
+- whether a listener misread or correctly read a move
+
+Those manual decisions are the training data. Save the observed action, actor
+intent, listener perception, accepted mutation, rejected mutation, and reviewer
+notes. Later, train classifiers and appraisers on that corpus. The prototype
+should automate mechanical legality and visibility first, not pretend it has
+already learned human interpretation from twelve examples and a strong coffee.
 
 ## Projection's Narrower Job
 
@@ -167,10 +219,13 @@ Prototype one tiny loop:
 7. Save the response as an event proposal.
 8. Apply a small deterministic mutation:
    - append event
+   - apply only mechanical world/resource/object deltas the resolver can prove
+9. Manually review fuzzy state effects:
    - add one memory or belief update
    - adjust one or two `current_activation` values
    - update one relationship stance if justified
-9. Validate the resulting fixture.
+   - record the rationale as training data
+10. Validate the resulting fixture.
 
 The goal is not literary quality. The goal is to prove that a character can act
 from local state and leave the world slightly different behind them.

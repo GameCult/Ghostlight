@@ -40,13 +40,20 @@
      contract.
    - Build local awareness from scene state, agent state, relationships,
      memories, resources, affordances, and known constraints.
-   - Let the acting agent choose speech, silence, movement, resource use,
-     concealment, revelation, violence, refusal, or other available action.
+   - Keep action primitives concrete: speech, silence, movement, gesture,
+     object use, object transfer, object blocking, resource spending, waiting,
+     and attack. Treat ask/refuse/offer/reveal/conceal/request as intended
+     communicative functions, not separate reality-mutating tools.
+   - Preserve the gap between actor intent and listener interpretation; a
+     listener is free to misread what the actor thought they were doing.
    - Treat generated action as an event proposal, not direct truth mutation.
    - Resolve the event against world state and mutation authority.
-   - Apply bounded state changes: event append, memory/belief updates,
-     relationship movement, current activation deltas, resource/object changes,
-     and opened or closed options.
+   - Automate only mechanical legality, visibility, world/resource/object
+     deltas, and event append in the first prototype.
+   - Keep fuzzy updates manual at first: appraisals, relationship movement,
+     belief changes, memory writes, intent classification, misreads, and
+     activation deltas. Save those reviewed decisions as future classifier and
+     appraiser training data.
    - Keep author control at stage-setting and high-level constraints; do not
      require the author to script every beat.
    - First prototype: rerun one Cold Wake story-lab beat through a deterministic
