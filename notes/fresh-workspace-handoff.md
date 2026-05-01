@@ -35,9 +35,14 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `schemas/agent-state.required-fields.json`
   - `examples/agent-state.call-of-the-void.json`
   - `tools/validate_agent_state.py`
+- prompt projection and distillation docs:
+  - `docs/architecture/prompt-projection-contract.md`
+  - `docs/architecture/projection-distillation-plan.md`
+- visitor-facing README refreshed to explain Ghostlight's goals
 
 There is still no full runtime yet. The live machine is design, state
-discipline, a cleaner repo boundary, and the first executable state contract.
+discipline, a cleaner repo boundary, the first executable state contract, and a
+documented projection path.
 
 ## Current Direction
 
@@ -54,15 +59,17 @@ state unless explicitly revived.
 
 ## Current Next Action
 
-Pick the first implementation seam to cut:
+Define the projection example schema and create the first reviewed Cat/Oz
+projection artifacts from the Call of the Void fixture.
 
-- state schema
-- perceived-state overlay
-- classifier/event data model
-- prompt projection renderer for authoring outputs
+The projection path is:
 
-The canonical agent-state schema now exists as v0. The next move is to validate
-and harden it before deriving perceived-state and prompt-projection fixtures.
+- build a deterministic speaker-local input slicer
+- define `schemas/projection-example.schema.json`
+- create reviewed Cat/Oz projection examples
+- use a frontier teacher model to generate/audit projection artifacts
+- train a smaller student projector only after the artifact schema, input
+  slicer, and evaluator stabilize
 
 ## Warnings
 
@@ -74,5 +81,6 @@ and harden it before deriving perceived-state and prompt-projection fixtures.
   truth storage.
 - Do not accidentally re-promote the older corridor-crisis idea into a game MVP
   because an old doc had a strong chin and good lighting.
-- Do not build prompt projection on top of the v0 schema until the schema has
-  survived at least one hardening pass. One passing fixture is not revelation.
+- `notes/evaluation.md` may exist as an untracked user-supplied file for the
+  next session. It was intentionally left unread and uncommitted during the
+  compaction prep.
