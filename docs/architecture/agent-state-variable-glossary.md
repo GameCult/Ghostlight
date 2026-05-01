@@ -63,6 +63,11 @@ activated toward distance under exceptional pressure." Correcting that
 impression takes work because the observer's confidence is supported by memory,
 emotion, stakes, prior assumptions, and social reinforcement.
 
+Perceived overlays may use structured belief metadata such as subject, claim
+type, evidence events, visibility, and emotional charge. That metadata is not
+canonical certainty. It describes why a specific observer trusts a specific
+read.
+
 ## Label Set Policy
 
 The labels in `agent-state.required-fields.json` are the required v0 core,
@@ -110,7 +115,7 @@ schema becomes a junk drawer with a badge.
 
 | Label | Meaning |
 | --- | --- |
-| `warmth` | Tendency to express care, friendliness, affection, or social welcome. |
+| `interpersonal_warmth` | Tendency to express care, friendliness, affection, or social welcome. |
 | `drive` | Goal pressure, persistence, ambition, and forward force. |
 | `grandiosity` | Inflated self-importance, entitlement, exceptionalism, or self-mythologizing. |
 | `validation_seeking` | Need for reassurance, approval, recognition, or confirmation of worth. |
@@ -153,7 +158,7 @@ quirks in the current examples.
 | Label | Meaning |
 | --- | --- |
 | `dryness` | Understated, deadpan, low-sentiment phrasing. |
-| `warmth` | Inviting, affectionate, reassuring, or socially soft phrasing. |
+| `verbal_warmth` | Inviting, affectionate, reassuring, or socially soft phrasing. |
 | `formality` | Uses formal structure, titles, careful address, or institutionally correct phrasing. |
 | `verbosity` | Tends toward longer turns, elaboration, qualification, or verbal sprawl. |
 | `pace` | Moves quickly through turns, interruptions, replies, or topic shifts. |
@@ -251,3 +256,18 @@ That is deliberate for v0:
 Later, Ghostlight may support sparse authoring overlays for convenience. The
 canonical fixture should remain explicit until we have enough tooling to avoid
 silent defaults becoming accidental canon.
+
+## Event Interpretation
+
+Events may carry three optional interpretation layers:
+
+| Field | Meaning |
+| --- | --- |
+| `observed_exchange` | What was externally observable: who acted or spoke, what they seemed to do, and the visible cues. |
+| `private_interpretations` | How each participant appraised the event from their own partial state. |
+| `event_effects` | The proposed consequences: state deltas, new beliefs, or memory updates caused by the event. |
+
+These fields are immediate scaffolding for projection. They do not yet define a
+complete transition engine. For now, they make important scene history legible
+enough that a prompt projector can explain why a later line bends toward trust,
+evasion, curiosity, fear, or repair.

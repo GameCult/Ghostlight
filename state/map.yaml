@@ -83,7 +83,10 @@ accepted_design:
   - Relationship stance is directional; reciprocal agent pairs need separate edges because trust, fear, obligation, dependence, and betrayal expectations are not symmetric by default.
   - Prompt projection should compile state into speaker-local pressure prose through input selection, active-pressure scoring, tension detection, response affordance derivation, compact prompt rendering, and post-generation evaluation.
   - Projection distillation is the long-term optimization path: a frontier teacher model generates reviewed projection artifacts, and a smaller student projector is trained only after the artifact schema, deterministic input slicer, and evaluator are stable.
+  - Behavioral warmth and verbal warmth are separate axes: `interpersonal_warmth` describes social care or welcome, while `verbal_warmth` describes soft or reassuring language surface.
+  - Events can carry lightweight observed exchange, private interpretation, and event-effect scaffolding so prompt projection can reason from appraisal and consequence without pretending the v0 schema is already a full transition engine.
+  - Future social-simulation mechanisms should be documented and tested through projection artifacts before promotion into the canonical schema.
 
 current_status:
-  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, a prompt projection contract, and a documented teacher/student distillation path for projection.
+  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, and a documented teacher/student distillation path for projection.
   next_action: Define the projection example schema and create the first reviewed Cat/Oz projection artifacts from the Call of the Void fixture.

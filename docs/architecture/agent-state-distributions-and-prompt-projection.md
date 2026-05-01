@@ -1,4 +1,4 @@
-# Agent State Distributions And Prompt Projection
+﻿# Agent State Distributions And Prompt Projection
 
 This note describes how personality, culture, memory, and social context should
 be represented in structured state, and how that state should be projected into
@@ -69,7 +69,7 @@ These are relatively persistent tendencies:
 These are first-class, not optional garnish. They belong in the rebuild from
 the start:
 
-- warmth
+- interpersonal warmth
 - drive
 - grandiosity
 - validation-seeking
@@ -110,7 +110,7 @@ machinery.
 These describe how the performed self comes out in language:
 
 - dryness
-- warmth
+- verbal warmth
 - formality
 - verbosity
 - pace

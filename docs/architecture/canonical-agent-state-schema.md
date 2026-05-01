@@ -110,7 +110,7 @@ Human beings are regrettably efficient little porcupines.
 The required voice handles are:
 
 - `dryness`
-- `warmth`
+- `verbal_warmth`
 - `formality`
 - `verbosity`
 - `pace`
@@ -137,6 +137,13 @@ The required voice handles are:
 - `listening_responsiveness`
 - `question_asking`
 - `profanity`
+
+Behavioral warmth and verbal warmth are intentionally separate:
+
+- `behavioral_dimensions.interpersonal_warmth` is the tendency to offer care,
+  welcome, or affiliation.
+- `voice_style.verbal_warmth` is the language surface that can sound soft,
+  reassuring, affectionate, or socially inviting.
 
 So Cat's prickliness is not only a dialogue prompt instruction. It is backed by
 canonical state:
@@ -171,14 +178,26 @@ An overlay records:
 - distortions
 
 This is where misunderstanding lives. Suspicious agents can overread threat.
-Attachment-hungry agents can overread warmth. Avoidant agents can underread
-care. Fundamental attribution bias also lives here: an observer can mistake
-exceptional behavior for stable character. None of that requires corrupting the
-canonical state.
+Attachment-hungry agents can overread interpersonal warmth. Avoidant agents can
+underread care. Fundamental attribution bias also lives here: an observer can
+mistake exceptional behavior for stable character. None of that requires
+corrupting the canonical state.
 
 Relationship stance is directional. If Cat has a relationship record toward Oz,
 Oz needs a separate record toward Cat. Mutual presence does not imply symmetric
 trust, fear, obligation, dependence, or expectation of betrayal.
+
+## Event Interpretation
+
+Events can include optional interpretation scaffolding:
+
+- `observed_exchange` for externally visible action or dialogue
+- `private_interpretations` for each participant's appraisal of what happened
+- `event_effects` for proposed state deltas, belief creation, and memory updates
+
+This is not a full social transition engine yet. It is enough structure for the
+projection layer to know what an event changed without asking later prompts to
+infer everything from a one-line summary and a bad attitude.
 
 ## Dialogue Context Packs
 

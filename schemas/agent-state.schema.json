@@ -374,6 +374,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "linked_relationship_id": {
+          "type": "string"
         }
       }
     },
@@ -413,7 +416,11 @@
               "underread_threat",
               "false_mask_detection",
               "missed_mask_detection",
-              "status_injury"
+              "status_injury",
+              "threat_amplification",
+              "institutional_suspicion_transfer",
+              "care_underread",
+              "mask_overfocus"
             ]
           }
         }
@@ -435,6 +442,39 @@
           "type": "string"
         },
         "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "claim_type": {
+          "enum": [
+            "fact",
+            "identity_inference",
+            "motive_inference",
+            "prediction",
+            "norm",
+            "value_read",
+            "relationship_read"
+          ]
+        },
+        "evidence_event_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "visibility": {
+          "enum": [
+            "private",
+            "shared",
+            "public",
+            "rumor"
+          ]
+        },
+        "emotional_charge": {
           "type": "number",
           "minimum": 0,
           "maximum": 1
@@ -512,6 +552,24 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "observed_exchange": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event_exchange_turn"
+          }
+        },
+        "private_interpretations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event_private_interpretation"
+          }
+        },
+        "event_effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event_effect"
           }
         }
       }
@@ -671,6 +729,115 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "event_exchange_turn": {
+      "type": "object",
+      "required": [
+        "speaker_id",
+        "utterance_summary",
+        "dialogue_function"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "speaker_id": {
+          "type": "string"
+        },
+        "utterance_summary": {
+          "type": "string"
+        },
+        "dialogue_function": {
+          "type": "string"
+        },
+        "observable_cues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "event_private_interpretation": {
+      "type": "object",
+      "required": [
+        "agent_id",
+        "interpretation",
+        "confidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "type": "string"
+        },
+        "interpretation": {
+          "type": "string"
+        },
+        "attributed_motive": {
+          "type": "string"
+        },
+        "appraisal_tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "event_effect": {
+      "type": "object",
+      "required": [
+        "agent_id",
+        "summary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "state_deltas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/state_delta"
+          }
+        },
+        "new_belief_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "memory_update_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "state_delta": {
+      "type": "object",
+      "required": [
+        "path",
+        "delta"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "delta": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
         }
       }
     }

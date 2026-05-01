@@ -23,6 +23,10 @@
 3. Build the prompt projection layer for authoring.
    - Use `docs/architecture/prompt-projection-contract.md` as the first
      renderer contract.
+   - Use `docs/architecture/schema-future-mechanisms.md` to keep appraisal,
+     transition, belief, action, conversation, resource, dyad, institution,
+     memory, and embodiment needs visible without prematurely bloating the v0
+     agent-state schema.
    - Render scene and dialogue scaffolds from structured state, relevant
      memories, scene pressure, cultural defaults, and perceived state.
    - Keep the prompt renderer a projection surface instead of a second brain.

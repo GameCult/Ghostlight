@@ -22,7 +22,7 @@
       "ideological_rigidity"
     ],
     "behavioral_dimensions": [
-      "warmth",
+      "interpersonal_warmth",
       "drive",
       "grandiosity",
       "validation_seeking",
@@ -77,7 +77,7 @@
     ],
     "voice_style": [
       "dryness",
-      "warmth",
+      "verbal_warmth",
       "formality",
       "verbosity",
       "pace",

@@ -38,6 +38,8 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 - prompt projection and distillation docs:
   - `docs/architecture/prompt-projection-contract.md`
   - `docs/architecture/projection-distillation-plan.md`
+- evaluation follow-up docs:
+  - `docs/architecture/schema-future-mechanisms.md`
 - visitor-facing README refreshed to explain Ghostlight's goals
 
 There is still no full runtime yet. The live machine is design, state
@@ -61,6 +63,15 @@ state unless explicitly revived.
 
 Define the projection example schema and create the first reviewed Cat/Oz
 projection artifacts from the Call of the Void fixture.
+
+The evaluation follow-up fixed the immediate v0 schema issues:
+
+- `behavioral_dimensions.warmth` became `interpersonal_warmth`
+- `voice_style.warmth` became `verbal_warmth`
+- Cat now has a perceived-state overlay for Oz
+- Cat and Oz now have relationship summary memories
+- `event-drone-lie` now includes observed exchange, private interpretations,
+  and event effects
 
 The projection path is:
 

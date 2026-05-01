@@ -45,6 +45,10 @@ state and re-entry discipline.
 - `docs/architecture/projection-distillation-plan.md`
   - plan for using a frontier teacher model to generate reviewed projection
     artifacts before training a smaller student projector
+- `docs/architecture/schema-future-mechanisms.md`
+  - parking lot for appraisal, transition, belief, action, conversation,
+    resource, dyad, institution, memory, and embodiment mechanisms not yet
+    promoted into the v0 schema
 - `schemas/agent-state.schema.json`
   - v0 canonical agent-state contract for agents, relationships, events,
     scenes, perceived overlays, and dialogue context packs

@@ -156,8 +156,9 @@ person behind the drone while pretending she is only annoyed about the repair.
 If Oz gets too close to her fear of dependency, Cat is likely to answer the
 practical issue and make the emotional issue sound stupid.
 
-Voice for this turn: dry, quick, pointed, plainspoken, low warmth, low emotional
-explicitness, some profanity. Humor can appear as a boundary, not as friendliness.
+Voice for this turn: dry, quick, pointed, plainspoken, low verbal warmth, low
+emotional explicitness, some profanity. Humor can appear as a boundary, not as
+friendliness.
 ```
 
 Possible generated behavior:
@@ -191,8 +192,8 @@ redirect toward the immediate repair or answer in a way that preserves the mask
 without making the evasion look like panic.
 
 Voice for this turn: controlled, concise, technically precise, gently polite,
-low emotional explicitness, careful warmth, frequent hedging when the subject
-approaches the operator.
+low emotional explicitness, careful verbal warmth, frequent hedging when the
+subject approaches the operator.
 ```
 
 Possible generated behavior:

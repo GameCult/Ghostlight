@@ -120,11 +120,6 @@
           }
         },
         "behavioral_dimensions": {
-          "warmth": {
-            "mean": 0.54,
-            "plasticity": 0.42,
-            "current_activation": 0.46
-          },
           "drive": {
             "mean": 0.76,
             "plasticity": 0.21,
@@ -184,6 +179,11 @@
             "mean": 0.69,
             "plasticity": 0.34,
             "current_activation": 0.78
+          },
+          "interpersonal_warmth": {
+            "mean": 0.54,
+            "plasticity": 0.42,
+            "current_activation": 0.46
           }
         },
         "presentation_strategy": {
@@ -308,11 +308,6 @@
             "mean": 0.86,
             "plasticity": 0.18,
             "current_activation": 0.91
-          },
-          "warmth": {
-            "mean": 0.31,
-            "plasticity": 0.45,
-            "current_activation": 0.26
           },
           "formality": {
             "mean": 0.22,
@@ -443,6 +438,11 @@
             "mean": 0.52,
             "plasticity": 0.38,
             "current_activation": 0.57
+          },
+          "verbal_warmth": {
+            "mean": 0.31,
+            "plasticity": 0.45,
+            "current_activation": 0.26
           }
         }
       },
@@ -480,9 +480,70 @@
             "linked_event_ids": []
           }
         ],
-        "relationship_summaries": []
+        "relationship_summaries": [
+          {
+            "memory_id": "memory-rel-cat-oz-current-read",
+            "summary": "Oz is useful, evasive, and probably a mask for someone more vulnerable than the drone.",
+            "salience": 0.74,
+            "confidence": 0.61,
+            "linked_event_ids": [
+              "event-drone-lie"
+            ],
+            "linked_relationship_id": "rel-cat-oz"
+          }
+        ]
       },
-      "perceived_state_overlays": []
+      "perceived_state_overlays": [
+        {
+          "observer_agent_id": "cat_marrigan",
+          "target_agent_id": "oz_operator",
+          "perceived_dimensions": {
+            "strategic_opacity": {
+              "observed_activation": 0.86,
+              "attributed_disposition": 0.72,
+              "confidence": 0.64,
+              "evidence": [
+                "event-drone-lie"
+              ]
+            },
+            "cultivated_harmlessness": {
+              "observed_activation": 0.78,
+              "attributed_disposition": 0.51,
+              "confidence": 0.48,
+              "evidence": [
+                "event-drone-lie"
+              ]
+            },
+            "interpersonal_warmth": {
+              "observed_activation": 0.52,
+              "attributed_disposition": 0.39,
+              "confidence": 0.35,
+              "evidence": [
+                "event-drone-lie"
+              ]
+            }
+          },
+          "beliefs": [
+            {
+              "belief_id": "belief-cat-oz-is-a-mask",
+              "subject_id": "oz_operator",
+              "claim_type": "identity_inference",
+              "claim": "Oz is probably a mask for someone or something more vulnerable than the drone.",
+              "confidence": 0.57,
+              "evidence_event_ids": [
+                "event-drone-lie"
+              ],
+              "visibility": "private",
+              "emotional_charge": 0.71
+            }
+          ],
+          "distortions": [
+            "threat_amplification",
+            "institutional_suspicion_transfer",
+            "mask_overfocus"
+          ]
+        }
+      ]
     },
     {
       "agent_id": "oz_operator",
@@ -584,11 +645,6 @@
           }
         },
         "behavioral_dimensions": {
-          "warmth": {
-            "mean": 0.67,
-            "plasticity": 0.4,
-            "current_activation": 0.74
-          },
           "drive": {
             "mean": 0.52,
             "plasticity": 0.45,
@@ -648,6 +704,11 @@
             "mean": 0.64,
             "plasticity": 0.44,
             "current_activation": 0.72
+          },
+          "interpersonal_warmth": {
+            "mean": 0.67,
+            "plasticity": 0.4,
+            "current_activation": 0.74
           }
         },
         "presentation_strategy": {
@@ -772,11 +833,6 @@
             "mean": 0.32,
             "plasticity": 0.49,
             "current_activation": 0.35
-          },
-          "warmth": {
-            "mean": 0.48,
-            "plasticity": 0.44,
-            "current_activation": 0.52
           },
           "formality": {
             "mean": 0.58,
@@ -907,6 +963,11 @@
             "mean": 0.05,
             "plasticity": 0.39,
             "current_activation": 0.03
+          },
+          "verbal_warmth": {
+            "mean": 0.48,
+            "plasticity": 0.44,
+            "current_activation": 0.52
           }
         }
       },
@@ -936,22 +997,33 @@
             "linked_event_ids": []
           }
         ],
-        "relationship_summaries": []
+        "relationship_summaries": [
+          {
+            "memory_id": "memory-rel-oz-cat-current-read",
+            "summary": "Cat is suspicious enough to be dangerous and principled enough that the danger may have rules.",
+            "salience": 0.76,
+            "confidence": 0.58,
+            "linked_event_ids": [
+              "event-drone-lie"
+            ],
+            "linked_relationship_id": "rel-oz-cat"
+          }
+        ]
       },
       "perceived_state_overlays": [
         {
           "observer_agent_id": "oz_operator",
           "target_agent_id": "cat_marrigan",
           "perceived_dimensions": {
-            "warmth": {
-              "observed_activation": 0.4,
-              "attributed_disposition": 0.44,
-              "confidence": 0.34
-            },
             "suspicion": {
               "observed_activation": 0.9,
               "attributed_disposition": 0.83,
               "confidence": 0.71
+            },
+            "interpersonal_warmth": {
+              "observed_activation": 0.4,
+              "attributed_disposition": 0.44,
+              "confidence": 0.34
             }
           },
           "beliefs": [
@@ -1116,7 +1188,7 @@
     {
       "event_id": "event-drone-lie",
       "kind": "dialogue",
-      "summary": "Oz dodged Cat's question about who was controlling the drone.",
+      "summary": "Cat asked who was controlling the drone; Oz redirected toward the repair instead of answering the identity question.",
       "participants": [
         "cat_marrigan",
         "oz_operator"
@@ -1125,6 +1197,104 @@
         "mask",
         "privacy",
         "suspicion"
+      ],
+      "observed_exchange": [
+        {
+          "speaker_id": "cat_marrigan",
+          "utterance_summary": "Cat pressed on whether Oz was really autonomous or a mask for someone remote.",
+          "dialogue_function": "probe_identity",
+          "observable_cues": [
+            "pointed humor",
+            "feigned casualness",
+            "attention on drone hesitation"
+          ]
+        },
+        {
+          "speaker_id": "oz_operator",
+          "utterance_summary": "Oz answered the practical repair issue and avoided naming the operator behind the drone.",
+          "dialogue_function": "evasive_redirect",
+          "observable_cues": [
+            "technical compression",
+            "polite deflection",
+            "too-human timing"
+          ]
+        }
+      ],
+      "private_interpretations": [
+        {
+          "agent_id": "cat_marrigan",
+          "interpretation": "Oz is hiding a person-shaped vulnerability behind the drone body.",
+          "attributed_motive": "Protect the operator by keeping Cat focused on the broken taxi instead of the mask.",
+          "appraisal_tags": [
+            "trust_violation",
+            "curiosity",
+            "useful_secret",
+            "possible_leverage"
+          ],
+          "confidence": 0.62
+        },
+        {
+          "agent_id": "oz_operator",
+          "interpretation": "Cat noticed the mask and is testing whether Oz will panic or confess.",
+          "attributed_motive": "Find out what Oz is without making her own dependence on the repair visible.",
+          "appraisal_tags": [
+            "exposure_risk",
+            "status_threat",
+            "possible_care",
+            "conversation_hazard"
+          ],
+          "confidence": 0.68
+        }
+      ],
+      "event_effects": [
+        {
+          "agent_id": "cat_marrigan",
+          "summary": "Cat trusts Oz less, becomes more fascinated, and stores the drone as a mask rather than a personless tool.",
+          "state_deltas": [
+            {
+              "path": "relationships.rel-cat-oz.stance.trust.current_activation",
+              "delta": -0.07
+            },
+            {
+              "path": "relationships.rel-cat-oz.stance.fascination.current_activation",
+              "delta": 0.13
+            },
+            {
+              "path": "canonical_state.behavioral_dimensions.suspicion.current_activation",
+              "delta": 0.11
+            }
+          ],
+          "new_belief_ids": [
+            "belief-cat-oz-is-a-mask"
+          ],
+          "memory_update_ids": [
+            "memory-rel-cat-oz-current-read"
+          ]
+        },
+        {
+          "agent_id": "oz_operator",
+          "summary": "Oz reads Cat as sharper and riskier, but not automatically cruel.",
+          "state_deltas": [
+            {
+              "path": "relationships.rel-oz-cat.stance.fear.current_activation",
+              "delta": 0.08
+            },
+            {
+              "path": "relationships.rel-oz-cat.stance.respect.current_activation",
+              "delta": 0.07
+            },
+            {
+              "path": "canonical_state.presentation_strategy.strategic_opacity.current_activation",
+              "delta": 0.06
+            }
+          ],
+          "new_belief_ids": [
+            "belief-cat-will-pry"
+          ],
+          "memory_update_ids": [
+            "memory-rel-oz-cat-current-read"
+          ]
+        }
       ]
     }
   ],
@@ -1195,7 +1365,7 @@
           "presentation_constraints": [
             "Be helpful, a little funny, and evasive.",
             "Let the drone seem more autonomous than it is.",
-            "Use warmth carefully; Cat may treat open sincerity as bait.",
+            "Use verbal warmth carefully; Cat may treat open sincerity as bait.",
             "Keep the operator location private unless scene pressure explicitly breaks the mask."
           ]
         }

@@ -145,6 +145,8 @@ def validate_agent(agent: dict[str, Any], required: dict[str, list[str]]) -> Non
             belief_path = f"{overlay_path}.beliefs[{belief_index}]"
             require_keys(belief, ["belief_id", "claim", "confidence"], belief_path)
             require_0_1(belief["confidence"], f"{belief_path}.confidence")
+            if "emotional_charge" in belief:
+                require_0_1(belief["emotional_charge"], f"{belief_path}.emotional_charge")
 
 
 def validate_document(document: dict[str, Any], required: dict[str, list[str]], source: Path) -> None:
@@ -184,6 +186,24 @@ def validate_document(document: dict[str, Any], required: dict[str, list[str]], 
         require_keys(event, ["event_id", "kind", "summary", "participants", "pressure_tags"], path)
         for participant_id in event["participants"]:
             require(participant_id in agent_id_set, f"{path}.participants references unknown agent: {participant_id}")
+        for turn_index, turn in enumerate(event.get("observed_exchange", [])):
+            turn_path = f"{path}.observed_exchange[{turn_index}]"
+            require_keys(turn, ["speaker_id", "utterance_summary", "dialogue_function"], turn_path)
+            require(turn["speaker_id"] in agent_id_set, f"{turn_path}.speaker_id references unknown agent")
+        for interpretation_index, interpretation in enumerate(event.get("private_interpretations", [])):
+            interpretation_path = f"{path}.private_interpretations[{interpretation_index}]"
+            require_keys(interpretation, ["agent_id", "interpretation", "confidence"], interpretation_path)
+            require(interpretation["agent_id"] in agent_id_set, f"{interpretation_path}.agent_id references unknown agent")
+            require_0_1(interpretation["confidence"], f"{interpretation_path}.confidence")
+        for effect_index, effect in enumerate(event.get("event_effects", [])):
+            effect_path = f"{path}.event_effects[{effect_index}]"
+            require_keys(effect, ["agent_id", "summary"], effect_path)
+            require(effect["agent_id"] in agent_id_set, f"{effect_path}.agent_id references unknown agent")
+            for delta_index, delta in enumerate(effect.get("state_deltas", [])):
+                delta_path = f"{effect_path}.state_deltas[{delta_index}]"
+                require_keys(delta, ["path", "delta"], delta_path)
+                require(isinstance(delta["delta"], (int, float)), f"{delta_path}.delta must be numeric")
+                require(-1 <= delta["delta"] <= 1, f"{delta_path}.delta must be between -1 and 1")
 
     for index, scene in enumerate(document["scenes"]):
         path = f"scenes[{index}]"
