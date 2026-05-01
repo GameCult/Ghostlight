@@ -13,9 +13,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_EXAMPLES = [
-    ROOT / "examples" / "lore-grounding" / "historical-flashpoint.template.json"
-]
+DEFAULT_EXAMPLES = sorted((ROOT / "examples" / "lore-grounding").glob("*.json"))
 
 
 class ValidationError(Exception):

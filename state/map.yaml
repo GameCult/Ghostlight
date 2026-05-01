@@ -25,6 +25,7 @@ constraints:
   - Keep persistent state small enough to rehydrate without drowning the next session.
   - Reuse proven machinery where it fits before inventing ornate nonsense.
   - Do not treat an older corridor-crisis game slice as the active Ghostlight implementation target.
+  - Cold Wake may be used as a pre-Elysium historical grounding fixture, but not as the active product target unless explicitly revived.
   - Do not use the obsolete Call of the Void colony-fleet return-home twist; current Aetheria canon sequesters the whole Solar system into Elysium.
   - Do not treat malleable Elysium gameplay-era outcomes as fixed lore for grounded training data unless a branch outcome is explicitly promoted.
 
@@ -92,7 +93,8 @@ accepted_design:
   - Projection examples use `ghostlight.projection_example.v0` JSONL records with traceable known facts, active pressures, tensions, response affordances, voice surface, rendered prompt text, and audit checks.
   - Aetheria projection training has two modes: historical grounded fixtures from authored lore, and procedural Elysium branch fixtures that test generation without canonizing gameplay-era outcomes.
   - Lore grounding digests use `ghostlight.lore_grounding_digest.v0` records to distill authored lore into cultural pressure fields, factional misread maps, role pressures, speaker knowledge boundaries, and author-only exclusions.
+  - The Cold Wake Panic is the first chosen historical grounding fixture: a draft Ganymede corridor digest now models thermal stealth panic, insurer category failure, Navigator rescue obligation, Lightsail reliability pressure, Aya-coded care pressure, pirate porosity, Cognitum firmware denial, and Cryonix/Rossum certification culture.
 
 current_status:
-  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, a revised Aetheria lore-grounding architecture, a lore grounding digest schema, and a documented teacher/student distillation path for projection.
-  next_action: Choose the first authored historical Aetheria flashpoint for grounded training, then fill the first real lore grounding digest from the template.
+  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, a revised Aetheria lore-grounding architecture, a lore grounding digest schema, the first draft Cold Wake historical grounding digest, and a documented teacher/student distillation path for projection.
+  next_action: Choose one room inside the Cold Wake Panic and build the first grounded projection fixture from the Ganymede corridor digest.

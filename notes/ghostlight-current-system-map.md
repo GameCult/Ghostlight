@@ -55,6 +55,9 @@ state and re-entry discipline.
 - `docs/architecture/lore-grounding-digest-format.md`
   - human-facing format guide for cultural, factional, institutional, role, and
     speaker-boundary lore digests
+- `docs/architecture/aetheria-cold-wake-training-fixture.md`
+  - human-facing note that reframes the recovered Cold Wake scenario as
+    historical projection feedstock rather than the active product target
 - `schemas/agent-state.schema.json`
   - v0 canonical agent-state contract for agents, relationships, events,
     scenes, perceived overlays, and dialogue context packs
@@ -75,6 +78,9 @@ state and re-entry discipline.
   - pretty-printed mirror for inspecting the first projection examples
 - `examples/lore-grounding/historical-flashpoint.template.json`
   - fillable template for the first historical Aetheria grounding digest
+- `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json`
+  - first draft historical grounding digest, centered on Cold Wake Panic in the
+    Ganymede/Jovian corridor
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
@@ -97,7 +103,7 @@ state and re-entry discipline.
 - a relationship engine
 - a culture prior engine
 
-The canonical agent-state schema, first projection example schema, and first
-lore grounding digest schema now exist as v0 seams. The next implementation
-target is choosing the first authored historical Aetheria flashpoint for a real
-grounding digest, followed by the deterministic input slicer.
+The canonical agent-state schema, first projection example schema, lore
+grounding digest schema, and first draft Cold Wake grounding digest now exist as
+v0 seams. The next implementation target is choosing one Cold Wake room for a
+grounded projection fixture, followed by the deterministic input slicer.

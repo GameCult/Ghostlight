@@ -47,6 +47,10 @@
    - Maintain `schemas/lore-grounding-digest.schema.json`,
      `examples/lore-grounding/`, and `tools/validate_lore_grounding.py` as the
      cultural and factional pressure seam for grounded fixtures.
+   - Use `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json` as
+     the first draft historical grounding digest.
+   - Build the first grounded projection fixture from one specific Cold Wake
+     room rather than from the whole crisis at once.
    - Use a frontier teacher model to produce reviewed projection artifacts from
      structured state and lore grounding digests.
    - Save accepted and rejected projection examples as supervised data.
@@ -69,8 +73,8 @@
      promoted
    - support dialogue scaffolding and procedural drama for narrated stories
      across the Aetheria timeline
-   - do not treat an older corridor-crisis game slice as the implementation
-     target unless explicitly revived later
+   - do not treat Cold Wake as the implementation target unless explicitly
+     revived later; it is currently training feedstock
 
 ## Discipline
 
