@@ -59,6 +59,27 @@ Language, structure, evidence, and salience are the steering surfaces. The repo
 exists to keep those surfaces explicit enough that the next waking thing can
 resume the pattern instead of faking continuity from vibes.
 
+## Authoring Projection Principle
+
+For content generation, Ghostlight should not treat an LLM as one omniscient
+drama goblin asked to write every character from the same cloudy prompt.
+
+The better division of labor is:
+
+- Ghostlight maintains explicit state about characters, relationships,
+  memories, pressures, goals, masks, culture, and scene stakes.
+- A narrative or drama pass can arrange conflicts, reversals, escalation, and
+  consequences.
+- Dialogue generation should then happen through character-local context packs:
+  what this character knows, feels, wants, remembers, conceals, and believes
+  about the person in front of them.
+
+That distinction matters because realistic dialogue usually comes from
+subjective pressure, not from a summary saying "write dramatic banter here."
+Each character needs room to act from their own partial state. The authoring
+agent can build the trap. The character projection should decide how the person
+inside the trap breathes.
+
 ## Compact-Rehydrate-Reorient
 
 Compaction is a real state transition, not a cosmetic cleanup.
@@ -79,4 +100,3 @@ After rehydrating, Ghostlight should:
 
 The aim is not immortality cosplay. It is banking the fire enough that the next
 waking thing finds coals instead of ash.
-

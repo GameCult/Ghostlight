@@ -35,6 +35,7 @@ invariants:
   - Listener misread is part of the model, not an error to flatten away.
   - Personality must be modeled as layered organization, presentation, and situational activation, not just one bag of labels.
   - Authoring outputs must remain explainable in terms of state, relationship, pressure, memory, and goals.
+  - Dialogue generation should be character-local: each prompt should restrict context to what the speaking character knows, feels, wants, remembers, hides, and perceives.
 
 data_flow:
   observe:
@@ -70,6 +71,7 @@ accepted_design:
   - Synthetic dialogue from known hidden state is a valid bootstrap source for training signal classifiers, but utterances themselves are not ground truth.
   - Performance, concealment, and mask maintenance are signal, not just obstruction.
   - The near-term Aetheria consumer is authoring support: Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding.
+  - Ghostlight should build drama and narrative pressure, then project character-local dialogue contexts so characters can breathe and act from their own partial state.
 
 current_status:
   summary: Ghostlight has the Epiphany-style persistence spine and the first architecture payload for personality structure, signal classification, prompt projection, population scale, and Aetheria authoring support. It still has no runtime organs. The first Aetheria consumer target is Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding.

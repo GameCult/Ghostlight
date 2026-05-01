@@ -19,6 +19,36 @@ characters, factions, pressures, memories, masks, and conflict arcs in explicit
 state, then project that state into usable scenes, dialogue beats, outlines,
 and dramatic complications.
 
+## Why This Helps Dialogue
+
+Ghostlight should not ask one LLM prompt to "write good character drama" from
+vibes. That path produces clever paste: fluent, energetic, and usually a little
+dead behind the eyes.
+
+The useful split is:
+
+- Ghostlight builds the drama, narrative pressure, scene setup, and state.
+- The dialogue renderer gives each character a constrained local context.
+- The character speaks from who they are, what they have endured, what they
+  want, what they are feeling, what they are hiding, and how they perceive the
+  person in front of them.
+
+That means dialogue prompts should be character-local rather than omniscient.
+They should include only the state that character plausibly has access to:
+
+- identity and role
+- current mood and pressure
+- relevant memories
+- active goals
+- relationship stance toward the listener
+- perceived stakes
+- cultural or factional scripts
+- mask, concealment, or presentation strategy
+
+This lets characters breathe and act inside the scene instead of serving as
+mouthpieces for a single plot-generating agent. The agent can shape the drama.
+The character projection should preserve subjectivity.
+
 ## Primary Use: Call Of The Void Content
 
 Call of the Void should be treated as the first consumer context for Ghostlight,
@@ -95,6 +125,8 @@ The first useful organs are:
 6. drama beat generator driven by goals, values, pressure, and memory
 7. dialogue scaffold renderer that preserves stance, mask, and relationship
    asymmetry
+8. character-local dialogue context packs that restrict each generated voice to
+   what that character knows, feels, wants, fears, and perceives
 
 The output should be inspectable. The author should be able to see why the
 machine thinks a character would deflect, confess, threaten, soften, bargain,
@@ -118,6 +150,7 @@ organs can come later if they earn the trouble.
 The first implementation is useful if it can:
 
 - keep character state distinct from prompt prose
+- render dialogue from character-local context rather than global plot vibes
 - generate dialogue scaffolds that reflect relationship history
 - create procedural drama from incompatible goals instead of random hostility
 - preserve cultural and factional pressure without making clones
