@@ -52,16 +52,16 @@ These are the characters who accumulate history and can plausibly remember what
 happened last week, who lied to them, who saved them, and which institution
 just humiliated them.
 
-Examples in the Cold Wake slice:
+Examples in an Aetheria content-generation slice:
 
-- a navigator council delegate
-- a Lightsail dispatcher
-- a dock labor organizer
-- an insurer adjudicator
-- an Aya sanctuary coordinator
-- a pirate broker
-- a cutout cognition vendor
-- a Cryonix or Rossum technical rep
+- a faction liaison
+- a ship officer
+- a labor organizer
+- a corporate handler
+- a sanctuary coordinator
+- a black-market broker
+- a cutout vendor
+- a technical specialist with inconvenient loyalties
 
 These are not the population. They are the pressure points where
 population-scale systems become legible.
@@ -173,14 +173,14 @@ affected.
 Because the simulation is not trying to create a census. It is trying to create
 a socially legible machine.
 
-In a corridor like Ganymede, one persistent agent can sit at the hinge point
-for a great many people:
+In a dense Aetheria slice, one persistent agent can sit at the hinge point for
+a great many people:
 
 - one dispatcher affects dozens of ships and hundreds of crew
 - one sanctuary coordinator gates a network under pressure from thousands of vulnerable lives
-- one insurer official can reprice route access across the corridor
-- one navigator delegate can legitimize or delegitimize rescue, inspection, and route closure
-- one pirate broker can redirect shadow traffic across many dependent cells
+- one corporate official can reshape access, risk, and reputation
+- one faction delegate can legitimize or delegitimize a compromise
+- one broker can redirect shadow traffic across many dependent cells
 
 The persistent cast is therefore best understood as:
 
@@ -212,13 +212,13 @@ Each cohort record should include:
 - `mobilizationPotential`
 - `recentIncidents`
 
-Useful cohort types for Cold Wake:
+Useful cohort types for Aetheria story and content generation:
 
 - dock labor
-- convoy crews
+- ship crews
 - sanctuary residents
-- insurer workforce
-- pirate crews
+- corporate workforce
+- shadow-market crews
 - repair-yard workers
 - shadow clinic clients
 - private security detachments
@@ -289,39 +289,41 @@ That means scenes, dashboards, and local UI should be fed with things like:
 The player does not need to meet everyone. They need to feel surrounded by
 consequences.
 
-## Cold Wake-Specific Population Recipe
+## Content-Generation Population Recipe
 
-For the first slice, a sensible starting mix is:
+For the first authoring slice, a sensible starting mix is:
 
 - **20-40 persistent agents**
 - **10-25 cohorts**
 - **0-20 ephemerals per active scene**, generated on demand
 
-Persistent clusters:
+Persistent clusters should be chosen from the story context, but the useful
+categories are:
 
-- Navigators
-- Lightsail
-- PSC / insurers
-- Aya
-- pirates
-- cutout vendors
-- local technical reps
+- primary faction representatives
+- ship or station operators
+- labor and logistics figures
+- care, sanctuary, or rights workers
+- criminal or deniable-economy brokers
+- corporate cutouts
+- technical specialists
+- witnesses with leverage
 
 Cohorts:
 
 - dock labor
-- convoy crews
-- sanctuary overflow
+- crews
+- sanctuary or civilian overflow
 - clinic queues
-- inspector pool
+- administrative or inspection staff
 - security contractors
-- pirate cells
+- shadow-market cells
 - repair techs
 - cargo handlers
 - passengers / transients
 
-That is enough to make the world feel socially populated without turning the
-runtime into a screaming furnace.
+That is enough to make generated scenes feel socially populated without turning
+the authoring runtime into a screaming furnace.
 
 ## Simulation Tier Mapping
 

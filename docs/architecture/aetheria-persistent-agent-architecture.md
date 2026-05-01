@@ -3,8 +3,8 @@
 This is the companion document to
 [Things To Steal](../research/things-to-steal.md).
 
-For the first concrete slice, see
-[Aetheria Cold Wake MVP Scenario](./aetheria-cold-wake-mvp-scenario.md).
+For the first concrete target, see
+[Aetheria Content Generation Targets](./aetheria-content-generation-targets.md).
 
 For the scaling model that explains how a crowded region can be simulated with
 a relatively small persistent cast, see
@@ -17,7 +17,7 @@ perceived state should project into prompts, see
 That document is the theft list. This one is the machine we are trying to build
 out of the stolen parts.
 
-The target is a persistent world full of in-universe agents who:
+The long-horizon target is a persistent world full of in-universe agents who:
 
 - remember what happened
 - want different things
@@ -29,6 +29,11 @@ player. Humans are participants, not the sun around which every synthetic
 little bastard must orbit.
 
 ## Design Goals
+
+The near-term target is content generation and story scaffolding, not a
+standalone game slice. Ghostlight should first help Aetheria authors generate
+dialogue, scene pressure, procedural drama, and character reactions from
+explicit social state.
 
 We want a world where:
 
@@ -526,34 +531,41 @@ Countermeasure:
 
 ## Build Order
 
-### Phase 1: Cast Spine
+### Phase 1: Authoring Cast Spine
 
 - explicit agent identity dossiers
 - explicit goal objects
 - explicit relationship objects
 - episodic + semantic memory split
 
-### Phase 2: Social Simulation
+### Phase 2: Dialogue And Drama Scaffolding
+
+- prompt projection for scene and dialogue drafts
+- relationship-aware dialogue skeletons
+- conflict beat generation from incompatible goals
+- author-visible rationale for generated moves
+
+### Phase 3: Social Simulation
 
 - scene objects
 - scene scheduler
 - relationship updates from scenes
 - goal revision from scenes
 
-### Phase 3: Persistent World
+### Phase 4: Persistent World
 
 - region state
 - off-screen strategic ticking
 - rumor/news propagation
 - faction and economy hooks
 
-### Phase 4: Human Integration
+### Phase 5: Human Integration
 
 - live player-facing interactions
 - persistent human reputation
 - access, trust, and consequence systems
 
-### Phase 5: Rich Narrative Surface
+### Phase 6: Rich Narrative Surface
 
 - chronicles
 - regional reports

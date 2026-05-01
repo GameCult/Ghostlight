@@ -10,12 +10,14 @@ experiment:
 objective:
   primary: >
     Turn Ghostlight into a legible machine for persistent autonomous social
-    agents that can inhabit Aetheria and other worlds without collapsing into
-    prompt soup.
+    agents that can support Aetheria content generation, dialogue scaffolding,
+    procedural drama, and eventual live-world simulation without collapsing
+    into prompt soup.
   current: >
     Stand up the repo spine, consolidate the architecture we already know, and
     prepare the first implementation slices around state modeling, cultural
-    priors, signal classification, and prompt projection.
+    priors, signal classification, prompt projection, and authoring-oriented
+    drama generation.
 
 constraints:
   - Prefer explicit latent state over persona theater.
@@ -23,6 +25,7 @@ constraints:
   - Prompt text is a projection surface, not the canonical store of truth.
   - Keep persistent state small enough to rehydrate without drowning the next session.
   - Reuse proven machinery where it fits before inventing ornate nonsense.
+  - Do not treat an older corridor-crisis game slice as the active Ghostlight implementation target.
 
 invariants:
   - The map is canonical and slow-changing.
@@ -31,6 +34,7 @@ invariants:
   - Canonical agent state and per-agent perceived state must remain distinct.
   - Listener misread is part of the model, not an error to flatten away.
   - Personality must be modeled as layered organization, presentation, and situational activation, not just one bag of labels.
+  - Authoring outputs must remain explainable in terms of state, relationship, pressure, memory, and goals.
 
 data_flow:
   observe:
@@ -38,6 +42,7 @@ data_flow:
     - implementation artifacts
     - simulation requirements
     - setting constraints
+    - AetheriaLore source context
   process:
     - rehydrate from canonical state
     - work one bounded organ
@@ -47,12 +52,14 @@ data_flow:
   cut:
     - kill machinery that does not visibly serve the core model
     - move volatile proof to git history or artifacts, not durable notes
+    - remove active scenario assumptions when the user redirects the product target
 
 active_subgoals:
   - Keep Ghostlight as the canonical home for its architecture notes so consumer projects do not quietly regrow duplicate brains.
   - Define the canonical agent state model, including first-class volatility, attachment-seeking, and distance-seeking.
   - Define how culture shapes priors, incentives, masks, and economic behavior without turning populations into clones.
   - Define the boundary between canonical signal, perceived signal, and prompt projection.
+  - Support content generation for the Call of the Void slice in AetheriaLore and dialogue scaffolding or procedural drama for narrated Aetheria timeline stories.
 
 accepted_design:
   - Ghostlight owns the deeper agent-state, personality, culture, relationship, and prompt-projection architecture; other projects can remain consumers instead of shrines.
@@ -62,7 +69,8 @@ accepted_design:
   - Culture acts as a prior-shaping and incentive field with distributions, covariance, scripts, reward gradients, taboo maps, and prestige structure.
   - Synthetic dialogue from known hidden state is a valid bootstrap source for training signal classifiers, but utterances themselves are not ground truth.
   - Performance, concealment, and mask maintenance are signal, not just obstruction.
+  - The near-term Aetheria consumer is authoring support: Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding.
 
 current_status:
-  summary: Ghostlight now has both the Epiphany-style persistence spine and the first real architecture payload: research notes for personality structure, signal classification, prompt projection, and the Aetheria corridor simulation slice. It still has no runtime organs, but it finally owns the design body it was spun up to carry.
-  next_action: Freeze the first implementation organ. The clean contenders are the canonical agent-state schema, the event or classifier data model, and the prompt-projection renderer.
+  summary: Ghostlight has the Epiphany-style persistence spine and the first architecture payload for personality structure, signal classification, prompt projection, population scale, and Aetheria authoring support. It still has no runtime organs. The first Aetheria consumer target is Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding.
+  next_action: Freeze the first implementation organ. The clean first move remains the canonical agent-state schema, followed by perceived-state overlays, event/classifier records, and prompt projection for authoring outputs.

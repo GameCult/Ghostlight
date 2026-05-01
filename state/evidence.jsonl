@@ -1,3 +1,5 @@
 
 {"ts": "2026-05-01T17:06:46+00:00", "type": "scaffold", "status": "ok", "note": "Initialized Ghostlight with a stripped-down Epiphany-style persistence spine: canonical map, scratch, evidence, handoff, implementation plan, and Python state or compaction helpers."}
 {"ts": "2026-05-01T17:24:54+00:00", "type": "migration", "status": "ok", "note": "Migrated Ghostlight-owned research and architecture notes out of VoidBot and into this repo; Ghostlight is now the canonical home for personality, culture, state-projection, and Aetheria persistent-world design notes."}
+{"ts": "2026-05-01T17:35:16+00:00", "type": "decision", "status": "rejected", "note": "Rejected the prior corridor-crisis game slice as Ghostlight active direction; current Aetheria consumer target is Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding."}
+{"ts": "2026-05-01T17:35:57+00:00", "type": "source", "status": "ok", "note": "Imported the scattered Call of the Void Google Doc brainstorm into docs/aetheria/call-of-the-void-brainstorm.md as raw source material; compact canon remains the AetheriaLore Call of the Void design note."}

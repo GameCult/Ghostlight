@@ -17,6 +17,8 @@ beautiful little superstition.
   distilled evidence.
 - Architecture notes for agent state, signal classification, culture-shaped
   distributions, and prompt projection.
+- Aetheria authoring targets for Call of the Void content generation,
+  dialogue scaffolding, and procedural drama across narrated timeline stories.
 - A bounded working discipline that keeps maps, scratch, evidence, and plans
   from dissolving into one confident soup.
 
@@ -32,6 +34,8 @@ beautiful little superstition.
 - `notes/ghostlight-implementation-plan.md`: current larger-organ sequence
 - `notes/architecture-rationale.md`: why the state split exists at all
 - `docs/research/`: research backlog and modeling notes
+- `docs/aetheria/`: imported or local Aetheria source material used by
+  Ghostlight
 - `docs/architecture/`: world, state, and prompt-system architecture notes
 - `tools/ghostlight_state.py`: compact state helper
 - `tools/ghostlight_prepare_compaction.py`: pre-compaction audit helper
@@ -52,7 +56,8 @@ operating manual. The README is just the sign on the door.
 - `docs/research/things-to-steal.md`
 - `docs/research/personality-model-roadmap.md`
 - `docs/research/personality-signal-classifier.md`
+- `docs/aetheria/call-of-the-void-brainstorm.md`
 - `docs/architecture/agent-state-distributions-and-prompt-projection.md`
 - `docs/architecture/aetheria-persistent-agent-architecture.md`
-- `docs/architecture/aetheria-cold-wake-mvp-scenario.md`
+- `docs/architecture/aetheria-content-generation-targets.md`
 - `docs/architecture/aetheria-agent-population-model.md`
