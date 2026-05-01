@@ -33,9 +33,12 @@
    - Make generated moves inspectable: why this character deflects, confesses,
      threatens, softens, bargains, or lies.
 
-4. Build the projection distillation loop.
+4. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to
      student roadmap.
+   - Maintain `schemas/projection-example.schema.json`,
+     `examples/projections/`, and `tools/validate_projection_examples.py` as
+     the first reviewed artifact seam.
    - Use a frontier teacher model to produce reviewed projection artifacts from
      structured state.
    - Save accepted and rejected projection examples as supervised data.

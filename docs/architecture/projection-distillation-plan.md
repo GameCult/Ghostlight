@@ -66,6 +66,14 @@ latency, and cost, not for final prose quality.
 
 ## Dataset Shape
 
+The first schema lives in:
+
+- `schemas/projection-example.schema.json`
+
+The first reviewed examples live in:
+
+- `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl`
+
 Use a JSONL dataset with one projection example per speaker-scene turn.
 
 ```json
@@ -165,9 +173,9 @@ Minimum useful milestone:
 
 ## Near-Term Implementation Tasks
 
-1. Define `schemas/projection-example.schema.json`.
+1. Define `schemas/projection-example.schema.json`. Done.
 2. Add `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl` with
-   the first reviewed Cat and Oz examples.
+   the first reviewed Cat and Oz examples. Done.
 3. Add a deterministic projection input-slice tool that reads the agent-state
    fixture and emits speaker-local input JSON.
 4. Add a teacher prompt template for producing projection artifacts.

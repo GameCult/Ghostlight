@@ -6,6 +6,8 @@
   "scripts": {
     "state:status": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_state.py status",
     "state:prepare-compaction": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_prepare_compaction.py",
-    "schema:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_agent_state.py"
+    "agent-state:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_agent_state.py",
+    "schema:validate": "npm run agent-state:validate && npm run projection:validate",
+    "projection:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_projection_examples.py"
   }
 }

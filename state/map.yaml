@@ -86,7 +86,8 @@ accepted_design:
   - Behavioral warmth and verbal warmth are separate axes: `interpersonal_warmth` describes social care or welcome, while `verbal_warmth` describes soft or reassuring language surface.
   - Events can carry lightweight observed exchange, private interpretation, and event-effect scaffolding so prompt projection can reason from appraisal and consequence without pretending the v0 schema is already a full transition engine.
   - Future social-simulation mechanisms should be documented and tested through projection artifacts before promotion into the canonical schema.
+  - Projection examples use `ghostlight.projection_example.v0` JSONL records with traceable known facts, active pressures, tensions, response affordances, voice surface, rendered prompt text, and audit checks.
 
 current_status:
-  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, and a documented teacher/student distillation path for projection.
-  next_action: Define the projection example schema and create the first reviewed Cat/Oz projection artifacts from the Call of the Void fixture.
+  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, and a documented teacher/student distillation path for projection.
+  next_action: Build the deterministic projection input-slice tool that reads the Call of the Void fixture and emits speaker-local input JSON for one scene/speaker pair.

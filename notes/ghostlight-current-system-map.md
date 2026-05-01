@@ -52,28 +52,37 @@ state and re-entry discipline.
 - `schemas/agent-state.schema.json`
   - v0 canonical agent-state contract for agents, relationships, events,
     scenes, perceived overlays, and dialogue context packs
+- `schemas/projection-example.schema.json`
+  - v0 reviewed projection artifact contract for speaker-local prompt
+    projection examples
 - `schemas/agent-state.required-fields.json`
   - required first-class variable names for canonical state and relationship
     stance
 - `examples/agent-state.call-of-the-void.json`
   - first Call of the Void-flavored fixture for schema and projection work
+- `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl`
+  - first reviewed Cat and Oz projection examples
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
   - pre-compaction audit of required files, handoff content, and git hygiene
 - `tools/validate_agent_state.py`
   - dependency-free validator for the current schema fixture invariants
+- `tools/validate_projection_examples.py`
+  - dependency-free validator for projection example JSONL records
 
 ## What Does Not Exist Yet
 
 - a classifier pipeline
 - a prompt renderer
-- a projection training dataset
+- a full projection training corpus
+- a deterministic projection input slicer
 - a student projection model
 - a simulation/event loop
 - a relationship engine
 - a culture prior engine
 
-The canonical agent-state schema exists as a v0 seam, and the prompt projection
-contract now defines the next implementation target. The renderer should turn
-state intersections into compact speaker-local pressure prose.
+The canonical agent-state schema and first projection example schema now exist
+as v0 seams. The next implementation target is the deterministic input slicer
+that emits speaker-local state before a renderer turns that state into compact
+pressure prose.

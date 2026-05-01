@@ -40,6 +40,10 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `docs/architecture/projection-distillation-plan.md`
 - evaluation follow-up docs:
   - `docs/architecture/schema-future-mechanisms.md`
+- first projection example seam:
+  - `schemas/projection-example.schema.json`
+  - `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl`
+  - `tools/validate_projection_examples.py`
 - visitor-facing README refreshed to explain Ghostlight's goals
 
 There is still no full runtime yet. The live machine is design, state
@@ -61,8 +65,8 @@ state unless explicitly revived.
 
 ## Current Next Action
 
-Define the projection example schema and create the first reviewed Cat/Oz
-projection artifacts from the Call of the Void fixture.
+Build the deterministic projection input-slice tool that reads the Call of the
+Void fixture and emits speaker-local input JSON for one scene/speaker pair.
 
 The evaluation follow-up fixed the immediate v0 schema issues:
 
@@ -73,11 +77,14 @@ The evaluation follow-up fixed the immediate v0 schema issues:
 - `event-drone-lie` now includes observed exchange, private interpretations,
   and event effects
 
-The projection path is:
+Completed projection path items:
 
-- build a deterministic speaker-local input slicer
 - define `schemas/projection-example.schema.json`
 - create reviewed Cat/Oz projection examples
+
+Remaining projection path:
+
+- build a deterministic speaker-local input slicer
 - use a frontier teacher model to generate/audit projection artifacts
 - train a smaller student projector only after the artifact schema, input
   slicer, and evaluator stabilize
