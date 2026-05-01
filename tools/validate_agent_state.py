@@ -43,8 +43,17 @@ def require_0_1(value: Any, path: str) -> None:
 
 def validate_state_variable(obj: Any, path: str) -> None:
     require(isinstance(obj, dict), f"{path} must be an object")
-    require_keys(obj, ["mean", "certainty", "plasticity", "current_activation"], path)
-    for key in ["mean", "certainty", "plasticity", "current_activation"]:
+    require_keys(obj, ["mean", "plasticity", "current_activation"], path)
+    require("certainty" not in obj, f"{path}.certainty belongs in perceived/inferred state, not canonical state")
+    for key in ["mean", "plasticity", "current_activation"]:
+        require_0_1(obj[key], f"{path}.{key}")
+
+
+def validate_inferred_state_variable(obj: Any, path: str) -> None:
+    require(isinstance(obj, dict), f"{path} must be an object")
+    require_keys(obj, ["mean", "confidence", "plasticity", "current_activation"], path)
+    require("certainty" not in obj, f"{path}.certainty should be named confidence in perceived/inferred state")
+    for key in ["mean", "confidence", "plasticity", "current_activation"]:
         require_0_1(obj[key], f"{path}.{key}")
 
 
@@ -59,6 +68,12 @@ def validate_variable_map(
         require(not missing, f"{path} missing variables: {', '.join(missing)}")
     for name, value in obj.items():
         validate_state_variable(value, f"{path}.{name}")
+
+
+def validate_inferred_variable_map(obj: Any, path: str) -> None:
+    require(isinstance(obj, dict), f"{path} must be an object")
+    for name, value in obj.items():
+        validate_inferred_state_variable(value, f"{path}.{name}")
 
 
 def validate_agent(agent: dict[str, Any], required: dict[str, list[str]]) -> None:
@@ -117,7 +132,7 @@ def validate_agent(agent: dict[str, Any], required: dict[str, list[str]]) -> Non
             ["observer_agent_id", "target_agent_id", "perceived_dimensions", "beliefs", "distortions"],
             overlay_path,
         )
-        validate_variable_map(overlay["perceived_dimensions"], None, f"{overlay_path}.perceived_dimensions")
+        validate_inferred_variable_map(overlay["perceived_dimensions"], f"{overlay_path}.perceived_dimensions")
         for belief_index, belief in enumerate(overlay["beliefs"]):
             belief_path = f"{overlay_path}.beliefs[{belief_index}]"
             require_keys(belief, ["belief_id", "claim", "confidence"], belief_path)

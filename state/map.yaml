@@ -74,6 +74,7 @@ accepted_design:
   - Ghostlight should build drama and narrative pressure, then project character-local dialogue contexts so characters can breathe and act from their own partial state.
   - Call of the Void pressure should come from Sol's whole unresolved inheritance being trapped inside Elysium, not from a lone expedition discovering there is no way home.
   - The first schema contract lives in schemas/agent-state.schema.json with required first-class dimensions in schemas/agent-state.required-fields.json and a validator in tools/validate_agent_state.py.
+  - Canonical authored character variables do not carry certainty; confidence belongs on perceived, inferred, classifier, memory, belief, or workflow-provenance records.
 
 current_status:
   summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, and the initial canonical agent-state schema seam for Call of the Void-style authoring examples. The schema is still v0 and should be hardened before building prompt projection on top of it.

@@ -208,18 +208,12 @@
       "type": "object",
       "required": [
         "mean",
-        "certainty",
         "plasticity",
         "current_activation"
       ],
       "additionalProperties": false,
       "properties": {
         "mean": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "certainty": {
           "type": "number",
           "minimum": 0,
           "maximum": 1
@@ -401,7 +395,7 @@
           "type": "string"
         },
         "perceived_dimensions": {
-          "$ref": "#/$defs/variable_map"
+          "$ref": "#/$defs/inferred_variable_map"
         },
         "beliefs": {
           "type": "array",
@@ -646,6 +640,50 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        }
+      }
+    },
+    "inferred_variable_map": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/inferred_state_variable"
+      }
+    },
+    "inferred_state_variable": {
+      "type": "object",
+      "required": [
+        "mean",
+        "confidence",
+        "plasticity",
+        "current_activation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mean": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "plasticity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "current_activation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

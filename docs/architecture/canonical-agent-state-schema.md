@@ -52,24 +52,26 @@ Each agent has:
 - `situational_state`
 - `values`
 
-Each scalar-like dimension is represented as:
+Each canonical scalar-like dimension is represented as:
 
 ```json
 {
   "mean": 0.5,
-  "certainty": 0.5,
   "plasticity": 0.5,
   "current_activation": 0.5
 }
 ```
 
-This keeps baseline, confidence, change rate, and scene activation separate.
+This keeps baseline, change rate, and scene activation separate.
 A person can be dispositionally suspicious without being maximally suspicious
 in every scene. A person can be highly activated right now without rewriting
 their whole soul because someone coughed near a status wound.
 
-For full meanings of `mean`, `certainty`, `plasticity`, `current_activation`,
-and every required v0 label, see
+Canonical variables do not include confidence or certainty. Perceived and
+inferred variables use `confidence` when a read can be wrong.
+
+For full meanings of `mean`, `plasticity`, `current_activation`, perceived
+`confidence`, and every required v0 label, see
 `docs/architecture/agent-state-variable-glossary.md`.
 
 ## Required First-Class Dimensions

@@ -13,12 +13,11 @@ avoid turning every new scene into a bespoke little fog machine.
 
 ## Variable Components
 
-Every scalar-like state variable uses the same four numeric components.
+Canonical scalar-like state variables use three numeric components.
 
 | Field | Meaning |
 | --- | --- |
 | `mean` | The baseline tendency or long-run level for this variable. A high `mean` means this trait, strategy, pressure, or stance is normally strong for the agent. |
-| `certainty` | How confident the system is in the baseline. Low certainty means the value is provisional, thinly evidenced, or inferred from weak material. |
 | `plasticity` | How easily this variable can change. High plasticity means the value can move quickly under events, relationships, culture, or scene pressure. Low plasticity means it is entrenched. |
 | `current_activation` | How active the variable is right now, in this scene or current state. This can spike above or fall below the baseline without rewriting the agent. |
 
@@ -27,16 +26,35 @@ Example:
 ```json
 {
   "mean": 0.35,
-  "certainty": 0.8,
   "plasticity": 0.2,
   "current_activation": 0.9
 }
 ```
 
-This means the agent is not generally high in the variable, the system is
-fairly sure about that, the baseline is not very easy to change, but the
-variable is strongly activated right now. Translation: this is a situation,
-not a personality transplant.
+This means the agent is not generally high in the variable, the baseline is not
+very easy to change, but the variable is strongly activated right now.
+Translation: this is a situation, not a personality transplant.
+
+Canonical character state does not include `certainty`. If Ghostlight is
+defining a character, uncertainty about that definition is not part of the
+character. It belongs in workflow provenance, drafts, imported-source notes, or
+review status. Otherwise the schema confuses the person with our confidence in
+our paperwork, which is how bureaucracies get haunted.
+
+Perceived or inferred state can use `confidence`, because that is explicitly
+about an observer's or classifier's read:
+
+```json
+{
+  "mean": 0.7,
+  "confidence": 0.4,
+  "plasticity": 0.5,
+  "current_activation": 0.8
+}
+```
+
+That means the observer currently reads the target as high in this dimension,
+but the read is weakly supported or uncertain.
 
 ## Label Set Policy
 
@@ -185,7 +203,6 @@ That is deliberate for v0:
 - complete vectors make comparison and validation easier
 - low `mean` values are meaningful
 - low `current_activation` values tell the renderer not to emphasize a variable
-- low `certainty` values warn future systems not to over-trust the value
 
 Later, Ghostlight may support sparse authoring overlays for convenience. The
 canonical fixture should remain explicit until we have enough tooling to avoid

@@ -172,7 +172,6 @@ to shape them properly.
 A practical representation is:
 
 - `mean`
-- `certainty` or `concentration`
 - `plasticity`
 - `current_activation`
 
@@ -183,16 +182,20 @@ So instead of:
 use something like:
 
 - `status_hunger.mean = 0.72`
-- `status_hunger.certainty = 0.81`
 - `status_hunger.plasticity = 0.22`
 - `status_hunger.current_activation = 0.89`
 
 This gives us:
 
 - stable baseline personality
-- uncertainty and variation
 - different rates of change
 - scene-sensitive activation without rewriting the whole person every turn
+
+Canonical authored state should not include epistemic uncertainty about itself.
+If a value is only an observer's read, a classifier output, or a draft import,
+store that uncertainty as `confidence` on the perceived, inferred, or workflow
+record instead. The character is not uncertain about our spreadsheet. The
+spreadsheet may be uncertain about the character.
 
 ## Culture As A Prior Field
 

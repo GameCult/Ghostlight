@@ -38,49 +38,41 @@
         "underlying_organization": {
           "self_coherence": {
             "mean": 0.62,
-            "certainty": 0.63,
             "plasticity": 0.31,
             "current_activation": 0.58
           },
           "contingent_worth": {
             "mean": 0.58,
-            "certainty": 0.54,
             "plasticity": 0.46,
             "current_activation": 0.72
           },
           "shame_sensitivity": {
             "mean": 0.68,
-            "certainty": 0.58,
             "plasticity": 0.39,
             "current_activation": 0.74
           },
           "reciprocity_capacity": {
             "mean": 0.71,
-            "certainty": 0.64,
             "plasticity": 0.28,
             "current_activation": 0.66
           },
           "mentalization_quality": {
             "mean": 0.76,
-            "certainty": 0.69,
             "plasticity": 0.22,
             "current_activation": 0.79
           },
           "authenticity_tolerance": {
             "mean": 0.48,
-            "certainty": 0.51,
             "plasticity": 0.44,
             "current_activation": 0.41
           },
           "mask_rigidity": {
             "mean": 0.61,
-            "certainty": 0.56,
             "plasticity": 0.34,
             "current_activation": 0.77
           },
           "external_regulation_dependence": {
             "mean": 0.44,
-            "certainty": 0.47,
             "plasticity": 0.49,
             "current_activation": 0.52
           }
@@ -88,49 +80,41 @@
         "stable_dispositions": {
           "novelty_seeking": {
             "mean": 0.64,
-            "certainty": 0.62,
             "plasticity": 0.29,
             "current_activation": 0.57
           },
           "conformity": {
             "mean": 0.22,
-            "certainty": 0.66,
             "plasticity": 0.25,
             "current_activation": 0.18
           },
           "status_hunger": {
             "mean": 0.39,
-            "certainty": 0.54,
             "plasticity": 0.41,
             "current_activation": 0.48
           },
           "risk_tolerance": {
             "mean": 0.67,
-            "certainty": 0.61,
             "plasticity": 0.33,
             "current_activation": 0.73
           },
           "sociability": {
             "mean": 0.52,
-            "certainty": 0.55,
             "plasticity": 0.31,
             "current_activation": 0.49
           },
           "baseline_threat_sensitivity": {
             "mean": 0.71,
-            "certainty": 0.64,
             "plasticity": 0.28,
             "current_activation": 0.81
           },
           "aesthetic_appetite": {
             "mean": 0.57,
-            "certainty": 0.43,
             "plasticity": 0.45,
             "current_activation": 0.44
           },
           "ideological_rigidity": {
             "mean": 0.35,
-            "certainty": 0.5,
             "plasticity": 0.38,
             "current_activation": 0.28
           }
@@ -138,79 +122,66 @@
         "behavioral_dimensions": {
           "warmth": {
             "mean": 0.54,
-            "certainty": 0.51,
             "plasticity": 0.42,
             "current_activation": 0.46
           },
           "drive": {
             "mean": 0.76,
-            "certainty": 0.68,
             "plasticity": 0.21,
             "current_activation": 0.84
           },
           "grandiosity": {
             "mean": 0.19,
-            "certainty": 0.6,
             "plasticity": 0.37,
             "current_activation": 0.12
           },
           "validation_seeking": {
             "mean": 0.47,
-            "certainty": 0.49,
             "plasticity": 0.43,
             "current_activation": 0.53
           },
           "anxiety": {
             "mean": 0.72,
-            "certainty": 0.64,
             "plasticity": 0.33,
             "current_activation": 0.86
           },
           "control_pressure": {
             "mean": 0.59,
-            "certainty": 0.56,
             "plasticity": 0.35,
             "current_activation": 0.7
           },
           "hostility": {
             "mean": 0.3,
-            "certainty": 0.5,
             "plasticity": 0.47,
             "current_activation": 0.25
           },
           "suspicion": {
             "mean": 0.74,
-            "certainty": 0.66,
             "plasticity": 0.28,
             "current_activation": 0.82
           },
           "rigidity": {
             "mean": 0.43,
-            "certainty": 0.54,
             "plasticity": 0.4,
             "current_activation": 0.51
           },
           "withdrawal": {
             "mean": 0.5,
-            "certainty": 0.48,
             "plasticity": 0.46,
             "current_activation": 0.57
           },
           "volatility": {
             "mean": 0.46,
-            "certainty": 0.52,
             "plasticity": 0.42,
             "current_activation": 0.61
           },
           "attachment_seeking": {
             "mean": 0.42,
-            "certainty": 0.47,
             "plasticity": 0.48,
             "current_activation": 0.49
           },
           "distance_seeking": {
             "mean": 0.69,
-            "certainty": 0.58,
             "plasticity": 0.34,
             "current_activation": 0.78
           }
@@ -218,67 +189,56 @@
         "presentation_strategy": {
           "charm": {
             "mean": 0.55,
-            "certainty": 0.5,
             "plasticity": 0.4,
             "current_activation": 0.63
           },
           "compliance": {
             "mean": 0.26,
-            "certainty": 0.55,
             "plasticity": 0.36,
             "current_activation": 0.2
           },
           "superiority": {
             "mean": 0.28,
-            "certainty": 0.48,
             "plasticity": 0.45,
             "current_activation": 0.31
           },
           "detachment": {
             "mean": 0.66,
-            "certainty": 0.59,
             "plasticity": 0.32,
             "current_activation": 0.75
           },
           "seductiveness": {
             "mean": 0.22,
-            "certainty": 0.42,
             "plasticity": 0.5,
             "current_activation": 0.12
           },
           "competence_theater": {
             "mean": 0.73,
-            "certainty": 0.6,
             "plasticity": 0.31,
             "current_activation": 0.86
           },
           "moral_theater": {
             "mean": 0.18,
-            "certainty": 0.5,
             "plasticity": 0.39,
             "current_activation": 0.11
           },
           "strategic_opacity": {
             "mean": 0.7,
-            "certainty": 0.62,
             "plasticity": 0.27,
             "current_activation": 0.8
           },
           "cultivated_harmlessness": {
             "mean": 0.32,
-            "certainty": 0.46,
             "plasticity": 0.46,
             "current_activation": 0.38
           },
           "abrasive_boundary": {
             "mean": 0.74,
-            "certainty": 0.67,
             "plasticity": 0.24,
             "current_activation": 0.88
           },
           "ironic_distance": {
             "mean": 0.81,
-            "certainty": 0.7,
             "plasticity": 0.19,
             "current_activation": 0.9
           }
@@ -286,61 +246,51 @@
         "situational_state": {
           "exhaustion": {
             "mean": 0.55,
-            "certainty": 0.63,
             "plasticity": 0.8,
             "current_activation": 0.79
           },
           "scarcity_pressure": {
             "mean": 0.68,
-            "certainty": 0.67,
             "plasticity": 0.7,
             "current_activation": 0.88
           },
           "humiliation": {
             "mean": 0.38,
-            "certainty": 0.52,
             "plasticity": 0.77,
             "current_activation": 0.42
           },
           "panic": {
             "mean": 0.28,
-            "certainty": 0.56,
             "plasticity": 0.82,
             "current_activation": 0.35
           },
           "triumph": {
             "mean": 0.1,
-            "certainty": 0.5,
             "plasticity": 0.78,
             "current_activation": 0.05
           },
           "grief": {
             "mean": 0.34,
-            "certainty": 0.46,
             "plasticity": 0.69,
             "current_activation": 0.39
           },
           "overstimulation": {
             "mean": 0.52,
-            "certainty": 0.6,
             "plasticity": 0.74,
             "current_activation": 0.66
           },
           "grievance_activation": {
             "mean": 0.61,
-            "certainty": 0.58,
             "plasticity": 0.63,
             "current_activation": 0.77
           },
           "acute_shame": {
             "mean": 0.45,
-            "certainty": 0.52,
             "plasticity": 0.8,
             "current_activation": 0.59
           },
           "perceived_status_threat": {
             "mean": 0.57,
-            "certainty": 0.55,
             "plasticity": 0.76,
             "current_activation": 0.68
           }
@@ -356,49 +306,41 @@
         "voice_style": {
           "dryness": {
             "mean": 0.86,
-            "certainty": 0.72,
             "plasticity": 0.18,
             "current_activation": 0.91
           },
           "sarcastic_deflection": {
             "mean": 0.84,
-            "certainty": 0.74,
             "plasticity": 0.2,
             "current_activation": 0.93
           },
           "pointedness": {
             "mean": 0.77,
-            "certainty": 0.68,
             "plasticity": 0.25,
             "current_activation": 0.82
           },
           "sincerity_evasion": {
             "mean": 0.8,
-            "certainty": 0.69,
             "plasticity": 0.24,
             "current_activation": 0.87
           },
           "emotional_evasion": {
             "mean": 0.78,
-            "certainty": 0.66,
             "plasticity": 0.27,
             "current_activation": 0.85
           },
           "banter_as_boundary": {
             "mean": 0.74,
-            "certainty": 0.63,
             "plasticity": 0.31,
             "current_activation": 0.8
           },
           "verbal_aggression": {
             "mean": 0.46,
-            "certainty": 0.55,
             "plasticity": 0.42,
             "current_activation": 0.5
           },
           "plainspoken_directness": {
             "mean": 0.62,
-            "certainty": 0.58,
             "plasticity": 0.33,
             "current_activation": 0.67
           }
@@ -460,49 +402,41 @@
         "underlying_organization": {
           "self_coherence": {
             "mean": 0.57,
-            "certainty": 0.5,
             "plasticity": 0.42,
             "current_activation": 0.61
           },
           "contingent_worth": {
             "mean": 0.62,
-            "certainty": 0.45,
             "plasticity": 0.49,
             "current_activation": 0.69
           },
           "shame_sensitivity": {
             "mean": 0.7,
-            "certainty": 0.53,
             "plasticity": 0.45,
             "current_activation": 0.72
           },
           "reciprocity_capacity": {
             "mean": 0.66,
-            "certainty": 0.48,
             "plasticity": 0.39,
             "current_activation": 0.65
           },
           "mentalization_quality": {
             "mean": 0.69,
-            "certainty": 0.55,
             "plasticity": 0.35,
             "current_activation": 0.7
           },
           "authenticity_tolerance": {
             "mean": 0.31,
-            "certainty": 0.46,
             "plasticity": 0.51,
             "current_activation": 0.24
           },
           "mask_rigidity": {
             "mean": 0.82,
-            "certainty": 0.57,
             "plasticity": 0.25,
             "current_activation": 0.9
           },
           "external_regulation_dependence": {
             "mean": 0.58,
-            "certainty": 0.42,
             "plasticity": 0.52,
             "current_activation": 0.63
           }
@@ -510,49 +444,41 @@
         "stable_dispositions": {
           "novelty_seeking": {
             "mean": 0.49,
-            "certainty": 0.44,
             "plasticity": 0.47,
             "current_activation": 0.52
           },
           "conformity": {
             "mean": 0.4,
-            "certainty": 0.48,
             "plasticity": 0.45,
             "current_activation": 0.36
           },
           "status_hunger": {
             "mean": 0.33,
-            "certainty": 0.4,
             "plasticity": 0.51,
             "current_activation": 0.31
           },
           "risk_tolerance": {
             "mean": 0.44,
-            "certainty": 0.45,
             "plasticity": 0.49,
             "current_activation": 0.47
           },
           "sociability": {
             "mean": 0.6,
-            "certainty": 0.5,
             "plasticity": 0.41,
             "current_activation": 0.68
           },
           "baseline_threat_sensitivity": {
             "mean": 0.78,
-            "certainty": 0.58,
             "plasticity": 0.3,
             "current_activation": 0.83
           },
           "aesthetic_appetite": {
             "mean": 0.43,
-            "certainty": 0.38,
             "plasticity": 0.52,
             "current_activation": 0.46
           },
           "ideological_rigidity": {
             "mean": 0.29,
-            "certainty": 0.39,
             "plasticity": 0.5,
             "current_activation": 0.25
           }
@@ -560,79 +486,66 @@
         "behavioral_dimensions": {
           "warmth": {
             "mean": 0.67,
-            "certainty": 0.49,
             "plasticity": 0.4,
             "current_activation": 0.74
           },
           "drive": {
             "mean": 0.52,
-            "certainty": 0.45,
             "plasticity": 0.45,
             "current_activation": 0.56
           },
           "grandiosity": {
             "mean": 0.16,
-            "certainty": 0.5,
             "plasticity": 0.39,
             "current_activation": 0.12
           },
           "validation_seeking": {
             "mean": 0.55,
-            "certainty": 0.46,
             "plasticity": 0.49,
             "current_activation": 0.62
           },
           "anxiety": {
             "mean": 0.76,
-            "certainty": 0.56,
             "plasticity": 0.37,
             "current_activation": 0.81
           },
           "control_pressure": {
             "mean": 0.37,
-            "certainty": 0.44,
             "plasticity": 0.48,
             "current_activation": 0.4
           },
           "hostility": {
             "mean": 0.18,
-            "certainty": 0.48,
             "plasticity": 0.44,
             "current_activation": 0.13
           },
           "suspicion": {
             "mean": 0.69,
-            "certainty": 0.51,
             "plasticity": 0.38,
             "current_activation": 0.73
           },
           "rigidity": {
             "mean": 0.39,
-            "certainty": 0.43,
             "plasticity": 0.47,
             "current_activation": 0.44
           },
           "withdrawal": {
             "mean": 0.61,
-            "certainty": 0.5,
             "plasticity": 0.39,
             "current_activation": 0.7
           },
           "volatility": {
             "mean": 0.38,
-            "certainty": 0.45,
             "plasticity": 0.48,
             "current_activation": 0.41
           },
           "attachment_seeking": {
             "mean": 0.58,
-            "certainty": 0.43,
             "plasticity": 0.51,
             "current_activation": 0.66
           },
           "distance_seeking": {
             "mean": 0.64,
-            "certainty": 0.49,
             "plasticity": 0.44,
             "current_activation": 0.72
           }
@@ -640,67 +553,56 @@
         "presentation_strategy": {
           "charm": {
             "mean": 0.45,
-            "certainty": 0.4,
             "plasticity": 0.51,
             "current_activation": 0.52
           },
           "compliance": {
             "mean": 0.52,
-            "certainty": 0.46,
             "plasticity": 0.48,
             "current_activation": 0.59
           },
           "superiority": {
             "mean": 0.08,
-            "certainty": 0.44,
             "plasticity": 0.45,
             "current_activation": 0.05
           },
           "detachment": {
             "mean": 0.57,
-            "certainty": 0.47,
             "plasticity": 0.44,
             "current_activation": 0.63
           },
           "seductiveness": {
             "mean": 0.07,
-            "certainty": 0.35,
             "plasticity": 0.5,
             "current_activation": 0.03
           },
           "competence_theater": {
             "mean": 0.58,
-            "certainty": 0.46,
             "plasticity": 0.45,
             "current_activation": 0.68
           },
           "moral_theater": {
             "mean": 0.21,
-            "certainty": 0.4,
             "plasticity": 0.49,
             "current_activation": 0.19
           },
           "strategic_opacity": {
             "mean": 0.84,
-            "certainty": 0.55,
             "plasticity": 0.26,
             "current_activation": 0.91
           },
           "cultivated_harmlessness": {
             "mean": 0.76,
-            "certainty": 0.5,
             "plasticity": 0.35,
             "current_activation": 0.88
           },
           "abrasive_boundary": {
             "mean": 0.12,
-            "certainty": 0.38,
             "plasticity": 0.5,
             "current_activation": 0.08
           },
           "ironic_distance": {
             "mean": 0.22,
-            "certainty": 0.41,
             "plasticity": 0.48,
             "current_activation": 0.18
           }
@@ -708,61 +610,51 @@
         "situational_state": {
           "exhaustion": {
             "mean": 0.5,
-            "certainty": 0.42,
             "plasticity": 0.81,
             "current_activation": 0.57
           },
           "scarcity_pressure": {
             "mean": 0.77,
-            "certainty": 0.52,
             "plasticity": 0.76,
             "current_activation": 0.86
           },
           "humiliation": {
             "mean": 0.61,
-            "certainty": 0.48,
             "plasticity": 0.8,
             "current_activation": 0.7
           },
           "panic": {
             "mean": 0.42,
-            "certainty": 0.41,
             "plasticity": 0.83,
             "current_activation": 0.49
           },
           "triumph": {
             "mean": 0.08,
-            "certainty": 0.36,
             "plasticity": 0.78,
             "current_activation": 0.04
           },
           "grief": {
             "mean": 0.46,
-            "certainty": 0.38,
             "plasticity": 0.73,
             "current_activation": 0.5
           },
           "overstimulation": {
             "mean": 0.61,
-            "certainty": 0.5,
             "plasticity": 0.8,
             "current_activation": 0.67
           },
           "grievance_activation": {
             "mean": 0.49,
-            "certainty": 0.44,
             "plasticity": 0.75,
             "current_activation": 0.55
           },
           "acute_shame": {
             "mean": 0.69,
-            "certainty": 0.48,
             "plasticity": 0.82,
             "current_activation": 0.78
           },
           "perceived_status_threat": {
             "mean": 0.73,
-            "certainty": 0.51,
             "plasticity": 0.76,
             "current_activation": 0.8
           }
@@ -778,49 +670,41 @@
         "voice_style": {
           "dryness": {
             "mean": 0.32,
-            "certainty": 0.39,
             "plasticity": 0.49,
             "current_activation": 0.35
           },
           "sarcastic_deflection": {
             "mean": 0.28,
-            "certainty": 0.36,
             "plasticity": 0.52,
             "current_activation": 0.24
           },
           "pointedness": {
             "mean": 0.24,
-            "certainty": 0.38,
             "plasticity": 0.5,
             "current_activation": 0.22
           },
           "sincerity_evasion": {
             "mean": 0.62,
-            "certainty": 0.5,
             "plasticity": 0.42,
             "current_activation": 0.69
           },
           "emotional_evasion": {
             "mean": 0.72,
-            "certainty": 0.54,
             "plasticity": 0.36,
             "current_activation": 0.78
           },
           "banter_as_boundary": {
             "mean": 0.45,
-            "certainty": 0.43,
             "plasticity": 0.48,
             "current_activation": 0.49
           },
           "verbal_aggression": {
             "mean": 0.09,
-            "certainty": 0.35,
             "plasticity": 0.52,
             "current_activation": 0.05
           },
           "plainspoken_directness": {
             "mean": 0.4,
-            "certainty": 0.42,
             "plasticity": 0.49,
             "current_activation": 0.37
           }
@@ -861,15 +745,15 @@
           "perceived_dimensions": {
             "warmth": {
               "mean": 0.44,
-              "certainty": 0.34,
               "plasticity": 0.55,
-              "current_activation": 0.4
+              "current_activation": 0.4,
+              "confidence": 0.34
             },
             "suspicion": {
               "mean": 0.83,
-              "certainty": 0.71,
               "plasticity": 0.28,
-              "current_activation": 0.9
+              "current_activation": 0.9,
+              "confidence": 0.71
             }
           },
           "beliefs": [
@@ -894,73 +778,61 @@
       "stance": {
         "trust": {
           "mean": 0.31,
-          "certainty": 0.38,
           "plasticity": 0.52,
           "current_activation": 0.27
         },
         "respect": {
           "mean": 0.42,
-          "certainty": 0.31,
           "plasticity": 0.49,
           "current_activation": 0.46
         },
         "resentment": {
           "mean": 0.18,
-          "certainty": 0.29,
           "plasticity": 0.55,
           "current_activation": 0.16
         },
         "dependence": {
           "mean": 0.24,
-          "certainty": 0.28,
           "plasticity": 0.56,
           "current_activation": 0.31
         },
         "fear": {
           "mean": 0.2,
-          "certainty": 0.25,
           "plasticity": 0.57,
           "current_activation": 0.22
         },
         "fascination": {
           "mean": 0.61,
-          "certainty": 0.35,
           "plasticity": 0.5,
           "current_activation": 0.76
         },
         "obligation": {
           "mean": 0.16,
-          "certainty": 0.22,
           "plasticity": 0.58,
           "current_activation": 0.13
         },
         "envy": {
           "mean": 0.05,
-          "certainty": 0.2,
           "plasticity": 0.5,
           "current_activation": 0.02
         },
         "moral_disgust": {
           "mean": 0.04,
-          "certainty": 0.21,
           "plasticity": 0.53,
           "current_activation": 0.03
         },
         "perceived_status_gap": {
           "mean": 0.29,
-          "certainty": 0.27,
           "plasticity": 0.54,
           "current_activation": 0.31
         },
         "expectation_of_care": {
           "mean": 0.22,
-          "certainty": 0.24,
           "plasticity": 0.58,
           "current_activation": 0.19
         },
         "expectation_of_betrayal": {
           "mean": 0.47,
-          "certainty": 0.37,
           "plasticity": 0.51,
           "current_activation": 0.52
         }
