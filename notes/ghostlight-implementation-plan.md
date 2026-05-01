@@ -35,9 +35,12 @@
    - Treat this as a debug/training seam for the larger sequential runtime, not
      as the final product shape.
 
-4. Build the sequential agent loop. New target.
+4. Build the scene-local sequential dialogue loop. New target.
    - Use `docs/architecture/sequential-agent-runtime.md` as the first runtime
      contract.
+   - Keep the product target narrow: procedural interactive dialogue trees for
+     games first, then scene-local character action with consequence
+     propagation, then longer procedural storyline generation later.
    - Build local awareness from scene state, agent state, relationships,
      memories, resources, affordances, and known constraints.
    - Keep action primitives concrete: speech, silence, movement, gesture,
@@ -56,6 +59,12 @@
      appraiser training data.
    - Keep author control at stage-setting and high-level constraints; do not
      require the author to script every beat.
+   - Emit game-useful artifacts: scene transcript, candidate player choices,
+     NPC response branches, state/memory/social-perception deltas, and
+     unresolved hooks.
+   - Keep out of scope for now: world-scale simulation, economy, city-scale
+     scheduling, autonomous offscreen factions, and long-horizon plot invention
+     without author scaffolding.
    - First prototype: rerun one Cold Wake story-lab beat through a deterministic
      local-awareness/projection-control renderer, then apply one conservative
      state mutation and validate the resulting fixture.

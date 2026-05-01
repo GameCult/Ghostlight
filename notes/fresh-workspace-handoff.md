@@ -91,9 +91,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Build the first deterministic sequential-agent prototype: local awareness,
-projection controls, action prompt, Qwen event proposal, conservative state
-mutation, and validation on one Cold Wake story-lab beat.
+Build the first deterministic scene-local dialogue prototype: local awareness,
+projection controls, action/dialogue prompt, Qwen event proposal, conservative
+state mutation, and validation on one Cold Wake story-lab beat.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -137,8 +137,12 @@ Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- build the first sequential runtime tick so an agent can act from local
-  awareness and mutate only the state it has authority to affect
+- build the first scene-local dialogue tick so an agent can act from local
+  awareness, produce branchable dialogue or action, and mutate only the state it
+  has authority to affect
+- keep the near-term product target to interactive dialogue trees and
+  scene-local consequences; defer world-scale simulation and autonomous
+  long-horizon plot machinery
 - use a frontier teacher model to generate/audit projection artifacts
 - train a smaller student projector only after the artifact schema, input
   slicer, and evaluator stabilize

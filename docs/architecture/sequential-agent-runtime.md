@@ -1,12 +1,18 @@
 # Sequential Agent Runtime
 
-Ghostlight's target is not a fancy dialogue prompt machine.
+Ghostlight's near-term target is not a general-purpose life simulator.
 
-The target is a sequential social-agent runtime: set the stage, choose which
-character is acting, give that character local awareness, let them act, apply
-consequences, mutate state, and continue. The author should not need to control
-every beat. The useful machine is the one that makes characters push the story
-sideways for reasons their state can explain.
+The near-term product target is procedural interactive dialogue: set up a scene,
+let characters choose believable responses, expose player-facing choices, and
+propagate consequences into state, memory, and social perception. Later, the
+same machinery can help generate longer storylines, but that is not license to
+build an everything-simulator right now. The little goblin will ask for a crown.
+Do not give it one.
+
+The runtime target for now is scene-local: choose which character is acting,
+give that character local awareness, let them act, apply consequences, mutate
+the relevant state, and continue until the scene produces a usable dialogue
+tree, scene transcript, or branch scaffold.
 
 Single-turn projection remains useful, but it is a microscope, not the animal.
 
@@ -23,9 +29,20 @@ One runtime tick should look like this:
 7. Append an event record with participant-local interpretations.
 8. Choose the next acting agent or end the scene.
 
-The author sets the initial scene and may steer with high-level constraints.
-The author should not need to decide every line, interruption, withdrawal,
-betrayal, repair attempt, confession, or slap. That is the point of the machine.
+The author sets the initial scene, player role if any, and high-level branch
+constraints. The author should not need to decide every line, interruption,
+withdrawal, refusal, or concession. That is the point of the machine.
+
+For game use, the loop should be able to emit:
+
+- a scene transcript
+- candidate player choices
+- NPC response branches
+- state/memory/social-perception deltas for each branch
+- unresolved hooks for later scenes
+
+If a feature does not help produce those artifacts, it belongs in the parking
+lot until the smaller machine works.
 
 ## Local Awareness
 
@@ -46,10 +63,10 @@ The local awareness pack should include:
 - what facts are unresolved
 - what the agent is allowed to mutate directly
 
-This is not reader legibility. This is operational state. If the scene itself is
-abstract and byzantine, the agent may still behave correctly inside that mess.
-The story may be hard to read for separate authoring reasons. Do not shove that
-problem into projection.
+This is not reader legibility or global story authorship. This is operational
+state for scene-local dialogue and action. If the scene itself is abstract and
+byzantine, the agent may still behave correctly inside that mess. Do not shove
+general prose quality or whole-plot design into this layer.
 
 ## Action Selection
 
@@ -176,6 +193,33 @@ notes. Later, train classifiers and appraisers on that corpus. The prototype
 should automate mechanical legality and visibility first, not pretend it has
 already learned human interpretation from twelve examples and a strong coffee.
 
+## Scope Boundary
+
+Build only what interactive dialogue generation needs first.
+
+In scope now:
+
+- scene-local agent turns
+- player/NPC dialogue branches
+- local action proposals
+- event records
+- manual reviewed appraisals
+- memory, belief, relationship, and activation deltas
+- branch consequences that can be carried into later scenes
+
+Out of scope for now:
+
+- full autonomous world simulation
+- economy simulation
+- city-scale scheduling
+- long-horizon plot invention without author scaffolding
+- autonomous factions moving offscreen
+- physical simulation beyond scene affordances
+- automatic social appraisal rules pretending to be trained classifiers
+
+The eventual storyline generator should grow out of reliable scene machinery,
+not the other way around.
+
 ## Projection's Narrower Job
 
 Projection still matters.
@@ -208,13 +252,13 @@ agent state + scene state
 
 The next implementation should not try to simulate a city. Calm down, wizard.
 
-Prototype one tiny loop:
+Prototype one tiny dialogue-scene loop:
 
 1. Load `examples/agent-state.cold-wake-story-lab.json`.
 2. Select one scene and one acting agent.
 3. Build a local awareness packet from existing state.
 4. Compile projection controls.
-5. Render a prompt that asks for an action, not just dialogue.
+5. Render a prompt that asks for an action or dialogue response.
 6. Send it to Qwen.
 7. Save the response as an event proposal.
 8. Apply a small deterministic mutation:
@@ -227,5 +271,7 @@ Prototype one tiny loop:
    - record the rationale as training data
 10. Validate the resulting fixture.
 
-The goal is not literary quality. The goal is to prove that a character can act
-from local state and leave the world slightly different behind them.
+The goal is not literary quality or autonomous plot generation. The goal is to
+prove that a character can drive a scene beat, produce branchable dialogue or
+action, and leave memory, relationship, social perception, and scene state
+slightly different behind them.

@@ -9,14 +9,14 @@ experiment:
 
 objective:
   primary: >
-    Turn Ghostlight into a legible machine for persistent autonomous social
-    agents that can support Aetheria content generation, dialogue scaffolding,
-    procedural drama, and eventual live-world simulation without collapsing
-    into prompt soup.
+    Turn Ghostlight into a legible machine for persistent socially aware
+    characters that can generate interactive dialogue trees for games, propagate
+    scene consequences into state and memory, and eventually support procedural
+    storyline generation without collapsing into prompt soup.
   current: >
     Move from hand-authored single-turn projection artifacts toward the first
-    sequential agent runtime tick: local awareness, action choice, event
-    proposal, conservative state mutation, and validation.
+    scene-local sequential dialogue tick: local awareness, action or dialogue
+    choice, event proposal, conservative state mutation, and validation.
 
 constraints:
   - Prefer explicit latent state over persona theater.
@@ -99,11 +99,12 @@ accepted_design:
   - Projection controls are now first-class in projection examples: frame_controls, authority_boundaries, object_custody, required_semantics, and forbidden_resolutions capture failure lessons before prompt prose is rendered.
   - Qwen response captures are validated training receipts, not loose logs; accepted, rejected, and useful-needs-revision outputs should keep review status, response kind, strengths, failures, and pipeline lessons.
   - The first complete Cold Wake short story, The Narrowest Possible Margin, is assembled from Ghostlight projection receipts plus in-session connective narration.
-  - Single-turn projection is a debug and training seam, not the final procedural-generation shape; the target runtime is sequential agents acting from local awareness, producing event proposals, and mutating bounded state.
+  - Single-turn projection is a debug and training seam, not the final procedural-generation shape; the near-term runtime target is scene-local interactive dialogue generation with agents acting from local awareness, producing event proposals, and mutating bounded state.
   - Generated action should become an event proposal resolved by mutation authority, not direct unrestricted edits to world or other-agent private state.
   - Sequential runtime action primitives should stay concrete; ask, refuse, offer, reveal, conceal, and request are communicative intentions carried by actions, while listener interpretation remains separate and may be wrong.
   - Early fuzzy social updates should be manual reviewed training data, not brittle rule-based appraisals pretending to understand relationships before the corpus exists.
+  - Scope boundary: generate interactive dialogue trees and scene-local consequences first; defer world-scale simulation, autonomous offscreen factions, economy, and long-horizon plot invention until the smaller machine works.
 
 current_status:
   summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, a revised Aetheria lore-grounding architecture, a lore grounding digest schema, the first draft Cold Wake historical grounding digest, a Cold Wake story-lab fixture, projection controls, validated Qwen capture receipts, and a complete Cold Wake short story assembled from accepted projection outputs.
-  next_action: Build the first deterministic sequential-agent prototype: local awareness, projection controls, action prompt, Qwen event proposal, conservative state mutation, and validation on one Cold Wake story-lab beat.
+  next_action: Build the first deterministic scene-local dialogue prototype: local awareness, projection controls, action/dialogue prompt, Qwen event proposal, conservative state mutation, and validation on one Cold Wake story-lab beat.
