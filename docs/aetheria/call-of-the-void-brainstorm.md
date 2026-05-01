@@ -4,6 +4,38 @@ Source: https://docs.google.com/document/d/1YWn5RWsciBxuaQ4l5TN2lAEz4okaQes-aiyx
 
 This is a local plaintext import of the scattered Call of the Void brainstorming doc. Treat it as raw source material, not canon. The current compact design note remains E:\Projects\AetheriaLore\Aetheria\Game Design\Call of the Void.md.
 
+## Current Canon Correction
+
+This brainstorm predates a major Aetheria timeline migration.
+
+The old version assumes a colony fleet or exploratory force was shunted into
+Elysium and slowly discovers that nobody is going home. That is no longer the
+live premise.
+
+Current canon, summarized in
+`E:\Projects\AetheriaLore\Aetheria\Worldbuilding\Pre-Elysium\From Sol to Elysium.md`,
+is that the FTL trigger sequestered the whole Solar system, with its fleets,
+institutions, corporate blocs, uploaded minds, labor systems, histories, and
+unresolved social machinery. Elysium is not a remote elsewhere that a fleet
+cannot leave. It is the sealed domain into which Sol itself was displaced.
+
+So the useful dramatic pressure is not "can the expedition return home?"
+because home came with them. The better pressure is:
+
+- there is no clean outside to return to
+- the systems people hoped to escape are trapped in Elysium too
+- the old order can no longer rely on the old universe remaining stable around
+  it
+- every faction is trying to define what survival, legitimacy, personhood, and
+  ownership mean now that Sol's whole inheritance has been exported into the
+  sealed domain
+- Cat's story should turn on the realization that starting over is not escape
+  when the machinery you fled arrived in the same disaster
+
+The raw notes below remain useful for cases, characters, tones, and comic
+cruelty. Treat their old "return home" twist as obsolete pressure, not active
+continuity.
+
 ---
 
 Potential ideas here, feel free to discuss/deplore/detour in comments. 

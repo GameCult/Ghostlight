@@ -62,8 +62,20 @@ The local source of truth is:
 
 The slice is a story-first Aetheria scope cut about Catastrophe "Cat" Marrigan:
 an out-of-work private investigator making ends meet with a failure-prone space
-taxi while people trapped inside Elysium slowly realize the old world is not
-coming back intact.
+taxi inside the aftermath of Sol's sequestration into Elysium.
+
+The older brainstorm frames the core twist as a colony fleet or exploratory
+force discovering that nobody is going home. That premise is obsolete. Current
+Aetheria canon says the FTL trigger displaced the whole Solar system into the
+sealed spacetime domain later called Elysium. Home did not stay behind. Home,
+with every corporate bloc, labor regime, upload abuse, political failure, and
+unresolved compromise, came through too.
+
+So the active Call of the Void pressure should be refactored from "there is no
+return ticket" into something meaner and more useful: there is no outside, no
+clean restart, and no frontier innocent of Sol's history. Cat can still try to
+outrun debt, coercion, legal pressure, or institutional rot, but Elysium proves
+that escape exported the machinery instead of dissolving it.
 
 Its useful shape is authored density:
 
@@ -73,7 +85,8 @@ Its useful shape is authored density:
 - recurring characters
 - faction contacts
 - campaign consequence
-- the social aftermath of return becoming fantasy
+- the social aftermath of realizing Sol's old failures are now Elysium's local
+  weather
 
 Ghostlight should help generate and manage:
 
@@ -89,6 +102,8 @@ Ghostlight should help generate and manage:
 - case premises and clue chains
 - passenger encounters that reveal denial, opportunism, homesickness, fear, or reckless celebration
 - continuity pressure from the sealed-domain premise
+- cases that expose how old Sol institutions mutate when there is no larger
+  outside to appeal to
 
 The important thing is that generated content should emerge from structured
 state instead of a prompt asking for "dramatic dialogue" and hoping the machine

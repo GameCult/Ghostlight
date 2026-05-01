@@ -26,6 +26,7 @@ constraints:
   - Keep persistent state small enough to rehydrate without drowning the next session.
   - Reuse proven machinery where it fits before inventing ornate nonsense.
   - Do not treat an older corridor-crisis game slice as the active Ghostlight implementation target.
+  - Do not use the obsolete Call of the Void colony-fleet return-home twist; current Aetheria canon sequesters the whole Solar system into Elysium.
 
 invariants:
   - The map is canonical and slow-changing.
@@ -72,6 +73,7 @@ accepted_design:
   - Performance, concealment, and mask maintenance are signal, not just obstruction.
   - The near-term Aetheria consumer is authoring support: Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding.
   - Ghostlight should build drama and narrative pressure, then project character-local dialogue contexts so characters can breathe and act from their own partial state.
+  - Call of the Void pressure should come from Sol's whole unresolved inheritance being trapped inside Elysium, not from a lone expedition discovering there is no way home.
 
 current_status:
   summary: Ghostlight has the Epiphany-style persistence spine and the first architecture payload for personality structure, signal classification, prompt projection, population scale, and Aetheria authoring support. It still has no runtime organs. The first Aetheria consumer target is Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding.
