@@ -1,0 +1,69 @@
+experiment:
+  name: Ghostlight
+  status: incubation
+  phase: phase_0_scaffold
+  premise: >
+    Build a durable research and implementation home for socially persistent
+    generative agents whose behavior emerges from latent state, culture,
+    memory, perception, and incentives rather than flat persona prompts.
+
+objective:
+  primary: >
+    Turn Ghostlight into a legible machine for persistent autonomous social
+    agents that can inhabit Aetheria and other worlds without collapsing into
+    prompt soup.
+  current: >
+    Stand up the repo spine, consolidate the architecture we already know, and
+    prepare the first implementation slices around state modeling, cultural
+    priors, signal classification, and prompt projection.
+
+constraints:
+  - Prefer explicit latent state over persona theater.
+  - Culture should shape priors and incentives, not stamp out clones.
+  - Prompt text is a projection surface, not the canonical store of truth.
+  - Keep persistent state small enough to rehydrate without drowning the next session.
+  - Reuse proven machinery where it fits before inventing ornate nonsense.
+
+invariants:
+  - The map is canonical and slow-changing.
+  - Scratch is temporary and disposable.
+  - Evidence is durable and distilled.
+  - Canonical agent state and per-agent perceived state must remain distinct.
+  - Listener misread is part of the model, not an error to flatten away.
+  - Personality must be modeled as layered organization, presentation, and situational activation, not just one bag of labels.
+
+data_flow:
+  observe:
+    - research notes
+    - implementation artifacts
+    - simulation requirements
+    - setting constraints
+  process:
+    - rehydrate from canonical state
+    - work one bounded organ
+    - verify the seam that matters
+    - distill only belief-changing evidence
+    - commit or cut the branch
+  cut:
+    - kill machinery that does not visibly serve the core model
+    - move volatile proof to git history or artifacts, not durable notes
+
+active_subgoals:
+  - Consolidate the architecture notes already proven useful in VoidBot into a Ghostlight-native home.
+  - Define the canonical agent state model, including first-class volatility, attachment-seeking, and distance-seeking.
+  - Define how culture shapes priors, incentives, masks, and economic behavior without turning populations into clones.
+  - Define the boundary between canonical signal, perceived signal, and prompt projection.
+
+accepted_design:
+  - Ghostlight owns the deeper agent-state, personality, culture, relationship, and prompt-projection architecture; other projects can remain consumers instead of shrines.
+  - Personality is layered: underlying organization, stable dispositions, behavioral dimensions, presentation strategy, situational activation, relationship state, and goals or values.
+  - The agent model must distinguish canonical state from per-agent perceived state.
+  - Prompts are rendered projections of perceived state, active memory, and scene pressure; they are not the authoritative store of truth.
+  - Culture acts as a prior-shaping and incentive field with distributions, covariance, scripts, reward gradients, taboo maps, and prestige structure.
+  - Synthetic dialogue from known hidden state is a valid bootstrap source for training signal classifiers, but utterances themselves are not ground truth.
+  - Performance, concealment, and mask maintenance are signal, not just obstruction.
+
+current_status:
+  summary: Ghostlight is a freshly spun repo with the Epiphany-style persistence spine, but no runtime organs yet.
+  next_action: Migrate or rewrite the existing Ghostlight-relevant research notes from VoidBot into this repo, then pick the first implementation organ: state schema, classifier data model, or prompt renderer.
+

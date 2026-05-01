@@ -1,0 +1,2 @@
+
+{"ts": "2026-05-01T17:06:46+00:00", "type": "scaffold", "status": "ok", "note": "Initialized Ghostlight with a stripped-down Epiphany-style persistence spine: canonical map, scratch, evidence, handoff, implementation plan, and Python state or compaction helpers."}

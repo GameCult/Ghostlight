@@ -1,0 +1,11 @@
+{
+  "name": "ghostlight",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Persistent research repo for socially situated generative agent architecture.",
+  "scripts": {
+    "state:status": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_state.py status",
+    "state:prepare-compaction": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_prepare_compaction.py"
+  }
+}
+
