@@ -65,8 +65,9 @@ emotion, stakes, prior assumptions, and social reinforcement.
 
 ## Label Set Policy
 
-The labels in `agent-state.required-fields.json` are the required v0 core.
-They are not comprehensive.
+The labels in `agent-state.required-fields.json` are the required v0 core,
+not per-character tags. They cover the axes Ghostlight currently treats as
+first-class.
 
 The validator requires each canonical agent fixture to include the full core
 set so agents can be compared on the same axes. That means Cat's example does
@@ -145,26 +146,41 @@ the agent is trying to maintain.
 
 ## Voice Style
 
-Voice style describes how the performed self comes out in language. The current
-v0 voice set is not comprehensive. It is a starter set added because Cat's
-prickly sarcasm was too important to leave hidden inside presentation strategy
-and behavioral dimensions.
+Voice style describes how the performed self comes out in language. The v0
+required vector covers broad communication mechanics, not only the most obvious
+quirks in the current examples.
 
 | Label | Meaning |
 | --- | --- |
 | `dryness` | Understated, deadpan, low-sentiment phrasing. |
+| `warmth` | Inviting, affectionate, reassuring, or socially soft phrasing. |
+| `formality` | Uses formal structure, titles, careful address, or institutionally correct phrasing. |
+| `verbosity` | Tends toward longer turns, elaboration, qualification, or verbal sprawl. |
+| `pace` | Moves quickly through turns, interruptions, replies, or topic shifts. |
+| `plainspoken_directness` | Speaks plainly, concretely, or bluntly rather than ornamenting or obscuring. |
+| `lexical_precision` | Chooses exact words, distinctions, definitions, or careful terms. |
+| `technical_density` | Packs speech with specialist terms, systems language, procedure, or analysis. |
+| `figurative_language` | Uses metaphor, image, analogy, poetic compression, or symbolic framing. |
+| `narrative_detail` | Explains through context, sequence, anecdote, or concrete scene detail. |
+| `emotional_explicitness` | Names feelings, needs, wounds, affection, fear, or attachment directly. |
 | `sarcastic_deflection` | Uses sarcasm to redirect, dodge, or blunt sincerity, fear, gratitude, or pain. |
 | `pointedness` | Cuts directly, sharply, or with barbed precision. |
 | `sincerity_evasion` | Avoids emotionally plain or vulnerable language even when the feeling is present. |
 | `emotional_evasion` | Avoids naming, dwelling in, or accepting emotional baggage. |
+| `self_disclosure` | Volunteers personal history, inner state, motives, or private stakes. |
+| `hedging` | Softens claims with uncertainty markers, caveats, deference, or exits. |
+| `certainty_marking` | Signals confidence, finality, authority, or refusal to leave claims open. |
+| `politeness` | Uses courtesy, mitigation, face-saving language, or social smoothing. |
+| `ritualized_address` | Uses formulaic greetings, titles, honorifics, oaths, prayers, or ceremonial phrases. |
+| `register_switching` | Shifts between speech registers depending on audience, status, danger, or role. |
+| `dialect_marking` | Shows regional, class, occupational, subcultural, or community-specific speech markers. |
+| `humor` | Uses jokes, wit, absurdity, teasing, or comic framing as a regular speech tool. |
 | `banter_as_boundary` | Uses joking exchange to maintain distance while staying socially engaged. |
 | `verbal_aggression` | Uses language to attack, intimidate, punish, or dominate. |
-| `plainspoken_directness` | Speaks plainly, concretely, or bluntly rather than ornamenting or obscuring. |
-
-Future voice labels probably need to cover things like lyrical speech,
-formality, verbosity, hedging, coded politeness, theatricality, dialect,
-register switching, technical compression, and ritualized address. Not yet.
-We do not need the whole wardrobe before we know where the floor is.
+| `conversational_dominance` | Takes, holds, redirects, or controls conversational floor and agenda. |
+| `listening_responsiveness` | Reflects, tracks, validates, or adapts to what the other person just said. |
+| `question_asking` | Uses questions to probe, invite, corner, teach, test, or keep the other person talking. |
+| `profanity` | Uses taboo, vulgar, sacred, or deliberately coarse language. |
 
 ## Situational State
 

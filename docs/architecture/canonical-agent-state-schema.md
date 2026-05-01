@@ -107,20 +107,37 @@ Human beings are regrettably efficient little porcupines.
 
 `voice_style` describes how that performed self comes out in language.
 
-For Cat, the important voice handles are explicit now:
+The required voice handles are:
 
 - `dryness`
+- `warmth`
+- `formality`
+- `verbosity`
+- `pace`
+- `plainspoken_directness`
+- `lexical_precision`
+- `technical_density`
+- `figurative_language`
+- `narrative_detail`
+- `emotional_explicitness`
 - `sarcastic_deflection`
 - `pointedness`
 - `sincerity_evasion`
 - `emotional_evasion`
+- `self_disclosure`
+- `hedging`
+- `certainty_marking`
+- `politeness`
+- `ritualized_address`
+- `register_switching`
+- `dialect_marking`
+- `humor`
 - `banter_as_boundary`
 - `verbal_aggression`
-- `plainspoken_directness`
-
-This list is not comprehensive. It is a v0 starter set. Future labels will
-likely need to cover formality, verbosity, lyricism, hedging, ritual politeness,
-dialect, register switching, technical compression, and other language habits.
+- `conversational_dominance`
+- `listening_responsiveness`
+- `question_asking`
+- `profanity`
 
 So Cat's prickliness is not only a dialogue prompt instruction. It is backed by
 canonical state:

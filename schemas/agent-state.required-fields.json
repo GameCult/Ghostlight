@@ -77,13 +77,34 @@
     ],
     "voice_style": [
       "dryness",
+      "warmth",
+      "formality",
+      "verbosity",
+      "pace",
+      "plainspoken_directness",
+      "lexical_precision",
+      "technical_density",
+      "figurative_language",
+      "narrative_detail",
+      "emotional_explicitness",
       "sarcastic_deflection",
       "pointedness",
       "sincerity_evasion",
       "emotional_evasion",
+      "self_disclosure",
+      "hedging",
+      "certainty_marking",
+      "politeness",
+      "ritualized_address",
+      "register_switching",
+      "dialect_marking",
+      "humor",
       "banter_as_boundary",
       "verbal_aggression",
-      "plainspoken_directness"
+      "conversational_dominance",
+      "listening_responsiveness",
+      "question_asking",
+      "profanity"
     ]
   }
 }

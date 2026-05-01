@@ -110,13 +110,34 @@ machinery.
 These describe how the performed self comes out in language:
 
 - dryness
+- warmth
+- formality
+- verbosity
+- pace
+- plainspoken directness
+- lexical precision
+- technical density
+- figurative language
+- narrative detail
+- emotional explicitness
 - sarcastic deflection
 - pointedness
 - sincerity evasion
 - emotional evasion
+- self disclosure
+- hedging
+- certainty marking
+- politeness
+- ritualized address
+- register switching
+- dialect marking
+- humor
 - banter as boundary
 - verbal aggression
-- plainspoken directness
+- conversational dominance
+- listening responsiveness
+- question asking
+- profanity
 
 This layer matters because presentation strategy and voice are related but not
 identical. Performing a prickly self may come out as dry sarcasm, clipped
