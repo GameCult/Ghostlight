@@ -2,9 +2,15 @@
 
 Ghostlight's near-term target is not a general-purpose life simulator.
 
-The near-term product target is procedural interactive dialogue: set up a scene,
-let characters choose believable responses, expose player-facing choices, and
-propagate consequences into state, memory, and social perception.
+The near-term product target is procedural interactive dialogue in the game
+sense: branching scenes where choices can be speech, silence, movement, object
+use, refusal, revelation, concealment, violence, withdrawal, trade, or any other
+scene-valid action. "Dialogue tree" does not mean a tree made only of spoken
+lines. It means an interactive branch structure for a character encounter.
+
+Ghostlight should set up a scene, generate plausible things the protagonist or
+NPCs could do, generate responses from the people present, and propagate the
+consequences into world state, memory, belief, and social perception.
 
 The long-term target is broader. The same classifiers, appraisers, and
 projection models should eventually operate inside a simulated game world with
@@ -15,8 +21,8 @@ shortage. Also do not build the whole economy today. Both cliffs are stupid.
 
 The runtime target for now is scene-local: choose which character is acting,
 give that character local awareness, let them act, apply consequences, mutate
-the relevant state, and continue until the scene produces a usable dialogue
-tree, scene transcript, or branch scaffold.
+the relevant state, and continue until the scene produces a usable branching
+scene tree, scene transcript, or branch scaffold.
 
 Single-turn projection remains useful, but it is a microscope, not the animal.
 
@@ -40,7 +46,7 @@ withdrawal, refusal, or concession. That is the point of the machine.
 For game use, the loop should be able to emit:
 
 - a scene transcript
-- candidate player choices
+- candidate player choices, including speech and non-speech actions
 - NPC response branches
 - state/memory/social-perception deltas for each branch
 - unresolved hooks for later scenes
@@ -75,9 +81,31 @@ state for scene-local dialogue and action. If the scene itself is abstract and
 byzantine, the agent may still behave correctly inside that mess. Do not shove
 general prose quality or whole-plot design into this layer.
 
-## Action Selection
+## Branch Choices And Action Selection
 
 The action model must allow more than speech.
+
+For a protagonist scene, Ghostlight should be able to generate several
+plausible choices for what the protagonist can do next. For example, if Cat is
+interacting with another character, the generated choices might include:
+
+- say the honest thing badly
+- deflect with a joke
+- leave before the other person can answer
+- hand over evidence
+- hide evidence
+- accept help while pretending not to need it
+- threaten to walk
+- spend scarce money
+- break a device
+- touch someone gently
+- slap someone
+
+Those choices should come from Cat's state, scene affordances, resources,
+relationship pressure, and goals. They should not be generic verbs glued to a
+persona card. Each branch should carry expected consequence surfaces, such as
+trust risk, reputation risk, resource cost, information exposure, or future
+obligation.
 
 Keep the action vocabulary small and concrete. Do not turn every possible
 speech act into a separate tool. `ask`, `refuse`, `offer`, `reveal`, `conceal`,
@@ -177,6 +205,21 @@ The resolver should decide:
 - which current activations changed
 - which options opened or closed
 
+In a branching scene tree, each branch should carry its own consequence packet.
+If Cat chooses to lie, accept help, shove someone, spend money, or reveal a
+secret, that branch should record what changed and what might matter later.
+Consequences can include:
+
+- trust lost or gained
+- suspicion raised or lowered
+- obligation created
+- debt created or paid
+- resource spent
+- information revealed or concealed
+- relationship rupture or repair
+- faction or reputation pressure changed
+- future scene hook opened or closed
+
 The first implementation can be conservative and partly deterministic. A bad
 resolver will build narrative sludge faster than a bad line of dialogue will.
 No pressure. Tiny little bear trap.
@@ -202,13 +245,13 @@ already learned human interpretation from twelve examples and a strong coffee.
 
 ## Scope Boundary
 
-Build interactive dialogue generation first, but shape the data for later
+Build interactive branching scene generation first, but shape the data for later
 open-world use.
 
 In scope now:
 
 - scene-local agent turns
-- player/NPC dialogue branches
+- player/NPC dialogue and action branches
 - local action proposals
 - event records
 - manual reviewed appraisals
@@ -242,8 +285,8 @@ Out of implementation scope for now:
 - automatic social appraisal rules pretending to be trained classifiers
 
 The eventual storyline generator, economic behavior model, and faction decision
-model should grow out of reliable scene machinery and reviewed decision data,
-not the other way around.
+model should grow out of reliable branching-scene machinery and reviewed
+decision data, not the other way around.
 
 ## Projection's Narrower Job
 
@@ -277,7 +320,7 @@ agent state + scene state
 
 The next implementation should not try to simulate a city. Calm down, wizard.
 
-Prototype one tiny dialogue-scene loop:
+Prototype one tiny branching-scene loop:
 
 1. Load `examples/agent-state.cold-wake-story-lab.json`.
 2. Select one scene and one acting agent.
@@ -298,5 +341,6 @@ Prototype one tiny dialogue-scene loop:
 
 The goal is not literary quality or autonomous plot generation. The goal is to
 prove that a character can drive a scene beat, produce branchable dialogue or
-action, and leave memory, relationship, social perception, and scene state
-slightly different behind them.
+non-dialogue action, trigger plausible responses from other characters, and
+leave memory, relationship, social perception, and scene state slightly
+different behind them.

@@ -137,9 +137,9 @@ Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- build the first scene-local dialogue tick so an agent can act from local
-  awareness, produce branchable dialogue or action, and mutate only the state it
-  has authority to affect
+- build the first scene-local branching tick so an agent can act from local
+  awareness, produce branchable speech or non-speech action, trigger NPC
+  responses, and mutate only the state it has authority to affect
 - keep the near-term product target to interactive dialogue trees and
   scene-local consequences
 - preserve training-data hooks for future open-world behavior, iterated

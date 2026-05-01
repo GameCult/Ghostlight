@@ -38,9 +38,9 @@
 4. Build the scene-local sequential dialogue loop. New target.
    - Use `docs/architecture/sequential-agent-runtime.md` as the first runtime
      contract.
-   - Keep the product target narrow: procedural interactive dialogue trees for
-     games first, then scene-local character action with consequence
-     propagation, then longer procedural storyline generation later.
+   - Keep the product target narrow: procedural branching scene trees for games
+     first. "Dialogue tree" means speech and non-speech actions, not only
+     spoken lines.
    - Do not make the training data dialogue-only. Preserve labels and state
      hooks for open-world contexts, iterated decisions, consumer behavior,
      scarcity, reputation, faction pressure, and institution decision-making.
@@ -63,8 +63,12 @@
    - Keep author control at stage-setting and high-level constraints; do not
      require the author to script every beat.
    - Emit game-useful artifacts: scene transcript, candidate player choices,
-     NPC response branches, state/memory/social-perception deltas, and
-     unresolved hooks.
+     including non-speech actions, NPC response branches,
+     state/memory/social-perception deltas, and unresolved hooks.
+   - For protagonist scenes, generate several plausible things the protagonist
+     could do from state and affordances, then generate NPC responses and branch
+     consequences such as trust loss, suspicion, obligation, debt, resource
+     cost, information exposure, or future scene hooks.
    - Keep out of implementation scope for now: world-scale simulation loops,
      economy simulation loops, city-scale scheduling, autonomous offscreen
      factions as full actors, and long-horizon plot invention without author
