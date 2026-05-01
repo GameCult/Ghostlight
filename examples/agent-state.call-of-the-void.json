@@ -1039,6 +1039,77 @@
       "unresolved_incident_ids": [
         "event-drone-lie"
       ]
+    },
+    {
+      "relationship_id": "rel-oz-cat",
+      "source_id": "oz_operator",
+      "target_id": "cat_marrigan",
+      "stance": {
+        "trust": {
+          "mean": 0.44,
+          "plasticity": 0.56,
+          "current_activation": 0.39
+        },
+        "respect": {
+          "mean": 0.58,
+          "plasticity": 0.45,
+          "current_activation": 0.63
+        },
+        "resentment": {
+          "mean": 0.09,
+          "plasticity": 0.53,
+          "current_activation": 0.07
+        },
+        "dependence": {
+          "mean": 0.31,
+          "plasticity": 0.6,
+          "current_activation": 0.38
+        },
+        "fear": {
+          "mean": 0.42,
+          "plasticity": 0.61,
+          "current_activation": 0.55
+        },
+        "fascination": {
+          "mean": 0.52,
+          "plasticity": 0.55,
+          "current_activation": 0.6
+        },
+        "obligation": {
+          "mean": 0.34,
+          "plasticity": 0.57,
+          "current_activation": 0.42
+        },
+        "envy": {
+          "mean": 0.18,
+          "plasticity": 0.48,
+          "current_activation": 0.2
+        },
+        "moral_disgust": {
+          "mean": 0.03,
+          "plasticity": 0.5,
+          "current_activation": 0.02
+        },
+        "perceived_status_gap": {
+          "mean": 0.46,
+          "plasticity": 0.54,
+          "current_activation": 0.51
+        },
+        "expectation_of_care": {
+          "mean": 0.4,
+          "plasticity": 0.58,
+          "current_activation": 0.48
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.36,
+          "plasticity": 0.6,
+          "current_activation": 0.44
+        }
+      },
+      "summary": "Oz reads Cat as dangerous but potentially protective, and keeps helping while testing whether the suspicion has teeth.",
+      "unresolved_incident_ids": [
+        "event-drone-lie"
+      ]
     }
   ],
   "events": [

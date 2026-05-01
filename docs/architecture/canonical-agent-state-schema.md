@@ -176,6 +176,10 @@ care. Fundamental attribution bias also lives here: an observer can mistake
 exceptional behavior for stable character. None of that requires corrupting the
 canonical state.
 
+Relationship stance is directional. If Cat has a relationship record toward Oz,
+Oz needs a separate record toward Cat. Mutual presence does not imply symmetric
+trust, fear, obligation, dependence, or expectation of betrayal.
+
 ## Dialogue Context Packs
 
 Scenes contain `dialogue_context_packs`.

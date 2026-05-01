@@ -218,7 +218,9 @@ they deserve their own canonical storage slot.
 
 ## Relationship Stance
 
-Relationship stance is directional. `A -> B` can differ sharply from `B -> A`.
+Relationship stance is directional. A `source_id -> target_id` record describes
+how the source feels and predicts the target, not a shared relationship object.
+Reciprocal records can disagree.
 
 | Label | Meaning |
 | --- | --- |

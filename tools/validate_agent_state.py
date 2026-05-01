@@ -165,14 +165,19 @@ def validate_document(document: dict[str, Any], required: dict[str, list[str]], 
 
     event_ids = {event["event_id"] for event in document["events"]}
 
+    relationship_pairs: set[tuple[str, str]] = set()
     for index, relationship in enumerate(document["relationships"]):
         path = f"relationships[{index}]"
         require_keys(relationship, ["relationship_id", "source_id", "target_id", "stance", "summary"], path)
         require(relationship["source_id"] in agent_id_set, f"{path}.source_id references unknown agent")
         require(relationship["target_id"] in agent_id_set, f"{path}.target_id references unknown agent")
+        relationship_pairs.add((relationship["source_id"], relationship["target_id"]))
         validate_variable_map(relationship["stance"], required["relationship_stance"], f"{path}.stance")
         for event_id in relationship.get("unresolved_incident_ids", []):
             require(event_id in event_ids, f"{path}.unresolved_incident_ids references unknown event: {event_id}")
+
+    for source_id, target_id in relationship_pairs:
+        require((target_id, source_id) in relationship_pairs, f"relationships missing reciprocal edge: {target_id} -> {source_id}")
 
     for index, event in enumerate(document["events"]):
         path = f"events[{index}]"

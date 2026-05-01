@@ -80,6 +80,7 @@ accepted_design:
   - Defensive verbal responses are derived during projection from underlying organization, dispositions, behavioral dimensions, presentation strategy, situational pressure, relationship context, and voice style rather than stored as a separate canonical layer.
   - Sarcastic deflection, sincerity evasion, emotional evasion, banter-as-boundary, and verbal aggression are target emergent behaviors for projection tests.
   - Dialogue context packs are positive-context payloads; unknown or author-only material is omitted rather than listed as forbidden context, while known secrets are handled through goals, memories, beliefs, and presentation constraints.
+  - Relationship stance is directional; reciprocal agent pairs need separate edges because trust, fear, obligation, dependence, and betrayal expectations are not symmetric by default.
 
 current_status:
   summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, and the initial canonical agent-state schema seam for Call of the Void-style authoring examples. The schema is still v0 and should be hardened before building prompt projection on top of it.
