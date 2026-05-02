@@ -65,7 +65,8 @@ state and re-entry discipline.
   - boundary and plan for grounding training data in authored Aetheria history
     while treating Elysium gameplay-era outcomes as procedural branch space;
     includes the source-first doctrine for checking AetheriaLore and patching
-    blocking lore gaps before generation
+    blocking lore gaps before generation, plus a `future_branch` lane for
+    reviewed possible post-Rupture Elysium futures
 - `docs/architecture/lore-grounding-digest-format.md`
   - human-facing format guide for cultural, factional, institutional, role, and
     speaker-boundary lore digests
@@ -84,8 +85,9 @@ state and re-entry discipline.
     institution/faction/consumer decision models
 - `docs/architecture/training-plan.md`
   - concrete enumeration of trainable Ghostlight stages, including each stage's
-    inputs, outputs, likely model architecture, artifact family, and first
-    training gate
+    inputs, outputs, likely model architecture, artifact family, first training
+    gate, and timeline coverage across historical grounded, transition
+    grounded, and future-branch examples
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
     historical projection feedstock rather than the active product target
@@ -297,5 +299,7 @@ decides which machinery runs, and emits glue prose. That output should stay
 game-engine-shaped even while the prose lives in model imagination. The
 lore/tone goal is not a separate adapter; it is a responder trained on strong
 timeline-spread Aetheria responses until the setting's assumptions become
-native priors. Do not materialize another capture until it has no failure or
-repair notes.
+native priors. The timeline plan now includes generated possible futures in
+Elysium as reviewed `future_branch` artifacts so models learn post-Rupture
+concepts without canonizing every shiny catastrophe they produce. Do not
+materialize another capture until it has no failure or repair notes.

@@ -1,8 +1,9 @@
 # Aetheria Lore Grounding Architecture
 
-Ghostlight needs two different Aetheria modes:
+Ghostlight needs three different Aetheria modes:
 
 - grounded historical training
+- post-Rupture procedural future training
 - procedural Elysium generation
 
 Do not blur them. That is how a useful mystery becomes accidental canon with a
@@ -25,6 +26,17 @@ grounded Ghostlight training data. They are downstream procedural territory.
 For grounded training data, Ghostlight should start from the authored historical
 archive: late Sol, Pre-Elysium institutions, factional flashpoints, personhood
 conflicts, labor regimes, political collapse, and the FTL trigger.
+
+That does not mean Ghostlight should avoid Elysium futures. The trained models
+will need to handle post-Rupture concepts: Aether, pseudospace, temporal
+nonlinearity, spirits, altered substrates, necrotech, mutable bodies, and all
+the new ways power learns to monetize miracles while pretending it found ethics
+in a drawer.
+
+Elysium future data belongs in a separate lane. It should be generated,
+reviewed, and labeled as possible future branch material unless a specific
+outcome is promoted. It teaches the model how post-Rupture worlds feel and
+behave without claiming those futures already happened.
 
 ## Revised Architecture
 
@@ -53,9 +65,21 @@ grounded pre-Elysium priors
   -> optional promoted canon after review
 ```
 
-The first flow teaches the projector what grounded social pressure looks like.
-The second flow uses that learned machinery to generate Elysium outcomes
-without pretending those outcomes were already settled lore.
+Post-Rupture future training flow:
+
+```text
+authored Elysium concepts and constraints
+  -> possible future premise
+  -> procedural branch fixture
+  -> coordinator plan and projected local contexts
+  -> generated action, dialogue, and event consequences
+  -> reviewed future-branch training artifact
+  -> optional promoted branch or discarded branch after review
+```
+
+The first flow teaches the machine what grounded social pressure looks like.
+The second and third flows teach it how those pressures mutate under Elysium's
+stranger conditions without pretending every generated future is settled canon.
 
 ## Source Priority
 
@@ -65,7 +89,9 @@ For projection training, prefer sources in this order:
    context.
 2. Grounded transition material around the FTL trigger and displacement.
 3. Historical fiction or scene fragments that remain canon-compatible.
-4. Elysium-era procedural fixtures marked as provisional branch material.
+4. Authored post-Elysium concept documents that define altered conditions,
+   technologies, species, metaphysics, or social pressures.
+5. Elysium-era procedural fixtures marked as provisional branch material.
 
 Call of the Void and Cat/Oz can remain useful for testing projection mechanics,
 speaker-local boundaries, and prompt shape. They should not be treated as the
@@ -151,11 +177,18 @@ Use explicit fixture status:
 `historical_grounded` and `transition_grounded` examples can become primary
 training data.
 
-`procedural_branch` examples are useful for testing and generation but should
-not train the projector as if they were fixed lore.
+`procedural_branch` and `future_branch` examples are useful for testing,
+generation, responder training, coordinator training, and post-Rupture concept
+coverage, but should not train any model as if the branch facts were fixed
+canon.
 
 `promoted_branch` examples are procedural outputs that have been reviewed and
 accepted into canon or into a specific authored continuity.
+
+Use `future_branch` when the point of the fixture is to explore possible
+post-Rupture Elysium outcomes and weird-concept behavior. Use
+`procedural_branch` for ordinary gameplay-era branch fixtures whose main job is
+scene/runtime testing.
 
 ## Projection Rules
 
@@ -171,6 +204,48 @@ Grounded projection examples should prove:
 If the lore source is too vague for a convincing scene, stop and elaborate the
 lore slice first. Do not train the model to pave over missing social reality
 with confident fog.
+
+## Post-Rupture Future Branches
+
+Future-branch generation should be deliberate, not a slush pile of glittering
+possibilities with no handles.
+
+Each possible future fixture should declare:
+
+- which authored post-Elysium concepts it exercises
+- which facts are fixed source constraints
+- which facts are generated branch assumptions
+- which branch facts are local to this possible future
+- which facts are eligible for promotion later
+- which generated facts must not leak back into grounded historical training
+- what new social pressure the weird concept creates
+- what old pre-Elysium pressure is returning in a new costume
+
+Good future branches should stress the model with conditions it cannot learn
+from late-Sol history alone:
+
+- Aether as infrastructure, ecology, religion, weapon, medicine, or status good
+- pseudospace as transit, concealment, displacement, exile, or labor terrain
+- temporal nonlinearity as memory, debt, evidence, grief, insurance, or law
+- spirits as persons, tools, contaminants, witnesses, ancestors, or frauds
+- necrotech as care, extraction, continuity, punishment, or labor capture
+- mutable bodies and species boundaries as liberation, class marker, liability,
+  taboo, or supply chain
+- post-Rupture institutions rebuilding old hierarchies with new miracles
+
+These branches should feed:
+
+- Aetheria responder training, so the model learns post-Rupture assumptions
+- coordinator training, so the story runtime can handle weird scene premises
+- appraiser and relationship training, so characters misread new phenomena in
+  socially grounded ways
+- institution/faction/consumer training, so economic and political behavior can
+  respond to miracles as markets, threats, privileges, and dependencies
+
+Keep source provenance strict. A branch can invent a local future, but it should
+say what it invented. The machine may hallucinate futures under supervision; it
+does not get to launder them into the vault while everyone is looking at the
+shiny ghost.
 
 ## Operating Doctrine
 
@@ -224,7 +299,11 @@ should stay out of prompt text so they do not harden by accident.
 3. Choose one authored historical flashpoint from the Aetheria archive.
 4. Build the first `historical_grounded` agent-state fixture from that slice.
 5. Produce reviewed projection examples from that fixture.
-6. Compare those examples against Cat/Oz to separate grounded historical
+6. Create the first `future_branch` fixture from authored post-Elysium concepts
+   after the coordinator artifact schema exists.
+7. Compare those examples against Cat/Oz to separate grounded historical
    pressure from procedural Elysium branch generation.
 
-Ground the machine in the past. Let it hallucinate the future under supervision.
+Ground the machine in the past. Then make it hallucinate possible futures under
+supervision, with labels sharp enough that the hallucinations cannot steal a
+badge.

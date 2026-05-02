@@ -137,6 +137,10 @@ proposes world-state changes. Keep those outputs structured enough for future
 game-engine integration instead of letting them rot as chat-only intuition.
 The concrete training plan now enumerates the trainable stages, their inputs,
 outputs, likely model families, artifact families, and first corpus gates.
+It now uses three timeline lanes: `historical_grounded`,
+`transition_grounded`, and `future_branch`. Future branches are required
+training/evaluation material for post-Rupture Elysium concepts, but generated
+branch assumptions must not be treated as canon unless promoted.
 
 ## Current Direction
 
@@ -168,6 +172,11 @@ prompt/rendering fix.
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
 era Elysium outcomes.
+Post-Rupture future branches should be generated too, under explicit branch
+labels, so the models learn Aetheria concepts that only exist after the
+Rupture: Aether, pseudospace, temporal nonlinearity, spirits, necrotech,
+mutable bodies, altered substrates, and the fresh little institutional crimes
+that grow around them.
 
 The evaluation follow-up fixed the immediate v0 schema issues:
 

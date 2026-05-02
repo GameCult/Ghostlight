@@ -193,6 +193,12 @@
      the first reviewed artifact seam.
    - Use authored historical Aetheria flashpoints, not malleable Elysium
      gameplay outcomes, as the first grounded lore-training corpus.
+   - Also generate reviewed post-Rupture Elysium `future_branch` fixtures so
+     models learn Aetheria's weird future concepts under supervision rather
+     than treating late-Sol history as the whole training universe.
+   - Future branches must label source-backed post-Elysium concepts separately
+     from generated branch assumptions, promotion candidates, and non-canon
+     local facts.
    - Maintain `schemas/lore-grounding-digest.schema.json`,
      `examples/lore-grounding/`, and `tools/validate_lore_grounding.py` as the
      cultural and factional pressure seam for grounded fixtures.
@@ -231,6 +237,10 @@
      Ghostlight receipts, so lore, tone, factional preconceptions, species
      affordances, and institutional pressure become native responder priors
      rather than prompt handholding.
+   - Include future-branch post-Rupture responses before expecting the responder
+     to handle Elysium concepts such as Aether, pseudospace, temporal
+     nonlinearity, spirits, necrotech, mutable bodies, and altered substrates
+     without heavy prompt scaffolding.
    - Keep deterministic gates as code even after fine-tuning: visibility,
      action legality, object custody, resource accounting, schema validation,
      source provenance, mutation authority, prompt leakage checks, and Ink

@@ -9,6 +9,33 @@ resource math, source provenance, Ink compilation, and mutation gates. Models
 handle judgment, language, social inference, prioritization, and coordination.
 Every model-facing judgment should leave a reviewed artifact.
 
+## Timeline Coverage
+
+Ghostlight training should cover three timeline lanes:
+
+- `historical_grounded`: authored late-Sol and pre-Elysium history, used for
+  primary grounded social pressure.
+- `transition_grounded`: the rupture, displacement, and early Elysium shock,
+  used for continuity between old institutions and altered conditions.
+- `future_branch`: possible post-Rupture Elysium futures, used to teach models
+  Aetheria's stranger concepts without canonizing generated outcomes.
+
+The future branch lane is not optional. The models need to handle post-Rupture
+concepts such as Aether, pseudospace, temporal nonlinearity, spirits, necrotech,
+mutable bodies, altered substrates, and new species or institutional forms. Late
+Sol teaches the old damage. Elysium teaches what the damage does when reality
+starts handing out knives with metaphysics on the receipt.
+
+Future-branch examples must label:
+
+- source constraints from authored post-Elysium concepts
+- generated branch assumptions
+- local branch facts
+- promotion eligibility
+- non-canon facts that must not leak into grounded training
+- the post-Rupture concept being exercised
+- the old social pressure being re-expressed
+
 ## Runtime Stack
 
 Target runtime flow:
@@ -122,6 +149,8 @@ Inputs:
 - target location or institution
 - involved factions, species, roles, and social movements
 - author constraints
+- fixture lane: `historical_grounded`, `transition_grounded`, or
+  `future_branch`
 
 Outputs:
 
@@ -129,9 +158,11 @@ Outputs:
 - cultural pressure fields
 - factional misread maps
 - material constraints
+- post-Rupture concept constraints, when applicable
 - speaker knowledge boundaries
 - author-only exclusions
 - open lore gaps
+- generated branch assumptions, for future branches
 
 Training architecture:
 
@@ -152,6 +183,8 @@ First training gate:
 - 25 accepted digests across distinct Aetheria eras or institutions
 - 25 rejected/source-violation examples
 - evaluator catches unsupported room-scale assumptions
+- at least 5 future-branch digests exercising authored post-Elysium concepts
+  before training a responder expected to handle Elysium weirdness
 
 ### 2. Coordinator Or Story Runtime
 
@@ -176,6 +209,8 @@ Inputs:
 - available deterministic tools
 - available soft organs
 - prior reviewer notes
+- fixture lane and canon status
+- post-Rupture concept constraints for future branches
 
 Outputs:
 
@@ -188,6 +223,7 @@ Outputs:
 - unresolved hooks carried forward
 - glue prose
 - reviewer-facing rationale
+- generated branch assumptions and promotion candidates, for future branches
 
 Training architecture:
 
@@ -211,6 +247,8 @@ First training gate:
 - 25 rejected coordinator turns with labeled failures
 - structured world-state refs present in every accepted example
 - glue prose never treated as canonical state
+- at least 10 accepted future-branch coordinator turns before using the
+  coordinator to generate post-Rupture arcs without close review
 
 ### 3. Memory And Lore Retriever
 
@@ -230,6 +268,7 @@ Inputs:
 - memory store
 - lore grounding corpus
 - query or coordinator intent
+- fixture lane and canon status
 
 Outputs:
 
@@ -237,6 +276,8 @@ Outputs:
 - ranked lore/source refs
 - rejected irrelevant refs
 - retrieval rationale or labels
+- source-constraint versus branch-assumption labels when retrieving future
+  branch context
 
 Training architecture:
 
@@ -275,6 +316,7 @@ Inputs:
 - lore grounding digest
 - observed event, when responding
 - projection controls
+- branch/canon status and generated-assumption boundaries
 
 Outputs:
 
@@ -286,6 +328,7 @@ Outputs:
 - voice surface cues
 - rendered prompt/context text
 - audit refs to source state
+- explicit distinction between source-backed facts and branch-local assumptions
 
 Training architecture:
 
@@ -307,6 +350,8 @@ First training gate:
 - 50 rejected examples with clear failure labels
 - stable input slicer
 - evaluator catches private-state leakage and raw-state soup
+- evaluator catches future-branch assumptions leaking into grounded historical
+  examples
 
 ### 5. Character Agent Or Responder
 
@@ -326,6 +371,8 @@ Inputs:
 - local affordances
 - character-local goals, memories, relationship read, and constraints
 - Aetheria responder priors from training corpus, eventually
+- post-Rupture concept constraints when the turn is in Elysium future branch
+  territory
 
 Outputs:
 
@@ -351,6 +398,8 @@ Training artifacts:
 - negative examples for wrong body, wrong lore, wrong voice, omniscience, prompt
   leakage, and agency collapse
 - timeline-spread Aetheria response corpus
+- future-branch responses exercising post-Rupture concepts without claiming
+  branch facts as canon
 
 First training gate:
 
@@ -358,6 +407,8 @@ First training gate:
 - 100 rejected turns with labeled failures
 - at least 50 non-speech or mixed-action examples
 - evaluation includes speaker-local secret boundaries and body affordances
+- at least 50 accepted post-Rupture future-branch turns before expecting the
+  responder to handle Elysium-specific weirdness with reduced lore handholding
 
 ### 6. Event Resolver
 
@@ -378,6 +429,7 @@ Inputs:
 - authority rules
 - location constraints
 - participant visibility
+- branch/canon status for future generated facts
 
 Outputs:
 
@@ -386,6 +438,7 @@ Outputs:
 - perceived-by participant list
 - blocked or modified action result
 - unresolved facts
+- branch-local mechanical facts versus promoted facts
 
 Training architecture:
 
@@ -424,6 +477,7 @@ Inputs:
 - cultural priors
 - scene pressure
 - known facts and suspected facts
+- post-Rupture concept being interpreted, if any
 
 Outputs:
 
@@ -434,6 +488,7 @@ Outputs:
 - proposed memory candidate
 - proposed relationship implications
 - confidence notes
+- concept-specific misread labels, for weird Elysium phenomena
 
 Training architecture:
 
@@ -454,6 +509,8 @@ First training gate:
 - 300 participant appraisal examples
 - balanced set of correct reads, misreads, ambiguous reads, and biased reads
 - examples include fundamental attribution bias and confidence movement
+- future-branch examples include socially grounded misreads of post-Rupture
+  phenomena
 
 ### 8. State Mutator
 
@@ -473,6 +530,7 @@ Inputs:
 - mutation authority constraints
 - accepted memory candidates
 - relationship/perception implications
+- canon status and promotion eligibility
 
 Outputs:
 
@@ -498,6 +556,7 @@ Training artifacts:
 - rejected patches
 - deferred unresolved facts
 - validator failures
+- branch-local patches separated from promoted state patches
 
 First training gate:
 
@@ -619,6 +678,7 @@ Inputs:
 - legal authority
 - risk and cost models
 - local information and misreads
+- post-Rupture infrastructure or concept constraints, when applicable
 
 Outputs:
 
@@ -628,6 +688,7 @@ Outputs:
 - resource deltas proposed
 - reputation/faction pressure implications
 - rationale
+- branch-local policy or market assumptions
 
 Training architecture:
 
@@ -646,6 +707,8 @@ First training gate:
 - do not train until scene-local machinery produces reliable decision examples
 - collect at least 500 reviewed decision examples across consumer and
   institutional contexts
+- include future-branch decisions where post-Rupture miracles become markets,
+  privileges, liabilities, dependencies, or weapons
 
 ## Training Order
 
@@ -659,12 +722,14 @@ Recommended order:
 4. Build evaluator labels from existing failures.
 5. Fine-tune or LoRA the Aetheria responder first, because strong response data
    directly improves visible output and reduces lore handholding.
-6. Train projector only if deterministic projection becomes a bottleneck.
-7. Train appraiser and relationship updater after enough manual mutation receipts
+6. Add future-branch post-Rupture examples before claiming the responder can
+   handle Elysium-era concepts without heavy prompting.
+7. Train projector only if deterministic projection becomes a bottleneck.
+8. Train appraiser and relationship updater after enough manual mutation receipts
    exist.
-8. Train state mutator last among social organs because bad mutation corrupts
+9. Train state mutator last among social organs because bad mutation corrupts
    the world state.
-9. Train institution/faction/consumer models after scene-local decisions provide
+10. Train institution/faction/consumer models after scene-local decisions provide
    enough grounded examples.
 
 ## Minimum Corpus Before First Fine-Tune
@@ -676,9 +741,13 @@ A first useful Aetheria responder fine-tune wants:
 - 50 rejected/negative examples with clear labels
 - at least 5 factions or institutional contexts
 - at least 3 time periods or historical flashpoints
+- at least 50 accepted future-branch post-Rupture turns before using the model
+  for Elysium-era generation with reduced lore scaffolding
 - source refs for every grounded example
 - explicit local-context boundary for every turn
 - no unreviewed procedural branch material mixed into grounded canon data
+- clear labels separating source-backed Elysium concepts from generated future
+  branch facts
 
 A first coordinator fine-tune wants:
 
