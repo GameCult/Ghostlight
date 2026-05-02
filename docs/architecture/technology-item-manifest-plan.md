@@ -13,6 +13,13 @@ builds, market dependencies, quest hooks, factory politics, salvage value, and
 what a desperate mechanic can realistically bolt into a hull without creating a
 beautiful obituary.
 
+The economy is bigger than ship parts. Players moving freight should carry the
+ordinary manufactured life of colonies too: habitat fittings, clinic equipment,
+interface furniture, ritual goods, industrial consumables, food-processing
+systems, maintenance packs, education kits, luxury nonsense, and all the other
+things a settlement consumes without ever bolting them into a laser. A trade
+economy made only of gear components would be a very fancy skeleton.
+
 ## Source Premise
 
 Aetheria game design wants ships to be tools, homes, status symbols, and
@@ -68,8 +75,9 @@ technology pipeline should act as a content refinery:
 1. Ground the request in Aetheria lore: faction, era, location, tech base,
    industrial limits, political pressure, and known source constraints.
 2. Decompose the concept into item families, assemblies, subassemblies,
-   components, materials, processes, tooling, facilities, expertise, and
-   supply-chain dependencies.
+   components, colony-consumed manufactured goods, materials, processes,
+   tooling, facilities, expertise, demand profiles, and supply-chain
+   dependencies.
 3. Map each candidate onto the Aetheria-Economy blueprint model:
    `SimpleCommodityData`, `CompoundCommodityData`, `ConsumableItemData`,
    `GearData`, or another `EquippableItemData` subclass.
@@ -122,9 +130,15 @@ Blueprint classes currently relevant to Ghostlight:
   - maps to `SimpleCommodity` runtime instances with quantity
 - `CompoundCommodityData`
   - technological blueprints for crafted commodities, assemblies,
-    subassemblies, processed materials, and other manufactured economic units
+    subassemblies, processed materials, colony-consumed trade goods, and other
+    manufactured economic units
+  - not every compound commodity is an input to higher-level gear; many are
+    finished manufactured goods consumed by colonies, habitats, institutions,
+    ships, clinics, farms, sanctuaries, and cultural communities
   - maps to `CompoundCommodity` runtime instances whose quality and provenance
-    can affect downstream items
+    can affect downstream items, settlement demand, service quality, comfort,
+    productivity, legitimacy, maintenance load, or faction-specific living
+    standards
 - `ConsumableItemData`
   - usable consumables with behaviors, duration, stackability, icon, and
     effectiveness curve
@@ -144,14 +158,15 @@ produce reviewed candidate technological blueprints for Aetheria-Economy data
 classes:
 
 ```text
-material/feedstock            -> SimpleCommodityData
-component/subassembly/assembly -> CompoundCommodityData
-consumable usable item         -> ConsumableItemData
-equippable usable item         -> GearData or another EquippableItemData subclass
-weapon                         -> WeaponItemData
-hull/frame/cargo/docking item  -> HullData, CargoBayData, DockingBayData, etc.
-runtime cargo or inventory     -> SimpleCommodity, CompoundCommodity,
-                                  ConsumableItem, or EquippableItem instances
+material/feedstock                   -> SimpleCommodityData
+component/subassembly/assembly        -> CompoundCommodityData
+manufactured colony trade good        -> CompoundCommodityData
+consumable usable item                -> ConsumableItemData
+equippable usable item                -> GearData or another EquippableItemData subclass
+weapon                                -> WeaponItemData
+hull/frame/cargo/docking item         -> HullData, CargoBayData, DockingBayData, etc.
+runtime cargo, inventory, or freight  -> SimpleCommodity, CompoundCommodity,
+                                         ConsumableItem, or EquippableItem instances
 ```
 
 The conceptual layers below are still useful. They describe how Ghostlight
@@ -234,6 +249,12 @@ Every explored technology or item family should be able to answer:
 - what systems it plugs into
 - what components and subassemblies it requires
 - which assemblies are swappable upgrade surfaces
+- whether it is a finished colony-consumed trade good rather than an assembly
+  input
+- what population, institution, habitat, ship, or faction demand profile
+  consumes it
+- what service, comfort, legitimacy, safety, productivity, cultural continuity,
+  or maintenance need it satisfies
 - which materials, processes, or specialists are bottlenecks
 - which factions or manufacturers can build it
 - which factions can maintain it but not manufacture it
@@ -284,6 +305,24 @@ control wafer, and contamination seal.
 A `component` is the smallest useful gameplay/logistics unit worth tracking.
 Do not split screws unless screws are the point of the quest. The machine has
 standards. Barely.
+
+A `manufactured_trade_good` is a finished compound commodity whose primary role
+is economic consumption rather than becoming a higher-level gear assembly. It
+may still have components and quality tiers, but the point is that colonies,
+ships, habitats, clinics, sanctuaries, temples, schools, or faction enclaves
+consume it as part of ordinary life and institutional function.
+
+Example: a Navigator wet-interface cradle would likely be a
+`CompoundCommodityData` candidate. It is not a ship weapon or a laser component.
+It is a manufactured interface good consumed by Navigator habitats, route
+annexes, mixed-species relay stations, sanctuary registrars, and other spaces
+where cetacean or aquatic-adapted cognition must participate in shared
+procedure. Its demand profile might be driven by Navigator population share,
+route-steward institutions, translation infrastructure, acoustic signaling
+standards, maintenance water quality, clinic/sanctuary access, and local
+prestige around dignified embodiment. Quality might affect comfort, signal
+clarity, translation latency, stress load, infection risk, repair frequency, or
+institutional legitimacy.
 
 A `blueprint` is the technological construction record represented by the
 appropriate Aetheria-Economy `*Data` class. It should be specific enough for a
@@ -410,7 +449,9 @@ artifact:
 - legal restrictions and export controls
 - black-market or pirate adaptations
 - blueprint records for starting equipment, ship systems, weapons, habitats,
-  medical systems, industrial tooling, and logistics infrastructure
+  medical systems, industrial tooling, logistics infrastructure, colony
+  furnishings, habitat equipment, institutional interface goods, and finished
+  manufactured trade goods consumed by settlements
 
 This matters because Elysium branches inherit different practical capabilities
 from the same shared Sol history depending on what each faction controls in that
@@ -474,6 +515,8 @@ alter:
 - technology availability
 - component compatibility
 - assembly upgrade paths
+- colony-consumed manufactured goods
+- demand profiles
 - materials and manufacturing processes
 - supply bottlenecks
 - faction access
@@ -492,6 +535,8 @@ Tech/item exploration should emit reviewed artifacts for future models:
 - item manifest records
 - component breakdown records
 - assembly compatibility records
+- colony trade-good records
+- demand-profile records
 - faction tech-base records
 - supply-chain dependency records
 - technology discovery records
@@ -533,6 +578,8 @@ Minimum fields:
 - open lore gaps
 - item family or technology id
 - object layer
+- consumption role: assembly input, finished trade good, consumable, gear, or
+  metadata-only
 - target Aetheria-Economy class
 - target blueprint id, when updating an existing record
 - candidate blueprint fields
@@ -541,6 +588,7 @@ Minimum fields:
 - parent assembly refs
 - child component refs
 - materials/process/tooling/facility refs
+- colony, habitat, institutional, cultural, or factional consumption drivers
 - faction/manufacturer access
 - prerequisites
 - bottlenecks
@@ -577,15 +625,19 @@ During worldbuilding exploration:
 
 1. If a scene implies a new item, component, supply bottleneck, or technology
    dependency, emit a manifest candidate.
-2. If a faction decision changes what can be manufactured, maintained, bought,
+2. If a scene implies a manufactured good that a colony, habitat, ship,
+   institution, species community, or faction consumes, emit a
+   `CompoundCommodityData` candidate with a demand profile, even if it is not an
+   assembly input for gear.
+3. If a faction decision changes what can be manufactured, maintained, bought,
    salvaged, counterfeited, or upgraded, emit a faction tech-base delta.
-3. If an innovation appears in Elysium, label its branch lineage and prior
+4. If an innovation appears in Elysium, label its branch lineage and prior
    conditions.
-4. If existing lore names a technology but lacks blueprint detail, elaborate it
+5. If existing lore names a technology but lacks blueprint detail, elaborate it
    into a candidate manifest with explicit inferred fields and source-gap notes.
-5. If the item relies on unsupported lore, patch AetheriaLore or mark a source
+6. If the item relies on unsupported lore, patch AetheriaLore or mark a source
    gap before treating it as stable.
-6. If an item is cool but breaks logistics, keep it as a rejected artifact with
+7. If an item is cool but breaks logistics, keep it as a rejected artifact with
    the failure label. Beautiful nonsense is still training data if tagged before
    it bites someone.
 

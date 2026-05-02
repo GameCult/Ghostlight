@@ -68,6 +68,13 @@ and specialized `EquippableItemData` subclasses, while runtime `ItemInstance`
 objects belong to scene, inventory, cargo, provenance, branding, and world-state
 simulation.
 
+`CompoundCommodityData` candidates are not limited to gear assemblies or
+manufacturing inputs. They also cover finished manufactured trade goods consumed
+by colonies, habitats, institutions, ships, clinics, species communities, and
+faction enclaves. A generated detail like a Navigator wet-interface cradle is
+therefore both world texture and a possible colony demand item, not just prose
+decoration.
+
 ## Runtime Stack
 
 Target runtime flow:
@@ -321,6 +328,9 @@ Outputs:
   beat
 - item, component, assembly, supply-chain, or faction tech-base deltas implied
   by the scene or branch decision
+- colony-consumed manufactured goods and demand-profile deltas implied by
+  habitats, institutions, species communities, interface needs, rituals, or
+  living standards
 
 Training architecture:
 
@@ -900,7 +910,8 @@ Outputs:
 - candidate Aetheria-Economy technological blueprint records
 - `SimpleCommodityData` candidates for fungible resources and feedstock
 - `CompoundCommodityData` candidates for assemblies, subassemblies,
-  components, processed materials, and manufactured economic units
+  components, processed materials, colony-consumed trade goods, and
+  manufactured economic units
 - `ConsumableItemData` candidates for usable consumables
 - `GearData` or other `EquippableItemData` subclass candidates for usable
   equipment, ship systems, hulls, cargo structures, docking systems, and weapons

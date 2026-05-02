@@ -71,6 +71,10 @@ current gold-data route.
   detail as available to Ghostlight.
 - Technology exploration should emit database-shaped item/assembly/component/
   supply-chain candidates mapped toward Aetheria-Economy's CultCache item model.
+  `CompoundCommodityData` includes colony-consumed manufactured trade goods, not
+  only gear assemblies or manufacturing inputs; a Navigator wet-interface cradle
+  is the current example of generated texture that should become a possible
+  demand-profiled trade-good candidate.
 
 ## Current Next Action
 
