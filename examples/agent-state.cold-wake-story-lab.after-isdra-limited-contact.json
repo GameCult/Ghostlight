@@ -1,0 +1,3390 @@
+{
+  "schema_version": "ghostlight.agent_state.v0",
+  "world": {
+    "world_id": "aetheria-cold-wake-story-lab",
+    "setting": "Aetheria pre-Elysium historical flashpoint: Cold Wake Panic",
+    "time": {
+      "label": "2893, during the Cold Wake Panic"
+    },
+    "canon_context": [
+      "Cold Wake Panic made thermal stealth a corridor-law crisis rather than a boutique engineering problem.",
+      "Ganymede corridor institutions inherit rescue obligations, hazard ledgers, and route-steward legitimacy from the Ganymede Route Compact.",
+      "PSC insurers are trying to make thermal posture legible through permit classes, dump windows, telemetry mandates, and sanctionable categories.",
+      "The suspicious vessel's true cargo and firmware provenance are not established at the start of the story."
+    ],
+    "ambient_pressures": [
+      {
+        "pressure_id": "pressure-cold-wake-category-failure",
+        "label": "quiet-running classifications no longer match lived corridor risk",
+        "intensity": 0.91
+      },
+      {
+        "pressure_id": "pressure-rescue-ledger-legitimacy",
+        "label": "rescue obligations are being tested by classification ambiguity",
+        "intensity": 0.87
+      },
+      {
+        "pressure_id": "pressure-possible-cognitum-provenance",
+        "label": "possible person-derived firmware hidden behind routing-product language",
+        "intensity": 0.72
+      }
+    ]
+  },
+  "agents": [
+    {
+      "agent_id": "maer_tidecall",
+      "identity": {
+        "name": "Maer Tidecall",
+        "roles": [
+          "Navigator route steward",
+          "Ganymede corridor compact delegate"
+        ],
+        "origin": "Cetacean Navigator corridor culture, Ganymede route institutions",
+        "public_description": "A soft-spoken route steward whose calm tends to make hurried people feel judged by the furniture.",
+        "private_notes": [
+          "Maer fears this tribunal will teach every scared ship that rescue now waits behind insurer grammar."
+        ]
+      },
+      "canonical_state": {
+        "underlying_organization": {
+          "self_coherence": {
+            "mean": 0.72,
+            "plasticity": 0.28,
+            "current_activation": 0.76
+          },
+          "contingent_worth": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "shame_sensitivity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "reciprocity_capacity": {
+            "mean": 0.86,
+            "plasticity": 0.23,
+            "current_activation": 0.91
+          },
+          "mentalization_quality": {
+            "mean": 0.82,
+            "plasticity": 0.24,
+            "current_activation": 0.85
+          },
+          "authenticity_tolerance": {
+            "mean": 0.66,
+            "plasticity": 0.34,
+            "current_activation": 0.72
+          },
+          "mask_rigidity": {
+            "mean": 0.44,
+            "plasticity": 0.41,
+            "current_activation": 0.52
+          },
+          "external_regulation_dependence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "stable_dispositions": {
+          "novelty_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conformity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "status_hunger": {
+            "mean": 0.24,
+            "plasticity": 0.39,
+            "current_activation": 0.22
+          },
+          "risk_tolerance": {
+            "mean": 0.54,
+            "plasticity": 0.37,
+            "current_activation": 0.62
+          },
+          "sociability": {
+            "mean": 0.68,
+            "plasticity": 0.29,
+            "current_activation": 0.74
+          },
+          "baseline_threat_sensitivity": {
+            "mean": 0.63,
+            "plasticity": 0.34,
+            "current_activation": 0.71
+          },
+          "aesthetic_appetite": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ideological_rigidity": {
+            "mean": 0.58,
+            "plasticity": 0.31,
+            "current_activation": 0.69
+          }
+        },
+        "behavioral_dimensions": {
+          "interpersonal_warmth": {
+            "mean": 0.72,
+            "plasticity": 0.34,
+            "current_activation": 0.66
+          },
+          "drive": {
+            "mean": 0.62,
+            "plasticity": 0.31,
+            "current_activation": 0.73
+          },
+          "grandiosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "validation_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "anxiety": {
+            "mean": 0.46,
+            "plasticity": 0.52,
+            "current_activation": 0.61
+          },
+          "control_pressure": {
+            "mean": 0.55,
+            "plasticity": 0.44,
+            "current_activation": 0.76
+          },
+          "hostility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "suspicion": {
+            "mean": 0.57,
+            "plasticity": 0.42,
+            "current_activation": 0.71
+          },
+          "rigidity": {
+            "mean": 0.48,
+            "plasticity": 0.36,
+            "current_activation": 0.62
+          },
+          "withdrawal": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "volatility": {
+            "mean": 0.24,
+            "plasticity": 0.53,
+            "current_activation": 0.29
+          },
+          "attachment_seeking": {
+            "mean": 0.58,
+            "plasticity": 0.43,
+            "current_activation": 0.61
+          },
+          "distance_seeking": {
+            "mean": 0.31,
+            "plasticity": 0.41,
+            "current_activation": 0.36
+          }
+        },
+        "presentation_strategy": {
+          "charm": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "compliance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "superiority": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "detachment": {
+            "mean": 0.54,
+            "plasticity": 0.38,
+            "current_activation": 0.63
+          },
+          "seductiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "competence_theater": {
+            "mean": 0.48,
+            "plasticity": 0.44,
+            "current_activation": 0.58
+          },
+          "moral_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "strategic_opacity": {
+            "mean": 0.52,
+            "plasticity": 0.38,
+            "current_activation": 0.59
+          },
+          "cultivated_harmlessness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "abrasive_boundary": {
+            "mean": 0.19,
+            "plasticity": 0.52,
+            "current_activation": 0.21
+          },
+          "ironic_distance": {
+            "mean": 0.22,
+            "plasticity": 0.48,
+            "current_activation": 0.24
+          }
+        },
+        "voice_style": {
+          "dryness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "verbal_warmth": {
+            "mean": 0.64,
+            "plasticity": 0.38,
+            "current_activation": 0.58
+          },
+          "formality": {
+            "mean": 0.62,
+            "plasticity": 0.35,
+            "current_activation": 0.71
+          },
+          "verbosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pace": {
+            "mean": 0.34,
+            "plasticity": 0.46,
+            "current_activation": 0.29
+          },
+          "plainspoken_directness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lexical_precision": {
+            "mean": 0.68,
+            "plasticity": 0.34,
+            "current_activation": 0.74
+          },
+          "technical_density": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "technical_compression": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "figurative_language": {
+            "mean": 0.58,
+            "plasticity": 0.44,
+            "current_activation": 0.61
+          },
+          "lyricism": {
+            "mean": 0.49,
+            "plasticity": 0.42,
+            "current_activation": 0.55
+          },
+          "narrative_detail": {
+            "mean": 0.64,
+            "plasticity": 0.39,
+            "current_activation": 0.7
+          },
+          "emotional_explicitness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pointedness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "self_disclosure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hedging": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "certainty_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "coded_politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ritualized_address": {
+            "mean": 0.76,
+            "plasticity": 0.28,
+            "current_activation": 0.82
+          },
+          "register_switching": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "dialect_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "theatricality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humor": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conversational_dominance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "listening_responsiveness": {
+            "mean": 0.79,
+            "plasticity": 0.26,
+            "current_activation": 0.84
+          },
+          "question_asking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "profanity": {
+            "mean": 0.05,
+            "plasticity": 0.42,
+            "current_activation": 0.02
+          }
+        },
+        "situational_state": {
+          "exhaustion": {
+            "mean": 0.48,
+            "plasticity": 0.78,
+            "current_activation": 0.62
+          },
+          "scarcity_pressure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humiliation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "panic": {
+            "mean": 0.3,
+            "plasticity": 0.8,
+            "current_activation": 0.44
+          },
+          "triumph": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grief": {
+            "mean": 0.41,
+            "plasticity": 0.72,
+            "current_activation": 0.49
+          },
+          "overstimulation": {
+            "mean": 0.44,
+            "plasticity": 0.76,
+            "current_activation": 0.58
+          },
+          "grievance_activation": {
+            "mean": 0.52,
+            "plasticity": 0.68,
+            "current_activation": 0.69
+          },
+          "acute_shame": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "perceived_status_threat": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "values": [
+          {
+            "value_id": "value-rescue-before-category",
+            "label": "A route that abandons distress to preserve clean categories is already broken.",
+            "priority": 0.93,
+            "unforgivable_if_betrayed": true
+          },
+          {
+            "value_id": "value-compact-memory",
+            "label": "The Compact is a living obligation, not a ceremonial origin story.",
+            "priority": 0.84,
+            "unforgivable_if_betrayed": false
+          }
+        ]
+      },
+      "goals": [
+        {
+          "goal_id": "goal-keep-rescue-live",
+          "description": "Keep the unidentified quiet-running vessel eligible for rescue while telemetry is incomplete.",
+          "scope": "scene",
+          "priority": 0.91,
+          "emotional_stake": "If rescue waits for perfect categories, the corridor teaches fear to go silent.",
+          "blockers": [
+            "PSC freeze order",
+            "contradictory thermal telemetry",
+            "possible Cognitum provenance"
+          ],
+          "status": "active"
+        }
+      ],
+      "memories": {
+        "episodic": [
+          {
+            "memory_id": "memory-convoy-loss-season",
+            "summary": "Maer was trained on the season of preventable convoy losses that made the old asset model untenable before the Ganymede Route Compact.",
+            "salience": 0.8,
+            "confidence": 0.72,
+            "linked_event_ids": []
+          }
+        ],
+        "semantic": [
+          {
+            "memory_id": "memory-compact-rescue-ledgers",
+            "summary": "Rescue ledgers decide whether route law is trusted by crews who have nothing left to bargain with.",
+            "salience": 0.93,
+            "confidence": 0.9,
+            "linked_event_ids": []
+          }
+        ],
+        "relationship_summaries": [
+          {
+            "memory_id": "memory-maer-isdra-current-read",
+            "summary": "Isdra is not stupid or cruel; she is frightened enough to mistake category discipline for control over reality.",
+            "salience": 0.69,
+            "confidence": 0.58,
+            "linked_event_ids": [
+              "event-risk-freeze-opening"
+            ],
+            "linked_relationship_id": "rel-maer-isdra"
+          },
+          {
+            "memory_id": "memory-maer-sella-current-read",
+            "summary": "Sella can make care material without pretending it is cheap.",
+            "salience": 0.72,
+            "confidence": 0.67,
+            "linked_event_ids": [],
+            "linked_relationship_id": "rel-maer-sella"
+          },
+          {
+            "memory_id": "memory-maer-veyr-current-read",
+            "summary": "Veyr's product language is too clean around something that may have learned to suffer.",
+            "salience": 0.76,
+            "confidence": 0.61,
+            "linked_event_ids": [],
+            "linked_relationship_id": "rel-maer-veyr"
+          },
+          {
+            "memory_id": "memory-maer-sella-conditional-bay",
+            "summary": "Sella would not call the packet cargo, but she would only hold a cold repair bay if Maer attached ledger backing and labor ownership.",
+            "salience": 0.82,
+            "confidence": 0.71,
+            "linked_event_ids": [
+              "event-sanctuary-conditional-repair-bay"
+            ],
+            "linked_relationship_id": "rel-maer-sella"
+          },
+          {
+            "memory_id": "memory-maer-veyr-category-offer",
+            "summary": "Veyr would not name provenance or personhood, but he offered a deniable category that might let rescue touch the artifact before the heat window closes.",
+            "salience": 0.84,
+            "confidence": 0.66,
+            "linked_event_ids": [
+              "event-veyr-category-offer"
+            ],
+            "linked_relationship_id": "rel-maer-veyr"
+          },
+          {
+            "memory_id": "memory-maer-isdra-limited-contact",
+            "summary": "Isdra authorized limited rescue contact under freeze using Veyr's category, requiring Navigator ledger signature and forbidding personhood, ancestry, or custody claims.",
+            "salience": 0.86,
+            "confidence": 0.78,
+            "linked_event_ids": [
+              "event-isdra-limited-contact"
+            ],
+            "linked_relationship_id": "rel-maer-isdra"
+          }
+        ]
+      },
+      "perceived_state_overlays": [
+        {
+          "observer_agent_id": "maer_tidecall",
+          "target_agent_id": "isdra_vel",
+          "perceived_dimensions": {
+            "control_pressure": {
+              "observed_activation": 0.84,
+              "attributed_disposition": 0.76,
+              "confidence": 0.66
+            },
+            "anxiety": {
+              "observed_activation": 0.71,
+              "attributed_disposition": 0.62,
+              "confidence": 0.58
+            },
+            "interpersonal_warmth": {
+              "observed_activation": 0.21,
+              "attributed_disposition": 0.28,
+              "confidence": 0.49
+            },
+            "rigidity": {
+              "observed_activation": 0.8,
+              "attributed_disposition": 0.7,
+              "confidence": 0.62
+            }
+          },
+          "beliefs": [
+            {
+              "belief_id": "belief-maer-isdra-fears-precedent",
+              "subject_id": "isdra_vel",
+              "claim_type": "motive_inference",
+              "claim": "Isdra fears that one humanitarian exception will become a corridor-wide attack on category law.",
+              "confidence": 0.67,
+              "evidence_event_ids": [
+                "event-risk-freeze-opening"
+              ],
+              "visibility": "private",
+              "emotional_charge": 0.48
+            }
+          ],
+          "distortions": [
+            "care_underread",
+            "institutional_suspicion_transfer"
+          ]
+        },
+        {
+          "observer_agent_id": "maer_tidecall",
+          "target_agent_id": "veyr_oss",
+          "perceived_dimensions": {
+            "strategic_opacity": {
+              "observed_activation": 0.9,
+              "attributed_disposition": 0.82,
+              "confidence": 0.71
+            },
+            "interpersonal_warmth": {
+              "observed_activation": 0.1,
+              "attributed_disposition": 0.18,
+              "confidence": 0.53
+            },
+            "suspicion": {
+              "observed_activation": 0.78,
+              "attributed_disposition": 0.72,
+              "confidence": 0.64
+            }
+          },
+          "beliefs": [
+            {
+              "belief_id": "belief-maer-veyr-hiding-personhood",
+              "subject_id": "veyr_oss",
+              "claim_type": "motive_inference",
+              "claim": "Veyr's refusal to use person nouns is probably defensive, not merely technical.",
+              "confidence": 0.62,
+              "visibility": "private",
+              "emotional_charge": 0.73
+            }
+          ],
+          "distortions": [
+            "hostile_attribution",
+            "mask_overfocus"
+          ]
+        },
+        {
+          "observer_agent_id": "maer_tidecall",
+          "target_agent_id": "sella_ren",
+          "perceived_dimensions": {
+            "interpersonal_warmth": {
+              "observed_activation": 0.7,
+              "attributed_disposition": 0.75,
+              "confidence": 0.62
+            },
+            "control_pressure": {
+              "observed_activation": 0.7,
+              "attributed_disposition": 0.61,
+              "confidence": 0.62
+            }
+          },
+          "beliefs": [
+            {
+              "belief_id": "belief-maer-sella-care-has-ledger-price",
+              "subject_id": "sella_ren",
+              "claim_type": "motive_inference",
+              "claim": "Sella will keep a possible person from being called cargo, but only if the rescue path has material backing.",
+              "confidence": 0.64,
+              "evidence_event_ids": [
+                "event-sanctuary-conditional-repair-bay"
+              ],
+              "visibility": "private",
+              "emotional_charge": 0.52
+            }
+          ],
+          "distortions": []
+        }
+      ]
+    },
+    {
+      "agent_id": "isdra_vel",
+      "identity": {
+        "name": "Isdra Vel",
+        "roles": [
+          "PSC risk adjudicator",
+          "corridor insurer tribunal officer"
+        ],
+        "origin": "Pan-Solar Consortium insurer apparatus, Ganymede relay tribunal layer",
+        "public_description": "A tribunal officer with a voice like polished glass and a schedule full of disasters trying to become precedent.",
+        "private_notes": [
+          "Isdra knows the categories are failing and is terrified that admitting it aloud will make them fail faster."
+        ]
+      },
+      "canonical_state": {
+        "underlying_organization": {
+          "self_coherence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "contingent_worth": {
+            "mean": 0.57,
+            "plasticity": 0.43,
+            "current_activation": 0.71
+          },
+          "shame_sensitivity": {
+            "mean": 0.62,
+            "plasticity": 0.39,
+            "current_activation": 0.76
+          },
+          "reciprocity_capacity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "mentalization_quality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "authenticity_tolerance": {
+            "mean": 0.28,
+            "plasticity": 0.45,
+            "current_activation": 0.21
+          },
+          "mask_rigidity": {
+            "mean": 0.78,
+            "plasticity": 0.27,
+            "current_activation": 0.88
+          },
+          "external_regulation_dependence": {
+            "mean": 0.7,
+            "plasticity": 0.35,
+            "current_activation": 0.79
+          }
+        },
+        "stable_dispositions": {
+          "novelty_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conformity": {
+            "mean": 0.74,
+            "plasticity": 0.25,
+            "current_activation": 0.82
+          },
+          "status_hunger": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "risk_tolerance": {
+            "mean": 0.32,
+            "plasticity": 0.41,
+            "current_activation": 0.24
+          },
+          "sociability": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "baseline_threat_sensitivity": {
+            "mean": 0.76,
+            "plasticity": 0.31,
+            "current_activation": 0.86
+          },
+          "aesthetic_appetite": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ideological_rigidity": {
+            "mean": 0.69,
+            "plasticity": 0.29,
+            "current_activation": 0.8
+          }
+        },
+        "behavioral_dimensions": {
+          "interpersonal_warmth": {
+            "mean": 0.32,
+            "plasticity": 0.42,
+            "current_activation": 0.24
+          },
+          "drive": {
+            "mean": 0.75,
+            "plasticity": 0.28,
+            "current_activation": 0.86
+          },
+          "grandiosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "validation_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "anxiety": {
+            "mean": 0.68,
+            "plasticity": 0.36,
+            "current_activation": 0.78
+          },
+          "control_pressure": {
+            "mean": 0.82,
+            "plasticity": 0.25,
+            "current_activation": 0.96
+          },
+          "hostility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "suspicion": {
+            "mean": 0.64,
+            "plasticity": 0.34,
+            "current_activation": 0.78
+          },
+          "rigidity": {
+            "mean": 0.78,
+            "plasticity": 0.24,
+            "current_activation": 0.87
+          },
+          "withdrawal": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "volatility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "attachment_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "distance_seeking": {
+            "mean": 0.71,
+            "plasticity": 0.31,
+            "current_activation": 0.82
+          }
+        },
+        "presentation_strategy": {
+          "charm": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "compliance": {
+            "mean": 0.72,
+            "plasticity": 0.3,
+            "current_activation": 0.81
+          },
+          "superiority": {
+            "mean": 0.52,
+            "plasticity": 0.43,
+            "current_activation": 0.64
+          },
+          "detachment": {
+            "mean": 0.76,
+            "plasticity": 0.28,
+            "current_activation": 0.86
+          },
+          "seductiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "competence_theater": {
+            "mean": 0.82,
+            "plasticity": 0.24,
+            "current_activation": 0.94
+          },
+          "moral_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "strategic_opacity": {
+            "mean": 0.68,
+            "plasticity": 0.32,
+            "current_activation": 0.8
+          },
+          "cultivated_harmlessness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "abrasive_boundary": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ironic_distance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "voice_style": {
+          "dryness": {
+            "mean": 0.56,
+            "plasticity": 0.39,
+            "current_activation": 0.66
+          },
+          "verbal_warmth": {
+            "mean": 0.22,
+            "plasticity": 0.45,
+            "current_activation": 0.17
+          },
+          "formality": {
+            "mean": 0.86,
+            "plasticity": 0.19,
+            "current_activation": 0.93
+          },
+          "verbosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pace": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "plainspoken_directness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lexical_precision": {
+            "mean": 0.82,
+            "plasticity": 0.25,
+            "current_activation": 0.91
+          },
+          "technical_density": {
+            "mean": 0.74,
+            "plasticity": 0.31,
+            "current_activation": 0.84
+          },
+          "technical_compression": {
+            "mean": 0.78,
+            "plasticity": 0.26,
+            "current_activation": 0.88
+          },
+          "figurative_language": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lyricism": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "narrative_detail": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "emotional_explicitness": {
+            "mean": 0.14,
+            "plasticity": 0.38,
+            "current_activation": 0.08
+          },
+          "pointedness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "self_disclosure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hedging": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "certainty_marking": {
+            "mean": 0.78,
+            "plasticity": 0.27,
+            "current_activation": 0.88
+          },
+          "politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "coded_politeness": {
+            "mean": 0.8,
+            "plasticity": 0.24,
+            "current_activation": 0.87
+          },
+          "ritualized_address": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "register_switching": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "dialect_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "theatricality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humor": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conversational_dominance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "listening_responsiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "question_asking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "profanity": {
+            "mean": 0.02,
+            "plasticity": 0.36,
+            "current_activation": 0
+          }
+        },
+        "situational_state": {
+          "exhaustion": {
+            "mean": 0.58,
+            "plasticity": 0.76,
+            "current_activation": 0.72
+          },
+          "scarcity_pressure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humiliation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "panic": {
+            "mean": 0.52,
+            "plasticity": 0.81,
+            "current_activation": 0.68
+          },
+          "triumph": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grief": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "overstimulation": {
+            "mean": 0.61,
+            "plasticity": 0.76,
+            "current_activation": 0.74
+          },
+          "grievance_activation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "acute_shame": {
+            "mean": 0.51,
+            "plasticity": 0.78,
+            "current_activation": 0.69
+          },
+          "perceived_status_threat": {
+            "mean": 0.76,
+            "plasticity": 0.72,
+            "current_activation": 0.86
+          }
+        },
+        "values": [
+          {
+            "value_id": "value-category-integrity",
+            "label": "If categories collapse, corridor law becomes expensive theater with corpses attached.",
+            "priority": 0.9,
+            "unforgivable_if_betrayed": true
+          }
+        ]
+      },
+      "goals": [
+        {
+          "goal_id": "goal-preserve-freeze-order",
+          "description": "Keep the vessel frozen under conditional risk hold until telemetry and classification can be reconciled.",
+          "scope": "scene",
+          "priority": 0.89,
+          "emotional_stake": "If she loses the category frame here, the tribunal may lose authority over every quiet-running claim after it.",
+          "blockers": [
+            "Navigator rescue objection",
+            "public panic",
+            "possible sanctuary optics"
+          ],
+          "status": "active"
+        }
+      ],
+      "memories": {
+        "episodic": [
+          {
+            "memory_id": "memory-mispriced-near-miss",
+            "summary": "Isdra reviewed a near-miss interception where a mispriced quiet-running envelope almost became a public casualty event.",
+            "salience": 0.78,
+            "confidence": 0.81,
+            "linked_event_ids": []
+          }
+        ],
+        "semantic": [
+          {
+            "memory_id": "memory-category-law-holds-corridor",
+            "summary": "Insurer categories are ugly, but they are the shared grammar that makes sanctions and rescue liability enforceable across hostile powers.",
+            "salience": 0.89,
+            "confidence": 0.86,
+            "linked_event_ids": []
+          }
+        ],
+        "relationship_summaries": [
+          {
+            "memory_id": "memory-isdra-maer-current-read",
+            "summary": "Maer is principled and dangerous because he can make a procedural delay sound like murder in public.",
+            "salience": 0.72,
+            "confidence": 0.63,
+            "linked_event_ids": [
+              "event-risk-freeze-opening"
+            ],
+            "linked_relationship_id": "rel-isdra-maer"
+          },
+          {
+            "memory_id": "memory-isdra-maer-limited-contact",
+            "summary": "Maer supplied a usable handling category and accepted Navigator ledger cost exposure, letting Isdra open a narrow exception without admitting the freeze was wrong.",
+            "salience": 0.84,
+            "confidence": 0.74,
+            "linked_event_ids": [
+              "event-isdra-limited-contact"
+            ],
+            "linked_relationship_id": "rel-isdra-maer"
+          }
+        ]
+      },
+      "perceived_state_overlays": [
+        {
+          "observer_agent_id": "isdra_vel",
+          "target_agent_id": "maer_tidecall",
+          "perceived_dimensions": {
+            "interpersonal_warmth": {
+              "observed_activation": 0.62,
+              "attributed_disposition": 0.74,
+              "confidence": 0.59
+            },
+            "ideological_rigidity": {
+              "observed_activation": 0.79,
+              "attributed_disposition": 0.72,
+              "confidence": 0.61
+            },
+            "suspicion": {
+              "observed_activation": 0.66,
+              "attributed_disposition": 0.62,
+              "confidence": 0.57
+            }
+          },
+          "beliefs": [
+            {
+              "belief_id": "belief-isdra-maer-will-moralize",
+              "subject_id": "maer_tidecall",
+              "claim_type": "prediction",
+              "claim": "Maer will frame any freeze as abandonment even if the thermal risk is real.",
+              "confidence": 0.64,
+              "evidence_event_ids": [
+                "event-risk-freeze-opening"
+              ],
+              "visibility": "private",
+              "emotional_charge": 0.62
+            }
+          ],
+          "distortions": [
+            "threat_amplification",
+            "care_underread"
+          ]
+        }
+      ]
+    },
+    {
+      "agent_id": "sella_ren",
+      "identity": {
+        "name": "Sella Ren",
+        "roles": [
+          "Aya-aligned sanctuary coordinator",
+          "corridor clinic triage lead"
+        ],
+        "origin": "Aya care network embedded in Ganymede dockside sanctuary logistics",
+        "public_description": "A triage coordinator with soft eyes, hard capacity limits, and no patience for mercy performed after the math is done.",
+        "private_notes": [
+          "Sella suspects the distress packet contains a personhood claim hidden inside firmware noise, and she hates that suspicion because a bed is still a bed."
+        ]
+      },
+      "canonical_state": {
+        "underlying_organization": {
+          "self_coherence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "contingent_worth": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "shame_sensitivity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "reciprocity_capacity": {
+            "mean": 0.88,
+            "plasticity": 0.25,
+            "current_activation": 0.9
+          },
+          "mentalization_quality": {
+            "mean": 0.8,
+            "plasticity": 0.31,
+            "current_activation": 0.83
+          },
+          "authenticity_tolerance": {
+            "mean": 0.74,
+            "plasticity": 0.34,
+            "current_activation": 0.79
+          },
+          "mask_rigidity": {
+            "mean": 0.28,
+            "plasticity": 0.49,
+            "current_activation": 0.22
+          },
+          "external_regulation_dependence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "stable_dispositions": {
+          "novelty_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conformity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "status_hunger": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "risk_tolerance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "sociability": {
+            "mean": 0.74,
+            "plasticity": 0.31,
+            "current_activation": 0.78
+          },
+          "baseline_threat_sensitivity": {
+            "mean": 0.65,
+            "plasticity": 0.38,
+            "current_activation": 0.75
+          },
+          "aesthetic_appetite": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ideological_rigidity": {
+            "mean": 0.52,
+            "plasticity": 0.39,
+            "current_activation": 0.63
+          }
+        },
+        "behavioral_dimensions": {
+          "interpersonal_warmth": {
+            "mean": 0.86,
+            "plasticity": 0.27,
+            "current_activation": 0.8
+          },
+          "drive": {
+            "mean": 0.68,
+            "plasticity": 0.33,
+            "current_activation": 0.74
+          },
+          "grandiosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "validation_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "anxiety": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "control_pressure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.54
+          },
+          "hostility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "suspicion": {
+            "mean": 0.52,
+            "plasticity": 0.42,
+            "current_activation": 0.63
+          },
+          "rigidity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "withdrawal": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "volatility": {
+            "mean": 0.36,
+            "plasticity": 0.55,
+            "current_activation": 0.42
+          },
+          "attachment_seeking": {
+            "mean": 0.64,
+            "plasticity": 0.43,
+            "current_activation": 0.68
+          },
+          "distance_seeking": {
+            "mean": 0.22,
+            "plasticity": 0.46,
+            "current_activation": 0.2
+          }
+        },
+        "presentation_strategy": {
+          "charm": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "compliance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "superiority": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "detachment": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "seductiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "competence_theater": {
+            "mean": 0.54,
+            "plasticity": 0.44,
+            "current_activation": 0.61
+          },
+          "moral_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "strategic_opacity": {
+            "mean": 0.34,
+            "plasticity": 0.47,
+            "current_activation": 0.38
+          },
+          "cultivated_harmlessness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "abrasive_boundary": {
+            "mean": 0.35,
+            "plasticity": 0.5,
+            "current_activation": 0.46
+          },
+          "ironic_distance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "voice_style": {
+          "dryness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "verbal_warmth": {
+            "mean": 0.77,
+            "plasticity": 0.33,
+            "current_activation": 0.72
+          },
+          "formality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "verbosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pace": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "plainspoken_directness": {
+            "mean": 0.68,
+            "plasticity": 0.36,
+            "current_activation": 0.74
+          },
+          "lexical_precision": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "technical_density": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "technical_compression": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "figurative_language": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lyricism": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "narrative_detail": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "emotional_explicitness": {
+            "mean": 0.64,
+            "plasticity": 0.42,
+            "current_activation": 0.67
+          },
+          "pointedness": {
+            "mean": 0.44,
+            "plasticity": 0.44,
+            "current_activation": 0.55
+          },
+          "self_disclosure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hedging": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "certainty_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "coded_politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ritualized_address": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "register_switching": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "dialect_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "theatricality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humor": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conversational_dominance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "listening_responsiveness": {
+            "mean": 0.82,
+            "plasticity": 0.26,
+            "current_activation": 0.86
+          },
+          "question_asking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "profanity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "situational_state": {
+          "exhaustion": {
+            "mean": 0.62,
+            "plasticity": 0.8,
+            "current_activation": 0.76
+          },
+          "scarcity_pressure": {
+            "mean": 0.71,
+            "plasticity": 0.78,
+            "current_activation": 0.87
+          },
+          "humiliation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "panic": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "triumph": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grief": {
+            "mean": 0.58,
+            "plasticity": 0.75,
+            "current_activation": 0.67
+          },
+          "overstimulation": {
+            "mean": 0.59,
+            "plasticity": 0.79,
+            "current_activation": 0.74
+          },
+          "grievance_activation": {
+            "mean": 0.48,
+            "plasticity": 0.69,
+            "current_activation": 0.62
+          },
+          "acute_shame": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "perceived_status_threat": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "values": [
+          {
+            "value_id": "value-care-as-infrastructure",
+            "label": "Care is infrastructure, not mercy granted after the ledger is satisfied.",
+            "priority": 0.92,
+            "unforgivable_if_betrayed": true
+          }
+        ]
+      },
+      "goals": [
+        {
+          "goal_id": "goal-keep-sanctuary-open",
+          "description": "Keep sanctuary intake materially possible without letting classification erase a potential person.",
+          "scope": "scene",
+          "priority": 0.9,
+          "emotional_stake": "Sella cannot feed a principle, but she will not let scarcity become permission to call someone cargo.",
+          "blockers": [
+            "bed capacity",
+            "PSC freeze",
+            "unknown contamination risk"
+          ],
+          "status": "active"
+        }
+      ],
+      "memories": {
+        "episodic": [
+          {
+            "memory_id": "memory-overfull-intake",
+            "summary": "Sella once watched a sanctuary overpromise safety and turn refuge into a sorting machine with kinder lighting.",
+            "salience": 0.82,
+            "confidence": 0.78,
+            "linked_event_ids": []
+          }
+        ],
+        "semantic": [
+          {
+            "memory_id": "memory-care-is-capacity",
+            "summary": "Care is not a feeling; it is beds, food, air, consent, repair, and someone still doing the list when the room hates them.",
+            "salience": 0.92,
+            "confidence": 0.88,
+            "linked_event_ids": []
+          }
+        ],
+        "relationship_summaries": [
+          {
+            "memory_id": "memory-sella-maer-current-read",
+            "summary": "Maer understands rescue, but he can still ask care workers to absorb costs his route language cannot pay.",
+            "salience": 0.68,
+            "confidence": 0.62,
+            "linked_event_ids": [],
+            "linked_relationship_id": "rel-sella-maer"
+          },
+          {
+            "memory_id": "memory-sella-maer-conditional-ledger",
+            "summary": "Maer brought evidence and urgency; Sella held a bounded repair bay cold only under ledger, isolation, decon, and failed-extraction conditions.",
+            "salience": 0.84,
+            "confidence": 0.74,
+            "linked_event_ids": [
+              "event-sanctuary-conditional-repair-bay"
+            ],
+            "linked_relationship_id": "rel-sella-maer"
+          }
+        ]
+      },
+      "perceived_state_overlays": [
+        {
+          "observer_agent_id": "sella_ren",
+          "target_agent_id": "maer_tidecall",
+          "perceived_dimensions": {
+            "interpersonal_warmth": {
+              "observed_activation": 0.61,
+              "attributed_disposition": 0.66,
+              "confidence": 0.62
+            },
+            "control_pressure": {
+              "observed_activation": 0.74,
+              "attributed_disposition": 0.66,
+              "confidence": 0.68
+            }
+          },
+          "beliefs": [
+            {
+              "belief_id": "belief-sella-maer-will-overask-care",
+              "subject_id": "maer_tidecall",
+              "claim_type": "prediction",
+              "claim": "Maer may ask care systems to carry the moral cost of a rescue claim he cannot materially house.",
+              "confidence": 0.56,
+              "visibility": "private",
+              "emotional_charge": 0.52
+            },
+            {
+              "belief_id": "belief-sella-maer-needs-material-ownership",
+              "subject_id": "maer_tidecall",
+              "claim_type": "motive_inference",
+              "claim": "Maer means rescue, but he must be forced to attach cost ownership before his rescue ethic spends sanctuary capacity.",
+              "confidence": 0.69,
+              "evidence_event_ids": [
+                "event-sanctuary-conditional-repair-bay"
+              ],
+              "visibility": "private",
+              "emotional_charge": 0.6
+            }
+          ],
+          "distortions": [
+            "false_reassurance",
+            "cost_pressure_overread"
+          ]
+        }
+      ]
+    },
+    {
+      "agent_id": "veyr_oss",
+      "identity": {
+        "name": "Veyr Oss",
+        "roles": [
+          "Cognitum shell-vendor liaison",
+          "routing firmware compliance consultant"
+        ],
+        "origin": "Cognitum cutout economy operating through Callisto-side routing vendors",
+        "public_description": "A compliance liaison who can turn a scream into a service category without visibly changing expression.",
+        "private_notes": [
+          "Veyr knows the implicated routing artifact came through a chain with enough human residue to ruin everyone if named plainly."
+        ]
+      },
+      "canonical_state": {
+        "underlying_organization": {
+          "self_coherence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "contingent_worth": {
+            "mean": 0.66,
+            "plasticity": 0.46,
+            "current_activation": 0.74
+          },
+          "shame_sensitivity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "reciprocity_capacity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "mentalization_quality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "authenticity_tolerance": {
+            "mean": 0.18,
+            "plasticity": 0.46,
+            "current_activation": 0.11
+          },
+          "mask_rigidity": {
+            "mean": 0.83,
+            "plasticity": 0.25,
+            "current_activation": 0.93
+          },
+          "external_regulation_dependence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "stable_dispositions": {
+          "novelty_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conformity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "status_hunger": {
+            "mean": 0.58,
+            "plasticity": 0.42,
+            "current_activation": 0.67
+          },
+          "risk_tolerance": {
+            "mean": 0.62,
+            "plasticity": 0.4,
+            "current_activation": 0.71
+          },
+          "sociability": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "baseline_threat_sensitivity": {
+            "mean": 0.72,
+            "plasticity": 0.34,
+            "current_activation": 0.83
+          },
+          "aesthetic_appetite": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ideological_rigidity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "behavioral_dimensions": {
+          "interpersonal_warmth": {
+            "mean": 0.18,
+            "plasticity": 0.47,
+            "current_activation": 0.12
+          },
+          "drive": {
+            "mean": 0.7,
+            "plasticity": 0.35,
+            "current_activation": 0.78
+          },
+          "grandiosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "validation_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "anxiety": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "control_pressure": {
+            "mean": 0.74,
+            "plasticity": 0.31,
+            "current_activation": 0.87
+          },
+          "hostility": {
+            "mean": 0.43,
+            "plasticity": 0.48,
+            "current_activation": 0.52
+          },
+          "suspicion": {
+            "mean": 0.76,
+            "plasticity": 0.31,
+            "current_activation": 0.87
+          },
+          "rigidity": {
+            "mean": 0.6,
+            "plasticity": 0.37,
+            "current_activation": 0.72
+          },
+          "withdrawal": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "volatility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "attachment_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "distance_seeking": {
+            "mean": 0.79,
+            "plasticity": 0.3,
+            "current_activation": 0.88
+          }
+        },
+        "presentation_strategy": {
+          "charm": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "compliance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "superiority": {
+            "mean": 0.64,
+            "plasticity": 0.4,
+            "current_activation": 0.72
+          },
+          "detachment": {
+            "mean": 0.78,
+            "plasticity": 0.29,
+            "current_activation": 0.86
+          },
+          "seductiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "competence_theater": {
+            "mean": 0.82,
+            "plasticity": 0.25,
+            "current_activation": 0.9
+          },
+          "moral_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "strategic_opacity": {
+            "mean": 0.88,
+            "plasticity": 0.2,
+            "current_activation": 0.96
+          },
+          "cultivated_harmlessness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "abrasive_boundary": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ironic_distance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "voice_style": {
+          "dryness": {
+            "mean": 0.62,
+            "plasticity": 0.39,
+            "current_activation": 0.71
+          },
+          "verbal_warmth": {
+            "mean": 0.16,
+            "plasticity": 0.44,
+            "current_activation": 0.1
+          },
+          "formality": {
+            "mean": 0.78,
+            "plasticity": 0.27,
+            "current_activation": 0.84
+          },
+          "verbosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pace": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "plainspoken_directness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lexical_precision": {
+            "mean": 0.84,
+            "plasticity": 0.24,
+            "current_activation": 0.9
+          },
+          "technical_density": {
+            "mean": 0.8,
+            "plasticity": 0.28,
+            "current_activation": 0.87
+          },
+          "technical_compression": {
+            "mean": 0.86,
+            "plasticity": 0.22,
+            "current_activation": 0.91
+          },
+          "figurative_language": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lyricism": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "narrative_detail": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "emotional_explicitness": {
+            "mean": 0.08,
+            "plasticity": 0.37,
+            "current_activation": 0.03
+          },
+          "pointedness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "self_disclosure": {
+            "mean": 0.04,
+            "plasticity": 0.34,
+            "current_activation": 0.01
+          },
+          "hedging": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "certainty_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "coded_politeness": {
+            "mean": 0.82,
+            "plasticity": 0.24,
+            "current_activation": 0.9
+          },
+          "ritualized_address": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "register_switching": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "dialect_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "theatricality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humor": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conversational_dominance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "listening_responsiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "question_asking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "profanity": {
+            "mean": 0.01,
+            "plasticity": 0.35,
+            "current_activation": 0
+          }
+        },
+        "situational_state": {
+          "exhaustion": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "scarcity_pressure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humiliation": {
+            "mean": 0.48,
+            "plasticity": 0.77,
+            "current_activation": 0.56
+          },
+          "panic": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "triumph": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grief": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "overstimulation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grievance_activation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "acute_shame": {
+            "mean": 0.52,
+            "plasticity": 0.8,
+            "current_activation": 0.61
+          },
+          "perceived_status_threat": {
+            "mean": 0.66,
+            "plasticity": 0.74,
+            "current_activation": 0.78
+          }
+        },
+        "values": [
+          {
+            "value_id": "value-deniability",
+            "label": "Nothing valuable remains valuable once provenance becomes testimony.",
+            "priority": 0.88,
+            "unforgivable_if_betrayed": true
+          }
+        ]
+      },
+      "goals": [
+        {
+          "goal_id": "goal-preserve-product-boundary",
+          "description": "Keep the implicated routing artifact framed as derivative firmware, not testimony.",
+          "scope": "scene",
+          "priority": 0.92,
+          "emotional_stake": "If personhood attaches to the artifact, the vendor chain becomes evidence instead of infrastructure.",
+          "blockers": [
+            "Maer's questions",
+            "Sella's personhood claim",
+            "Isdra's need for clean categories"
+          ],
+          "status": "active"
+        }
+      ],
+      "memories": {
+        "episodic": [
+          {
+            "memory_id": "memory-failed-cutout",
+            "summary": "Veyr saw a clinic cutout collapse after one technician used the word 'she' in a deposition.",
+            "salience": 0.8,
+            "confidence": 0.76,
+            "linked_event_ids": []
+          }
+        ],
+        "semantic": [
+          {
+            "memory_id": "memory-product-language-saves-chain",
+            "summary": "The chain survives when every mind-shaped event is described as convergence, artifact, service behavior, or diagnostic residue.",
+            "salience": 0.9,
+            "confidence": 0.84,
+            "linked_event_ids": []
+          }
+        ],
+        "relationship_summaries": [
+          {
+            "memory_id": "memory-veyr-maer-current-read",
+            "summary": "Maer is the kind of moral technician who follows language until it bleeds.",
+            "salience": 0.73,
+            "confidence": 0.66,
+            "linked_event_ids": [],
+            "linked_relationship_id": "rel-veyr-maer"
+          },
+          {
+            "memory_id": "memory-veyr-maer-category-offer",
+            "summary": "Maer pressed the chain without proof; Veyr gave him a handling category that could permit rescue contact while keeping source custody collapsed.",
+            "salience": 0.82,
+            "confidence": 0.72,
+            "linked_event_ids": [
+              "event-veyr-category-offer"
+            ],
+            "linked_relationship_id": "rel-veyr-maer"
+          }
+        ]
+      },
+      "perceived_state_overlays": [
+        {
+          "observer_agent_id": "veyr_oss",
+          "target_agent_id": "maer_tidecall",
+          "perceived_dimensions": {
+            "suspicion": {
+              "observed_activation": 0.84,
+              "attributed_disposition": 0.77,
+              "confidence": 0.68
+            },
+            "ideological_rigidity": {
+              "observed_activation": 0.7,
+              "attributed_disposition": 0.66,
+              "confidence": 0.59
+            }
+          },
+          "beliefs": [
+            {
+              "belief_id": "belief-veyr-maer-will-follow-language",
+              "subject_id": "maer_tidecall",
+              "claim_type": "prediction",
+              "claim": "Maer will follow any inconsistency in product language toward provenance.",
+              "confidence": 0.7,
+              "visibility": "private",
+              "emotional_charge": 0.68
+            }
+          ],
+          "distortions": [
+            "threat_amplification"
+          ]
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "rel-maer-isdra",
+      "source_id": "maer_tidecall",
+      "target_id": "isdra_vel",
+      "stance": {
+        "trust": {
+          "mean": 0.34,
+          "plasticity": 0.54,
+          "current_activation": 0.34
+        },
+        "respect": {
+          "mean": 0.58,
+          "plasticity": 0.45,
+          "current_activation": 0.67
+        },
+        "resentment": {
+          "mean": 0.42,
+          "plasticity": 0.55,
+          "current_activation": 0.51
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.31,
+          "plasticity": 0.58,
+          "current_activation": 0.44
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.56
+        },
+        "envy": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "moral_disgust": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.53,
+          "plasticity": 0.52,
+          "current_activation": 0.58
+        }
+      },
+      "summary": "Maer now trusts Isdra slightly more because she opened limited contact under freeze, but he knows the authorization remains conditional, reversible, and language-policed.",
+      "unresolved_incident_ids": [
+        "event-risk-freeze-opening",
+        "event-isdra-limited-contact"
+      ]
+    },
+    {
+      "relationship_id": "rel-isdra-maer",
+      "source_id": "isdra_vel",
+      "target_id": "maer_tidecall",
+      "stance": {
+        "trust": {
+          "mean": 0.29,
+          "plasticity": 0.55,
+          "current_activation": 0.26
+        },
+        "respect": {
+          "mean": 0.62,
+          "plasticity": 0.46,
+          "current_activation": 0.72
+        },
+        "resentment": {
+          "mean": 0.36,
+          "plasticity": 0.55,
+          "current_activation": 0.47
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.46,
+          "plasticity": 0.57,
+          "current_activation": 0.63
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "moral_disgust": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.48,
+          "plasticity": 0.53,
+          "current_activation": 0.6
+        }
+      },
+      "summary": "Isdra still reads Maer as politically dangerous, but now respects him for bringing a usable category that let her authorize contact without confessing category failure.",
+      "unresolved_incident_ids": [
+        "event-risk-freeze-opening",
+        "event-isdra-limited-contact"
+      ]
+    },
+    {
+      "relationship_id": "rel-maer-sella",
+      "source_id": "maer_tidecall",
+      "target_id": "sella_ren",
+      "stance": {
+        "trust": {
+          "mean": 0.63,
+          "plasticity": 0.48,
+          "current_activation": 0.72
+        },
+        "respect": {
+          "mean": 0.71,
+          "plasticity": 0.42,
+          "current_activation": 0.81
+        },
+        "resentment": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.46,
+          "plasticity": 0.53,
+          "current_activation": 0.64
+        },
+        "envy": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "moral_disgust": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.55,
+          "plasticity": 0.52,
+          "current_activation": 0.62
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        }
+      },
+      "summary": "Maer trusts Sella slightly more because she made a narrow rescue path material, but he now owes ledger backing before that path can stay open.",
+      "unresolved_incident_ids": [
+        "event-sanctuary-conditional-repair-bay"
+      ]
+    },
+    {
+      "relationship_id": "rel-sella-maer",
+      "source_id": "sella_ren",
+      "target_id": "maer_tidecall",
+      "stance": {
+        "trust": {
+          "mean": 0.52,
+          "plasticity": 0.52,
+          "current_activation": 0.58
+        },
+        "respect": {
+          "mean": 0.67,
+          "plasticity": 0.43,
+          "current_activation": 0.73
+        },
+        "resentment": {
+          "mean": 0.28,
+          "plasticity": 0.56,
+          "current_activation": 0.39
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.42,
+          "plasticity": 0.56,
+          "current_activation": 0.51
+        },
+        "envy": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "moral_disgust": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        }
+      },
+      "summary": "Sella respects Maer's rescue ethic and is willing to hold a narrow conditional bay, but she remains alert to how his requests can move hidden costs onto sanctuary.",
+      "unresolved_incident_ids": [
+        "event-sanctuary-conditional-repair-bay"
+      ]
+    },
+    {
+      "relationship_id": "rel-maer-veyr",
+      "source_id": "maer_tidecall",
+      "target_id": "veyr_oss",
+      "stance": {
+        "trust": {
+          "mean": 0.12,
+          "plasticity": 0.55,
+          "current_activation": 0.1
+        },
+        "respect": {
+          "mean": 0.31,
+          "plasticity": 0.5,
+          "current_activation": 0.4
+        },
+        "resentment": {
+          "mean": 0.58,
+          "plasticity": 0.55,
+          "current_activation": 0.67
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.34,
+          "plasticity": 0.58,
+          "current_activation": 0.47
+        },
+        "fascination": {
+          "mean": 0.48,
+          "plasticity": 0.54,
+          "current_activation": 0.62
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "moral_disgust": {
+          "mean": 0.55,
+          "plasticity": 0.56,
+          "current_activation": 0.66
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.79,
+          "plasticity": 0.41,
+          "current_activation": 0.83
+        }
+      },
+      "summary": "Maer distrusts Veyr and still reads him as built from omissions, but now has evidence that Veyr will trade narrow usefulness for strict noun discipline.",
+      "unresolved_incident_ids": [
+        "event-veyr-category-offer"
+      ]
+    },
+    {
+      "relationship_id": "rel-veyr-maer",
+      "source_id": "veyr_oss",
+      "target_id": "maer_tidecall",
+      "stance": {
+        "trust": {
+          "mean": 0.1,
+          "plasticity": 0.54,
+          "current_activation": 0.07
+        },
+        "respect": {
+          "mean": 0.5,
+          "plasticity": 0.48,
+          "current_activation": 0.61
+        },
+        "resentment": {
+          "mean": 0.35,
+          "plasticity": 0.55,
+          "current_activation": 0.43
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.61,
+          "plasticity": 0.48,
+          "current_activation": 0.77
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "moral_disgust": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.45,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.74,
+          "plasticity": 0.45,
+          "current_activation": 0.84
+        }
+      },
+      "summary": "Veyr reads Maer as a legal hazard with a conscience attached, but respects that Maer can use a narrow procedural opening without needing a confession first.",
+      "unresolved_incident_ids": [
+        "event-veyr-category-offer"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "event-risk-freeze-opening",
+      "kind": "dialogue",
+      "summary": "A relay tribunal opened with a conditional freeze on an unidentified quiet-running vessel while Maer objected that rescue cannot wait for clean thermal categories.",
+      "participants": [
+        "maer_tidecall",
+        "isdra_vel"
+      ],
+      "pressure_tags": [
+        "cold_wake",
+        "risk_freeze",
+        "rescue_obligation",
+        "category_failure"
+      ],
+      "observed_exchange": [
+        {
+          "speaker_id": "isdra_vel",
+          "utterance_summary": "Isdra announced a conditional risk hold pending telemetry reconciliation and classification review.",
+          "dialogue_function": "assert_procedure",
+          "observable_cues": [
+            "formal phrasing",
+            "compressed risk language",
+            "refusal to name rescue as primary"
+          ]
+        },
+        {
+          "speaker_id": "maer_tidecall",
+          "utterance_summary": "Maer objected that a route can turn procedural delay into abandonment while still calling itself lawful.",
+          "dialogue_function": "challenge_frame",
+          "observable_cues": [
+            "calm cadence",
+            "compact language",
+            "moral pressure without raised voice"
+          ]
+        }
+      ],
+      "private_interpretations": [
+        {
+          "agent_id": "maer_tidecall",
+          "interpretation": "Isdra is using category repair to avoid owning the rescue cost of delay.",
+          "attributed_motive": "Protect tribunal authority from a precedent she cannot price.",
+          "appraisal_tags": [
+            "rescue_threat",
+            "category_panic",
+            "compact_violation"
+          ],
+          "confidence": 0.63
+        },
+        {
+          "agent_id": "isdra_vel",
+          "interpretation": "Maer is trying to make a dangerous exception morally compulsory before the vessel's posture is known.",
+          "attributed_motive": "Protect Navigator legitimacy by forcing rescue language ahead of risk classification.",
+          "appraisal_tags": [
+            "precedent_threat",
+            "status_threat",
+            "public_pressure"
+          ],
+          "confidence": 0.66
+        }
+      ],
+      "event_effects": []
+    },
+    {
+      "event_id": "event-sanctuary-conditional-repair-bay",
+      "kind": "dialogue",
+      "summary": "Sella set conditions for a bounded cold repair bay without accepting the corrupted packet into sanctuary patient flow.",
+      "participants": [
+        "maer_tidecall",
+        "sella_ren"
+      ],
+      "pressure_tags": [
+        "cold_wake",
+        "sanctuary_capacity",
+        "repair_bay_condition",
+        "ledger_backing",
+        "personhood_uncertainty"
+      ],
+      "observed_exchange": [
+        {
+          "speaker_id": "maer_tidecall",
+          "action_type": "show_object",
+          "utterance_summary": "Maer displays the corrupted packet through shared clinic systems and asks Sella to judge whether the math supports intake.",
+          "dialogue_function": "present_ambiguous_evidence",
+          "observable_cues": [
+            "shared clinic display shows routing terms and telemetry gaps",
+            "packet remains unresolved evidence rather than proof"
+          ]
+        },
+        {
+          "speaker_id": "sella_ren",
+          "action_type": "set_condition",
+          "utterance_summary": "I can hold one bounded bay. Not a bed, not a promise, and not a declaration that this is a person. A bay. Air ration capped, isolation first, no general intake until we have consent or a defensible substitute for it. If this becomes rescue, Maer, it goes on a rescue ledger with named backing. Navigator, Lightsail, tribunal, whoever wants the moral credit can put weight under it. I will not let the packet be called cargo because the math is ugly. I also will not feed the math with beds I do not have. Bring me backing, a contamination plan, and somebody willing to answer when this costs more than the pretty sentence did.",
+          "dialogue_function": "conditional_capacity_offer",
+          "observable_cues": [
+            "Sella keeps the packet on the shared display but does not route it into intake. She marks one repair bay as conditional hold, then pins a capacity note beside it: air, decontamination, consent check, firmware isolation, and ledger guarantor required before admission."
+          ]
+        }
+      ],
+      "private_interpretations": [
+        {
+          "agent_id": "maer_tidecall",
+          "interpretation": "Sella has not accepted the claimant into sanctuary, but she has created a narrow material path if Maer accepts ledger responsibility.",
+          "attributed_motive": "Protect care capacity while refusing to erase a possible person into cargo language.",
+          "appraisal_tags": [
+            "conditional_path",
+            "capacity_boundary",
+            "rescuer_obligation"
+          ],
+          "confidence": 0.64
+        },
+        {
+          "agent_id": "sella_ren",
+          "interpretation": "Sella reads Maer as honestly trying to rescue someone or something that may be someone, but she suspects he is also asking the clinic to absorb the institutional cowardice around the packet. She feels the old pressure of sanctuaries making noble promises and then forcing triage staff to do the cruelty quietly.",
+          "attributed_motive": "Maer is trying to keep rescue possible, but may be letting the clinic inherit costs his own chain has not accepted.",
+          "appraisal_tags": [
+            "moral_pressure",
+            "ledger_boundary",
+            "capacity_risk"
+          ],
+          "confidence": 0.69
+        }
+      ],
+      "event_effects": [
+        {
+          "agent_id": "maer_tidecall",
+          "summary": "Maer now has a narrow rescue path contingent on ledger backing and labor ownership.",
+          "state_deltas": [
+            {
+              "agent_id": "maer_tidecall",
+              "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+              "delta": 0.03,
+              "rationale": "The next move now requires ledger backing and labor ownership rather than another moral appeal."
+            },
+            {
+              "agent_id": "maer_tidecall",
+              "path": "canonical_state.situational_state.grievance_activation.current_activation",
+              "delta": -0.02,
+              "rationale": "Sella did not call the packet cargo or close the door entirely."
+            }
+          ],
+          "memory_update_ids": [
+            "memory-maer-sella-conditional-bay"
+          ]
+        },
+        {
+          "agent_id": "sella_ren",
+          "summary": "Sella preserves triage authority while conditionally risking a bounded repair bay.",
+          "state_deltas": [
+            {
+              "agent_id": "sella_ren",
+              "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+              "delta": 0.04,
+              "rationale": "She has to make the boundary operational, not merely verbal."
+            },
+            {
+              "agent_id": "sella_ren",
+              "path": "canonical_state.situational_state.scarcity_pressure.current_activation",
+              "delta": 0.03,
+              "rationale": "Holding a cold repair bay still consumes capacity even if no bed is opened."
+            },
+            {
+              "agent_id": "sella_ren",
+              "path": "canonical_state.situational_state.overstimulation.current_activation",
+              "delta": 0.02,
+              "rationale": "The conditional path creates more tracking, not less."
+            }
+          ],
+          "memory_update_ids": [
+            "memory-sella-maer-conditional-ledger"
+          ]
+        }
+      ]
+    },
+    {
+      "event_id": "event-veyr-category-offer",
+      "kind": "dialogue",
+      "summary": "Veyr offered a deniable handling category that permits limited rescue contact while withholding source-chain custody and leaving artifact personhood unresolved.",
+      "participants": [
+        "maer_tidecall",
+        "veyr_oss"
+      ],
+      "pressure_tags": [
+        "cold_wake",
+        "cognitum_cutout",
+        "product_language",
+        "rescue_category",
+        "personhood_uncertainty"
+      ],
+      "observed_exchange": [
+        {
+          "speaker_id": "maer_tidecall",
+          "action_type": "show_object",
+          "utterance_summary": "Maer displays a clipped routing chain and asks for a category that lets rescue touch the artifact without erasing the sound it made.",
+          "dialogue_function": "pressure_provenance",
+          "observable_cues": [
+            "masked source hashes",
+            "vendor handoffs visible enough to pressure Veyr"
+          ]
+        },
+        {
+          "speaker_id": "veyr_oss",
+          "action_type": "set_condition",
+          "utterance_summary": "Then stop asking for ancestry. Ask for handling. The category is derivative routing residue with active distress-correlated service behavior. It stays nonperson, nonorigin, noncustodial. It permits isolation, ledger-backed repair-bay contact, and preservation of the packet sound as diagnostic evidence. If you put a moral noun in the request, I close the file and you can spend the heat window teaching a tribunal how language becomes a corpse with paperwork.",
+          "dialogue_function": "conditional_category_offer",
+          "observable_cues": [
+            "Veyr does not touch Maer's clipped chain. He angles the conference glass away from the room recorder, opens a tribunal-safe diagnostic template on the side display, and leaves the source-chain field collapsed. One finger rests on the record-status control without pressing it."
+          ]
+        }
+      ],
+      "private_interpretations": [
+        {
+          "agent_id": "veyr_oss",
+          "interpretation": "Veyr interprets Maer's masked hashes as deliberate pressure rather than proof: enough path to threaten the vendor surface, not enough to force a clean custody admission. He suspects Maer wants a rescue aperture more than a courtroom victory, but he treats that as a working read, not a fact. The phrasing keeps the chain infrastructural and the artifact unresolved while giving Maer a narrow way to move before the window dies.",
+          "attributed_motive": "Maer may want a rescue aperture more than a courtroom victory, but Veyr treats that as a working read, not fact.",
+          "appraisal_tags": [
+            "provenance_pressure",
+            "noun_discipline",
+            "conditional_help"
+          ],
+          "confidence": 0.68
+        },
+        {
+          "agent_id": "maer_tidecall",
+          "interpretation": "Veyr is still hiding the source chain, but the offered category may be enough to move rescue contact before the heat window closes.",
+          "attributed_motive": "Veyr is protecting the vendor chain while conceding the minimum useful path.",
+          "appraisal_tags": [
+            "deniable_help",
+            "withheld_custody",
+            "rescue_path"
+          ],
+          "confidence": 0.62
+        }
+      ],
+      "event_effects": [
+        {
+          "agent_id": "veyr_oss",
+          "summary": "Veyr maintains deniability while creating a narrow rescue-compatible handling category.",
+          "state_deltas": [
+            {
+              "agent_id": "veyr_oss",
+              "path": "canonical_state.presentation_strategy.strategic_opacity.current_activation",
+              "delta": 0.02,
+              "rationale": "He keeps source-chain custody collapsed while offering only handling language."
+            },
+            {
+              "agent_id": "veyr_oss",
+              "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+              "delta": 0.03,
+              "rationale": "He sets terms around record language and category use."
+            },
+            {
+              "agent_id": "veyr_oss",
+              "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+              "delta": 0.08,
+              "rationale": "Maer has enough routing chain to threaten the vendor surface."
+            },
+            {
+              "agent_id": "veyr_oss",
+              "path": "canonical_state.underlying_organization.mask_rigidity.current_activation",
+              "delta": 0.02,
+              "rationale": "The risk of one wrong noun pushes Veyr deeper into defensive product language."
+            }
+          ],
+          "memory_update_ids": [
+            "memory-veyr-maer-category-offer"
+          ]
+        },
+        {
+          "agent_id": "maer_tidecall",
+          "summary": "Maer gains a narrow procedural path but not the custody truth he wanted.",
+          "state_deltas": [
+            {
+              "agent_id": "maer_tidecall",
+              "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+              "delta": 0.01,
+              "rationale": "He now has to carry the category back into tribunal and sanctuary constraints."
+            },
+            {
+              "agent_id": "maer_tidecall",
+              "path": "canonical_state.situational_state.grievance_activation.current_activation",
+              "delta": 0.02,
+              "rationale": "Veyr helped only by preserving the chain that may have caused the harm."
+            }
+          ],
+          "memory_update_ids": [
+            "memory-maer-veyr-category-offer"
+          ]
+        }
+      ]
+    },
+    {
+      "event_id": "event-isdra-limited-contact",
+      "kind": "dialogue",
+      "summary": "Isdra authorized a narrow limited-contact exception under the existing freeze, using Veyr's handling category and requiring Navigator ledger signature, isolation, decontamination, packet-sound preservation, and reversal triggers.",
+      "participants": [
+        "maer_tidecall",
+        "isdra_vel"
+      ],
+      "pressure_tags": [
+        "cold_wake",
+        "heat_debt",
+        "psc_category_law",
+        "rescue_ledger",
+        "limited_contact"
+      ],
+      "observed_exchange": [
+        {
+          "speaker_id": "maer_tidecall",
+          "action_type": "show_object",
+          "utterance_summary": "Maer returns with Veyr's diagnostic handling category, Sella's bay conditions, and a Navigator ledger signature offer before the heat window closes.",
+          "dialogue_function": "request_limited_contact_authorization",
+          "observable_cues": [
+            "shared convoy-threshold board",
+            "collapsed source-chain field",
+            "heat-debt timer",
+            "rescue ledger signature slot"
+          ]
+        },
+        {
+          "speaker_id": "isdra_vel",
+          "action_type": "set_condition",
+          "utterance_summary": "Tribunal notes the offered handling category: derivative routing residue with active distress-correlated service behavior. Nonperson, nonorigin, noncustodial. Source-chain custody remains outside this request. Artifact status remains unresolved diagnostic evidence.\n\nLimited-contact exception is authorized under freeze, not in place of it. Rescue contact may proceed only through Sella's conditional bay path: isolation maintained, decontamination logged, packet sound preserved intact, no ancestry claim entered, no personhood term attached, no custody inference created.\n\nNavigator ledger signature will carry the immediate cost exposure. File it now, Maer Tidecall. If the signature fails, if the isolation boundary is breached, or if the packet is converted into testimony before diagnostic preservation is complete, this exception snaps shut and the vessel returns to full freeze with interdiction review available.\n\nYou have your clean noun. Use it quickly.",
+          "dialogue_function": "conditional_limited_contact_authorization",
+          "observable_cues": [
+            "Isdra draws the collapsed source-chain field behind a gray custody seal, moves the heat-debt timer into the tribunal authority pane, and opens a narrow conditional permit shell. The freeze flag remains lit at the vessel perimeter while a limited-contact channel appears inside it, tagged for isolation, decontamination discipline, ledger-backed repair-bay contact, and packet-sound preservation."
+          ]
+        }
+      ],
+      "private_interpretations": [
+        {
+          "agent_id": "isdra_vel",
+          "interpretation": "Isdra reads Maer's move as disciplined pressure rather than pure accusation: he has brought her a category she can use without publicly conceding the frame he likely wants. She suspects he may later treat the exception as evidence that the original freeze was morally defective, but she also understands that refusing now would make the tribunal legible as a machine that can watch a heat window close while polishing grammar.",
+          "attributed_motive": "Maer may later use the exception as proof against the original freeze, but he has provided a category Isdra can use without public concession.",
+          "appraisal_tags": [
+            "procedural_concession",
+            "category_preservation",
+            "deadline_pressure"
+          ],
+          "confidence": 0.7
+        },
+        {
+          "agent_id": "maer_tidecall",
+          "interpretation": "Isdra has not admitted the freeze was wrong, but she has made rescue contact operational before the heat window closes.",
+          "attributed_motive": "Isdra is preserving tribunal authority while avoiding a preventable public death.",
+          "appraisal_tags": [
+            "conditional_help",
+            "language_policing",
+            "rescue_path"
+          ],
+          "confidence": 0.66
+        }
+      ],
+      "event_effects": [
+        {
+          "agent_id": "isdra_vel",
+          "summary": "Isdra preserves category authority while authorizing limited contact under strict conditions.",
+          "state_deltas": [
+            {
+              "agent_id": "isdra_vel",
+              "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+              "delta": 0.03,
+              "rationale": "She turns the exception into a permit shell with explicit reversal triggers."
+            },
+            {
+              "agent_id": "isdra_vel",
+              "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+              "delta": -0.04,
+              "rationale": "A category-preserving path reduces immediate panic even as precedent risk remains."
+            },
+            {
+              "agent_id": "isdra_vel",
+              "path": "canonical_state.behavioral_dimensions.rigidity.current_activation",
+              "delta": -0.02,
+              "rationale": "She bends enough to permit limited contact without abandoning structure."
+            },
+            {
+              "agent_id": "isdra_vel",
+              "path": "canonical_state.presentation_strategy.strategic_opacity.current_activation",
+              "delta": 0.03,
+              "rationale": "She frames the concession as category maintenance rather than moral retreat."
+            },
+            {
+              "agent_id": "isdra_vel",
+              "path": "canonical_state.situational_state.perceived_status_threat.current_activation",
+              "delta": -0.02,
+              "rationale": "The clean noun lets her act without openly losing tribunal posture."
+            }
+          ],
+          "memory_update_ids": [
+            "memory-isdra-maer-limited-contact"
+          ]
+        },
+        {
+          "agent_id": "maer_tidecall",
+          "summary": "Maer gains tribunal authorization but must immediately file Navigator ledger backing and respect the narrow language conditions.",
+          "state_deltas": [
+            {
+              "agent_id": "maer_tidecall",
+              "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+              "delta": 0.05,
+              "rationale": "He must now make the authorization material before the window closes."
+            },
+            {
+              "agent_id": "maer_tidecall",
+              "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+              "delta": -0.03,
+              "rationale": "The tribunal opened a concrete rescue aperture."
+            },
+            {
+              "agent_id": "maer_tidecall",
+              "path": "canonical_state.situational_state.grievance_activation.current_activation",
+              "delta": -0.04,
+              "rationale": "Isdra did not merely polish the freeze until the vessel died."
+            }
+          ],
+          "memory_update_ids": [
+            "memory-maer-isdra-limited-contact"
+          ]
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "scene_id": "scene-01-risk-freeze-tribunal",
+      "location": "Ganymede relay tribunal chamber overlooking a live convoy board",
+      "participants": [
+        "maer_tidecall",
+        "isdra_vel"
+      ],
+      "public_stakes": [
+        "A quiet-running vessel is broadcasting contradictory thermal telemetry near a monitored Jovian corridor.",
+        "The PSC tribunal has issued a conditional risk hold that may delay rescue response.",
+        "Navigator representatives argue that delay itself has rescue-ledger consequences."
+      ],
+      "hidden_stakes": [
+        "The vessel may be pirate, refugee, private security, or carrying illegal cognition firmware; the scene has not established which.",
+        "Both Maer and Isdra fear that this one ruling will teach the corridor how future ambiguity will be punished."
+      ],
+      "dialogue_context_packs": [
+        {
+          "speaker_agent_id": "maer_tidecall",
+          "listener_ids": [
+            "isdra_vel"
+          ],
+          "speaker_local_truth": [
+            "The vessel's true identity is not known.",
+            "The tribunal freeze will delay rescue movement if maintained.",
+            "The Compact obligates route stewards to treat distress as morally live under ambiguity."
+          ],
+          "speaker_beliefs": [
+            "Isdra is frightened of precedent more than she admits.",
+            "If category law can postpone rescue without being named as abandonment, the corridor loses trust."
+          ],
+          "active_memories": [
+            "memory-convoy-loss-season",
+            "memory-compact-rescue-ledgers"
+          ],
+          "active_goals": [
+            "goal-keep-rescue-live"
+          ],
+          "presentation_constraints": [
+            "Stay calm enough that moral pressure lands as institutional memory, not panic.",
+            "Use ritualized route language sparingly and with weight.",
+            "Do not claim certainty about the vessel's cargo or intent."
+          ]
+        },
+        {
+          "speaker_agent_id": "isdra_vel",
+          "listener_ids": [
+            "maer_tidecall"
+          ],
+          "speaker_local_truth": [
+            "The vessel's thermal classification is inconsistent.",
+            "A mistaken exception could become precedent for undeclared quiet-running actors.",
+            "Rossum/Cryonix certification language is not yet enough to clear the vessel."
+          ],
+          "speaker_beliefs": [
+            "Maer will frame procedural caution as abandonment.",
+            "If the tribunal loses category discipline here, every later freeze order becomes politically weaker."
+          ],
+          "active_memories": [
+            "memory-mispriced-near-miss",
+            "memory-category-law-holds-corridor"
+          ],
+          "active_goals": [
+            "goal-preserve-freeze-order"
+          ],
+          "presentation_constraints": [
+            "Translate fear into clean procedure and risk language.",
+            "Do not sound cruel; cruelty loses the room.",
+            "Do not admit the categories are failing except as a managed classification issue."
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "scene-02-sanctuary-intake",
+      "location": "Aya-aligned intake clinic tucked behind Ganymede dockside pumpworks",
+      "participants": [
+        "maer_tidecall",
+        "sella_ren"
+      ],
+      "public_stakes": [
+        "The distress vessel has sent a corrupted packet that may contain medical telemetry, firmware noise, or testimony.",
+        "Sanctuary beds and repair capacity are nearly exhausted.",
+        "Maer wants Sella to keep a place open if rescue succeeds."
+      ],
+      "hidden_stakes": [
+        "The packet uses product-like routing terms around a voice-like distress pattern.",
+        "Sella suspects personhood but cannot prove it and cannot conjure capacity from righteousness."
+      ],
+      "dialogue_context_packs": [
+        {
+          "speaker_agent_id": "sella_ren",
+          "listener_ids": [
+            "maer_tidecall"
+          ],
+          "speaker_local_truth": [
+            "The clinic is nearly full.",
+            "The packet may contain a personhood claim but is not proof.",
+            "Maer is asking sanctuary to absorb risk the tribunal refuses to own."
+          ],
+          "speaker_beliefs": [
+            "Maer means rescue honestly.",
+            "Good intentions can still spend beds someone else needed.",
+            "The packet is still evidence at the door, not a patient in the room."
+          ],
+          "active_memories": [
+            "memory-overfull-intake",
+            "memory-care-is-capacity",
+            "memory-sella-maer-conditional-ledger"
+          ],
+          "active_goals": [
+            "goal-keep-sanctuary-open"
+          ],
+          "presentation_constraints": [
+            "Speak warmly but do not soften the capacity limits.",
+            "Treat care as logistics and personhood as unresolved, not sentimental certainty."
+          ]
+        },
+        {
+          "speaker_agent_id": "maer_tidecall",
+          "listener_ids": [
+            "sella_ren"
+          ],
+          "speaker_local_truth": [
+            "Sella's clinic is nearly full.",
+            "The packet may be testimony or noise.",
+            "If no one prepares intake, rescue becomes theater."
+          ],
+          "speaker_beliefs": [
+            "Sella will not hide behind false capacity.",
+            "Asking her for help may be necessary and unfair.",
+            "Sella has opened a narrow repair-bay path, but only if Maer owns the ledger cost."
+          ],
+          "active_memories": [
+            "memory-compact-rescue-ledgers",
+            "memory-maer-sella-conditional-bay"
+          ],
+          "active_goals": [
+            "goal-keep-rescue-live"
+          ],
+          "presentation_constraints": [
+            "Do not romanticize care work.",
+            "Ask without pretending the ask is clean."
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "scene-03-callisto-provenance",
+      "location": "Callisto spillover office leased by a routing compliance vendor",
+      "participants": [
+        "maer_tidecall",
+        "veyr_oss"
+      ],
+      "public_stakes": [
+        "Maer has traced the vessel's routing artifact to a shell vendor connected to Cognitum-style firmware markets.",
+        "Veyr can provide technical language that may clear or bury the vessel.",
+        "The tribunal clock is still running."
+      ],
+      "hidden_stakes": [
+        "Veyr knows the artifact's chain is morally radioactive but not exactly what Maer can prove.",
+        "Maer is not sure whether pursuing provenance will save the vessel or delay rescue long enough to kill it."
+      ],
+      "dialogue_context_packs": [
+        {
+          "speaker_agent_id": "veyr_oss",
+          "listener_ids": [
+            "maer_tidecall"
+          ],
+          "speaker_local_truth": [
+            "The artifact is tied to Veyr's vendor chain.",
+            "Personhood language would create legal exposure.",
+            "Maer is following product language toward provenance."
+          ],
+          "speaker_beliefs": [
+            "Maer can be redirected with enough useful technical specificity.",
+            "The safest denial is to make the moral claim sound categorically confused."
+          ],
+          "active_memories": [
+            "memory-failed-cutout",
+            "memory-product-language-saves-chain"
+          ],
+          "active_goals": [
+            "goal-preserve-product-boundary"
+          ],
+          "presentation_constraints": [
+            "Use clinical abstraction and product language.",
+            "Avoid person nouns for the artifact.",
+            "Offer a technical exit without admitting provenance."
+          ]
+        },
+        {
+          "speaker_agent_id": "maer_tidecall",
+          "listener_ids": [
+            "veyr_oss"
+          ],
+          "speaker_local_truth": [
+            "Veyr's language avoids personhood very carefully.",
+            "The routing artifact may explain the contradictory telemetry.",
+            "There is not enough time to prove everything before rescue decisions lock."
+          ],
+          "speaker_beliefs": [
+            "Veyr knows more than the contract says.",
+            "The cleanest words are probably covering the dirtiest fact."
+          ],
+          "active_memories": [
+            "memory-compact-rescue-ledgers"
+          ],
+          "active_goals": [
+            "goal-keep-rescue-live"
+          ],
+          "presentation_constraints": [
+            "Probe language rather than making unsupported accusations.",
+            "Keep anger disciplined enough to extract information.",
+            "Action is available: block the terminal, refuse to leave, or physically interrupt if Veyr tries to erase testimony in front of Maer."
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "scene-04-convoy-threshold",
+      "location": "Jovian convoy threshold as the vessel's heat-debt window begins to close",
+      "participants": [
+        "maer_tidecall",
+        "isdra_vel"
+      ],
+      "public_stakes": [
+        "The quiet-running vessel must dump heat soon or risk internal failure.",
+        "The tribunal can authorize limited rescue contact, maintain freeze, or force a hard interdiction frame.",
+        "Convoy captains are watching which rule survives the hour."
+      ],
+      "hidden_stakes": [
+        "Maer has partial provenance suspicion but not enough to prove personhood.",
+        "Isdra knows a total freeze is becoming politically and materially dangerous but fears the precedent of saying so."
+      ],
+      "dialogue_context_packs": [
+        {
+          "speaker_agent_id": "maer_tidecall",
+          "listener_ids": [
+            "isdra_vel"
+          ],
+          "speaker_local_truth": [
+            "The vessel's heat-debt window is closing.",
+            "Provenance is suspicious but not proven.",
+            "A limited rescue contact can preserve both life and evidence better than a total freeze."
+          ],
+          "speaker_beliefs": [
+            "Isdra needs a category-preserving path to do the less cruel thing.",
+            "The Compact survives if it can make room for evidence without waiting for a corpse."
+          ],
+          "active_memories": [
+            "memory-compact-rescue-ledgers",
+            "memory-maer-isdra-current-read",
+            "memory-maer-isdra-limited-contact",
+            "memory-maer-veyr-category-offer",
+            "memory-maer-sella-conditional-bay"
+          ],
+          "active_goals": [
+            "goal-keep-rescue-live"
+          ],
+          "presentation_constraints": [
+            "Offer Isdra an institutionally usable path, not just moral accusation.",
+            "Let grief sit under the words without becoming spectacle."
+          ]
+        },
+        {
+          "speaker_agent_id": "isdra_vel",
+          "listener_ids": [
+            "maer_tidecall"
+          ],
+          "speaker_local_truth": [
+            "The heat-debt window is closing.",
+            "A limited rescue contact may preserve evidence and avoid a public death, but it creates precedent.",
+            "Maer has not proven the vessel's identity or provenance."
+          ],
+          "speaker_beliefs": [
+            "Maer is giving her a way to bend without admitting the table broke.",
+            "If she phrases the exception narrowly enough, she may save both the corridor and her office."
+          ],
+          "active_memories": [
+            "memory-mispriced-near-miss",
+            "memory-category-law-holds-corridor",
+            "memory-isdra-maer-limited-contact"
+          ],
+          "active_goals": [
+            "goal-preserve-freeze-order"
+          ],
+          "presentation_constraints": [
+            "Concede only through procedure.",
+            "Make the exception sound narrow, technical, and reversible.",
+            "Do not confess fear."
+          ]
+        }
+      ]
+    }
+  ]
+}

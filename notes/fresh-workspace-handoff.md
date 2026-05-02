@@ -58,6 +58,12 @@ path is:
 - Trace-backed Veyr capture: `experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.capture.json`
 - Trace-backed Veyr mutation: `experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.mutation.json`
 - Trace-backed Veyr aftermath state: `examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json`
+- Trace-backed Isdra projected context: `examples/projected-contexts/scene-04-convoy-threshold.isdra_vel.projected-context.json`
+- Trace-backed Isdra packet: `examples/responder-packets/scene-04-convoy-threshold.isdra_vel.packet.trace.v0.json`
+- Trace-backed Isdra coordinator artifact: `examples/coordinator/cold-wake-convoy-threshold.v0.json`
+- Trace-backed Isdra capture: `experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.capture.json`
+- Trace-backed Isdra mutation: `experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.mutation.json`
+- Trace-backed Isdra aftermath state: `examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json`
 - Research sanity probe: `experiments/research-sanity/navigator-embodiment-sanity-v0.capture.json`
 - Packet builder: `tools/build_responder_packet.py`
 - Packet/output validators: `tools/validate_responder_packets.py`, `tools/validate_responder_outputs.py`
@@ -98,17 +104,16 @@ current gold-data route.
 The first no-fork research-enabled Sella responder sample exists and has a
 reviewed mutation receipt. It carries `coordinator_reconstructed` trace entries
 and remains draft-grade audit data, not proof of the responder's actual tool
-path. The next Veyr/Callisto sample is the first accepted coordinator-scoped
-retrieval lane with `runner_captured` trace: coordinator retrieval grounded the
-packet in Cognitum cutouts, Neuromorphic Firmware product-denial language,
-Callisto gray-market cognition geography, and PSC category law; the responder
-then saw only the packet and returned a deniable handling category.
+path. The Veyr/Callisto sample is accepted coordinator-scoped retrieval with
+`runner_captured` trace, and the Isdra convoy-threshold sample is now accepted
+with `runner_captured` trace as well.
 
-Continue from `examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json`.
-The next beat should carry Veyr's category back toward Sella, Isdra, or both:
-`derivative routing residue with active distress-correlated service behavior`.
-Preserve runner-captured retrieval trace, exact packet-visible input, raw
-responder output, leakage audit, and reviewed mutation receipt.
+Continue from `examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json`.
+The next beat should carry Isdra's limited-contact authorization back into
+Sella's conditional bay path while Maer files Navigator ledger backing. Preserve
+runner-captured retrieval trace, exact packet-visible input, raw responder
+output, leakage audit, and reviewed mutation receipt. Artifact personhood,
+source-chain provenance, and final rescue outcome remain unresolved.
 
 ## Warnings
 

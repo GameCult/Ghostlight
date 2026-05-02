@@ -72,6 +72,13 @@ Aetheria lore/source context
   lore as packet-visible source excerpts, runs a no-fork packet-only responder,
   and mutates state into
   `examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json`.
+- Second accepted runner-traced coordinator-scoped sample:
+  `experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.capture.json`
+- It starts from `examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json`,
+  projects Isdra for `scene-04-convoy-threshold`, embeds coordinator-retrieved
+  lore on Cold Wake, PSC category law, Ganymede rescue ledgers, heat debt, and
+  Navigator mixed-interface spaces, then mutates state into
+  `examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json`.
 - Parent sessions currently receive only the subagent final message, not a
   visible tool-call transcript. Treat subagent research as self-reported unless
   the worker returns explicit research notes or a future runner captures calls.

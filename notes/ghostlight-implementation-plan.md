@@ -30,8 +30,9 @@ sandboxed training-data pipeline for branching scenes and state consequences.
    - Continue rejecting archived local-model prototype runners for gold responder data unless the task is explicitly model plumbing.
 
 4. Generate the next reviewed sample.
-   - Start from `examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json`.
+   - Start from `examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json`.
    - Build the next projected local context and responder packet from reviewed state, not from coordinator memory.
+   - The next likely beat is Sella receiving Isdra's limited-contact authorization plus Maer's Navigator ledger signature and deciding whether the conditional bay path can receive contact under isolation/decon constraints.
    - Run the next no-fork sandboxed responder/coordinator step with exact visible input, raw output, runner-captured research trace, leakage audit, and review labels.
    - Convert accepted output into mutation receipts.
    - Keep fuzzy social changes manual and auditable until appraiser/classifier models exist.

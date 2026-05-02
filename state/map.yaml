@@ -120,6 +120,12 @@ current_artifacts:
     - experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.capture.json
     - experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.mutation.json
     - examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json
+    - examples/projected-contexts/scene-04-convoy-threshold.isdra_vel.projected-context.json
+    - examples/responder-packets/scene-04-convoy-threshold.isdra_vel.packet.trace.v0.json
+    - examples/coordinator/cold-wake-convoy-threshold.v0.json
+    - experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.capture.json
+    - experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.mutation.json
+    - examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json
   archived_receipts:
     - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
 
@@ -132,5 +138,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Ghostlight now has its first accepted coordinator-scoped, runner-traced responder sample. Veyr's Callisto provenance turn uses runner-captured lore trace, packet-only no-fork response, reviewed capture, mutation receipt, and updated state.
-  next_action: Continue from examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json. Build the next responder/coordinator step around Maer carrying Veyr's deniable handling category back toward Sella, Isdra, or both, preserving runner-captured retrieval trace, exact packet-visible input, raw responder output, leakage audit, and reviewed mutation receipt.
+  summary: Ghostlight now has two accepted coordinator-scoped, runner-traced responder samples. The latest Isdra convoy-threshold turn authorizes limited contact under freeze using Veyr's handling category, Navigator ledger backing, isolation/decon conditions, packet-sound preservation, and reversal triggers; state has advanced to after-isdra-limited-contact.
+  next_action: Continue from examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json. Build the next responder/coordinator step around Maer filing the Navigator ledger signature and carrying Isdra's limited-contact authorization back to Sella's conditional bay path, preserving runner-captured retrieval trace, exact packet-visible input, raw responder output, leakage audit, and reviewed mutation receipt.

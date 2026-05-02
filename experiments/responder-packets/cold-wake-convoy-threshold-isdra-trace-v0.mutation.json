@@ -1,0 +1,324 @@
+{
+  "schema_version": "ghostlight.reviewed_state_mutation.v0",
+  "mutation_id": "mutation-convoy-threshold-isdra-limited-contact-trace-v0",
+  "source_fixture_ref": "examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json",
+  "source_capture_ref": "experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.capture.json",
+  "mutated_fixture_ref": "examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json",
+  "event_id": "event-isdra-limited-contact",
+  "responder_output_ref": "experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.capture.json#parsed_output",
+  "participant_appraisals": [
+    {
+      "schema_version": "ghostlight.manual_participant_appraisal.v0",
+      "appraiser": "codex_manual_review",
+      "participant_agent_id": "isdra_vel",
+      "trigger_observable_action": {
+        "speaker_id": "maer_tidecall",
+        "action_type": "show_object",
+        "utterance_summary": "Maer returns with Veyr's handling category, Sella's bay conditions, and a Navigator ledger signature offer.",
+        "dialogue_function": "request_limited_contact_authorization",
+        "observable_cues": [
+          "shared convoy-threshold board",
+          "collapsed source-chain field",
+          "heat-debt timer",
+          "rescue ledger signature slot"
+        ]
+      },
+      "private_interpretation": "Isdra reads Maer's move as disciplined pressure rather than pure accusation: he has brought her a category she can use without publicly conceding the frame he likely wants. She suspects he may later treat the exception as evidence that the original freeze was morally defective, but she also understands that refusing now would make the tribunal legible as a machine that can watch a heat window close while polishing grammar.",
+      "attributed_motive": "Maer may later use the exception as proof against the original freeze, but he has provided a category Isdra can use without public concession.",
+      "misread_risk": "Medium. Isdra may overread Maer as setting a public precedent trap, even though his immediate move is materially useful.",
+      "state_deltas": [
+        {
+          "agent_id": "isdra_vel",
+          "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+          "delta": 0.03,
+          "rationale": "She turns the exception into a permit shell with explicit reversal triggers."
+        },
+        {
+          "agent_id": "isdra_vel",
+          "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+          "delta": -0.04,
+          "rationale": "A category-preserving path reduces immediate panic even as precedent risk remains."
+        },
+        {
+          "agent_id": "isdra_vel",
+          "path": "canonical_state.behavioral_dimensions.rigidity.current_activation",
+          "delta": -0.02,
+          "rationale": "She bends enough to permit limited contact without abandoning structure."
+        },
+        {
+          "agent_id": "isdra_vel",
+          "path": "canonical_state.presentation_strategy.strategic_opacity.current_activation",
+          "delta": 0.03,
+          "rationale": "She frames the concession as category maintenance rather than moral retreat."
+        },
+        {
+          "agent_id": "isdra_vel",
+          "path": "canonical_state.situational_state.perceived_status_threat.current_activation",
+          "delta": -0.02,
+          "rationale": "The clean noun lets her act without openly losing tribunal posture."
+        }
+      ],
+      "relationship_deltas": [
+        {
+          "relationship_id": "rel-isdra-maer",
+          "path": "stance.trust.current_activation",
+          "delta": 0.03,
+          "rationale": "Maer supplied a usable category and accepted ledger exposure."
+        },
+        {
+          "relationship_id": "rel-isdra-maer",
+          "path": "stance.respect.current_activation",
+          "delta": 0.04,
+          "rationale": "Maer applied pressure through procedure rather than unsupported accusation."
+        },
+        {
+          "relationship_id": "rel-isdra-maer",
+          "path": "stance.resentment.current_activation",
+          "delta": -0.02,
+          "rationale": "The move gave Isdra a workable path instead of only public blame."
+        },
+        {
+          "relationship_id": "rel-isdra-maer",
+          "path": "stance.fear.current_activation",
+          "delta": 0.02,
+          "rationale": "Maer remains capable of turning tribunal language into legitimacy pressure."
+        },
+        {
+          "relationship_id": "rel-isdra-maer",
+          "path": "stance.expectation_of_betrayal.current_activation",
+          "delta": 0.01,
+          "rationale": "Isdra still expects the exception may be used against category law later."
+        }
+      ],
+      "next_action_constraints": [
+        "Limited contact is authorized only under freeze.",
+        "Navigator ledger signature must be filed.",
+        "No personhood, ancestry, source-chain custody, or testimony conversion may enter the formal order before diagnostic preservation.",
+        "Breach snaps the exception shut and returns the vessel to full freeze with interdiction review available."
+      ]
+    },
+    {
+      "schema_version": "ghostlight.manual_participant_appraisal.v0",
+      "appraiser": "codex_manual_review",
+      "participant_agent_id": "maer_tidecall",
+      "trigger_observable_action": {
+        "speaker_id": "isdra_vel",
+        "action_type": "set_condition",
+        "utterance_summary": "Tribunal notes the offered handling category: derivative routing residue with active distress-correlated service behavior. Nonperson, nonorigin, noncustodial. Source-chain custody remains outside this request. Artifact status remains unresolved diagnostic evidence.\n\nLimited-contact exception is authorized under freeze, not in place of it. Rescue contact may proceed only through Sella's conditional bay path: isolation maintained, decontamination logged, packet sound preserved intact, no ancestry claim entered, no personhood term attached, no custody inference created.\n\nNavigator ledger signature will carry the immediate cost exposure. File it now, Maer Tidecall. If the signature fails, if the isolation boundary is breached, or if the packet is converted into testimony before diagnostic preservation is complete, this exception snaps shut and the vessel returns to full freeze with interdiction review available.\n\nYou have your clean noun. Use it quickly.",
+        "dialogue_function": "conditional_limited_contact_authorization",
+        "observable_cues": [
+          "Isdra draws the collapsed source-chain field behind a gray custody seal, moves the heat-debt timer into the tribunal authority pane, and opens a narrow conditional permit shell. The freeze flag remains lit at the vessel perimeter while a limited-contact channel appears inside it, tagged for isolation, decontamination discipline, ledger-backed repair-bay contact, and packet-sound preservation."
+        ]
+      },
+      "private_interpretation": "Isdra has not admitted the freeze was wrong, but she has made rescue contact operational before the heat window closes.",
+      "attributed_motive": "Isdra is preserving tribunal authority while avoiding a preventable public death.",
+      "misread_risk": "Medium. Maer may underweight the precedent risk Isdra is containing, while Isdra may underweight the moral cost of the language restrictions.",
+      "state_deltas": [
+        {
+          "agent_id": "maer_tidecall",
+          "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+          "delta": 0.05,
+          "rationale": "He must now make the authorization material before the window closes."
+        },
+        {
+          "agent_id": "maer_tidecall",
+          "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+          "delta": -0.03,
+          "rationale": "The tribunal opened a concrete rescue aperture."
+        },
+        {
+          "agent_id": "maer_tidecall",
+          "path": "canonical_state.situational_state.grievance_activation.current_activation",
+          "delta": -0.04,
+          "rationale": "Isdra did not merely polish the freeze until the vessel died."
+        }
+      ],
+      "relationship_deltas": [
+        {
+          "relationship_id": "rel-maer-isdra",
+          "path": "stance.trust.current_activation",
+          "delta": 0.06,
+          "rationale": "Isdra opened an actual rescue aperture."
+        },
+        {
+          "relationship_id": "rel-maer-isdra",
+          "path": "stance.respect.current_activation",
+          "delta": 0.05,
+          "rationale": "She bent without making the procedure useless."
+        },
+        {
+          "relationship_id": "rel-maer-isdra",
+          "path": "stance.resentment.current_activation",
+          "delta": -0.05,
+          "rationale": "The freeze no longer functions as pure delay."
+        },
+        {
+          "relationship_id": "rel-maer-isdra",
+          "path": "stance.obligation.current_activation",
+          "delta": 0.06,
+          "rationale": "Maer now owes ledger backing under the authorization Isdra created."
+        },
+        {
+          "relationship_id": "rel-maer-isdra",
+          "path": "stance.expectation_of_betrayal.current_activation",
+          "delta": -0.06,
+          "rationale": "Isdra did not bury the rescue aperture when given a usable category."
+        }
+      ],
+      "next_action_constraints": [
+        "Maer must file the Navigator ledger signature immediately.",
+        "Maer must keep formal language inside the nonperson, nonorigin, noncustodial handling category if he wants the permit to remain open.",
+        "Sella still controls whether the conditional bay can actually receive the vessel."
+      ]
+    }
+  ],
+  "observed_action": {
+    "speaker_id": "maer_tidecall",
+    "action_type": "show_object",
+    "utterance_summary": "Maer returns with Veyr's handling category, Sella's bay conditions, and a Navigator ledger signature offer.",
+    "dialogue_function": "request_limited_contact_authorization",
+    "observable_cues": [
+      "shared convoy-threshold board",
+      "collapsed source-chain field",
+      "heat-debt timer",
+      "rescue ledger signature slot"
+    ]
+  },
+  "observed_response": {
+    "speaker_id": "isdra_vel",
+    "action_type": "set_condition",
+    "utterance_summary": "Tribunal notes the offered handling category: derivative routing residue with active distress-correlated service behavior. Nonperson, nonorigin, noncustodial. Source-chain custody remains outside this request. Artifact status remains unresolved diagnostic evidence.\n\nLimited-contact exception is authorized under freeze, not in place of it. Rescue contact may proceed only through Sella's conditional bay path: isolation maintained, decontamination logged, packet sound preserved intact, no ancestry claim entered, no personhood term attached, no custody inference created.\n\nNavigator ledger signature will carry the immediate cost exposure. File it now, Maer Tidecall. If the signature fails, if the isolation boundary is breached, or if the packet is converted into testimony before diagnostic preservation is complete, this exception snaps shut and the vessel returns to full freeze with interdiction review available.\n\nYou have your clean noun. Use it quickly.",
+    "dialogue_function": "conditional_limited_contact_authorization",
+    "observable_cues": [
+      "Isdra draws the collapsed source-chain field behind a gray custody seal, moves the heat-debt timer into the tribunal authority pane, and opens a narrow conditional permit shell. The freeze flag remains lit at the vessel perimeter while a limited-contact channel appears inside it, tagged for isolation, decontamination discipline, ledger-backed repair-bay contact, and packet-sound preservation."
+    ]
+  },
+  "applied_mutations": [
+    {
+      "target": "isdra_vel",
+      "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+      "before": 0.93,
+      "after": 0.96
+    },
+    {
+      "target": "isdra_vel",
+      "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+      "before": 0.82,
+      "after": 0.78
+    },
+    {
+      "target": "isdra_vel",
+      "path": "canonical_state.behavioral_dimensions.rigidity.current_activation",
+      "before": 0.89,
+      "after": 0.87
+    },
+    {
+      "target": "isdra_vel",
+      "path": "canonical_state.presentation_strategy.strategic_opacity.current_activation",
+      "before": 0.77,
+      "after": 0.8
+    },
+    {
+      "target": "isdra_vel",
+      "path": "canonical_state.situational_state.perceived_status_threat.current_activation",
+      "before": 0.88,
+      "after": 0.86
+    },
+    {
+      "target": "maer_tidecall",
+      "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+      "before": 0.71,
+      "after": 0.76
+    },
+    {
+      "target": "maer_tidecall",
+      "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+      "before": 0.64,
+      "after": 0.61
+    },
+    {
+      "target": "maer_tidecall",
+      "path": "canonical_state.situational_state.grievance_activation.current_activation",
+      "before": 0.73,
+      "after": 0.69
+    },
+    {
+      "target": "rel-isdra-maer",
+      "path": "stance.trust.current_activation",
+      "before": 0.23,
+      "after": 0.26
+    },
+    {
+      "target": "rel-isdra-maer",
+      "path": "stance.respect.current_activation",
+      "before": 0.68,
+      "after": 0.72
+    },
+    {
+      "target": "rel-isdra-maer",
+      "path": "stance.resentment.current_activation",
+      "before": 0.49,
+      "after": 0.47
+    },
+    {
+      "target": "rel-isdra-maer",
+      "path": "stance.fear.current_activation",
+      "before": 0.61,
+      "after": 0.63
+    },
+    {
+      "target": "rel-isdra-maer",
+      "path": "stance.expectation_of_betrayal.current_activation",
+      "before": 0.59,
+      "after": 0.6
+    },
+    {
+      "target": "rel-maer-isdra",
+      "path": "stance.trust.current_activation",
+      "before": 0.28,
+      "after": 0.34
+    },
+    {
+      "target": "rel-maer-isdra",
+      "path": "stance.respect.current_activation",
+      "before": 0.62,
+      "after": 0.67
+    },
+    {
+      "target": "rel-maer-isdra",
+      "path": "stance.resentment.current_activation",
+      "before": 0.56,
+      "after": 0.51
+    },
+    {
+      "target": "rel-maer-isdra",
+      "path": "stance.obligation.current_activation",
+      "before": 0.5,
+      "after": 0.56
+    },
+    {
+      "target": "rel-maer-isdra",
+      "path": "stance.expectation_of_betrayal.current_activation",
+      "before": 0.64,
+      "after": 0.58
+    }
+  ],
+  "accepted_world_state_candidates": [
+    "A limited-contact exception is opened under the existing freeze rather than replacing it.",
+    "Navigator ledger signature is required for immediate cost exposure before repair-bay contact proceeds.",
+    "Packet sound must be preserved as diagnostic evidence without personhood, ancestry, or source-chain custody claims.",
+    "Breach of isolation, decontamination, ledger, or language conditions returns the vessel to full freeze with interdiction review available."
+  ],
+  "manual_review_notes": [
+    "The responder output was accepted without prose repair.",
+    "The limited-contact permit is accepted as scene-local procedural state, not as truth about the artifact.",
+    "Both Maer and Isdra receive state, relationship, memory, and event updates.",
+    "The research trace is runner-captured at the coordinator retrieval layer; the responder had no repo access."
+  ],
+  "deferred_mutations": [
+    "No personhood claim is proven or disproven.",
+    "No Cognitum provenance confession is canonized.",
+    "No final Sella bay intake or rescue outcome is canonized yet.",
+    "No automatic appraiser or mutator is trained yet."
+  ]
+}

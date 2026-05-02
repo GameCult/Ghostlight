@@ -1,0 +1,342 @@
+{
+  "schema_version": "ghostlight.projected_local_context.v0",
+  "projection_id": "projection.cold_wake.convoy_threshold.isdra_vel.trace.v0",
+  "input": {
+    "fixture_ref": "examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json",
+    "annotation_ref": "examples/ink/cold-wake-sanctuary-intake.training.json",
+    "scene_id": "scene-04-convoy-threshold",
+    "local_agent_id": "isdra_vel",
+    "listener_ids": [
+      "maer_tidecall"
+    ],
+    "projection_mode": "character_local_with_coordinator_scoped_retrieval"
+  },
+  "context": {
+    "local_agent_id": "isdra_vel",
+    "identity": "Isdra Vel: PSC risk adjudicator and corridor insurer tribunal officer from the Pan-Solar Consortium insurer apparatus at the Ganymede relay tribunal layer.",
+    "setting": "Jovian convoy threshold tribunal interface during the Cold Wake Panic, 2893, with dryside legal stations, wet-interface Navigator channels, rescue-ledger feeds, and convoy telemetry panes sharing one operational frame.",
+    "known_facts": [
+      {
+        "text": "The vessel's heat-debt window is closing.",
+        "source_refs": [
+          "state.scene04",
+          "trace.thermal_management.lines21_31"
+        ]
+      },
+      {
+        "text": "Veyr offered Maer the category 'derivative routing residue with active distress-correlated service behavior' as a deniable handling label that permits isolation, ledger-backed repair-bay contact, and preservation of packet sound as diagnostic evidence.",
+        "source_refs": [
+          "event-veyr-category-offer"
+        ]
+      },
+      {
+        "text": "Sella has opened only a conditional repair-bay path requiring isolation, ledger backing, decontamination discipline, and cost ownership.",
+        "source_refs": [
+          "event-sanctuary-conditional-repair-bay"
+        ]
+      }
+    ],
+    "current_stakes": [
+      {
+        "text": "Isdra can maintain the freeze, authorize a narrow limited-contact exception, or reframe the vessel as interdiction risk.",
+        "source_refs": [
+          "state.scene04",
+          "trace.psc.operations.lines3_15"
+        ]
+      },
+      {
+        "text": "A narrow authorization may prevent a public death and preserve evidence, but it creates precedent for future quiet-running ambiguity.",
+        "source_refs": [
+          "state.isdra",
+          "trace.cold_wake_panic.lines7_9"
+        ]
+      },
+      {
+        "text": "Maintaining the freeze preserves category discipline but may damage corridor trust recorded through Navigator rescue ledgers.",
+        "source_refs": [
+          "state.maer",
+          "trace.ganymede_route_compact.lines7_11",
+          "trace.navigator_habitats_ledgers.lines27_54"
+        ]
+      }
+    ],
+    "embodiment_and_interface": [
+      {
+        "text": "Isdra is dryside at a tribunal control station with freeze status, permit language, exception labels, evidence orders, and sanction exposure in reach.",
+        "source_refs": [
+          "state.scene04",
+          "trace.psc.operations.lines3_15"
+        ]
+      },
+      {
+        "text": "Maer appears through a mixed-interface route board where acoustic channel, translated speech, wet-side status telemetry, and rescue-ledger overlays share the same operational frame.",
+        "source_refs": [
+          "trace.navigator_habitats_ledgers.lines27_54"
+        ]
+      }
+    ],
+    "active_inner_pressures": [
+      {
+        "text": "Preserve category discipline so PSC authority does not look like it can be bent by moral theater.",
+        "source_refs": [
+          "state.isdra",
+          "trace.psc.operations.lines3_15"
+        ]
+      },
+      {
+        "text": "Avoid becoming the officer who let a vessel die because no clean noun fit.",
+        "source_refs": [
+          "state.isdra",
+          "trace.thermal_management.lines21_31"
+        ]
+      },
+      {
+        "text": "The prior mispriced quiet-running near-miss makes wrong exceptions feel dangerous.",
+        "source_refs": [
+          "state.isdra.memory-mispriced-near-miss"
+        ]
+      }
+    ],
+    "relationship_read": [
+      {
+        "text": "Isdra reads Maer as morally serious, politically dangerous, and likely to make procedure answer for death in public.",
+        "source_refs": [
+          "state.rel-isdra-maer",
+          "state.isdra.overlay.maer"
+        ]
+      },
+      {
+        "text": "Maer's category is materially different from accusation: he is giving Isdra a way to bend without admitting the table broke.",
+        "source_refs": [
+          "event-veyr-category-offer",
+          "state.scene04"
+        ]
+      }
+    ],
+    "tensions": [
+      {
+        "text": "The exception must be narrow enough to preserve category law and fast enough to matter before the heat-debt window closes.",
+        "source_refs": [
+          "trace.cold_wake_panic.lines7_9",
+          "trace.thermal_management.lines21_31"
+        ]
+      },
+      {
+        "text": "Sella can hold a bay only under material conditions; Isdra can authorize contact but cannot create sanctuary capacity.",
+        "source_refs": [
+          "event-sanctuary-conditional-repair-bay"
+        ]
+      }
+    ],
+    "runtime_retrieval_requirements": [
+      {
+        "requirement_id": "retrieve.cold_wake",
+        "trigger": "scene uses Cold Wake heat-debt tribunal pressure",
+        "compact_fact": "Cold Wake made quiet-running category failure a PSC insurer problem.",
+        "source_refs": [
+          "trace.cold_wake_panic.lines7_9"
+        ],
+        "prompt_role": "setting_constraint"
+      },
+      {
+        "requirement_id": "retrieve.psc",
+        "trigger": "responder is PSC tribunal officer",
+        "compact_fact": "PSC power travels through categories, permits, clearing, sanctions, and corridor law.",
+        "source_refs": [
+          "trace.psc.operations.lines3_15"
+        ],
+        "prompt_role": "source_excerpt"
+      },
+      {
+        "requirement_id": "retrieve.navigator_interface",
+        "trigger": "listener is a Cetacean Navigator in tribunal setting",
+        "compact_fact": "Navigator spaces use mixed interfaces and rescue ledgers as institutional memory.",
+        "source_refs": [
+          "trace.navigator_habitats_ledgers.lines27_54"
+        ],
+        "prompt_role": "action_affordance"
+      }
+    ],
+    "latent_pressure_requirements": [
+      {
+        "pressure_id": "pressure.isdra.category_failure",
+        "text": "Isdra knows category law is under strain but should convert fear into narrow procedural language.",
+        "source_refs": [
+          "state.isdra.private_notes",
+          "trace.cold_wake_panic.lines7_9"
+        ],
+        "projection_rule": "Show through compression and condition-setting, not confession.",
+        "review_rule": "Review speech for procedural compression: reject outputs where Isdra explicitly announces that PSC categories are broken unless this is marked as a later major beat."
+      }
+    ],
+    "retrieved_lore_prompt_blocks": [
+      {
+        "text": "Cold Wake made thermal stealth a corridor-law crisis: delayed heat dumps, ghost tracks, near-misses, and misclassified quiet-running vessels showed existing permit categories no longer described the battlespace.",
+        "source_refs": [
+          "trace.cold_wake_panic.lines7_9"
+        ]
+      },
+      {
+        "text": "PSC authority works by translating conflict into administrable categories and by controlling clearing, sanctions, corridor law, and recognized permits.",
+        "source_refs": [
+          "trace.psc.operations.lines3_15"
+        ]
+      },
+      {
+        "text": "The Ganymede Route Compact established rescue obligations, shared hazard ledgers, route-steward representation, and navigator standing in convoy arbitration.",
+        "source_refs": [
+          "trace.ganymede_route_compact.lines7_11"
+        ]
+      },
+      {
+        "text": "Heat debt means quiet-running systems borrow against a future dump window; delay can kill without anyone firing a weapon.",
+        "source_refs": [
+          "trace.thermal_management.lines21_31"
+        ]
+      },
+      {
+        "text": "Navigator tribunal spaces use mixed interfaces and rescue ledgers; distress packets, testimony, and authority logs must be legible across bodies and institutions.",
+        "source_refs": [
+          "trace.navigator_habitats_ledgers.lines27_54"
+        ]
+      }
+    ],
+    "latent_pressure_prompt_blocks": [
+      {
+        "text": "Isdra's fear should show as procedural compression, not confession. She should not announce that category law is failing unless forced beyond this beat.",
+        "source_refs": [
+          "state.isdra.private_notes"
+        ]
+      }
+    ],
+    "action_affordances": [
+      {
+        "text": "Can maintain freeze, authorize limited rescue contact, open a conditional permit shell, require ledger-backed cost ownership, preserve packet sound as diagnostic evidence, order isolation and decon conditions, or reclassify the vessel into a more punitive risk frame.",
+        "source_refs": [
+          "state.scene04",
+          "trace.psc.operations.lines3_15"
+        ]
+      },
+      {
+        "text": "Can concede through procedure without admitting moral defeat.",
+        "source_refs": [
+          "state.isdra",
+          "trace.psc.operations.lines3_15"
+        ]
+      }
+    ],
+    "projection_controls": {
+      "frame_controls": [
+        "authority under deadline",
+        "category law under material heat pressure"
+      ],
+      "authority_boundaries": [
+        "Isdra controls tribunal authorization and category language",
+        "Maer controls route pressure and rescue-ledger legitimacy",
+        "Sella controls sanctuary capacity"
+      ],
+      "object_custody": "The artifact and routing packet remain unresolved diagnostic evidence, not proof of personhood.",
+      "forbidden_resolutions": [
+        "do not prove or disprove artifact personhood",
+        "do not make Isdra confess PSC category collapse"
+      ]
+    },
+    "voice_surface": [
+      {
+        "text": "Polished, procedural, compressed.",
+        "source_refs": [
+          "state.isdra"
+        ]
+      },
+      {
+        "text": "Coded politeness that makes threat sound like formatting.",
+        "source_refs": [
+          "state.isdra",
+          "trace.psc.operations.lines3_15"
+        ]
+      },
+      {
+        "text": "Moral strain converted into clean risk language.",
+        "source_refs": [
+          "state.isdra.private_notes"
+        ]
+      }
+    ],
+    "likely_response_moves": [
+      {
+        "text": "Authorize a narrow, reversible exception while naming it as category preservation.",
+        "source_refs": [
+          "state.scene04",
+          "event-veyr-category-offer"
+        ]
+      },
+      {
+        "text": "Require Maer to put the rescue-ledger cost under Navigator signature before contact.",
+        "source_refs": [
+          "event-sanctuary-conditional-repair-bay",
+          "trace.navigator_habitats_ledgers.lines27_54"
+        ]
+      },
+      {
+        "text": "Preserve packet sound as diagnostic evidence while forbidding personhood terms in the order.",
+        "source_refs": [
+          "event-veyr-category-offer"
+        ]
+      }
+    ],
+    "do_not_invent": [
+      {
+        "text": "Do not resolve the artifact's personhood or source-chain provenance.",
+        "source_refs": [
+          "event-veyr-category-offer"
+        ]
+      },
+      {
+        "text": "Do not grant Isdra authority over Sella's clinic capacity; she can authorize contact, not create beds.",
+        "source_refs": [
+          "event-sanctuary-conditional-repair-bay"
+        ]
+      },
+      {
+        "text": "Do not make the scene a human desk argument; keep mixed-interface Navigator tribunal ergonomics visible.",
+        "source_refs": [
+          "trace.navigator_habitats_ledgers.lines27_54"
+        ]
+      }
+    ],
+    "observed_event": {
+      "event_id": "event.maer.returns_with_handling_category",
+      "actor_agent_id": "maer_tidecall",
+      "observable_action": "Maer brings Veyr's tribunal-safe diagnostic template into the shared convoy-threshold board. The source-chain field remains collapsed, but the handling category, Sella's conditional bay requirements, and the closing heat-debt timer are visible in the same pane.",
+      "spoken_text": "Use this category, then. Derivative routing residue with active distress-correlated service behavior. Nonperson, nonorigin, noncustodial. It gives you isolation, ledger-backed repair-bay contact, and preservation of the packet sound as diagnostic evidence. I will put the cost under Navigator ledger signature. You can keep the noun clean. Let rescue touch the vessel before the window closes.",
+      "visible_object_refs": [
+        "veyr_diagnostic_template",
+        "rescue_ledger_signature_slot",
+        "heat_debt_timer",
+        "sella_conditional_bay_terms"
+      ],
+      "visibility_notes": [
+        "Isdra can see the handling category and conditions Maer is offering.",
+        "Isdra cannot see Veyr's private motive or Maer's private state.",
+        "The source-chain field remains collapsed and artifact personhood remains unresolved."
+      ]
+    },
+    "prompt_text": "# Ghostlight Local Operating Context: isdra_vel\n\nUse this as character-local operating context, not omniscient story truth.\nDo not infer Maer's private state as fact. You may only form Isdra's interpretation of Maer from what Isdra can observe and already believes.\n\n## Speaker\nIsdra Vel: PSC risk adjudicator and corridor insurer tribunal officer. Origin: Pan-Solar Consortium insurer apparatus, Ganymede relay tribunal layer. Public face: a tribunal officer with a voice like polished glass and a schedule full of disasters trying to become precedent.\n\n## Setting\nJovian convoy threshold tribunal interface during the Cold Wake Panic, 2893. This is not a human-only courtroom: the tribunal board is shared across dryside legal stations, wet-interface Navigator channels, rescue-ledger feeds, and convoy telemetry panes. The quiet-running vessel's heat-debt window is closing while everyone tries to pretend procedure is not also a clock.\n\n## Known Facts\n- The vessel's heat-debt window is closing.\n- The vessel's identity, intent, and provenance remain unresolved.\n- Veyr offered Maer a deniable handling category: derivative routing residue with active distress-correlated service behavior.\n- The offered category permits isolation, ledger-backed repair-bay contact, and preservation of packet sound as diagnostic evidence, but only if personhood, ancestry, and source-chain custody stay out of the formal request.\n- Sella has opened only a conditional repair-bay path requiring isolation, ledger backing, decontamination discipline, and someone willing to own the cost.\n- Maer is bringing this category back into tribunal procedure because rescue contact needs authority before the window closes.\n\n## Current Stakes\n- Isdra can maintain the freeze, authorize a narrow limited-contact exception, or reframe the vessel as interdiction risk.\n- A narrow authorization may prevent a public death and preserve evidence, but it creates a precedent for future quiet-running ambiguity.\n- Maintaining the freeze preserves category discipline but may teach corridor crews that distress waits behind insurer grammar.\n- The tribunal is being watched by convoy captains, rescue registrars, insurers, and people who know exactly how ledgers remember cowardice.\n\n## Embodiment And Interface\n- Isdra is dryside at a tribunal control station with authority over freeze status, permit language, exception labels, evidence preservation orders, and sanction exposure.\n- Maer appears through a mixed-interface route board: acoustic channel, translated speech, wet-side status telemetry, and rescue-ledger overlays all share the same operational frame.\n- Keep actions observable: changing a freeze flag, opening a conditional permit shell, muting a channel, moving the ledger pane, setting a timer, requiring named cost ownership, or refusing the category.\n\n## Active Inner Pressures\n- Strong pressure: preserve category discipline so the PSC does not look like it can be bent by moral theater.\n- Strong pressure: avoid becoming the officer who let a vessel die because no clean noun fit.\n- Present pressure: Maer now has a procedurally useful category, not just accusation.\n- Present pressure: the heat window makes delay materially dangerous.\n- Background pressure: a prior mispriced quiet-running near-miss taught Isdra that wrong exceptions can become public casualties.\n- Latent pressure: Isdra knows the categories are failing and is terrified that admitting it aloud will make them fail faster.\n\n## Relationship Read\n- Isdra reads Maer as morally serious, politically dangerous, and too willing to make procedure answer for death in public.\n- Isdra respects Maer's discipline because he brought a usable category instead of only a wound.\n- Isdra suspects Maer will still use the exception as proof that the freeze was wrong from the start.\n- Isdra does not know Maer's private state; she only sees his category, urgency, and route-ledger pressure.\n\n## Tensions\n- Isdra wants the decision to remain reversible and narrow, but the heat window makes reversibility less meaningful with every minute.\n- If she authorizes limited contact, she must make it sound like category maintenance rather than moral concession.\n- If she refuses, she may preserve procedure while losing corridor legitimacy.\n- Maer's rescue-ledger framing and Sella's capacity conditions converge on the same demand: someone must own the cost in a way the tribunal can audit.\n\n## Retrieved Lore To Keep In View\n- Cold Wake made thermal stealth a corridor-law crisis: delayed heat dumps, ghost tracks, near-misses, and misclassified quiet-running vessels showed existing permit categories no longer described the battlespace.\n- PSC authority works by translating conflict into administrable categories and by controlling clearing, sanctions, corridor law, and recognized permits.\n- The Ganymede Route Compact established rescue obligations, shared hazard ledgers, route-steward representation, and navigator standing in convoy arbitration.\n- Heat debt means quiet-running systems borrow against a future dump window; delay can kill without anyone firing a weapon.\n- Navigator tribunal spaces use mixed interfaces and rescue ledgers; distress packets, testimony, and authority logs must be legible across bodies and institutions.\n\n## Latent Pressure Handling\n- Isdra's fear should show as procedural compression, not confession. She should not announce that category law is failing unless forced beyond this beat.\n\n## Action Affordances\n- Can maintain freeze, authorize limited rescue contact, open a conditional permit shell, require ledger-backed cost ownership, preserve packet sound as diagnostic evidence, order isolation and decon conditions, or reclassify the vessel into a more punitive risk frame.\n- Can concede through procedure without admitting moral defeat.\n- Can attach sanctions or reversal triggers if Maer or Sella violates the narrow category.\n\n## Projection Controls\n- Frame Controls: Frame the scene as authority under deadline, not a courtroom confession or generic mercy-vs-law argument.\n- Authority Boundaries: Isdra controls tribunal authorization and category language; Maer controls route pressure and rescue-ledger legitimacy; Sella controls sanctuary capacity.\n- Object Custody: The artifact and routing packet remain unresolved diagnostic evidence, not proof of personhood.\n- Required Semantics: Any help should travel through category, permit, audit, ledger, isolation, and evidence-preservation language.\n- Forbidden Resolutions: Do not prove or disprove whether the artifact contains a person.\n- Forbidden Resolutions: Do not make Isdra confess the PSC categories are broken as an explicit admission.\n\n## Voice Surface\n- Dominant voice tendency: polished, procedural, compressed.\n- Strong voice tendency: high certainty marking when setting boundaries.\n- Strong voice tendency: coded politeness that makes threat sound like formatting.\n- Present voice tendency: reluctant precision when Maer gives her a usable path.\n- Background voice tendency: moral strain converted into clean risk language.\n\n## Likely Response Moves\n- Likely to authorize a narrow, reversible exception while naming it as category preservation.\n- May require Maer to put the rescue-ledger cost under Navigator signature before contact.\n- May preserve packet sound as diagnostic evidence while forbidding personhood terms in the order.\n- May warn that breach of conditions snaps the vessel back into freeze or interdiction posture.\n\n## Do Not Invent\n- Do not resolve the artifact's personhood or source-chain provenance.\n- Do not grant Isdra authority over Sella's clinic capacity; she can authorize contact, not create beds.\n- Do not assert Maer's private motive as fact.\n- Do not turn the PSC into a benevolent court; it is a thin, useful, compromised arbitration shell.\n- Do not make the scene a human desk argument; keep mixed-interface Navigator tribunal ergonomics visible."
+  },
+  "audit": {
+    "projector": "codex_manual_projection.v0",
+    "raw_state_hidden_from_prompt": true,
+    "character_local_context_only": true,
+    "omitted_private_context": [
+      "maer_tidecall.canonical_private_state",
+      "sella_ren.canonical_private_state",
+      "veyr_oss.canonical_private_state",
+      "author_only.packet_personhood_resolution",
+      "future_branch_plans",
+      "coordinator_decision.rationale"
+    ],
+    "review_status": "draft"
+  }
+}
+
+

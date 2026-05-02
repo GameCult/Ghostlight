@@ -1,0 +1,161 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "responder.cold_wake.convoy_threshold.isdra.trace.v0",
+  "review_status": "accepted",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/scene-04-convoy-threshold.isdra_vel.packet.trace.v0.json",
+  "coordinator_artifact_ref": "examples/coordinator/cold-wake-convoy-threshold.v0.json",
+  "responder_agent_id": "isdra_vel",
+  "generation_lane": "retrieval_augmented",
+  "lore_access": {
+    "mode": "coordinator_scoped_retrieval",
+    "consulted_refs": [
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md#lines7-9",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md#lines7-11",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#lines3-15",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md#lines21-31",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines27-54"
+    ],
+    "research_summary": "Coordinator-scoped retrieval grounded Isdra in Cold Wake category failure, PSC category authority, Ganymede rescue obligations, heat-debt physics, and Navigator mixed-interface ledger practice. Those constraints shaped a response that authorizes limited contact under freeze while preserving category discipline and unresolved artifact status.",
+    "research_trace_status": "runner_captured",
+    "research_trace": [
+      {
+        "trace_id": "trace.cold_wake_panic.lines7_9",
+        "origin": "runner_captured",
+        "query": "Cold Wake Panic thermal stealth quiet-running heat-debt permit categories Jovian tribunal",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md#lines7-9",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+        "chunk_index": 0,
+        "line_start": 7,
+        "line_end": 9,
+        "extracted_constraint": "Cold Wake made thermal stealth a corridor-law crisis: near-miss interceptions, ghost tracks, delayed heat dumps, and misclassified quiet-running vessels showed existing permit categories no longer described the real battlespace; PSC insurers began pricing thermal posture directly.",
+        "used_for": "Constrained Isdra to treat the case as a category and precedent crisis, not a simple rescue request."
+      },
+      {
+        "trace_id": "trace.ganymede_route_compact.lines7_11",
+        "origin": "runner_captured",
+        "query": "Ganymede Route Compact rescue obligations hazard ledgers route-steward representation convoy arbitration",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md#lines7-11",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+        "chunk_index": 0,
+        "line_start": 7,
+        "line_end": 11,
+        "extracted_constraint": "The Compact established rescue obligations, shared hazard ledgers, route-steward representation, navigator legal status in convoy arbitration, and later sanctuary/rescue institutional ancestry.",
+        "used_for": "Constrained Maer's appeal as institutionally real and dangerous to ignore, not merely moral pressure."
+      },
+      {
+        "trace_id": "trace.psc.operations.lines3_15",
+        "origin": "runner_captured",
+        "query": "Pan-Solar Consortium corridor law administrable categories sanctions clearing recognized deniable quiet registered undeclared",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#lines3-15",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+        "chunk_index": 0,
+        "line_start": 3,
+        "line_end": 15,
+        "extracted_constraint": "The PSC keeps sovereign firms interoperable through clearing, sanctions, corridor law, reserve currency management, and administrable categories such as insured/uninsured, permitted/illicit, recognized/deniable, corridor-safe/corridor-breaking, hot/quiet/burst/registered/undeclared.",
+        "used_for": "Constrained Isdra's likely action to a narrow procedural authorization or continued freeze framed through reversible categories."
+      },
+      {
+        "trace_id": "trace.thermal_management.lines21_31",
+        "origin": "runner_captured",
+        "query": "Aetheria thermal management heat debt dump window quiet-running ships circulation safety Rossum",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md#lines21-31",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md",
+        "chunk_index": 0,
+        "line_start": 21,
+        "line_end": 31,
+        "extracted_constraint": "Heat debt means quiet systems store, reroute, or defer waste heat; every quiet system borrows against a future dump window, and accounting that borrowed invisibility becomes as important as metallurgy.",
+        "used_for": "Constrained the beat's urgency: delay can materially kill the vessel even if everyone keeps speaking in procedure."
+      },
+      {
+        "trace_id": "trace.navigator_habitats_ledgers.lines27_54",
+        "origin": "runner_captured",
+        "query": "Cetacean Navigators rescue ledgers mixed-interface tribunal route culture arguments shared display",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines27-54",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+        "chunk_index": 0,
+        "line_start": 27,
+        "line_end": 54,
+        "extracted_constraint": "Navigator institutions assume cetacean bodies and mixed interfaces; testimony packets and rescue ledgers are legible across species, and rescue ledgers record who answered distress calls, shaping credit, arbitration, and kinship ties.",
+        "used_for": "Constrained the scene interface around shared boards rather than human desk staging, and made rescue-ledger backing concrete."
+      }
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/scene-04-convoy-threshold.isdra_vel.packet.trace.v0.json#packet_prompt_text; coordinator-scoped retrieval embedded as source excerpts; no repo access",
+    "hidden_context_refs": [
+      "maer_tidecall.canonical_private_state",
+      "sella_ren.canonical_private_state",
+      "veyr_oss.canonical_private_state",
+      "author_only.packet_personhood_resolution",
+      "future_branch_plans",
+      "coordinator_artifact.coordinator_decision.rationale",
+      "parent_conversation_context"
+    ],
+    "worker_model_family": "frontier_worker_no_fork"
+  },
+  "raw_output": "{\"responder_agent_id\":\"isdra_vel\",\"action_label\":\"set_condition\",\"visible_action\":\"Isdra draws the collapsed source-chain field behind a gray custody seal, moves the heat-debt timer into the tribunal authority pane, and opens a narrow conditional permit shell. The freeze flag remains lit at the vessel perimeter while a limited-contact channel appears inside it, tagged for isolation, decontamination discipline, ledger-backed repair-bay contact, and packet-sound preservation.\",\"spoken_text\":\"Tribunal notes the offered handling category: derivative routing residue with active distress-correlated service behavior. Nonperson, nonorigin, noncustodial. Source-chain custody remains outside this request. Artifact status remains unresolved diagnostic evidence.\\n\\nLimited-contact exception is authorized under freeze, not in place of it. Rescue contact may proceed only through Sella's conditional bay path: isolation maintained, decontamination logged, packet sound preserved intact, no ancestry claim entered, no personhood term attached, no custody inference created.\\n\\nNavigator ledger signature will carry the immediate cost exposure. File it now, Maer Tidecall. If the signature fails, if the isolation boundary is breached, or if the packet is converted into testimony before diagnostic preservation is complete, this exception snaps shut and the vessel returns to full freeze with interdiction review available.\\n\\nYou have your clean noun. Use it quickly.\",\"private_interpretation\":\"Isdra reads Maer's move as disciplined pressure rather than pure accusation: he has brought her a category she can use without publicly conceding the frame he likely wants. She suspects he may later treat the exception as evidence that the original freeze was morally defective, but she also understands that refusing now would make the tribunal legible as a machine that can watch a heat window close while polishing grammar.\",\"intended_effect\":\"Authorize rescue contact before the heat-debt window closes while preserving PSC category discipline, limiting precedent, keeping personhood and provenance unresolved, forcing auditable cost ownership onto the Navigator ledger, and retaining reversal triggers if the narrow conditions are breached.\",\"state_update_candidates\":[\"A limited-contact exception is opened under the existing freeze rather than replacing it.\",\"The vessel remains unresolved diagnostic evidence under the derivative routing residue category.\",\"Navigator ledger signature is required for immediate cost exposure before repair-bay contact proceeds.\",\"Packet sound must be preserved as diagnostic evidence without personhood, ancestry, or source-chain custody claims.\",\"Isolation and decontamination conditions are attached to the permit shell.\",\"Breach of conditions triggers return to full freeze and possible interdiction review.\"],\"relationship_update_candidates\":[\"Isdra shows reluctant procedural respect for Maer because he supplied a usable category.\",\"Maer gains a narrow tribunal authorization but not an admission that the freeze was wrong.\",\"Isdra maintains adversarial boundaries by making the concession sound like category preservation rather than mercy.\",\"The tribunal's dependence on Navigator ledger legitimacy becomes more visible to everyone watching.\"],\"unresolved_hooks\":[\"Whether Maer can file the Navigator ledger signature quickly enough.\",\"Whether Sella's conditional bay path can receive the vessel within the heat-debt window.\",\"Whether the packet sound reveals diagnostic evidence without resolving personhood or provenance.\",\"Whether future corridor actors treat this narrow exception as precedent for other quiet-running ambiguity.\",\"Whether any breach of isolation, decontamination, or language conditions forces interdiction review.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "isdra_vel",
+    "action_label": "set_condition",
+    "visible_action": "Isdra draws the collapsed source-chain field behind a gray custody seal, moves the heat-debt timer into the tribunal authority pane, and opens a narrow conditional permit shell. The freeze flag remains lit at the vessel perimeter while a limited-contact channel appears inside it, tagged for isolation, decontamination discipline, ledger-backed repair-bay contact, and packet-sound preservation.",
+    "spoken_text": "Tribunal notes the offered handling category: derivative routing residue with active distress-correlated service behavior. Nonperson, nonorigin, noncustodial. Source-chain custody remains outside this request. Artifact status remains unresolved diagnostic evidence.\n\nLimited-contact exception is authorized under freeze, not in place of it. Rescue contact may proceed only through Sella's conditional bay path: isolation maintained, decontamination logged, packet sound preserved intact, no ancestry claim entered, no personhood term attached, no custody inference created.\n\nNavigator ledger signature will carry the immediate cost exposure. File it now, Maer Tidecall. If the signature fails, if the isolation boundary is breached, or if the packet is converted into testimony before diagnostic preservation is complete, this exception snaps shut and the vessel returns to full freeze with interdiction review available.\n\nYou have your clean noun. Use it quickly.",
+    "private_interpretation": "Isdra reads Maer's move as disciplined pressure rather than pure accusation: he has brought her a category she can use without publicly conceding the frame he likely wants. She suspects he may later treat the exception as evidence that the original freeze was morally defective, but she also understands that refusing now would make the tribunal legible as a machine that can watch a heat window close while polishing grammar.",
+    "intended_effect": "Authorize rescue contact before the heat-debt window closes while preserving PSC category discipline, limiting precedent, keeping personhood and provenance unresolved, forcing auditable cost ownership onto the Navigator ledger, and retaining reversal triggers if the narrow conditions are breached.",
+    "state_update_candidates": [
+      "A limited-contact exception is opened under the existing freeze rather than replacing it.",
+      "The vessel remains unresolved diagnostic evidence under the derivative routing residue category.",
+      "Navigator ledger signature is required for immediate cost exposure before repair-bay contact proceeds.",
+      "Packet sound must be preserved as diagnostic evidence without personhood, ancestry, or source-chain custody claims.",
+      "Isolation and decontamination conditions are attached to the permit shell.",
+      "Breach of conditions triggers return to full freeze and possible interdiction review."
+    ],
+    "relationship_update_candidates": [
+      "Isdra shows reluctant procedural respect for Maer because he supplied a usable category.",
+      "Maer gains a narrow tribunal authorization but not an admission that the freeze was wrong.",
+      "Isdra maintains adversarial boundaries by making the concession sound like category preservation rather than mercy.",
+      "The tribunal's dependence on Navigator ledger legitimacy becomes more visible to everyone watching."
+    ],
+    "unresolved_hooks": [
+      "Whether Maer can file the Navigator ledger signature quickly enough.",
+      "Whether Sella's conditional bay path can receive the vessel within the heat-debt window.",
+      "Whether the packet sound reveals diagnostic evidence without resolving personhood or provenance.",
+      "Whether future corridor actors treat this narrow exception as precedent for other quiet-running ambiguity.",
+      "Whether any breach of isolation, decontamination, or language conditions forces interdiction review."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "No Maer private state is asserted as fact; Isdra frames motive as suspicion and likely future use.",
+      "Artifact personhood and provenance remain unresolved.",
+      "Isdra authorizes contact under freeze and does not create sanctuary capacity.",
+      "Runner-captured coordinator retrieval trace is attached at lore_access.research_trace while the responder itself had no repo access."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Accepted trace-backed Isdra responder output for the convoy-threshold fixture.",
+      "The response creates a concrete state-affecting permit shell rather than only speech: limited contact under freeze with ledger, isolation, decon, evidence-preservation, and reversal triggers.",
+      "The output preserves Isdra local constraints: category discipline, procedural concession, PSC authority, and unresolved artifact status.",
+      "Use as gold candidate for coordinator-scoped retrieval lane: retrieval trace is runner-captured by the coordinator and the responder received only packet-visible context."
+    ],
+    "coordinator_interventions": [
+      {
+        "intervention_type": "none",
+        "description": "Raw no-fork sandbox responder output was preserved without prose repair or schema repair."
+      }
+    ],
+    "failure_labels": []
+  }
+}
