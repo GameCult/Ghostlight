@@ -49,6 +49,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `docs/architecture/projected-local-context.md`
   - `docs/architecture/soft-model-training-artifacts.md`
   - `docs/architecture/training-plan.md`
+  - `docs/architecture/technology-item-manifest-plan.md`
 - lore grounding seam:
   - `schemas/lore-grounding-digest.schema.json`
   - `examples/lore-grounding/historical-flashpoint.template.json`
@@ -182,6 +183,12 @@ Future branches now also need event constraint labels:
 `branch_attractor`, `fated_event`, `tech_order_constraint`, `quest_injection`,
 or `branch_local_event`. This supports likely Elysium faction births, authored
 rails, baked-in technology order, and quest injection into active timelines.
+Future and historical exploration should also emit technology/item manifest
+data: item families, variants, assemblies, subassemblies, components, materials,
+faction tech-base access, prerequisites, bottlenecks, compatibility rules,
+upgrade surfaces, economic consequences, and quest hooks. Pre-Elysium starting
+tech is part of this because factions enter Elysium with asymmetric industrial
+bases and supply chains.
 
 The evaluation follow-up fixed the immediate v0 schema issues:
 

@@ -208,6 +208,14 @@
      labels rather than hidden in prose: they may emerge from branch pressure,
      be nudged by fate, arrive through quest injection, or remain local to one
      branch.
+   - Use `docs/architecture/technology-item-manifest-plan.md` to make future
+     exploration produce game-usable technology data: item families, variants,
+     assemblies, subassemblies, components, materials, faction access,
+     prerequisites, bottlenecks, compatibility rules, upgrade slots, economic
+     consequences, and quest hooks.
+   - Pre-Elysium starting tech must be manifested too. Factions do not begin
+     with identical tech bases, manufacturing rights, stockpiles, maintenance
+     skills, standards, or supply-chain dependencies.
    - Maintain `schemas/lore-grounding-digest.schema.json`,
      `examples/lore-grounding/`, and `tools/validate_lore_grounding.py` as the
      cultural and factional pressure seam for grounded fixtures.
@@ -283,6 +291,9 @@
      before generating another long story pass, so glue prose, next-beat choice,
      world-state refs, branch flags, unresolved hooks, and machinery invocations
      are captured as trainable data instead of living only in chat.
+   - Coordinator artifacts should be able to attach item-manifest deltas when a
+     scene or branch decision discovers, alters, upgrades, restricts, salvages,
+     counterfeits, or economically stresses a technology or item.
 
 7. Build the first drama-scaffolding loop.
    - memory updates

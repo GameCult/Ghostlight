@@ -58,6 +58,10 @@ rails, or injections when appropriate.
 - `quest_injection`: authored content inserted into compatible branch points.
 - `branch_local_event`: true only inside its lineage, with no cross-branch pull.
 
+Future exploration must also emit technology and item knowledge when a branch
+discovers or changes material capability. See
+`docs/architecture/technology-item-manifest-plan.md` for the manifest seam.
+
 ## Runtime Stack
 
 Target runtime flow:
@@ -101,6 +105,8 @@ Candidate stages:
 - character agent/responder
 - state mutator, only after the mutation schema is very stable
 - institution/faction planner, if it needs explanations and mixed outputs
+- item or technology manifest generator, if structured extraction from
+  coordinator exploration becomes too broad for deterministic templates
 
 ### Classifier Or Cross-Encoder
 
@@ -121,6 +127,7 @@ Candidate stages:
 - candidate action ranker
 - lore/source violation detector
 - prompt-leak detector
+- technology and item manifest evaluator
 
 ### Embedding Or Retrieval Model
 
@@ -137,6 +144,7 @@ Candidate stages:
 - memory retrieval
 - lore retrieval
 - precedent retrieval for coordinator planning
+- technology prerequisite and component dependency retrieval
 
 ### Deterministic Code
 
@@ -152,6 +160,7 @@ Keep as code, not a model:
 - Ink compilation
 - artifact status validation
 - world-state patch application
+- item manifest validation and compatibility checks
 
 ## Trainable Stages
 
@@ -235,6 +244,8 @@ Inputs:
 - fixture lane and canon status
 - post-Rupture concept constraints for future branches
 - active attractors, fated events, tech-order gates, and quest-injection hooks
+- current technology and item manifest refs
+- faction tech-base refs
 
 Outputs:
 
@@ -251,6 +262,8 @@ Outputs:
 - branch lineage and conditional truth boundaries
 - selected attractor, fate, technology, or quest constraints that shape the next
   beat
+- item, component, assembly, supply-chain, or faction tech-base deltas implied
+  by the scene or branch decision
 
 Training architecture:
 
@@ -266,6 +279,8 @@ Training artifacts:
 - tool invocation traces
 - world-state proposal receipts
 - attractor/rail/injection selection receipts
+- item-manifest proposal receipts
+- faction tech-base delta receipts
 - reviewer labels for pacing, continuity, legibility, game usefulness, and lore
   grounding
 
@@ -279,6 +294,8 @@ First training gate:
   coordinator to generate post-Rupture arcs without close review
 - at least 20 labeled constrained-event examples before the coordinator is
   trusted to inject quests or advance technology order automatically
+- at least 25 reviewed item/faction-tech deltas before coordinator exploration
+  is allowed to create technology data without close review
 
 ### 3. Memory And Lore Retriever
 
@@ -719,6 +736,9 @@ Inputs:
 - local information and misreads
 - post-Rupture infrastructure or concept constraints, when applicable
 - active technology order, faction attractors, fated events, and quest hooks
+- item manifest refs
+- faction tech-base refs
+- component, assembly, and supply-chain dependencies
 
 Outputs:
 
@@ -731,6 +751,8 @@ Outputs:
 - branch-local policy or market assumptions
 - constrained-event response: exploit, resist, comply, delay, adapt, sabotage,
   or organize around the attractor/rail/injection
+- manufacture, buy, salvage, counterfeit, maintain, upgrade, embargo, or
+  substitute decisions
 
 Training architecture:
 
@@ -745,6 +767,8 @@ Training artifacts:
 - resource and reputation consequence labels
 - constrained-event decision examples for faction founding, technology adoption,
   quest hooks, and pressure-born institutions
+- item availability and component dependency decisions
+- faction access or restriction decisions
 
 First training gate:
 
@@ -755,6 +779,73 @@ First training gate:
   privileges, liabilities, dependencies, or weapons
 - include examples where factions or companies emerge from branch pressures,
   fated constraints, or quest injections
+- include examples where factions differ in starting pre-Elysium tech base,
+  manufacturing rights, maintenance ability, and supply-chain dependency
+
+### 12. Technology And Item Manifest Generator
+
+Purpose: turn worldbuilding exploration into game-usable item, component,
+assembly, technology, and supply-chain records.
+
+Current implementation:
+
+- not built yet
+- architecture plan exists in
+  `docs/architecture/technology-item-manifest-plan.md`
+
+Inputs:
+
+- coordinator plan and glue prose
+- branch lineage and prior conditions
+- source refs from AetheriaLore
+- technology discovery events
+- faction or manufacturer state
+- item family or gameplay role
+- existing item manifests
+- pre-Elysium starting tech refs
+- post-Rupture concept constraints
+
+Outputs:
+
+- item family records
+- item variant records
+- assembly and subassembly records
+- component and material records
+- compatibility and upgrade-slot rules
+- faction/manufacturer access records
+- prerequisites and technology order
+- supply-chain bottlenecks
+- gameplay effects
+- economic consequences
+- quest hooks
+- rejected unsupported item designs
+
+Training architecture:
+
+- start as reviewed structured authoring
+- generative decoder LLM for manifest drafting once schema exists
+- classifier/evaluator for unsupported tech, impossible compatibility, bad
+  source grounding, and overpowered designs
+- retrieval model for prerequisite/component dependency lookup later
+
+Training artifacts:
+
+- item manifest records
+- component breakdown records
+- assembly compatibility records
+- faction tech-base records
+- technology discovery records
+- branch-local innovation records
+- economic consequence records
+- rejected item designs with failure labels
+
+First training gate:
+
+- item manifest schema and validator exist
+- 100 reviewed item/component/assembly records
+- 50 faction tech-base records across pre-Elysium and future branches
+- 50 rejected/invalid item examples with clear failure labels
+- at least 10 branch-local innovations tied to lineage and prerequisites
 
 ## Training Order
 
@@ -775,7 +866,9 @@ Recommended order:
    exist.
 9. Train state mutator last among social organs because bad mutation corrupts
    the world state.
-10. Train institution/faction/consumer models after scene-local decisions provide
+10. Build item manifest schema before large future-branch exploration produces
+   technology data.
+11. Train institution/faction/consumer models after scene-local decisions provide
    enough grounded examples.
 
 ## Minimum Corpus Before First Fine-Tune
@@ -811,6 +904,15 @@ A first appraiser/classifier training run wants:
 - balanced misread/correct/ambiguous/bias examples
 - labeled confidence drivers
 - reviewer rationale
+
+A first item-manifest model wants:
+
+- 100 reviewed item/component/assembly records
+- 50 faction tech-base records
+- 50 rejected item designs or compatibility failures
+- source refs or branch lineage for every record
+- explicit component, assembly, prerequisite, bottleneck, and gameplay-effect
+  fields
 
 ## Artifact Shape Rule
 

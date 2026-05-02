@@ -280,6 +280,21 @@ Future branch fixtures should record:
 - hard facts created
 - branch facts that remain conditional
 
+Future branch fixtures should also emit technology and item manifest candidates
+when exploration changes the material economy:
+
+- new item families
+- new item variants
+- component and subassembly breakdowns
+- assembly upgrade surfaces
+- technology prerequisites
+- faction or manufacturer access
+- supply bottlenecks
+- salvage, counterfeit, maintenance, and substitution paths
+- quest hooks created by scarcity or discovery
+
+See `docs/architecture/technology-item-manifest-plan.md`.
+
 Factions born in Elysium should be modeled through this lens. Adrasteia or Miss
 Terri's Sugarrific Snack Company can be represented as pressure-born attractors,
 fated institutions, quest-injected branch content, or some combination. The

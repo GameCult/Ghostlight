@@ -89,6 +89,10 @@ state and re-entry discipline.
     inputs, outputs, likely model architecture, artifact family, first training
     gate, and timeline coverage across historical grounded, transition
     grounded, and future-branch examples
+- `docs/architecture/technology-item-manifest-plan.md`
+  - plan for turning coordinator-led Aetheria exploration into game-usable
+    item, component, assembly, faction tech-base, prerequisite, supply-chain,
+    and upgrade-path data
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
     historical projection feedstock rather than the active product target
@@ -306,5 +310,9 @@ concepts as branch-local canon indexed by lineage. It also distinguishes
 branch attractors, fated events, technology-order constraints, quest injections,
 and ordinary branch-local events so Elysium can support likely faction births,
 authored rails, discovery order, and quest injection without flattening the
-timeline into equal-probability soup. Do not materialize another capture until
-it has no failure or repair notes.
+timeline into equal-probability soup. The technology/item manifest plan now
+requires exploration to emit item families, variants, assemblies,
+subassemblies, components, materials, faction tech-base access, prerequisites,
+bottlenecks, compatibility rules, supply-chain consequences, and quest hooks for
+both pre-Elysium starting tech and post-Rupture innovations. Do not materialize
+another capture until it has no failure or repair notes.
