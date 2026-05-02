@@ -1,0 +1,235 @@
+﻿{
+    "schema_version":  "ghostlight.reviewed_state_mutation.v0",
+    "mutation_id":  "mutation-sanctuary-conditional-repair-bay-research-enabled-v0",
+    "source_fixture_ref":  "examples/agent-state.cold-wake-story-lab.json",
+    "source_capture_ref":  "experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json",
+    "mutated_fixture_ref":  "examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json",
+    "event_id":  "event-sanctuary-conditional-repair-bay",
+    "responder_output_ref":  "experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json#parsed_output",
+    "participant_appraisals":  [
+                                   {
+                                       "schema_version":  "ghostlight.manual_participant_appraisal.v0",
+                                       "appraiser":  "codex_manual_review",
+                                       "participant_agent_id":  "maer_tidecall",
+                                       "trigger_observable_action":  {
+                                                                         "speaker_id":  "sella_ren",
+                                                                         "action_type":  "set_condition",
+                                                                         "utterance_summary":  "I can hold one bounded bay. Not a bed, not a promise, and not a declaration that this is a person. A bay. Air ration capped, isolation first, no general intake until we have consent or a defensible substitute for it. If this becomes rescue, Maer, it goes on a rescue ledger with named backing. Navigator, Lightsail, tribunal, whoever wants the moral credit can put weight under it. I will not let the packet be called cargo because the math is ugly. I also will not feed the math with beds I do not have. Bring me backing, a contamination plan, and somebody willing to answer when this costs more than the pretty sentence did.",
+                                                                         "dialogue_function":  "conditional_capacity_offer",
+                                                                         "observable_cues":  [
+                                                                                                 "Sella keeps the packet on the shared display but does not route it into intake. She marks one repair bay as conditional hold, then pins a capacity note beside it: air, decontamination, consent check, firmware isolation, and ledger guarantor required before admission."
+                                                                                             ]
+                                                                     },
+                                       "private_interpretation":  "Sella has not accepted the claimant into sanctuary, but she has created a narrow material path if Maer accepts ledger responsibility.",
+                                       "attributed_motive":  "Protect care capacity while refusing to erase a possible person into cargo language.",
+                                       "misread_risk":  "Medium. Maer may overread the condition as moral refusal if urgency outruns his respect for Sella\u0027s capacity boundary.",
+                                       "state_deltas":  [
+                                                            {
+                                                                "agent_id":  "maer_tidecall",
+                                                                "path":  "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+                                                                "delta":  0.03,
+                                                                "rationale":  "The next move now requires ledger backing and labor ownership rather than another moral appeal."
+                                                            },
+                                                            {
+                                                                "agent_id":  "maer_tidecall",
+                                                                "path":  "canonical_state.situational_state.grievance_activation.current_activation",
+                                                                "delta":  -0.02,
+                                                                "rationale":  "Sella did not call the packet cargo or close the door entirely."
+                                                            }
+                                                        ],
+                                       "relationship_deltas":  [
+                                                                   {
+                                                                       "relationship_id":  "rel-maer-sella",
+                                                                       "path":  "stance.trust.current_activation",
+                                                                       "delta":  0.02,
+                                                                       "rationale":  "Sella offered a narrow path instead of hiding behind capacity math alone."
+                                                                   },
+                                                                   {
+                                                                       "relationship_id":  "rel-maer-sella",
+                                                                       "path":  "stance.respect.current_activation",
+                                                                       "delta":  0.03,
+                                                                       "rationale":  "She made care concrete without pretending it was free."
+                                                                   },
+                                                                   {
+                                                                       "relationship_id":  "rel-maer-sella",
+                                                                       "path":  "stance.obligation.current_activation",
+                                                                       "delta":  0.04,
+                                                                       "rationale":  "Maer now owes material backing if he wants the cold bay held."
+                                                                   }
+                                                               ],
+                                       "next_action_constraints":  [
+                                                                       "Maer must answer the ledger, labor, and custody conditions if he wants the repair bay held.",
+                                                                       "Maer should not treat the conditional bay as sanctuary acceptance.",
+                                                                       "Packet personhood remains unresolved."
+                                                                   ]
+                                   },
+                                   {
+                                       "schema_version":  "ghostlight.manual_participant_appraisal.v0",
+                                       "appraiser":  "codex_manual_review",
+                                       "participant_agent_id":  "sella_ren",
+                                       "trigger_observable_action":  {
+                                                                         "speaker_id":  "maer_tidecall",
+                                                                         "action_type":  "show_object",
+                                                                         "utterance_summary":  "Maer displays the corrupted packet through shared clinic systems and asks Sella to judge whether the math supports intake.",
+                                                                         "dialogue_function":  "present_ambiguous_evidence",
+                                                                         "observable_cues":  [
+                                                                                                 "shared clinic display shows routing terms and telemetry gaps",
+                                                                                                 "packet remains unresolved evidence rather than proof"
+                                                                                             ]
+                                                                     },
+                                       "private_interpretation":  "Sella reads Maer as honestly trying to rescue someone or something that may be someone, but she suspects he is also asking the clinic to absorb the institutional cowardice around the packet. She feels the old pressure of sanctuaries making noble promises and then forcing triage staff to do the cruelty quietly.",
+                                       "attributed_motive":  "Maer is trying to keep rescue possible, but may be letting the clinic inherit costs his own chain has not accepted.",
+                                       "misread_risk":  "Medium. Sella may overread moral pressure as an attempt to spend sanctuary capacity without ownership.",
+                                       "state_deltas":  [
+                                                            {
+                                                                "agent_id":  "sella_ren",
+                                                                "path":  "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+                                                                "delta":  0.04,
+                                                                "rationale":  "She has to make the boundary operational, not merely verbal."
+                                                            },
+                                                            {
+                                                                "agent_id":  "sella_ren",
+                                                                "path":  "canonical_state.situational_state.scarcity_pressure.current_activation",
+                                                                "delta":  0.03,
+                                                                "rationale":  "Holding a cold repair bay still consumes capacity even if no bed is opened."
+                                                            },
+                                                            {
+                                                                "agent_id":  "sella_ren",
+                                                                "path":  "canonical_state.situational_state.overstimulation.current_activation",
+                                                                "delta":  0.02,
+                                                                "rationale":  "The conditional path creates more tracking, not less."
+                                                            }
+                                                        ],
+                                       "relationship_deltas":  [
+                                                                   {
+                                                                       "relationship_id":  "rel-sella-maer",
+                                                                       "path":  "stance.trust.current_activation",
+                                                                       "delta":  0.01,
+                                                                       "rationale":  "Maer provided evidence rather than only pressure."
+                                                                   },
+                                                                   {
+                                                                       "relationship_id":  "rel-sella-maer",
+                                                                       "path":  "stance.resentment.current_activation",
+                                                                       "delta":  0.03,
+                                                                       "rationale":  "The hidden bill still lands near her clinic."
+                                                                   },
+                                                                   {
+                                                                       "relationship_id":  "rel-sella-maer",
+                                                                       "path":  "stance.obligation.current_activation",
+                                                                       "delta":  0.03,
+                                                                       "rationale":  "She has conditionally placed sanctuary capacity at risk."
+                                                                   }
+                                                               ],
+                                       "next_action_constraints":  [
+                                                                       "Sella has not admitted the packet into patient flow.",
+                                                                       "Sella has conditionally held a bounded cold repair bay for a short window.",
+                                                                       "Ledger backing, isolation, decon, failed extraction cost, and body-work ownership are live conditions.",
+                                                                       "Packet personhood remains unresolved."
+                                                                   ]
+                                   }
+                               ],
+    "observed_action":  {
+                            "speaker_id":  "maer_tidecall",
+                            "action_type":  "show_object",
+                            "utterance_summary":  "Maer displays the corrupted packet through shared clinic systems and asks Sella to judge whether the math supports intake.",
+                            "dialogue_function":  "present_ambiguous_evidence",
+                            "observable_cues":  [
+                                                    "shared clinic display shows routing terms and telemetry gaps",
+                                                    "packet remains unresolved evidence rather than proof"
+                                                ]
+                        },
+    "observed_response":  {
+                              "speaker_id":  "sella_ren",
+                              "action_type":  "set_condition",
+                              "utterance_summary":  "I can hold one bounded bay. Not a bed, not a promise, and not a declaration that this is a person. A bay. Air ration capped, isolation first, no general intake until we have consent or a defensible substitute for it. If this becomes rescue, Maer, it goes on a rescue ledger with named backing. Navigator, Lightsail, tribunal, whoever wants the moral credit can put weight under it. I will not let the packet be called cargo because the math is ugly. I also will not feed the math with beds I do not have. Bring me backing, a contamination plan, and somebody willing to answer when this costs more than the pretty sentence did.",
+                              "dialogue_function":  "conditional_capacity_offer",
+                              "observable_cues":  [
+                                                      "Sella keeps the packet on the shared display but does not route it into intake. She marks one repair bay as conditional hold, then pins a capacity note beside it: air, decontamination, consent check, firmware isolation, and ledger guarantor required before admission."
+                                                  ]
+                          },
+    "applied_mutations":  [
+                              {
+                                  "target":  "maer_tidecall",
+                                  "path":  "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+                                  "before":  0.67,
+                                  "after":  0.7
+                              },
+                              {
+                                  "target":  "maer_tidecall",
+                                  "path":  "canonical_state.situational_state.grievance_activation.current_activation",
+                                  "before":  0.73,
+                                  "after":  0.71
+                              },
+                              {
+                                  "target":  "sella_ren",
+                                  "path":  "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+                                  "before":  0.5,
+                                  "after":  0.54
+                              },
+                              {
+                                  "target":  "sella_ren",
+                                  "path":  "canonical_state.situational_state.scarcity_pressure.current_activation",
+                                  "before":  0.84,
+                                  "after":  0.87
+                              },
+                              {
+                                  "target":  "sella_ren",
+                                  "path":  "canonical_state.situational_state.overstimulation.current_activation",
+                                  "before":  0.72,
+                                  "after":  0.74
+                              },
+                              {
+                                  "target":  "rel-maer-sella",
+                                  "path":  "stance.trust.current_activation",
+                                  "before":  0.7,
+                                  "after":  0.72
+                              },
+                              {
+                                  "target":  "rel-maer-sella",
+                                  "path":  "stance.respect.current_activation",
+                                  "before":  0.78,
+                                  "after":  0.81
+                              },
+                              {
+                                  "target":  "rel-maer-sella",
+                                  "path":  "stance.obligation.current_activation",
+                                  "before":  0.6,
+                                  "after":  0.64
+                              },
+                              {
+                                  "target":  "rel-sella-maer",
+                                  "path":  "stance.trust.current_activation",
+                                  "before":  0.57,
+                                  "after":  0.58
+                              },
+                              {
+                                  "target":  "rel-sella-maer",
+                                  "path":  "stance.resentment.current_activation",
+                                  "before":  0.36,
+                                  "after":  0.39
+                              },
+                              {
+                                  "target":  "rel-sella-maer",
+                                  "path":  "stance.obligation.current_activation",
+                                  "before":  0.48,
+                                  "after":  0.51
+                              }
+                          ],
+    "accepted_world_state_candidates":  [
+                                            "A bounded cold repair bay may be held for a short window if ledger backing is attached.",
+                                            "The corrupted packet remains evidence at the door and is not admitted into patient flow.",
+                                            "Ledger backing is required for air, isolation, decon, repair labor, and failed extraction before escalation."
+                                        ],
+    "manual_review_notes":  [
+                                "The responder output\u0027s candidate updates were reviewed before becoming fixture state.",
+                                "The repair-bay condition is accepted as scene-local world state, not as sanctuary bed intake.",
+                                "Both Maer and Sella receive state, relationship, memory, and perceived-overlay updates.",
+                                "Packet personhood remains unresolved.",
+                                "This receipt was generated from the research-enabled sandbox capture; the event shape matches the earlier conditional-bay fixture, but the capture provenance is distinct."
+                            ],
+    "deferred_mutations":  [
+                               "No sanctuary bed is opened or consumed.",
+                               "No personhood claim is proven or disproven.",
+                               "No automatic appraiser or mutator is trained yet."
+                           ]
+}

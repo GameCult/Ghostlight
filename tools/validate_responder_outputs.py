@@ -109,6 +109,10 @@ def validate_parsed_response(value: Any, path: str) -> None:
     for key in ["state_update_candidates", "relationship_update_candidates"]:
         require_update_candidate_array(value[key], f"{path}.{key}")
     require_string_array(value["unresolved_hooks"], f"{path}.unresolved_hooks")
+    if "consulted_refs" in value:
+        require_string_array(value["consulted_refs"], f"{path}.consulted_refs")
+    if "research_summary" in value:
+        require(isinstance(value["research_summary"], str), f"{path}.research_summary must be a string")
 
 
 def validate_capture(document: dict[str, Any], source: Path) -> None:
@@ -185,6 +189,15 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
     validate_parsed_response(document["parsed_output"], f"{base}.parsed_output")
     require(parsed_raw == document["parsed_output"], f"{base}.raw_output does not match parsed_output")
     require(document["parsed_output"]["responder_agent_id"] == document["responder_agent_id"], f"{base}.parsed_output.responder_agent_id mismatch")
+    if lore_access["mode"] == "responder_scoped_repository_search":
+        require(
+            document["parsed_output"].get("consulted_refs") == lore_access["consulted_refs"],
+            f"{base}.parsed_output.consulted_refs must match lore_access.consulted_refs",
+        )
+        require(
+            document["parsed_output"].get("research_summary") == lore_access["research_summary"],
+            f"{base}.parsed_output.research_summary must match lore_access.research_summary",
+        )
 
     lowered_raw = raw_output.lower()
     leaked = [marker for marker in LEAK_MARKERS if marker in lowered_raw]

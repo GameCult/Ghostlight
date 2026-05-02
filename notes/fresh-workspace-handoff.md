@@ -49,6 +49,9 @@ path is:
 - Responder packet schema: `schemas/responder-packet.schema.json`
 - Responder output schema: `schemas/responder-output.schema.json`
 - Research-enabled Sella packet: `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
+- Research-enabled Sella capture: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
+- Research-enabled Sella mutation: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`
+- Research-enabled aftermath state: `examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json`
 - Packet builder: `tools/build_responder_packet.py`
 - Packet/output validators: `tools/validate_responder_packets.py`, `tools/validate_responder_outputs.py`
 
@@ -71,14 +74,13 @@ current gold-data route.
 
 ## Current Next Action
 
-Run a sandboxed no-fork research-enabled responder against
-`examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`,
-allowing only the declared AetheriaLore scope. Capture exact visible input,
-consulted refs, research summary, raw output, review labels, leakage audit, and
-any coordinator intervention. Review whether the output uses institutional lore
-and latent pressure without prompt parroting, omniscience, or mission-critical
-trauma-dumping. Do not use archived local-model prototype runners for gold
-responder data.
+The first no-fork research-enabled Sella responder sample now exists and has a
+reviewed mutation receipt. Tighten the capture seam next: future research-enabled
+gold samples should preserve auditable research traces, not only
+responder-reported consulted refs. Then generate the next sandboxed
+responder/coordinator sample from the updated Sella aftermath state, preserving
+exact visible input, raw output, review labels, leakage audit, and mutation
+receipts.
 
 ## Warnings
 

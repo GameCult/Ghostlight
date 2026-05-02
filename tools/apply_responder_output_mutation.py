@@ -100,6 +100,10 @@ def main() -> int:
     parser.add_argument("--out-state", type=Path, default=DEFAULT_OUT_STATE)
     parser.add_argument("--receipt", type=Path, default=DEFAULT_RECEIPT)
     args = parser.parse_args()
+    args.fixture = args.fixture.resolve()
+    args.capture = args.capture.resolve()
+    args.out_state = args.out_state.resolve()
+    args.receipt = args.receipt.resolve()
 
     source_state = load_json(args.fixture)
     capture = load_json(args.capture)

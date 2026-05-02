@@ -8,8 +8,8 @@ material, pending hooks, and author intent. The responder is not. The responder
 gets one packet, acts as one character, and returns a visible action plus any
 private interpretation it can justify from that packet.
 
-No clairvoyance. No repo spelunking. No "I accidentally remembered the whole
-chat" aristocratic nonsense.
+No clairvoyance. No undeclared repo spelunking. No "I accidentally remembered
+the whole chat" aristocratic nonsense.
 
 ## Generation Lanes
 
@@ -65,6 +65,9 @@ The v0 packet seam is:
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-retrieval-v0.capture.json`
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`
+- `examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json`
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
 - `tools/validate_responder_outputs.py`
 - `tools/apply_responder_output_mutation.py`
@@ -113,7 +116,7 @@ state mutator, and reviewer decide what becomes truth.
 
 ## Training Use
 
-Gold responder data requires packet-only isolation. Valid approaches include:
+Gold responder data requires declared isolation. Valid approaches include:
 
 - a one-turn subagent started without inherited context
 - an external model call that receives only the packet prompt
@@ -164,6 +167,14 @@ A responder output capture preserves:
 The raw output must parse to the reviewed `parsed_output` exactly. If the
 coordinator edits prose, repairs schema, removes leakage, or corrects lore, the
 capture must say so directly.
+
+For `responder_scoped_repository_search`, the raw responder object may also
+include `consulted_refs` and `research_summary`. Those fields should be
+preserved inside `parsed_output` and mirrored into top-level `lore_access` so
+the capture can be indexed without stripping the original response. If the
+runner cannot expose a machine-verifiable tool-call or retrieval transcript,
+label the sample as draft and say so in review notes. Trust, but make the
+trust write receipts like everyone else.
 
 The first lane comparison found the expected tradeoff. Packet-only output gave a
 clean runtime-parity conditional bay decision and stronger character-specific

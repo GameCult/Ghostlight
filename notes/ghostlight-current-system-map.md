@@ -52,8 +52,15 @@ Aetheria lore/source context
   `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
 - It uses `responder_scoped_repository_search`, allows only declared
   AetheriaLore scope, and requires `consulted_refs` plus `research_summary`.
-- The next useful sample should be generated through a no-fork sandboxed
-  responder, not through archived local-model prototype runners.
+- First research-enabled capture:
+  `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
+- First research-enabled mutation receipt:
+  `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`
+- First research-enabled aftermath state:
+  `examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json`
+- The capture is useful draft data, but the current subagent seam preserves
+  responder-reported consulted refs rather than a machine-verifiable research
+  trace. Fix that before producing many more research-enabled gold samples.
 
 ## Archived Receipts
 

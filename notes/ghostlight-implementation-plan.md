@@ -20,16 +20,17 @@ sandboxed training-data pipeline for branching scenes and state consequences.
    - Preserve exact responder-visible input, hidden-context audit, allowed actions, source excerpts, output contract, and lore-access mode.
    - Preserve raw output, parsed output, review labels, consulted refs, research summary, leakage audit, and coordinator interventions.
 
-3. Generate the next research-enabled responder sample.
-   - Use `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`.
-   - Run a no-fork sandboxed responder with only the packet and declared lore scope.
-   - Require actual lore consultation before answering.
-   - Review for institutional grounding, latent character pressure, non-omniscience, prompt parroting, and mission-critical trauma-dumping.
-   - Do not use archived local-model prototype runners for gold responder data.
+3. Tighten research-enabled responder capture.
+   - The first no-fork research-enabled Sella sample and reviewed mutation receipt now exist.
+   - Preserve `consulted_refs` and `research_summary` inside both raw responder output and capture metadata.
+   - Add an auditable research trace before scaling this lane; responder-reported consulted refs are useful but not enough for durable gold data.
+   - Continue rejecting archived local-model prototype runners for gold responder data unless the task is explicitly model plumbing.
 
-4. Materialize reviewed consequences.
-   - Convert accepted responder output into a mutation receipt.
-   - Update only reviewed scene state, memories, relationship stance, perceived overlays, and unresolved hooks.
+4. Generate the next reviewed sample.
+   - Start from `examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json`.
+   - Build the next projected local context and responder packet from reviewed state, not from coordinator memory.
+   - Run the next no-fork sandboxed responder/coordinator step with exact visible input, raw output, leakage audit, and review labels.
+   - Convert accepted output into mutation receipts.
    - Keep fuzzy social changes manual and auditable until appraiser/classifier models exist.
 
 5. Generalize the loop.

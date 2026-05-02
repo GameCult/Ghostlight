@@ -96,6 +96,9 @@ current_artifacts:
     - examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json
     - experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json
     - experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json
+    - experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json
+    - experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json
+    - examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json
   archived_receipts:
     - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
 
@@ -108,5 +111,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Ghostlight is focused on sandboxed, source-grounded responder and coordinator training artifacts for socially persistent Aetheria agents, with archived prototype runs demoted to receipts and the live path centered on projected local context, responder packets, reviewed outputs, and audited state mutation.
-  next_action: Run a sandboxed no-fork research-enabled responder against `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`, allowing only the declared AetheriaLore scope, then capture exact visible input, consulted refs, research summary, raw output, review labels, leakage audit, and any coordinator intervention. Review for institutional lore use, latent pressure, prompt parroting, omniscience, and mission-critical trauma-dumping. Do not use archived local-model prototype runners for gold responder data.
+  summary: Ghostlight has produced its first no-fork research-enabled Sella responder capture and a reviewed state mutation receipt, with research provenance preserved in the raw responder output and mirrored in capture metadata.
+  next_action: Tighten the research-enabled responder capture seam so future gold-data samples preserve auditable research traces, not only responder-reported consulted refs. Then generate the next sandboxed responder/coordinator sample from the updated Sella aftermath state, keeping exact visible input, raw output, leakage audit, review labels, and mutation receipts.
