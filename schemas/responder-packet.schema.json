@@ -1,0 +1,163 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/GameCult/Ghostlight/schemas/responder-packet.schema.json",
+  "title": "Ghostlight Responder Packet Schema",
+  "description": "Packet-only visible input for a sandboxed character responder. The coordinator may know more, but this artifact is the exact surface a responder model is allowed to see.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "packet_id",
+    "review_status",
+    "fixture_lane",
+    "canon_status",
+    "coordinator_artifact_ref",
+    "projected_context_ref",
+    "responder_agent_id",
+    "visible_context",
+    "output_contract",
+    "hidden_context_audit",
+    "isolation_requirements",
+    "packet_prompt_text",
+    "review"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "ghostlight.responder_packet.v0" },
+    "packet_id": { "type": "string", "minLength": 1 },
+    "review_status": { "$ref": "#/$defs/review_status" },
+    "fixture_lane": { "enum": ["historical_grounded", "transition_grounded", "future_branch"] },
+    "canon_status": { "enum": ["single_history", "branch_local", "promoted_branch", "template", "draft"] },
+    "coordinator_artifact_ref": { "type": "string", "minLength": 1 },
+    "projected_context_ref": { "type": "string", "minLength": 1 },
+    "responder_agent_id": { "type": "string", "minLength": 1 },
+    "visible_context": {
+      "type": "object",
+      "required": [
+        "local_context_prompt",
+        "observed_event",
+        "allowed_action_labels",
+        "source_excerpts"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "local_context_prompt": { "type": "string", "minLength": 1 },
+        "observed_event": { "$ref": "#/$defs/observed_event" },
+        "allowed_action_labels": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "source_excerpts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_excerpt" }
+        }
+      }
+    },
+    "output_contract": {
+      "type": "object",
+      "required": [
+        "response_schema",
+        "required_fields",
+        "response_rules"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "response_schema": { "type": "string", "minLength": 1 },
+        "required_fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "response_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "hidden_context_audit": {
+      "type": "object",
+      "required": [
+        "omitted_context_refs",
+        "forbidden_inference_classes",
+        "known_absences"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "omitted_context_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "forbidden_inference_classes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "known_absences": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "isolation_requirements": {
+      "type": "object",
+      "required": [
+        "isolation_method",
+        "packet_only",
+        "no_repo_access",
+        "no_conversation_context",
+        "no_hidden_state_refs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "isolation_method": { "enum": ["subagent_no_fork", "manual_packet_only", "external_model_packet_only"] },
+        "packet_only": { "type": "boolean", "const": true },
+        "no_repo_access": { "type": "boolean" },
+        "no_conversation_context": { "type": "boolean", "const": true },
+        "no_hidden_state_refs": { "type": "boolean", "const": true }
+      }
+    },
+    "packet_prompt_text": { "type": "string", "minLength": 1 },
+    "review": {
+      "type": "object",
+      "required": ["reviewer", "review_notes", "accepted_for_sandbox_use", "failure_labels"],
+      "additionalProperties": false,
+      "properties": {
+        "reviewer": { "type": "string", "minLength": 1 },
+        "review_notes": { "type": "array", "items": { "type": "string" } },
+        "accepted_for_sandbox_use": { "type": "boolean" },
+        "failure_labels": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  },
+  "$defs": {
+    "review_status": {
+      "enum": ["draft", "accepted", "accepted_as_draft", "useful_needs_revision", "rejected", "superseded"]
+    },
+    "observed_event": {
+      "type": "object",
+      "required": ["event_id", "actor_agent_id", "observable_action", "spoken_text", "visible_object_refs", "visibility_notes"],
+      "additionalProperties": false,
+      "properties": {
+        "event_id": { "type": "string", "minLength": 1 },
+        "actor_agent_id": { "type": "string", "minLength": 1 },
+        "observable_action": { "type": "string", "minLength": 1 },
+        "spoken_text": { "type": "string" },
+        "visible_object_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "visibility_notes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "source_excerpt": {
+      "type": "object",
+      "required": ["ref_id", "source_ref", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "ref_id": { "type": "string", "minLength": 1 },
+        "source_ref": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

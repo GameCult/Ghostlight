@@ -84,6 +84,11 @@ state and re-entry discipline.
     coordinator/story runtime, projector, character agent/responder, appraiser,
     state mutator, relationship/perception classifier, Aetheria responder, and
     institution/faction/consumer decision models
+- `docs/architecture/sandboxed-responder-packets.md`
+  - contract for the exact packet-only surface handed from an omniscient
+    coordinator to a sandboxed character responder, including visible event,
+    local prompt, allowed actions, source excerpts, hidden-context audit, and
+    output contract
 - `docs/architecture/training-plan.md`
   - concrete enumeration of trainable Ghostlight stages, including each stage's
     inputs, outputs, likely model architecture, artifact family, first training
@@ -116,6 +121,8 @@ state and re-entry discipline.
     next-beat choice, acting-agent choice, machinery invocations, sandboxed
     responder handoffs, world-state refs, proposed deltas, branch constraints,
     item-manifest deltas, unresolved hooks, glue prose, and review notes
+- `schemas/responder-packet.schema.json`
+  - v0 contract for the exact input a sandboxed character responder may see
 - `schemas/agent-state.required-fields.json`
   - required first-class variable names for canonical state and relationship
     stance
@@ -134,6 +141,10 @@ state and re-entry discipline.
   - first coordinator artifact schema-shakedown example, backfilled from the
     accepted-as-draft sanctuary packet-assessment beat and explicitly marked as
     not gold responder data
+- `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
+  - first responder-packet schema-shakedown example for Sella's sanctuary
+    response; accepted as draft for sandbox handoff testing, not gold responder
+    output
 - `experiments/cold-wake-story-lab/`
   - Qwen response captures and reviews from the writing experiment
   - `the-narrowest-possible-margin.md`, the first readable short story
@@ -266,6 +277,12 @@ state and re-entry discipline.
   - validates v0 coordinator artifacts, including sandboxed responder handoff
     fields, world-state refs, branch constraints, proposed deltas, unresolved
     hooks, and review status
+- `tools/build_responder_packet.py`
+  - builds the first packet-only responder handoff from a coordinator artifact
+    and projected local context
+- `tools/validate_responder_packets.py`
+  - validates responder packets and rejects prompt surfaces that leak raw state
+    internals or hidden coordinator context markers
 - `tools/apply_sequential_ink_branch_mutation.py`
   - applies a reviewed replay of one selected branch into a mutated agent-state
     fixture and mutation receipt without letting Ink variables become
@@ -288,7 +305,7 @@ state and re-entry discipline.
 
 The canonical agent-state schema, projection example schema, lore grounding
 digest schema, projected-local-context schema, coordinator artifact schema,
-first draft Cold Wake grounding digest, and first Cold Wake story-lab Qwen
+responder-packet schema, first draft Cold Wake grounding digest, and first Cold Wake story-lab Qwen
 captures now exist as v0 seams. The
 first complete Cold Wake story pass exists with receipts, projection controls
 have been promoted, and Ink is now the standard branching scene format. The
@@ -315,7 +332,10 @@ data now requires a sandbox boundary: the coordinator may be omniscient, but the
 responder sees only the exact projected local packet, visible event, allowed
 actions, and explicitly included source excerpts; artifacts preserve raw output,
 reviewed output, hidden-context refs, leakage audit, isolation method, and
-coordinator intervention labels. The concrete training plan now enumerates
+coordinator intervention labels. The responder packet seam now turns that
+requirement into a concrete artifact and validator, so the next gold-data pass
+can hand a worker the exact prompt surface instead of hoping nobody leaks the
+coordinator's brain into the room. The concrete training plan now enumerates
 eleven trainable stages and their likely model
 families: generative decoder LLMs for coordinator, responder, and structured
 soft outputs; classifiers or cross-encoders for appraisal, evaluation, and

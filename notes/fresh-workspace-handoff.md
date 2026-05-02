@@ -60,6 +60,13 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `examples/coordinator/cold-wake-sanctuary-intake.v0.json`
   - `tools/validate_coordinator_artifacts.py`
   - `npm run coordinator:validate`
+- sandboxed responder packet seam:
+  - `docs/architecture/sandboxed-responder-packets.md`
+  - `schemas/responder-packet.schema.json`
+  - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
+  - `tools/build_responder_packet.py`
+  - `tools/validate_responder_packets.py`
+  - `npm run responder-packets:validate`
 - Cold Wake story-lab seam:
   - `docs/experiments/cold-wake-story-lab.md`
   - `examples/agent-state.cold-wake-story-lab.json`
@@ -162,6 +169,13 @@ responder handoffs, world-state refs, proposed deltas, branch constraints,
 item-manifest deltas, unresolved hooks, glue prose, and review status. The first
 example is a backfilled Cold Wake sanctuary packet-assessment artifact accepted
 as draft for schema shakedown, not gold responder data.
+The first responder packet seam now exists. It converts a coordinator artifact
+and projected local context into the exact packet-only prompt surface a
+character responder may see, with visible event, allowed actions, source
+excerpts, hidden-context audit, isolation requirements, output contract, and
+validator checks against raw-state or coordinator-context leakage. The first
+Sella packet is accepted as draft for sandbox testing, not as gold responder
+output.
 It now uses three timeline lanes: `historical_grounded`,
 `transition_grounded`, and `future_branch`. Future branches are required
 training/evaluation material for post-Rupture Elysium concepts, but generated
@@ -190,9 +204,10 @@ narrow elaboration before treating the detail as available to Ghostlight.
 
 ## Current Next Action
 
-Use the coordinator artifact schema for the next fresh generation pass: produce
-a source-grounded coordinator receipt first, then generate any responder turn
-through a sandboxed packet-only worker and preserve raw output, reviewed output,
+Use the responder packet seam for the next fresh generation pass: generate the
+first actual sandboxed responder output from
+`examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
+through a packet-only worker, then preserve raw output, reviewed output,
 hidden-context refs, leakage audit, and coordinator repair labels. Do not call
 Qwen for gold responder data yet.
 

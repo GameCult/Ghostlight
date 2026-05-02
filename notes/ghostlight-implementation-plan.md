@@ -324,14 +324,20 @@
    - Coordinator artifacts should be able to attach item-manifest deltas when a
      scene or branch decision discovers, alters, upgrades, restricts, salvages,
      counterfeits, or economically stresses a technology or item.
-   - First schema seam: `schemas/coordinator-artifact.schema.json`,
-     `examples/coordinator/cold-wake-sanctuary-intake.v0.json`, and
-     `tools/validate_coordinator_artifacts.py` now validate the coordinator
-     receipt shape through `npm run schema:validate`.
-   - Next prototype: use the coordinator artifact before generating fresh story
-     or lore elaboration. The coordinator must write the receipt first, then any
-     responder turn must be generated through a sandboxed packet-only worker and
-     reviewed into the artifact rather than improvised into chat.
+  - First schema seam: `schemas/coordinator-artifact.schema.json`,
+    `examples/coordinator/cold-wake-sanctuary-intake.v0.json`, and
+    `tools/validate_coordinator_artifacts.py` now validate the coordinator
+    receipt shape through `npm run schema:validate`.
+  - First responder packet seam:
+    `schemas/responder-packet.schema.json`,
+    `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`,
+    `tools/build_responder_packet.py`, and
+    `tools/validate_responder_packets.py` now validate the exact prompt surface
+    a sandboxed character responder may see.
+  - Next prototype: generate the first actual responder output from the Sella
+    packet through a packet-only worker. Preserve the raw output, reviewed
+    output, hidden-context refs, leakage audit, and coordinator repair labels
+    before accepting anything as training material.
 
 7. Build the first drama-scaffolding loop.
    - memory updates
