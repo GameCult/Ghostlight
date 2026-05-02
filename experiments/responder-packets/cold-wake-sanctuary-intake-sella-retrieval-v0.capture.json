@@ -77,7 +77,7 @@
                                         "The output uses coordinator-provided lore concepts such as heat-debt update, rescue ledger, dockfall burden, and sanctuary as moral-debt sink.",
                                         "The response keeps packet personhood unresolved and frames Maer motive through Sella interpretation.",
                                         "Candidate updates were returned as structured objects; this is accepted after widening the responder-output schema.",
-                                        "The response does not meaningfully surface Sella Ren\u0027s personal sanctuary-collapse backstory even though that pressure was present in the packet."
+                                        "Sella Ren\u0027s sanctuary-collapse backstory was visible in the packet as latent behavioral pressure; it did not need to be referenced directly in mission-critical speech."
                                     ]
                       },
     "coordinator_review":  {
@@ -86,7 +86,7 @@
                                "review_notes":  [
                                                     "Accepted as draft retrieval_augmented responder output for lore-absorption training.",
                                                     "The responder did not autonomously search the lore archive; the coordinator retrieved scoped AetheriaLore refs and included them in the visible prompt.",
-                                                    "The output is richer in Aetheria-native institutional texture than the packet-only v0 response, but it underuses Sella Ren\u0027s personal sanctuary-collapse scar from the packet.",
+                                                    "The output is richer in Aetheria-native institutional texture than the packet-only v0 response; follow-up review clarifies that Sella Ren\u0027s personal sanctuary-collapse scar should remain available as latent pressure, not forced into dialogue.",
                                                     "Do not use this capture as proof that packet-only runtime context is sufficient, or as proof that autonomous responder research is working."
                                                 ],
                                "coordinator_interventions":  [

@@ -32,9 +32,9 @@
                                   "Do not merge the two lanes without preserving generation_lane and lore_access metadata."
                               ],
     "review_status":  "accepted_as_draft",
-    "missed_character_pressure":  [
-                                      "The retrieval-augmented response underuses Sella Ren\u0027s packet-visible backstory: she once watched a sanctuary overpromise safety and turn refuge into a sorting machine with kinder lighting.",
-                                      "Future projector/retrieval passes must preserve character-local scars and not let faction or event lore crowd them out.",
-                                      "Lane review should score both institutional grounding and character-specific pressure retention."
-                                  ]
+    "character_pressure_visibility":  [
+                                          "Sella Ren\u0027s packet-visible sanctuary-collapse backstory does not need to be referenced directly in mission-critical speech.",
+                                          "The requirement is pressure availability: the responder must be able to see the scar so it can shape triage posture, capacity suspicion, and refusal/condition-setting behavior.",
+                                          "Lane review should score institutional grounding and latent character-pressure availability without rewarding unnecessary trauma-dumping."
+                                      ]
 }

@@ -111,10 +111,11 @@ as autonomous-research data.
 Retrieval can also make the packet worse if it floods the scene with faction or
 event context and starves the character's own scars. The Sella v0 comparison is
 the first warning shot: the retrieval-augmented output used heat-debt and rescue
-ledger texture well, but underused Sella's packet-visible backstory about
-watching a sanctuary overpromise safety until refuge became a sorting machine
-with kinder lighting. Future review should score both institutional grounding
-and character-pressure retention.
+ledger texture well, but review must still verify that Sella's packet-visible
+history of watching a sanctuary overpromise safety remains available as latent
+behavioral pressure. The point is not to make her trauma-dump during a
+mission-critical exchange. The point is that the responder cannot be shaped by
+a pressure it cannot see.
 
 ## Output Captures
 
@@ -140,6 +141,7 @@ The first lane comparison found the expected tradeoff. Packet-only output gave a
 clean runtime-parity conditional bay decision and stronger character-specific
 flavor. Retrieval-augmented output added stronger Aetheria-native institutional
 texture: heat-debt timing, rescue-ledger burden, dockfall responsibility, and
-Aya sanctuary capacity politics. It also underused Sella's own packet-visible
-sanctuary-collapse scar. Both lanes are useful; neither should impersonate the
-other.
+Aya sanctuary capacity politics. Follow-up review clarified that Sella's
+packet-visible sanctuary-collapse scar does not need to be spoken aloud, but it
+does need to remain visible to the responder as behavioral pressure. Both lanes
+are useful; neither should impersonate the other.

@@ -174,7 +174,7 @@ state and re-entry discipline.
   - comparison artifact showing the packet-only lane proves bounded runtime
     competence while the retrieval-augmented lane adds stronger
     Aetheria-native institutional texture, retrieval lessons, and a warning
-    that character backstory can be crowded out
+    that character backstory must remain available as latent pressure
 - `experiments/cold-wake-story-lab/`
   - Qwen response captures and reviews from the writing experiment
   - `the-narrowest-possible-margin.md`, the first readable short story
@@ -383,10 +383,11 @@ responder research unless the responder actually receives scoped repo access.
 The first lane comparison is now captured: packet-only produced a clean
 conditional repair-bay decision, while retrieval-augmented added heat-debt,
 rescue-ledger, dockfall, and Aya sanctuary politics that should inform future
-runtime retrieval. The comparison also records a failure mode: injected
-institutional lore can crowd out character-local backstory, as the
-retrieval-augmented Sella response underused her packet-visible
-sanctuary-collapse scar.
+runtime retrieval. Follow-up review clarified the failure mode: injected
+institutional lore should not crowd out character-local backstory from the
+responder's visible pressure set, but the responder should not be rewarded for
+surfacing that backstory aloud when the mission-critical exchange does not call
+for it.
 The concrete training plan now enumerates
 eleven trainable stages and their likely model
 families: generative decoder LLMs for coordinator, responder, and structured

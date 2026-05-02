@@ -210,9 +210,11 @@ coordinator-selected scoped AetheriaLore refs and produces richer
 Aetheria-native language around heat-debt timing, rescue ledgers, dockfall
 burden, and sanctuary as moral-debt sink. The lane comparison records that this
 is good lore-absorption data but not proof of packet-only runtime sufficiency.
-It also records a miss: the retrieval-augmented output underused Sella's
-packet-visible sanctuary-collapse scar, so future projector/retrieval review
-must score character-pressure retention as well as institutional grounding.
+Follow-up review clarified the real concern: Sella's packet-visible
+sanctuary-collapse scar does not need to surface in speech, but it must remain
+visible to the responder as latent behavioral pressure. Future
+projector/retrieval review should verify pressure availability, not reward
+mission-critical trauma-dumping.
 It now uses three timeline lanes: `historical_grounded`,
 `transition_grounded`, and `future_branch`. Future branches are required
 training/evaluation material for post-Rupture Elysium concepts, but generated
@@ -246,7 +248,8 @@ update the runtime retrieval/projector plan so packet-only contexts can pull
 compact lore facts for heat-debt timing, Navigator rescue ledgers, Aya sanctuary
 capacity politics, and Lightsail/Ganymede route obligations when scene-relevant,
 while explicitly preserving character-local scars such as Sella's
-sanctuary-collapse backstory. Do not call Qwen for gold responder data yet.
+sanctuary-collapse backstory as available behavioral pressure. Do not call Qwen
+for gold responder data yet.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than
