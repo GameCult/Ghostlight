@@ -90,12 +90,14 @@
       "Kept Sella's sanctuary authority and capacity constraints active."
     ],
     "failure_notes": [
+      "Generated Maer branch options and Sella responses in a single pass from a shared packet; this is a bootstrap shortcut, not the target sequential local-awareness runtime.",
       "The training_hooks field drifted into future branch-id suggestions instead of semantic training labels.",
       "Some prose is flatter than the hand-authored scene and should be treated as draft material, not final Aetheria prose.",
       "The silent-observation branch implies Sella sees routing terms even though the action prose does not explicitly show the packet; future prompts need tighter object-custody continuity."
     ],
     "accepted_into_ink_ref": "examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink",
     "pipeline_lessons": [
+      "Next generator should split protagonist choice generation from responder generation so Sella sees only observable Maer action, not Maer private intent or full protagonist-local state.",
       "The branch-generation prompt should distinguish semantic training hooks from follow-up branch ids.",
       "Object visibility and custody need to be rendered as explicit branch-local constraints, especially for silence/withhold actions.",
       "Qwen can generate useful branch shapes, but Ghostlight still needs review before promotion into polished Ink or canonical state."

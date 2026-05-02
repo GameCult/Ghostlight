@@ -189,6 +189,7 @@
     "reviewer": "Codex",
     "review_status": "accepted",
     "review_notes": [
+      "This draft uses one-shot paired generation for Maer choices and Sella responses; keep it as bootstrap training material, not target runtime architecture.",
       "Qwen generated four branch candidates from Ghostlight local awareness and projection controls.",
       "The draft preserves multiple non-speech actions: show_object, withhold_object, and silence.",
       "The draft is accepted as training material, not as final polished Aetheria prose."

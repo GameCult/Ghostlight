@@ -28,7 +28,10 @@ The near-term authoring path is:
 ```text
 agent state + scene state + lore grounding
   -> local awareness
-  -> projected branch choices and NPC responses
+  -> projected branch choices for the acting character
+  -> selected branch as observable action
+  -> responder local awareness built from only what the responder can perceive
+  -> responder action
   -> Ink scene
   -> compiled Ink JSON
   -> reviewed training annotations
@@ -39,6 +42,16 @@ agent state + scene state + lore grounding
 The Ink file should be readable as Aetheria content on its own. The sidecar
 training annotation should explain which Ghostlight state produced each branch
 and which consequences are automatic, reviewed, or deferred.
+
+Each character turn must be generated from that character's local awareness.
+The protagonist-choice generator should not receive the responder's private
+state. The responder generator should not receive the protagonist's private
+intent except as an observable action, spoken text, gesture, object use,
+silence, or other perceivable cue. A listener is allowed to misunderstand.
+
+One-shot generation of both sides is allowed only as bootstrap scaffolding, and
+must be marked as such in the capture review. It is not the target runtime
+shape.
 
 The first generated draft path is:
 
@@ -52,10 +65,11 @@ examples/agent-state.cold-wake-story-lab.json
   -> examples/ink/cold-wake-sanctuary-intake.qwen-draft.training.json
 ```
 
-The Qwen draft is accepted as training material, not as final polished prose.
-That distinction matters. A generated branch can be useful because it exposes a
-decision shape, an action type, a misread, or a prompt failure even when the
-line writing still needs a human with a knife.
+The Qwen draft is accepted as training material, not as final polished prose or
+runtime architecture. It generated Maer's branch options and Sella's responses
+in one pass, which is a known shortcut. A generated branch can still be useful
+because it exposes a decision shape, an action type, a misread, or a prompt
+failure even when the line writing still needs a human with a knife.
 
 ## Ink Comments
 

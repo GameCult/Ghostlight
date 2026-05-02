@@ -47,6 +47,26 @@ The author sets the initial scene, player role if any, and high-level branch
 constraints. The author should not need to decide every line, interruption,
 withdrawal, refusal, or concession. That is the point of the machine.
 
+Every generated character turn must be local to that character.
+
+For branching scenes, this means protagonist/player options and NPC responses
+are separate generation steps:
+
+1. Build the protagonist's local awareness.
+2. Generate plausible protagonist choices from only what the protagonist knows,
+   perceives, wants, can attempt, and can affect.
+3. When one choice is selected, reduce it to observable action: words, silence,
+   gesture, movement, object use, resource spend, or other perceivable change.
+4. Build the responder's local awareness from the responder's own state plus
+   the observable action, not the protagonist's private intent.
+5. Generate the responder's action from that responder-local packet.
+6. Store actor intent and listener interpretation separately.
+
+One-shot paired generation, where a model writes both the player's move and the
+NPC response from a shared omniscient packet, is acceptable only as bootstrap
+scaffolding. It should be reviewed and labeled as such. Do not treat it as the
+target runtime behavior.
+
 For game use, the loop should be able to emit:
 
 - a scene transcript
