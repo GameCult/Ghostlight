@@ -86,13 +86,20 @@ When context pressure is clearly rising:
 
 When the user says to prepare for imminent compaction:
 
-1. run `tools/ghostlight_prepare_compaction.py` before editing persistence
+1. immediately write hot live context from memory into a new
+   `state/scratch-compaction-<guid>.md` file before reading files, running
+   status checks, or doing tidy persistence work
+2. run `tools/ghostlight_prepare_compaction.py` before editing persistence
    surfaces
-2. use its warnings as the checklist for map, handoff, scratch, evidence, and
+3. use its warnings as the checklist for map, handoff, scratch, evidence, and
    git hygiene
-3. update only the state that actually needs to change
-4. run `tools/ghostlight_prepare_compaction.py` again after edits
-5. fix errors, address warnings, and commit the completed persistence pass
+4. update only the state that actually needs to change
+5. after hot context has been folded into canonical persisted state, delete the
+   `state/scratch-compaction-<guid>.md` file so stale emergency memory does not
+   linger
+6. run `tools/ghostlight_prepare_compaction.py` again after edits and scratch
+   cleanup
+7. fix errors, address warnings, and commit the completed persistence pass
    unless the work is deliberately mid-surgery
 
 ## Operating Discipline
