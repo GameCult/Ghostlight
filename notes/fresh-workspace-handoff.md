@@ -48,6 +48,7 @@ path is a source-grounded branching-scene data loop:
 - Canonical map: `state/map.yaml`
 - Current system map: `notes/ghostlight-current-system-map.md`
 - Implementation plan: `notes/ghostlight-implementation-plan.md`
+- Documentation inventory: `notes/documentation-inventory.md`
 - Agent-state schema: `schemas/agent-state.schema.json`
 - Projected local context schema: `schemas/projected-local-context.schema.json`
 - Coordinator artifact schema: `schemas/coordinator-artifact.schema.json`

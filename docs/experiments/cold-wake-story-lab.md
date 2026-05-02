@@ -1,5 +1,16 @@
 # Cold Wake Story Lab
 
+Status: archived local-model/projection experiment. This doc records the early
+Cold Wake story-lab run, including Qwen outputs, projection failures, and useful
+pipeline lessons. It is not the current gold-data path.
+
+The current accepted-as-draft coordinator/IF scaffold is:
+
+- `examples/ink/cold-wake-branch-and-fold.v0.ink`
+- `examples/ink/cold-wake-branch-and-fold.v0.training.json`
+- `examples/coordinator/cold-wake-branch-and-fold.v0.json`
+- `experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md`
+
 This experiment uses Ghostlight as a writing crutch on purpose.
 
 The goal is to write a small Cold Wake story while producing reusable projection
@@ -72,11 +83,15 @@ preserves evidence and life without pretending the category system has healed.
 
 ## Experiment Loop
 
+The archived run used this loop. Current gold-data runs should preserve exact
+packet, capture, review, mutation, branch compiler, and IF reviewer seams rather
+than treating model output as accepted prose by default.
+
 For each scene:
 
 1. Define character-local state and scene pressure.
 2. Project the next response prompt for one character.
-3. Send only `prompt_text` to the Qwen response model.
+3. Send only `prompt_text` to the local response model.
 4. Save the model output.
 5. Review whether the output served the story, respected speaker-local context,
    and chose speech/action/silence plausibly.
@@ -118,7 +133,7 @@ wording mistakes. The projection artifact now needs controls for frame
 ownership, authority boundaries, object custody, required compromise semantics,
 and forbidden resolutions before prompt prose is rendered.
 
-## Qwen Target
+## Archived Qwen Target
 
 Use the LAN Ollama endpoint from `gamecult-ops`:
 
@@ -138,9 +153,9 @@ Use the LAN Ollama endpoint from `gamecult-ops`:
 ## Acceptance Criteria
 
 - The story has a visible arc, not just disconnected argument samples.
-- Projection prompts include enough setting and cultural pressure for Qwen to
-  write without seeing the lore archive.
+- Projection prompts include enough setting and cultural pressure for the
+  responder to write without seeing hidden author state.
 - At least one projected turn permits action instead of dialogue.
-- Review notes explicitly mark whether Qwen chose speech, action, silence, or a
-  mixed beat.
+- Review notes explicitly mark whether the responder chose speech, action,
+  silence, or a mixed beat.
 - Failures are kept when they teach a useful boundary.

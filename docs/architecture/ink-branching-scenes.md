@@ -23,7 +23,7 @@ cultural, memory, relationship, and consequence rationale.
 
 ## Runtime Shape
 
-The near-term authoring path is:
+The artifact flow is:
 
 ```text
 agent state + scene state + lore grounding

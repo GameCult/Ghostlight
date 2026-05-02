@@ -102,6 +102,7 @@ coverage_targets:
 
 current_artifacts:
   canonical_docs:
+    - notes/documentation-inventory.md
     - docs/architecture/prompt-projection-contract.md
     - docs/architecture/projected-local-context.md
     - docs/architecture/sequential-agent-runtime.md
@@ -165,5 +166,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Cold Wake now has a clean accepted-as-draft branch-and-fold interactive-fiction scaffold. The run starts at the Ganymede route freeze tribunal, folds through Veyr provenance and Sella's clinic, carries compact consequence variables into the diagnostic-contact climax, and includes durable base image prompts plus branch/state modifiers. It is coordinator/IF scaffold training data, not raw responder gold.
+  summary: Cold Wake now has a clean accepted-as-draft branch-and-fold interactive-fiction scaffold, and the docs have a navigation inventory separating architecture contracts, planning surfaces, archived experiments, raw imported source, research backlog, and state ledgers.
   next_action: Move to a different Aetheria setting fixture. Pick the next faction, movement, flashpoint, or day-in-the-life target from the coverage plan, source-ground it in AetheriaLore, then build a similarly compact branch-and-fold IF scaffold with visual prompt anchors and reviewed consequence surfaces.

@@ -6,6 +6,10 @@ Build the first reliable data-generation loop for socially persistent Aetheria
 agents. The immediate target is not a full simulation. It is a clean, reviewed,
 sandboxed training-data pipeline for branching scenes and state consequences.
 
+Planning belongs in this file and the handoff/map state surfaces. Architecture
+docs should describe durable contracts, boundaries, and data shapes; they should
+not carry live next-action lists.
+
 ## Near-Term Sequence
 
 1. Stabilize canonical state and projection seams.
@@ -66,8 +70,9 @@ sandboxed training-data pipeline for branching scenes and state consequences.
 6. Train only after schemas stop sliding.
    - Pilot samples are schema shakedown, not robust corpus scale.
    - Specialized future models include coordinator, retriever, projector,
-     responder, appraiser, mutator, relationship/perception updater, evaluator,
-     and institution/faction/consumer decision models.
+     responder, appraiser, mutator, relationship/perception updater, branch
+     compiler, IF artifact reviewer, evaluator, and
+     institution/faction/consumer decision models.
    - Deterministic gates remain code: visibility, action legality, object
      custody, resource accounting, schema validation, source provenance,
      mutation authority, prompt leakage checks, and Ink compilation.

@@ -374,18 +374,13 @@ Blocking gaps should be patched in AetheriaLore first. Safe stubs must be
 tracked in the digest or sidecar and revisited before promotion. Deferred gaps
 should stay out of prompt text so they do not harden by accident.
 
-## Immediate Plan
+## Training Boundary
 
-1. Keep the Cat/Oz fixture as an Elysium procedural mechanics fixture.
-2. Add a lore grounding digest format. Done.
-3. Choose one authored historical flashpoint from the Aetheria archive.
-4. Build the first `historical_grounded` agent-state fixture from that slice.
-5. Produce reviewed projection examples from that fixture.
-6. Create the first `future_branch` fixture from authored post-Elysium concepts
-   after the coordinator artifact schema exists.
-7. Compare those examples against Cat/Oz to separate grounded historical
-   pressure from procedural Elysium branch generation.
-
-Ground the machine in the past. Then generate possible futures under
-supervision, with branch labels sharp enough that infinity does not show up
+Ground the machine in the past, then generate possible futures under
+supervision with branch labels sharp enough that infinity does not show up
 wearing one nametag.
+
+Historical fixtures teach single-history social pressure. Future-branch
+fixtures teach conditional canon. Cat/Oz-style procedural fixtures teach
+runtime mechanics. Those lanes can compare against each other, but they should
+not collapse into one unlabeled corpus.

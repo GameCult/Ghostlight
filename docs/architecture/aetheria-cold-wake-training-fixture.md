@@ -3,15 +3,7 @@
 Cold Wake is useful to Ghostlight as a grounded historical pressure cooker, not
 as the active product target.
 
-The deleted `aetheria-cold-wake-mvp-scenario.md` brief had the right social
-machine in it: Ganymede corridor law, thermal stealth panic, Navigator rescue
-obligation, insurer category failure, shadow cognition, and institutions forced
-to translate the same ambiguous vessel through incompatible moral economies.
-The bad part was the label. "MVP scenario" quietly points the repo back toward
-building a game slice when the current target is projection, content generation,
-and dialogue scaffolding.
-
-So the revived shape is narrower:
+The revived shape is narrow:
 
 - use Cold Wake as an authored historical Aetheria flashpoint
 - distill it into lore grounding digests
@@ -43,11 +35,15 @@ The first machine-readable digest is:
 
 - `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json`
 
-It is marked `draft` because the next move is not to canonize a whole plotted
-incident. The next move is to choose one room inside the crisis and build a
-projection fixture from it.
+It can ground Cold Wake projection, responder, coordinator, and branch compiler
+artifacts, including:
 
-## Candidate First Rooms
+- `examples/ink/cold-wake-branch-and-fold.v0.ink`
+- `examples/ink/cold-wake-branch-and-fold.v0.training.json`
+- `examples/coordinator/cold-wake-branch-and-fold.v0.json`
+- `experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md`
+
+## Useful Rooms
 
 - PSC risk tribunal freezes a quiet-running vessel's corridor status while a
   Navigator route steward argues rescue cannot wait for category repair.

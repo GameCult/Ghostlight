@@ -218,20 +218,6 @@ Minimum useful milestone:
 - deterministic input-slice builder
 - evaluator prompt or script that catches the known failure modes
 
-## Near-Term Implementation Tasks
-
-1. Define `schemas/projection-example.schema.json`. Done.
-2. Add `examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl` with
-   the first reviewed Cat and Oz examples. Done.
-3. Add a lore grounding digest format for historical Aetheria projection
-   fixtures. Done.
-4. Choose the first authored historical flashpoint for grounded training.
-5. Add a deterministic projection input-slice tool that reads the agent-state
-   fixture and emits speaker-local input JSON.
-6. Add a teacher prompt template for producing projection artifacts.
-7. Add an evaluator prompt template for projection audits.
-8. Only then consider student fine-tuning.
-
 ## Boundaries
 
 The student projector is not the character. It is not the dialogue writer. It is

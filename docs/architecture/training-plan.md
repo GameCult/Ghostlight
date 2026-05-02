@@ -556,12 +556,12 @@ Purpose: choose and render what a character does next from local context.
 
 Current implementation:
 
-- Qwen/local model calls through structured tools
-- manual review and capture receipts
-- no-thinking strict calls by default for tool compliance
-- future gold responder data should use isolated generation workers or
-  sub-agents that receive only the projected local packet, not coordinator
-  context
+- responder packet and output schemas with validators
+- reviewed packet, capture, and mutation receipts
+- archived local-model calls kept as plumbing tests and negative examples
+- future gold responder data should use isolated generation workers,
+  sub-agents, or external model calls that receive only the projected local
+  packet, not coordinator context
 
 Inputs:
 
@@ -693,7 +693,7 @@ Purpose: interpret an observable event from one participant's local perspective.
 Current implementation:
 
 - manual reviewed appraisals in mutation receipts
-- Qwen appraiser experiments exposed invalid path drift
+- archived local-model appraiser experiments exposed invalid path drift
 
 Inputs:
 
