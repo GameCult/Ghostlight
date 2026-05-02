@@ -1,0 +1,171 @@
+{
+  "schema_version": "ghostlight.reviewed_state_mutation.v0",
+  "mutation_id": "mutation-contact-timing-sella-trace-v0",
+  "source_fixture_ref": "examples/agent-state.cold-wake-story-lab.after-maer-channel-opened.json",
+  "source_capture_ref": "experiments/responder-packets/cold-wake-contact-timing-sella-trace-v0.capture.json",
+  "mutated_fixture_ref": "examples/agent-state.cold-wake-story-lab.after-sella-timing-mark.json",
+  "event_id": "event-sella-contact-timing-mark",
+  "responder_output_ref": "experiments/responder-packets/cold-wake-contact-timing-sella-trace-v0.capture.json#parsed_output",
+  "participant_appraisals": [
+    {
+      "participant_agent_id": "sella_ren",
+      "private_interpretation": "Sella reads Maer's live ledger and acceptance of limits as materially better than pressure dressed up as mercy. She still suspects the diagnostic category can become a clean little box for avoiding uglier obligations later, and she does not trust observers to remember the limits once the craft moves. She wants the possible distress preserved without letting the clinic become a mouth that promises more than it can swallow.",
+      "state_deltas": [
+        {
+          "agent_id": "sella_ren",
+          "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+          "delta": 0.03,
+          "rationale": "She takes procedural control of live contact."
+        },
+        {
+          "agent_id": "sella_ren",
+          "path": "canonical_state.situational_state.overstimulation.current_activation",
+          "delta": 0.02,
+          "rationale": "The bay now carries live contact channels."
+        }
+      ],
+      "relationship_deltas": [
+        {
+          "relationship_id": "rel-sella-maer",
+          "path": "stance.trust.current_activation",
+          "delta": 0.02,
+          "rationale": "Maer accepted material conditions."
+        }
+      ],
+      "next_action_constraints": [
+        "Whether diagnostic contact reveals actionable condition data remains unknown.",
+        "Whether the heat-window timing remains adequate is unresolved.",
+        "Whether later observers attempt to inflate bounded contact into broader obligation remains a live risk.",
+        "Artifact personhood, ancestry, custody, provenance, and survival outcome remain unresolved."
+      ]
+    },
+    {
+      "participant_agent_id": "maer_tidecall",
+      "private_interpretation": "Sella allowed the diagnostic sleeve to cycle live while preserving the limits.",
+      "state_deltas": [
+        {
+          "agent_id": "maer_tidecall",
+          "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+          "delta": -0.01,
+          "rationale": "Contact is proceeding instead of waiting on another argument."
+        }
+      ],
+      "relationship_deltas": [
+        {
+          "relationship_id": "rel-maer-sella",
+          "path": "stance.trust.current_activation",
+          "delta": 0.01,
+          "rationale": "The contact path is proceeding."
+        }
+      ],
+      "next_action_constraints": [
+        "Whether diagnostic contact reveals actionable condition data remains unknown.",
+        "Whether the heat-window timing remains adequate is unresolved.",
+        "Whether later observers attempt to inflate bounded contact into broader obligation remains a live risk.",
+        "Artifact personhood, ancestry, custody, provenance, and survival outcome remain unresolved."
+      ]
+    }
+  ],
+  "observed_action": {
+    "speaker_id": "maer_tidecall",
+    "action_type": "set_condition",
+    "utterance_summary": "Maer accepts limits, extends the ledger, and opens a diagnostic channel while waiting for Sella's mark.",
+    "dialogue_function": "accept_conditions_and_open_diagnostic_channel",
+    "observable_cues": [
+      "live ledger exposure",
+      "preservation-only channel",
+      "rescue craft hold marker"
+    ]
+  },
+  "observed_response": {
+    "speaker_id": "sella_ren",
+    "action_type": "set_condition",
+    "utterance_summary": "Proceed through Three on my mark. Diagnostic sleeve only. No intake language, no custody drift, no ancestry fishing, no testimony conversion. The sound is preserved, not interpreted. Staff pair, stay outside the sleeve unless I name a breach. Maer, your ledger is sufficient for contact, not sufficient for a miracle. We listen, we handle heat, we keep isolation, and nobody turns motion into permission after the fact.",
+    "dialogue_function": "mark_decon_timing_for_bounded_contact",
+    "observable_cues": [
+      "Sella keys the clinic board with two fingers, locking the packet-sound buffer to preservation-only and lighting decon route Three in amber instead of green. She assigns one wet-side tech and one dry-side recorder to the contact lane, then places her timing mark on the rescue craft hold marker with a hard isolation flag attached. The bay doors do not open fully; only the bounded diagnostic sleeve cycles live against the heat-window countdown."
+    ]
+  },
+  "applied_mutations": [
+    {
+      "target": "sella_ren",
+      "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+      "before": 0.6,
+      "after": 0.63
+    },
+    {
+      "target": "sella_ren",
+      "path": "canonical_state.situational_state.overstimulation.current_activation",
+      "before": 0.77,
+      "after": 0.79
+    },
+    {
+      "target": "sella_ren",
+      "path": "canonical_state.situational_state.exhaustion.current_activation",
+      "before": 0.78,
+      "after": 0.79
+    },
+    {
+      "target": "sella_ren",
+      "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+      "before": 0.65,
+      "after": 0.64
+    },
+    {
+      "target": "maer_tidecall",
+      "path": "canonical_state.behavioral_dimensions.anxiety.current_activation",
+      "before": 0.55,
+      "after": 0.54
+    },
+    {
+      "target": "maer_tidecall",
+      "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+      "before": 0.81,
+      "after": 0.82
+    },
+    {
+      "target": "rel-sella-maer",
+      "path": "stance.trust.current_activation",
+      "before": 0.65,
+      "after": 0.67
+    },
+    {
+      "target": "rel-sella-maer",
+      "path": "stance.respect.current_activation",
+      "before": 0.78,
+      "after": 0.79
+    },
+    {
+      "target": "rel-sella-maer",
+      "path": "stance.obligation.current_activation",
+      "before": 0.57,
+      "after": 0.59
+    },
+    {
+      "target": "rel-maer-sella",
+      "path": "stance.trust.current_activation",
+      "before": 0.78,
+      "after": 0.79
+    },
+    {
+      "target": "rel-maer-sella",
+      "path": "stance.obligation.current_activation",
+      "before": 0.73,
+      "after": 0.75
+    }
+  ],
+  "accepted_world_state_candidates": [
+    "Sella authorizes decon route Three for bounded diagnostic contact only.",
+    "Packet-sound preservation buffers are locked before contact proceeds.",
+    "A minimal wet/dry staff pair is assigned to the diagnostic lane.",
+    "The rescue contact craft receives Sella's timing mark under hard isolation conditions.",
+    "The artifact remains unresolved diagnostic evidence."
+  ],
+  "manual_review_notes": [
+    "Responder output accepted without prose repair.",
+    "Contact is authorized but outcome remains unresolved."
+  ],
+  "deferred_mutations": [
+    "No personhood, provenance, custody, or final rescue outcome resolved."
+  ]
+}

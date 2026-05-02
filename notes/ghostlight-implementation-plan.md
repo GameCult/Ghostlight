@@ -30,10 +30,10 @@ sandboxed training-data pipeline for branching scenes and state consequences.
    - Continue rejecting archived local-model prototype runners for gold responder data unless the task is explicitly model plumbing.
 
 4. Run the first full-story artifact pass.
-   - Start from `examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json`.
+   - Current story-run state: `examples/agent-state.cold-wake-story-lab.after-sella-timing-mark.json`.
    - Treat the next test as a bounded end-to-end Cold Wake short story run, not another isolated seam check.
-   - Begin with Maer accepting Sella's bounded diagnostic-contact conditions and initiating actual vessel contact or extraction under decon, isolation, packet-sound preservation, heat burden, and Navigator-ledger exposure.
-   - The coordinator should write readable connective prose and keep the story moving toward an ending. Coordinator glue prose is training signal for the future coordinator/story-runtime model.
+   - Completed story-run setup beats: Maer accepted Sella's bounded diagnostic-contact conditions, extended live ledger exposure, opened the preservation-only diagnostic acoustic channel, and Sella marked decon route Three so the bounded diagnostic sleeve cycles live.
+   - Next story-run beat: generate the first diagnostic signal/contact result, keep the story readable, and continue toward an ending. Coordinator glue prose is training signal for the future coordinator/story-runtime model.
    - Still emit training artifacts at material turns: projected local context, responder packet, raw output/capture, leakage audit, reviewed mutation receipt, and aftermath state where relevant.
    - Do not stop for every minor prose flaw; curate as coordinator and continue. Stop to patch the pipeline only for core invariant failures: hidden-state leakage, lore grounding failure, visibility/object/body affordance errors, bad state mutation, or schema break.
    - Keep fuzzy social changes manual and auditable until appraiser/classifier models exist.

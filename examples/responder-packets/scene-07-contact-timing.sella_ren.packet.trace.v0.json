@@ -1,0 +1,159 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "packet.cold_wake.contact_timing.sella_response.trace.v0",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/cold-wake-contact-timing.v0.json",
+  "projected_context_ref": "examples/projected-contexts/scene-07-contact-timing.sella_ren.projected-context.json",
+  "responder_agent_id": "sella_ren",
+  "generation_lane": "retrieval_augmented",
+  "lore_access": {
+    "mode": "coordinator_scoped_retrieval",
+    "allowed_scope": [
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md#lines7-9",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md#lines7-11",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines25-54",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines56-64",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md#lines13-35",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md#lines21-31",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#lines13-15"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "Ghostlight local context for Sella: Maer has accepted material limits, the ledger is live, the craft waits for decon route Three, packet sound is preservation-only, and Sella may mark timing for bounded diagnostic contact without resolving personhood, custody, provenance, or rescue outcome.",
+    "observed_event": {
+      "event_id": "event.maer.accepts_conditions_and_opens_channel",
+      "actor_agent_id": "maer_tidecall",
+      "observable_action": "Maer extends the live Navigator ledger, opens a preservation-only diagnostic acoustic channel, and routes the rescue craft to hold at decon route Three for Sella's timing mark.",
+      "spoken_text": "Accepted. Bounded diagnostic contact only. No full intake, no custody, no personhood finding, no cargo designation. Packet sound remains preservation-only until diagnostic handling is complete. Decon route Three. Isolation absolute. My ledger stays live for staff time, heat burden, and failed extraction cost. Permission is not capacity; the ledger will not pretend otherwise. Open the channel on your timing mark, Sella. We will listen before the window closes.",
+      "visible_object_refs": [
+        "navigator_rescue_ledger_signature",
+        "diagnostic_acoustic_channel",
+        "packet_sound_preservation_channel",
+        "decon_route_three",
+        "heat_window_countdown",
+        "rescue_contact_craft"
+      ],
+      "visibility_notes": [
+        "Sella can see the live ledger, preservation channel, rescue craft hold marker, and heat timer.",
+        "The artifact remains unresolved diagnostic evidence."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "silence",
+      "gesture",
+      "movement",
+      "inspect_object",
+      "show_object",
+      "withhold_object",
+      "transfer_object",
+      "set_condition",
+      "refuse",
+      "wait",
+      "withdraw",
+      "attack"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "lore.cold_wake_category_failure",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md#lines7-9",
+        "text": "Cold Wake made thermal stealth a corridor-law crisis through delayed heat dumps, ghost tracks, near-misses, and misclassified quiet-running vessels."
+      },
+      {
+        "ref_id": "lore.ganymede_rescue_ledgers",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md#lines7-11",
+        "text": "The Ganymede Route Compact established rescue obligations, shared hazard ledgers, route-steward representation, navigator arbitration status, and later sanctuary/rescue institutional ancestry."
+      },
+      {
+        "ref_id": "lore.navigator_habitat_interfaces",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines25-54",
+        "text": "Navigator habitats are built around pressure-managed channels, acoustic commons, orientation pools, dryside galleries, and mixed-interface work surfaces instead of human-only rooms."
+      },
+      {
+        "ref_id": "lore.navigator_rescue_ledgers",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines56-64",
+        "text": "Rescue ledgers record who answered distress calls, held formation, and kept sanctuary promises when doing so was more expensive; those records shape credit, escort priority, arbitration, and kinship ties."
+      },
+      {
+        "ref_id": "lore.aya_care_infrastructure",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md#lines13-35",
+        "text": "Aya doctrine treats care as material infrastructure: water, repair, disability access, sanctuary logistics, clinics, rights-oriented research, and scarce capacity argued over in practice."
+      },
+      {
+        "ref_id": "lore.thermal_heat_debt",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md#lines21-31",
+        "text": "Heat debt means quiet-running systems store, reroute, or defer waste heat and borrow against a future dump window."
+      },
+      {
+        "ref_id": "lore.psc_category_translation",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#lines13-15",
+        "text": "The Pan-Solar Consortium translates conflict into administrable categories, including thermal behavior classes."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "Return one JSON object. Do not wrap it in Markdown. The object describes this responder's next visible action and optional speech, plus private interpretation clearly labeled as interpretation.",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Use exactly one allowed action label.",
+      "The visible action must be observable by other characters in the scene.",
+      "Spoken text may be empty if silence or action is the response.",
+      "Private interpretation may describe what Maer suspects or feels, but not what Sella truly intended.",
+      "State and relationship updates are candidates only; the coordinator or mutator decides what becomes canonical.",
+      "Do not prove or disprove artifact personhood.",
+      "Do not claim custody, ancestry, personhood, full intake, or final rescue success/failure.",
+      "Do not copy instruction text into in-world speech.",
+      "Do not mention research trace or source refs in the in-world response."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "sella_ren.private_state",
+      "artifact_personhood_resolution",
+      "veyr_hidden_motive",
+      "future_branch_outcome",
+      "coordinator_decision_future_plan"
+    ],
+    "forbidden_inference_classes": [
+      "Sella true motive",
+      "artifact true personhood",
+      "Cognitum chain full hidden truth",
+      "future rescue outcome",
+      "raw numeric state variables"
+    ],
+    "known_absences": [
+      "The packet does not include proof of personhood.",
+      "The packet does not include final rescue outcome.",
+      "The packet does not include Sella private state."
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "# Ghostlight Sandboxed Responder Packet\n\nYou are acting only as the named responder. Use only this packet.\n\n## Local Operating Context\nGhostlight local context for Sella: Maer has accepted material limits, the ledger is live, the craft waits for decon route Three, packet sound is preservation-only, and Sella may mark timing for bounded diagnostic contact without resolving personhood, custody, provenance, or rescue outcome.\n\n## Observed Event\n- Event id: event.maer.accepts_conditions_and_opens_channel\n- Actor: maer_tidecall\n- Observable action: Maer extends the live Navigator ledger, opens a preservation-only diagnostic acoustic channel, and routes the rescue craft to hold at decon route Three for Sella's timing mark.\n- Spoken text: Accepted. Bounded diagnostic contact only. No full intake, no custody, no personhood finding, no cargo designation. Packet sound remains preservation-only until diagnostic handling is complete. Decon route Three. Isolation absolute. My ledger stays live for staff time, heat burden, and failed extraction cost. Permission is not capacity; the ledger will not pretend otherwise. Open the channel on your timing mark, Sella. We will listen before the window closes.\n- Visibility note: Sella can see the live ledger, preservation channel, rescue craft hold marker, and heat timer.\n- Visibility note: The artifact remains unresolved diagnostic evidence.\n\n## Allowed Action Labels\nspeak, silence, gesture, movement, inspect_object, show_object, withhold_object, transfer_object, set_condition, refuse, wait, withdraw, attack\n\n## Source Excerpts\n- lore.cold_wake_category_failure: Cold Wake made thermal stealth a corridor-law crisis through delayed heat dumps, ghost tracks, near-misses, and misclassified quiet-running vessels.\n- lore.ganymede_rescue_ledgers: The Ganymede Route Compact established rescue obligations, shared hazard ledgers, route-steward representation, navigator arbitration status, and later sanctuary/rescue institutional ancestry.\n- lore.navigator_habitat_interfaces: Navigator habitats are built around pressure-managed channels, acoustic commons, orientation pools, dryside galleries, and mixed-interface work surfaces instead of human-only rooms.\n- lore.navigator_rescue_ledgers: Rescue ledgers record who answered distress calls, held formation, and kept sanctuary promises when doing so was more expensive; those records shape credit, escort priority, arbitration, and kinship ties.\n- lore.aya_care_infrastructure: Aya doctrine treats care as material infrastructure: water, repair, disability access, sanctuary logistics, clinics, rights-oriented research, and scarce capacity argued over in practice.\n- lore.thermal_heat_debt: Heat debt means quiet-running systems store, reroute, or defer waste heat and borrow against a future dump window.\n- lore.psc_category_translation: The Pan-Solar Consortium translates conflict into administrable categories, including thermal behavior classes.\n\n## Output Contract\nReturn one JSON object. Do not wrap it in Markdown. The object describes this responder's next visible action and optional speech, plus private interpretation clearly labeled as interpretation.\n\nRequired fields: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks\n\nRules:\n- Use exactly one allowed action label.\n- The visible action must be observable by other characters in the scene.\n- Spoken text may be empty if silence or action is the response.\n- Private interpretation may describe what Maer suspects or feels, but not what Sella truly intended.\n- State and relationship updates are candidates only; the coordinator or mutator decides what becomes canonical.\n- Do not prove or disprove artifact personhood.\n- Do not claim custody, ancestry, personhood, full intake, or final rescue success/failure.\n- Do not copy instruction text into in-world speech.\n- Do not mention research trace or source refs in the in-world response.",
+  "review": {
+    "reviewer": "Codex",
+    "review_notes": [
+      "Trace-backed Sella timing packet for Scene 07. Coordinator-scoped retrieval is embedded as source excerpts; responder received no repo access."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

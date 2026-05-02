@@ -1,0 +1,180 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "responder.cold_wake.contact_timing.sella.trace.v0",
+  "review_status": "accepted",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/scene-07-contact-timing.sella_ren.packet.trace.v0.json",
+  "coordinator_artifact_ref": "examples/coordinator/cold-wake-contact-timing.v0.json",
+  "responder_agent_id": "sella_ren",
+  "generation_lane": "retrieval_augmented",
+  "lore_access": {
+    "mode": "coordinator_scoped_retrieval",
+    "consulted_refs": [
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md#lines7-9",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md#lines7-11",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines25-54",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines56-64",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md#lines13-35",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md#lines21-31",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#lines13-15"
+    ],
+    "research_summary": "Coordinator-scoped retrieval grounded Sella in Cold Wake heat pressure, Aya material capacity politics, Navigator mixed-interface contact lanes, rescue ledgers, PSC category limits, and heat-debt urgency.",
+    "research_trace_status": "runner_captured",
+    "research_trace": [
+      {
+        "trace_id": "trace.scene06.cold_wake_panic.lines7_9",
+        "origin": "runner_captured",
+        "query": "Cold Wake Panic delayed heat dumps misclassified quiet-running vessels",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md#lines7-9",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+        "chunk_index": 0,
+        "line_start": 7,
+        "line_end": 9,
+        "extracted_constraint": "Cold Wake makes delay and misclassification materially dangerous.",
+        "used_for": "Kept Maer focused on initiating contact instead of litigating category language."
+      },
+      {
+        "trace_id": "trace.scene06.ganymede_compact.lines7_11",
+        "origin": "runner_captured",
+        "query": "Ganymede Route Compact rescue obligations shared hazard ledgers",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md#lines7-11",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+        "chunk_index": 0,
+        "line_start": 7,
+        "line_end": 11,
+        "extracted_constraint": "The Compact makes rescue obligations and hazard ledgers institutional.",
+        "used_for": "Made Maer's ledger extension the concrete action that pays for contact risk."
+      },
+      {
+        "trace_id": "trace.scene06.navigator_interfaces.lines25_54",
+        "origin": "runner_captured",
+        "query": "Cetacean Navigators wet dry interface acoustic commons clinic shared displays",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines25-54",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+        "chunk_index": 0,
+        "line_start": 25,
+        "line_end": 54,
+        "extracted_constraint": "Navigator-adjacent spaces use wet/dry access, acoustic notation, shared displays, haptic or delegated controls, and multi-body affordances.",
+        "used_for": "Kept Maer acting through a Navigator interface rather than walking around a human room."
+      },
+      {
+        "trace_id": "trace.scene06.navigator_ledgers.lines56_64",
+        "origin": "runner_captured",
+        "query": "Cetacean Navigators rescue ledgers credit escort priority arbitration kinship",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines56-64",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+        "chunk_index": 0,
+        "line_start": 56,
+        "line_end": 64,
+        "extracted_constraint": "Rescue ledgers track distress answers and sanctuary promises and affect credit, escort, arbitration, and kinship.",
+        "used_for": "Framed ledger exposure as social and institutional risk, not only payment."
+      },
+      {
+        "trace_id": "trace.scene06.aya_capacity.lines13_35",
+        "origin": "runner_captured",
+        "query": "Aya Collective care material infrastructure sanctuary logistics scarce capacity",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md#lines13-35",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md",
+        "chunk_index": 0,
+        "line_start": 13,
+        "line_end": 35,
+        "extracted_constraint": "Aya care is material infrastructure and scarce capacity, not slogan purity.",
+        "used_for": "Made Maer accept Sella's procedure instead of overriding it with rescue rhetoric."
+      },
+      {
+        "trace_id": "trace.scene06.thermal_heat_debt.lines21_31",
+        "origin": "runner_captured",
+        "query": "Thermal Management heat debt future dump window quiet-running ships",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md#lines21-31",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md",
+        "chunk_index": 0,
+        "line_start": 21,
+        "line_end": 31,
+        "extracted_constraint": "Quiet-running systems borrow against a future heat dump window; delayed consequences can become lethal.",
+        "used_for": "Kept the diagnostic channel time-bound and urgent."
+      },
+      {
+        "trace_id": "trace.scene06.psc_categories.lines13_15",
+        "origin": "runner_captured",
+        "query": "Pan-Solar Consortium administrable categories thermal behavior corridor safe recognized deniable",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#lines13-15",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+        "chunk_index": 0,
+        "line_start": 13,
+        "line_end": 15,
+        "extracted_constraint": "PSC power works through administrable categories, including late thermal classifications.",
+        "used_for": "Kept Maer inside the nonperson diagnostic category while letting discomfort remain private interpretation."
+      }
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/scene-07-contact-timing.sella_ren.packet.trace.v0.json#packet_prompt_text; coordinator-scoped retrieval embedded as source excerpts; no repo access",
+    "hidden_context_refs": [
+      "sella_ren.private_state",
+      "artifact_personhood_resolution",
+      "future_branch_outcome",
+      "parent_conversation_context",
+      "coordinator_artifact.coordinator_decision.rationale"
+    ],
+    "worker_model_family": "frontier_worker_no_fork"
+  },
+  "raw_output": "{\"responder_agent_id\":\"sella_ren\",\"action_label\":\"set_condition\",\"visible_action\":\"Sella keys the clinic board with two fingers, locking the packet-sound buffer to preservation-only and lighting decon route Three in amber instead of green. She assigns one wet-side tech and one dry-side recorder to the contact lane, then places her timing mark on the rescue craft hold marker with a hard isolation flag attached. The bay doors do not open fully; only the bounded diagnostic sleeve cycles live against the heat-window countdown.\",\"spoken_text\":\"Proceed through Three on my mark. Diagnostic sleeve only. No intake language, no custody drift, no ancestry fishing, no testimony conversion. The sound is preserved, not interpreted. Staff pair, stay outside the sleeve unless I name a breach. Maer, your ledger is sufficient for contact, not sufficient for a miracle. We listen, we handle heat, we keep isolation, and nobody turns motion into permission after the fact.\",\"private_interpretation\":\"Sella reads Maer's live ledger and acceptance of limits as materially better than pressure dressed up as mercy. She still suspects the diagnostic category can become a clean little box for avoiding uglier obligations later, and she does not trust observers to remember the limits once the craft moves. She wants the possible distress preserved without letting the clinic become a mouth that promises more than it can swallow.\",\"intended_effect\":\"Allow bounded diagnostic contact before the heat window closes while preserving packet sound, maintaining isolation, and preventing the action from being treated as full sanctuary intake, custody, personhood proof, ancestry finding, or rescue success.\",\"state_update_candidates\":[\"Sella authorizes decon route Three for bounded diagnostic contact only.\",\"Packet-sound preservation buffers are locked before contact proceeds.\",\"A minimal wet/dry staff pair is assigned to the diagnostic lane.\",\"The rescue contact craft receives Sella's timing mark under hard isolation conditions.\",\"The artifact remains unresolved diagnostic evidence.\"],\"relationship_update_candidates\":[\"Sella treats Maer's compliance as operationally sufficient to proceed.\",\"Sella maintains firm authority over clinic procedure despite accepting Maer's ledger backing.\",\"Sella's trust in Maer improves slightly around material accountability, but not around future interpretation of the contact.\"],\"unresolved_hooks\":[\"Whether diagnostic contact reveals actionable condition data remains unknown.\",\"Whether the heat-window timing remains adequate is unresolved.\",\"Whether later observers attempt to inflate bounded contact into broader obligation remains a live risk.\",\"Artifact personhood, ancestry, custody, provenance, and survival outcome remain unresolved.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "sella_ren",
+    "action_label": "set_condition",
+    "visible_action": "Sella keys the clinic board with two fingers, locking the packet-sound buffer to preservation-only and lighting decon route Three in amber instead of green. She assigns one wet-side tech and one dry-side recorder to the contact lane, then places her timing mark on the rescue craft hold marker with a hard isolation flag attached. The bay doors do not open fully; only the bounded diagnostic sleeve cycles live against the heat-window countdown.",
+    "spoken_text": "Proceed through Three on my mark. Diagnostic sleeve only. No intake language, no custody drift, no ancestry fishing, no testimony conversion. The sound is preserved, not interpreted. Staff pair, stay outside the sleeve unless I name a breach. Maer, your ledger is sufficient for contact, not sufficient for a miracle. We listen, we handle heat, we keep isolation, and nobody turns motion into permission after the fact.",
+    "private_interpretation": "Sella reads Maer's live ledger and acceptance of limits as materially better than pressure dressed up as mercy. She still suspects the diagnostic category can become a clean little box for avoiding uglier obligations later, and she does not trust observers to remember the limits once the craft moves. She wants the possible distress preserved without letting the clinic become a mouth that promises more than it can swallow.",
+    "intended_effect": "Allow bounded diagnostic contact before the heat window closes while preserving packet sound, maintaining isolation, and preventing the action from being treated as full sanctuary intake, custody, personhood proof, ancestry finding, or rescue success.",
+    "state_update_candidates": [
+      "Sella authorizes decon route Three for bounded diagnostic contact only.",
+      "Packet-sound preservation buffers are locked before contact proceeds.",
+      "A minimal wet/dry staff pair is assigned to the diagnostic lane.",
+      "The rescue contact craft receives Sella's timing mark under hard isolation conditions.",
+      "The artifact remains unresolved diagnostic evidence."
+    ],
+    "relationship_update_candidates": [
+      "Sella treats Maer's compliance as operationally sufficient to proceed.",
+      "Sella maintains firm authority over clinic procedure despite accepting Maer's ledger backing.",
+      "Sella's trust in Maer improves slightly around material accountability, but not around future interpretation of the contact."
+    ],
+    "unresolved_hooks": [
+      "Whether diagnostic contact reveals actionable condition data remains unknown.",
+      "Whether the heat-window timing remains adequate is unresolved.",
+      "Whether later observers attempt to inflate bounded contact into broader obligation remains a live risk.",
+      "Artifact personhood, ancestry, custody, provenance, and survival outcome remain unresolved."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Maer frames Sella's intent as his interpretation rather than fact.",
+      "Artifact personhood, ancestry, custody, provenance, and rescue outcome remain unresolved.",
+      "Navigator body/interface affordances are respected; Maer acts through wet/dry interface and ledger controls.",
+      "No raw numeric state variables or prompt text are copied into in-world speech."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Accepted trace-backed Sella responder output for the contact-timing fixture.",
+      "The response authorizes contact through decon route Three while preserving isolation, packet sound, and unresolved artifact status."
+    ],
+    "coordinator_interventions": [
+      {
+        "intervention_type": "none",
+        "description": "Raw no-fork sandbox responder output was preserved without prose repair or schema repair."
+      }
+    ],
+    "failure_labels": []
+  }
+}

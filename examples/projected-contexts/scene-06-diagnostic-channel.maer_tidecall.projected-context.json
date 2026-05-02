@@ -1,0 +1,332 @@
+{
+  "schema_version": "ghostlight.projected_local_context.v0",
+  "projection_id": "projection.cold_wake.scene06.maer_diagnostic_channel.trace.v0",
+  "input": {
+    "fixture_ref": "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json",
+    "annotation_ref": "examples/coordinator/cold-wake-diagnostic-channel.v0.json",
+    "scene_id": "scene-06-diagnostic-channel",
+    "local_agent_id": "maer_tidecall",
+    "listener_ids": [
+      "sella_ren"
+    ],
+    "projection_mode": "coordinator_scoped_retrieval"
+  },
+  "context": {
+    "local_agent_id": "maer_tidecall",
+    "identity": "Maer Tidecall: Cetacean Navigator route steward and Ganymede corridor compact delegate.",
+    "setting": "Aya-aligned mixed wet/dry clinic repair bay behind Ganymede dockside pumpworks during the Cold Wake Panic.",
+    "known_facts": [
+      {
+        "text": "Sella opened the cold repair bay only for bounded diagnostic contact.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "Maer has filed Navigator ledger backing and must carry staff, heat, decon, isolation, and failed-extraction costs.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "The artifact's personhood, ancestry, custody, source-chain provenance, and survival outcome remain unresolved.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "current_stakes": [
+      {
+        "text": "Maer can accept Sella's conditions, keep the ledger live, and initiate actual contact with the vessel.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "If Maer pushes for full intake or personhood language now, he may collapse the only legal and clinical aperture.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "embodiment_and_interface": [
+      {
+        "text": "Maer is present through a Navigator-compatible wet/dry clinic interface with acoustic notation, translated speech, route-ledger controls, shared display surfaces, and delegated dryside action.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines25-54"
+        ]
+      }
+    ],
+    "active_inner_pressures": [
+      {
+        "text": "Rescue must happen under ambiguity or route law becomes a pretty way to abandon ships.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "Sella made care operational without lying about capacity; Maer respects that and must not spend her clinic as rhetoric.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "Maer fears the diagnostic category may erase a possible person, but naming personhood now could kill the only available contact path.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "relationship_read": [
+      {
+        "text": "Maer reads Sella as someone who protects care by making it material, not sentimental.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "tensions": [
+      {
+        "text": "Maer must keep the nonperson diagnostic language intact while still treating the contact as morally live.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "Maer must accept being financially and politically exposed by the rescue ledger.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "runtime_retrieval_requirements": [
+      {
+        "requirement_id": "lore.cold_wake_category_failure",
+        "trigger": "Scene 06 grounding",
+        "compact_fact": "Cold Wake made thermal stealth a corridor-law crisis through delayed heat dumps, ghost tracks, near-misses, and misclassified quiet-running vessels.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md#lines7-9"
+        ],
+        "prompt_role": "source_excerpt"
+      },
+      {
+        "requirement_id": "lore.ganymede_rescue_ledgers",
+        "trigger": "Scene 06 grounding",
+        "compact_fact": "The Ganymede Route Compact established rescue obligations, shared hazard ledgers, route-steward representation, navigator arbitration status, and later sanctuary/rescue institutional ancestry.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md#lines7-11"
+        ],
+        "prompt_role": "source_excerpt"
+      },
+      {
+        "requirement_id": "lore.navigator_habitat_interfaces",
+        "trigger": "Scene 06 grounding",
+        "compact_fact": "Navigator habitats are built around pressure-managed channels, acoustic commons, orientation pools, dryside galleries, and mixed-interface work surfaces instead of human-only rooms.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines25-54"
+        ],
+        "prompt_role": "source_excerpt"
+      },
+      {
+        "requirement_id": "lore.navigator_rescue_ledgers",
+        "trigger": "Scene 06 grounding",
+        "compact_fact": "Rescue ledgers record who answered distress calls, held formation, and kept sanctuary promises when doing so was more expensive; those records shape credit, escort priority, arbitration, and kinship ties.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines56-64"
+        ],
+        "prompt_role": "source_excerpt"
+      },
+      {
+        "requirement_id": "lore.aya_care_infrastructure",
+        "trigger": "Scene 06 grounding",
+        "compact_fact": "Aya doctrine treats care as material infrastructure: water, repair, disability access, sanctuary logistics, clinics, rights-oriented research, and scarce capacity argued over in practice.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md#lines13-35"
+        ],
+        "prompt_role": "source_excerpt"
+      },
+      {
+        "requirement_id": "lore.thermal_heat_debt",
+        "trigger": "Scene 06 grounding",
+        "compact_fact": "Heat debt means quiet-running systems store, reroute, or defer waste heat and borrow against a future dump window.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md#lines21-31"
+        ],
+        "prompt_role": "source_excerpt"
+      },
+      {
+        "requirement_id": "lore.psc_category_translation",
+        "trigger": "Scene 06 grounding",
+        "compact_fact": "The Pan-Solar Consortium translates conflict into administrable categories, including thermal behavior classes.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#lines13-15"
+        ],
+        "prompt_role": "source_excerpt"
+      }
+    ],
+    "latent_pressure_requirements": [
+      {
+        "pressure_id": "maer.convoy_loss_pressure",
+        "text": "Maer's convoy-loss memory should shape urgency and ritual weight without exposition.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ],
+        "projection_rule": "Let memory constrain action and tone, not become a monologue.",
+        "review_rule": "Review speech and spoken action for urgency and ritual weight without trauma-dump exposition, personhood resolution, or hidden-state leakage."
+      }
+    ],
+    "retrieved_lore_prompt_blocks": [
+      {
+        "text": "Cold Wake made thermal stealth a corridor-law crisis through delayed heat dumps, ghost tracks, near-misses, and misclassified quiet-running vessels.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md#lines7-9"
+        ]
+      },
+      {
+        "text": "The Ganymede Route Compact established rescue obligations, shared hazard ledgers, route-steward representation, navigator arbitration status, and later sanctuary/rescue institutional ancestry.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md#lines7-11"
+        ]
+      },
+      {
+        "text": "Navigator habitats are built around pressure-managed channels, acoustic commons, orientation pools, dryside galleries, and mixed-interface work surfaces instead of human-only rooms.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines25-54"
+        ]
+      },
+      {
+        "text": "Rescue ledgers record who answered distress calls, held formation, and kept sanctuary promises when doing so was more expensive; those records shape credit, escort priority, arbitration, and kinship ties.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#lines56-64"
+        ]
+      },
+      {
+        "text": "Aya doctrine treats care as material infrastructure: water, repair, disability access, sanctuary logistics, clinics, rights-oriented research, and scarce capacity argued over in practice.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md#lines13-35"
+        ]
+      },
+      {
+        "text": "Heat debt means quiet-running systems store, reroute, or defer waste heat and borrow against a future dump window.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md#lines21-31"
+        ]
+      },
+      {
+        "text": "The Pan-Solar Consortium translates conflict into administrable categories, including thermal behavior classes.",
+        "source_refs": [
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#lines13-15"
+        ]
+      }
+    ],
+    "latent_pressure_prompt_blocks": [
+      {
+        "text": "Maer's convoy-loss memory and fear of abandonment-by-category should shape urgency and ritual weight without exposition.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "action_affordances": [
+      {
+        "text": "Can accept conditions, sign or extend ledger exposure, route diagnostic contact, transmit through an acoustic/translated channel, instruct rescue craft, preserve packet sound, ask Sella for timing, refuse a term, wait, withdraw, or physically interrupt an immediate destructive action through delegated crew if one occurs.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "projection_controls": {
+      "frame_controls": [
+        "rescue becoming operational under legal and material limits"
+      ],
+      "authority_boundaries": [
+        "Maer controls Navigator ledger backing, route pressure, and rescue contact routing; Sella controls clinic intake and bay procedure."
+      ],
+      "forbidden_resolutions": [
+        "artifact personhood",
+        "custody",
+        "ancestry",
+        "final rescue outcome"
+      ]
+    },
+    "voice_surface": [
+      {
+        "text": "Calm, formal, precise, ritualized, gentle, and weighted toward obligation; urgency sits under discipline.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "likely_response_moves": [
+      {
+        "text": "Accept Sella's conditions plainly.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "Extend or lock the Navigator ledger to make costs visible.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "Initiate an acoustic/diagnostic contact channel to the vessel.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "do_not_invent": [
+      {
+        "text": "Do not resolve artifact personhood, ancestry, custody, source-chain provenance, or rescue outcome.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "Do not make Maer physically walk around a human-only room; keep Navigator interface affordances visible.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      },
+      {
+        "text": "Do not create spare clinic capacity.",
+        "source_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ]
+      }
+    ],
+    "observed_event": {
+      "event_id": "event.sella.opens_bounded_diagnostic_contact",
+      "actor_agent_id": "sella_ren",
+      "observable_action": "Sella locks the cold repair bay status to conditional diagnostic contact, tags decon route Three, assigns packet-sound capture to preservation-only handling, and pins Maer's Navigator ledger signature beside staff overtime, heat-management, isolation, and failed-extraction cost lines on the shared clinic board.",
+      "spoken_text": "The clinic can open the bay for bounded diagnostic contact. Not full intake. Not custody. Not personhood. Not cargo, either. Packet sound goes under preservation and stays there until diagnostic handling is complete. Decon route Three, isolation discipline absolute, no corridor bleed, no extra staff pulled from warm intake unless your ledger stays live for the overtime and heat burden. If extraction fails, the cost does not wash off onto sanctuary because the door opened. Keep your signature attached, Maer. Permission is not capacity. This is the path we can actually perform before the window closes.",
+      "visible_object_refs": [
+        "cold_repair_bay_status",
+        "decon_route_three",
+        "packet_sound_preservation_channel",
+        "navigator_rescue_ledger_signature",
+        "heat_window_countdown",
+        "limited_contact_permit_shell"
+      ],
+      "visibility_notes": [
+        "Maer can see Sella's conditions, the bay status, preservation channel, ledger costs, permit shell, and heat timer.",
+        "The artifact remains unresolved diagnostic evidence."
+      ]
+    },
+    "prompt_text": "# Ghostlight Local Operating Context: maer_tidecall\n\nUse this as character-local operating context, not omniscient story truth.\nDo not infer Sella's private state as fact. You may only form Maer's interpretation of Sella from what Maer can observe and already believes.\n\n## Speaker\nMaer Tidecall: Cetacean Navigator route steward and Ganymede corridor compact delegate. Origin: Cetacean Navigator corridor culture, Ganymede route institutions. Public face: a soft-spoken route steward whose calm tends to make hurried people feel judged by the furniture.\n\n## Setting\nAya-aligned mixed wet/dry clinic repair bay behind Ganymede dockside pumpworks during the Cold Wake Panic. The room has wet/dry access, shared triage boards, decontamination locks, bay-temperature controls, packet-sound preservation channels, rescue-ledger panels, and a live heat-window countdown from the quiet-running vessel.\n\n## Known Facts\n- Sella has opened the cold repair bay only for bounded diagnostic contact.\n- Sella's limits are: not full intake, not custody, not personhood, not cargo; packet sound preservation-only; decon route Three; absolute isolation discipline; no extra staff pulled from warm intake unless Maer's Navigator ledger remains live for overtime and heat burden.\n- Isdra authorized limited contact under freeze using a nonperson, nonorigin, noncustodial diagnostic category.\n- Maer has filed Navigator ledger backing and must carry staff, heat, decon, isolation, and failed-extraction costs.\n- The artifact's personhood, ancestry, custody, source-chain provenance, and survival outcome remain unresolved.\n- The vessel's heat-debt window is closing.\n\n## Current Stakes\n- Maer can accept Sella's conditions, keep the ledger live, and initiate actual contact with the vessel.\n- If Maer pushes for full intake or personhood language now, he may collapse the only legal and clinical aperture.\n- If Maer hesitates, the heat window may close while everyone preserves perfect categories.\n- The immediate goal is not moral victory. It is to make contact, preserve evidence, and keep the possible life or evidence from being cooked by delay.\n\n## Embodiment And Interface\n- Maer does not stand in a human-only room. He is present through a Navigator-compatible wet/dry clinic interface: acoustic notation, translated speech, route-ledger controls, shared display surfaces, and delegated dryside action where needed.\n- Maer can sign, update, or extend the rescue ledger; route vessel telemetry; open a Navigator acoustic channel; tag packet sound preservation; authorize cost exposure; direct a rescue contact craft; request Sella's decon timing; or hold silence while the channel opens.\n\n## Active Inner Pressures\n- Rescue must happen under ambiguity or route law becomes a pretty way to abandon ships.\n- Sella made care operational without lying about capacity; Maer respects that and must not spend her clinic as rhetoric.\n- Maer fears the diagnostic category may erase a possible person, but naming personhood now could kill the only available contact path.\n- Heat debt makes delay lethal without needing anyone to intend harm.\n\n## Relationship Read\n- Maer reads Sella as someone who protects care by making it material, not sentimental.\n- Maer believes Sella will help if the conditions remain real and accountable.\n\n## Retrieved Lore To Keep In View\n- Cold Wake made thermal stealth a corridor-law crisis through delayed heat dumps, ghost tracks, near-misses, and misclassified quiet-running vessels.\n- The Ganymede Route Compact established rescue obligations, shared hazard ledgers, route-steward representation, navigator arbitration status, and later sanctuary/rescue institutional ancestry.\n- Navigator spaces assume cetacean bodies from the start: pressure-managed channels, acoustic commons, orientation pools, dryside galleries, shared displays, acoustic commands, pressure fields, haptic waterflow, neural interfaces, and delegated crew action.\n- Navigator rescue ledgers record who answered distress calls, who held formation, and who kept sanctuary promises when it would have been cheaper not to.\n- Aya care politics treat care as material infrastructure: water, repair, clinics, sanctuary logistics, scarce capacity, and practical argument rather than slogans.\n- Heat debt means quiet-running systems store, reroute, or defer heat and borrow against a future dump window.\n- The PSC translates conflict into administrable categories: insured or uninsured, permitted or illicit, recognized or deniable, corridor-safe or corridor-breaking; by the late timeline it does the same for thermal behavior.\n\n## Action Affordances\n- Can accept conditions, sign or extend ledger exposure, route diagnostic contact, transmit through an acoustic/translated channel, instruct rescue craft, preserve packet sound, ask Sella for timing, refuse a term, wait, withdraw, or physically interrupt an immediate destructive action through delegated crew if one occurs.\n\n## Projection Controls\n- Frame the scene as rescue becoming operational under legal and material limits, not as victory over Sella or the tribunal.\n- Do not prove or disprove whether the artifact contains a person.\n- Do not make Maer claim custody, ancestry, personhood, or full intake.\n- Do not make the rescue succeed or fail yet.\n\n## Voice Surface\n- Calm, formal, precise, ritualized, gentle, and weighted toward obligation; urgency sits under discipline.\n\n## Do Not Invent\n- Do not resolve artifact personhood, ancestry, custody, source-chain provenance, or rescue outcome.\n- Do not make Maer physically walk around a human-only room; keep Navigator interface affordances visible.\n- Do not create spare clinic capacity.\n- Do not make Sella's private thoughts visible.\n- Do not turn this into a generic radio call without wet/dry and acoustic/ledger affordances."
+  },
+  "audit": {
+    "projector": "codex_manual_projection_v0",
+    "raw_state_hidden_from_prompt": true,
+    "character_local_context_only": true,
+    "omitted_private_context": [
+      "sella_ren.private_state",
+      "artifact_truth",
+      "future_branch_outcome",
+      "coordinator_future_plan"
+    ],
+    "review_status": "accepted"
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "schema_version": "ghostlight.coordinator_artifact.v0",
+  "artifact_id": "coordinator.cold_wake.contact_timing.v0",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "source_refs": [
+    {
+      "ref_id": "after_maer_channel_opened",
+      "path": "examples/agent-state.cold-wake-story-lab.after-maer-channel-opened.json",
+      "purpose": "Reviewed state after Maer opened diagnostic channel."
+    },
+    {
+      "ref_id": "scene07_capture",
+      "path": "experiments/responder-packets/cold-wake-contact-timing-sella-trace-v0.capture.json#parsed_output",
+      "purpose": "Raw Sella timing response."
+    }
+  ],
+  "input_refs": {
+    "agent_state_ref": "examples/agent-state.cold-wake-story-lab.after-maer-channel-opened.json",
+    "lore_grounding_refs": [
+      "examples/lore-grounding/cold-wake-panic.ganymede-corridor.json"
+    ],
+    "prior_artifact_refs": [
+      "experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.capture.json",
+      "experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.mutation.json"
+    ],
+    "projected_context_refs": [
+      "examples/projected-contexts/scene-07-contact-timing.sella_ren.projected-context.json"
+    ],
+    "ink_refs": [],
+    "item_manifest_refs": []
+  },
+  "scene_context": {
+    "scene_id": "scene-06-diagnostic-channel",
+    "sequence_marker": "after Sella opens the conditional repair bay and before diagnostic contact reaches the vessel",
+    "location_id": "ganymede_dockside_sanctuary.conditional_repair_bay",
+    "participant_ids": [
+      "maer_tidecall",
+      "sella_ren"
+    ],
+    "active_object_ids": [
+      "navigator_rescue_ledger_signature",
+      "diagnostic_acoustic_channel",
+      "packet_sound_preservation_channel",
+      "decon_route_three",
+      "heat_window_countdown",
+      "rescue_contact_craft"
+    ],
+    "active_resource_ids": [
+      "navigator_ledger_backing",
+      "heat_debt_window",
+      "conditional_repair_bay",
+      "staff_attention",
+      "decontamination_route"
+    ],
+    "public_facts": [
+      {
+        "text": "Sella has opened a bay only for bounded diagnostic contact, and Maer must keep ledger backing live through the material costs.",
+        "refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json",
+          "event-sella-bounded-diagnostic-contact"
+        ]
+      }
+    ],
+    "scene_pressure": [
+      {
+        "text": "The beat tests whether a character can accept material limits and initiate contact without resolving hidden truth or overriding another institution's authority.",
+        "refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json",
+          "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Thermal Management.md#lines21-31"
+        ]
+      }
+    ]
+  },
+  "coordinator_decision": {
+    "decision_id": "decision.contact_timing.sella_marks_decon",
+    "selected_next_beat": "Sella marks decon route Three and authorizes bounded diagnostic contact through the sleeve.",
+    "selected_acting_agent_id": "sella_ren",
+    "candidate_next_beats": [
+      {
+        "choice_id": "beat.accept_and_route_contact",
+        "summary": "Maer accepts all limits and initiates diagnostic contact through preservation-only handling.",
+        "status": "selected",
+        "reason": "Advances the full story toward actual vessel contact while preserving hard invariants."
+      },
+      {
+        "choice_id": "beat.challenge_nonperson_language",
+        "summary": "Maer challenges the diagnostic category as erasure.",
+        "status": "deferred",
+        "reason": "Plausible conflict branch, but it risks collapsing the only contact aperture before the story reaches diagnostic evidence."
+      }
+    ],
+    "rationale": "The prior turn made care operational but conditional. This beat lets Maer demonstrate whether rescue language can become material accountability without violating Sella's authority or PSC constraints.",
+    "glue_prose": "Sella let the room move, but only by inches. The diagnostic sleeve woke amber, not green, because green was how institutions lied to themselves about capacity.",
+    "glue_prose_status": "accepted_as_narration"
+  },
+  "machinery_plan": {
+    "invocations": [
+      {
+        "invocation_id": "invoke.retrieve.scene06.maer",
+        "organ": "memory_lore_retriever",
+        "purpose": "Ground Maer in Cold Wake heat pressure, Navigator interface/body affordances, rescue ledgers, Aya capacity politics, PSC category law, and thermal heat debt.",
+        "input_refs": [
+          "AetheriaLore local source reads after voidbot transport failure"
+        ],
+        "output_refs": [
+          "experiments/responder-packets/cold-wake-diagnostic-channel-maer-trace-v0.capture.json#lore_access.research_trace"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "invoke.project.maer.scene06",
+        "organ": "projector",
+        "purpose": "Compile Maer-local operating context from reviewed state and source-backed constraints.",
+        "input_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json"
+        ],
+        "output_refs": [
+          "examples/projected-contexts/scene-06-diagnostic-channel.maer_tidecall.projected-context.json"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "invoke.respond.maer.scene06",
+        "organ": "sandboxed_responder",
+        "purpose": "Generate Maer's response from packet-only no-fork sandbox handoff.",
+        "input_refs": [
+          "examples/responder-packets/scene-06-diagnostic-channel.maer_tidecall.packet.trace.v0.json"
+        ],
+        "output_refs": [
+          "experiments/responder-packets/cold-wake-diagnostic-channel-maer-trace-v0.capture.json"
+        ],
+        "status": "accepted_as_draft"
+      }
+    ]
+  },
+  "sandboxed_responder_handoffs": [],
+  "world_state_refs": {
+    "read_refs": [
+      {
+        "ref_id": "state.after_sella_bay",
+        "ref_type": "world_fact",
+        "path": "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json",
+        "visibility": "coordinator_only"
+      }
+    ],
+    "write_candidate_refs": [
+      {
+        "ref_id": "state.after_sella_timing_mark",
+        "ref_type": "event",
+        "path": "examples/agent-state.cold-wake-story-lab.after-sella-timing-mark.json#events",
+        "visibility": "coordinator_only"
+      }
+    ]
+  },
+  "proposed_deltas": [
+    {
+      "delta_id": "delta.sella.timing_mark_live",
+      "delta_type": "world_fact_update",
+      "target_ref": "scene-07-contact-timing.diagnostic_sleeve",
+      "summary": "Sella authorizes decon route Three and cycles the bounded diagnostic sleeve live under preservation-only handling.",
+      "authority": "manual_review",
+      "status": "accepted"
+    }
+  ],
+  "branching": {
+    "branch_action": "continue_branch",
+    "active_branch_flags": [
+      "cold_wake_claimant_status_unresolved",
+      "sella_conditional_bay_open",
+      "maer_ledger_live",
+      "diagnostic_channel_opened",
+      "rescue_craft_waiting_for_decon_mark",
+      "heat_debt_window_closing"
+    ],
+    "event_constraints": [
+      {
+        "constraint_id": "constraint.personhood_unresolved",
+        "constraint_type": "branch_local_event",
+        "summary": "The artifact remains unresolved diagnostic evidence.",
+        "pull_strength": "locked"
+      },
+      {
+        "constraint_id": "constraint.no_rescue_outcome_yet",
+        "constraint_type": "branch_local_event",
+        "summary": "Diagnostic contact has been initiated but has not yet succeeded or failed.",
+        "pull_strength": "locked"
+      }
+    ],
+    "sibling_exclusion_notes": []
+  },
+  "item_manifest_deltas": [
+    {
+      "delta_id": "item.navigator_wet_dry_clinic_interface_candidate",
+      "delta_type": "blueprint_candidate",
+      "summary": "Navigator-compatible wet/dry clinic interface: shared acoustic/visual/tactile work surface that lets cetacean, human, and machine participants route ledgers, packets, authority logs, and diagnostic channels in one operational frame.",
+      "target_class": "CompoundCommodityData",
+      "status": "proposed"
+    }
+  ],
+  "unresolved_hooks": [
+    {
+      "hook_id": "hook.diagnostic_packet_contact",
+      "hook_type": "story",
+      "summary": "Whether the diagnostic acoustic contact receives intelligible packet sound remains unresolved.",
+      "owner": "coordinator",
+      "status": "open"
+    },
+    {
+      "hook_id": "hook.final_rescue_outcome",
+      "hook_type": "world_state",
+      "summary": "Whether the vessel survives limited contact remains unresolved.",
+      "owner": "coordinator",
+      "status": "carried"
+    },
+    {
+      "hook_id": "hook.item_wet_dry_interface",
+      "hook_type": "item_manifest",
+      "summary": "Navigator wet/dry clinic interface should be considered later as a manufactured trade good or facility assembly candidate.",
+      "owner": "item_manifest_generator",
+      "status": "open"
+    }
+  ],
+  "review": {
+    "reviewer": "Codex",
+    "review_notes": [
+      "Accepted as the next material full-story-run turn after Sella opened the bay.",
+      "This artifact preserves responder isolation and source grounding while moving toward actual vessel contact."
+    ],
+    "accepted_for_training": true,
+    "failure_labels": []
+  }
+}
