@@ -23,6 +23,94 @@ violence, trade, survival, logistics, or prestige.
 Ghostlight should turn worldbuilding exploration into the data needed to support
 that design.
 
+## Economy Schema Target
+
+Ghostlight should target the existing Aetheria-Economy item model instead of
+inventing a parallel item taxonomy.
+
+The concrete source is:
+
+- `E:\Projects\Aetheria-Economy\Assets\Scripts\ServerShared\ItemData.cs`
+- `E:\Projects\Aetheria-Economy\Assets\Scripts\ServerShared\ItemInstance.cs`
+- `E:\Projects\Aetheria-Economy\Assets\Scripts\ServerShared\CultCache\`
+
+The important split:
+
+- `ItemData` and subclasses are CultCache-backed technological blueprint
+  records: a way of constructing a thing in the game, including the parameters,
+  behaviors, stat curves, and category fields that make that construction
+  meaningful.
+- `ItemInstance` and subclasses are runtime objects that link to definition
+  records and represent manufactured artifacts in the world.
+- Ghostlight item manifests should normally propose blueprint/data records, not
+  individual runtime artifacts.
+- Runtime instances belong in simulation, inventory, scene state, cargo, loot,
+  and world-state fixtures. They are where realized quality, supply-chain
+  provenance, manufacturer branding, and assembly history can make two items
+  built from the same blueprint differ in practice.
+
+Blueprint classes currently relevant to Ghostlight:
+
+- `SimpleCommodityData`
+  - basic fungible resources such as steel, hydrogen, volatiles, or feedstock
+  - maps to `SimpleCommodity` runtime instances with quantity
+- `CompoundCommodityData`
+  - technological blueprints for crafted commodities, assemblies,
+    subassemblies, processed materials, and other manufactured economic units
+  - maps to `CompoundCommodity` runtime instances whose quality and provenance
+    can affect downstream items
+- `ConsumableItemData`
+  - usable consumables with behaviors, duration, stackability, icon, and
+    effectiveness curve
+  - maps to `ConsumableItem` runtime instances
+- `GearData`
+  - technological blueprints for usable equippable items with hardpoint,
+    behavior, durability, thermal, audio, schematic, and action-bar fields
+  - maps through `EquippableItem` runtime instances whose realized quality,
+    provenance, manufacturer, and installed assembly lineage can alter actual
+    performance
+- `WeaponItemData`, `HullData`, `CargoBayData`, `DockingBayData`, and other
+  `EquippableItemData` subclasses are specialized top-level usable item
+  definitions.
+
+Manifest artifacts should therefore use Ghostlight's conceptual decomposition to
+produce reviewed candidate technological blueprints for Aetheria-Economy data
+classes:
+
+```text
+material/feedstock            -> SimpleCommodityData
+component/subassembly/assembly -> CompoundCommodityData
+consumable usable item         -> ConsumableItemData
+equippable usable item         -> GearData or another EquippableItemData subclass
+weapon                         -> WeaponItemData
+hull/frame/cargo/docking item  -> HullData, CargoBayData, DockingBayData, etc.
+runtime cargo or inventory     -> SimpleCommodity, CompoundCommodity,
+                                  ConsumableItem, or EquippableItem instances
+```
+
+The conceptual layers below are still useful. They describe how Ghostlight
+breaks a technology into reviewable engineering, logistics, and gameplay pieces.
+They are not a replacement database schema. The output should be able to say
+which Aetheria-Economy blueprint class each candidate wants to become, what
+fields are source-backed, what fields are inferred, and which fields require
+new engine schema before they can be loaded.
+
+`PerformanceStat` is the core bridge from blueprint to realized item behavior.
+Blueprint data defines stat ranges and quality sensitivity; runtime instances
+and equipped/active contexts determine actual evaluation through quality,
+durability, heat, effectiveness, and modifiers. Ghostlight manifests should
+therefore preserve the difference between:
+
+- blueprint-level performance intent
+- assembly or subassembly contribution to quality and stat behavior
+- realized instance provenance and manufacturer branding
+- in-world operating conditions that change evaluated performance
+
+If a Ghostlight manifest needs fields Aetheria-Economy does not currently store,
+mark them as manifest-side metadata or source gaps. Do not pretend CultCache
+already has slots for every nice idea. The future can have organs; today it has
+classes.
+
 ## Nebulous Technology Elaboration
 
 Aetheria already has plenty of named technologies. Many of them are currently
@@ -91,7 +179,9 @@ Every explored technology or item family should be able to answer:
 
 ## Manifest Object Types
 
-Use these object layers when producing tech data:
+Use these object layers when producing tech data. Each layer must also declare
+its intended Aetheria-Economy target class or state that it is manifest metadata
+only:
 
 - `item_family`
 - `item_variant`
@@ -129,9 +219,17 @@ A `component` is the smallest useful gameplay/logistics unit worth tracking.
 Do not split screws unless screws are the point of the quest. The machine has
 standards. Barely.
 
-A `blueprint` is a craftable or manufacturable recipe-like record. It should be
-specific enough for a game system to evaluate whether a faction, factory, ship,
-or player can build the item.
+A `blueprint` is the technological construction record represented by the
+appropriate Aetheria-Economy `*Data` class. It should be specific enough for a
+game system to evaluate whether a faction, factory, ship, or player can build
+the item, and how sub-assemblies affect performance through quality-sensitive
+stats and behavior parameters.
+
+Ghostlight manifests still need explicit assembly trees, compatibility rules,
+supply-chain dependencies, and manufacturing gates. If the current engine schema
+does not expose those fields directly, keep them as manifest metadata or
+engine-schema gaps attached to the target `*Data` blueprint rather than
+pretending they are separate from the blueprint concept.
 
 A `tech_prerequisite` is a required discovery, process, standard, license,
 facility, or expertise gate.
@@ -347,10 +445,12 @@ These artifacts train:
 
 ## First Schema Target
 
-The next concrete schema after coordinator artifacts should be a manifest seam:
+The next concrete schema after coordinator artifacts should be a manifest seam
+that maps directly onto Aetheria-Economy's technological blueprint classes:
 
 - `schemas/item-manifest.schema.json`
-- `schemas/item-blueprint.schema.json`
+- `schemas/item-blueprint-candidate.schema.json`
+- `schemas/item-instance-provenance-candidate.schema.json`
 - `examples/item-manifest/pre-elysium-starting-tech.template.json`
 - `examples/item-manifest/future-branch-innovation.template.json`
 - `examples/item-manifest/super-planckian-emitter.candidate.json`
@@ -362,9 +462,16 @@ Minimum fields:
 - fixture lane
 - branch lineage, if any
 - source refs
+- source-backed facts
+- inferred engineering
+- open lore gaps
 - item family or technology id
 - object layer
-- blueprint ids
+- target Aetheria-Economy class
+- target blueprint id, when updating an existing record
+- candidate blueprint fields
+- blueprint candidate ids
+- instance provenance fields, when simulating manufactured artifacts
 - parent assembly refs
 - child component refs
 - materials/process/tooling/facility refs
@@ -377,7 +484,26 @@ Minimum fields:
 - gameplay effects
 - economic consequences
 - quest hooks
+- engine-schema gaps
 - review status
+
+Candidate blueprint fields should be shaped around existing data classes first:
+
+- shared `ItemData` blueprint fields: `Name`, `Description`, `Manufacturer`,
+  `Mass`, `Shape`,
+  `SpecificHeat`, `Conductivity`, `Price`
+- `SimpleCommodityData`: `MaxStack`, `Category`
+- `CompoundCommodityData`: `DemandProfile`, `Category`
+- `ConsumableItemData`: `Behaviors`, `Stackable`, `Duration`, `Icon`,
+  `Effectiveness`
+- `EquippableItemData` and subclasses: `Schematic`, `Behaviors`, `Durability`,
+  temperature fields, heat performance curve, resilience, icons, sound data,
+  `HardpointType`, and subclass-specific fields such as weapon range, caliber,
+  fire type, hull hardpoints, cargo interiors, or docking size
+
+Ghostlight may propose additional manifest fields, but validators should label
+them as metadata, engine-gap, or rejected. Do not silently smuggle non-engine
+fields into supposed CultCache records.
 
 ## Data Generation Policy
 

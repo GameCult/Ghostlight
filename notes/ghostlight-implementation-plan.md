@@ -213,6 +213,18 @@
      assemblies, subassemblies, components, materials, faction access,
      prerequisites, bottlenecks, compatibility rules, upgrade slots, economic
      consequences, and quest hooks.
+   - Target the existing Aetheria-Economy CultCache item model rather than a
+     Ghostlight-only taxonomy. Manifest candidates should map conceptual layers
+     onto `SimpleCommodityData`, `CompoundCommodityData`, `ConsumableItemData`,
+     `GearData`, and other `EquippableItemData` technological blueprint
+     classes. Runtime `SimpleCommodity`, `CompoundCommodity`, `ConsumableItem`,
+     and `EquippableItem` instances belong to inventory/world-state simulation,
+     carrying realized quality, provenance, manufacturer branding, and assembly
+     history.
+   - Treat recipes, assembly trees, upgrade compatibility, tooling, facilities,
+     process requirements, and supply-chain dependencies as blueprint metadata
+     or engine-schema gaps attached to the relevant `*Data` class until
+     Aetheria-Economy exposes explicit storage for them.
    - Use the same manifest process to elaborate existing nebulous timeline
      technologies into blueprint candidates. Named tech like a
      super-Planckian emitter should be decomposed into candidate assemblies,

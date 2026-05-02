@@ -93,7 +93,9 @@ state and re-entry discipline.
   - plan for turning coordinator-led Aetheria exploration into game-usable
     item, component, assembly, faction tech-base, prerequisite, supply-chain,
     and upgrade-path data, including elaboration of existing nebulous named
-    technologies into blueprint candidates
+    technologies into blueprint candidates; now explicitly targets the
+    Aetheria-Economy CultCache `ItemData` technological blueprint classes
+    instead of a parallel Ghostlight item database
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
     historical projection feedstock rather than the active product target
@@ -315,5 +317,13 @@ timeline into equal-probability soup. The technology/item manifest plan now
 requires exploration to emit item families, variants, assemblies,
 subassemblies, components, materials, faction tech-base access, prerequisites,
 bottlenecks, compatibility rules, supply-chain consequences, and quest hooks for
-both pre-Elysium starting tech and post-Rupture innovations. Do not materialize
-another capture until it has no failure or repair notes.
+both pre-Elysium starting tech and post-Rupture innovations, mapped onto
+Aetheria-Economy's existing CultCache technological blueprint classes:
+`SimpleCommodityData`, `CompoundCommodityData`, `ConsumableItemData`, `GearData`,
+and other `EquippableItemData` subclasses. Runtime `ItemInstance` classes remain
+simulation, inventory, cargo, provenance, branding, and world-state objects.
+Recipes, assembly trees, compatibility rules, tooling, facilities, process
+requirements, and supply-chain dependencies are blueprint metadata or
+engine-schema gaps attached to the relevant `*Data` class until the economy code
+has explicit storage for them. Do not materialize another capture until it has
+no failure or repair notes.

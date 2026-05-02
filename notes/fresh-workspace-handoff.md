@@ -193,6 +193,18 @@ Existing named but nebulous technologies should be elaborated into blueprint
 candidates during the same process. Separate source facts, inferred
 engineering, and open lore gaps so item database candidates do not pretend the
 timeline already answered every manufacturing question.
+The concrete schema target already exists in Aetheria-Economy: CultCache-backed
+`ItemData` subclasses are technological blueprint records. `SimpleCommodityData`
+defines fungible resources, `CompoundCommodityData` defines assemblies,
+subassemblies, components, processed materials, and crafted economic units,
+`ConsumableItemData` defines usable consumables, and `GearData` plus other
+`EquippableItemData` subclasses define top-level usable gear. Runtime
+`ItemInstance` objects carry realized quality, provenance, manufacturer
+branding, assembly history, and world-state placement. Ghostlight should attach
+recipes, assembly trees, compatibility, tooling, facilities, process
+requirements, and supply-chain dependencies to the relevant blueprint as
+manifest metadata or engine-schema gaps until Aetheria-Economy exposes explicit
+storage for those details.
 
 The evaluation follow-up fixed the immediate v0 schema issues:
 

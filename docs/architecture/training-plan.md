@@ -60,7 +60,13 @@ rails, or injections when appropriate.
 
 Future exploration must also emit technology and item knowledge when a branch
 discovers or changes material capability. See
-`docs/architecture/technology-item-manifest-plan.md` for the manifest seam.
+`docs/architecture/technology-item-manifest-plan.md` for the manifest seam. That
+seam targets the existing Aetheria-Economy CultCache model: Ghostlight proposes
+reviewed candidate `ItemData` technological blueprints such as
+`SimpleCommodityData`, `CompoundCommodityData`, `ConsumableItemData`, `GearData`,
+and specialized `EquippableItemData` subclasses, while runtime `ItemInstance`
+objects belong to scene, inventory, cargo, provenance, branding, and world-state
+simulation.
 
 ## Runtime Stack
 
@@ -792,6 +798,9 @@ Current implementation:
 - not built yet
 - architecture plan exists in
   `docs/architecture/technology-item-manifest-plan.md`
+- concrete target schema exists in Aetheria-Economy as CultCache-backed
+  `ItemData` technological blueprint classes and linked `ItemInstance` runtime
+  classes
 
 Inputs:
 
@@ -805,14 +814,24 @@ Inputs:
 - existing item manifests
 - pre-Elysium starting tech refs
 - post-Rupture concept constraints
+- existing Aetheria-Economy item definitions, categories, behavior data,
+  hardpoint types, and known engine schema gaps
 
 Outputs:
 
-- item family records
-- item variant records
-- blueprint candidate records
-- assembly and subassembly records
-- component and material records
+- candidate Aetheria-Economy technological blueprint records
+- `SimpleCommodityData` candidates for fungible resources and feedstock
+- `CompoundCommodityData` candidates for assemblies, subassemblies,
+  components, processed materials, and manufactured economic units
+- `ConsumableItemData` candidates for usable consumables
+- `GearData` or other `EquippableItemData` subclass candidates for usable
+  equipment, ship systems, hulls, cargo structures, docking systems, and weapons
+- assembly-tree, recipe, compatibility, and supply-chain metadata attached to
+  the target blueprint record
+- instance-provenance candidates when simulating manufactured artifacts,
+  including realized quality, supply-chain lineage, manufacturer branding, and
+  subassembly contributions to performance
+- item family and item variant records as manifest metadata
 - process, tooling, expertise, and facility records
 - compatibility and upgrade-slot rules
 - faction/manufacturer access records
@@ -823,6 +842,8 @@ Outputs:
 - quest hooks
 - rejected unsupported item designs
 - source-gap records for named tech that lacks actionable blueprint detail
+- engine-schema gap records when a useful manifest concept has no CultCache
+  field yet
 
 Training architecture:
 
@@ -844,10 +865,15 @@ Training artifacts:
 - economic consequence records
 - rejected item designs with failure labels
 - nebulous-tech elaboration records with inferred/source/gap fields
+- instance-provenance records for manufactured artifacts when a scene or branch
+  needs realized supply-chain history, not just a blueprint
 
 First training gate:
 
 - item manifest schema and validator exist
+- validator checks target Aetheria-Economy blueprint class, source-backed
+  fields, inferred fields, metadata-only fields, instance-provenance fields, and
+  engine-schema gaps
 - 100 reviewed item/component/assembly records
 - 50 faction tech-base records across pre-Elysium and future branches
 - 50 rejected/invalid item examples with clear failure labels
