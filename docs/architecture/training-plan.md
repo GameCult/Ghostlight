@@ -41,8 +41,22 @@ Future-branch examples must label:
 - sibling-branch exclusion boundaries
 - branch-local facts that must not leak into single-history Sol training or
   unrelated Elysium branches
+- event constraint type: `branch_attractor`, `fated_event`,
+  `tech_order_constraint`, `quest_injection`, or `branch_local_event`
+- prerequisites, exclusions, and pull strength for constrained events
 - the post-Rupture concept being exercised
 - the old social pressure being re-expressed
+
+Some Elysium events are not globally fixed, but they are not equally optional
+either. Founding events for Elysium-born factions, technology discoveries,
+metaphysical practices, and quest hooks should be represented as attractors,
+rails, or injections when appropriate.
+
+- `branch_attractor`: likely under recurring pressures, with local variation.
+- `fated_event`: authorially constrained to occur unless the branch disables it.
+- `tech_order_constraint`: locked behind prerequisite discoveries or systems.
+- `quest_injection`: authored content inserted into compatible branch points.
+- `branch_local_event`: true only inside its lineage, with no cross-branch pull.
 
 ## Runtime Stack
 
@@ -220,6 +234,7 @@ Inputs:
 - prior reviewer notes
 - fixture lane and canon status
 - post-Rupture concept constraints for future branches
+- active attractors, fated events, tech-order gates, and quest-injection hooks
 
 Outputs:
 
@@ -234,6 +249,8 @@ Outputs:
 - reviewer-facing rationale
 - generated branch assumptions and promotion candidates, for future branches
 - branch lineage and conditional truth boundaries
+- selected attractor, fate, technology, or quest constraints that shape the next
+  beat
 
 Training architecture:
 
@@ -248,6 +265,7 @@ Training artifacts:
 - branch continuity decisions
 - tool invocation traces
 - world-state proposal receipts
+- attractor/rail/injection selection receipts
 - reviewer labels for pacing, continuity, legibility, game usefulness, and lore
   grounding
 
@@ -259,6 +277,8 @@ First training gate:
 - glue prose never treated as canonical state
 - at least 10 accepted future-branch coordinator turns before using the
   coordinator to generate post-Rupture arcs without close review
+- at least 20 labeled constrained-event examples before the coordinator is
+  trusted to inject quests or advance technology order automatically
 
 ### 3. Memory And Lore Retriever
 
@@ -329,6 +349,7 @@ Inputs:
 - observed event, when responding
 - projection controls
 - branch/canon status and generated-assumption boundaries
+- active technology gates and quest constraints
 
 Outputs:
 
@@ -342,6 +363,7 @@ Outputs:
 - audit refs to source state
 - explicit distinction between source-backed facts and branch-local assumptions
 - branch lineage and conditional truth boundaries
+- unavailable action or knowledge constraints derived from tech order
 
 Training architecture:
 
@@ -443,6 +465,7 @@ Inputs:
 - location constraints
 - participant visibility
 - branch/canon status for future generated facts
+- technology and quest gates relevant to action legality
 
 Outputs:
 
@@ -453,6 +476,7 @@ Outputs:
 - unresolved facts
 - branch-local mechanical facts versus promoted facts
 - branch-local mechanical facts versus cross-branch source constraints
+- blocked actions caused by missing prerequisites
 
 Training architecture:
 
@@ -694,6 +718,7 @@ Inputs:
 - risk and cost models
 - local information and misreads
 - post-Rupture infrastructure or concept constraints, when applicable
+- active technology order, faction attractors, fated events, and quest hooks
 
 Outputs:
 
@@ -704,6 +729,8 @@ Outputs:
 - reputation/faction pressure implications
 - rationale
 - branch-local policy or market assumptions
+- constrained-event response: exploit, resist, comply, delay, adapt, sabotage,
+  or organize around the attractor/rail/injection
 
 Training architecture:
 
@@ -716,6 +743,8 @@ Training artifacts:
 - buy/refuse/trade/hoard/comply/defect/conceal/punish/help examples
 - accepted and rejected decision rationales
 - resource and reputation consequence labels
+- constrained-event decision examples for faction founding, technology adoption,
+  quest hooks, and pressure-born institutions
 
 First training gate:
 
@@ -724,6 +753,8 @@ First training gate:
   institutional contexts
 - include future-branch decisions where post-Rupture miracles become markets,
   privileges, liabilities, dependencies, or weapons
+- include examples where factions or companies emerge from branch pressures,
+  fated constraints, or quest injections
 
 ## Training Order
 

@@ -199,6 +199,15 @@
    - Future branches must label source-backed post-Elysium concepts separately
      from generated branch assumptions, branch lineage, sibling-branch
      exclusions, and branch-local canonical facts.
+   - Future branches must also label constrained events: pressure-born
+     `branch_attractor`, authorial `fated_event`, discovery-gated
+     `tech_order_constraint`, authored `quest_injection`, or ordinary
+     `branch_local_event`.
+   - Elysium-born factions and institutions, including things like Adrasteia or
+     Miss Terri's Sugarrific Snack Company, should be modeled through those
+     labels rather than hidden in prose: they may emerge from branch pressure,
+     be nudged by fate, arrive through quest injection, or remain local to one
+     branch.
    - Maintain `schemas/lore-grounding-digest.schema.json`,
      `examples/lore-grounding/`, and `tools/validate_lore_grounding.py` as the
      cultural and factional pressure seam for grounded fixtures.

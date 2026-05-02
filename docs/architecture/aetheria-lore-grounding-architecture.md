@@ -228,6 +228,66 @@ Each possible future fixture should declare:
 - what new social pressure the weird concept creates
 - what old pre-Elysium pressure is returning in a new costume
 
+## Attractors, Rails, And Injections
+
+Elysium is a branching state-space, not an undifferentiated fog. Some events may
+happen in most branches because the pressures almost always produce them. Some
+events may be authored constraints because the game needs a stable enough world
+to design around. Some events may be injected by quests or scenario logic when
+an active branch reaches a compatible shape.
+
+Use separate labels:
+
+- `branch_attractor`
+- `fated_event`
+- `tech_order_constraint`
+- `quest_injection`
+- `branch_local_event`
+
+`branch_attractor` means an event is highly likely under broad pressures but
+not absolutely forced. The founding of a faction born inside Elysium may start
+here if the social, economic, metaphysical, and institutional gradients make it
+show up again and again with local variation.
+
+`fated_event` means the authorial hand is on the scale. The event should occur
+unless the branch has explicitly disabled it. Use this sparingly, because too
+much fate turns the quantum superposition back into a hallway with rude
+wallpaper.
+
+`tech_order_constraint` means discovery order matters. Some technologies,
+metaphysical practices, industrial dependencies, or social adaptations should be
+unavailable until their prerequisites exist. This is not merely lore flavor; it
+is a runtime gate for what quests, economies, factions, and character actions
+can plausibly do.
+
+`quest_injection` means authored content enters the active timeline at a branch
+point. A quest may require prerequisites, forbid certain prior states, create
+new local facts, or push an attractor toward one concrete manifestation.
+
+`branch_local_event` means the event is canonical inside its lineage but has no
+special pull across other branches.
+
+Future branch fixtures should record:
+
+- event type from the labels above
+- probability or pull strength, for attractors
+- required branch prerequisites
+- excluded branch states
+- technology prerequisites
+- faction or institution prerequisites
+- quest ids or content hooks, if injected
+- local variation allowed
+- hard facts created
+- branch facts that remain conditional
+
+Factions born in Elysium should be modeled through this lens. Adrasteia or Miss
+Terri's Sugarrific Snack Company can be represented as pressure-born attractors,
+fated institutions, quest-injected branch content, or some combination. The
+point is not to decide that once in prose and hope the game remembers. The point
+is to make the founding mechanism explicit enough for Ghostlight, the active
+timeline, and later game systems to agree on what kind of inevitability they are
+dealing with.
+
 Good future branches should stress the model with conditions it cannot learn
 from late-Sol history alone:
 

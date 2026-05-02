@@ -302,5 +302,9 @@ lore/tone goal is not a separate adapter; it is a responder trained on strong
 timeline-spread Aetheria responses until the setting's assumptions become
 native priors. The timeline plan now includes generated possible futures in
 Elysium as reviewed `future_branch` artifacts so models learn post-Rupture
-concepts as branch-local canon indexed by lineage. Do not materialize another
-capture until it has no failure or repair notes.
+concepts as branch-local canon indexed by lineage. It also distinguishes
+branch attractors, fated events, technology-order constraints, quest injections,
+and ordinary branch-local events so Elysium can support likely faction births,
+authored rails, discovery order, and quest injection without flattening the
+timeline into equal-probability soup. Do not materialize another capture until
+it has no failure or repair notes.

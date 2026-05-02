@@ -178,6 +178,10 @@ labels, so the models learn Aetheria concepts that only exist after the
 Rupture: Aether, pseudospace, temporal nonlinearity, spirits, necrotech,
 mutable bodies, altered substrates, and the fresh little institutional crimes
 that grow around them.
+Future branches now also need event constraint labels:
+`branch_attractor`, `fated_event`, `tech_order_constraint`, `quest_injection`,
+or `branch_local_event`. This supports likely Elysium faction births, authored
+rails, baked-in technology order, and quest injection into active timelines.
 
 The evaluation follow-up fixed the immediate v0 schema issues:
 
