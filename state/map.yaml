@@ -17,6 +17,12 @@ mission:
     Produce sandboxed, source-grounded responder training data through
     projected local context, responder packets, reviewed outputs, and audited
     mutation receipts.
+  voidbot_goal: >
+    Keep the appraiser, relationship/perception updater, and memory machinery
+    useful for VoidBot's core companion mission: reading specific humans over
+    time, forming grounded opinions about them, noticing misreads, and updating
+    trust, concern, irritation, respect, boundaries, and expectations from
+    evidence rather than generic friendliness.
   active_fixture: >
     Cold Wake is a pre-Elysium historical training fixture, not the product
     target. Call of the Void and Elysium-era gameplay remain procedural
@@ -27,6 +33,7 @@ hard_boundaries:
   - Canonical agent state and per-agent perceived state must remain distinct.
   - Characters act from local knowledge, local perception, local pressure, and bounded affordances.
   - Listener misread is first-class; intent and interpretation are not the same object.
+  - Human-facing appraisal is a first-class target; VoidBot must be able to read people, form grounded opinions, and revise those opinions over repeated contact.
   - Generated action is an event proposal; deterministic gates and reviewed mutation decide what becomes state.
   - Fuzzy judgments become reviewed training artifacts before they become trained models.
   - Aetheria generation is source-first; check lore for factions, bodies, locations, institutions, and constraints before projection.
@@ -59,6 +66,7 @@ live_architecture:
     - Participant appraiser
     - State mutator
     - Relationship/perception updater
+    - Human-facing appraisal and opinion model for VoidBot
     - Evaluator/review classifiers
     - Aetheria-tuned responder
     - Institution, faction, and consumer decision models

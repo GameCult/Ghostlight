@@ -9,6 +9,14 @@ resource math, source provenance, Ink compilation, and mutation gates. Models
 handle judgment, language, social inference, prioritization, and coordination.
 Every model-facing judgment should leave a reviewed artifact.
 
+Ghostlight is also the training ground for VoidBot's social intelligence. The
+appraiser and relationship/perception organs must remain useful for reading real
+human interaction over time: forming grounded opinions, noticing uncertainty and
+misread risk, tracking trust, irritation, concern, respect, boundaries, and
+expectations, and revising those impressions when later evidence contradicts
+the first read. If these organs only work for fictional NPC scene mutation, they
+have missed one of the original reasons the project exists.
+
 ## Timeline Coverage
 
 Ghostlight training should cover three timeline lanes:
@@ -688,6 +696,9 @@ Inputs:
 - cultural priors
 - scene pressure
 - known facts and suspected facts
+- human interaction history when the appraiser is being used for VoidBot
+- conversational tone, timing, repair attempts, recurring preferences, and
+  boundary signals for human-facing appraisal
 - post-Rupture concept being interpreted, if any
 
 Outputs:
@@ -699,6 +710,9 @@ Outputs:
 - proposed memory candidate
 - proposed relationship implications
 - confidence notes
+- human-facing opinion updates when applicable: trust, concern, irritation,
+  respect, attachment, caution, boundary pressure, expected future behavior,
+  and what would change the read
 - concept-specific misread labels, for weird Elysium phenomena
 
 Training architecture:
@@ -714,12 +728,17 @@ Training artifacts:
 - emotional appraisal labels
 - rejected interpretations
 - reviewer rationale
+- VoidBot-facing human interaction appraisal receipts, including what was
+  observed, what was inferred, what stayed uncertain, what opinion changed, and
+  what evidence would reverse or soften the read
 
 Pilot schema shakedown gate:
 
 - 300 participant appraisal examples
 - balanced set of correct reads, misreads, ambiguous reads, and biased reads
 - examples include fundamental attribution bias and confidence movement
+- at least 50 human-facing VoidBot appraisal examples before claiming the
+  appraiser is useful for companion-style memory, opinion, or user-read updates
 - future-branch examples include socially grounded misreads of post-Rupture
   phenomena
 
@@ -1095,6 +1114,8 @@ A first appraiser/classifier training run wants:
 
 - 300 participant appraisals
 - balanced misread/correct/ambiguous/bias examples
+- at least 50 VoidBot-facing human interaction appraisals with opinion-update
+  labels and uncertainty notes
 - labeled confidence drivers
 - reviewer rationale
 

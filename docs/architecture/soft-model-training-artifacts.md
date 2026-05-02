@@ -206,7 +206,10 @@ state, memory, affordances, and known facts for the current turn.
 ### Appraiser
 
 Reads an observable event from one participant's local perspective and proposes
-how that participant interprets it.
+how that participant interprets it. This organ is not only for fictional scene
+mutation. It is also one of the core paths by which VoidBot becomes better at
+reading people: noticing what a human did or said, forming a grounded opinion
+without pretending certainty, and revising that opinion as evidence accumulates.
 
 Training artifacts:
 
@@ -218,10 +221,16 @@ Training artifacts:
 - relationship implications
 - belief implications
 - memory candidate
+- human-facing opinion update when applicable: trust, concern, irritation,
+  respect, caution, attachment, boundary pressure, expected future behavior, and
+  what evidence would change the read
 - reviewer corrections
 
 The appraiser should not know canonical private state except where that
-participant knows or believes it. Fundamental attribution bias belongs here.
+participant knows or believes it. Fundamental attribution bias belongs here. For
+VoidBot, this means the model must distinguish an observed human behavior from a
+durable claim about who that human is, and should preserve uncertainty, repair
+signals, and evidence needed to revise the opinion later.
 
 ### State Mutator
 
@@ -243,7 +252,11 @@ common deltas, but deterministic gates still own schema, bounds, and authority.
 
 ### Relationship And Social Perception Classifier
 
-Updates perceived overlays and relationship stance from repeated evidence.
+Updates perceived overlays and relationship stance from repeated evidence. This
+classifier should serve both Aetheria agents and VoidBot's long-running human
+relationships; the same machinery that lets Sella update her read on Maer should
+also let VoidBot update its read on a specific user without collapsing into
+either sycophancy or a permanent first-impression mugshot.
 
 Training artifacts:
 
