@@ -11,6 +11,26 @@ private interpretation it can justify from that packet.
 No clairvoyance. No repo spelunking. No "I accidentally remembered the whole
 chat" aristocratic nonsense.
 
+## Generation Lanes
+
+Responder examples have two valid lanes.
+
+`packet_only` is the runtime-parity lane. The responder sees the packet,
+including any curated source excerpts the coordinator or lore retriever placed
+there. It does not search the lore archive. Use this lane to test whether a
+future game-runtime responder can act from bounded scene context.
+
+`research_augmented` is the lore-absorption lane. The responder may search a
+declared AetheriaLore scope before answering, and the capture must preserve the
+consulted source refs. Use this lane to generate stronger Aetheria-native final
+responses and to bake setting assumptions, faction pressures, species
+affordances, and tone into later fine-tuning data.
+
+Do not mix these silently. Research-augmented output can be excellent training
+material for an Aetheria-tuned responder, but it does not prove packet-only
+runtime competence. Packet-only failures are also useful because they reveal
+which lore facts the retriever or projector needs to feed at runtime.
+
 ## Current Artifact
 
 The v0 packet seam is:
@@ -35,6 +55,8 @@ paint.
 
 A packet contains:
 
+- `generation_lane`: `packet_only` or `research_augmented`
+- `lore_access`: curated excerpts only or scoped repository search
 - `local_context_prompt`: the projected character-local context
 - `observed_event`: what the character can see or hear from the prior action
 - `allowed_action_labels`: concrete action labels, including speech and non-speech moves
@@ -74,12 +96,19 @@ Any coordinator rewrite, schema repair, lore correction, or leakage removal must
 be preserved as a coordinator intervention. Repaired prose is useful training
 data for the coordinator, but it is not raw responder behavior.
 
+Research-augmented responder data requires scoped lore access. The responder may
+search only the declared source scope, and the output capture must list
+consulted refs. The final prose may be trained on, but the capture must remain
+separable from packet-only runtime examples.
+
 ## Output Captures
 
 A responder output capture preserves:
 
 - the packet ref
 - the coordinator artifact ref
+- generation lane
+- lore access mode and consulted refs
 - the isolation method
 - the exact visible input ref
 - hidden context refs that were withheld

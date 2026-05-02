@@ -1,4 +1,4 @@
-﻿{
+{
   "schema_version": "ghostlight.responder_output.v0",
   "capture_id": "responder.cold_wake.sanctuary_intake.sella.v0",
   "review_status": "accepted_as_draft",
@@ -7,6 +7,13 @@
   "packet_ref": "examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json",
   "coordinator_artifact_ref": "examples/coordinator/cold-wake-sanctuary-intake.v0.json",
   "responder_agent_id": "sella_ren",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json#visible_context.source_excerpts"
+    ]
+  },
   "isolation": {
     "isolation_method": "subagent_no_fork",
     "fork_context": false,

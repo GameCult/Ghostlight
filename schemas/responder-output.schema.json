@@ -13,6 +13,8 @@
     "packet_ref",
     "coordinator_artifact_ref",
     "responder_agent_id",
+    "generation_lane",
+    "lore_access",
     "isolation",
     "raw_output",
     "parsed_output",
@@ -29,6 +31,16 @@
     "packet_ref": { "type": "string", "minLength": 1 },
     "coordinator_artifact_ref": { "type": "string", "minLength": 1 },
     "responder_agent_id": { "type": "string", "minLength": 1 },
+    "generation_lane": { "enum": ["packet_only", "research_augmented"] },
+    "lore_access": {
+      "type": "object",
+      "required": ["mode", "consulted_refs"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["curated_excerpts_only", "scoped_repository_search"] },
+        "consulted_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
     "isolation": {
       "type": "object",
       "required": ["isolation_method", "fork_context", "visible_input_ref", "hidden_context_refs", "worker_model_family"],

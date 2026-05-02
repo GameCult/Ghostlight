@@ -65,6 +65,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `schemas/responder-packet.schema.json`
   - `schemas/responder-output.schema.json`
   - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
+  - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v1.json`
   - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
   - `tools/build_responder_packet.py`
   - `tools/validate_responder_packets.py`
@@ -183,6 +184,15 @@ output. The first no-fork responder output capture now also exists and is
 accepted as draft: the worker received only the packet prompt, returned valid
 JSON, preserved Sella's read as interpretation, left packet personhood
 unresolved, and required no coordinator prose repair.
+Responder data now has two explicit lanes. `packet_only` is the runtime-parity
+lane: curated source excerpts are in the packet and the responder does not
+search lore. `research_augmented` is the lore-absorption lane: the responder may
+search a declared AetheriaLore scope and the capture must preserve consulted
+refs. Do not use research-augmented examples as proof that the packet-only
+runtime prompt has enough context.
+The v1 Sella packet removes responder-visible references to absent coordinator
+knowledge and adds curated AetheriaLore excerpts for Cold Wake, the Ganymede
+Route Compact, Navigator rescue ledgers, and Lightsail reliability.
 It now uses three timeline lanes: `historical_grounded`,
 `transition_grounded`, and `future_branch`. Future branches are required
 training/evaluation material for post-Rupture Elysium concepts, but generated
@@ -216,6 +226,10 @@ review and materialize the response into the scene-local mutation path. Treat
 its state and relationship updates as candidates only; consolidate participant
 appraisals and write a reviewed mutation receipt before changing any canonical
 fixture. Do not call Qwen for gold responder data yet.
+Optional parallel lane after that: generate a research-augmented Sella response
+from the same scene with scoped `Aetheria/Worldbuilding/Pre-Elysium` access,
+then compare it against packet-only output to identify which lore facts should
+be retrieved at runtime.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than

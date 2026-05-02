@@ -13,6 +13,8 @@
     "coordinator_artifact_ref",
     "projected_context_ref",
     "responder_agent_id",
+    "generation_lane",
+    "lore_access",
     "visible_context",
     "output_contract",
     "hidden_context_audit",
@@ -30,6 +32,17 @@
     "coordinator_artifact_ref": { "type": "string", "minLength": 1 },
     "projected_context_ref": { "type": "string", "minLength": 1 },
     "responder_agent_id": { "type": "string", "minLength": 1 },
+    "generation_lane": { "enum": ["packet_only", "research_augmented"] },
+    "lore_access": {
+      "type": "object",
+      "required": ["mode", "allowed_scope", "required_provenance"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["curated_excerpts_only", "scoped_repository_search"] },
+        "allowed_scope": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "required_provenance": { "type": "boolean", "const": true }
+      }
+    },
     "visible_context": {
       "type": "object",
       "required": [

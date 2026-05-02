@@ -88,7 +88,8 @@ state and re-entry discipline.
   - contract for the exact packet-only surface handed from an omniscient
     coordinator to a sandboxed character responder, including visible event,
     local prompt, allowed actions, source excerpts, hidden-context audit, and
-    output contract
+    output contract; also defines the separate `packet_only` and
+    `research_augmented` responder-data lanes
 - `docs/architecture/training-plan.md`
   - concrete enumeration of trainable Ghostlight stages, including each stage's
     inputs, outputs, likely model architecture, artifact family, first training
@@ -122,11 +123,14 @@ state and re-entry discipline.
     responder handoffs, world-state refs, proposed deltas, branch constraints,
     item-manifest deltas, unresolved hooks, glue prose, and review notes
 - `schemas/responder-packet.schema.json`
-  - v0 contract for the exact input a sandboxed character responder may see
+  - v0 contract for the exact input a sandboxed character responder may see,
+    now lane-labeled as `packet_only` or `research_augmented` with explicit
+    lore-access policy
 - `schemas/responder-output.schema.json`
   - v0 contract for reviewed captures from sandboxed responder workers,
     preserving raw output, parsed output, isolation method, leakage audit, and
-    coordinator review
+    coordinator review; output captures also preserve generation lane and
+    consulted lore refs
 - `schemas/agent-state.required-fields.json`
   - required first-class variable names for canonical state and relationship
     stance
@@ -149,6 +153,11 @@ state and re-entry discipline.
   - first responder-packet schema-shakedown example for Sella's sanctuary
     response; accepted as draft for sandbox handoff testing, not gold responder
     output
+- `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v1.json`
+  - corrected packet-only Sella handoff with absent hidden context moved out of
+    responder-visible prose and curated AetheriaLore excerpts added for Cold
+    Wake, Ganymede rescue obligations, Navigator rescue ledgers, and Lightsail
+    reliability
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
   - first no-fork sandboxed responder output capture from the Sella packet;
     accepted as draft with no leakage flags and no coordinator prose repair
@@ -349,6 +358,10 @@ can hand a worker the exact prompt surface instead of hoping nobody leaks the
 coordinator's brain into the room. The first no-fork Sella responder capture now
 exists and validates as accepted-as-draft with raw output preserved, parsed
 output matched exactly, leakage audit clear, and no coordinator prose repair.
+Responder data now has two explicit lanes: `packet_only` for runtime parity with
+curated source excerpts, and `research_augmented` for scoped AetheriaLore search
+that can bake setting priors into final responses while preserving consulted
+refs.
 The concrete training plan now enumerates
 eleven trainable stages and their likely model
 families: generative decoder LLMs for coordinator, responder, and structured

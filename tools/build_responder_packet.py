@@ -16,7 +16,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_COORDINATOR = ROOT / "examples" / "coordinator" / "cold-wake-sanctuary-intake.v0.json"
 DEFAULT_PROJECTED = ROOT / "examples" / "projected-contexts" / "scene-02-sanctuary-intake.sella_ren.projected-context.json"
-DEFAULT_OUT = ROOT / "examples" / "responder-packets" / "scene-02-sanctuary-intake.sella_ren.packet.v0.json"
+DEFAULT_OUT = ROOT / "examples" / "responder-packets" / "scene-02-sanctuary-intake.sella_ren.packet.v1.json"
 
 ALLOWED_ACTION_LABELS = [
     "speak",
@@ -52,7 +52,7 @@ def render_packet_prompt(packet: dict[str, Any]) -> str:
         "# Ghostlight Sandboxed Responder Packet",
         "",
         "You are acting only as the named responder. Use only this packet.",
-        "Do not infer hidden coordinator context, author plans, future branch facts, or another character's private state.",
+        "Do not treat guesses about another character's intent as fact.",
         "If you need to guess intent, mark it as this character's interpretation, not truth.",
         "",
         "## Local Operating Context",
@@ -93,13 +93,24 @@ def build_packet(coordinator: dict[str, Any], projected: dict[str, Any], out_ref
     responder_agent_id = projected["input"]["local_agent_id"]
     packet = {
         "schema_version": "ghostlight.responder_packet.v0",
-        "packet_id": "packet.cold_wake.sanctuary_intake.sella_response.v0",
+        "packet_id": "packet.cold_wake.sanctuary_intake.sella_response.v1",
         "review_status": "accepted_as_draft",
         "fixture_lane": coordinator["fixture_lane"],
         "canon_status": coordinator["canon_status"],
         "coordinator_artifact_ref": "examples/coordinator/cold-wake-sanctuary-intake.v0.json",
         "projected_context_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json",
         "responder_agent_id": responder_agent_id,
+        "generation_lane": "packet_only",
+        "lore_access": {
+            "mode": "curated_excerpts_only",
+            "allowed_scope": [
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
+            ],
+            "required_provenance": True,
+        },
         "visible_context": {
             "local_context_prompt": projected["context"]["prompt_text"],
             "observed_event": {
@@ -110,7 +121,6 @@ def build_packet(coordinator: dict[str, Any], projected: dict[str, Any], out_ref
                 "visible_object_refs": ["corrupted_distress_packet", "shared_clinic_display", "sanctuary_ledger"],
                 "visibility_notes": [
                     "Sella can observe Maer's displayed packet evidence and spoken request.",
-                    "Sella cannot see Maer's private state, the coordinator rationale, or future branch plans.",
                     "The packet remains unresolved evidence, not proof of personhood."
                 ],
             },
@@ -130,6 +140,26 @@ def build_packet(coordinator: dict[str, Any], projected: dict[str, Any], out_ref
                     "ref_id": "local_boundary.packet_unresolved",
                     "source_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json#context.do_not_invent",
                     "text": "Do not resolve whether the corrupted packet contains a person.",
+                },
+                {
+                    "ref_id": "lore.cold_wake_panic",
+                    "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+                    "text": "Cold Wake Panic was a late-Sol corridor crisis around thermal stealth, ghost tracks, delayed heat dumps, misclassified quiet-running vessels, insurer categories, certified quiet-running envelopes, and heat-debt tolerances.",
+                },
+                {
+                    "ref_id": "lore.ganymede_route_compact",
+                    "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+                    "text": "The Ganymede Route Compact established rescue obligations, shared hazard ledgers, route-steward representation, and legal status for Navigator councils in convoy arbitration.",
+                },
+                {
+                    "ref_id": "lore.navigator_rescue_ledgers",
+                    "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#Rescue Ledgers",
+                    "text": "Navigator rescue ledgers record who answered distress calls, held formation in lethal weather, and kept sanctuary promises when a paying client wanted otherwise; those records shape credit, escort priority, arbitration, and kinship ties.",
+                },
+                {
+                    "ref_id": "lore.lightsail_reliability",
+                    "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
+                    "text": "Lightsail Express is associated with the Cetacean Navigators as a bulk-carrier and convoy-management arm whose corridor reputation depends on being the boring answer that still arrives when trust is scarce.",
                 },
             ],
         },
@@ -187,8 +217,8 @@ def build_packet(coordinator: dict[str, Any], projected: dict[str, Any], out_ref
         "review": {
             "reviewer": "Codex",
             "review_notes": [
-                "First responder packet seam for sandboxed gold-data generation.",
-                "Accepted as draft because it is packet-shaped and validator-backed, but not yet generated through an actually isolated responder worker.",
+                "Second responder packet draft for sandboxed gold-data generation.",
+                "Adds explicit packet_only lane labels and curated AetheriaLore excerpts while keeping absent hidden context in audit fields, not responder-visible prose.",
             ],
             "accepted_for_sandbox_use": True,
             "failure_labels": [],

@@ -106,6 +106,8 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
             "packet_ref",
             "coordinator_artifact_ref",
             "responder_agent_id",
+            "generation_lane",
+            "lore_access",
             "isolation",
             "raw_output",
             "parsed_output",
@@ -119,8 +121,18 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
     require(document["canon_status"] in CANON_STATUSES, f"{base}.canon_status is invalid")
     for key in ["capture_id", "packet_ref", "coordinator_artifact_ref", "responder_agent_id", "raw_output"]:
         require_string(document[key], f"{base}.{key}")
+    require(document["generation_lane"] in {"packet_only", "research_augmented"}, f"{base}.generation_lane is invalid")
     require((ROOT / document["packet_ref"]).exists(), f"{base}.packet_ref does not exist")
     require((ROOT / document["coordinator_artifact_ref"]).exists(), f"{base}.coordinator_artifact_ref does not exist")
+
+    lore_access = document["lore_access"]
+    require_keys(lore_access, ["mode", "consulted_refs"], f"{base}.lore_access")
+    require(lore_access["mode"] in {"curated_excerpts_only", "scoped_repository_search"}, f"{base}.lore_access.mode is invalid")
+    require_string_array(lore_access["consulted_refs"], f"{base}.lore_access.consulted_refs")
+    if document["generation_lane"] == "packet_only":
+        require(lore_access["mode"] == "curated_excerpts_only", f"{base}.packet_only must use curated_excerpts_only lore access")
+    if document["generation_lane"] == "research_augmented":
+        require(lore_access["mode"] == "scoped_repository_search", f"{base}.research_augmented must use scoped_repository_search lore access")
 
     isolation = document["isolation"]
     require_keys(isolation, ["isolation_method", "fork_context", "visible_input_ref", "hidden_context_refs", "worker_model_family"], f"{base}.isolation")
