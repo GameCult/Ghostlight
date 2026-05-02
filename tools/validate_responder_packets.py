@@ -113,6 +113,17 @@ def validate_packet(document: dict[str, Any], source: Path) -> None:
     require(lore_access["required_provenance"] is True, f"{base}.lore_access.required_provenance must be true")
     if "research_instructions" in lore_access:
         require_string_array(lore_access["research_instructions"], f"{base}.lore_access.research_instructions", nonempty=True)
+    if "traversal_policy" in lore_access:
+        traversal_policy = lore_access["traversal_policy"]
+        require_keys(
+            traversal_policy,
+            ["max_link_depth", "allowed_prefixes", "required_seed_refs", "follow_link_classes", "stop_conditions"],
+            f"{base}.lore_access.traversal_policy",
+        )
+        require(isinstance(traversal_policy["max_link_depth"], int), f"{base}.lore_access.traversal_policy.max_link_depth must be an integer")
+        require(traversal_policy["max_link_depth"] >= 0, f"{base}.lore_access.traversal_policy.max_link_depth must be non-negative")
+        for key in ["allowed_prefixes", "required_seed_refs", "follow_link_classes", "stop_conditions"]:
+            require_string_array(traversal_policy[key], f"{base}.lore_access.traversal_policy.{key}", nonempty=True)
     if document["generation_lane"] == "packet_only":
         require(lore_access["mode"] == "curated_excerpts_only", f"{base}.packet_only must use curated_excerpts_only lore access")
     if document["generation_lane"] == "retrieval_augmented":
@@ -126,6 +137,10 @@ def validate_packet(document: dict[str, Any], source: Path) -> None:
         require(
             lore_access.get("research_instructions"),
             f"{base}.responder_scoped_repository_search requires lore_access.research_instructions",
+        )
+        require(
+            lore_access.get("traversal_policy"),
+            f"{base}.responder_scoped_repository_search requires lore_access.traversal_policy",
         )
 
     visible = document["visible_context"]
@@ -180,6 +195,9 @@ def validate_packet(document: dict[str, Any], source: Path) -> None:
         require("## Required Lore Research" in prompt_text, f"{base}.packet_prompt_text must include required lore research instructions")
         for scope in lore_access["allowed_scope"]:
             require(scope in prompt_text, f"{base}.packet_prompt_text must include allowed research scope: {scope}")
+        traversal_policy = lore_access.get("traversal_policy", {})
+        for prefix in traversal_policy.get("allowed_prefixes", []):
+            require(prefix in prompt_text, f"{base}.packet_prompt_text must include allowed traversal prefix: {prefix}")
 
     review = document["review"]
     require_keys(review, ["reviewer", "review_notes", "accepted_for_sandbox_use", "failure_labels"], f"{base}.review")

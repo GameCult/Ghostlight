@@ -37,14 +37,23 @@ There are two retrieval-augmented modes:
   research-enabled lane. The packet must include a `Required Lore Research`
   section, `allowed_scope`, and `research_instructions`.
 
-In `responder_scoped_repository_search`, the responder must consult the scoped
-docs before answering. It should use retrieved lore to constrain behavior,
-affordances, institutions, vocabulary, material stakes, and local assumptions.
+In `responder_scoped_repository_search`, the responder must consult the seed
+docs before answering and may follow relevant links inside the traversal policy.
+It should use retrieved lore to constrain behavior, affordances, institutions,
+vocabulary, material stakes, territory, social movements, and local assumptions.
 It must not use research access to infer hidden state, author-only answers,
 future branches, or private motives outside the packet. The output capture must
-preserve consulted refs and a brief research summary. No consulted refs means
-the research-enabled response failed at the first hurdle, tragic but at least
-easy to grade.
+preserve consulted seed refs, followed refs, and a brief research summary. No
+consulted refs means the research-enabled response failed at the first hurdle,
+tragic but at least easy to grade.
+
+Training-time research scope should be materially wider than runtime context.
+The point is not to feed every responder a lore pantry forever. The point is to
+let high-quality training samples absorb the world: PSC risk language, Jovian
+territorial texture, resident factions, linked social movements, technology
+constraints, and the odd little institutional grudges that make the universe
+smell lived in. Runtime can later feed compact retrieval. Fine-tuning should
+have already eaten its vegetables.
 
 Do not mix these silently. Retrieval-augmented output can be excellent training
 material for an Aetheria-tuned responder, but it does not prove packet-only
@@ -86,6 +95,9 @@ A packet contains:
 - `generation_lane`: `packet_only` or `retrieval_augmented`
 - `lore_access`: curated excerpts, coordinator-scoped retrieval, or
   responder-scoped repository search
+- `traversal_policy`: for responder-scoped research, the permitted link depth,
+  allowed repo prefixes, required seed refs, link classes to follow, and stop
+  conditions
 - `local_context_prompt`: the projected character-local context
 - `observed_event`: what the character can see or hear from the prior action
 - `allowed_action_labels`: concrete action labels, including speech and non-speech moves
@@ -169,12 +181,13 @@ coordinator edits prose, repairs schema, removes leakage, or corrects lore, the
 capture must say so directly.
 
 For `responder_scoped_repository_search`, the raw responder object may also
-include `consulted_refs` and `research_summary`. Those fields should be
-preserved inside `parsed_output` and mirrored into top-level `lore_access` so
-the capture can be indexed without stripping the original response. If the
-runner cannot expose a machine-verifiable tool-call or retrieval transcript,
-label the sample as draft and say so in review notes. Trust, but make the
-trust write receipts like everyone else.
+include `consulted_refs`, `followed_refs`, and `research_summary`. Those fields
+should be preserved inside `parsed_output`; consulted refs and summary should
+also be mirrored into top-level `lore_access` so the capture can be indexed
+without stripping the original response. If the runner cannot expose a
+machine-verifiable tool-call or retrieval transcript, label the sample as draft
+and say so in review notes. Trust, but make the trust write receipts like
+everyone else.
 
 The first lane comparison found the expected tradeoff. Packet-only output gave a
 clean runtime-parity conditional bay decision and stronger character-specific

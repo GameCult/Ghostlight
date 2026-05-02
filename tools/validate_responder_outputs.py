@@ -111,6 +111,8 @@ def validate_parsed_response(value: Any, path: str) -> None:
     require_string_array(value["unresolved_hooks"], f"{path}.unresolved_hooks")
     if "consulted_refs" in value:
         require_string_array(value["consulted_refs"], f"{path}.consulted_refs")
+    if "followed_refs" in value:
+        require_string_array(value["followed_refs"], f"{path}.followed_refs")
     if "research_summary" in value:
         require(isinstance(value["research_summary"], str), f"{path}.research_summary must be a string")
 

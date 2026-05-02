@@ -59,17 +59,35 @@ def render_packet_prompt(packet: dict[str, Any]) -> str:
         "",
     ]
     if lore_access["mode"] == "responder_scoped_repository_search":
+        traversal_policy = lore_access["traversal_policy"]
         lines.extend([
             "## Required Lore Research",
-            "Before answering, inspect the declared lore scope and ground your action in what those sources make true or likely.",
-            "Use lore to constrain behavior, affordances, institutions, vocabulary, and material stakes. Do not use it to gain hidden character state, author-only answers, or future branch knowledge.",
-            "If a scoped source contradicts the packet, follow the packet for character-local knowledge and flag the contradiction in unresolved hooks.",
-            "Your output capture must list consulted refs and a brief research summary; an answer with no consulted refs is a failed research-enabled response.",
+            "Before answering, inspect the declared seed scope and follow relevant links within the traversal policy.",
+            "Use lore to constrain behavior, affordances, institutions, vocabulary, material stakes, social movements, territory, and cultural pressure. Do not use it to gain hidden character state, author-only answers, or future branch knowledge.",
+            "If a source contradicts the packet, follow the packet for character-local knowledge and flag the contradiction in unresolved hooks.",
+            "Your output capture must list consulted seed refs, followed refs, and a brief research summary; an answer with no consulted refs is a failed research-enabled response.",
             "",
-            "Allowed research scope:",
+            "Seed research scope:",
         ])
         for scope in lore_access["allowed_scope"]:
             lines.append(f"- {scope}")
+        lines.extend([
+            "",
+            "Traversal policy:",
+            f"- Max link depth: {traversal_policy['max_link_depth']}",
+            "- Allowed prefixes:",
+        ])
+        for prefix in traversal_policy["allowed_prefixes"]:
+            lines.append(f"  - {prefix}")
+        lines.append("- Required seed refs:")
+        for ref in traversal_policy["required_seed_refs"]:
+            lines.append(f"  - {ref}")
+        lines.append("- Follow link classes:")
+        for link_class in traversal_policy["follow_link_classes"]:
+            lines.append(f"  - {link_class}")
+        lines.append("- Stop conditions:")
+        for condition in traversal_policy["stop_conditions"]:
+            lines.append(f"  - {condition}")
         if lore_access.get("research_instructions"):
             lines.extend(["", "Research instructions:"])
             for instruction in lore_access["research_instructions"]:
@@ -144,10 +162,21 @@ def build_source_excerpts(projected: dict[str, Any]) -> list[dict[str, str]]:
 
 def build_lore_access(mode: str) -> dict[str, Any]:
     allowed_scope = [
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/index.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/index.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/index.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/index.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Megas.md",
         "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
         "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md",
         "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
         "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Politics/Thermal Signature Warfare.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Politics/Restrictions on Warfare.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Neuromorphic Firmware.md",
     ]
     lore_access = {
         "mode": mode,
@@ -155,11 +184,41 @@ def build_lore_access(mode: str) -> dict[str, Any]:
         "required_provenance": True,
     }
     if mode == "responder_scoped_repository_search":
+        lore_access["traversal_policy"] = {
+            "max_link_depth": 2,
+            "allowed_prefixes": [
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/",
+                "AetheriaLore:Aetheria/Worldbuilding/Politics/",
+                "AetheriaLore:Aetheria/Worldbuilding/Technology/",
+            ],
+            "required_seed_refs": [
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/index.md",
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md",
+            ],
+            "follow_link_classes": [
+                "resident Jovian factions and institutions",
+                "referenced factions with direct scene pressure",
+                "referenced social movements shaping a visible faction's values",
+                "territory, politics, and technology docs that explain material constraints",
+                "event docs that explain local precedent or institutional obligation",
+            ],
+            "stop_conditions": [
+                "stop when a link is not relevant to the responder's local action, institution, relationship, or material stakes",
+                "stop before post-Elysium or future-outcome lore unless the packet explicitly requests it",
+                "stop before author-only plot resolution or hidden incident truth not visible to this character",
+                "summarize only the constraints that affected the response; do not dump research into dialogue",
+            ],
+        }
         lore_access["research_instructions"] = [
-            "Consult the allowed AetheriaLore scope before answering; do not rely only on the packet excerpts.",
-            "Ground Sella's behavior in retrieved institutional, factional, species, location, and crisis-context details.",
+            "Consult the required seed refs before answering; do not rely only on the packet excerpts.",
+            "Follow relevant wikilinks within the traversal policy to recover institutional, territorial, technological, and social-movement context.",
+            "For this fixture, inspect PSC context, Jovian territory context, resident or referenced Jovian factions, and social movements referenced by visible factions when those links affect Sella's local pressures.",
+            "Ground Sella's behavior in retrieved institutional, factional, species, location, crisis-context, and movement-pressure details.",
             "Treat retrieved lore as world constraint and cultural pressure, not as access to another character's hidden intent.",
-            "Record the consulted refs and a concise research summary in the response object.",
+            "Record consulted seed refs, followed refs, and a concise research summary in the response object.",
         ]
     return lore_access
 
@@ -186,10 +245,11 @@ def build_output_contract(lore_mode: str) -> dict[str, Any]:
         "Do not copy instruction text into in-world speech.",
     ]
     if lore_mode == "responder_scoped_repository_search":
-        required_fields.extend(["consulted_refs", "research_summary"])
+        required_fields.extend(["consulted_refs", "followed_refs", "research_summary"])
         response_rules.extend(
             [
-                "Consulted refs must list the scoped lore documents actually inspected before answering.",
+                "Consulted refs must list the seed lore documents actually inspected before answering.",
+                "Followed refs must list relevant linked lore documents inspected beyond the seed scope; use an empty array only if no relevant links were found.",
                 "Research summary must state how retrieved lore constrained the action, without dumping lore into dialogue.",
             ]
         )

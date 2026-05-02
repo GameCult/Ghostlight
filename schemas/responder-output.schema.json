@@ -102,6 +102,7 @@
         "relationship_update_candidates": { "type": "array", "items": { "$ref": "#/$defs/update_candidate" } },
         "unresolved_hooks": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "consulted_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "followed_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "research_summary": { "type": "string" }
       }
     },

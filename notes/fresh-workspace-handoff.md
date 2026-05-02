@@ -75,9 +75,12 @@ current gold-data route.
 ## Current Next Action
 
 The first no-fork research-enabled Sella responder sample now exists and has a
-reviewed mutation receipt. Tighten the capture seam next: future research-enabled
-gold samples should preserve auditable research traces, not only
-responder-reported consulted refs. Then generate the next sandboxed
+reviewed mutation receipt. The research packet now uses seed scope plus bounded
+link traversal so training samples can absorb PSC, Jovian territory,
+resident-faction, technology, and social-movement context without pretending
+runtime prompts will carry the whole lore vault. Tighten the capture seam next:
+future research-enabled gold samples should preserve auditable research traces,
+not only responder-reported consulted refs. Then generate the next sandboxed
 responder/coordinator sample from the updated Sella aftermath state, preserving
 exact visible input, raw output, review labels, leakage audit, and mutation
 receipts.
@@ -89,3 +92,6 @@ receipts.
 - Do not train on coordinator-repaired responder prose unless the repair is labeled.
 - Do not let Elysium branch futures overwrite Sol single-history facts.
 - Do not rebuild the older corridor-crisis game slice by accident.
+- Do not treat parent-visible subagent output as proof of research. If the
+  parent cannot see tool calls, require explicit research notes or use a runner
+  that captures calls.

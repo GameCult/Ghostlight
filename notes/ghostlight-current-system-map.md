@@ -50,8 +50,9 @@ Aetheria lore/source context
 
 - Research-enabled packet:
   `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
-- It uses `responder_scoped_repository_search`, allows only declared
-  AetheriaLore scope, and requires `consulted_refs` plus `research_summary`.
+- It uses `responder_scoped_repository_search`, now treats `allowed_scope` as
+  seed scope, permits bounded traversal through relevant AetheriaLore links,
+  and requires `consulted_refs`, `followed_refs`, plus `research_summary`.
 - First research-enabled capture:
   `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
 - First research-enabled mutation receipt:
@@ -61,6 +62,9 @@ Aetheria lore/source context
 - The capture is useful draft data, but the current subagent seam preserves
   responder-reported consulted refs rather than a machine-verifiable research
   trace. Fix that before producing many more research-enabled gold samples.
+- Parent sessions currently receive only the subagent final message, not a
+  visible tool-call transcript. Treat subagent research as self-reported unless
+  the worker returns explicit research notes or a future runner captures calls.
 
 ## Archived Receipts
 
