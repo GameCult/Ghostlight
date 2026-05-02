@@ -39,7 +39,7 @@ hard_boundaries:
   - Aetheria generation is source-first; check lore for factions, bodies, locations, institutions, and constraints before projection.
   - Elysium futures are branch-local canon indexed by lineage, not single-history Sol facts.
   - Technology exploration must emit game-usable item, component, assembly, supply-chain, compatibility, and provenance data mapped toward Aetheria-Economy.
-  - Complete interactive-fiction fixtures must emit visual art direction for website imagery, with branch-visible consequences carried into later scene descriptions.
+  - Complete interactive-fiction fixtures must emit visual art direction for website imagery, with one durable base image prompt per scene and additive modification prompts for branch-visible consequences and scene-state changes.
   - Archived local-model prototype runners are receipts and plumbing tests, not the gold-data path.
 
 live_architecture:

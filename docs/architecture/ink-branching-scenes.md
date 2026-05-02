@@ -191,8 +191,11 @@ Each scene should preserve an art-direction block with:
 - branch marks: visible changes caused by earlier choices, such as a sealed
   hatch, an exhausted staffer, a live debt ledger, missing equipment, guarded
   posture, or a route marker left blinking
-- image prompt seed: a compact prompt suitable for an illustrator or image
-  model, separated from canonical facts so style polish does not become lore
+- base image prompt: one stable prompt for the unbranched scene, suitable for
+  generating the reusable background or canonical key frame
+- branch modification prompts: additive edit prompts for visible consequences,
+  changed character positions, opened or sealed routes, damaged objects,
+  lighting changes, emotional posture, crowd pressure, or other scene states
 
 The coordinator owns this surface for now. The responder should not receive
 omniscient visual art direction unless the character can observe it. Character
@@ -204,3 +207,27 @@ heat, trust, time, equipment, or social standing, the later scene should show
 that cost somewhere on the page or in the frame. Otherwise the choice may be
 mechanically recorded while still feeling fake, which is the stupid little
 trapdoor interactive fiction keeps setting for itself.
+
+Do not regenerate every branch image from scratch when continuity matters.
+Each scene should have one durable base visual prompt and branch/state
+modification prompts that describe only what changed. The base prompt owns the
+room, palette, dominant geometry, key props, bodies, and interface layout. A
+modification prompt owns the delta: Sella moves from the dryside console to the
+decon sleeve, the route marker flips from amber to white, a wet access hatch
+seals, an exhausted staffer appears behind the glass, Maer's ledger panel gains
+a live debt line.
+
+Keep these prompts separate from canonical prose:
+
+- `base_image_prompt`: stable scene anchor
+- `state_image_modifiers`: reusable prompts for common scene states
+- `branch_image_modifiers`: prompts tied to specific branch ids
+- `visual_continuity_notes`: non-prompt reminders about what must remain stable
+
+Image edits are allowed to stylize, compose, and beautify. They are not allowed
+to silently change canonical facts. If an edit introduces a new visible object,
+body affordance, damage mark, or faction symbol that was not in the scene state,
+the coordinator must either reject it, mark it as noncanonical illustration
+noise, or promote it through the normal reviewed lore/state path. The picture
+does not get to smuggle a gun onto the mantel just because it had a strong
+personal brand that morning.
