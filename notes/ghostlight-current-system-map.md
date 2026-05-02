@@ -72,7 +72,8 @@ state and re-entry discipline.
     thinking enabled, repair for known nested-argument double-stringify cases
 - `docs/architecture/projected-local-context.md`
   - contract for the projector seam that turns canonical state into
-    character-local operating context before a response model sees it
+    character-local operating context before a response model sees it,
+    including embodiment and interface affordances
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
     historical projection feedstock rather than the active product target
@@ -224,7 +225,9 @@ state and re-entry discipline.
 - `tools/project_local_context.py`
   - deterministic first projector that compiles canonical state, scene facts,
     relationships, memories, projection controls, and optional observed event
-    into character-local operating prose
+    into character-local operating prose; for cetacean Navigators it projects
+    habitat-native movement and interface affordances instead of generic human
+    body defaults
 - `tools/validate_projected_contexts.py`
   - validates projected context artifacts and rejects prompt text that leaks raw
     canonical state internals
@@ -264,5 +267,6 @@ instead of tool-call completion, so strict sequential generation now disables
 thinking by default. v10 validated that correction with an accepted-as-draft
 projector-routed no-thinking capture, which has now been materialized into Ink
 plus reviewed mutation training data. The next implementation target is
-reviewing the materialized v10 branch and mutation receipt for narrative quality
-and state-change plausibility before polishing or generalizing the materializer.
+reviewing the embodiment-aware v10 branch and mutation receipt for narrative
+quality and state-change plausibility before another updated-projector Qwen pass
+or generalizing the materializer.

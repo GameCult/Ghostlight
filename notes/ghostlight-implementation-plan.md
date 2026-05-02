@@ -125,6 +125,11 @@
      `tools/validate_projected_contexts.py`; rendered prompt text must not leak
      raw state internals such as `current_activation`, `plasticity`, means, or
      decimal state values.
+   - Embodiment correction: projected local context now includes a first-class
+     embodiment/interface section. Cetacean Navigator action should be
+     projected through habitat-native channels, wet/dry workstations, shared
+     displays, control rails, acoustic or translation systems, and other
+     Navigator-built infrastructure, not default human body assumptions.
    - Sixth sequential draft: v6 routed thinking-plus-tools generation through
      projected local context instead of selected activation dictionaries. It
      produced usable Maer/Sella behavior but remains useful-needs-revision
@@ -147,10 +152,11 @@
    - V10 materialization: `tools/materialize_sequential_capture.py`
      materialized the accepted projector-routed capture into Ink, sidecar
      annotation, reviewed mutation receipt, and a mutated Cold Wake fixture.
-   - Next prototype: review the materialized v10 branch and mutation receipt
-     for narrative quality and state-change plausibility, then decide whether
-     to polish the branch or generalize the materializer for additional
-     accepted captures.
+   - Next prototype: review the embodiment-aware materialized v10 branch and
+     mutation receipt for narrative quality and state-change plausibility, then
+     decide whether to run another Qwen pass through the updated projector,
+     polish the branch, or generalize the materializer for additional accepted
+     captures.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

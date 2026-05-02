@@ -63,6 +63,7 @@
         "setting",
         "known_facts",
         "current_stakes",
+        "embodiment_and_interface",
         "active_inner_pressures",
         "relationship_read",
         "tensions",
@@ -94,6 +95,13 @@
           }
         },
         "current_stakes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "embodiment_and_interface": {
           "type": "array",
           "minItems": 1,
           "items": {

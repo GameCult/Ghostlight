@@ -111,9 +111,9 @@
       ],
       "generation_notes": {
         "choice_text": "Show the corrupted packet to Sella without claiming it as proof, allowing her to assess the noise or testimony.",
-        "observable_action": "Maer extends a data slate containing the corrupted packet toward Sella's workbench.",
+        "observable_action": "Maer routes the corrupted packet onto Sella's workbench display without giving it the status of proof.",
         "spoken_text": "Here is the packet. It is not proof. Assess it.",
-        "sella_observable_response": "Sella does not take the packet. She keeps her hands at her sides and tilts her head slightly, eyes narrowing as she scans the data slate for corruption signatures.",
+        "sella_observable_response": "Sella does not admit the packet into intake flow. She keeps her hands off the board and studies the workbench display for corruption signatures.",
         "sella_spoken_text": "I won't accept this into intake without knowing what's inside. If it's noise, it's noise. If it's a person, I need to know the cost before I spend a bed."
       }
     }

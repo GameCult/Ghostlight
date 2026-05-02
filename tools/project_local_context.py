@@ -274,7 +274,7 @@ def action_affordances(agent_id: str, annotation: dict[str, Any]) -> list[dict[s
     if agent_id == annotation["protagonist_agent_id"]:
         return [
             text_block(
-                "Can ask, offer ledger backing, show or withhold the packet, help with triage, wait, or press the moral frame. Sella controls intake.",
+                "Can ask, offer ledger backing, show or withhold the packet through shared clinic systems, help with triage through available displays and controls, wait, or press the moral frame. Sella controls intake.",
                 ["examples/ink/cold-wake-sanctuary-intake.training.json.projection_controls.authority_boundaries"],
             ),
             text_block(
@@ -291,6 +291,34 @@ def action_affordances(agent_id: str, annotation: dict[str, Any]) -> list[dict[s
             "Must treat care as capacity: beds, food, air, consent, repair, and follow-through.",
             ["examples/ink/cold-wake-sanctuary-intake.training.json.projection_controls.required_semantics"],
         ),
+    ]
+
+
+def embodiment_context(agent: dict[str, Any], source_prefix: str) -> list[dict[str, Any]]:
+    identity = agent["identity"]
+    origin = identity.get("origin", "")
+    roles = " ".join(identity.get("roles", []))
+    searchable_identity = f"{origin} {roles}".lower()
+    if "cetacean" in searchable_identity:
+        return [
+            text_block(
+                "This character is a literal cetacean Navigator. Corridor habitats and Navigator-adjacent clinics are built around cetacean movement, access, and communication.",
+                [f"{source_prefix}.identity.origin"],
+            ),
+            text_block(
+                "Express physical action through Navigator-native channels, wet/dry workstations, shared displays, control rails, acoustic or translation systems, and other infrastructure already present in the habitat.",
+                [f"{source_prefix}.identity.roles", "scenes.scene-02-sanctuary-intake.location"],
+            ),
+            text_block(
+                "Do not describe human hands, pockets, standing, walking, leaning, doorframe blocking, or facial expressions for this character unless the fixture explicitly establishes that specific visible interface.",
+                [f"{source_prefix}.identity.origin"],
+            ),
+        ]
+    return [
+        text_block(
+            "Use only the body, tools, interfaces, and movement affordances established by this character's fixture and the current scene.",
+            [f"{source_prefix}.identity"],
+        )
     ]
 
 
@@ -390,6 +418,7 @@ def render_prompt_text(context: dict[str, Any]) -> str:
     for title, key in [
         ("Known Facts", "known_facts"),
         ("Current Stakes", "current_stakes"),
+        ("Embodiment And Interface", "embodiment_and_interface"),
         ("Active Inner Pressures", "active_inner_pressures"),
         ("Relationship Read", "relationship_read"),
         ("Tensions", "tensions"),
@@ -443,6 +472,7 @@ def build_projected_context(
         "setting": f"{scene['location']}. {fixture['world']['setting']}, {fixture['world']['time']['label']}.",
         "known_facts": known_fact_blocks(scene, pack, scene_prefix),
         "current_stakes": scene_stakes(scene, local_agent_id, scene_prefix),
+        "embodiment_and_interface": embodiment_context(agent, source_prefix),
         "active_inner_pressures": active_inner_pressures,
         "relationship_read": relationship_context(fixture, local_agent_id, listener_ids) + perceived_overlay_context(agent, listener_ids, source_prefix),
         "tensions": tension_blocks(agent, pack, annotation, source_prefix),

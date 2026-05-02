@@ -17,9 +17,9 @@ make every prayer sound like a maintenance complaint.
 Sella Ren has three names on the red board, eight on orange, and one empty
 monitored bay that exists mostly as an argument people keep trying to win.
 
-Maer Tidecall stands in the doorway with the corrupted packet on his slate. The
-packet might be medical telemetry, firmware noise, testimony, or a cruel little
-mess of all three.
+Maer Tidecall waits in the clinic's Navigator channel with the corrupted packet
+queued on a shared wet/dry workstation. The packet might be medical telemetry,
+firmware noise, testimony, or a cruel little mess of all three.
 
 Sella does not look at the slate first. She looks at Maer.
 
@@ -57,7 +57,7 @@ What does Maer do?
 ~ sella_obligation = 53
 ~ maer_obligation = 66
 
-Maer keeps his hands away from the empty bay's control rail.
+Maer's side of the workstation stays clear of the empty bay's control rail.
 
 "One monitored bay," he says. "Not charity. Put the oxygen, cold-chain, and
 staff hours on my route ledger until the tribunal learns what courage costs."
@@ -81,7 +81,8 @@ The clinic exhales around them, annoyed to discover it is still alive.
 === triage_first ===
 ~ sella_trust = 60
 
-Maer lowers the slate and steps to the intake wall.
+Maer dims the packet window and shifts along the Navigator channel toward the
+intake wall.
 
 He does not touch the red cases. He reads orange tags, finds the two whose
 timers are lying politely, and moves neither until Sella gives the smallest
@@ -89,10 +90,10 @@ possible nod.
 
 "If I ask," he says, "I should know what I am asking you to steal from."
 
-Sella hands him a marker.
+Sella clips a marker to the rail at the Navigator-accessible side of the board.
 
 "Orange only," she says. "Touch red without asking and I will make the Compact
-explain your hands in writing."
+explain your board privileges in writing."
 
 It is not permission. It is worse. It is work.
 
@@ -104,7 +105,8 @@ It is not permission. It is worse. It is work.
 === show_packet ===
 ~ packet_shown = true
 
-Maer turns the slate so Sella can see the packet's broken rhythm.
+Maer routes the packet to the shared intake display so Sella can see its broken
+rhythm.
 
 He does not say person. He does not say cargo. He lets the little damaged
 pattern fail to be either.
@@ -119,7 +121,8 @@ Sella watches too long for someone who wants this to be simple.
 
 Her thumb hovers over the isolation protocol. Not over the bay.
 
-"You brought me a worse problem, which is very Navigator of you."
+"You brought me a worse problem," she says. "That may be the only honest thing
+in the room."
 
 // ghostlight.npc_response: sella_protocol_before_mercy
 // ghostlight.consequence: packet_seen_no_personhood_resolution

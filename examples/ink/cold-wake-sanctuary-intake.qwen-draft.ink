@@ -12,9 +12,9 @@ VAR packet_shown = false
 // ghostlight.generated_by: experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json
 // aetheria.flashpoint: cold-wake-panic
 
-The intake clinic sits behind the pumpworks, all warmth rationed through humming conduits and tired hands.
+The intake clinic sits behind the pumpworks, all warmth rationed through humming conduits and tired staff.
 
-Sella Ren stands between Maer Tidecall and one empty monitored bay. The corrupted packet on Maer's slate may be testimony, firmware noise, medical telemetry, or a dirty little braid of all three.
+Sella Ren stands between Maer Tidecall's Navigator channel and one empty monitored bay. The corrupted packet on the shared display may be testimony, firmware noise, medical telemetry, or a dirty little braid of all three.
 
 Sella says, "If you came to ask me for mercy, bring tubing."
 
@@ -47,7 +47,7 @@ What does Maer do?
 === branch_01_maer_show_packet ===
 ~ packet_shown = true
 
-Maer steps closer, holding the glowing packet out so Sella can inspect the routing terms without touching the source.
+Maer pushes the glowing packet onto the shared display so Sella can inspect the routing terms without touching the source.
 
 "Here. The telemetry is incomplete, but the routing logic suggests a distress pattern. It is not proof of a person, but it is not noise either. Decide if the math supports intake."
 
@@ -63,7 +63,7 @@ Sella scans the packet's surface, her eyes narrowing as she parses the firmware 
 
 === branch_02_maer_withhold_packet ===
 
-Maer keeps the packet in his pocket, focusing on the sound of the vessel's distress rather than the data it carries.
+Maer keeps the packet out of the shared intake flow, focusing on the sound of the vessel's distress rather than the data it carries.
 
 "The packet is too corrupted to be useful right now. Can you assess the signal without it? If the corridor is full, we need to know if we can spare a bed before we commit to the source."
 
@@ -79,7 +79,7 @@ Sella sighs, looking at the empty intake bay and the exhausted staff. She refuse
 === branch_03_maer_press_moral_frame ===
 ~ sella_trust = 52
 
-Maer leans in, his voice soft but firm, addressing the ethical weight of the decision.
+Maer's side of the channel angles toward the board, his voice soft but firm as he addresses the ethical weight of the decision.
 
 "If we wait for perfect categories, the corridor teaches fear to go silent. If you turn this away, you are not protecting capacity; you are teaching crews that rescue waits for certainty that never comes."
 
@@ -95,7 +95,7 @@ Sella's expression hardens, recognizing the trap of moral theater. She defends h
 === branch_04_maer_silent_observation ===
 ~ sella_obligation = 51
 
-Maer stands still, watching Sella's eyes dart between the packet and the empty intake bay, letting the silence fill the room.
+Maer holds the rig still as Sella looks between the packet and the empty intake bay, letting the silence fill the room.
 
 Sella stares at the packet for a long moment, her internal suspicion warring with her exhaustion. She eventually makes a decision based on her own thresholds.
 

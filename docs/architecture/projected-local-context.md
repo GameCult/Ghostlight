@@ -43,6 +43,7 @@ The context contains:
 - speaker identity and setting
 - known facts and speaker beliefs
 - current stakes
+- embodiment and interface affordances
 - active inner pressures rendered as ordinary language
 - relationship read and known biases
 - tensions
@@ -81,3 +82,16 @@ create inspectable training artifacts.
 Later versions can become smarter, but they should still preserve this boundary:
 response models act from projected local context; they do not become ad hoc
 interpreters of the canonical schema.
+
+## Embodiment Boundary
+
+Embodiment is part of the prompt surface, not flavor garnish. If a character is
+a cetacean Navigator, the response model must know what kind of body is acting
+and what infrastructure surrounds it.
+
+For Navigator scenes, project habitat-native affordances directly: channels,
+wet/dry workstations, shared displays, control rails, acoustic or translation
+systems, and other infrastructure built around cetacean movement and
+communication. Do not let the model default to hands, pockets, standing,
+walking, leaning, or doorway blocking unless the fixture explicitly establishes
+that visible interface.

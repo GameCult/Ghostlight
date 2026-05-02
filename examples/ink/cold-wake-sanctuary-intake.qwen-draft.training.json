@@ -98,7 +98,7 @@
       ],
       "generation_notes": {
         "choice_text": "Show the corrupted packet to Sella.",
-        "maer_action_prose": "Maer steps closer, holding the glowing packet out so Sella can inspect the routing terms without touching the source.",
+        "maer_action_prose": "Maer pushes the glowing packet onto the shared display so Sella can inspect the routing terms without touching the source.",
         "maer_spoken_text": "Here. The telemetry is incomplete, but the routing logic suggests a distress pattern. It is not proof of a person, but it is not noise either. Decide if the math supports intake.",
         "sella_response_prose": "Sella scans the packet's surface, her eyes narrowing as she parses the firmware noise against the distress pattern. She does not immediately agree to open a bed.",
         "sella_spoken_text": "The packet is unstable. If I accept this, I am betting on a pattern that could be a lie or a glitch. If I say no, the vessel goes dark. What is your ledger backing for this specific intake?"
@@ -120,7 +120,7 @@
       ],
       "generation_notes": {
         "choice_text": "Withhold the packet and ask for a triage assessment based on the signal alone.",
-        "maer_action_prose": "Maer keeps the packet in his pocket, focusing on the sound of the vessel's distress rather than the data it carries.",
+        "maer_action_prose": "Maer keeps the packet out of the shared intake flow, focusing on the sound of the vessel's distress rather than the data it carries.",
         "maer_spoken_text": "The packet is too corrupted to be useful right now. Can you assess the signal without it? If the corridor is full, we need to know if we can spare a bed before we commit to the source.",
         "sella_response_prose": "Sella sighs, looking at the empty intake bay and the exhausted staff. She refuses to accept a blind assessment that wastes her limited capacity.",
         "sella_spoken_text": "You want me to guess on a ghost? My capacity is measured in minutes, not faith. If you won't show me the packet, you aren't asking for help; you're asking for a miracle. That is not in the ledger."
@@ -142,7 +142,7 @@
       ],
       "generation_notes": {
         "choice_text": "Press Sella on the moral cost of turning away a potential person.",
-        "maer_action_prose": "Maer leans in, his voice soft but firm, addressing the ethical weight of the decision.",
+        "maer_action_prose": "Maer's side of the channel angles toward the board, his voice soft but firm as he addresses the ethical weight of the decision.",
         "maer_spoken_text": "If we wait for perfect categories, the corridor teaches fear to go silent. If you turn this away, you are not protecting capacity; you are teaching crews that rescue waits for certainty that never comes.",
         "sella_response_prose": "Sella's expression hardens, recognizing the trap of moral theater. She defends her triage logic against the accusation of coldness.",
         "sella_spoken_text": "You speak of fear, but you ignore the reality of the math. Every bed I open is a bed closed for someone else. If I take a risk on noise, I am not being merciful; I am being negligent. Do not pretend my ledger is a morality play."
@@ -163,8 +163,8 @@
         "branch-06-sella-initiative-with-conditions"
       ],
       "generation_notes": {
-        "choice_text": "Stand in silence and observe Sella's reaction to the packet's presence.",
-        "maer_action_prose": "Maer stands still, watching Sella's eyes dart between the packet and the empty intake bay, letting the silence fill the room.",
+        "choice_text": "Hold silence and observe Sella's reaction to the packet's presence.",
+        "maer_action_prose": "Maer holds position in the channel as Sella looks between the packet and the empty intake bay, letting the silence fill the room.",
         "maer_spoken_text": "",
         "sella_response_prose": "Sella stares at the packet for a long moment, her internal suspicion warring with her exhaustion. She eventually makes a decision based on her own thresholds.",
         "sella_spoken_text": "The silence is loud enough. I see the routing terms. They are messy, but they are there. I am not a judge, Maer. I am a triage lead. If you want me to open a bed, you must understand that I am doing it because the math allows it, not because you told me it was right. Now, do you want me to try to parse the noise, or do you want to walk away?"

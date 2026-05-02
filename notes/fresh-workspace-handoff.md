@@ -104,6 +104,9 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json`
   - `tools/project_local_context.py`
   - `tools/validate_projected_contexts.py`
+  - includes an embodiment/interface section so Navigator action is projected
+    through habitat-native channels, workstations, displays, rails, and
+    communication systems instead of default human body assumptions
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
 - first projection example seam:
@@ -135,9 +138,10 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Review the materialized v10 Ink branch and mutation receipt for narrative
-quality and state-change plausibility, then either polish the Ink text or
-generalize the sequential materializer for more accepted captures.
+Review the embodiment-aware materialized v10 Ink branch and mutation receipt for
+narrative quality and state-change plausibility, then either run another Qwen
+pass through the updated projector or generalize the sequential materializer for
+more accepted captures.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -265,8 +269,10 @@ Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- review the materialized v10 Ink and mutation receipt for narrative quality and
-  state-change plausibility
+- review the embodiment-aware materialized v10 Ink and mutation receipt for
+  narrative quality and state-change plausibility
+- run another Qwen pass through the updated projector if Maer's Navigator
+  embodiment needs to be tested against generation rather than hand polish
 - decide whether to polish this Ink text by hand or generalize the sequential
   materializer for future accepted captures
 - preserve the no-thinking default for strict tool-call generation unless a

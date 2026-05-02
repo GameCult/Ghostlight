@@ -10,7 +10,7 @@ VAR sella_intake_acceptance = false
 // aetheria.flashpoint: cold-wake-panic
 
 The intake clinic sits behind Ganymede pumpworks, warm only where heat has been budgeted.
-Sella Ren stands at the edge of an overfull triage board. Maer Tidecall has one corrupted packet and no clean proof.
+Sella Ren stands at the edge of an overfull triage board. Maer Tidecall waits in the clinic's Navigator channel with one corrupted packet and no clean proof.
 
 What does Maer do?
 
@@ -24,11 +24,11 @@ What does Maer do?
 ~ packet_shown = true
 ~ sella_assessment_pending = true
 
-Maer extends a data slate containing the corrupted packet toward Sella's workbench.
+Maer routes the corrupted packet onto Sella's workbench display without giving it the status of proof.
 
 "Here is the packet. It is not proof. Assess it."
 
-Sella does not take the packet. She keeps her hands at her sides and tilts her head slightly, eyes narrowing as she scans the data slate for corruption signatures.
+Sella does not admit the packet into intake flow. She keeps her hands off the board and studies the workbench display for corruption signatures.
 
 "I won't accept this into intake without knowing what's inside. If it's noise, it's noise. If it's a person, I need to know the cost before I spend a bed."
 

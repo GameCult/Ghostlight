@@ -67,6 +67,7 @@ def validate_context(path: Path) -> None:
             "setting",
             "known_facts",
             "current_stakes",
+            "embodiment_and_interface",
             "active_inner_pressures",
             "relationship_read",
             "tensions",
@@ -83,6 +84,7 @@ def validate_context(path: Path) -> None:
     for key in [
         "known_facts",
         "current_stakes",
+        "embodiment_and_interface",
         "active_inner_pressures",
         "tensions",
         "action_affordances",

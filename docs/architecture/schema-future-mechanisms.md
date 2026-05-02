@@ -139,6 +139,12 @@ leakage risks, and physical affordances are separate facts. Future projection
 needs embodiment because social meaning leaks through movement, timing,
 silence, distance, posture, and constrained bodies.
 
+The projected-local-context seam now carries a first embodiment/interface
+surface, but the canonical schema still lacks a proper reusable embodiment
+model. Future work should promote body form, native habitat, movement channels,
+assistive or translation infrastructure, and visible nonverbal signal channels
+only after more projection examples prove the required shape.
+
 ## Promotion Rule
 
 Promote a future mechanism into the main schema only after it has survived at
