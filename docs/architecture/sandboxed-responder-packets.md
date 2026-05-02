@@ -42,7 +42,11 @@ The v0 packet seam is:
 - `npm run responder-packets:validate`
 - `schemas/responder-output.schema.json`
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-v0.capture.json`
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
 - `tools/validate_responder_outputs.py`
+- `tools/apply_responder_output_mutation.py`
 - `npm run responder-outputs:validate`
 
 The first example is accepted as draft. It is suitable for testing the sandbox
@@ -120,3 +124,9 @@ A responder output capture preserves:
 The raw output must parse to the reviewed `parsed_output` exactly. If the
 coordinator edits prose, repairs schema, removes leakage, or corrects lore, the
 capture must say so directly.
+
+The first lane comparison found the expected tradeoff. Packet-only output gave a
+clean runtime-parity conditional bay decision. Research-augmented output added
+stronger Aetheria-native texture: heat-debt timing, rescue-ledger burden,
+dockfall responsibility, and Aya sanctuary capacity politics. Both are useful;
+neither should impersonate the other.

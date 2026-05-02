@@ -67,9 +67,13 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
   - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v1.json`
   - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
+  - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
+  - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-v0.capture.json`
+  - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
   - `tools/build_responder_packet.py`
   - `tools/validate_responder_packets.py`
   - `tools/validate_responder_outputs.py`
+  - `tools/apply_responder_output_mutation.py`
   - `npm run responder-packets:validate`
   - `npm run responder-outputs:validate`
 - Cold Wake story-lab seam:
@@ -193,6 +197,17 @@ runtime prompt has enough context.
 The v1 Sella packet removes responder-visible references to absent coordinator
 knowledge and adds curated AetheriaLore excerpts for Cold Wake, the Ganymede
 Route Compact, Navigator rescue ledgers, and Lightsail reliability.
+The packet-only Sella capture has now been materialized into a reviewed mutation
+receipt and mutated fixture:
+`examples/agent-state.cold-wake-story-lab.after-sella-conditions.json`. The
+mutation accepts a conditional cold repair-bay path as scene-local state, keeps
+packet personhood unresolved, and updates Maer and Sella state, relationship
+stance, memories, and perceived overlays.
+The first research-augmented Sella capture also exists. It uses scoped
+AetheriaLore refs and produces richer Aetheria-native language around heat-debt
+timing, rescue ledgers, dockfall burden, and sanctuary as moral-debt sink. The
+lane comparison records that this is good lore-absorption data but not proof of
+packet-only runtime sufficiency.
 It now uses three timeline lanes: `historical_grounded`,
 `transition_grounded`, and `future_branch`. Future branches are required
 training/evaluation material for post-Rupture Elysium concepts, but generated
@@ -221,15 +236,11 @@ narrow elaboration before treating the detail as available to Ghostlight.
 
 ## Current Next Action
 
-Use the accepted Sella responder capture for the next fresh generation pass:
-review and materialize the response into the scene-local mutation path. Treat
-its state and relationship updates as candidates only; consolidate participant
-appraisals and write a reviewed mutation receipt before changing any canonical
-fixture. Do not call Qwen for gold responder data yet.
-Optional parallel lane after that: generate a research-augmented Sella response
-from the same scene with scoped `Aetheria/Worldbuilding/Pre-Elysium` access,
-then compare it against packet-only output to identify which lore facts should
-be retrieved at runtime.
+Use the lane-comparison lessons for the next fresh generation pass: update the
+runtime retrieval/projector plan so packet-only contexts can pull compact lore
+facts for heat-debt timing, Navigator rescue ledgers, Aya sanctuary capacity
+politics, and Lightsail/Ganymede route obligations when those pressures are
+scene-relevant. Do not call Qwen for gold responder data yet.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than

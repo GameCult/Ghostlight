@@ -1,0 +1,34 @@
+{
+  "schema_version": "ghostlight.responder_lane_comparison.v0",
+  "comparison_id": "comparison.cold_wake.sanctuary_intake.sella.packet_vs_research.v0",
+  "packet_only_capture_ref": "experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json",
+  "research_augmented_capture_ref": "experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-v0.capture.json",
+  "summary": "The research-augmented response is more Aetheria-native and institutionally textured, while the packet-only response is cleaner runtime proof that bounded context can produce a usable conditional answer.",
+  "shared_strengths": [
+    "Both preserve unresolved packet personhood.",
+    "Both require Maer to attach material responsibility before sanctuary capacity is consumed.",
+    "Both keep state and relationship updates as candidates rather than canonical truth."
+  ],
+  "packet_only_strengths": [
+    "Cleaner runtime parity: the output depends only on the packet prompt.",
+    "Clear action label and plain conditional-bay consequence.",
+    "Easier to materialize into mutation without schema widening."
+  ],
+  "research_augmented_strengths": [
+    "Uses heat-debt timing as a concrete Cold Wake pressure surface.",
+    "Names rescue ledger responsibility in a way that fits Navigator institutions.",
+    "Frames Aya sanctuary pressure as practical capacity politics rather than generic compassion.",
+    "Produces stronger Sella voice: sharper, more tired, and more politically grounded."
+  ],
+  "runtime_retrieval_implications": [
+    "Packet-only runtime should retrieve a compact Cold Wake heat-debt excerpt when heat timing matters.",
+    "Packet-only runtime should retrieve Navigator rescue ledger obligations when Maer invokes rescue legitimacy.",
+    "Packet-only runtime should retrieve Aya sanctuary capacity doctrine when Sella is making triage decisions."
+  ],
+  "training_implications": [
+    "Use packet_only examples to train and evaluate bounded-context runtime behavior.",
+    "Use research_augmented examples to bake Aetheria tone, faction priors, and institutional texture into responder models.",
+    "Do not merge the two lanes without preserving generation_lane and lore_access metadata."
+  ],
+  "review_status": "accepted_as_draft"
+}

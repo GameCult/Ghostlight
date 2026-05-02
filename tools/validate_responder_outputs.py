@@ -10,6 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CAPTURES = sorted((ROOT / "experiments" / "responder-packets").glob("*.capture.json"))
+DEFAULT_MUTATIONS = sorted((ROOT / "experiments" / "responder-packets").glob("*.mutation.json"))
 REVIEW_STATUSES = {"draft", "accepted", "accepted_as_draft", "useful_needs_revision", "rejected", "superseded"}
 FIXTURE_LANES = {"historical_grounded", "transition_grounded", "future_branch"}
 CANON_STATUSES = {"single_history", "branch_local", "promoted_branch", "template", "draft"}
@@ -68,6 +69,22 @@ def require_string_array(value: Any, path: str, *, nonempty: bool = False) -> No
         require_string(item, f"{path}[{index}]")
 
 
+def require_update_candidate_array(value: Any, path: str) -> None:
+    require(isinstance(value, list), f"{path} must be an array")
+    for index, item in enumerate(value):
+        item_path = f"{path}[{index}]"
+        if isinstance(item, str):
+            require_string(item, item_path)
+            continue
+        require(isinstance(item, dict), f"{item_path} must be a string or object")
+        require("value" in item, f"{item_path} object must include value")
+        require_string(item["value"], f"{item_path}.value")
+        if "key" in item:
+            require_string(item["key"], f"{item_path}.key")
+        if "target_agent_id" in item:
+            require_string(item["target_agent_id"], f"{item_path}.target_agent_id")
+
+
 def validate_parsed_response(value: Any, path: str) -> None:
     require(isinstance(value, dict), f"{path} must be an object")
     require_keys(
@@ -89,8 +106,9 @@ def validate_parsed_response(value: Any, path: str) -> None:
         require_string(value[key], f"{path}.{key}")
     require(isinstance(value["spoken_text"], str), f"{path}.spoken_text must be a string")
     require(value["action_label"] in ACTION_LABELS, f"{path}.action_label is invalid: {value['action_label']}")
-    for key in ["state_update_candidates", "relationship_update_candidates", "unresolved_hooks"]:
-        require_string_array(value[key], f"{path}.{key}")
+    for key in ["state_update_candidates", "relationship_update_candidates"]:
+        require_update_candidate_array(value[key], f"{path}.{key}")
+    require_string_array(value["unresolved_hooks"], f"{path}.unresolved_hooks")
 
 
 def validate_capture(document: dict[str, Any], source: Path) -> None:
@@ -180,6 +198,46 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
     require_string_array(review["failure_labels"], f"{base}.coordinator_review.failure_labels")
 
 
+def validate_mutation_receipt(document: dict[str, Any], source: Path) -> None:
+    base = str(source)
+    require(document.get("schema_version") == "ghostlight.reviewed_state_mutation.v0", f"{base}.schema_version is wrong")
+    require_keys(
+        document,
+        [
+            "mutation_id",
+            "source_fixture_ref",
+            "source_capture_ref",
+            "mutated_fixture_ref",
+            "event_id",
+            "responder_output_ref",
+            "participant_appraisals",
+            "observed_action",
+            "observed_response",
+            "applied_mutations",
+            "manual_review_notes",
+            "deferred_mutations",
+        ],
+        base,
+    )
+    for key in ["mutation_id", "source_fixture_ref", "source_capture_ref", "mutated_fixture_ref", "event_id", "responder_output_ref"]:
+        require_string(document[key], f"{base}.{key}")
+    require((ROOT / document["source_fixture_ref"]).exists(), f"{base}.source_fixture_ref does not exist")
+    require((ROOT / document["source_capture_ref"]).exists(), f"{base}.source_capture_ref does not exist")
+    require((ROOT / document["mutated_fixture_ref"]).exists(), f"{base}.mutated_fixture_ref does not exist")
+    require(isinstance(document["participant_appraisals"], list) and document["participant_appraisals"], f"{base}.participant_appraisals must be non-empty")
+    for index, appraisal in enumerate(document["participant_appraisals"]):
+        appraisal_path = f"{base}.participant_appraisals[{index}]"
+        require_keys(appraisal, ["participant_agent_id", "private_interpretation", "state_deltas", "relationship_deltas", "next_action_constraints"], appraisal_path)
+    require(isinstance(document["applied_mutations"], list) and document["applied_mutations"], f"{base}.applied_mutations must be non-empty")
+    for index, mutation in enumerate(document["applied_mutations"]):
+        mutation_path = f"{base}.applied_mutations[{index}]"
+        require_keys(mutation, ["target", "path", "before", "after"], mutation_path)
+        require(isinstance(mutation["before"], (int, float)), f"{mutation_path}.before must be numeric")
+        require(isinstance(mutation["after"], (int, float)), f"{mutation_path}.after must be numeric")
+        require(0 <= mutation["before"] <= 1, f"{mutation_path}.before must be between 0 and 1")
+        require(0 <= mutation["after"] <= 1, f"{mutation_path}.after must be between 0 and 1")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate Ghostlight responder output captures.")
     parser.add_argument("paths", nargs="*", type=Path, help="Responder output capture files to validate.")
@@ -189,6 +247,9 @@ def main() -> int:
     require(paths, "no responder output captures found")
     for path in paths:
         validate_capture(load_json(path), path)
+        print(f"ok: {path}")
+    for path in DEFAULT_MUTATIONS:
+        validate_mutation_receipt(load_json(path), path)
         print(f"ok: {path}")
     return 0
 

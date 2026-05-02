@@ -348,13 +348,21 @@
     and `tools/validate_responder_outputs.py` now preserve the raw no-fork
     worker response, parsed response, isolation method, hidden-context refs,
     leakage audit, and coordinator review.
-  - Next prototype: review and materialize the accepted-as-draft Sella response
-    into the scene-local mutation path. Treat its state and relationship updates
-    as candidates only; consolidate participant appraisals and write a reviewed
-    mutation receipt before changing any canonical fixture.
-  - Parallel evaluation path: generate a research-augmented Sella response from
-    the same scene with scoped AetheriaLore access, then compare it to the
-    packet-only response to identify missing retrieval needs.
+  - First responder mutation materialization:
+    `tools/apply_responder_output_mutation.py` now writes
+    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
+    and `examples/agent-state.cold-wake-story-lab.after-sella-conditions.json`
+    from the packet-only Sella capture.
+  - First research-augmented comparison:
+    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-v0.capture.json`
+    and
+    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
+    show that scoped lore access improves Aetheria-native texture around
+    heat-debt timing, rescue ledgers, dockfall burden, and sanctuary capacity
+    politics.
+  - Next prototype: turn the comparison lessons into retrieval/projector
+    requirements so packet-only runtime contexts can pull compact lore facts
+    when those pressures are scene-relevant.
 
 7. Build the first drama-scaffolding loop.
    - memory updates

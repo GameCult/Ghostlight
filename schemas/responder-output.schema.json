@@ -97,10 +97,25 @@
         "spoken_text": { "type": "string" },
         "private_interpretation": { "type": "string", "minLength": 1 },
         "intended_effect": { "type": "string", "minLength": 1 },
-        "state_update_candidates": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "relationship_update_candidates": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "state_update_candidates": { "type": "array", "items": { "$ref": "#/$defs/update_candidate" } },
+        "relationship_update_candidates": { "type": "array", "items": { "$ref": "#/$defs/update_candidate" } },
         "unresolved_hooks": { "type": "array", "items": { "type": "string", "minLength": 1 } }
       }
+    },
+    "update_candidate": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "required": ["value"],
+          "additionalProperties": true,
+          "properties": {
+            "key": { "type": "string" },
+            "target_agent_id": { "type": "string" },
+            "value": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
     },
     "leakage_audit": {
       "type": "object",

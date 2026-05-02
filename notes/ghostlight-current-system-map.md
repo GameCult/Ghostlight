@@ -161,6 +161,18 @@ state and re-entry discipline.
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
   - first no-fork sandboxed responder output capture from the Sella packet;
     accepted as draft with no leakage flags and no coordinator prose repair
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
+  - reviewed mutation receipt that materializes the packet-only Sella response
+    into scene-local state, relationship, memory, perceived-overlay, and
+    unresolved-hook updates without resolving packet personhood
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-v0.capture.json`
+  - first research-augmented responder capture using scoped AetheriaLore refs
+    for Aya sanctuary politics, Cold Wake heat-debt pressure, Navigator rescue
+    ledgers, Ganymede route obligations, and Lightsail reliability
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
+  - comparison artifact showing the packet-only lane proves bounded runtime
+    competence while the research-augmented lane adds stronger Aetheria-native
+    institutional texture and retrieval lessons
 - `experiments/cold-wake-story-lab/`
   - Qwen response captures and reviews from the writing experiment
   - `the-narrowest-possible-margin.md`, the first readable short story
@@ -302,7 +314,10 @@ state and re-entry discipline.
 - `tools/validate_responder_outputs.py`
   - validates sandboxed responder output captures, including exact raw-to-parsed
     JSON agreement, no-fork isolation, action labels, leakage audit, and review
-    metadata
+    metadata; also validates responder mutation receipts
+- `tools/apply_responder_output_mutation.py`
+  - applies a reviewed responder-output capture into a mutated agent-state
+    fixture and mutation receipt
 - `tools/apply_sequential_ink_branch_mutation.py`
   - applies a reviewed replay of one selected branch into a mutated agent-state
     fixture and mutation receipt without letting Ink variables become
@@ -362,6 +377,10 @@ Responder data now has two explicit lanes: `packet_only` for runtime parity with
 curated source excerpts, and `research_augmented` for scoped AetheriaLore search
 that can bake setting priors into final responses while preserving consulted
 refs.
+The first lane comparison is now captured: packet-only produced a clean
+conditional repair-bay decision, while research-augmented added heat-debt,
+rescue-ledger, dockfall, and Aya sanctuary politics that should inform future
+runtime retrieval.
 The concrete training plan now enumerates
 eleven trainable stages and their likely model
 families: generative decoder LLMs for coordinator, responder, and structured
