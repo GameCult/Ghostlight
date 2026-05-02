@@ -71,9 +71,6 @@ state and re-entry discipline.
 - `docs/architecture/lore-grounding-digest-format.md`
   - human-facing format guide for cultural, factional, institutional, role, and
     speaker-boundary lore digests
-- `docs/architecture/qwen-invocation-notes.md`
-  - verified local Qwen invocation policy: Ollama `/api/chat`, native tools,
-    thinking enabled, repair for known nested-argument double-stringify cases
 - `docs/architecture/projected-local-context.md`
   - contract for the projector seam that turns canonical state into
     character-local operating context before a response model sees it,
@@ -186,7 +183,7 @@ state and re-entry discipline.
     Aetheria-native institutional texture, retrieval lessons, and a warning
     that character backstory must remain available as latent pressure
 - `experiments/cold-wake-story-lab/`
-  - Qwen response captures and reviews from the writing experiment
+  - archived local-model response captures and reviews from the writing experiment
   - `the-narrowest-possible-margin.md`, the first readable short story
     assembled from accepted projection outputs
 - `examples/lore-grounding/historical-flashpoint.template.json`
@@ -201,73 +198,11 @@ state and re-entry discipline.
   - reviewed sidecar annotation tying Ink branches to Ghostlight local
     awareness, projection controls, branch rationale, consequence surfaces, and
     manual mutation policy
-- `examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`
-  - first Qwen-generated playable Ink draft materialized from a Ghostlight
-    local-awareness prompt
-- `examples/ink/cold-wake-sanctuary-intake.qwen-draft.training.json`
-  - sidecar annotation for the generated draft, accepted as training material
-    rather than final polished prose
-- `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.ink`
-  - first playable Ink branch materialized from an accepted projector-routed
-    sequential Qwen capture
-- `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.training.json`
-  - sidecar annotation for the v10 materialized sequential branch
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json`
-  - reviewed Qwen branch-generation receipt, including prompt, parsed response,
-    strengths, failure notes, and pipeline lessons
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.capture.json`
-  - useful-needs-revision sequential Qwen receipt that separates Maer-local
-    choice generation from Sella-local next-action generation, while preserving
-    the discovered failure around missing per-turn appraisal/consolidation and
-    invalid action labels
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v2.capture.json`
-  - useful-needs-revision sequential Qwen receipt using the symmetrical turn
-    model; it produced canonical action labels and a concrete Sella
-    `withhold_object` next action, but still needs stricter schema enforcement
-    because some array fields came back as strings or objects
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v3.capture.json`
-  - useful-needs-revision thinking-plus-tools receipt that proved Maer could
-    call the tool while later passes still fell back to plain JSON content
-    because old prompt text conflicted with the tool path
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v5.capture.json`
-  - accepted-as-draft thinking-plus-tools receipt using Ollama `/api/chat`,
-    native tools, and `think: true` for Maer choice, Sella appraisal, and Sella
-    next action
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v6-projector.capture.json`
-  - useful-needs-revision projector-routed receipt proving Qwen prompts can use
-    character-local operating prose instead of raw state variables; still
-    exposed nested `response_constraints` stringification in appraisal output
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v8-projector-tightened.capture.json`
-  - useful-needs-revision receipt proving failed Maer choice generation is now
-    captured instead of crashing the runner; exposed malformed stringified
-    `choices`
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v9-projector-tightened.capture.json`
-  - useful-needs-revision receipt showing Qwen can still drop tool calls
-    entirely under projector-routed prompting
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json`
-  - accepted-as-draft receipt showing projector-routed sequential generation
-    works cleanly when strict tool calls run with thinking disabled
-- `examples/projected-contexts/`
-  - current rendered projected local context artifacts for Maer and Sella in
-    the sanctuary intake scene
-- `experiments/ink/qwen-chat-tools-smoke.json`
-  - smoke receipt proving local `qwen3.5:9b` returns both `message.thinking`
-    and native `tool_calls`
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
-  - first reviewed branch mutation receipt, including manual participant
-    appraisal/consolidation, normalized action labels, applied state deltas, and
-    deferred unresolved facts
-- `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
-  - mutated Cold Wake fixture after the selected sanctuary ledger branch,
-    updating Maer and Sella state, relationship stance, memories, perceived
-    overlays, event log, and active scene memories
-- `examples/agent-state.cold-wake-story-lab.after-v10-packet-assessment.json`
-  - mutated Cold Wake fixture after the v10 packet-assessment branch,
-    preserving unresolved packet personhood while updating state, relationship
-    stance, memories, perceived overlays, event log, and active scene memories
-- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10.mutation.json`
-  - reviewed mutation receipt for v10 materialization, keeping fuzzy appraisal
-    and relationship movement manual and auditable
+- archived local-model prototype Ink and capture receipts
+  - older files with `qwen` in the path remain in `examples/ink/` and
+    `experiments/ink/` as historical receipts; they are not the active
+    generation path and should not steer new gold-data work unless model
+    plumbing is explicitly being tested
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
@@ -276,34 +211,18 @@ state and re-entry discipline.
   - dependency-free validator for the current schema fixture invariants
 - `tools/validate_projection_examples.py`
   - dependency-free validator for projection example JSONL records
-- `tools/run_qwen_projection.py`
-  - sends a projection prompt to the LAN Qwen box and saves response/capture
-    artifacts without PowerShell encoding footguns
-- `tools/validate_qwen_captures.py`
-  - validates reviewed Qwen response capture receipts
+- archived local-model prototype tools
+  - older `run_qwen_*`, `materialize_qwen_*`, `validate_qwen_captures.py`, and
+    `check_qwen_chat_tools.py` helpers remain for validating historical
+    receipts and testing model plumbing; they are not the active gold-data path
 - `tools/validate_lore_grounding.py`
   - dependency-free validator for lore grounding digest examples
 - `tools/validate_ink_examples.py`
   - compiles Ink examples with `inkjs` and validates sidecar training
-    annotations plus reviewed Qwen Ink-generation captures
-- `tools/run_qwen_ink_branch_generation.py`
-  - builds a local-awareness prompt from the Cold Wake fixture and asks Qwen
-    for Ink branch candidates
-- `tools/materialize_qwen_ink_draft.py`
-  - turns a reviewed Qwen branch capture into a playable Ink draft and sidecar
-    annotation
+    annotations plus reviewed prototype Ink-generation captures
 - `tools/materialize_sequential_capture.py`
   - turns an accepted sequential capture into playable Ink, sidecar annotation,
     reviewed mutation receipt, and a mutated fixture
-- `tools/run_qwen_ink_sequential_generation.py`
-  - builds a sequential Qwen prototype through Ollama `/api/chat` with native
-    tools and thinking disabled by default: actor-local choices, participant
-    appraisal/consolidation, then next-actor action from updated state; now
-    routes character context through the projected-local-context seam, captures
-    failed Maer choice calls, separates repair notes from fatal validation
-    notes, and keeps numeric appraisal deltas out of next-action prompt context
-- `tools/check_qwen_chat_tools.py`
-  - fast smoke test for local Qwen thinking plus native tool calling
 - `tools/project_local_context.py`
   - deterministic first projector that compiles canonical state, scene facts,
     relationships, memories, projection controls, and optional observed event
@@ -352,108 +271,14 @@ state and re-entry discipline.
 - an automatic Ink branch generator from local awareness
 - automatic promotion of Ink branch outcomes into canonical state
 
-The canonical agent-state schema, projection example schema, lore grounding
-digest schema, projected-local-context schema, coordinator artifact schema,
-responder-packet schema, first draft Cold Wake grounding digest, and first Cold Wake story-lab Qwen
-captures now exist as v0 seams. The
-first complete Cold Wake story pass exists with receipts, projection controls
-have been promoted, and Ink is now the standard branching scene format. The
-first Qwen-generated Ink draft now exists with a reviewed capture, the first
-selected branch now has a reviewed mutation replay that updates both involved
-characters, v2 shows the symmetrical turn model improves action behavior, v5
-proves local thinking-plus-tools invocation works for the scene runner, and v6
-routes that runner through projected character-local operating context. v8 and
-v9 show that Qwen tool-call reliability, not the projector seam, is now the
-immediate blocker. The v9 thinking trace also showed schema self-check looping
-instead of tool-call completion, so strict sequential generation now disables
-thinking by default. v10 validated that correction with an accepted-as-draft
-projector-routed no-thinking capture, which has now been materialized into Ink
-plus reviewed mutation training data. The next implementation target is
-fixing the Sella next-action prompt/rendering path after source-checked v11-v17
-retries improved Maer's Navigator embodiment but exposed object-custody drift,
-invalid appraisal paths, Qwen tool dropout, and prompt-constraint leakage into
-responder prose. The soft-model artifact doctrine now makes the broader
-training boundary explicit: deterministic gates stay code, while fuzzy
-coordination, projection, action choice, appraisal, mutation, relationship
-movement, Aetheria responder training, and economic/faction decision judgments
-become reviewed artifacts for later fine-tuning or distillation. Gold responder
-data now requires a sandbox boundary: the coordinator may be omniscient, but the
-responder sees only the exact projected local packet, visible event, allowed
-actions, and explicitly included source excerpts; artifacts preserve raw output,
-reviewed output, hidden-context refs, leakage audit, isolation method, and
-coordinator intervention labels. The responder packet seam now turns that
-requirement into a concrete artifact and validator, so the next gold-data pass
-can hand a worker the exact prompt surface instead of hoping nobody leaks the
-coordinator's brain into the room. The first no-fork Sella responder capture now
-exists and validates as accepted-as-draft with raw output preserved, parsed
-output matched exactly, leakage audit clear, and no coordinator prose repair.
-Responder data now has two explicit lanes: `packet_only` for runtime parity with
-curated source excerpts, and `retrieval_augmented` for coordinator- or
-retriever-selected scoped AetheriaLore refs that can bake setting priors into
-final responses while preserving consulted refs. This is not autonomous
-responder research unless the responder actually receives scoped repo access.
-That explicit repo-access path is now named
-`responder_scoped_repository_search`: the packet must tell the responder to
-consult the declared lore docs before answering, show the allowed scope, and
-give behavior-grounding research instructions. The capture must record consulted
-refs and a research summary.
-The first concrete research-enabled Sella packet has now been generated and
-validates alongside the packet-only handoffs.
-The first lane comparison is now captured: packet-only produced a clean
-conditional repair-bay decision, while retrieval-augmented added heat-debt,
-rescue-ledger, dockfall, and Aya sanctuary politics that should inform future
-runtime retrieval. Follow-up review clarified the failure mode: injected
-institutional lore should not crowd out character-local backstory from the
-responder's visible pressure set, but the responder should not be rewarded for
-surfacing that backstory aloud when the mission-critical exchange does not call
-for it.
-The runtime retrieval/projector correction is now concrete: projected contexts
-carry source-backed retrieval requirements and latent pressure requirements,
-and the responder packet builder copies active retrieval requirements into
-packet source excerpts. The first Sella packet now receives Cold Wake heat-debt,
-Navigator rescue-ledger, Aya sanctuary-capacity, and Ganymede/Lightsail route
-obligation facts through that seam.
-The concrete training plan now enumerates
-eleven trainable stages and their likely model
-families: generative decoder LLMs for coordinator, responder, and structured
-soft outputs; classifiers or cross-encoders for appraisal, evaluation, and
-relationship movement; embedding/retrieval models for memory and lore selection;
-and deterministic code for gates. The listed per-stage counts are pilot
-schema-shakedown gates, not robust training targets; review-assistant and runtime
-targets are larger corpus tiers meant to avoid declaring victory after the first
-small pile of sacrificial data merely shows where the schema is wrong. The
-first coordinator artifact seam now validates through `npm run schema:validate`
-and backfills the sanctuary packet-assessment beat as an accepted-as-draft
-schema shakedown example. The coordinator is currently the authoring
-agent: it glues scenes together, carries world-state refs and unresolved hooks,
-decides which machinery runs, and emits glue prose. That output should stay
-game-engine-shaped even while the prose lives in model imagination. The
-lore/tone goal is not a separate adapter; it is a responder trained on strong
-timeline-spread Aetheria responses until the setting's assumptions become
-native priors. The timeline plan now includes generated possible futures in
-Elysium as reviewed `future_branch` artifacts so models learn post-Rupture
-concepts as branch-local canon indexed by lineage. It also distinguishes
-branch attractors, fated events, technology-order constraints, quest injections,
-and ordinary branch-local events so Elysium can support likely faction births,
-authored rails, discovery order, and quest injection without flattening the
-timeline into equal-probability soup. The technology/item manifest plan now
-requires exploration to emit item families, variants, assemblies,
-subassemblies, components, materials, faction tech-base access, prerequisites,
-bottlenecks, compatibility rules, supply-chain consequences, and quest hooks for
-both pre-Elysium starting tech and post-Rupture innovations, mapped onto
-Aetheria-Economy's existing CultCache technological blueprint classes:
-`SimpleCommodityData`, `CompoundCommodityData`, `ConsumableItemData`, `GearData`,
-and other `EquippableItemData` subclasses. Runtime `ItemInstance` classes remain
-simulation, inventory, cargo, provenance, branding, and world-state objects.
-Recipes, assembly trees, compatibility rules, tooling, facilities, process
-requirements, and supply-chain dependencies are blueprint metadata or
-engine-schema gaps attached to the relevant `*Data` class until the economy code
-has explicit storage for them. The player-facing gear fantasy is provenance
-hunting: players chasing an ultimate item should trace exceptional assemblies,
-manufacturer processes, repair history, counterfeit substitutions, supply-chain
-lineage, and operating constraints through the galaxy. The technology pipeline is
-therefore a content refinery: it grounds ideas in lore, decomposes them into
-parts and supply chains, maps them to economy blueprint classes, defines
-performance and instance variation, preserves review labels, and emits
-database-shaped candidates instead of spreadsheet sludge. Do not materialize
-another capture until it has no failure or repair notes.
+The canonical schemas and first Cold Wake fixture seams now exist as v0
+contracts. Archived local-model prototype receipts proved useful for discovering
+architecture lessons, but the active path is now sandboxed responder packets,
+source-grounded local context, reviewed outputs, and audited mutation receipts.
+Deterministic gates stay code; fuzzy coordination, projection, action choice,
+appraisal, mutation, relationship movement, Aetheria responder training, and
+economic/faction decision judgments become reviewed artifacts for later
+fine-tuning or distillation. The next gold-data pass should use the concrete
+research-enabled Sella packet and preserve exact visible input, consulted refs,
+research summary, raw output, reviewed output, hidden-context refs, leakage
+audit, isolation method, and coordinator intervention labels.

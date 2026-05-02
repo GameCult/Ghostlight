@@ -87,11 +87,8 @@
      and validate a sidecar training annotation that maps branches to
      Ghostlight state basis, action intent, consequence surfaces, and manual
      mutation policy.
-   - First generated draft: use `tools/run_qwen_ink_branch_generation.py` to
-     ask Qwen for branch candidates from local awareness, then materialize the
-     reviewed result with `tools/materialize_qwen_ink_draft.py`.
-   - First sequential draft: use `tools/run_qwen_ink_sequential_generation.py`
-     to separate actor-local choice, participant appraisal/consolidation, and
+   - Archived prototype drafts produced branch candidates from local awareness and proved the Ink materialization seam.
+   - First sequential prototype draft separated actor-local choice, participant appraisal/consolidation, and
      the next actor's move from updated state. The first saved capture is
      useful-needs-revision because it exposed the missing per-turn appraisal
      boundary and weak action enum discipline.
@@ -105,17 +102,11 @@
      action labels and a concrete Sella `withhold_object` next action, but
      still needs stricter schema or tool-call enforcement because array fields
      drifted into strings and objects.
-   - Qwen invocation correction: use Ollama `/api/chat` with native tools and
-     `think: true`, not `/api/generate` with prose-only JSON instructions.
-     Qwen's XML-shaped tool format belongs to the chat-template/tool-call
-     layer; Ghostlight artifacts do not need XML wrappers.
-   - Third sequential draft: v3 proved the tool path could work for Maer while
-     later passes still fell back to plain JSON because old prompt contract
-     text conflicted with tool calling.
-   - Fifth sequential draft: v5 is accepted as draft. It used thinking plus
-     native tools for Maer choice, Sella appraisal, and Sella next action.
+   - Archived local-model invocation lesson: model-specific chat/tool
+     formatting belongs in runner code and must not leak into Ghostlight
+     artifact formats.
    - Projector gap: the sequential runner still sends selected raw numeric
-     state variables into prompts. This is acceptable scaffolding for Qwen
+     state variables into prompts. This is archived scaffolding for local-model
      plumbing tests, not the final Ghostlight architecture.
    - Projector prototype: `tools/project_local_context.py` now turns canonical
      variables, memory, relationship stance, culture, and scene pressure into
@@ -142,37 +133,29 @@
      body types, location, and time period. If a blocking room-scale detail is
      missing, patch AetheriaLore narrowly before treating that detail as
      available to projection.
-   - Sixth sequential draft: v6 routed thinking-plus-tools generation through
-     projected local context instead of selected activation dictionaries. It
-     produced usable Maer/Sella behavior but remains useful-needs-revision
-     because Qwen stringified nested `response_constraints` in the appraisal
-     payload.
+   - A later sequential prototype routed structured generation through
+     projected local context instead of selected activation dictionaries and
+     proved the projector boundary while preserving malformed-output failures
+     as receipts.
    - Runner tightening: failed Maer choice generation now writes reviewed
      receipts instead of exiting, obvious malformed stringified tool arrays can
      be repaired, repair notes are separated from fatal validation notes, and
      Sella's next-action prompt receives appraisal prose instead of raw numeric
      deltas.
-   - Eighth and ninth sequential drafts: v8 captured malformed stringified
-     `choices`; v9 captured a no-tool-call dropout. Both validate the receipt
-     path and show Qwen tool reliability is now the blocker.
-   - Thinking policy correction: v9's thinking trace showed minutes of schema
-     self-check looping followed by no tool call. Strict sequential generation
-     now defaults to `think: false`; `--think` is reserved for diagnostics.
-   - Tenth sequential draft: v10 ran projector-routed generation with thinking
-     disabled and validated as accepted-as-draft with no repair or failure
-     notes.
+   - Later sequential prototype drafts captured malformed structured output,
+     no-call dropouts, and schema-looping as reviewed failure receipts. These
+     are runner/model reliability lessons, not active architecture targets.
    - V10 materialization: `tools/materialize_sequential_capture.py`
      materialized the accepted projector-routed capture into Ink, sidecar
      annotation, reviewed mutation receipt, and a mutated Cold Wake fixture.
-   - Next prototype: run another Qwen pass through the source-checked Navigator
-     projector, review whether the patched AetheriaLore ergonomics produce
-     cleaner action proposals, then decide whether to polish the branch or
-     generalize the materializer for additional accepted captures.
+   - Next prototype work should use sandboxed responder packets and reviewed
+     outputs; do not revive the archived local-model runner unless explicitly
+     testing model plumbing.
    - Source-checked retry results: v11-v17 improved Maer's body/interface
      behavior substantially, producing packet actions through shared clinic
      displays and mixed wet/dry affordances instead of humanoid action. No
      capture was materialized because later passes exposed repair notes,
-     object-custody drift, invented mutation paths, one Qwen appraisal
+     object-custody drift, invented mutation paths, one local-model appraisal
      tool-call dropout, and prompt-constraint leakage into Sella prose.
    - Validation correction: the sequential runner now checks Maer embodiment,
      Cold Wake object semantics, Sella appraisal paths/relationship ids, and
@@ -252,7 +235,7 @@
    - Treat projection outputs as response turns, not dialogue-only turns:
      characters may speak, act, withdraw, stay silent, use violence, or combine
      speech and action when state and scene pressure justify it.
-   - Keep failed and accepted Qwen captures together. The Maer/Veyr v1 and v2
+   - Keep failed and accepted prototype captures together. The Maer/Veyr v1 and v2
      outputs are useful failed examples; v3 is the first accepted output that
      preserves unresolved claimant status while allowing controlled physical
      action.
@@ -260,9 +243,7 @@
      only prompt wording problems. Projection examples now include controls for
      frame ownership, authority boundaries, object custody, required semantics,
      and forbidden resolutions.
-   - Keep Qwen captures as reviewed receipts. `tools/validate_qwen_captures.py`
-     is part of `npm run schema:validate` so unreviewed captures do not quietly
-     become training data.
+   - Keep archived local-model captures as reviewed receipts; validators keep unreviewed captures from quietly becoming training data.
    - Use `experiments/cold-wake-story-lab/the-narrowest-possible-margin.md` as
      the first end-to-end story artifact assembled from accepted response
      captures plus authored connective narration.
@@ -272,7 +253,7 @@
    - Train or adapt a smaller student projector only after the artifact schema,
      input slicer, and evaluator are stable.
    - Treat the character agent/responder as a training target too. A
-     Qwen-class or similar local model can eventually be adapted on a corpus of
+     small local model can eventually be adapted on a corpus of
      strong Aetheria responses spread throughout the timeline, plus reviewed
      Ghostlight receipts, so lore, tone, factional preconceptions, species
      affordances, and institutional pressure become native responder priors

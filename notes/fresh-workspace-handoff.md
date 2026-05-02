@@ -45,7 +45,6 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 - Aetheria lore grounding docs:
   - `docs/architecture/aetheria-lore-grounding-architecture.md`
   - `docs/architecture/lore-grounding-digest-format.md`
-  - `docs/architecture/qwen-invocation-notes.md`
   - `docs/architecture/projected-local-context.md`
   - `docs/architecture/soft-model-training-artifacts.md`
   - `docs/architecture/training-plan.md`
@@ -81,48 +80,17 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `docs/experiments/cold-wake-story-lab.md`
   - `examples/agent-state.cold-wake-story-lab.json`
   - `examples/projections/cold-wake-story-lab.jsonl`
-  - `examples/projections/cold-wake-story-lab.pretty.json`
   - `experiments/cold-wake-story-lab/the-narrowest-possible-margin.md`
-  - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.capture.json`
-  - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.v2.capture.json`
-  - `experiments/cold-wake-story-lab/scene-03-maer-veyr.qwen3-5-9b.v3.capture.json`
-  - additional scene 1, 2, 3, and 4 Qwen captures under
-    `experiments/cold-wake-story-lab/`
+  - archived local-model prototype captures under `experiments/cold-wake-story-lab/`
   - `tools/build_cold_wake_story_lab_fixture.py`
-  - `tools/run_qwen_projection.py`
-  - `tools/validate_qwen_captures.py`
-- Ink branching seam:
+- Ink branching and mutation seam:
   - `examples/ink/cold-wake-sanctuary-intake.ink`
   - `examples/ink/cold-wake-sanctuary-intake.training.json`
-  - `examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`
-  - `examples/ink/cold-wake-sanctuary-intake.qwen-draft.training.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.prompt.md`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.response.md`
-  - `tools/run_qwen_ink_branch_generation.py`
-  - `tools/materialize_qwen_ink_draft.py`
+  - archived prototype Ink/capture receipts under `examples/ink/` and `experiments/ink/`
   - `tools/validate_ink_examples.py`
-  - `tools/run_qwen_ink_sequential_generation.py`
   - `tools/materialize_sequential_capture.py`
   - `tools/apply_sequential_ink_branch_mutation.py`
   - `inkjs` dev dependency and `npm run ink:validate`
-- sequential branch mutation seam:
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.capture.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v2.capture.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v3.capture.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v5.capture.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v6-projector.capture.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v8-projector-tightened.capture.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v9-projector-tightened.capture.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
-  - `experiments/ink/qwen-chat-tools-smoke.json`
-  - `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
-- projector-routed sequential materialization seam:
-  - `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.ink`
-  - `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.training.json`
-  - `examples/agent-state.cold-wake-story-lab.after-v10-packet-assessment.json`
-  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10.mutation.json`
 - projected local context seam:
   - `schemas/projected-local-context.schema.json`
   - `examples/projected-contexts/scene-02-sanctuary-intake.maer_tidecall.projected-context.json`
@@ -150,7 +118,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 There is still no full runtime yet. The live machine is design, state
 discipline, a cleaner repo boundary, the first executable state contract, a
 documented projection path, the first Ink-backed playable branching scene, the
-first Qwen-generated Ink draft with reviewed training annotations, and the
+first prototype-generated Ink draft with reviewed training annotations, and the
 first reviewed mutation receipt showing how a selected generated branch changes
 both involved characters. The soft-model training doctrine is now explicit:
 deterministic gates stay code, while fuzzy judgments become reviewed artifacts
@@ -270,8 +238,8 @@ Run a sandboxed no-fork research-enabled responder against
 allowing only the declared AetheriaLore scope. Capture exact visible input,
 consulted refs, research summary, raw output, review labels, and leakage audit.
 Review whether the output uses institutional lore and latent pressure without
-prompt parroting, omniscience, or mission-critical trauma-dumping. Do not call
-Qwen for gold responder data yet.
+prompt parroting, omniscience, or mission-critical trauma-dumping. Do not use
+archived local-model prototype runners for gold responder data.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than
@@ -333,112 +301,12 @@ The evaluation follow-up fixed the immediate v0 schema issues:
 
 Completed projection path items:
 
-- define `schemas/projection-example.schema.json`
-- create reviewed Cat/Oz projection examples
-- choose Cold Wake Panic as the first authored historical flashpoint
-- fill the first draft lore grounding digest:
-  `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json`
-- define the Cold Wake story lab as a four-scene arc with Maer Tidecall as
-  protagonist
-- add the first Cold Wake projection example and first Qwen response capture
-- widen projection from dialogue-only turns to response turns that can include
-  action, silence, withdrawal, violence, or mixed beats
-- revise the first Maer/Veyr projection through v3 so unresolved
-  personhood/claimant suspicion stays unresolved in Qwen output
-- save both useful failed captures and the accepted v3 response as training
-  material
-- complete the first readable Cold Wake story,
-  `experiments/cold-wake-story-lab/the-narrowest-possible-margin.md`, with a
-  receipts table tying accepted story beats to projection and capture artifacts
-- promote projection controls into the projection artifact shape:
-  `frame_controls`, `authority_boundaries`, `object_custody`,
-  `required_semantics`, and `forbidden_resolutions`
-- add a Qwen projection runner and capture validator so response artifacts are
-  reviewed training receipts, not loose logs
-- adopt Ink as the standard playable branching scene format rather than
-  inventing a parallel Ghostlight dialogue-tree format
-- add the first Cold Wake Ink scene,
-  `examples/ink/cold-wake-sanctuary-intake.ink`, with a reviewed sidecar
-  annotation tying branches to Ghostlight state, projection controls,
-  consequence surfaces, and manual mutation policy
-- add the first local-awareness-to-Qwen-to-Ink pass:
-  `tools/run_qwen_ink_branch_generation.py` produced a reviewed capture, and
-  `tools/materialize_qwen_ink_draft.py` materialized
-  `examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`
-- add the first sequential Qwen branch capture:
-  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.capture.json`
-  is useful-needs-revision because it separated actor and responder context but
-  lacked the per-turn participant appraisal boundary and returned non-canonical
-  action labels
-- add the first reviewed state mutation replay:
-  `tools/apply_sequential_ink_branch_mutation.py` writes
-  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
-  and
-  `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`,
-  updating Maer and Sella state, relationship stance, memories, perceived
-  overlays, and the event log after the selected event
-- add the second sequential Qwen capture:
-  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v2.capture.json`
-  uses the symmetrical turn framing and produces better action behavior
-  (`show_object` followed by Sella's `withhold_object`), but remains
-  useful-needs-revision because prose prompting did not force array-typed JSON
-  fields
-- verify Qwen invocation:
-  `tools/check_qwen_chat_tools.py` proves local `qwen3.5:9b` returns both
-  `message.thinking` and native `tool_calls` through Ollama `/api/chat`
-- update the sequential runner to use `/api/chat` with native tools and
-  strict tool calls
-- add v3 and v5 thinking-plus-tools captures:
-  v3 preserved a useful failure where old prompt text still caused plain JSON
-  content in later passes; v5 is accepted as draft and produced valid
-  tool-shaped Maer choice, Sella appraisal, and Sella next action
-- identify the projector gap:
-  the sequential runner is still scaffolding because it sends selected raw
-  numeric state variables into prompts. The next real organ is a projector or
-  state interpreter that turns canonical variables, memories, relationship
-  stance, culture, and scene pressure into readable character-local operating
-  context and action affordances. Character agents should not need to interpret
-  `current_activation`, `plasticity`, or numeric dimension scores.
-- add the first projector seam:
-  `tools/project_local_context.py` creates
-  `ghostlight.projected_local_context.v0` artifacts and rendered prompt prose
-  from canonical state, scene, relationship, memories, projection controls, and
-  event context while hiding raw state variables from the prompt text
-- add projected-context validation:
-  `tools/validate_projected_contexts.py` rejects projected prompt text that
-  leaks raw state markers such as `current_activation`, `plasticity`, means, or
-  decimal state values
-- route the sequential Qwen runner through projected local context:
-  `tools/run_qwen_ink_sequential_generation.py` now sends projected operating
-  prose instead of selected activation dictionaries
-- add v6 projector-routed Qwen capture:
-  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v6-projector.capture.json`
-  validates the architecture boundary and produces usable Maer/Sella behavior,
-  but remains useful-needs-revision because Qwen stringified a nested
-  `response_constraints` field in Sella appraisal
-- tighten the sequential runner:
-  repair notes are separated from fatal validation notes, obvious truncated
-  stringified tool arrays can be repaired, failed Maer choice generation writes
-  a reviewed capture instead of exiting, and Sella's next-action prompt receives
-  appraisal context as prose constraints rather than raw numeric deltas
-- add v8 and v9 projector-routed failure receipts:
-  v8 shows malformed stringified `choices`; v9 shows a no-tool-call dropout.
-  These are Qwen tool reliability failures, so no projector-routed branch was
-  materialized into Ink in this pass.
-- disable thinking by default for strict sequential generation:
-  the v9 thinking trace showed Qwen looping on schema self-checks for minutes
-  before returning no tool call, so `tools/run_qwen_ink_sequential_generation.py`
-  now defaults to `think: false`; use `--think` only for diagnostics
-- add v10 no-thinking projector-routed capture:
-  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json`
-  validates as accepted-as-draft with no repair notes or failure notes
-- materialize v10:
-  `tools/materialize_sequential_capture.py` wrote a playable Ink branch, sidecar
-  training annotation, reviewed mutation receipt, and mutated Cold Wake fixture
-  from the accepted projector-routed capture
-- update v10 capture provenance:
-  `accepted_into_ink_ref` now points at
-  `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.ink`
+- defined projection examples, Cold Wake grounding, story-lab fixtures, and projection controls
+- adopted Ink as the playable branching scene format
+- built and validated local-awareness, projected-context, responder-packet, capture, and mutation seams
+- preserved archived local-model prototype captures as reviewed receipts, not active guidance
+- materialized one accepted projector-routed prototype branch into Ink, sidecar annotation, mutation receipt, and mutated fixture
+- extracted the important lessons: character-local context, source-checked embodiment, object custody, per-turn consolidation, structured failure receipts, and no raw-state leakage into responder prompts
 
 Remaining projection path:
 
@@ -446,13 +314,12 @@ Remaining projection path:
 - build a renderer that emits projection controls before prompt prose
 - review the embodiment-aware materialized v10 Ink and mutation receipt for
   narrative quality and state-change plausibility
-- run another Qwen pass through the source-checked projector to test whether
-  patched Navigator habitat/interface lore improves Maer's generated action
-  proposals
-- v11-v17 did improve Maer's source-grounded embodiment, but no capture was
+- keep using sandboxed responder packets and reviewed outputs for fresh
+  generation passes
+- source-checked retries improved Maer's grounded embodiment, but no capture was
   materialized because Sella appraisal/response still exposed object-custody
-  drift, invented mutation paths, Qwen tool dropout, or prompt-constraint
-  leakage
+  drift, invented mutation paths, structured-output dropout, or
+  prompt-constraint leakage
 - next pass should focus on separating response constraints from in-world prose
   before chasing another materialized Ink branch
 - decide whether to polish this Ink text by hand or generalize the sequential
