@@ -52,6 +52,7 @@ path is:
 - Research-enabled Sella capture: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
 - Research-enabled Sella mutation: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`
 - Research-enabled aftermath state: `examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json`
+- Research sanity probe: `experiments/research-sanity/navigator-embodiment-sanity-v0.capture.json`
 - Packet builder: `tools/build_responder_packet.py`
 - Packet/output validators: `tools/validate_responder_packets.py`, `tools/validate_responder_outputs.py`
 
@@ -80,6 +81,11 @@ current gold-data route.
   movement, and major flashpoint. Major factions need both founding-era and
   day-in-the-life stories. All coverage stories should involve cultural
   collision so faction and movement dynamics appear in the training data.
+- Current rough corpus counts from AetheriaLore: 12 major powers, 21 minor
+  powers, 23 movements, 24 Pre-Elysium flashpoints, and 5 defunct/absorbed
+  powers. Baseline coverage is 92 story fixtures, or 97 with defunct powers;
+  the practical first broad target is 100-150 reviewed fixtures, not exhaustive
+  pairwise combinations.
 
 ## Current Next Action
 

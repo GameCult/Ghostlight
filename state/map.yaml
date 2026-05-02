@@ -71,6 +71,19 @@ active_subgoals:
   - Keep item/technology exploration database-shaped for Aetheria-Economy instead of prose-only worldbuilding, including colony-consumed manufactured trade goods, not only gear assemblies.
   - Track corpus coverage across all major factions, minor factions, movements, and flashpoints so no single fixture becomes the training universe by accident.
 
+coverage_targets:
+  current_lore_counts:
+    major_powers: 12
+    minor_powers: 21
+    movements: 23
+    pre_elysium_flashpoints: 24
+    defunct_absorbed_powers: 5
+  baseline_story_fixtures: 92
+  baseline_with_defunct: 97
+  practical_first_broad_target: 100-150 reviewed fixtures
+  major_power_requirement: founding-era story plus day-in-the-life story
+  collision_requirement: every coverage story should involve multiple cultures, factions, movements, institutions, or body/infrastructure assumptions colliding
+
 current_artifacts:
   canonical_docs:
     - docs/architecture/prompt-projection-contract.md
@@ -99,6 +112,7 @@ current_artifacts:
     - experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json
     - experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json
     - experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json
+    - experiments/research-sanity/navigator-embodiment-sanity-v0.capture.json
     - examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json
   archived_receipts:
     - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
