@@ -114,8 +114,15 @@
      text conflicted with tool calling.
    - Fifth sequential draft: v5 is accepted as draft. It used thinking plus
      native tools for Maer choice, Sella appraisal, and Sella next action.
-   - Next prototype: materialize the accepted v5 capture into Ink and sidecar
-     annotation, then apply reviewed state mutation only after validation.
+   - Projector gap: the sequential runner still sends selected raw numeric
+     state variables into prompts. This is acceptable scaffolding for Qwen
+     plumbing tests, not the final Ghostlight architecture.
+   - Next prototype: build the projector artifact seam that turns canonical
+     variables, memory, relationship stance, culture, and scene pressure into
+     compact character-local operating context and action affordances.
+   - After projector seam exists, rerun or adapt v5-style thinking-plus-tools
+     sequential generation through projected context, then materialize only a
+     validated branch into Ink and sidecar annotation.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

@@ -209,6 +209,7 @@ Ink is now the standard branching scene format. The first Qwen-generated Ink
 draft now exists with a reviewed capture, the first selected branch now has a
 reviewed mutation replay that updates both involved characters, v2 shows the
 symmetrical turn model improves action behavior, and v5 proves local
-thinking-plus-tools invocation works for the scene runner. The next
-implementation target is materializing the accepted v5 capture into Ink and a
-sidecar annotation.
+thinking-plus-tools invocation works for the scene runner. The runner is still
+scaffolding because it sends selected raw numeric state variables into the
+model. The next implementation target is the projector artifact seam: canonical
+state becomes compact character-local operating context before Qwen sees it.

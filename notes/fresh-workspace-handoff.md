@@ -118,9 +118,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Materialize the accepted v5 thinking-plus-tools sequential capture into an Ink
-branch draft and sidecar, then apply reviewed state mutation only after
-validation.
+Build the projector artifact seam that translates canonical state into compact
+character-local operating context, then rerun or materialize v5-style
+sequential generation through that projector rather than raw state soup.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -196,13 +196,22 @@ Completed projection path items:
   v3 preserved a useful failure where old prompt text still caused plain JSON
   content in later passes; v5 is accepted as draft and produced valid
   tool-shaped Maer choice, Sella appraisal, and Sella next action
+- identify the projector gap:
+  the sequential runner is still scaffolding because it sends selected raw
+  numeric state variables into prompts. The next real organ is a projector or
+  state interpreter that turns canonical variables, memories, relationship
+  stance, culture, and scene pressure into readable character-local operating
+  context and action affordances. Character agents should not need to interpret
+  `current_activation`, `plasticity`, or numeric dimension scores.
 
 Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- materialize the accepted v5 thinking-plus-tools sequential capture into Ink
-  and sidecar annotation
+- build the projector artifact seam before materializing more generated
+  branches
+- rerun or adapt v5-style thinking-plus-tools sequential generation through
+  projected character-local context instead of raw state variables
 - improve the local-awareness-to-Ink prompt so semantic `training_hooks` do not
   drift into future branch ids, object custody remains branch-local, and action
   labels come from the exact canonical enum
