@@ -306,7 +306,11 @@ eleven trainable stages and their likely model
 families: generative decoder LLMs for coordinator, responder, and structured
 soft outputs; classifiers or cross-encoders for appraisal, evaluation, and
 relationship movement; embedding/retrieval models for memory and lore selection;
-and deterministic code for gates. The coordinator is currently the authoring
+and deterministic code for gates. The listed per-stage counts are pilot
+schema-shakedown gates, not robust training targets; review-assistant and runtime
+targets are larger corpus tiers meant to avoid declaring victory after the first
+small pile of sacrificial data merely shows where the schema is wrong. The
+coordinator is currently the authoring
 agent: it glues scenes together, carries world-state refs and unresolved hooks,
 decides which machinery runs, and emits glue prose. That output should stay
 game-engine-shaped even while the prose lives in model imagination. The

@@ -89,6 +89,57 @@ Some stages are trained as generative models. Some are trained as classifiers or
 rankers. Some may remain manual longer than the rest because bad automation here
 would create narrative sewage with confidence.
 
+## Corpus Scale Tiers
+
+The per-stage counts below are pilot gates, not robust training targets.
+
+Pilot data exists to shake out schema mistakes, artifact shape problems,
+leakage boundaries, reviewer workflow, and validator gaps. It is allowed to be
+sacrificial. If a pilot proves that the schema is wrong, update the schema and
+accept that some pilot artifacts may become obsolete. Better a small controlled
+burn than a cathedral built from cursed bricks.
+
+Use three corpus tiers:
+
+- `pilot_schema_shakedown`
+  - proves that artifacts can be produced, reviewed, validated, and loaded
+  - exposes missing fields, wrong boundaries, bad labels, and impossible
+    assumptions
+  - may be invalidated by schema changes
+- `review_assistant_target`
+  - enough examples for a model to draft useful candidates under human or
+    frontier-model review
+  - still not trusted for unattended runtime mutation or simulation authority
+  - expected to include broad negative examples and repair labels
+- `runtime_target`
+  - enough diversity, sequence coverage, negative coverage, and adversarial
+    checks to trust a model inside automated loops with deterministic gates
+  - requires held-out evaluation sets, regression fixtures, and failure audits
+  - still cannot bypass deterministic legality, visibility, source, or mutation
+    gates
+
+Approximate target scale:
+
+| Stage | Pilot Schema Shakedown | Review Assistant Target | Runtime Target |
+| --- | ---: | ---: | ---: |
+| Lore grounding compiler | 25 accepted / 25 rejected | 500+ digests | 2,000+ digests |
+| Coordinator/story runtime | 50 accepted / 25 rejected | 1,000+ turns | 5,000+ turns |
+| Memory/lore retriever | 500 labeled pairs | 5,000+ pairs | 50,000+ pairs |
+| Projector | 100 accepted / 50 rejected | 1,000+ examples | 5,000+ examples |
+| Character agent/responder | 200 accepted / 100 rejected | 2,000-5,000 turns | 10,000+ turns |
+| Event resolver normalization | 100 reviewed examples | 1,000+ examples | 5,000+ examples |
+| Participant appraiser | 300 appraisals | 3,000+ appraisals | 10,000+ appraisals |
+| State mutator | 500 accepted / 200 rejected | 5,000+ patches | 10,000+ patches |
+| Relationship/perception updater | 500 updates | 5,000+ updates | 20,000+ sequence updates |
+| Guardrail/evaluator classifiers | 300 labeled failures | 3,000+ labeled outputs | 20,000+ labeled outputs |
+| Institution/faction/consumer decisions | 500 decisions | 5,000+ decisions | 20,000+ decisions |
+| Technology/item manifests | 100 records / 50 rejected | 1,000+ manifests | 5,000+ manifests |
+
+The exact numbers will move once we know which organs are narrow classifiers,
+which are generative, which can lean on retrieval, and which are mostly
+deterministic code wearing a little judgment hat. The important rule is that the
+first gate proves the schema and workflow. It does not prove robustness.
+
 ## Model Families
 
 Use these as the default architecture assumptions until evidence says otherwise.
@@ -216,7 +267,7 @@ Training artifacts:
 - source violation labels
 - corrections tied to AetheriaLore paths
 
-First training gate:
+Pilot schema shakedown gate:
 
 - 25 accepted digests across distinct Aetheria eras or institutions
 - 25 rejected/source-violation examples
@@ -290,7 +341,7 @@ Training artifacts:
 - reviewer labels for pacing, continuity, legibility, game usefulness, and lore
   grounding
 
-First training gate:
+Pilot schema shakedown gate:
 
 - 50 accepted coordinator turns across at least 5 scenes
 - 25 rejected coordinator turns with labeled failures
@@ -347,7 +398,7 @@ Training artifacts:
 - reviewer relevance labels
 - missed-critical-context labels
 
-First training gate:
+Pilot schema shakedown gate:
 
 - 500 labeled retrieval pairs before tuning
 - evaluation set includes false friends: similar vibe, wrong faction or era
@@ -402,7 +453,7 @@ Training artifacts:
 - source grounding failures
 - reviewer corrections
 
-First training gate:
+Pilot schema shakedown gate:
 
 - 100 accepted projection examples
 - 50 rejected examples with clear failure labels
@@ -482,7 +533,7 @@ Training artifacts:
 - future-branch responses exercising post-Rupture concepts as branch-local canon
   without claiming branch facts apply to sibling histories
 
-First training gate:
+Pilot schema shakedown gate:
 
 - 200 accepted character turns across eras, factions, species, and social roles
 - 100 rejected turns with labeled failures
@@ -541,7 +592,7 @@ Training artifacts:
 - normalized action labels
 - mechanical delta records
 
-First training gate:
+Pilot schema shakedown gate:
 
 - do not train until action/event schemas stabilize
 - collect 100 reviewed action-to-event examples before considering normalization
@@ -592,7 +643,7 @@ Training artifacts:
 - rejected interpretations
 - reviewer rationale
 
-First training gate:
+Pilot schema shakedown gate:
 
 - 300 participant appraisal examples
 - balanced set of correct reads, misreads, ambiguous reads, and biased reads
@@ -647,7 +698,7 @@ Training artifacts:
 - branch-local patches separated from promoted state patches
 - branch-local patches separated from cross-branch source constraints
 
-First training gate:
+Pilot schema shakedown gate:
 
 - 500 accepted mutation examples
 - 200 rejected/deferred mutation examples
@@ -695,7 +746,7 @@ Training artifacts:
 - confidence driver labels
 - rejected updates
 
-First training gate:
+Pilot schema shakedown gate:
 
 - 500 directional relationship updates
 - repeated-contact sequences, not only isolated events
@@ -741,7 +792,7 @@ Training artifacts:
 - false positive/false negative review notes
 - failure taxonomy examples
 
-First training gate:
+Pilot schema shakedown gate:
 
 - 300 labeled failures across prompt leakage, omniscience, wrong body, wrong
   lore, invalid mutation, schema drift, and flattened character agency
@@ -803,7 +854,7 @@ Training artifacts:
 - item availability and component dependency decisions
 - faction access or restriction decisions
 
-First training gate:
+Pilot schema shakedown gate:
 
 - do not train until scene-local machinery produces reliable decision examples
 - collect at least 500 reviewed decision examples across consumer and
@@ -895,7 +946,7 @@ Training artifacts:
 - instance-provenance records for manufactured artifacts when a scene or branch
   needs realized supply-chain history, not just a blueprint
 
-First training gate:
+Pilot schema shakedown gate:
 
 - item manifest schema and validator exist
 - validator checks target Aetheria-Economy blueprint class, source-backed
@@ -933,7 +984,11 @@ Recommended order:
 11. Train institution/faction/consumer models after scene-local decisions provide
    enough grounded examples.
 
-## Minimum Corpus Before First Fine-Tune
+## Minimum Corpus Before First Experimental Fine-Tune
+
+These are still pilot numbers. Use them for controlled experiments, schema
+pressure tests, and early behavior probes. Do not treat them as enough for
+robust runtime use.
 
 A first useful Aetheria responder fine-tune wants:
 

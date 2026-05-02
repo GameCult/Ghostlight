@@ -145,7 +145,12 @@ reviewed output, hidden-context refs, leakage audit, isolation method, and
 coordinator intervention labels. Coordinator repairs are allowed, but they must
 be labeled as repairs rather than treated as raw responder behavior.
 The concrete training plan now enumerates the trainable stages, their inputs,
-outputs, likely model families, artifact families, and first corpus gates.
+outputs, likely model families, artifact families, and pilot corpus gates. The
+listed pilot counts are schema shakedown thresholds, not robust training
+targets. They exist to expose missing fields, bad boundaries, leakage risks, and
+validator gaps before large data generation. Robust organs will need roughly an
+order of magnitude more examples, with separate review-assistant and runtime
+targets.
 It now uses three timeline lanes: `historical_grounded`,
 `transition_grounded`, and `future_branch`. Future branches are required
 training/evaluation material for post-Rupture Elysium concepts, but generated
