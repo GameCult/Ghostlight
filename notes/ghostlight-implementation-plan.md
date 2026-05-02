@@ -29,12 +29,13 @@ sandboxed training-data pipeline for branching scenes and state consequences.
    - The Veyr/Callisto provenance sample is the first accepted coordinator-scoped retrieval lane with `runner_captured` trace. Use it as the current pattern for trace-backed gold candidates.
    - Continue rejecting archived local-model prototype runners for gold responder data unless the task is explicitly model plumbing.
 
-4. Generate the next reviewed sample.
+4. Run the first full-story artifact pass.
    - Start from `examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json`.
-   - Build the next projected local context and responder packet from reviewed state, not from coordinator memory.
-   - The next likely beat is Maer accepting Sella's bounded diagnostic-contact conditions and initiating actual vessel contact or extraction under decon, isolation, packet-sound preservation, heat burden, and Navigator-ledger exposure.
-   - Run the next no-fork sandboxed responder/coordinator step with exact visible input, raw output, runner-captured research trace, leakage audit, and review labels.
-   - Convert accepted output into mutation receipts.
+   - Treat the next test as a bounded end-to-end Cold Wake short story run, not another isolated seam check.
+   - Begin with Maer accepting Sella's bounded diagnostic-contact conditions and initiating actual vessel contact or extraction under decon, isolation, packet-sound preservation, heat burden, and Navigator-ledger exposure.
+   - The coordinator should write readable connective prose and keep the story moving toward an ending. Coordinator glue prose is training signal for the future coordinator/story-runtime model.
+   - Still emit training artifacts at material turns: projected local context, responder packet, raw output/capture, leakage audit, reviewed mutation receipt, and aftermath state where relevant.
+   - Do not stop for every minor prose flaw; curate as coordinator and continue. Stop to patch the pipeline only for core invariant failures: hidden-state leakage, lore grounding failure, visibility/object/body affordance errors, bad state mutation, or schema break.
    - Keep fuzzy social changes manual and auditable until appraiser/classifier models exist.
 
 5. Generalize the loop.
