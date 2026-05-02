@@ -9,7 +9,7 @@ Some parts should be boring code:
 - action legality
 - object custody
 - resource accounting
-- Ink materialization
+- Ink syntax validation and compilation
 - event append
 - provenance checks
 - deterministic context slicing
@@ -295,6 +295,66 @@ little horrors of systems pretending to be neutral.
 It still must receive character-local context at runtime. Fine-tuning gives it
 priors, not omniscience.
 
+### Branch Compiler
+
+Turns scene intent, reviewed branch candidates, consequence packets, fold plans,
+and visual continuity requirements into playable Ink plus sidecar receipts.
+
+The Branch Compiler is trainable because good branching structure is not just
+syntax. It needs to decide where choices belong, which consequences can fold
+into compact variables, which choices deserve route splits, which callbacks must
+exist later, and how visual modifiers attach to actual state. Deterministic code
+can validate Ink and refs. It cannot, by itself, know whether a branch feels
+meaningful or whether convergence is lying.
+
+Training artifacts:
+
+- fixture brief
+- source-grounded lore digest refs
+- input branch candidates
+- reviewed consequence packets
+- fold plan
+- generated Ink
+- generated sidecar
+- compiler notes
+- variable set/read map
+- route split or fold rationale
+- visual prompt handles
+- reviewer findings and repair labels
+
+The compiler does not own hidden character truth, participant appraisal, or
+durable social mutation. It materializes structure from already reviewed or
+explicitly marked draft material.
+
+### IF Artifact Reviewer
+
+Audits playable branch artifacts before they enter the accepted corpus.
+
+This reviewer is separate from the branch compiler because compilers are very
+good at producing valid little lies. The reviewer checks whether tracked state
+actually matters, whether choices change future affordances or outcomes, whether
+folds preserve callbacks, whether visual modifiers correspond to real branch
+state, and whether endings read the variables the story told us were important.
+
+Training artifacts:
+
+- Ink fixture under review
+- sidecar under review
+- coordinator artifact
+- compiler notes
+- validation output
+- accepted/rejected decision
+- severity-ranked findings
+- failure labels such as `potemkin_state`, `cosmetic_choice`, `fake_fold`,
+  `missing_state_read`, `state_named_instead_of_checked`,
+  `visual_callback_missing`, and `ending_ignores_major_state`
+- required fixes
+- repaired artifact refs, when available
+
+The first Cold Wake branch-and-fold review is seed material for this organ
+because it caught decorative variables before they were allowed to become
+training sludge.
+
 ### Institution, Faction, And Consumer Decision Models
 
 Eventually Ghostlight should support economic behavior and major faction
@@ -354,6 +414,8 @@ JSONL wearing a crown.
 - lore-grounding digest corpus
 - Aetheria responder corpus
 - Ink branch annotation corpus
+- Branch compiler corpus
+- IF artifact review corpus
 - institution/faction/consumer decision corpus
 - negative-example corpus
 

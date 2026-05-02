@@ -14,9 +14,9 @@ mission:
     social consequences, and eventually storylines, consumer behavior,
     faction decisions, and technology/item manifests for Aetheria.
   near_term: >
-    Produce sandboxed, source-grounded responder training data through
-    projected local context, responder packets, reviewed outputs, and audited
-    mutation receipts.
+    Produce sandboxed, source-grounded branching-scene training data through
+    projected local context, responder packets, reviewed outputs, mutation
+    receipts, coordinator continuity, branch compiler artifacts, and IF review.
   voidbot_goal: >
     Keep the appraiser, relationship/perception updater, and memory machinery
     useful for VoidBot's core companion mission: reading specific humans over
@@ -81,7 +81,7 @@ live_architecture:
 
 active_subgoals:
   - Keep Ghostlight focused on the architecture and data pipeline for socially persistent agents.
-  - Build schema-stable, sandboxed responder data before chasing larger runtime loops.
+  - Build schema-stable, sandboxed responder, coordinator, branch compiler, and IF review data before chasing larger runtime loops.
   - Preserve Aetheria grounding through source-backed lore, branch labels, and reviewed assumptions.
   - Shape every soft judgment as future training data, not permanent prompt folklore.
   - Keep item/technology exploration database-shaped for Aetheria-Economy instead of prose-only worldbuilding, including colony-consumed manufactured trade goods, not only gear assemblies.
@@ -154,6 +154,7 @@ current_artifacts:
     - experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md
   archived_receipts:
     - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
+    - docs/architecture/qwen-invocation-notes.md is archived local-model plumbing guidance, not the current gold-data route.
 
 data_flow:
   - Rehydrate from map, handoff, system map, implementation plan, and `npm run state:status`.

@@ -160,6 +160,8 @@ world state + author constraints + lore grounding
   -> state mutator
   -> relationship/perception updater
   -> coordinator carries hooks, glue prose, and next beat
+  -> branch compiler materializes branch-and-fold Ink plus sidecar receipts
+  -> IF artifact reviewer accepts, rejects, or sends the fixture back
 ```
 
 Some stages are trained as generative models. Some are trained as classifiers or
@@ -208,6 +210,8 @@ Approximate target scale:
 | Participant appraiser | 300 appraisals | 3,000+ appraisals | 10,000+ appraisals |
 | State mutator | 500 accepted / 200 rejected | 5,000+ patches | 10,000+ patches |
 | Relationship/perception updater | 500 updates | 5,000+ updates | 20,000+ sequence updates |
+| Branch compiler | 25 fixtures / 25 rejected | 500 fixtures | 2,000+ fixtures |
+| IF artifact reviewer | 100 reviewed fixtures / 100 labeled failures | 2,000+ labeled fixtures | 10,000+ labeled fixtures |
 | Guardrail/evaluator classifiers | 300 labeled failures | 3,000+ labeled outputs | 20,000+ labeled outputs |
 | Institution/faction/consumer decisions | 500 decisions | 5,000+ decisions | 20,000+ decisions |
 | Technology/item manifests | 100 records / 50 rejected | 1,000+ manifests | 5,000+ manifests |
@@ -237,6 +241,8 @@ Candidate stages:
 - coordinator/story runtime
 - projector, if deterministic projection becomes too brittle
 - character agent/responder
+- branch compiler, if rule-assisted Ink materialization is too narrow for
+  authored fixture variety
 - state mutator, only after the mutation schema is very stable
 - institution/faction planner, if it needs explanations and mixed outputs
 - item or technology manifest generator, if structured extraction from
@@ -258,9 +264,11 @@ Candidate stages:
 - participant appraiser
 - relationship/perception updater
 - output evaluator
+- IF artifact reviewer
 - candidate action ranker
 - lore/source violation detector
 - prompt-leak detector
+- branch-consequence and fake-fold detector
 - technology and item manifest evaluator
 
 ### Embedding Or Retrieval Model
@@ -843,7 +851,127 @@ Pilot schema shakedown gate:
 - repeated-contact sequences, not only isolated events
 - evaluation includes asymmetric relationships and stubborn misreads
 
-### 10. Output Evaluator And Guardrail Classifiers
+### 10. Branch Compiler
+
+Purpose: turn reviewed scene intent, branch candidates, consequence packets, and
+fold plans into playable Ink plus sidecar receipts.
+
+Current implementation:
+
+- coordinator-authored Ink fixtures
+- documented branch-and-fold contract
+- manual materialization and review
+
+Inputs:
+
+- fixture brief and scene spine
+- source-grounded lore digest
+- current world, scene, resource, relationship, and branch state
+- actor-local branch candidates, including speech and non-speech actions
+- responder outputs or coordinator-authored placeholder reactions
+- reviewed consequence packets
+- branch-and-fold plan
+- visual continuity requirements
+- schema and Ink formatting constraints
+
+Outputs:
+
+- readable `.ink` scene content
+- Ink variables, choices, knots, gathers, and conditionals
+- `.training.json` sidecar tying branches to state basis, action intent,
+  consequences, callbacks, and review status
+- compiler notes for fold decisions, route-split decisions, and known review
+  risks
+- base image prompt handles and branch/state modification handles
+
+Training architecture:
+
+- start as reviewed structured authoring
+- generative decoder LLM for fixture drafting once sidecar shape stabilizes
+- deterministic validators for Ink syntax, branch ids, sidecar refs, and schema
+  shape
+
+Training artifacts:
+
+- accepted and rejected compiled fixtures
+- Ink/sidecar pairs
+- compiler notes
+- fold and route-split decisions
+- state-variable read/write maps
+- visual prompt modifier maps
+- reviewer findings and repair receipts
+
+Pilot schema shakedown gate:
+
+- 25 accepted fixtures across multiple story shapes
+- 25 rejected or needs-revision fixtures with labeled compiler failures
+- every accepted fixture has an Ink file, sidecar, compiler notes, and review
+  status
+- every material variable is read later or marked telemetry-only before
+  acceptance
+- branch compiler output is reviewed by the IF artifact reviewer before it
+  enters the accepted corpus
+
+### 11. IF Artifact Reviewer
+
+Purpose: catch false consequence before branch fixtures become training data.
+
+Current implementation:
+
+- manual/frontier-model review
+- failure taxonomy documented in
+  `docs/architecture/ink-branching-scenes.md`
+
+Inputs:
+
+- Ink file
+- `.training.json` sidecar
+- coordinator artifact
+- branch compiler notes
+- declared variables, resources, risks, relationship bands, and visual
+  modifiers
+- intended branch-and-fold plan
+- validation output
+
+Outputs:
+
+- `accepted`, `needs_revision`, or `rejected`
+- severity-ranked findings
+- fake-variable audit
+- choice-consequence audit
+- fold/callback audit
+- state-gated prose audit
+- visual-continuity audit
+- required fixes
+
+Training architecture:
+
+- classifier or cross-encoder for known failure labels
+- LLM judge for nuanced IF design failures, with reviewed labels saved
+- deterministic support tools for variable set/read maps and branch-id
+  consistency
+
+Training artifacts:
+
+- accepted fixtures
+- rejected fixtures
+- labeled failures such as `potemkin_state`, `cosmetic_choice`, `fake_fold`,
+  `missing_state_read`, `state_named_instead_of_checked`,
+  `visual_callback_missing`, and `ending_ignores_major_state`
+- reviewer rationales
+- repaired fixture diffs tied to findings
+
+Pilot schema shakedown gate:
+
+- 100 reviewed fixtures or fixture fragments
+- 100 labeled failures, including at least 25 fake-variable or fake-fold cases
+- reviewer catches variables that do not affect affordances, risk, appraisal,
+  callbacks, visual state, or outcomes
+- reviewer catches prose that names alternate branch states instead of checking
+  variables
+- reviewer catches endings that ignore major prior state
+
+### 12. Output Evaluator And Guardrail Classifiers
 
 Purpose: reject bad model outputs before they become artifacts or state.
 
@@ -888,7 +1016,7 @@ Pilot schema shakedown gate:
 - 300 labeled failures across prompt leakage, omniscience, wrong body, wrong
   lore, invalid mutation, schema drift, and flattened character agency
 
-### 11. Institution, Faction, And Consumer Decision Models
+### 13. Institution, Faction, And Consumer Decision Models
 
 Purpose: model non-dialogue decisions in economic, factional, institutional, and
 open-world contexts.
@@ -957,7 +1085,7 @@ Pilot schema shakedown gate:
 - include examples where factions differ in starting pre-Elysium tech base,
   manufacturing rights, maintenance ability, and supply-chain dependency
 
-### 12. Technology And Item Manifest Generator
+### 14. Technology And Item Manifest Generator
 
 Purpose: turn worldbuilding exploration into game-usable item, component,
 assembly, technology, and supply-chain records.
@@ -1061,19 +1189,23 @@ Recommended order:
 1. Keep deterministic validators and artifact schemas ahead of data volume.
 2. Build coordinator artifact schema and start saving coordinator receipts.
 3. Expand projected local context and character-turn capture receipts.
-4. Build evaluator labels from existing failures.
-5. Fine-tune or LoRA the Aetheria responder first, because strong response data
+4. Stabilize branch compiler artifacts for Ink, sidecars, fold notes, and visual
+   prompt handles.
+5. Build IF artifact reviewer labels from existing branching failures.
+6. Build broader evaluator labels from responder, projector, lore, and mutation
+   failures.
+7. Fine-tune or LoRA the Aetheria responder first, because strong response data
    directly improves visible output and reduces lore handholding.
-6. Add future-branch post-Rupture examples before claiming the responder can
+8. Add future-branch post-Rupture examples before claiming the responder can
    handle Elysium-era concepts without heavy prompting.
-7. Train projector only if deterministic projection becomes a bottleneck.
-8. Train appraiser and relationship updater after enough manual mutation receipts
+9. Train projector only if deterministic projection becomes a bottleneck.
+10. Train appraiser and relationship updater after enough manual mutation receipts
    exist.
-9. Train state mutator last among social organs because bad mutation corrupts
+11. Train state mutator last among social organs because bad mutation corrupts
    the world state.
-10. Build item manifest schema before large future-branch exploration produces
+12. Build item manifest schema before large future-branch exploration produces
    technology data.
-11. Train institution/faction/consumer models after scene-local decisions provide
+13. Train institution/faction/consumer models after scene-local decisions provide
    enough grounded examples.
 
 ## Minimum Corpus Before First Experimental Fine-Tune
@@ -1109,6 +1241,23 @@ A first coordinator fine-tune wants:
 - at least 5 complete scene transitions
 - world-state refs in every example
 - glue prose paired with structured state deltas or explicit no-delta notes
+
+A first branch compiler model wants:
+
+- 25 accepted Ink fixtures with sidecars and compiler notes
+- 25 rejected or needs-revision fixtures with specific compiler failure labels
+- variable set/read maps for every fixture
+- branch-and-fold decisions marked as fold, conditional variant, or route split
+- visual prompt handles tied to actual state variables
+- IF artifact reviewer decisions for every accepted example
+
+A first IF artifact reviewer wants:
+
+- 100 reviewed fixtures or fixture fragments
+- 100 labeled failures
+- examples where the human review found fake state or fake folds before repair
+- repaired versions paired with the original finding
+- held-out fixtures with intentionally subtle cosmetic-choice and callback gaps
 
 A first appraiser/classifier training run wants:
 

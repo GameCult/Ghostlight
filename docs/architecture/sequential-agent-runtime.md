@@ -360,28 +360,35 @@ agent state + scene state
 
 ## First Prototype
 
-The next implementation should not try to simulate a city. Calm down, wizard.
+The first implementation should not try to simulate a city. Calm down, wizard.
 
-Prototype one tiny Ink-backed branching scene loop:
+Prototype one small Ink-backed branching scene loop:
 
 1. Load `examples/agent-state.cold-wake-story-lab.json`.
 2. Select one scene and one acting agent.
 3. Build a local awareness packet from existing state.
 4. Compile projection controls.
-5. Generate or author an Ink scene with branch choices and NPC responses.
-6. Compile the Ink scene to JSON with `inkjs`.
-7. Save a sidecar training annotation that maps Ink branches to Ghostlight
+5. Generate or author branch choices and NPC responses from local context.
+6. Materialize the branch plan through the Branch Compiler as Ink, sidecar
+   annotation, compiler notes, consequence variables, and visual prompt handles.
+7. Compile the Ink scene to JSON with `inkjs`.
+8. Save a sidecar training annotation that maps Ink branches to Ghostlight
    state basis, actor intent, consequence surfaces, and mutation policy.
-8. Apply selected branch consequences only through reviewed mutation:
+9. Apply selected branch consequences only through reviewed mutation:
    - Ink variables can track local playthrough facts
    - canonical state changes require resolver/reviewer approval
-9. Manually review fuzzy participant appraisals and state effects each turn:
+10. Run IF artifact review before acceptance:
+   - every material variable is read later or marked telemetry-only
+   - every material choice changes affordance, risk, callback, visual state, or
+     outcome
+   - folds preserve consequence rather than hiding it
+11. Manually review fuzzy participant appraisals and state effects each turn:
    - update every affected participant before selecting the next actor
    - add one memory or belief update
    - adjust one or two `current_activation` values
    - update one relationship stance if justified
    - record the rationale as training data
-10. Validate the resulting fixture.
+12. Validate the resulting fixture.
 
 The goal is not literary quality or autonomous plot generation. The goal is to
 prove that a character can drive a scene beat, produce branchable dialogue or

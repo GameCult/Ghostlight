@@ -62,7 +62,7 @@ One-shot generation of both sides is allowed only as bootstrap scaffolding, and
 must be marked as such in the capture review. It is not the target runtime
 shape.
 
-The first generated draft path is:
+Archived local-model draft path:
 
 ```text
 examples/agent-state.cold-wake-story-lab.json
@@ -74,11 +74,11 @@ examples/agent-state.cold-wake-story-lab.json
   -> examples/ink/cold-wake-sanctuary-intake.qwen-draft.training.json
 ```
 
-The Qwen draft is accepted as training material, not as final polished prose or
-runtime architecture. It generated Maer's branch options and Sella's responses
-in one pass, which is a known shortcut. A generated branch can still be useful
-because it exposes a decision shape, an action type, a misread, or a prompt
-failure even when the line writing still needs a human with a knife.
+This path is a receipt from the old local-model materialization experiment. It
+is useful for validation and negative examples, not the current gold-data path.
+The current target path is source-grounded coordinator state, projected local
+context, reviewed character turns, branch compiler materialization, and IF
+artifact review.
 
 ## Ink Comments
 
@@ -139,11 +139,14 @@ Manual reviewed until trained:
 - activation changes
 - promotion from branch outcome into durable Aetheria lore
 
-The first prototype lives in
+The first early prototype lives in
 `examples/ink/cold-wake-sanctuary-intake.ink`.
 
-The first Qwen-generated draft lives in
+The archived Qwen-generated draft lives in
 `examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`.
+
+The current accepted-as-draft branch-and-fold scaffold lives in
+`examples/ink/cold-wake-branch-and-fold.v0.ink`.
 
 ## Cross-Scene Consequence Carryover
 

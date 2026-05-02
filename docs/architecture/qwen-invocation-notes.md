@@ -1,7 +1,16 @@
 # Qwen Invocation Notes
 
-Ghostlight should call the local Qwen box through Ollama's chat/tool path when
-structured output matters.
+These notes are archived local-model plumbing guidance. They are useful when a
+task explicitly tests the neighboring Qwen box, Ollama tool calls, or old
+capture validation. They are not the current gold-data generation path.
+
+For accepted responder, branch compiler, or IF review data, preserve exact
+visible inputs, raw outputs, review labels, and coordinator interventions. Do
+not treat old local-model captures as active steering unless the task is
+explicitly model plumbing.
+
+When Ghostlight does call the local Qwen box, use Ollama's chat/tool path for
+structured output.
 
 ## Verified Local Path
 
@@ -71,7 +80,7 @@ Sources:
 
 ## Current Policy
 
-For structured Ghostlight generation:
+For archived local-model experiments and future explicit Qwen plumbing:
 
 1. Prefer native chat/tool calls with thinking disabled for strict generation.
 2. Keep tool schemas narrow and concrete.

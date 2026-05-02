@@ -137,15 +137,21 @@ The first useful organs are:
 3. relationship and faction stance records
 4. event and scene records
 5. prompt projection renderer for content generation
-6. drama beat generator driven by goals, values, pressure, and memory
-7. dialogue scaffold renderer that preserves stance, mask, and relationship
+6. coordinator/story runtime driven by goals, values, pressure, memory,
+   continuity, branch flags, and author constraints
+7. branch compiler that turns reviewed branch plans into Ink, sidecars,
+   callbacks, consequence variables, and visual prompt handles
+8. IF artifact reviewer that catches decorative choices, fake folds, unused
+   variables, and missing consequence callbacks
+9. dialogue scaffold renderer that preserves stance, mask, and relationship
    asymmetry
-8. character-local dialogue context packs that restrict each generated voice to
+10. character-local dialogue context packs that restrict each generated voice to
    what that character knows, feels, wants, fears, and perceives
 
 The output should be inspectable. The author should be able to see why the
 machine thinks a character would deflect, confess, threaten, soften, bargain,
-or lie.
+lie, leave, spend a resource, conceal evidence, or make a choice that changes a
+later scene.
 
 ## What This Is Not
 
@@ -166,10 +172,12 @@ The first implementation is useful if it can:
 
 - keep character state distinct from prompt prose
 - render dialogue from character-local context rather than global plot vibes
-- generate dialogue scaffolds that reflect relationship history
+- generate branching dialogue/action scaffolds that reflect relationship history
 - create procedural drama from incompatible goals instead of random hostility
 - preserve cultural and factional pressure without making clones
 - produce story beats a human author can actually use
+- make branch choices matter through later affordances, callbacks, visual
+  modifiers, costs, risks, and endings
 - explain its choices in state terms rather than vibes in a rented coat
 
 The real test is not whether the system can improvise a cool scene once. The

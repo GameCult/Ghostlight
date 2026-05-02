@@ -27,7 +27,7 @@ behavior, major faction decision-making, and technology/item manifest generation
 ## Current Focus
 
 The active path is not the archived local-model prototype runner. The active
-path is:
+path is a source-grounded branching-scene data loop:
 
 1. Source-ground Aetheria context.
 2. Project canonical state into character-local operating context.
@@ -37,6 +37,11 @@ path is:
    leakage audit, and coordinator interventions.
 6. Apply only reviewed mutations into state, memory, relationships, perceived
    overlays, and unresolved hooks.
+7. Let the coordinator carry continuity, unresolved hooks, glue prose, and the
+   next scene/beat plan.
+8. Let the branch compiler materialize playable Ink plus sidecar and compiler
+   notes from reviewed state and branch decisions.
+9. Run IF artifact review before accepting the fixture as training data.
 
 ## Live Seams
 
@@ -73,6 +78,11 @@ path is:
 - Research sanity probe: `experiments/research-sanity/navigator-embodiment-sanity-v0.capture.json`
 - Packet builder: `tools/build_responder_packet.py`
 - Packet/output validators: `tools/validate_responder_packets.py`, `tools/validate_responder_outputs.py`
+- Clean Cold Wake IF scaffold: `examples/ink/cold-wake-branch-and-fold.v0.ink`
+- Clean Cold Wake IF sidecar: `examples/ink/cold-wake-branch-and-fold.v0.training.json`
+- Clean Cold Wake coordinator artifact: `examples/coordinator/cold-wake-branch-and-fold.v0.json`
+- Clean Cold Wake readable run: `experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md`
+- Branch compiler and IF reviewer contract: `docs/architecture/ink-branching-scenes.md`
 
 Archived prototype captures and tools remain as evidence under `experiments/`,
 `examples/ink/`, and old `run_qwen_*` helpers. They are useful receipts, not the
@@ -130,6 +140,11 @@ IF scaffold with visual prompt anchors and reviewed consequence surfaces.
 - Keep persistent state small. Git history and artifacts own chronology.
 - Do not let notes, map, handoff, and evidence become four versions of the same brain.
 - Do not train on coordinator-repaired responder prose unless the repair is labeled.
+- Do not accept branch fixtures without branch compiler notes and IF artifact
+  review once that seam is available.
+- Do not let tracked variables, authority pressure, heat, evidence quality,
+  relationship bands, or visual modifiers remain decorative. If they are
+  tracked, they need consequence or an explicit telemetry-only label.
 - Do not let Elysium branch futures overwrite Sol single-history facts.
 - Do not rebuild the older corridor-crisis game slice by accident.
 - Do not treat parent-visible subagent output as proof of research. If the

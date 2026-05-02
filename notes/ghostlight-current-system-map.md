@@ -33,8 +33,16 @@ Aetheria lore/source context
   -> sandboxed responder output
   -> review and leakage audit
   -> mutation receipt
-  -> updated fixture / future training corpus
+  -> updated scene/world/social state
+  -> coordinator continuity and next-beat plan
+  -> branch compiler materializes Ink + sidecar + compiler notes
+  -> IF artifact reviewer audits consequence, fold, and visual continuity
+  -> accepted fixture / future training corpus
 ```
+
+Responder packets are one seam, not the whole project. The current branching
+scene path also requires coordinator receipts, branch compiler artifacts, and an
+independent IF review pass before a fixture is accepted.
 
 ## Important Contracts
 
@@ -45,6 +53,8 @@ Aetheria lore/source context
 - Coordinator artifacts: `schemas/coordinator-artifact.schema.json`
 - Responder packets: `schemas/responder-packet.schema.json`
 - Responder outputs: `schemas/responder-output.schema.json`
+- Ink branch contract: `docs/architecture/ink-branching-scenes.md`
+- Training stages and corpus gates: `docs/architecture/training-plan.md`
 
 ## Current Live Example
 
@@ -90,6 +100,17 @@ Aetheria lore/source context
 - Parent sessions currently receive only the subagent final message, not a
   visible tool-call transcript. Treat subagent research as self-reported unless
   the worker returns explicit research notes or a future runner captures calls.
+- Clean accepted-as-draft IF scaffold:
+  `examples/ink/cold-wake-branch-and-fold.v0.ink`
+- Its sidecar is
+  `examples/ink/cold-wake-branch-and-fold.v0.training.json`.
+- Its coordinator artifact is
+  `examples/coordinator/cold-wake-branch-and-fold.v0.json`.
+- Its readable run is
+  `experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md`.
+- This fixture is coordinator/IF scaffold data. It is not raw responder gold.
+- The user review that exposed fake variables and cosmetic state is now seed
+  taxonomy for the IF artifact reviewer.
 
 ## Archived Receipts
 
@@ -99,7 +120,7 @@ embodiment, prompt leakage, and materialization. They are not active direction.
 Do not let them steer gold responder data unless the task is explicitly model
 plumbing.
 
-## Missing Organs
+## Missing Or Incomplete Organs
 
 - Deterministic speaker-local input slicer
 - Full prompt renderer
@@ -107,13 +128,16 @@ plumbing.
 - Relationship/perception updater
 - State mutator model
 - Student projector
+- Branch compiler implementation beyond coordinator-authored fixtures
+- IF artifact reviewer implementation beyond manual/frontier review
 - Full scene/event loop implementation
 - Culture prior engine
 - Automatic promotion of branch outcomes into canonical state
 
 ## Current North Star
 
-Generate high-quality, sandboxed, source-grounded responder/coordinator samples
-that can later train specialized Ghostlight models while staying usable by a
-game engine: exact inputs, exact outputs, provenance, review labels, state
-mutation receipts, and clear branch consequences.
+Generate high-quality, sandboxed, source-grounded branching-scene samples that
+can later train specialized Ghostlight models while staying usable by a game
+engine: exact inputs, exact outputs, provenance, review labels, state mutation
+receipts, branch compiler artifacts, IF review findings, and clear branch
+consequences.

@@ -97,7 +97,7 @@ The sequential runtime still owns:
 - event proposal capture
 - participant appraisal
 - reviewed mutation
-- Ink materialization
+- branch compiler / Ink materialization
 
 The projector owns the translation from Ghostlight's internal state language to
 character-local operating prose.
@@ -106,7 +106,7 @@ character-local operating prose.
 
 The first projector is deterministic and deliberately simple. It uses threshold
 language like "dominant", "strong", "present", and "background" rather than
-numeric scores. This is enough to remove raw state soup from Qwen prompts and
+numeric scores. This is enough to remove raw state soup from responder prompts and
 create inspectable training artifacts.
 
 Later versions can become smarter, but they should still preserve this boundary:
