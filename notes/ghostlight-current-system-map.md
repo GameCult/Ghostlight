@@ -63,7 +63,9 @@ state and re-entry discipline.
     promoted into the v0 schema
 - `docs/architecture/aetheria-lore-grounding-architecture.md`
   - boundary and plan for grounding training data in authored Aetheria history
-    while treating Elysium gameplay-era outcomes as procedural branch space
+    while treating Elysium gameplay-era outcomes as procedural branch space;
+    includes the source-first doctrine for checking AetheriaLore and patching
+    blocking lore gaps before generation
 - `docs/architecture/lore-grounding-digest-format.md`
   - human-facing format guide for cultural, factional, institutional, role, and
     speaker-boundary lore digests
@@ -267,6 +269,6 @@ instead of tool-call completion, so strict sequential generation now disables
 thinking by default. v10 validated that correction with an accepted-as-draft
 projector-routed no-thinking capture, which has now been materialized into Ink
 plus reviewed mutation training data. The next implementation target is
-deciding whether to patch precise Navigator clinic/interface ergonomics in
-AetheriaLore before another source-checked Qwen pass or generalizing the
-materializer.
+running another source-checked Qwen pass after the AetheriaLore Navigator
+habitat/interface patch, then reviewing whether the generated action proposals
+improve before generalizing the materializer.

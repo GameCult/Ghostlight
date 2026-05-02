@@ -151,6 +151,11 @@ social affordances, keep generated action at that level and record the missing
 ergonomic detail as a source-lore gap instead of inventing a confident local
 interface.
 
+When a blocking gap is found, patch the AetheriaLore source before treating the
+detail as available to projection. Ghostlight can discover missing granularity
+through scene generation, but the lore vault should become the durable source of
+the elaboration.
+
 ## Promotion Rule
 
 Promote a future mechanism into the main schema only after it has survived at

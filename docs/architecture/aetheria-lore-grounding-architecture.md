@@ -172,6 +172,51 @@ If the lore source is too vague for a convincing scene, stop and elaborate the
 lore slice first. Do not train the model to pave over missing social reality
 with confident fog.
 
+## Operating Doctrine
+
+Ghostlight will generate a lot of Aetheria dialogue, branching scenes, and
+training data. That means it will also be the first tool to stress-test many
+timeline details at room scale. Treat that as part of the job, not an
+exception.
+
+Before writing an Aetheria scene or generating data from one, do a source pass:
+
+1. Check AetheriaLore for the factions, social movements, institutions, species
+   or body types, location, and time period present in the scene.
+2. Extract the material constraints that shape behavior: habitat form,
+   infrastructure, law, money, route access, labor pressure, class position,
+   surveillance, body affordances, communication channels, and local failure
+   costs.
+3. Distill those details into the lore grounding digest, agent-state fixture,
+   projected local context, or Ink sidecar before prompting a response model.
+4. Keep the prompt character-local. Source grounding tells Ghostlight what the
+   room and culture make possible; it does not grant characters omniscience.
+5. If the lore does not support a needed concrete detail, do not fill the gap
+   with confident furniture. Mark the gap, elaborate the AetheriaLore source,
+   then regenerate or revise the Ghostlight artifact from the patched source.
+6. Commit the lore patch in AetheriaLore and cite the source path from
+   Ghostlight so the training artifact has a clean provenance trail.
+
+The output goal is not only clean training data. It is also playable, readable,
+fun interactive fiction that discovers where the worldbuilding is thin by
+leaning on it. If Ghostlight needs to know what a sanctuary intake board looks
+like to a cetacean Navigator, that is not trivia. That is worldbuilding under
+load.
+
+## Lore Gap Policy
+
+When a gap appears, classify it before writing:
+
+- `blocking`: generation would produce wrong bodies, wrong institutions, wrong
+  authority, or wrong material constraints without the missing detail.
+- `safe_to_stub`: the scene can proceed with a clearly marked provisional
+  detail that does not affect canon-critical behavior.
+- `defer`: the detail is decorative and should not enter the prompt yet.
+
+Blocking gaps should be patched in AetheriaLore first. Safe stubs must be
+tracked in the digest or sidecar and revisited before promotion. Deferred gaps
+should stay out of prompt text so they do not harden by accident.
+
 ## Immediate Plan
 
 1. Keep the Cat/Oz fixture as an Elysium procedural mechanics fixture.

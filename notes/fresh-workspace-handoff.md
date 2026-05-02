@@ -108,7 +108,8 @@ Ghostlight now has the persistence spine plus the first architecture payload:
     from checked Aetheria lore instead of default human body assumptions;
     current source supports fluid architecture, acoustic signaling, communal
     orientation chambers, mixed-species translation/coexistence, and specialized
-    cetacean environments, but exact clinic ergonomics remain a source-lore gap
+    cetacean environments; AetheriaLore has now been patched with mixed
+    wet/dry habitat and interface ergonomics
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
 - first projection example seam:
@@ -138,11 +139,18 @@ Cold Wake is now selected as the first historical grounding fixture because it
 is authored pre-Elysium lore. It is not the current game target. Treat it as
 training feedstock for projection and dialogue scaffolding.
 
+## Aetheria Grounding Doctrine
+
+Before writing or generating Aetheria scenes, check AetheriaLore for the
+factions, movements, institutions, species or body types, location, and time
+period involved. If a blocking detail is missing, patch the lore source with a
+narrow elaboration before treating the detail as available to Ghostlight.
+
 ## Current Next Action
 
-Decide whether to patch AetheriaLore with precise Navigator clinic/interface
-ergonomics, then run another Qwen pass through the source-checked projector or
-generalize the sequential materializer for more accepted captures.
+Run another Qwen pass through the source-checked Navigator projector, then
+review whether the patched AetheriaLore ergonomics produce cleaner action
+proposals before generalizing the sequential materializer.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -272,8 +280,9 @@ Remaining projection path:
 - build a renderer that emits projection controls before prompt prose
 - review the embodiment-aware materialized v10 Ink and mutation receipt for
   narrative quality and state-change plausibility
-- run another Qwen pass through the updated projector if Maer's Navigator
-  embodiment needs to be tested against generation rather than hand polish
+- run another Qwen pass through the source-checked projector to test whether
+  patched Navigator habitat/interface lore improves Maer's generated action
+  proposals
 - decide whether to polish this Ink text by hand or generalize the sequential
   materializer for future accepted captures
 - preserve the no-thinking default for strict tool-call generation unless a

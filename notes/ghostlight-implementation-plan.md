@@ -130,9 +130,13 @@
      against lore before projection. Current Navigator source supports fluid
      architecture, acoustic signaling, soft navigation light, layered water
      motifs, communal orientation chambers, mixed-species
-     translation/coexistence, and specialized cetacean environments; exact
-     clinic workstation ergonomics remain a lore-detail gap until patched at
-     source.
+     translation/coexistence, specialized cetacean environments, and, after a
+     source patch, mixed wet/dry habitat and interface ergonomics.
+   - Aetheria generation doctrine: before writing scenes or generating training
+     data, check AetheriaLore for factions, movements, institutions, species or
+     body types, location, and time period. If a blocking room-scale detail is
+     missing, patch AetheriaLore narrowly before treating that detail as
+     available to projection.
    - Sixth sequential draft: v6 routed thinking-plus-tools generation through
      projected local context instead of selected activation dictionaries. It
      produced usable Maer/Sella behavior but remains useful-needs-revision
@@ -155,11 +159,10 @@
    - V10 materialization: `tools/materialize_sequential_capture.py`
      materialized the accepted projector-routed capture into Ink, sidecar
      annotation, reviewed mutation receipt, and a mutated Cold Wake fixture.
-   - Next prototype: review the embodiment-aware materialized v10 branch and
-     mutation receipt for narrative quality and state-change plausibility, then
-     decide whether to run another Qwen pass through the updated projector,
-     polish the branch, or generalize the materializer for additional accepted
-     captures.
+   - Next prototype: run another Qwen pass through the source-checked Navigator
+     projector, review whether the patched AetheriaLore ergonomics produce
+     cleaner action proposals, then decide whether to polish the branch or
+     generalize the materializer for additional accepted captures.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

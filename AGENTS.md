@@ -119,3 +119,18 @@ When the user says to prepare for imminent compaction:
   current rule. If rejected history matters, keep it short, explicit, and
   decision-relevant; otherwise cut it. The docs are not a trophy case for
   yesterday's wrong machine.
+
+## Aetheria Grounding Doctrine
+
+- Before writing or generating Aetheria scenes, check AetheriaLore for the
+  factions, movements, institutions, species or body types, location, and time
+  period involved.
+- Ground scene writing in the source's material details: habitat form,
+  infrastructure, law, class pressure, money, route access, surveillance,
+  communication channels, body affordances, and local failure costs.
+- If the source is too vague for a concrete scene detail, do not bluff. Mark
+  the lore gap, patch the AetheriaLore source with a narrow elaboration, then
+  regenerate or revise the Ghostlight artifact from that patched source.
+- Treat this as part of data generation. Ghostlight is expected to stress-test
+  Aetheria at room scale, find missing granularity, and push useful
+  elaborations back into the lore vault.

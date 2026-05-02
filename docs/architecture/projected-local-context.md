@@ -97,10 +97,8 @@ the lore source. The current Navigator projection is grounded in:
 
 Those sources support fluid architecture, acoustic signaling, soft navigation
 light, layered water motifs, communal orientation chambers, mixed-species
-translation/coexistence, and specialized environments for cetacean physiology.
-They do not yet define precise clinic controls, rail layouts, or wet/dry
-workstation ergonomics. Treat those details as a lore-grounding gap until the
-Aetheria source material defines them.
+translation/coexistence, specialized environments for cetacean physiology, and
+mixed wet/dry interface ergonomics for Navigator-adjacent habitats.
 
 Do not let the model default to hands, pockets, standing, walking, leaning, or
 doorway blocking unless the fixture explicitly establishes that visible

@@ -310,11 +310,11 @@ def embodiment_context(agent: dict[str, Any], source_prefix: str) -> list[dict[s
                 [f"{source_prefix}.identity.origin", *navigator_lore_refs],
             ),
             text_block(
-                "Express physical action through source-grounded habitat affordances: fluid circulation, orientation chambers, shared displays, acoustic or translation systems, and specialized environments tailored to cetacean physiology.",
+                "Express physical action through source-grounded habitat affordances: fluid circulation, orientation chambers, mixed wet/dry work surfaces, shared displays, acoustic commands, pressure fields, haptic waterflow, neural interfaces, translation systems, or delegated crew action.",
                 [f"{source_prefix}.identity.roles", "scenes.scene-02-sanctuary-intake.location", *navigator_lore_refs],
             ),
             text_block(
-                "Do not invent exact workstation ergonomics beyond the source. If a scene needs precise controls, rails, channel geometry, or wet/dry clinic layout, treat that as a lore-detail gap to fill before generation.",
+                "For clinics and sanctuaries, make triage boards, testimony packets, and rescue ledgers legible across species through visual text, acoustic notation, tactile markers, translated speech, and authority logs.",
                 [f"{source_prefix}.identity.origin", *navigator_lore_refs],
             ),
             text_block(
