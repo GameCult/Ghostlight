@@ -48,6 +48,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `docs/architecture/qwen-invocation-notes.md`
   - `docs/architecture/projected-local-context.md`
   - `docs/architecture/soft-model-training-artifacts.md`
+  - `docs/architecture/training-plan.md`
 - lore grounding seam:
   - `schemas/lore-grounding-digest.schema.json`
   - `examples/lore-grounding/historical-flashpoint.template.json`
@@ -134,6 +135,8 @@ The coordinator is currently the authoring agent: it glues scenes together,
 maintains continuity, chooses which machinery runs, emits connective prose, and
 proposes world-state changes. Keep those outputs structured enough for future
 game-engine integration instead of letting them rot as chat-only intuition.
+The concrete training plan now enumerates the trainable stages, their inputs,
+outputs, likely model families, artifact families, and first corpus gates.
 
 ## Current Direction
 
@@ -157,10 +160,10 @@ narrow elaboration before treating the detail as available to Ghostlight.
 
 ## Current Next Action
 
-Revise the Sella next-action prompt/rendering path so responder prose does not
-copy prompt constraints into in-world dialogue, then rerun the source-checked
-Navigator sequential pass and materialize only a capture with no failure or
-repair notes.
+Define the coordinator artifact schema so future story passes capture
+next-beat choice, glue prose, world-state refs, branch flags, unresolved hooks,
+and machinery invocations as trainable data, then return to the Sella
+prompt/rendering fix.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay

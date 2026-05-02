@@ -82,6 +82,10 @@ state and re-entry discipline.
     coordinator/story runtime, projector, character agent/responder, appraiser,
     state mutator, relationship/perception classifier, Aetheria responder, and
     institution/faction/consumer decision models
+- `docs/architecture/training-plan.md`
+  - concrete enumeration of trainable Ghostlight stages, including each stage's
+    inputs, outputs, likely model architecture, artifact family, and first
+    training gate
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
     historical projection feedstock rather than the active product target
@@ -282,11 +286,16 @@ responder prose. The soft-model artifact doctrine now makes the broader
 training boundary explicit: deterministic gates stay code, while fuzzy
 coordination, projection, action choice, appraisal, mutation, relationship
 movement, Aetheria responder training, and economic/faction decision judgments
-become reviewed artifacts for later fine-tuning or distillation. The coordinator
-is currently the authoring agent: it glues scenes together, carries world-state
-refs and unresolved hooks, decides which machinery runs, and emits glue prose.
-That output should stay game-engine-shaped even while the prose lives in model
-imagination. The lore/tone goal is not a separate adapter; it is a responder
-trained on strong timeline-spread Aetheria responses until the setting's
-assumptions become native priors. Do not materialize another capture until it
-has no failure or repair notes.
+become reviewed artifacts for later fine-tuning or distillation. The concrete
+training plan now enumerates eleven trainable stages and their likely model
+families: generative decoder LLMs for coordinator, responder, and structured
+soft outputs; classifiers or cross-encoders for appraisal, evaluation, and
+relationship movement; embedding/retrieval models for memory and lore selection;
+and deterministic code for gates. The coordinator is currently the authoring
+agent: it glues scenes together, carries world-state refs and unresolved hooks,
+decides which machinery runs, and emits glue prose. That output should stay
+game-engine-shaped even while the prose lives in model imagination. The
+lore/tone goal is not a separate adapter; it is a responder trained on strong
+timeline-spread Aetheria responses until the setting's assumptions become
+native priors. Do not materialize another capture until it has no failure or
+repair notes.

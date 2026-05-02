@@ -180,6 +180,11 @@
      student roadmap.
    - Use `docs/architecture/soft-model-training-artifacts.md` as the boundary
      between deterministic code and soft model-training targets.
+   - Use `docs/architecture/training-plan.md` as the concrete stage inventory:
+     lore grounding compiler, coordinator/story runtime, memory/lore retriever,
+     projector, character agent/responder, event resolver, participant
+     appraiser, state mutator, relationship/perception updater, evaluator
+     classifiers, and institution/faction/consumer decision models.
    - Use `docs/architecture/aetheria-lore-grounding-architecture.md` to keep
      Aetheria grounded training separate from procedural Elysium branch
      generation.
@@ -255,6 +260,10 @@
    - The long-term coordinator model should learn how to stage scenes, preserve
      continuity, call specialist organs, and emit readable connective narration
      while respecting deterministic gates and game-engine constraints.
+   - First concrete training-plan target: define the coordinator artifact schema
+     before generating another long story pass, so glue prose, next-beat choice,
+     world-state refs, branch flags, unresolved hooks, and machinery invocations
+     are captured as trainable data instead of living only in chat.
 
 7. Build the first drama-scaffolding loop.
    - memory updates
