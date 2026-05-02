@@ -171,3 +171,36 @@ Cold Wake lesson: the clinic contact sequence is a useful climax seam, but it is
 not a full story by itself. A complete interactive fixture needs an opening
 pressure, at least one consequential branch before the clinic, and a resolution
 that visibly reflects earlier choices.
+
+## Scene Imagery
+
+Ghostlight scenes are also website content. A complete fixture should emit
+vivid visual direction alongside prose and training receipts so story branches
+can be illustrated without a later model guessing what the room looked like.
+
+Each scene should preserve an art-direction block with:
+
+- establishing shot: location, scale, camera distance, and dominant geometry
+- light and color: practical light sources, palette, exposure, haze, glare,
+  reflection, water, vacuum, screen glow, or other atmosphere
+- bodies and interfaces: how each relevant body occupies the space, including
+  nonhuman access, assistive infrastructure, suits, avatars, wet/dry boundaries,
+  displays, tools, and machinery
+- material evidence: objects, damage, records, ledgers, cargo, alarms, clothing,
+  stains, frost, heat shimmer, or other concrete traces of what has happened
+- branch marks: visible changes caused by earlier choices, such as a sealed
+  hatch, an exhausted staffer, a live debt ledger, missing equipment, guarded
+  posture, or a route marker left blinking
+- image prompt seed: a compact prompt suitable for an illustrator or image
+  model, separated from canonical facts so style polish does not become lore
+
+The coordinator owns this surface for now. The responder should not receive
+omniscient visual art direction unless the character can observe it. Character
+packets may receive the local visible subset: what this actor can see, hear,
+touch, smell, monitor, or infer from their interface.
+
+Visual continuity is part of consequence carryover. If an earlier branch cost
+heat, trust, time, equipment, or social standing, the later scene should show
+that cost somewhere on the page or in the frame. Otherwise the choice may be
+mechanically recorded while still feeling fake, which is the stupid little
+trapdoor interactive fiction keeps setting for itself.

@@ -39,6 +39,7 @@ hard_boundaries:
   - Aetheria generation is source-first; check lore for factions, bodies, locations, institutions, and constraints before projection.
   - Elysium futures are branch-local canon indexed by lineage, not single-history Sol facts.
   - Technology exploration must emit game-usable item, component, assembly, supply-chain, compatibility, and provenance data mapped toward Aetheria-Economy.
+  - Complete interactive-fiction fixtures must emit visual art direction for website imagery, with branch-visible consequences carried into later scene descriptions.
   - Archived local-model prototype runners are receipts and plumbing tests, not the gold-data path.
 
 live_architecture:
@@ -153,4 +154,4 @@ data_flow:
 
 current_status:
   summary: Cold Wake v0/v1 fragments exposed two design corrections. First, v0 had over-procedural speech and is diagnostic, not gold. Second, v1 starts near the clinic climax and is not a full story arc. The next accepted pass must be interactive-fiction-shaped: opening pressure, branch points, cross-scene consequence carryover, climax, and resolution.
-  next_action: Restart the accepted Cold Wake story run as an interactive fiction fixture from the opening tribunal/route pressure, not from the clinic climax. Design a beginning-to-ending spine with meaningful branch points whose consequences carry across scenes into relationship state, resource costs, available options, and final resolution. Use responder artifacts only at material branch/action beats, with compressed in-character speech and procedural detail outside dialogue.
+  next_action: Restart the accepted Cold Wake story run as an interactive fiction fixture from the opening tribunal/route pressure, not from the clinic climax. Design a beginning-to-ending spine with meaningful branch points whose consequences carry across scenes into relationship state, resource costs, available options, final resolution, and scene imagery. Use responder artifacts only at material branch/action beats, with compressed in-character speech and procedural detail outside dialogue.
