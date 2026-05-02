@@ -64,6 +64,7 @@ def node_command() -> str:
 
 
 def compile_ink(path: Path) -> None:
+    validate_no_preview_leaking_metadata_tags(path)
     with tempfile.TemporaryDirectory(prefix="ghostlight-ink-") as temp_dir:
         output_path = Path(temp_dir) / f"{path.stem}.json"
         result = subprocess.run(
@@ -82,6 +83,15 @@ def compile_ink(path: Path) -> None:
         compiled = output_path.read_text(encoding="utf-8-sig")
         require(compiled.strip().startswith("{"), f"{path} compiled output is not JSON")
         validate_story_reaches_initial_choices(path, output_path)
+
+
+def validate_no_preview_leaking_metadata_tags(path: Path) -> None:
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        stripped = line.lstrip()
+        if stripped.startswith("# ghostlight.") or stripped.startswith("# aetheria."):
+            raise ValidationError(
+                f"{path}:{line_number} uses an Ink tag for Ghostlight/Aetheria metadata; use // comments so Inky preview stays clean"
+            )
 
 
 def validate_story_reaches_initial_choices(source_path: Path, compiled_path: Path) -> None:

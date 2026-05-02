@@ -4,7 +4,7 @@ Ink is the branching scene format.
 
 Ghostlight should not invent a parallel dialogue-tree language unless Ink
 fails a concrete requirement. Ink already gives us readable interactive fiction,
-choices, knots, stitches, variables, tags, compiled JSON, and a format writers
+choices, knots, stitches, variables, compiled JSON, and a format writers
 can inspect without needing to wear a compiler helmet indoors.
 
 Ghostlight's job is the machinery around Ink:
@@ -57,9 +57,9 @@ That distinction matters. A generated branch can be useful because it exposes a
 decision shape, an action type, a misread, or a prompt failure even when the
 line writing still needs a human with a knife.
 
-## Ink Tags
+## Ink Comments
 
-Use Ink tags for lightweight traceability:
+Use Ink comments for lightweight traceability in writer-facing drafts:
 
 - `ghostlight.scene`
 - `ghostlight.fixture`
@@ -71,8 +71,10 @@ Use Ink tags for lightweight traceability:
 - `ghostlight.training_hook`
 - `aetheria.flashpoint`
 
-Tags are not the full state model. They are handles that let runtime and
-training tools connect a playable branch back to Ghostlight state.
+Use `//`, not Ink tags (`#`), for this metadata in drafts. Inky exposes tags in
+preview, which makes Ghostlight state leak into the readable scene. The
+sidecar remains the machine-readable receipt; comments are only local handles
+for humans and simple tools.
 
 ## Sidecar Annotations
 
@@ -103,7 +105,7 @@ Automatic:
 - Ink compilation
 - branch id and knot validation
 - local variables for the current playthrough
-- mechanical tags and training hook checks
+- mechanical comment handles and training hook checks
 
 Manual reviewed until trained:
 

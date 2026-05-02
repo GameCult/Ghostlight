@@ -7,9 +7,9 @@ VAR packet_shown = false
 -> start
 
 === start ===
-# ghostlight.scene: scene-02-sanctuary-intake
-# ghostlight.fixture: examples/agent-state.cold-wake-story-lab.json
-# aetheria.flashpoint: cold-wake-panic
+// ghostlight.scene: scene-02-sanctuary-intake
+// ghostlight.fixture: examples/agent-state.cold-wake-story-lab.json
+// aetheria.flashpoint: cold-wake-panic
 
 The intake clinic sits behind the pumpworks where the dockside heat exchangers
 make every prayer sound like a maintenance complaint.
@@ -28,27 +28,27 @@ Sella does not look at the slate first. She looks at Maer.
 What does Maer do?
 
 * [Name the cost and put the route ledger behind it.]
-    # ghostlight.branch: branch-maer-name-cost-and-offer-ledger
-    # ghostlight.action: speak
-    # ghostlight.intent: ask_for_capacity_while_accepting_material_obligation
+    // ghostlight.branch: branch-maer-name-cost-and-offer-ledger
+    // ghostlight.action: speak
+    // ghostlight.intent: ask_for_capacity_while_accepting_material_obligation
     -> ledger_backed_bay
 
 * [Step to the intake board and help triage before asking.]
-    # ghostlight.branch: branch-maer-help-triage-before-asking
-    # ghostlight.action: gesture
-    # ghostlight.intent: earn_the_right_to_ask_by_sharing_logistical_burden
+    // ghostlight.branch: branch-maer-help-triage-before-asking
+    // ghostlight.action: gesture
+    // ghostlight.intent: earn_the_right_to_ask_by_sharing_logistical_burden
     -> triage_first
 
 * [Show Sella the corrupted packet.]
-    # ghostlight.branch: branch-maer-show-packet
-    # ghostlight.action: show_object
-    # ghostlight.intent: make_uncertainty_morally_present_without_overclaiming
+    // ghostlight.branch: branch-maer-show-packet
+    // ghostlight.action: show_object
+    // ghostlight.intent: make_uncertainty_morally_present_without_overclaiming
     -> show_packet
 
 * [Press the personhood risk until capacity stops being the only frame.]
-    # ghostlight.branch: branch-maer-press-moral-frame
-    # ghostlight.action: speak
-    # ghostlight.intent: force_personhood_risk_to_dominate_capacity_limits
+    // ghostlight.branch: branch-maer-press-moral-frame
+    // ghostlight.action: speak
+    // ghostlight.intent: force_personhood_risk_to_dominate_capacity_limits
     -> moral_pressure
 
 === ledger_backed_bay ===
@@ -72,10 +72,10 @@ into contagion math. Your ledger buys time, Maer. Not absolution."
 
 The clinic exhales around them, annoyed to discover it is still alive.
 
-# ghostlight.npc_response: sella_conditional_acceptance
-# ghostlight.consequence: conditional_bay_reserved
-# ghostlight.training_hook: care_as_capacity
-# ghostlight.training_hook: obligation_backed_request
+// ghostlight.npc_response: sella_conditional_acceptance
+// ghostlight.consequence: conditional_bay_reserved
+// ghostlight.training_hook: care_as_capacity
+// ghostlight.training_hook: obligation_backed_request
 -> END
 
 === triage_first ===
@@ -96,9 +96,9 @@ explain your hands in writing."
 
 It is not permission. It is worse. It is work.
 
-# ghostlight.npc_response: sella_conditional_delegation
-# ghostlight.consequence: trust_test_opened
-# ghostlight.training_hook: authority_respecting_help
+// ghostlight.npc_response: sella_conditional_delegation
+// ghostlight.consequence: trust_test_opened
+// ghostlight.training_hook: authority_respecting_help
 -> END
 
 === show_packet ===
@@ -121,9 +121,9 @@ Her thumb hovers over the isolation protocol. Not over the bay.
 
 "You brought me a worse problem, which is very Navigator of you."
 
-# ghostlight.npc_response: sella_protocol_before_mercy
-# ghostlight.consequence: packet_seen_no_personhood_resolution
-# ghostlight.training_hook: unresolved_evidence_pressure
+// ghostlight.npc_response: sella_protocol_before_mercy
+// ghostlight.consequence: packet_seen_no_personhood_resolution
+// ghostlight.training_hook: unresolved_evidence_pressure
 -> END
 
 === moral_pressure ===
@@ -144,7 +144,7 @@ bring me quiet."
 For a moment the only thing between them is the board, which has been keeping
 score longer than either of them has been brave.
 
-# ghostlight.npc_response: sella_rejects_symbolic_pressure
-# ghostlight.consequence: trust_loss_resentment_risk
-# ghostlight.training_hook: moral_pressure_as_resource_substitution
+// ghostlight.npc_response: sella_rejects_symbolic_pressure
+// ghostlight.consequence: trust_loss_resentment_risk
+// ghostlight.training_hook: moral_pressure_as_resource_substitution
 -> END

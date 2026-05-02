@@ -7,10 +7,10 @@ VAR packet_shown = false
 -> start
 
 === start ===
-# ghostlight.scene: scene-02-sanctuary-intake
-# ghostlight.fixture: examples/agent-state.cold-wake-story-lab.json
-# ghostlight.generated_by: experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json
-# aetheria.flashpoint: cold-wake-panic
+// ghostlight.scene: scene-02-sanctuary-intake
+// ghostlight.fixture: examples/agent-state.cold-wake-story-lab.json
+// ghostlight.generated_by: experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json
+// aetheria.flashpoint: cold-wake-panic
 
 The intake clinic sits behind the pumpworks, all warmth rationed through humming conduits and tired hands.
 
@@ -21,27 +21,27 @@ Sella says, "If you came to ask me for mercy, bring tubing."
 What does Maer do?
 
 * [Show the corrupted packet to Sella.]
-    # ghostlight.branch: branch-01-maer-show-packet
-    # ghostlight.action: show_object
-    # ghostlight.intent: Provide data for triage capacity calculation while acknowledging the packet is not clean proof of personhood.
+    // ghostlight.branch: branch-01-maer-show-packet
+    // ghostlight.action: show_object
+    // ghostlight.intent: Provide data for triage capacity calculation while acknowledging the packet is not clean proof of personhood.
     -> branch_01_maer_show_packet
 
 * [Withhold the packet and ask for a triage assessment based on the signal alone.]
-    # ghostlight.branch: branch-02-maer-withhold-packet
-    # ghostlight.action: withhold_object
-    # ghostlight.intent: Force Sella to rely on her own capacity management without the crutch of the packet's ambiguous data.
+    // ghostlight.branch: branch-02-maer-withhold-packet
+    // ghostlight.action: withhold_object
+    // ghostlight.intent: Force Sella to rely on her own capacity management without the crutch of the packet's ambiguous data.
     -> branch_02_maer_withhold_packet
 
 * [Press Sella on the moral cost of turning away a potential person.]
-    # ghostlight.branch: branch-03-maer-press-moral-frame
-    # ghostlight.action: speak
-    # ghostlight.intent: Challenge Sella's rigidity by framing the refusal as a moral failure, risking her resentment.
+    // ghostlight.branch: branch-03-maer-press-moral-frame
+    // ghostlight.action: speak
+    // ghostlight.intent: Challenge Sella's rigidity by framing the refusal as a moral failure, risking her resentment.
     -> branch_03_maer_press_moral_frame
 
 * [Stand in silence and observe Sella's reaction to the packet's presence.]
-    # ghostlight.branch: branch-04-maer-silent-observation
-    # ghostlight.action: silence
-    # ghostlight.intent: Allow Sella to initiate the decision process, testing her suspicion levels without verbal interference.
+    // ghostlight.branch: branch-04-maer-silent-observation
+    // ghostlight.action: silence
+    // ghostlight.intent: Allow Sella to initiate the decision process, testing her suspicion levels without verbal interference.
     -> branch_04_maer_silent_observation
 
 === branch_01_maer_show_packet ===
@@ -55,10 +55,10 @@ Sella scans the packet's surface, her eyes narrowing as she parses the firmware 
 
 "The packet is unstable. If I accept this, I am betting on a pattern that could be a lie or a glitch. If I say no, the vessel goes dark. What is your ledger backing for this specific intake?"
 
-# ghostlight.generated_branch: branch-01-maer-show-packet
-# ghostlight.consequence: branch_01_maer_show_packet_reviewed_consequence
-# ghostlight.training_hook: branch-02-sella-demand-ledger
-# ghostlight.training_hook: branch-03-sella-conditional-acceptance
+// ghostlight.generated_branch: branch-01-maer-show-packet
+// ghostlight.consequence: branch_01_maer_show_packet_reviewed_consequence
+// ghostlight.training_hook: branch-02-sella-demand-ledger
+// ghostlight.training_hook: branch-03-sella-conditional-acceptance
 -> END
 
 === branch_02_maer_withhold_packet ===
@@ -71,9 +71,9 @@ Sella sighs, looking at the empty intake bay and the exhausted staff. She refuse
 
 "You want me to guess on a ghost? My capacity is measured in minutes, not faith. If you won't show me the packet, you aren't asking for help; you're asking for a miracle. That is not in the ledger."
 
-# ghostlight.generated_branch: branch-02-maer-withhold-packet
-# ghostlight.consequence: branch_02_maer_withhold_packet_reviewed_consequence
-# ghostlight.training_hook: branch-04-maer-offer-personal-guarantee
+// ghostlight.generated_branch: branch-02-maer-withhold-packet
+// ghostlight.consequence: branch_02_maer_withhold_packet_reviewed_consequence
+// ghostlight.training_hook: branch-04-maer-offer-personal-guarantee
 -> END
 
 === branch_03_maer_press_moral_frame ===
@@ -87,9 +87,9 @@ Sella's expression hardens, recognizing the trap of moral theater. She defends h
 
 "You speak of fear, but you ignore the reality of the math. Every bed I open is a bed closed for someone else. If I take a risk on noise, I am not being merciful; I am being negligent. Do not pretend my ledger is a morality play."
 
-# ghostlight.generated_branch: branch-03-maer-press-moral-frame
-# ghostlight.consequence: branch_03_maer_press_moral_frame_reviewed_consequence
-# ghostlight.training_hook: branch-05-sella-moral-responsibility
+// ghostlight.generated_branch: branch-03-maer-press-moral-frame
+// ghostlight.consequence: branch_03_maer_press_moral_frame_reviewed_consequence
+// ghostlight.training_hook: branch-05-sella-moral-responsibility
 -> END
 
 === branch_04_maer_silent_observation ===
@@ -101,7 +101,7 @@ Sella stares at the packet for a long moment, her internal suspicion warring wit
 
 "The silence is loud enough. I see the routing terms. They are messy, but they are there. I am not a judge, Maer. I am a triage lead. If you want me to open a bed, you must understand that I am doing it because the math allows it, not because you told me it was right. Now, do you want me to try to parse the noise, or do you want to walk away?"
 
-# ghostlight.generated_branch: branch-04-maer-silent-observation
-# ghostlight.consequence: branch_04_maer_silent_observation_reviewed_consequence
-# ghostlight.training_hook: branch-06-sella-initiative-with-conditions
+// ghostlight.generated_branch: branch-04-maer-silent-observation
+// ghostlight.consequence: branch_04_maer_silent_observation_reviewed_consequence
+// ghostlight.training_hook: branch-06-sella-initiative-with-conditions
 -> END

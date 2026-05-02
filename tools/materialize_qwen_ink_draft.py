@@ -64,10 +64,10 @@ def build_ink(capture: dict[str, Any]) -> str:
         "-> start",
         "",
         "=== start ===",
-        "# ghostlight.scene: scene-02-sanctuary-intake",
-        "# ghostlight.fixture: examples/agent-state.cold-wake-story-lab.json",
-        "# ghostlight.generated_by: experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json",
-        "# aetheria.flashpoint: cold-wake-panic",
+        "// ghostlight.scene: scene-02-sanctuary-intake",
+        "// ghostlight.fixture: examples/agent-state.cold-wake-story-lab.json",
+        "// ghostlight.generated_by: experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json",
+        "// aetheria.flashpoint: cold-wake-panic",
         "",
         "The intake clinic sits behind the pumpworks, all warmth rationed through humming conduits and tired hands.",
         "",
@@ -83,9 +83,9 @@ def build_ink(capture: dict[str, Any]) -> str:
         lines.extend(
             [
                 f"* [{branch['choice_text']}]",
-                f"    # ghostlight.branch: {branch['branch_id']}",
-                f"    # ghostlight.action: {branch['action_type']}",
-                f"    # ghostlight.intent: {branch['actor_intent']}",
+                f"    // ghostlight.branch: {branch['branch_id']}",
+                f"    // ghostlight.action: {branch['action_type']}",
+                f"    // ghostlight.intent: {branch['actor_intent']}",
                 f"    -> {ink_path}",
                 "",
             ]
@@ -111,12 +111,12 @@ def build_ink(capture: dict[str, Any]) -> str:
         lines.extend(
             [
                 "",
-                f"# ghostlight.generated_branch: {branch['branch_id']}",
-                f"# ghostlight.consequence: {ink_identifier(branch['branch_id'])}_reviewed_consequence",
+                f"// ghostlight.generated_branch: {branch['branch_id']}",
+                f"// ghostlight.consequence: {ink_identifier(branch['branch_id'])}_reviewed_consequence",
             ]
         )
         for hook in ensure_list(branch.get("training_hooks")):
-            lines.append(f"# ghostlight.training_hook: {hook}")
+            lines.append(f"// ghostlight.training_hook: {hook}")
         lines.extend(["-> END", ""])
     return "\n".join(lines).rstrip() + "\n"
 
