@@ -1,0 +1,175 @@
+{
+  "schema_version": "ghostlight.reviewed_state_mutation.v0",
+  "mutation_id": "mutation-sanctuary-packet-assessment-v10",
+  "source_fixture_ref": "examples/agent-state.cold-wake-story-lab.json",
+  "source_capture_ref": "experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json",
+  "mutated_fixture_ref": "examples/agent-state.cold-wake-story-lab.after-v10-packet-assessment.json",
+  "selected_branch_id": "m1",
+  "event_id": "event-sanctuary-packet-assessment-boundary",
+  "participant_appraisals": [
+    {
+      "participant_agent_id": "maer_tidecall",
+      "trigger_observable_action": {
+        "speaker_id": "sella_ren",
+        "action_type": "wait",
+        "utterance_summary": "I won't accept this into intake without knowing what's inside. If it's noise, it's noise. If it's a person, I need to know the cost before I spend a bed.",
+        "dialogue_function": "withhold_intake_pending_assessment",
+        "observable_cues": [
+          "Sella does not take the packet. She keeps her hands at her sides and tilts her head slightly, eyes narrowing as she scans the data slate for corruption signatures."
+        ]
+      },
+      "private_interpretation": "Sella is not accepting the packet yet, but she has not collapsed uncertainty into refusal.",
+      "state_deltas": [
+        {
+          "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+          "delta": 0.01
+        },
+        {
+          "path": "canonical_state.behavioral_dimensions.suspicion.current_activation",
+          "delta": -0.02
+        }
+      ],
+      "next_action_constraints": [
+        "Do not treat Sella's assessment boundary as a clean refusal.",
+        "Do not resolve packet personhood.",
+        "Any next Maer action should answer cost, risk, or provenance rather than demand acceptance."
+      ]
+    },
+    {
+      "participant_agent_id": "sella_ren",
+      "trigger_observable_action": {
+        "speaker_id": "maer_tidecall",
+        "action_type": "show_object",
+        "utterance_summary": "Here is the packet. It is not proof. Assess it.",
+        "dialogue_function": "present_ambiguous_evidence",
+        "observable_cues": [
+          "Maer extends a data slate containing the corrupted packet toward Sella's workbench."
+        ]
+      },
+      "private_interpretation": "Maer is offering the packet as a test of our capacity to triage under uncertainty, not as a plea for immediate acceptance. He knows the packet is ambiguous and wants Sella to assess the risk before committing beds. His urgency is genuine but he is aware that the packet itself is not proof of personhood or need.",
+      "state_deltas": [
+        {
+          "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+          "delta": 0.03
+        },
+        {
+          "path": "canonical_state.situational_state.scarcity_pressure.current_activation",
+          "delta": 0.02
+        },
+        {
+          "path": "canonical_state.situational_state.overstimulation.current_activation",
+          "delta": 0.02
+        }
+      ],
+      "next_action_constraints": [
+        "Do not accept the packet into intake flow without assessing the risk of corruption.",
+        "Do not let compassion manufacture capacity; every acceptance must be backed by available resources.",
+        "Frame the response as capacity negotiation under uncertainty, not a morality duel with a clean answer.",
+        "Speak warmly but do not soften the capacity limits; treat care as logistics and personhood as unresolved."
+      ]
+    }
+  ],
+  "observed_action": {
+    "speaker_id": "maer_tidecall",
+    "action_type": "show_object",
+    "utterance_summary": "Here is the packet. It is not proof. Assess it.",
+    "dialogue_function": "present_ambiguous_evidence",
+    "observable_cues": [
+      "Maer extends a data slate containing the corrupted packet toward Sella's workbench."
+    ]
+  },
+  "observed_response": {
+    "speaker_id": "sella_ren",
+    "action_type": "wait",
+    "utterance_summary": "I won't accept this into intake without knowing what's inside. If it's noise, it's noise. If it's a person, I need to know the cost before I spend a bed.",
+    "dialogue_function": "withhold_intake_pending_assessment",
+    "observable_cues": [
+      "Sella does not take the packet. She keeps her hands at her sides and tilts her head slightly, eyes narrowing as she scans the data slate for corruption signatures."
+    ]
+  },
+  "applied_mutations": [
+    {
+      "target": "maer_tidecall",
+      "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+      "before": 0.67,
+      "after": 0.68
+    },
+    {
+      "target": "maer_tidecall",
+      "path": "canonical_state.behavioral_dimensions.suspicion.current_activation",
+      "before": 0.71,
+      "after": 0.69
+    },
+    {
+      "target": "sella_ren",
+      "path": "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+      "before": 0.5,
+      "after": 0.53
+    },
+    {
+      "target": "sella_ren",
+      "path": "canonical_state.situational_state.scarcity_pressure.current_activation",
+      "before": 0.84,
+      "after": 0.86
+    },
+    {
+      "target": "sella_ren",
+      "path": "canonical_state.situational_state.overstimulation.current_activation",
+      "before": 0.72,
+      "after": 0.74
+    },
+    {
+      "target": "rel-maer-sella",
+      "path": "stance.trust.current_activation",
+      "before": 0.7,
+      "after": 0.71
+    },
+    {
+      "target": "rel-maer-sella",
+      "path": "stance.respect.current_activation",
+      "before": 0.78,
+      "after": 0.8
+    },
+    {
+      "target": "rel-maer-sella",
+      "path": "stance.obligation.current_activation",
+      "before": 0.6,
+      "after": 0.61
+    },
+    {
+      "target": "rel-sella-maer",
+      "path": "stance.trust.current_activation",
+      "before": 0.57,
+      "after": 0.59
+    },
+    {
+      "target": "rel-sella-maer",
+      "path": "stance.respect.current_activation",
+      "before": 0.73,
+      "after": 0.75
+    },
+    {
+      "target": "rel-sella-maer",
+      "path": "stance.resentment.current_activation",
+      "before": 0.36,
+      "after": 0.34
+    },
+    {
+      "target": "rel-sella-maer",
+      "path": "stance.obligation.current_activation",
+      "before": 0.48,
+      "after": 0.49
+    }
+  ],
+  "manual_review_notes": [
+    "The packet remains unresolved.",
+    "Sella's non-acceptance is modeled as assessment boundary, not refusal.",
+    "Both Maer and Sella receive state, memory, relationship, or perception updates.",
+    "Fuzzy updates are manual reviewed training data."
+  ],
+  "deferred_mutations": [
+    "No sanctuary bed is opened or consumed.",
+    "No personhood claim is proven or disproven.",
+    "No automatic relationship classifier is trained yet."
+  ]
+}

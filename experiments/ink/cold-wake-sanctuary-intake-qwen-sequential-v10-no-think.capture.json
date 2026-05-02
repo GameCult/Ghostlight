@@ -227,7 +227,7 @@
     ],
     "failure_notes": [],
     "repair_notes": [],
-    "accepted_into_ink_ref": null,
+    "accepted_into_ink_ref": "examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.ink",
     "pipeline_lessons": [
       "Sequential generation needs event appraisal/consolidation before next actor selection.",
       "Action type selection should be tool-shaped or schema-constrained, not left to prose compliance.",

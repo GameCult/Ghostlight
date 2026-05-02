@@ -144,8 +144,13 @@
    - Tenth sequential draft: v10 ran projector-routed generation with thinking
      disabled and validated as accepted-as-draft with no repair or failure
      notes.
-   - Next prototype: materialize the accepted v10 projector-routed branch into
-     Ink and sidecar annotation, then produce reviewed mutation training data.
+   - V10 materialization: `tools/materialize_sequential_capture.py`
+     materialized the accepted projector-routed capture into Ink, sidecar
+     annotation, reviewed mutation receipt, and a mutated Cold Wake fixture.
+   - Next prototype: review the materialized v10 branch and mutation receipt
+     for narrative quality and state-change plausibility, then decide whether
+     to polish the branch or generalize the materializer for additional
+     accepted captures.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

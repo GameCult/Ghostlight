@@ -78,6 +78,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `tools/materialize_qwen_ink_draft.py`
   - `tools/validate_ink_examples.py`
   - `tools/run_qwen_ink_sequential_generation.py`
+  - `tools/materialize_sequential_capture.py`
   - `tools/apply_sequential_ink_branch_mutation.py`
   - `inkjs` dev dependency and `npm run ink:validate`
 - sequential branch mutation seam:
@@ -92,6 +93,11 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
   - `experiments/ink/qwen-chat-tools-smoke.json`
   - `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
+- projector-routed sequential materialization seam:
+  - `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.ink`
+  - `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.training.json`
+  - `examples/agent-state.cold-wake-story-lab.after-v10-packet-assessment.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10.mutation.json`
 - projected local context seam:
   - `schemas/projected-local-context.schema.json`
   - `examples/projected-contexts/scene-02-sanctuary-intake.maer_tidecall.projected-context.json`
@@ -129,8 +135,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Materialize the accepted v10 projector-routed sequential capture into Ink and
-reviewed mutation training data, keeping fuzzy state changes manual and audited.
+Review the materialized v10 Ink branch and mutation receipt for narrative
+quality and state-change plausibility, then either polish the Ink text or
+generalize the sequential materializer for more accepted captures.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -246,13 +253,22 @@ Completed projection path items:
 - add v10 no-thinking projector-routed capture:
   `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json`
   validates as accepted-as-draft with no repair notes or failure notes
+- materialize v10:
+  `tools/materialize_sequential_capture.py` wrote a playable Ink branch, sidecar
+  training annotation, reviewed mutation receipt, and mutated Cold Wake fixture
+  from the accepted projector-routed capture
+- update v10 capture provenance:
+  `accepted_into_ink_ref` now points at
+  `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.ink`
 
 Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- materialize the accepted v10 projector-routed capture into Ink and reviewed
-  mutation training data
+- review the materialized v10 Ink and mutation receipt for narrative quality and
+  state-change plausibility
+- decide whether to polish this Ink text by hand or generalize the sequential
+  materializer for future accepted captures
 - preserve the no-thinking default for strict tool-call generation unless a
   diagnostic run explicitly needs `--think`
 - improve the local-awareness-to-Ink prompt so semantic `training_hooks` do not

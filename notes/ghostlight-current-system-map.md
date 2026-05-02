@@ -124,6 +124,11 @@ state and re-entry discipline.
 - `examples/ink/cold-wake-sanctuary-intake.qwen-draft.training.json`
   - sidecar annotation for the generated draft, accepted as training material
     rather than final polished prose
+- `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.ink`
+  - first playable Ink branch materialized from an accepted projector-routed
+    sequential Qwen capture
+- `examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.training.json`
+  - sidecar annotation for the v10 materialized sequential branch
 - `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json`
   - reviewed Qwen branch-generation receipt, including prompt, parsed response,
     strengths, failure notes, and pipeline lessons
@@ -173,6 +178,13 @@ state and re-entry discipline.
   - mutated Cold Wake fixture after the selected sanctuary ledger branch,
     updating Maer and Sella state, relationship stance, memories, perceived
     overlays, event log, and active scene memories
+- `examples/agent-state.cold-wake-story-lab.after-v10-packet-assessment.json`
+  - mutated Cold Wake fixture after the v10 packet-assessment branch,
+    preserving unresolved packet personhood while updating state, relationship
+    stance, memories, perceived overlays, event log, and active scene memories
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10.mutation.json`
+  - reviewed mutation receipt for v10 materialization, keeping fuzzy appraisal
+    and relationship movement manual and auditable
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
@@ -197,6 +209,9 @@ state and re-entry discipline.
 - `tools/materialize_qwen_ink_draft.py`
   - turns a reviewed Qwen branch capture into a playable Ink draft and sidecar
     annotation
+- `tools/materialize_sequential_capture.py`
+  - turns an accepted sequential capture into playable Ink, sidecar annotation,
+    reviewed mutation receipt, and a mutated fixture
 - `tools/run_qwen_ink_sequential_generation.py`
   - builds a sequential Qwen prototype through Ollama `/api/chat` with native
     tools and thinking disabled by default: actor-local choices, participant
@@ -247,5 +262,7 @@ v9 show that Qwen tool-call reliability, not the projector seam, is now the
 immediate blocker. The v9 thinking trace also showed schema self-check looping
 instead of tool-call completion, so strict sequential generation now disables
 thinking by default. v10 validated that correction with an accepted-as-draft
-projector-routed no-thinking capture. The next implementation target is
-materializing v10 into Ink plus reviewed mutation training data.
+projector-routed no-thinking capture, which has now been materialized into Ink
+plus reviewed mutation training data. The next implementation target is
+reviewing the materialized v10 branch and mutation receipt for narrative quality
+and state-change plausibility before polishing or generalizing the materializer.
