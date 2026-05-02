@@ -61,6 +61,9 @@ live_architecture:
   coordinator:
     - The coordinator is a trainable soft organ: it stages scenes, chooses next beats and acting agents, invokes specialist machinery, carries unresolved hooks, emits glue prose, and proposes game-engine-shaped state changes.
     - Glue prose is training signal, not canonical truth.
+  branch_compiler:
+    - The branch compiler turns fixture briefs, lore digests, scene/world state, actor-local branch candidates, reviewed consequence packets, fold plans, and visual continuity requirements into playable Ink plus training sidecars and compiler notes.
+    - The branch compiler owns playable structure, conditionals, variables, callbacks, fold materialization, and image prompt handles; it does not own hidden character truth, participant appraisal, or durable social mutation.
   training_targets:
     - Coordinator/story runtime
     - Memory and lore retrieval
@@ -69,6 +72,7 @@ live_architecture:
     - Participant appraiser
     - State mutator
     - Relationship/perception updater
+    - Branch compiler for Ink materialization, fold/callback structure, sidecar generation, and visual prompt handles
     - Interactive-fiction artifact reviewer for fake variables, cosmetic choices, missing state reads, fake folds, and visual callback gaps
     - Human-facing appraisal and opinion model for VoidBot
     - Evaluator/review classifiers

@@ -232,6 +232,55 @@ is created, the artifact should name the reason and the expected future writing
 debt. Trees are cheap to grow and expensive to prune. The machine should not
 act surprised by botany.
 
+## Branch Compiler
+
+The Branch Compiler is the organ that turns Ghostlight scene intent into a
+playable Ink artifact. It is not the character agent, the responder, the
+appraiser, or the final reviewer. It assembles branch structure from already
+available scene state, projected actor affordances, proposed actions, accepted
+consequence packets, and coordinator constraints.
+
+The Branch Compiler receives:
+
+- fixture brief and scene spine
+- source-grounded lore digest
+- current world, scene, resource, relationship, and branch state
+- actor-local branch candidates, including speech and non-speech actions
+- responder outputs or coordinator-authored placeholder reactions
+- consequence packets from reviewed turns
+- branch-and-fold plan
+- visual continuity requirements
+- schema and Ink formatting constraints
+
+The Branch Compiler emits:
+
+- readable `.ink` scene content
+- Ink variables, knots, stitches, choices, gathers, and conditionals
+- a `.training.json` sidecar tying each branch to state basis, action intent,
+  consequence surfaces, and later callbacks
+- compiler notes for fold decisions, route-split decisions, and known review
+  risks
+- image prompt anchors and branch/state modification handles when the fixture is
+  meant for illustrated output
+
+The Branch Compiler may propose structure. It must not invent hidden character
+truth, private motivations, or durable social mutations as if compilation made
+them real. Character behavior comes from projected local context and responder
+or coordinator-authored action proposals. Social interpretation and memory
+changes come from appraiser/mutator review. The compiler's job is to make the
+branching artifact playable, legible, and traceable.
+
+The compiler should prefer compact state variables, bands, and flags over
+runaway branch trees. It should create major route splits only when the
+coordinator or reviewed consequence packet says folding would falsify the
+world. When it folds branches, it must preserve the variables and callbacks that
+make the fold honest.
+
+The Branch Compiler output is draft until the IF Artifact Reviewer accepts it.
+That separation matters. A compiler can make a scene valid Ink while still
+producing cosmetic choices, fake folds, unused variables, or endings that ignore
+the whole moral machinery. Valid syntax is not wisdom. It is barely hygiene.
+
 ## IF Artifact Review
 
 Branching fixtures need an independent review pass before acceptance. The
