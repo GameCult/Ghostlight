@@ -55,6 +55,12 @@ def npx_command() -> str:
     return command
 
 
+def node_command() -> str:
+    command = shutil.which("node.exe") or shutil.which("node")
+    require(command is not None, "node is required to smoke-test compiled Ink examples")
+    return command
+
+
 def compile_ink(path: Path) -> None:
     with tempfile.TemporaryDirectory(prefix="ghostlight-ink-") as temp_dir:
         output_path = Path(temp_dir) / f"{path.stem}.json"
@@ -73,6 +79,39 @@ def compile_ink(path: Path) -> None:
         require(output_path.exists(), f"{path} did not produce compiled Ink JSON")
         compiled = output_path.read_text(encoding="utf-8-sig")
         require(compiled.strip().startswith("{"), f"{path} compiled output is not JSON")
+        validate_story_reaches_initial_choices(path, output_path)
+
+
+def validate_story_reaches_initial_choices(source_path: Path, compiled_path: Path) -> None:
+    script = """
+const fs = require("fs");
+const { Story } = require("inkjs");
+const storyJson = fs.readFileSync(process.argv[1], "utf8").replace(/^\\uFEFF/, "");
+const story = new Story(storyJson);
+let safety = 0;
+while (story.canContinue && safety < 1000) {
+  story.Continue();
+  safety += 1;
+}
+if (safety >= 1000) {
+  throw new Error("story did not settle before safety limit");
+}
+if (story.currentChoices.length === 0) {
+  throw new Error("story starts without any available choices");
+}
+"""
+    result = subprocess.run(
+        [node_command(), "-e", script, str(compiled_path)],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    require(
+        result.returncode == 0,
+        f"{source_path} compiled, but does not reach initial choices\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}",
+    )
 
 
 def validate_text_blocks(items: Any, path: str) -> None:

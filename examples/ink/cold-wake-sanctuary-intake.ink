@@ -4,6 +4,8 @@ VAR maer_obligation = 60
 VAR bay_reserved = false
 VAR packet_shown = false
 
+-> start
+
 === start ===
 # ghostlight.scene: scene-02-sanctuary-intake
 # ghostlight.fixture: examples/agent-state.cold-wake-story-lab.json
