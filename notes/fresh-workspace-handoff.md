@@ -52,6 +52,12 @@ path is:
 - Research-enabled Sella capture: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
 - Research-enabled Sella mutation: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`
 - Research-enabled aftermath state: `examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json`
+- Trace-backed Veyr projected context: `examples/projected-contexts/scene-03-callisto-provenance.veyr_oss.projected-context.json`
+- Trace-backed Veyr packet: `examples/responder-packets/scene-03-callisto-provenance.veyr_oss.packet.trace.v0.json`
+- Trace-backed Veyr coordinator artifact: `examples/coordinator/cold-wake-callisto-provenance.v0.json`
+- Trace-backed Veyr capture: `experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.capture.json`
+- Trace-backed Veyr mutation: `experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.mutation.json`
+- Trace-backed Veyr aftermath state: `examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json`
 - Research sanity probe: `experiments/research-sanity/navigator-embodiment-sanity-v0.capture.json`
 - Packet builder: `tools/build_responder_packet.py`
 - Packet/output validators: `tools/validate_responder_packets.py`, `tools/validate_responder_outputs.py`
@@ -89,17 +95,20 @@ current gold-data route.
 
 ## Current Next Action
 
-The first no-fork research-enabled Sella responder sample now exists and has a
-reviewed mutation receipt. The research packet uses seed scope plus bounded link
-traversal so training samples can absorb PSC, Jovian territory, resident-faction,
-technology, and social-movement context without pretending runtime prompts will
-carry the whole lore vault. The capture seam now has a first-class
-`research_trace` shape. The existing Sella sample carries
-`coordinator_reconstructed` trace entries and remains draft-grade audit data,
-not proof of the responder's actual tool path. Next, generate the next sandboxed
-responder/coordinator sample from the updated Sella aftermath state using a
-runner or worker protocol that returns `runner_captured` research trace entries
-before accepting the sample as gold data.
+The first no-fork research-enabled Sella responder sample exists and has a
+reviewed mutation receipt. It carries `coordinator_reconstructed` trace entries
+and remains draft-grade audit data, not proof of the responder's actual tool
+path. The next Veyr/Callisto sample is the first accepted coordinator-scoped
+retrieval lane with `runner_captured` trace: coordinator retrieval grounded the
+packet in Cognitum cutouts, Neuromorphic Firmware product-denial language,
+Callisto gray-market cognition geography, and PSC category law; the responder
+then saw only the packet and returned a deniable handling category.
+
+Continue from `examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json`.
+The next beat should carry Veyr's category back toward Sella, Isdra, or both:
+`derivative routing residue with active distress-correlated service behavior`.
+Preserve runner-captured retrieval trace, exact packet-visible input, raw
+responder output, leakage audit, and reviewed mutation receipt.
 
 ## Warnings
 

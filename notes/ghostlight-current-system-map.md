@@ -65,6 +65,13 @@ Aetheria lore/source context
   constraints but does not prove the responder's actual tool path.
 - Future accepted research-enabled gold captures must use `runner_captured`
   research trace status.
+- First accepted runner-traced coordinator-scoped sample:
+  `experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.capture.json`
+- It starts from `examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json`,
+  projects Veyr for `scene-03-callisto-provenance`, embeds coordinator-retrieved
+  lore as packet-visible source excerpts, runs a no-fork packet-only responder,
+  and mutates state into
+  `examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json`.
 - Parent sessions currently receive only the subagent final message, not a
   visible tool-call transcript. Treat subagent research as self-reported unless
   the worker returns explicit research notes or a future runner captures calls.

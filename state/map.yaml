@@ -114,6 +114,12 @@ current_artifacts:
     - experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json
     - experiments/research-sanity/navigator-embodiment-sanity-v0.capture.json
     - examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json
+    - examples/projected-contexts/scene-03-callisto-provenance.veyr_oss.projected-context.json
+    - examples/responder-packets/scene-03-callisto-provenance.veyr_oss.packet.trace.v0.json
+    - examples/coordinator/cold-wake-callisto-provenance.v0.json
+    - experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.capture.json
+    - experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.mutation.json
+    - examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json
   archived_receipts:
     - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
 
@@ -126,5 +132,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Ghostlight's research-enabled responder seam now models research_trace as a first-class capture surface. Accepted research-enabled gold captures require runner-captured traces; the existing Sella research sample carries coordinator-reconstructed trace and remains draft-grade audit data.
-  next_action: Generate the next sandboxed responder/coordinator sample from examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json using a runner or worker protocol that returns runner-captured research_trace entries before the responder action is accepted as gold data.
+  summary: Ghostlight now has its first accepted coordinator-scoped, runner-traced responder sample. Veyr's Callisto provenance turn uses runner-captured lore trace, packet-only no-fork response, reviewed capture, mutation receipt, and updated state.
+  next_action: Continue from examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json. Build the next responder/coordinator step around Maer carrying Veyr's deniable handling category back toward Sella, Isdra, or both, preserving runner-captured retrieval trace, exact packet-visible input, raw responder output, leakage audit, and reviewed mutation receipt.

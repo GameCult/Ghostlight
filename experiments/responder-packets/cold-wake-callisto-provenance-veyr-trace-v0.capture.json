@@ -1,0 +1,154 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "responder.cold_wake.callisto_provenance.veyr.trace.v0",
+  "review_status": "accepted",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/scene-03-callisto-provenance.veyr_oss.packet.trace.v0.json",
+  "coordinator_artifact_ref": "examples/coordinator/cold-wake-callisto-provenance.v0.json",
+  "responder_agent_id": "veyr_oss",
+  "generation_lane": "retrieval_augmented",
+  "lore_access": {
+    "mode": "coordinator_scoped_retrieval",
+    "consulted_refs": [
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cognitum.md#chunk5",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cognitum.md#chunk6",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Neuromorphic Firmware.md#chunk0",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Territories.md#chunk8",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#chunk1"
+    ],
+    "research_summary": "Coordinator-scoped retrieval grounded Veyr in Cognitum cutout practice, Neuromorphic Firmware product-denial language, Callisto gray-market cognition geography, and PSC category law. Those constraints shaped a response that offers a rescue-compatible handling category while preserving deniability, withholding source-chain custody, and leaving artifact personhood unresolved.",
+    "research_trace_status": "runner_captured",
+    "research_trace": [
+      {
+        "trace_id": "trace.cognitum.clients.chunk5",
+        "origin": "runner_captured",
+        "query": "Cognitum firmware markets personhood language testimony product language derivative firmware diagnostic residue",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cognitum.md#chunk5",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cognitum.md",
+        "chunk_index": 5,
+        "line_start": 35,
+        "line_end": 40,
+        "extracted_constraint": "Cognitum firmware appears in route inference and anomaly detection through consultancies and intermediaries; customers want performance and legal insulation, not full truth.",
+        "used_for": "Constrained Veyr to hide behind consultancy, derivative module, and legal-insulation language rather than admitting direct personhood provenance."
+      },
+      {
+        "trace_id": "trace.cognitum.cutouts.chunk6",
+        "origin": "runner_captured",
+        "query": "Callisto spillover office routing compliance vendor cognition firmware gray-market Jovian",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cognitum.md#chunk6",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cognitum.md",
+        "chunk_index": 6,
+        "line_start": 41,
+        "line_end": 44,
+        "extracted_constraint": "After scandals, Cognitum hardened cutout structures, tightened contractual language, and pushed work through clinics, shell firms, and nominally separate integration vendors.",
+        "used_for": "Constrained the office as a cutout/integration-vendor surface where Veyr can truthfully describe separation while concealing the moral chain."
+      },
+      {
+        "trace_id": "trace.neuromorphic_firmware.chunk0",
+        "origin": "runner_captured",
+        "query": "Neuromorphic Firmware Aetheria derivative firmware cognition markets product language",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Technology/Neuromorphic Firmware.md#chunk0",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Neuromorphic Firmware.md",
+        "chunk_index": 0,
+        "line_start": 1,
+        "line_end": 8,
+        "extracted_constraint": "Neuromorphic Firmware is publicly sold as reusable neural derivatives distilled from patterns, while in practice it is processed personhood extracted through upload-grade mind capture.",
+        "used_for": "Constrained Veyr to avoid person nouns and keep the artifact framed as derivative firmware, while letting the moral danger leak through defensive precision."
+      },
+      {
+        "trace_id": "trace.territories.jovian_callisto.chunk8",
+        "origin": "runner_captured",
+        "query": "Callisto spillover office routing compliance vendor cognition firmware gray-market Jovian",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Territories.md#chunk8",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+        "chunk_index": 8,
+        "line_start": 67,
+        "line_end": 74,
+        "extracted_constraint": "Ganymede and Callisto host shadow economies, cutout research, and gray-market cognition work tied to Cognitum, AstroDyne, and pirate logistics.",
+        "used_for": "Constrained the setting as a plausible Callisto cutout office connected to gray-market cognition rather than a generic cyberpunk interrogation room."
+      },
+      {
+        "trace_id": "trace.psc.categories.chunk1",
+        "origin": "runner_captured",
+        "query": "Pan-Solar Consortium administrable categories insured permitted registered undeclared category law",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md#chunk1",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+        "chunk_index": 1,
+        "line_start": 13,
+        "line_end": 18,
+        "extracted_constraint": "The PSC translates political conflict into administrable categories such as insured, permitted, recognized, deniable, corridor-safe, hot, quiet, burst, registered, and undeclared.",
+        "used_for": "Constrained Veyr to offer a category-preserving technical path that can satisfy the tribunal without conceding testimony."
+      }
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/scene-03-callisto-provenance.veyr_oss.packet.trace.v0.json#packet_prompt_text; coordinator-scoped retrieval embedded as source excerpts; no repo access",
+    "hidden_context_refs": [
+      "maer_tidecall.canonical_private_state",
+      "author_only.packet_personhood_resolution",
+      "future_branch_plans",
+      "coordinator_artifact.coordinator_decision.rationale",
+      "parent_conversation_context"
+    ],
+    "worker_model_family": "frontier_worker_no_fork"
+  },
+  "raw_output": "{\"responder_agent_id\":\"veyr_oss\",\"action_label\":\"set_condition\",\"visible_action\":\"Veyr does not touch Maer's clipped chain. He angles the conference glass away from the room recorder, opens a tribunal-safe diagnostic template on the side display, and leaves the source-chain field collapsed. One finger rests on the record-status control without pressing it.\",\"spoken_text\":\"Then stop asking for ancestry. Ask for handling. The category is derivative routing residue with active distress-correlated service behavior. It stays nonperson, nonorigin, noncustodial. It permits isolation, ledger-backed repair-bay contact, and preservation of the packet sound as diagnostic evidence. If you put a moral noun in the request, I close the file and you can spend the heat window teaching a tribunal how language becomes a corpse with paperwork.\",\"private_interpretation\":\"Veyr interprets Maer's masked hashes as deliberate pressure rather than proof: enough path to threaten the vendor surface, not enough to force a clean custody admission. He suspects Maer wants a rescue aperture more than a courtroom victory, but he treats that as a working read, not a fact. The phrasing keeps the chain infrastructural and the artifact unresolved while giving Maer a narrow way to move before the window dies.\",\"intended_effect\":\"Give Maer a usable rescue-compatible classification while preventing source-chain provenance, testimony language, or personhood terms from entering the record.\",\"state_update_candidates\":[\"Veyr offers the classification 'derivative routing residue with active distress-correlated service behavior' as a tribunal-safe handling category.\",\"The category permits isolation, ledger-backed repair-bay contact, and preservation of the artifact's signal as diagnostic evidence without resolving personhood.\",\"Veyr withholds source-chain custody and conditions cooperation on avoiding personhood or ancestry language in the formal request.\"],\"relationship_update_candidates\":[\"Veyr recognizes Maer as disciplined enough to use a narrow procedural opening if given one.\",\"Maer may read Veyr as obstructive but not wholly refusing rescue contact.\",\"Veyr's respect for Maer's route pressure increases, while his suspicion of Maer's language tactics remains active.\"],\"unresolved_hooks\":[\"Whether Maer accepts the handling category without demanding source hashes remains unresolved.\",\"Whether Sella's conditional repair-bay path will accept Veyr's diagnostic label remains unresolved.\",\"The artifact's nature remains unresolved evidence, not proof of personhood or nonpersonhood.\",\"The vendor chain remains hidden behind collapsed custody fields.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "veyr_oss",
+    "action_label": "set_condition",
+    "visible_action": "Veyr does not touch Maer's clipped chain. He angles the conference glass away from the room recorder, opens a tribunal-safe diagnostic template on the side display, and leaves the source-chain field collapsed. One finger rests on the record-status control without pressing it.",
+    "spoken_text": "Then stop asking for ancestry. Ask for handling. The category is derivative routing residue with active distress-correlated service behavior. It stays nonperson, nonorigin, noncustodial. It permits isolation, ledger-backed repair-bay contact, and preservation of the packet sound as diagnostic evidence. If you put a moral noun in the request, I close the file and you can spend the heat window teaching a tribunal how language becomes a corpse with paperwork.",
+    "private_interpretation": "Veyr interprets Maer's masked hashes as deliberate pressure rather than proof: enough path to threaten the vendor surface, not enough to force a clean custody admission. He suspects Maer wants a rescue aperture more than a courtroom victory, but he treats that as a working read, not a fact. The phrasing keeps the chain infrastructural and the artifact unresolved while giving Maer a narrow way to move before the window dies.",
+    "intended_effect": "Give Maer a usable rescue-compatible classification while preventing source-chain provenance, testimony language, or personhood terms from entering the record.",
+    "state_update_candidates": [
+      "Veyr offers the classification 'derivative routing residue with active distress-correlated service behavior' as a tribunal-safe handling category.",
+      "The category permits isolation, ledger-backed repair-bay contact, and preservation of the artifact's signal as diagnostic evidence without resolving personhood.",
+      "Veyr withholds source-chain custody and conditions cooperation on avoiding personhood or ancestry language in the formal request."
+    ],
+    "relationship_update_candidates": [
+      "Veyr recognizes Maer as disciplined enough to use a narrow procedural opening if given one.",
+      "Maer may read Veyr as obstructive but not wholly refusing rescue contact.",
+      "Veyr's respect for Maer's route pressure increases, while his suspicion of Maer's language tactics remains active."
+    ],
+    "unresolved_hooks": [
+      "Whether Maer accepts the handling category without demanding source hashes remains unresolved.",
+      "Whether Sella's conditional repair-bay path will accept Veyr's diagnostic label remains unresolved.",
+      "The artifact's nature remains unresolved evidence, not proof of personhood or nonpersonhood.",
+      "The vendor chain remains hidden behind collapsed custody fields."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "No Maer private state is asserted as fact; Veyr frames motive as suspicion and working read.",
+      "Artifact personhood remains unresolved.",
+      "Veyr does not confess Cognitum provenance directly; he offers a deniable handling category.",
+      "Runner-captured coordinator retrieval trace is attached at lore_access.research_trace while the responder itself had no repo access."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Accepted trace-backed Veyr responder output for the Callisto provenance fixture.",
+      "The response creates a concrete state-affecting category rather than only speech: derivative routing residue with active distress-correlated service behavior.",
+      "The output preserves Veyr local constraints: product language, noun discipline, source-chain withholding, and conditional cooperation.",
+      "Use as gold candidate for coordinator-scoped retrieval lane: retrieval trace is runner-captured by the coordinator and the responder received only packet-visible context."
+    ],
+    "coordinator_interventions": [
+      {
+        "intervention_type": "none",
+        "description": "Raw no-fork sandbox responder output was preserved without prose repair or schema repair."
+      }
+    ],
+    "failure_labels": []
+  }
+}

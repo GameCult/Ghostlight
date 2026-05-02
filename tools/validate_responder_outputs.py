@@ -210,11 +210,6 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
             in {"coordinator_scoped_retrieval", "responder_scoped_repository_search"},
             f"{base}.retrieval_augmented must use scoped retrieval lore access",
         )
-    if lore_access["mode"] == "responder_scoped_repository_search":
-        require_string_array(lore_access["consulted_refs"], f"{base}.lore_access.consulted_refs", nonempty=True)
-        require_string(lore_access.get("research_summary"), f"{base}.lore_access.research_summary")
-        if "followed_refs" in lore_access:
-            require_string_array(lore_access["followed_refs"], f"{base}.lore_access.followed_refs")
         if "research_trace" in lore_access:
             require_research_trace(lore_access["research_trace"], f"{base}.lore_access.research_trace")
             require(
@@ -222,7 +217,17 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
                 f"{base}.lore_access.research_trace_status is invalid",
             )
         elif document["review_status"] == "accepted":
-            raise ValidationError(f"{base}.lore_access.research_trace is required for accepted research-enabled captures")
+            raise ValidationError(f"{base}.lore_access.research_trace is required for accepted retrieval-augmented captures")
+        if document["review_status"] == "accepted":
+            require(
+                lore_access.get("research_trace_status") == "runner_captured",
+                f"{base}.accepted retrieval-augmented captures must use runner_captured research_trace_status",
+            )
+    if lore_access["mode"] == "responder_scoped_repository_search":
+        require_string_array(lore_access["consulted_refs"], f"{base}.lore_access.consulted_refs", nonempty=True)
+        require_string(lore_access.get("research_summary"), f"{base}.lore_access.research_summary")
+        if "followed_refs" in lore_access:
+            require_string_array(lore_access["followed_refs"], f"{base}.lore_access.followed_refs")
 
     isolation = document["isolation"]
     require_keys(isolation, ["isolation_method", "fork_context", "visible_input_ref", "hidden_context_refs", "worker_model_family"], f"{base}.isolation")
@@ -260,11 +265,6 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
             require(
                 document["parsed_output"]["research_trace"] == lore_access.get("research_trace"),
                 f"{base}.parsed_output.research_trace must match lore_access.research_trace when present",
-            )
-        if document["review_status"] == "accepted":
-            require(
-                lore_access.get("research_trace_status") == "runner_captured",
-                f"{base}.accepted research-enabled captures must use runner_captured research_trace_status",
             )
 
     lowered_raw = raw_output.lower()
