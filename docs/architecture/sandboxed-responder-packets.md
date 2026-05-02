@@ -1,4 +1,4 @@
-﻿# Sandboxed Responder Packets
+# Sandboxed Responder Packets
 
 Responder packets are the handoff surface between the omniscient coordinator and
 a character-local responder model or one-turn worker.
@@ -20,13 +20,15 @@ including any curated source excerpts the coordinator or lore retriever placed
 there. It does not search the lore archive. Use this lane to test whether a
 future game-runtime responder can act from bounded scene context.
 
-`research_augmented` is the lore-absorption lane. The responder may search a
-declared AetheriaLore scope before answering, and the capture must preserve the
-consulted source refs. Use this lane to generate stronger Aetheria-native final
+`retrieval_augmented` is the lore-absorption lane. The coordinator or a
+dedicated retrieval worker searches a declared AetheriaLore scope, then builds a
+visible packet from the selected refs. The responder still answers only from the
+packet it receives. Use this lane to generate stronger Aetheria-native final
 responses and to bake setting assumptions, faction pressures, species
-affordances, and tone into later fine-tuning data.
+affordances, and tone into later fine-tuning data without pretending the
+character model did autonomous scholarship in the walls.
 
-Do not mix these silently. Research-augmented output can be excellent training
+Do not mix these silently. Retrieval-augmented output can be excellent training
 material for an Aetheria-tuned responder, but it does not prove packet-only
 runtime competence. Packet-only failures are also useful because they reveal
 which lore facts the retriever or projector needs to feed at runtime.
@@ -43,7 +45,7 @@ The v0 packet seam is:
 - `schemas/responder-output.schema.json`
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
-- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-v0.capture.json`
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-retrieval-v0.capture.json`
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
 - `tools/validate_responder_outputs.py`
 - `tools/apply_responder_output_mutation.py`
@@ -59,8 +61,8 @@ paint.
 
 A packet contains:
 
-- `generation_lane`: `packet_only` or `research_augmented`
-- `lore_access`: curated excerpts only or scoped repository search
+- `generation_lane`: `packet_only` or `retrieval_augmented`
+- `lore_access`: curated excerpts only or coordinator-scoped retrieval
 - `local_context_prompt`: the projected character-local context
 - `observed_event`: what the character can see or hear from the prior action
 - `allowed_action_labels`: concrete action labels, including speech and non-speech moves
@@ -100,10 +102,19 @@ Any coordinator rewrite, schema repair, lore correction, or leakage removal must
 be preserved as a coordinator intervention. Repaired prose is useful training
 data for the coordinator, but it is not raw responder behavior.
 
-Research-augmented responder data requires scoped lore access. The responder may
-search only the declared source scope, and the output capture must list
-consulted refs. The final prose may be trained on, but the capture must remain
-separable from packet-only runtime examples.
+Retrieval-augmented responder data requires scoped lore access before the
+responder acts. The coordinator or retrieval worker may search only the declared
+source scope, and the output capture must list consulted refs. The responder
+itself should not receive repo access unless the artifact is explicitly labeled
+as autonomous-research data.
+
+Retrieval can also make the packet worse if it floods the scene with faction or
+event context and starves the character's own scars. The Sella v0 comparison is
+the first warning shot: the retrieval-augmented output used heat-debt and rescue
+ledger texture well, but underused Sella's packet-visible backstory about
+watching a sanctuary overpromise safety until refuge became a sorting machine
+with kinder lighting. Future review should score both institutional grounding
+and character-pressure retention.
 
 ## Output Captures
 
@@ -126,7 +137,9 @@ coordinator edits prose, repairs schema, removes leakage, or corrects lore, the
 capture must say so directly.
 
 The first lane comparison found the expected tradeoff. Packet-only output gave a
-clean runtime-parity conditional bay decision. Research-augmented output added
-stronger Aetheria-native texture: heat-debt timing, rescue-ledger burden,
-dockfall responsibility, and Aya sanctuary capacity politics. Both are useful;
-neither should impersonate the other.
+clean runtime-parity conditional bay decision and stronger character-specific
+flavor. Retrieval-augmented output added stronger Aetheria-native institutional
+texture: heat-debt timing, rescue-ledger burden, dockfall responsibility, and
+Aya sanctuary capacity politics. It also underused Sella's own packet-visible
+sanctuary-collapse scar. Both lanes are useful; neither should impersonate the
+other.

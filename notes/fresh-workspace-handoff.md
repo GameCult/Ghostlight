@@ -68,7 +68,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v1.json`
   - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
   - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
-  - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-v0.capture.json`
+  - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-retrieval-v0.capture.json`
   - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
   - `tools/build_responder_packet.py`
   - `tools/validate_responder_packets.py`
@@ -190,10 +190,12 @@ JSON, preserved Sella's read as interpretation, left packet personhood
 unresolved, and required no coordinator prose repair.
 Responder data now has two explicit lanes. `packet_only` is the runtime-parity
 lane: curated source excerpts are in the packet and the responder does not
-search lore. `research_augmented` is the lore-absorption lane: the responder may
-search a declared AetheriaLore scope and the capture must preserve consulted
-refs. Do not use research-augmented examples as proof that the packet-only
-runtime prompt has enough context.
+search lore. `retrieval_augmented` is the lore-absorption lane: the coordinator
+or a retrieval worker searches a declared AetheriaLore scope, then gives the
+responder a bounded packet. Do not use retrieval-augmented examples as proof
+that the packet-only runtime prompt has enough context, and do not describe
+them as autonomous responder research unless the responder actually had repo
+access.
 The v1 Sella packet removes responder-visible references to absent coordinator
 knowledge and adds curated AetheriaLore excerpts for Cold Wake, the Ganymede
 Route Compact, Navigator rescue ledgers, and Lightsail reliability.
@@ -203,11 +205,14 @@ receipt and mutated fixture:
 mutation accepts a conditional cold repair-bay path as scene-local state, keeps
 packet personhood unresolved, and updates Maer and Sella state, relationship
 stance, memories, and perceived overlays.
-The first research-augmented Sella capture also exists. It uses scoped
-AetheriaLore refs and produces richer Aetheria-native language around heat-debt
-timing, rescue ledgers, dockfall burden, and sanctuary as moral-debt sink. The
-lane comparison records that this is good lore-absorption data but not proof of
-packet-only runtime sufficiency.
+The first retrieval-augmented Sella capture also exists. It uses
+coordinator-selected scoped AetheriaLore refs and produces richer
+Aetheria-native language around heat-debt timing, rescue ledgers, dockfall
+burden, and sanctuary as moral-debt sink. The lane comparison records that this
+is good lore-absorption data but not proof of packet-only runtime sufficiency.
+It also records a miss: the retrieval-augmented output underused Sella's
+packet-visible sanctuary-collapse scar, so future projector/retrieval review
+must score character-pressure retention as well as institutional grounding.
 It now uses three timeline lanes: `historical_grounded`,
 `transition_grounded`, and `future_branch`. Future branches are required
 training/evaluation material for post-Rupture Elysium concepts, but generated
@@ -236,11 +241,12 @@ narrow elaboration before treating the detail as available to Ghostlight.
 
 ## Current Next Action
 
-Use the lane-comparison lessons for the next fresh generation pass: update the
-runtime retrieval/projector plan so packet-only contexts can pull compact lore
-facts for heat-debt timing, Navigator rescue ledgers, Aya sanctuary capacity
-politics, and Lightsail/Ganymede route obligations when those pressures are
-scene-relevant. Do not call Qwen for gold responder data yet.
+Use the corrected lane-comparison lessons for the next fresh generation pass:
+update the runtime retrieval/projector plan so packet-only contexts can pull
+compact lore facts for heat-debt timing, Navigator rescue ledgers, Aya sanctuary
+capacity politics, and Lightsail/Ganymede route obligations when scene-relevant,
+while explicitly preserving character-local scars such as Sella's
+sanctuary-collapse backstory. Do not call Qwen for gold responder data yet.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than

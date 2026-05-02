@@ -89,7 +89,7 @@ state and re-entry discipline.
     coordinator to a sandboxed character responder, including visible event,
     local prompt, allowed actions, source excerpts, hidden-context audit, and
     output contract; also defines the separate `packet_only` and
-    `research_augmented` responder-data lanes
+    `retrieval_augmented` responder-data lanes
 - `docs/architecture/training-plan.md`
   - concrete enumeration of trainable Ghostlight stages, including each stage's
     inputs, outputs, likely model architecture, artifact family, first training
@@ -124,7 +124,7 @@ state and re-entry discipline.
     item-manifest deltas, unresolved hooks, glue prose, and review notes
 - `schemas/responder-packet.schema.json`
   - v0 contract for the exact input a sandboxed character responder may see,
-    now lane-labeled as `packet_only` or `research_augmented` with explicit
+    now lane-labeled as `packet_only` or `retrieval_augmented` with explicit
     lore-access policy
 - `schemas/responder-output.schema.json`
   - v0 contract for reviewed captures from sandboxed responder workers,
@@ -165,14 +165,16 @@ state and re-entry discipline.
   - reviewed mutation receipt that materializes the packet-only Sella response
     into scene-local state, relationship, memory, perceived-overlay, and
     unresolved-hook updates without resolving packet personhood
-- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-v0.capture.json`
-  - first research-augmented responder capture using scoped AetheriaLore refs
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-retrieval-v0.capture.json`
+  - first retrieval-augmented responder capture using coordinator-selected
+    scoped AetheriaLore refs
     for Aya sanctuary politics, Cold Wake heat-debt pressure, Navigator rescue
     ledgers, Ganymede route obligations, and Lightsail reliability
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
   - comparison artifact showing the packet-only lane proves bounded runtime
-    competence while the research-augmented lane adds stronger Aetheria-native
-    institutional texture and retrieval lessons
+    competence while the retrieval-augmented lane adds stronger
+    Aetheria-native institutional texture, retrieval lessons, and a warning
+    that character backstory can be crowded out
 - `experiments/cold-wake-story-lab/`
   - Qwen response captures and reviews from the writing experiment
   - `the-narrowest-possible-margin.md`, the first readable short story
@@ -374,13 +376,17 @@ coordinator's brain into the room. The first no-fork Sella responder capture now
 exists and validates as accepted-as-draft with raw output preserved, parsed
 output matched exactly, leakage audit clear, and no coordinator prose repair.
 Responder data now has two explicit lanes: `packet_only` for runtime parity with
-curated source excerpts, and `research_augmented` for scoped AetheriaLore search
-that can bake setting priors into final responses while preserving consulted
-refs.
+curated source excerpts, and `retrieval_augmented` for coordinator- or
+retriever-selected scoped AetheriaLore refs that can bake setting priors into
+final responses while preserving consulted refs. This is not autonomous
+responder research unless the responder actually receives scoped repo access.
 The first lane comparison is now captured: packet-only produced a clean
-conditional repair-bay decision, while research-augmented added heat-debt,
+conditional repair-bay decision, while retrieval-augmented added heat-debt,
 rescue-ledger, dockfall, and Aya sanctuary politics that should inform future
-runtime retrieval.
+runtime retrieval. The comparison also records a failure mode: injected
+institutional lore can crowd out character-local backstory, as the
+retrieval-augmented Sella response underused her packet-visible
+sanctuary-collapse scar.
 The concrete training plan now enumerates
 eleven trainable stages and their likely model
 families: generative decoder LLMs for coordinator, responder, and structured

@@ -1,4 +1,4 @@
-﻿"""Validate Ghostlight responder packets."""
+"""Validate Ghostlight responder packets."""
 
 from __future__ import annotations
 
@@ -94,19 +94,31 @@ def validate_packet(document: dict[str, Any], source: Path) -> None:
     require(document["canon_status"] in CANON_STATUSES, f"{base}.canon_status is invalid")
     for key in ["packet_id", "coordinator_artifact_ref", "projected_context_ref", "responder_agent_id", "packet_prompt_text"]:
         require_string(document[key], f"{base}.{key}")
-    require(document["generation_lane"] in {"packet_only", "research_augmented"}, f"{base}.generation_lane is invalid")
+    require(document["generation_lane"] in {"packet_only", "retrieval_augmented"}, f"{base}.generation_lane is invalid")
     require((ROOT / document["coordinator_artifact_ref"]).exists(), f"{base}.coordinator_artifact_ref does not exist")
     require((ROOT / document["projected_context_ref"]).exists(), f"{base}.projected_context_ref does not exist")
 
     lore_access = document["lore_access"]
     require_keys(lore_access, ["mode", "allowed_scope", "required_provenance"], f"{base}.lore_access")
-    require(lore_access["mode"] in {"curated_excerpts_only", "scoped_repository_search"}, f"{base}.lore_access.mode is invalid")
+    require(
+        lore_access["mode"]
+        in {
+            "curated_excerpts_only",
+            "coordinator_scoped_retrieval",
+            "responder_scoped_repository_search",
+        },
+        f"{base}.lore_access.mode is invalid",
+    )
     require_string_array(lore_access["allowed_scope"], f"{base}.lore_access.allowed_scope")
     require(lore_access["required_provenance"] is True, f"{base}.lore_access.required_provenance must be true")
     if document["generation_lane"] == "packet_only":
         require(lore_access["mode"] == "curated_excerpts_only", f"{base}.packet_only must use curated_excerpts_only lore access")
-    if document["generation_lane"] == "research_augmented":
-        require(lore_access["mode"] == "scoped_repository_search", f"{base}.research_augmented must use scoped_repository_search lore access")
+    if document["generation_lane"] == "retrieval_augmented":
+        require(
+            lore_access["mode"]
+            in {"coordinator_scoped_retrieval", "responder_scoped_repository_search"},
+            f"{base}.retrieval_augmented must use scoped retrieval lore access",
+        )
 
     visible = document["visible_context"]
     require_keys(visible, ["local_context_prompt", "observed_event", "allowed_action_labels", "source_excerpts"], f"{base}.visible_context")

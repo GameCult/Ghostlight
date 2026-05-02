@@ -335,10 +335,11 @@
     `tools/validate_responder_packets.py` now validate the exact prompt surface
     a sandboxed character responder may see.
   - Responder examples now have two lanes. `packet_only` uses curated source
-    excerpts and tests runtime parity. `research_augmented` allows scoped
-    AetheriaLore search, preserves consulted refs, and is for baking lore and
-    tone into final responder outputs rather than proving runtime prompt
-    sufficiency.
+    excerpts and tests runtime parity. `retrieval_augmented` uses coordinator
+    or retriever-selected scoped AetheriaLore refs, preserves consulted refs,
+    and is for baking lore and tone into final responder outputs rather than
+    proving runtime prompt sufficiency. It is not autonomous responder research
+    unless the artifact explicitly says the responder had repo access.
   - The v1 Sella packet removes responder-visible warnings about absent hidden
     context and adds curated AetheriaLore excerpts for Cold Wake, the Ganymede
     Route Compact, Navigator rescue ledgers, and Lightsail reliability.
@@ -353,13 +354,14 @@
     `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
     and `examples/agent-state.cold-wake-story-lab.after-sella-conditions.json`
     from the packet-only Sella capture.
-  - First research-augmented comparison:
-    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-v0.capture.json`
+  - First retrieval-augmented comparison:
+    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-retrieval-v0.capture.json`
     and
     `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
-    show that scoped lore access improves Aetheria-native texture around
-    heat-debt timing, rescue ledgers, dockfall burden, and sanctuary capacity
-    politics.
+    show that scoped lore access improves Aetheria-native institutional texture
+    around heat-debt timing, rescue ledgers, dockfall burden, and sanctuary
+    capacity politics, but can crowd out character-local backstory if the
+    projector does not protect that pressure.
   - Next prototype: turn the comparison lessons into retrieval/projector
     requirements so packet-only runtime contexts can pull compact lore facts
     when those pressures are scene-relevant.

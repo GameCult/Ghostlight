@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/GameCult/Ghostlight/schemas/responder-output.schema.json",
   "title": "Ghostlight Responder Output Schema",
@@ -31,13 +31,13 @@
     "packet_ref": { "type": "string", "minLength": 1 },
     "coordinator_artifact_ref": { "type": "string", "minLength": 1 },
     "responder_agent_id": { "type": "string", "minLength": 1 },
-    "generation_lane": { "enum": ["packet_only", "research_augmented"] },
+    "generation_lane": { "enum": ["packet_only", "retrieval_augmented"] },
     "lore_access": {
       "type": "object",
       "required": ["mode", "consulted_refs"],
       "additionalProperties": false,
       "properties": {
-        "mode": { "enum": ["curated_excerpts_only", "scoped_repository_search"] },
+        "mode": { "enum": ["curated_excerpts_only", "coordinator_scoped_retrieval", "responder_scoped_repository_search"] },
         "consulted_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
       }
     },
