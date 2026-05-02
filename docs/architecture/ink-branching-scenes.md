@@ -172,6 +172,66 @@ not a full story by itself. A complete interactive fixture needs an opening
 pressure, at least one consequential branch before the clinic, and a resolution
 that visibly reflects earlier choices.
 
+## Branch And Fold
+
+Do not model every choice as an indefinitely isolated authored subtree. Strict
+worldline splitting creates a combinatoric writing burden after a handful of
+choices, which interactive fiction authors have been discovering the painful
+way since approximately the first time someone let a player open a second door.
+
+Ghostlight should branch locally and fold structurally:
+
+```text
+choice
+  -> consequence packet
+  -> normalized state deltas
+  -> shared later scene reads compact variables
+  -> conditional options, callbacks, imagery, and relationship texture
+  -> major route split only when convergence would be false
+```
+
+Most branches should converge onto shared later scenes. The consequences should
+survive as compact variables, bands, and flags rather than bespoke scenes for
+every exact history.
+
+Good consequence state looks like this:
+
+- `sella_trust_maer: wary`
+- `ledger_debt_level: high`
+- `clinic_staff_exhaustion: true`
+- `veyr_evidence_disclosed: partial`
+- `isdra_reads_maer_as: procedurally_dangerous`
+- `route_authority_pressure: escalated`
+
+Those variables should alter later scenes by changing available options,
+relationship posture, timing pressure, resource costs, callback prose, visual
+state modifiers, and participant appraisals. They should not usually require a
+fully separate scene route.
+
+Use coarse bands instead of fake precision. `blocked`, `wary`, `conditional`,
+`cooperative`, and `personally_invested` are more useful than pretending the
+story can meaningfully maintain 37 decimals of trust. The same applies to heat
+debt, legal exposure, institutional pressure, staff exhaustion, reputation, and
+social suspicion.
+
+Major route splits are allowed when a consequence changes the playable world so
+much that folding would lie. Examples:
+
+- a character dies, leaves, defects, or becomes unavailable
+- a location is destroyed, locked, opened, or politically inaccessible
+- a faction becomes hostile, allied, exposed, or legally empowered
+- a key object is destroyed, stolen, transferred, or transformed
+- the protagonist loses or gains institutional authority
+- a quest route, rescue path, market, technology, or branch-local future opens
+  or closes entirely
+
+The coordinator owns the fold decision for now. Every material branch should
+record whether it folds into an existing later scene, opens a conditional
+variant inside that scene, or creates a justified route split. If a route split
+is created, the artifact should name the reason and the expected future writing
+debt. Trees are cheap to grow and expensive to prune. The machine should not
+act surprised by botany.
+
 ## Scene Imagery
 
 Ghostlight scenes are also website content. A complete fixture should emit
