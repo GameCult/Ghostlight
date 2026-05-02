@@ -23,6 +23,72 @@ violence, trade, survival, logistics, or prestige.
 Ghostlight should turn worldbuilding exploration into the data needed to support
 that design.
 
+## Player Fantasy
+
+The deep gear model is not a loot-affix treadmill. The fantasy is provenance.
+
+A player hunting for the ultimate laser should be able to trace the item through
+its parts, makers, technologies, and accidents:
+
+- the emitter assembly came from a short-lived manufacturer whose process was
+  only stable for nine months
+- the beam-control wafer uses a regulatory-buried fabrication step no successor
+  company wants to admit worked
+- the thermal rejection assembly is sturdy but mediocre, quietly strangling the
+  whole weapon
+- a pirate rebuild replaced the targeting interface with a counterfeit part
+  that improves lock speed while making maintenance ugly
+- a factional embargo means the good driver wafers are technically illegal,
+  practically everywhere, and therefore excellent quest bait
+
+An "ultimate item" is not just the best blueprint. It is the best realized
+artifact: the right blueprint, built from the right assemblies, with the right
+quality, provenance, manufacturer practice, replacement history, and operating
+conditions. If a player wants to rebuild it as the best it can be, the game
+should let them hunt the supply chain: salvage yards, old corporate stockpiles,
+specialist shops, faction arsenals, black-market refits, inherited ships,
+forgotten factories, and small wars over a beam-control wafer some dead
+manufacturer only made for nine months before the board got eaten by regulators.
+
+This is why Ghostlight matters. A spreadsheet can name a laser. Ghostlight should
+help explain why that laser exists, who can build it, which parts are worth
+killing for, why a particular instance is special, and what stories fall out of
+trying to make it better.
+
+## Content Refinery
+
+The old bottleneck was not ideas. Ideas are cheap. Volunteer design goblins can
+produce a hill of them before lunch and leave the database work sitting there
+like a little corpse.
+
+The real bottleneck is converting taste, lore, mechanics, and future-tech
+imagination into loadable, reviewable, schema-shaped content. Ghostlight's
+technology pipeline should act as a content refinery:
+
+1. Ground the request in Aetheria lore: faction, era, location, tech base,
+   industrial limits, political pressure, and known source constraints.
+2. Decompose the concept into item families, assemblies, subassemblies,
+   components, materials, processes, tooling, facilities, expertise, and
+   supply-chain dependencies.
+3. Map each candidate onto the Aetheria-Economy blueprint model:
+   `SimpleCommodityData`, `CompoundCommodityData`, `ConsumableItemData`,
+   `GearData`, or another `EquippableItemData` subclass.
+4. Define performance intent through behaviors, `PerformanceStat` fields,
+   quality sensitivity, failure modes, upgrade surfaces, and operating
+   constraints.
+5. Define realized-instance variation: assembly provenance, manufacturer
+   branding, quality, repair history, counterfeit substitutions, salvage scars,
+   and ownership chain.
+6. Emit reviewable artifacts that separate source facts, inferred engineering,
+   branch-local assumptions, engine-schema gaps, rejected ideas, and accepted
+   candidates.
+7. Export or hand off accepted candidates as database-shaped content rather than
+   another swamp of clever prose someone has to manually translate later.
+
+The goal is not infinite content sludge. The goal is volume with preserved taste:
+many plausible blueprints, variants, manufacturers, counterfeit versions,
+salvage stories, and supply-chain hooks that still feel like Aetheria.
+
 ## Economy Schema Target
 
 Ghostlight should target the existing Aetheria-Economy item model instead of

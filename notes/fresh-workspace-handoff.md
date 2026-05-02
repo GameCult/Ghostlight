@@ -205,6 +205,20 @@ recipes, assembly trees, compatibility, tooling, facilities, process
 requirements, and supply-chain dependencies to the relevant blueprint as
 manifest metadata or engine-schema gaps until Aetheria-Economy exposes explicit
 storage for those details.
+The player-facing fantasy is provenance hunting. An ultimate laser is not only a
+high-stat blueprint; it is a realized artifact assembled from rare or excellent
+subsystems, manufacturer processes, repair history, counterfeit substitutions,
+salvage scars, ownership chains, and operating conditions. Players should be
+able to follow those threads through trade, salvage, espionage, faction access,
+obsolete factories, and miserable little wars over parts like a beam-control
+wafer some dead manufacturer only made for nine months before regulators ate the
+board.
+Ghostlight's job is to make that content scalable without turning it into
+sludge. Treat the technology pipeline as a content refinery: ground the concept
+in lore, decompose it into parts and supply chains, map it to the economy
+blueprint classes, define performance and instance variation, preserve review
+labels and source gaps, then emit database-shaped candidates instead of another
+spreadsheet swamp.
 
 The evaluation follow-up fixed the immediate v0 schema issues:
 

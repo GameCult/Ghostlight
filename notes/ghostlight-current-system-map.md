@@ -325,5 +325,12 @@ simulation, inventory, cargo, provenance, branding, and world-state objects.
 Recipes, assembly trees, compatibility rules, tooling, facilities, process
 requirements, and supply-chain dependencies are blueprint metadata or
 engine-schema gaps attached to the relevant `*Data` class until the economy code
-has explicit storage for them. Do not materialize another capture until it has
-no failure or repair notes.
+has explicit storage for them. The player-facing gear fantasy is provenance
+hunting: players chasing an ultimate item should trace exceptional assemblies,
+manufacturer processes, repair history, counterfeit substitutions, supply-chain
+lineage, and operating constraints through the galaxy. The technology pipeline is
+therefore a content refinery: it grounds ideas in lore, decomposes them into
+parts and supply chains, maps them to economy blueprint classes, defines
+performance and instance variation, preserves review labels, and emits
+database-shaped candidates instead of spreadsheet sludge. Do not materialize
+another capture until it has no failure or repair notes.
