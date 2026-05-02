@@ -22,16 +22,16 @@ sandboxed training-data pipeline for branching scenes and state consequences.
 
 3. Tighten research-enabled responder capture.
    - The first no-fork research-enabled Sella sample and reviewed mutation receipt now exist.
-   - Preserve `consulted_refs`, `followed_refs`, and `research_summary` inside raw responder output; mirror indexable provenance into capture metadata.
+   - Preserve `consulted_refs`, `followed_refs`, `research_trace`, and `research_summary` inside raw responder output when the responder or runner produces them; mirror indexable provenance into capture metadata.
    - Treat research scope as seed docs plus bounded relevant traversal, not a four-file pinhole.
    - Require PSC, territory, resident-faction, technology, and social-movement context when it materially affects the scene.
-   - Add an auditable research trace before scaling this lane; responder-reported consulted refs are useful but not enough for durable gold data.
+   - Require `runner_captured` research trace status for accepted research-enabled gold data; coordinator-reconstructed trace is useful draft audit, not proof of the responder's actual research path.
    - Continue rejecting archived local-model prototype runners for gold responder data unless the task is explicitly model plumbing.
 
 4. Generate the next reviewed sample.
    - Start from `examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json`.
    - Build the next projected local context and responder packet from reviewed state, not from coordinator memory.
-   - Run the next no-fork sandboxed responder/coordinator step with exact visible input, raw output, leakage audit, and review labels.
+   - Run the next no-fork sandboxed responder/coordinator step with exact visible input, raw output, runner-captured research trace, leakage audit, and review labels.
    - Convert accepted output into mutation receipts.
    - Keep fuzzy social changes manual and auditable until appraiser/classifier models exist.
 

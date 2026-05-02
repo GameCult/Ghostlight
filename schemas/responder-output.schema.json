@@ -39,7 +39,13 @@
       "properties": {
         "mode": { "enum": ["curated_excerpts_only", "coordinator_scoped_retrieval", "responder_scoped_repository_search"] },
         "consulted_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "research_summary": { "type": "string" }
+        "followed_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "research_summary": { "type": "string" },
+        "research_trace": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/research_trace_entry" }
+        },
+        "research_trace_status": { "enum": ["none", "responder_reported", "coordinator_reconstructed", "runner_captured"] }
       }
     },
     "isolation": {
@@ -103,7 +109,39 @@
         "unresolved_hooks": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "consulted_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "followed_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "research_summary": { "type": "string" }
+        "research_summary": { "type": "string" },
+        "research_trace": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/research_trace_entry" }
+        }
+      }
+    },
+    "research_trace_entry": {
+      "type": "object",
+      "required": [
+        "trace_id",
+        "origin",
+        "query",
+        "source_ref",
+        "source_path",
+        "chunk_index",
+        "line_start",
+        "line_end",
+        "extracted_constraint",
+        "used_for"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": { "type": "string", "minLength": 1 },
+        "origin": { "enum": ["responder_reported", "coordinator_reconstructed", "runner_captured"] },
+        "query": { "type": "string", "minLength": 1 },
+        "source_ref": { "type": "string", "minLength": 1 },
+        "source_path": { "type": "string", "minLength": 1 },
+        "chunk_index": { "type": "integer", "minimum": 0 },
+        "line_start": { "type": "integer", "minimum": 1 },
+        "line_end": { "type": "integer", "minimum": 1 },
+        "extracted_constraint": { "type": "string", "minLength": 1 },
+        "used_for": { "type": "string", "minLength": 1 }
       }
     },
     "update_candidate": {

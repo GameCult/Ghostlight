@@ -85,6 +85,45 @@ def require_update_candidate_array(value: Any, path: str) -> None:
             require_string(item["target_agent_id"], f"{item_path}.target_agent_id")
 
 
+def require_research_trace(value: Any, path: str) -> None:
+    require(isinstance(value, list), f"{path} must be an array")
+    require(value, f"{path} must not be empty")
+    seen_ids: set[str] = set()
+    for index, item in enumerate(value):
+        item_path = f"{path}[{index}]"
+        require(isinstance(item, dict), f"{item_path} must be an object")
+        require_keys(
+            item,
+            [
+                "trace_id",
+                "origin",
+                "query",
+                "source_ref",
+                "source_path",
+                "chunk_index",
+                "line_start",
+                "line_end",
+                "extracted_constraint",
+                "used_for",
+            ],
+            item_path,
+        )
+        require_string(item["trace_id"], f"{item_path}.trace_id")
+        require(item["trace_id"] not in seen_ids, f"{item_path}.trace_id is duplicated")
+        seen_ids.add(item["trace_id"])
+        require(
+            item["origin"] in {"responder_reported", "coordinator_reconstructed", "runner_captured"},
+            f"{item_path}.origin is invalid",
+        )
+        for key in ["query", "source_ref", "source_path", "extracted_constraint", "used_for"]:
+            require_string(item[key], f"{item_path}.{key}")
+        for key in ["chunk_index", "line_start", "line_end"]:
+            require(isinstance(item[key], int), f"{item_path}.{key} must be an integer")
+        require(item["chunk_index"] >= 0, f"{item_path}.chunk_index must be non-negative")
+        require(item["line_start"] >= 1, f"{item_path}.line_start must be positive")
+        require(item["line_end"] >= item["line_start"], f"{item_path}.line_end must be >= line_start")
+
+
 def validate_parsed_response(value: Any, path: str) -> None:
     require(isinstance(value, dict), f"{path} must be an object")
     require_keys(
@@ -115,6 +154,8 @@ def validate_parsed_response(value: Any, path: str) -> None:
         require_string_array(value["followed_refs"], f"{path}.followed_refs")
     if "research_summary" in value:
         require(isinstance(value["research_summary"], str), f"{path}.research_summary must be a string")
+    if "research_trace" in value:
+        require_research_trace(value["research_trace"], f"{path}.research_trace")
 
 
 def validate_capture(document: dict[str, Any], source: Path) -> None:
@@ -172,6 +213,16 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
     if lore_access["mode"] == "responder_scoped_repository_search":
         require_string_array(lore_access["consulted_refs"], f"{base}.lore_access.consulted_refs", nonempty=True)
         require_string(lore_access.get("research_summary"), f"{base}.lore_access.research_summary")
+        if "followed_refs" in lore_access:
+            require_string_array(lore_access["followed_refs"], f"{base}.lore_access.followed_refs")
+        if "research_trace" in lore_access:
+            require_research_trace(lore_access["research_trace"], f"{base}.lore_access.research_trace")
+            require(
+                lore_access.get("research_trace_status") in {"responder_reported", "coordinator_reconstructed", "runner_captured"},
+                f"{base}.lore_access.research_trace_status is invalid",
+            )
+        elif document["review_status"] == "accepted":
+            raise ValidationError(f"{base}.lore_access.research_trace is required for accepted research-enabled captures")
 
     isolation = document["isolation"]
     require_keys(isolation, ["isolation_method", "fork_context", "visible_input_ref", "hidden_context_refs", "worker_model_family"], f"{base}.isolation")
@@ -200,6 +251,21 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
             document["parsed_output"].get("research_summary") == lore_access["research_summary"],
             f"{base}.parsed_output.research_summary must match lore_access.research_summary",
         )
+        if "followed_refs" in lore_access:
+            require(
+                document["parsed_output"].get("followed_refs") == lore_access["followed_refs"],
+                f"{base}.parsed_output.followed_refs must match lore_access.followed_refs",
+            )
+        if "research_trace" in document["parsed_output"]:
+            require(
+                document["parsed_output"]["research_trace"] == lore_access.get("research_trace"),
+                f"{base}.parsed_output.research_trace must match lore_access.research_trace when present",
+            )
+        if document["review_status"] == "accepted":
+            require(
+                lore_access.get("research_trace_status") == "runner_captured",
+                f"{base}.accepted research-enabled captures must use runner_captured research_trace_status",
+            )
 
     lowered_raw = raw_output.lower()
     leaked = [marker for marker in LEAK_MARKERS if marker in lowered_raw]

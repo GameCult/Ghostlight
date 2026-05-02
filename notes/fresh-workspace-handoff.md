@@ -90,15 +90,16 @@ current gold-data route.
 ## Current Next Action
 
 The first no-fork research-enabled Sella responder sample now exists and has a
-reviewed mutation receipt. The research packet now uses seed scope plus bounded
-link traversal so training samples can absorb PSC, Jovian territory,
-resident-faction, technology, and social-movement context without pretending
-runtime prompts will carry the whole lore vault. Tighten the capture seam next:
-future research-enabled gold samples should preserve auditable research traces,
-not only responder-reported consulted refs. Then generate the next sandboxed
-responder/coordinator sample from the updated Sella aftermath state, preserving
-exact visible input, raw output, review labels, leakage audit, and mutation
-receipts.
+reviewed mutation receipt. The research packet uses seed scope plus bounded link
+traversal so training samples can absorb PSC, Jovian territory, resident-faction,
+technology, and social-movement context without pretending runtime prompts will
+carry the whole lore vault. The capture seam now has a first-class
+`research_trace` shape. The existing Sella sample carries
+`coordinator_reconstructed` trace entries and remains draft-grade audit data,
+not proof of the responder's actual tool path. Next, generate the next sandboxed
+responder/coordinator sample from the updated Sella aftermath state using a
+runner or worker protocol that returns `runner_captured` research trace entries
+before accepting the sample as gold data.
 
 ## Warnings
 
@@ -108,5 +109,6 @@ receipts.
 - Do not let Elysium branch futures overwrite Sol single-history facts.
 - Do not rebuild the older corridor-crisis game slice by accident.
 - Do not treat parent-visible subagent output as proof of research. If the
-  parent cannot see tool calls, require explicit research notes or use a runner
-  that captures calls.
+  parent cannot see tool calls, require explicit research trace entries or use a
+  runner that captures calls. Accepted research-enabled gold data needs
+  `runner_captured` trace status.

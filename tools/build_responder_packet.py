@@ -65,7 +65,7 @@ def render_packet_prompt(packet: dict[str, Any]) -> str:
             "Before answering, inspect the declared seed scope and follow relevant links within the traversal policy.",
             "Use lore to constrain behavior, affordances, institutions, vocabulary, material stakes, social movements, territory, and cultural pressure. Do not use it to gain hidden character state, author-only answers, or future branch knowledge.",
             "If a source contradicts the packet, follow the packet for character-local knowledge and flag the contradiction in unresolved hooks.",
-            "Your output capture must list consulted seed refs, followed refs, and a brief research summary; an answer with no consulted refs is a failed research-enabled response.",
+            "Your output capture must list consulted seed refs, followed refs, research trace entries, and a brief research summary; an answer with no consulted refs is a failed research-enabled response.",
             "",
             "Seed research scope:",
         ])
@@ -218,7 +218,8 @@ def build_lore_access(mode: str) -> dict[str, Any]:
             "For this fixture, inspect PSC context, Jovian territory context, resident or referenced Jovian factions, and social movements referenced by visible factions when those links affect Sella's local pressures.",
             "Ground Sella's behavior in retrieved institutional, factional, species, location, crisis-context, and movement-pressure details.",
             "Treat retrieved lore as world constraint and cultural pressure, not as access to another character's hidden intent.",
-            "Record consulted seed refs, followed refs, and a concise research summary in the response object.",
+            "Record consulted seed refs, followed refs, research trace entries, and a concise research summary in the response object.",
+            "Each research trace entry must identify the query or lookup, source ref, source path, chunk index, line range, extracted constraint, and how that constraint shaped the response.",
         ]
     return lore_access
 
@@ -245,11 +246,12 @@ def build_output_contract(lore_mode: str) -> dict[str, Any]:
         "Do not copy instruction text into in-world speech.",
     ]
     if lore_mode == "responder_scoped_repository_search":
-        required_fields.extend(["consulted_refs", "followed_refs", "research_summary"])
+        required_fields.extend(["consulted_refs", "followed_refs", "research_trace", "research_summary"])
         response_rules.extend(
             [
                 "Consulted refs must list the seed lore documents actually inspected before answering.",
                 "Followed refs must list relevant linked lore documents inspected beyond the seed scope; use an empty array only if no relevant links were found.",
+                "Research trace must list one object per meaningful source constraint, with trace_id, origin, query, source_ref, source_path, chunk_index, line_start, line_end, extracted_constraint, and used_for.",
                 "Research summary must state how retrieved lore constrained the action, without dumping lore into dialogue.",
             ]
         )
@@ -275,7 +277,7 @@ def build_packet(
         no_repo_access = False
         review_notes = [
             "Research-enabled responder packet for sandboxed gold-data shakedown.",
-            "The responder must inspect scoped AetheriaLore refs before answering and preserve consulted refs plus research summary.",
+            "The responder must inspect scoped AetheriaLore refs before answering and preserve consulted refs, followed refs, research trace, and research summary.",
         ]
     else:
         packet_id = "packet.cold_wake.sanctuary_intake.sella_response.v1"

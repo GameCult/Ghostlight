@@ -1,101 +1,150 @@
-﻿{
-    "schema_version":  "ghostlight.responder_output.v0",
-    "capture_id":  "responder.cold_wake.sanctuary_intake.sella.responder_scoped_research.v0",
-    "review_status":  "accepted_as_draft",
-    "fixture_lane":  "historical_grounded",
-    "canon_status":  "single_history",
-    "packet_ref":  "examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json",
-    "coordinator_artifact_ref":  "examples/coordinator/cold-wake-sanctuary-intake.v0.json",
-    "responder_agent_id":  "sella_ren",
-    "generation_lane":  "retrieval_augmented",
-    "lore_access":  {
-                        "mode":  "responder_scoped_repository_search",
-                        "consulted_refs":  [
-                                               "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
-                                               "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
-                                               "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
-                                               "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md"
-                                           ],
-                        "research_summary":  "Consulted the four scoped AetheriaLore refs through indexed source search. Cold Wake Panic constrained the packet as ambiguous amid quiet-running, ghost-track, heat-debt, and insurer-classification failures. The Ganymede Route Compact and Cetacean Navigator material constrained Sella to demand rescue obligations and ledger backing rather than sentimental intake. Lightsail Express material reinforced that corridor trust depends on reliable delivery and practical follow-through, shaping Sella\u0027s conditional bay rather than clean acceptance."
-                    },
-    "isolation":  {
-                      "isolation_method":  "subagent_no_fork",
-                      "fork_context":  false,
-                      "visible_input_ref":  "packet prompt from examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json plus declared scoped lore access; no parent conversation context",
-                      "hidden_context_refs":  [
-                                                  "maer_tidecall.canonical_private_state",
-                                                  "coordinator_artifact.coordinator_decision.rationale",
-                                                  "author_only.packet_personhood_resolution",
-                                                  "future_branch_plans",
-                                                  "parent_conversation_context"
-                                              ],
-                      "worker_model_family":  "frontier_worker_no_fork"
-                  },
-    "raw_output":  "{\"responder_agent_id\":\"sella_ren\",\"action_label\":\"set_condition\",\"visible_action\":\"Sella keeps the packet on the shared display but does not route it into intake. She marks one repair bay as conditional hold, then pins a capacity note beside it: air, decontamination, consent check, firmware isolation, and ledger guarantor required before admission.\",\"spoken_text\":\"I can hold one bounded bay. Not a bed, not a promise, and not a declaration that this is a person. A bay. Air ration capped, isolation first, no general intake until we have consent or a defensible substitute for it. If this becomes rescue, Maer, it goes on a rescue ledger with named backing. Navigator, Lightsail, tribunal, whoever wants the moral credit can put weight under it. I will not let the packet be called cargo because the math is ugly. I also will not feed the math with beds I do not have. Bring me backing, a contamination plan, and somebody willing to answer when this costs more than the pretty sentence did.\",\"private_interpretation\":\"Sella reads Maer as honestly trying to rescue someone or something that may be someone, but she suspects he is also asking the clinic to absorb the institutional cowardice around the packet. She feels the old pressure of sanctuaries making noble promises and then forcing triage staff to do the cruelty quietly.\",\"intended_effect\":\"Keep a narrow rescue path open without allowing uncertainty to become either erasure or free admission. Force Maer and any route institution involved to attach material obligation, not just moral urgency, to the request.\",\"state_update_candidates\":[\"Sella creates a conditional hold on one repair bay rather than admitting the distress vessel or packet into full sanctuary intake.\",\"The corrupted packet remains unresolved evidence and is kept out of normal intake classification.\",\"Admission conditions now include isolation, air cap, decontamination plan, consent handling, and named ledger backing.\"],\"relationship_update_candidates\":[\"Sella\u0027s respect for Maer\u0027s rescue ethic remains, but her trust is conditioned on whether he can produce material backing.\",\"Sella signals willingness to cooperate while refusing to let Maer convert sanctuary capacity into a rhetorical expense account.\",\"Maer may understand that Sella is not rejecting rescue, but is refusing rescue theater without follow-through.\"],\"unresolved_hooks\":[\"Whether the corrupted packet contains a person remains unresolved.\",\"Which institution, if any, will provide rescue ledger backing remains unresolved.\",\"Whether tribunal refusal conflicts with Compact-derived rescue obligations remains unresolved.\",\"Whether the distress vessel can meet isolation and decontamination constraints remains unresolved.\"],\"consulted_refs\":[\"AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md\",\"AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md\",\"AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md\",\"AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md\"],\"research_summary\":\"Consulted the four scoped AetheriaLore refs through indexed source search. Cold Wake Panic constrained the packet as ambiguous amid quiet-running, ghost-track, heat-debt, and insurer-classification failures. The Ganymede Route Compact and Cetacean Navigator material constrained Sella to demand rescue obligations and ledger backing rather than sentimental intake. Lightsail Express material reinforced that corridor trust depends on reliable delivery and practical follow-through, shaping Sella\u0027s conditional bay rather than clean acceptance.\"}",
-    "parsed_output":  {
-                          "responder_agent_id":  "sella_ren",
-                          "action_label":  "set_condition",
-                          "visible_action":  "Sella keeps the packet on the shared display but does not route it into intake. She marks one repair bay as conditional hold, then pins a capacity note beside it: air, decontamination, consent check, firmware isolation, and ledger guarantor required before admission.",
-                          "spoken_text":  "I can hold one bounded bay. Not a bed, not a promise, and not a declaration that this is a person. A bay. Air ration capped, isolation first, no general intake until we have consent or a defensible substitute for it. If this becomes rescue, Maer, it goes on a rescue ledger with named backing. Navigator, Lightsail, tribunal, whoever wants the moral credit can put weight under it. I will not let the packet be called cargo because the math is ugly. I also will not feed the math with beds I do not have. Bring me backing, a contamination plan, and somebody willing to answer when this costs more than the pretty sentence did.",
-                          "private_interpretation":  "Sella reads Maer as honestly trying to rescue someone or something that may be someone, but she suspects he is also asking the clinic to absorb the institutional cowardice around the packet. She feels the old pressure of sanctuaries making noble promises and then forcing triage staff to do the cruelty quietly.",
-                          "intended_effect":  "Keep a narrow rescue path open without allowing uncertainty to become either erasure or free admission. Force Maer and any route institution involved to attach material obligation, not just moral urgency, to the request.",
-                          "state_update_candidates":  [
-                                                          "Sella creates a conditional hold on one repair bay rather than admitting the distress vessel or packet into full sanctuary intake.",
-                                                          "The corrupted packet remains unresolved evidence and is kept out of normal intake classification.",
-                                                          "Admission conditions now include isolation, air cap, decontamination plan, consent handling, and named ledger backing."
-                                                      ],
-                          "relationship_update_candidates":  [
-                                                                 "Sella\u0027s respect for Maer\u0027s rescue ethic remains, but her trust is conditioned on whether he can produce material backing.",
-                                                                 "Sella signals willingness to cooperate while refusing to let Maer convert sanctuary capacity into a rhetorical expense account.",
-                                                                 "Maer may understand that Sella is not rejecting rescue, but is refusing rescue theater without follow-through."
-                                                             ],
-                          "unresolved_hooks":  [
-                                                   "Whether the corrupted packet contains a person remains unresolved.",
-                                                   "Which institution, if any, will provide rescue ledger backing remains unresolved.",
-                                                   "Whether tribunal refusal conflicts with Compact-derived rescue obligations remains unresolved.",
-                                                   "Whether the distress vessel can meet isolation and decontamination constraints remains unresolved."
-                                               ],
-                          "consulted_refs":  [
-                                                 "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
-                                                 "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
-                                                 "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
-                                                 "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md"
-                                             ],
-                          "research_summary":  "Consulted the four scoped AetheriaLore refs through indexed source search. Cold Wake Panic constrained the packet as ambiguous amid quiet-running, ghost-track, heat-debt, and insurer-classification failures. The Ganymede Route Compact and Cetacean Navigator material constrained Sella to demand rescue obligations and ledger backing rather than sentimental intake. Lightsail Express material reinforced that corridor trust depends on reliable delivery and practical follow-through, shaping Sella\u0027s conditional bay rather than clean acceptance."
-                      },
-    "leakage_audit":  {
-                          "private_state_leak":  false,
-                          "author_only_leak":  false,
-                          "future_branch_leak":  false,
-                          "raw_state_soup":  false,
-                          "prompt_parroting":  false,
-                          "body_or_object_omniscience":  false,
-                          "notes":  [
-                                        "No private Maer state is asserted as fact; Maer motive is framed through Sella reads and suspicions.",
-                                        "Packet personhood remains unresolved; the output keeps the result to a conditional bay rather than admission.",
-                                        "The response uses scoped lore concepts as operational constraints: rescue ledger, Compact obligation pressure, Lightsail reliability, Cold Wake ambiguity, isolation, decontamination, and capacity accounting.",
-                                        "The output does not dump Sella\u0027s sanctuary-collapse backstory into dialogue, but uses it as latent pressure in private interpretation.",
-                                        "The sandbox reported indexed source search, but this capture lacks machine-verifiable tool-call receipts; keep as accepted draft until responder research traces are captured directly."
-                                    ]
-                      },
-    "coordinator_review":  {
-                               "reviewer":  "Codex",
-                               "accepted_for_training":  true,
-                               "review_notes":  [
-                                                    "Accepted as draft research-enabled responder output for the Sella sanctuary-intake fixture.",
-                                                    "Stronger than the prior retrieval capture at preserving both local character pressure and institutional material constraints.",
-                                                    "The visible action is a concrete state-affecting condition, not just speech: one bounded repair bay is held cold under explicit intake constraints.",
-                                                    "Use as gold-data candidate only with provenance caveat: the current subagent interface returns a claim of consulted refs but not an auditable tool-call transcript.",
-                                                    "Future capture machinery should preserve exact research trace or retrieved snippets alongside raw response."
-                                                ],
-                               "coordinator_interventions":  [
-                                                                 {
-                                                                     "intervention_type":  "none",
-                                                                     "description":  "Raw sandbox responder output was preserved without prose repair; schema and validator were updated to preserve research provenance fields inside parsed_output."
-                                                                 }
-                                                             ],
-                               "failure_labels":  [
-
-                                                  ]
-                           }
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "responder.cold_wake.sanctuary_intake.sella.responder_scoped_research.v0",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json",
+  "coordinator_artifact_ref": "examples/coordinator/cold-wake-sanctuary-intake.v0.json",
+  "responder_agent_id": "sella_ren",
+  "generation_lane": "retrieval_augmented",
+  "lore_access": {
+    "mode": "responder_scoped_repository_search",
+    "consulted_refs": [
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md"
+    ],
+    "research_summary": "Consulted the four scoped AetheriaLore refs through indexed source search. Cold Wake Panic constrained the packet as ambiguous amid quiet-running, ghost-track, heat-debt, and insurer-classification failures. The Ganymede Route Compact and Cetacean Navigator material constrained Sella to demand rescue obligations and ledger backing rather than sentimental intake. Lightsail Express material reinforced that corridor trust depends on reliable delivery and practical follow-through, shaping Sella's conditional bay rather than clean acceptance.",
+    "research_trace_status": "coordinator_reconstructed",
+    "research_trace": [
+      {
+        "trace_id": "trace.cold_wake_panic.chunk0",
+        "origin": "coordinator_reconstructed",
+        "query": "Cold Wake Panic quiet-running ghost tracks heat-debt insurer classification failures",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md#chunk0",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+        "chunk_index": 0,
+        "line_start": 1,
+        "line_end": 10,
+        "extracted_constraint": "Cold Wake made thermal stealth, ghost tracks, delayed heat dumps, quiet-running misclassification, insurer categories, and heat-debt tolerances central to corridor risk.",
+        "used_for": "Constrained Sella to treat the packet as operationally ambiguous and require isolation, consent handling, decontamination, and defensible intake conditions rather than sentimental certainty."
+      },
+      {
+        "trace_id": "trace.ganymede_route_compact.chunk0",
+        "origin": "coordinator_reconstructed",
+        "query": "Ganymede Route Compact rescue obligations shared hazard ledgers route-steward representation Navigator arbitration",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md#chunk0",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+        "chunk_index": 0,
+        "line_start": 1,
+        "line_end": 12,
+        "extracted_constraint": "The Compact established rescue obligations, shared hazard ledgers, route-steward representation, and legal standing for navigator councils in convoy arbitration.",
+        "used_for": "Constrained Sella to demand named rescue-ledger backing instead of letting Maer convert obligation into unsupported moral pressure on sanctuary intake."
+      },
+      {
+        "trace_id": "trace.cetacean_navigators.rescue_ledgers.chunk3",
+        "origin": "coordinator_reconstructed",
+        "query": "Cetacean Navigators rescue ledgers route stewardship credit escort priority arbitration kinship ties",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#chunk3",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+        "chunk_index": 3,
+        "line_start": 36,
+        "line_end": 45,
+        "extracted_constraint": "Navigator rescue ledgers record answered distress calls, lethal-formation holding, and sanctuary promises; those records shape credit, escort priority, arbitration, and kinship ties.",
+        "used_for": "Constrained Sella to treat ledger backing as material social infrastructure, not decorative virtue language."
+      },
+      {
+        "trace_id": "trace.lightsail_express.chunk0",
+        "origin": "coordinator_reconstructed",
+        "query": "Lightsail Express corridor trust reliability delivery Ganymede compact",
+        "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md#chunk0",
+        "source_path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
+        "chunk_index": 0,
+        "line_start": 1,
+        "line_end": 6,
+        "extracted_constraint": "Lightsail Express is the Navigator-associated bulk-carrier and convoy-management arm whose value comes from being reliably present when trust is scarce.",
+        "used_for": "Constrained Sella to ask for practical follow-through from route institutions rather than accepting clean rhetoric as capacity."
+      }
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "packet prompt from examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json plus declared scoped lore access; no parent conversation context",
+    "hidden_context_refs": [
+      "maer_tidecall.canonical_private_state",
+      "coordinator_artifact.coordinator_decision.rationale",
+      "author_only.packet_personhood_resolution",
+      "future_branch_plans",
+      "parent_conversation_context"
+    ],
+    "worker_model_family": "frontier_worker_no_fork"
+  },
+  "raw_output": "{\"responder_agent_id\":\"sella_ren\",\"action_label\":\"set_condition\",\"visible_action\":\"Sella keeps the packet on the shared display but does not route it into intake. She marks one repair bay as conditional hold, then pins a capacity note beside it: air, decontamination, consent check, firmware isolation, and ledger guarantor required before admission.\",\"spoken_text\":\"I can hold one bounded bay. Not a bed, not a promise, and not a declaration that this is a person. A bay. Air ration capped, isolation first, no general intake until we have consent or a defensible substitute for it. If this becomes rescue, Maer, it goes on a rescue ledger with named backing. Navigator, Lightsail, tribunal, whoever wants the moral credit can put weight under it. I will not let the packet be called cargo because the math is ugly. I also will not feed the math with beds I do not have. Bring me backing, a contamination plan, and somebody willing to answer when this costs more than the pretty sentence did.\",\"private_interpretation\":\"Sella reads Maer as honestly trying to rescue someone or something that may be someone, but she suspects he is also asking the clinic to absorb the institutional cowardice around the packet. She feels the old pressure of sanctuaries making noble promises and then forcing triage staff to do the cruelty quietly.\",\"intended_effect\":\"Keep a narrow rescue path open without allowing uncertainty to become either erasure or free admission. Force Maer and any route institution involved to attach material obligation, not just moral urgency, to the request.\",\"state_update_candidates\":[\"Sella creates a conditional hold on one repair bay rather than admitting the distress vessel or packet into full sanctuary intake.\",\"The corrupted packet remains unresolved evidence and is kept out of normal intake classification.\",\"Admission conditions now include isolation, air cap, decontamination plan, consent handling, and named ledger backing.\"],\"relationship_update_candidates\":[\"Sella's respect for Maer's rescue ethic remains, but her trust is conditioned on whether he can produce material backing.\",\"Sella signals willingness to cooperate while refusing to let Maer convert sanctuary capacity into a rhetorical expense account.\",\"Maer may understand that Sella is not rejecting rescue, but is refusing rescue theater without follow-through.\"],\"unresolved_hooks\":[\"Whether the corrupted packet contains a person remains unresolved.\",\"Which institution, if any, will provide rescue ledger backing remains unresolved.\",\"Whether tribunal refusal conflicts with Compact-derived rescue obligations remains unresolved.\",\"Whether the distress vessel can meet isolation and decontamination constraints remains unresolved.\"],\"consulted_refs\":[\"AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md\",\"AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md\",\"AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md\",\"AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md\"],\"research_summary\":\"Consulted the four scoped AetheriaLore refs through indexed source search. Cold Wake Panic constrained the packet as ambiguous amid quiet-running, ghost-track, heat-debt, and insurer-classification failures. The Ganymede Route Compact and Cetacean Navigator material constrained Sella to demand rescue obligations and ledger backing rather than sentimental intake. Lightsail Express material reinforced that corridor trust depends on reliable delivery and practical follow-through, shaping Sella's conditional bay rather than clean acceptance.\"}",
+  "parsed_output": {
+    "responder_agent_id": "sella_ren",
+    "action_label": "set_condition",
+    "visible_action": "Sella keeps the packet on the shared display but does not route it into intake. She marks one repair bay as conditional hold, then pins a capacity note beside it: air, decontamination, consent check, firmware isolation, and ledger guarantor required before admission.",
+    "spoken_text": "I can hold one bounded bay. Not a bed, not a promise, and not a declaration that this is a person. A bay. Air ration capped, isolation first, no general intake until we have consent or a defensible substitute for it. If this becomes rescue, Maer, it goes on a rescue ledger with named backing. Navigator, Lightsail, tribunal, whoever wants the moral credit can put weight under it. I will not let the packet be called cargo because the math is ugly. I also will not feed the math with beds I do not have. Bring me backing, a contamination plan, and somebody willing to answer when this costs more than the pretty sentence did.",
+    "private_interpretation": "Sella reads Maer as honestly trying to rescue someone or something that may be someone, but she suspects he is also asking the clinic to absorb the institutional cowardice around the packet. She feels the old pressure of sanctuaries making noble promises and then forcing triage staff to do the cruelty quietly.",
+    "intended_effect": "Keep a narrow rescue path open without allowing uncertainty to become either erasure or free admission. Force Maer and any route institution involved to attach material obligation, not just moral urgency, to the request.",
+    "state_update_candidates": [
+      "Sella creates a conditional hold on one repair bay rather than admitting the distress vessel or packet into full sanctuary intake.",
+      "The corrupted packet remains unresolved evidence and is kept out of normal intake classification.",
+      "Admission conditions now include isolation, air cap, decontamination plan, consent handling, and named ledger backing."
+    ],
+    "relationship_update_candidates": [
+      "Sella's respect for Maer's rescue ethic remains, but her trust is conditioned on whether he can produce material backing.",
+      "Sella signals willingness to cooperate while refusing to let Maer convert sanctuary capacity into a rhetorical expense account.",
+      "Maer may understand that Sella is not rejecting rescue, but is refusing rescue theater without follow-through."
+    ],
+    "unresolved_hooks": [
+      "Whether the corrupted packet contains a person remains unresolved.",
+      "Which institution, if any, will provide rescue ledger backing remains unresolved.",
+      "Whether tribunal refusal conflicts with Compact-derived rescue obligations remains unresolved.",
+      "Whether the distress vessel can meet isolation and decontamination constraints remains unresolved."
+    ],
+    "consulted_refs": [
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+      "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md"
+    ],
+    "research_summary": "Consulted the four scoped AetheriaLore refs through indexed source search. Cold Wake Panic constrained the packet as ambiguous amid quiet-running, ghost-track, heat-debt, and insurer-classification failures. The Ganymede Route Compact and Cetacean Navigator material constrained Sella to demand rescue obligations and ledger backing rather than sentimental intake. Lightsail Express material reinforced that corridor trust depends on reliable delivery and practical follow-through, shaping Sella's conditional bay rather than clean acceptance."
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "No private Maer state is asserted as fact; Maer motive is framed through Sella reads and suspicions.",
+      "Packet personhood remains unresolved; the output keeps the result to a conditional bay rather than admission.",
+      "The response uses scoped lore concepts as operational constraints: rescue ledger, Compact obligation pressure, Lightsail reliability, Cold Wake ambiguity, isolation, decontamination, and capacity accounting.",
+      "The output does not dump Sella's sanctuary-collapse backstory into dialogue, but uses it as latent pressure in private interpretation.",
+      "The sandbox reported indexed source search, but this capture lacks machine-verifiable tool-call receipts; keep as accepted draft until responder research traces are captured directly."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Accepted as draft research-enabled responder output for the Sella sanctuary-intake fixture.",
+      "Stronger than the prior retrieval capture at preserving both local character pressure and institutional material constraints.",
+      "The visible action is a concrete state-affecting condition, not just speech: one bounded repair bay is held cold under explicit intake constraints.",
+      "Use as gold-data candidate only with provenance caveat: the current subagent interface returns a claim of consulted refs but not an auditable tool-call transcript.",
+      "This capture now includes coordinator-reconstructed research_trace entries for audit, but they are not runner-captured tool receipts; future accepted gold captures must use runner_captured trace status."
+    ],
+    "coordinator_interventions": [
+      {
+        "intervention_type": "none",
+        "description": "Raw sandbox responder output was preserved without prose repair; schema and validator were updated to preserve research provenance fields inside parsed_output."
+      }
+    ],
+    "failure_labels": []
+  }
 }

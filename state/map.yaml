@@ -46,7 +46,7 @@ live_architecture:
   responder_packets:
     - `packet_only` tests runtime parity from curated source excerpts.
     - `retrieval_augmented` bakes setting texture into reviewed outputs through scoped retrieval.
-    - `responder_scoped_repository_search` allows the responder to inspect declared seed scope, follow bounded relevant AetheriaLore links, and requires consulted refs, followed refs, plus research summary.
+    - `responder_scoped_repository_search` allows the responder to inspect declared seed scope, follow bounded relevant AetheriaLore links, and requires consulted refs, followed refs, research trace, plus research summary.
     - Gold responder data must preserve exact visible input, raw output, parsed/reviewed output, hidden-context refs, leakage audit, isolation method, and coordinator interventions.
   coordinator:
     - The coordinator is a trainable soft organ: it stages scenes, chooses next beats and acting agents, invokes specialist machinery, carries unresolved hooks, emits glue prose, and proposes game-engine-shaped state changes.
@@ -126,5 +126,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Ghostlight has produced its first no-fork research-enabled Sella responder capture and a reviewed state mutation receipt, with research provenance preserved in the raw responder output and mirrored in capture metadata.
-  next_action: Tighten the research-enabled responder capture seam so future gold-data samples preserve auditable research traces, not only responder-reported consulted refs. The current research packet now uses seed scope plus bounded traversal for PSC, Jovian territory, resident factions, linked movements, politics, and technology context. Next, use a runner or worker protocol that returns explicit research trace data before generating the next sandboxed responder/coordinator sample from the updated Sella aftermath state.
+  summary: Ghostlight's research-enabled responder seam now models research_trace as a first-class capture surface. Accepted research-enabled gold captures require runner-captured traces; the existing Sella research sample carries coordinator-reconstructed trace and remains draft-grade audit data.
+  next_action: Generate the next sandboxed responder/coordinator sample from examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json using a runner or worker protocol that returns runner-captured research_trace entries before the responder action is accepted as gold data.

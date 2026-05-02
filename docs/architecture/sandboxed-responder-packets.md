@@ -43,9 +43,17 @@ It should use retrieved lore to constrain behavior, affordances, institutions,
 vocabulary, material stakes, territory, social movements, and local assumptions.
 It must not use research access to infer hidden state, author-only answers,
 future branches, or private motives outside the packet. The output capture must
-preserve consulted seed refs, followed refs, and a brief research summary. No
-consulted refs means the research-enabled response failed at the first hurdle,
-tragic but at least easy to grade.
+preserve consulted seed refs, followed refs, a research trace, and a brief
+research summary. No consulted refs means the research-enabled response failed
+at the first hurdle, tragic but at least easy to grade.
+
+`research_trace` is the receipt surface. Each entry records the query or lookup,
+source ref, source path, chunk index, line range, extracted constraint, and how
+that constraint shaped the response. Trace status matters:
+
+- `runner_captured`: the runner or retrieval worker captured the lookup as it happened. This is required for accepted gold research-enabled captures.
+- `coordinator_reconstructed`: the coordinator rebuilt the trace after the fact from source search and review. Useful draft data, not proof of the responder's actual research path.
+- `responder_reported`: the responder claimed the trace directly. This is texture, not audit.
 
 Training-time research scope should be materially wider than runtime context.
 The point is not to feed every responder a lore pantry forever. The point is to
@@ -141,7 +149,7 @@ data for the coordinator, but it is not raw responder behavior.
 Retrieval-augmented responder data requires scoped lore access before the
 responder acts. The coordinator, retrieval worker, or explicitly research-enabled
 responder may search only the declared source scope, and the output capture must
-list consulted refs. The responder itself should not receive repo access unless
+list consulted refs and trace entries. The responder itself should not receive repo access unless
 the artifact uses `responder_scoped_repository_search`, sets `no_repo_access` to
 false, and includes visible research instructions in the prompt.
 
@@ -181,13 +189,14 @@ coordinator edits prose, repairs schema, removes leakage, or corrects lore, the
 capture must say so directly.
 
 For `responder_scoped_repository_search`, the raw responder object may also
-include `consulted_refs`, `followed_refs`, and `research_summary`. Those fields
-should be preserved inside `parsed_output`; consulted refs and summary should
-also be mirrored into top-level `lore_access` so the capture can be indexed
-without stripping the original response. If the runner cannot expose a
-machine-verifiable tool-call or retrieval transcript, label the sample as draft
-and say so in review notes. Trust, but make the trust write receipts like
-everyone else.
+include `consulted_refs`, `followed_refs`, `research_trace`, and
+`research_summary`. Those fields should be preserved inside `parsed_output`
+when the responder itself produced them; consulted refs, followed refs, summary,
+trace status, and trace entries should also be mirrored into top-level
+`lore_access` so the capture can be indexed without stripping the original
+response. If the runner cannot expose a machine-verifiable tool-call or
+retrieval transcript, label the sample as draft and say so in review notes.
+Trust, but make the trust write receipts like everyone else.
 
 The first lane comparison found the expected tradeoff. Packet-only output gave a
 clean runtime-parity conditional bay decision and stronger character-specific
