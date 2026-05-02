@@ -1,0 +1,7 @@
+[mcp_servers.voidbot]
+command = "C:\\Program Files\\nodejs\\node.exe"
+args = ["E:\\Projects\\VoidBot\\apps\\worker\\dist\\mcp-server.js"]
+cwd = "E:\\Projects\\VoidBot"
+
+[mcp_servers.voidbot.env]
+VOIDBOT_WORKSPACE_ROOT = "E:\\Projects\\VoidBot"

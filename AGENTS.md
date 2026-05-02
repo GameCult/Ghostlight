@@ -129,6 +129,15 @@ When the user says to prepare for imminent compaction:
 
 ## Aetheria Grounding Doctrine
 
+- For Aetheria lore, indexed GameCult repositories, archived Discord
+  discussion, and owner notifications, use the global `voidbot` MCP server
+  first.
+- Prefer `search_sources`, `get_source_context`, `list_indexed_repos`,
+  `search_history`, and `get_message_context` over raw `rg`, directory walks,
+  and file-by-file reading when the indexed retrieval surfaces can answer the
+  question.
+- Treat raw filesystem spelunking as the fallback path for exact patch work,
+  missing-index cases, or when the MCP results are clearly insufficient.
 - Before writing or generating Aetheria scenes, check AetheriaLore for the
   factions, movements, institutions, species or body types, location, and time
   period involved.
