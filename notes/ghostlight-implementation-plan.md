@@ -213,6 +213,12 @@
      assemblies, subassemblies, components, materials, faction access,
      prerequisites, bottlenecks, compatibility rules, upgrade slots, economic
      consequences, and quest hooks.
+   - Use the same manifest process to elaborate existing nebulous timeline
+     technologies into blueprint candidates. Named tech like a
+     super-Planckian emitter should be decomposed into candidate assemblies,
+     subassemblies, components, materials, processes, tooling, facilities,
+     failure modes, quality tiers, and supply-chain dependencies with inferred
+     fields marked as inferred.
    - Pre-Elysium starting tech must be manifested too. Factions do not begin
      with identical tech bases, manufacturing rights, stockpiles, maintenance
      skills, standards, or supply-chain dependencies.

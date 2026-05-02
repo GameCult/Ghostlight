@@ -23,6 +23,54 @@ violence, trade, survival, logistics, or prestige.
 Ghostlight should turn worldbuilding exploration into the data needed to support
 that design.
 
+## Nebulous Technology Elaboration
+
+Aetheria already has plenty of named technologies. Many of them are currently
+high-level lore objects rather than actionable game objects. That is fine for a
+timeline note. It is not enough for an item blueprint database.
+
+Ghostlight's exploration pipeline should elaborate existing vague technologies
+into blueprint candidates.
+
+For each nebulous technology, produce:
+
+- source summary
+- inferred operating principle
+- gameplay role
+- item families enabled
+- assemblies and subassemblies implied
+- critical components
+- materials
+- manufacturing processes
+- tooling and facility requirements
+- required expertise
+- quality tiers
+- failure modes
+- maintenance needs
+- salvage value
+- counterfeit risk
+- substitute parts
+- faction access and restrictions
+- supply-chain bottlenecks
+- prerequisite technologies
+- downstream technologies enabled
+- branch-local variants
+- open lore questions
+
+This is where a phrase like `super-Planckian emitter` stops being a decorative
+sci-fi noun and becomes a logistics problem with teeth.
+
+If Ghostlight cannot yet know the exact real physics, it should still propose a
+consistent fictional engineering stack: what must be fabricated, stabilized,
+aligned, cooled, calibrated, certified, transported, repaired, and monopolized.
+The output should be reviewable, revisable, and eventually loadable into a game
+database.
+
+Do not hallucinate certainty. Mark inferred engineering as inferred. Mark source
+facts as source facts. Mark branch-local innovations as branch-local. The
+manifest is allowed to deepen the world; it is not allowed to pretend an
+invention arrived without provenance.
+
 ## Item Knowledge Goals
 
 Every explored technology or item family should be able to answer:
@@ -39,6 +87,7 @@ Every explored technology or item family should be able to answer:
 - which tech prerequisites unlock it
 - which branch conditions or discoveries created it
 - which quests, markets, or conflicts it enables
+- which blueprint records it should create or update
 
 ## Manifest Object Types
 
@@ -57,6 +106,10 @@ Use these object layers when producing tech data:
 - `manufacturer`
 - `supply_node`
 - `upgrade_slot`
+- `blueprint`
+- `tech_prerequisite`
+- `quality_tier`
+- `failure_mode`
 
 An `item_family` is a broad class, such as laser weapon, radiator, aetheric
 drive, cryo valve, sensor mast, or habitat seal.
@@ -75,6 +128,20 @@ control wafer, and contamination seal.
 A `component` is the smallest useful gameplay/logistics unit worth tracking.
 Do not split screws unless screws are the point of the quest. The machine has
 standards. Barely.
+
+A `blueprint` is a craftable or manufacturable recipe-like record. It should be
+specific enough for a game system to evaluate whether a faction, factory, ship,
+or player can build the item.
+
+A `tech_prerequisite` is a required discovery, process, standard, license,
+facility, or expertise gate.
+
+A `quality_tier` describes meaningful gameplay variation: crude, standard,
+premium, military, experimental, branch-exotic, counterfeit, degraded, salvaged,
+or other reviewed tiers.
+
+A `failure_mode` describes what breaks, how it breaks, and what that failure
+costs in gameplay, safety, logistics, reputation, or maintenance.
 
 ## Example Pattern: Laser Upgrade Surface
 
@@ -109,6 +176,56 @@ should produce:
 - factions able to manufacture or adapt it
 - quests or market events unlocked by scarcity
 
+## Example Pattern: Super-Planckian Emitter
+
+When a source names a technology like `super-Planckian emitter`, Ghostlight
+should elaborate it into at least a candidate blueprint stack.
+
+Example working decomposition:
+
+```text
+item_family: exotic_emitter
+  item_variant: super_planckian_emitter_core_candidate
+    assembly: emitter_lattice_assembly
+      subassembly: boundary_condition_lattice
+      subassembly: phase-lock microstructure
+      subassembly: exotic containment frame
+    assembly: field_drive_assembly
+      subassembly: pulse shaper
+      subassembly: high-stability driver wafer
+      subassembly: feedback quench circuit
+    assembly: thermal_and_causality_safety_assembly
+      subassembly: transient heat sink
+      subassembly: event-spike monitor
+      subassembly: failsafe isolation gate
+    assembly: calibration_and_control_assembly
+      subassembly: metrology package
+      subassembly: firmware governor
+      subassembly: certification seal
+```
+
+That decomposition is not automatically canon. It is a candidate manifest. A
+reviewer can accept, reject, revise, or mark source gaps. The important point is
+that the technology now has places for supply chains to attach:
+
+- lattice fabrication
+- exotic containment materials
+- high-stability driver wafers
+- metrology packages
+- safety gates
+- certification regimes
+- specialist calibration expertise
+- heat rejection and failure containment
+
+Once those exist, the game can ask useful questions:
+
+- who owns lattice fabrication?
+- who can counterfeit the driver wafer?
+- what happens if the safety gate is downgraded?
+- can a higher-tier emitter assembly fit into an older laser housing?
+- which faction can maintain it after three jumps and one bad decision?
+- what quest appears when the certification seal supply collapses?
+
 ## Pre-Elysium Starting Tech
 
 Pre-Elysium tech is not a monolith. Everyone was shunted into Elysium together,
@@ -128,6 +245,8 @@ artifact:
 - doctrine-driven design differences
 - legal restrictions and export controls
 - black-market or pirate adaptations
+- blueprint records for starting equipment, ship systems, weapons, habitats,
+  medical systems, industrial tooling, and logistics infrastructure
 
 This matters because Elysium branches inherit different practical capabilities
 from the same shared Sol history depending on what each faction controls in that
@@ -152,6 +271,8 @@ When exploration discovers a technology, the manifest should record:
 - market/faction consequences
 - quest hooks opened
 - sibling branches where this innovation does not exist or differs
+- blueprint records created or modified
+- compatibility with pre-Elysium assemblies
 
 Aetheric drives, necrotech interfaces, spirit-mediated sensors, temporal memory
 archives, pseudospace logistics, and mutable-body support equipment should all
@@ -229,8 +350,10 @@ These artifacts train:
 The next concrete schema after coordinator artifacts should be a manifest seam:
 
 - `schemas/item-manifest.schema.json`
+- `schemas/item-blueprint.schema.json`
 - `examples/item-manifest/pre-elysium-starting-tech.template.json`
 - `examples/item-manifest/future-branch-innovation.template.json`
+- `examples/item-manifest/super-planckian-emitter.candidate.json`
 - `tools/validate_item_manifests.py`
 
 Minimum fields:
@@ -241,12 +364,16 @@ Minimum fields:
 - source refs
 - item family or technology id
 - object layer
+- blueprint ids
 - parent assembly refs
 - child component refs
+- materials/process/tooling/facility refs
 - faction/manufacturer access
 - prerequisites
 - bottlenecks
 - compatibility rules
+- quality tiers
+- failure modes
 - gameplay effects
 - economic consequences
 - quest hooks
@@ -262,9 +389,11 @@ During worldbuilding exploration:
    salvaged, counterfeited, or upgraded, emit a faction tech-base delta.
 3. If an innovation appears in Elysium, label its branch lineage and prior
    conditions.
-4. If the item relies on unsupported lore, patch AetheriaLore or mark a source
+4. If existing lore names a technology but lacks blueprint detail, elaborate it
+   into a candidate manifest with explicit inferred fields and source-gap notes.
+5. If the item relies on unsupported lore, patch AetheriaLore or mark a source
    gap before treating it as stable.
-5. If an item is cool but breaks logistics, keep it as a rejected artifact with
+6. If an item is cool but breaks logistics, keep it as a rejected artifact with
    the failure label. Beautiful nonsense is still training data if tagged before
    it bites someone.
 

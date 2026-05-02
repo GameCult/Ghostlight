@@ -92,7 +92,8 @@ state and re-entry discipline.
 - `docs/architecture/technology-item-manifest-plan.md`
   - plan for turning coordinator-led Aetheria exploration into game-usable
     item, component, assembly, faction tech-base, prerequisite, supply-chain,
-    and upgrade-path data
+    and upgrade-path data, including elaboration of existing nebulous named
+    technologies into blueprint candidates
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
     historical projection feedstock rather than the active product target

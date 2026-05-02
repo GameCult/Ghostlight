@@ -798,6 +798,7 @@ Inputs:
 - coordinator plan and glue prose
 - branch lineage and prior conditions
 - source refs from AetheriaLore
+- nebulous named technologies from existing timeline/lore notes
 - technology discovery events
 - faction or manufacturer state
 - item family or gameplay role
@@ -809,8 +810,10 @@ Outputs:
 
 - item family records
 - item variant records
+- blueprint candidate records
 - assembly and subassembly records
 - component and material records
+- process, tooling, expertise, and facility records
 - compatibility and upgrade-slot rules
 - faction/manufacturer access records
 - prerequisites and technology order
@@ -819,6 +822,7 @@ Outputs:
 - economic consequences
 - quest hooks
 - rejected unsupported item designs
+- source-gap records for named tech that lacks actionable blueprint detail
 
 Training architecture:
 
@@ -831,6 +835,7 @@ Training architecture:
 Training artifacts:
 
 - item manifest records
+- blueprint records
 - component breakdown records
 - assembly compatibility records
 - faction tech-base records
@@ -838,6 +843,7 @@ Training artifacts:
 - branch-local innovation records
 - economic consequence records
 - rejected item designs with failure labels
+- nebulous-tech elaboration records with inferred/source/gap fields
 
 First training gate:
 
@@ -846,6 +852,9 @@ First training gate:
 - 50 faction tech-base records across pre-Elysium and future branches
 - 50 rejected/invalid item examples with clear failure labels
 - at least 10 branch-local innovations tied to lineage and prerequisites
+- at least 10 existing named technologies elaborated from vague lore into
+  candidate blueprints with explicit source facts, inferred engineering, and
+  open gaps
 
 ## Training Order
 
@@ -913,6 +922,8 @@ A first item-manifest model wants:
 - source refs or branch lineage for every record
 - explicit component, assembly, prerequisite, bottleneck, and gameplay-effect
   fields
+- named-tech elaborations that separate source facts from inferred engineering
+  and open lore gaps
 
 ## Artifact Shape Rule
 

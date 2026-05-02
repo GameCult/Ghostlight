@@ -189,6 +189,10 @@ faction tech-base access, prerequisites, bottlenecks, compatibility rules,
 upgrade surfaces, economic consequences, and quest hooks. Pre-Elysium starting
 tech is part of this because factions enter Elysium with asymmetric industrial
 bases and supply chains.
+Existing named but nebulous technologies should be elaborated into blueprint
+candidates during the same process. Separate source facts, inferred
+engineering, and open lore gaps so item database candidates do not pretend the
+timeline already answered every manufacturing question.
 
 The evaluation follow-up fixed the immediate v0 schema issues:
 
