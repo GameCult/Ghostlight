@@ -38,10 +38,11 @@ Fold variables:
 - `signal_preserved`
 
 Fold policy: every branch in this v0 converges through the same provenance,
-clinic, and contact scenes. Choices alter state, available texture, later lines,
-image modifiers, and final scars. A larger version may split if the vessel is
-lost, Veyr is burned badly enough to become a retaliation route, Sella refuses
-contact entirely, or Isdra converts the freeze into active sanction.
+clinic, and contact scenes, but the variables now actually change the fixture.
+They alter available choices, clinic prose, image modifiers, and final outcome
+texture. A larger version may split if the vessel is lost, Veyr is burned badly
+enough to become a retaliation route, Sella refuses contact entirely, or Isdra
+converts the freeze into active sanction.
 
 ## Scene 01: Route Freeze Tribunal
 
@@ -64,8 +65,8 @@ metal, and people trying to make cowardice audit-safe.
 Branches:
 
 - `branch-01-ledger-under-freeze`: Maer puts Navigator rescue ledger liability under the waiting cost. Increases `route_debt`, lowers `isdra_trust`, creates red ledger imagery later.
-- `branch-01-timer-in-public`: Maer projects the heat timer across every gallery pane. Increases `authority_pressure`, leaves a transcript-visible cost.
-- `branch-01-provisional-category`: Maer asks for unresolved distress-bearing thermal evidence. Sets `provisional_category`, improves `isdra_trust` slightly.
+- `branch-01-timer-in-public`: Maer projects the heat timer across every gallery pane. Increases `authority_pressure`, costs `heat_time`, leaves transcript-visible pressure.
+- `branch-01-provisional-category`: Maer asks for unresolved distress-bearing thermal evidence. Sets `provisional_category`, improves `isdra_trust`, unlocks a clinic option later.
 - `branch-01-find-veyr-first`: Maer leaves to improve provenance. Improves `evidence_quality`, reduces `heat_time`.
 
 ## Scene 02: Callisto Relay Shadow
@@ -82,9 +83,9 @@ voice because nobody taught it a kinder failure mode.
 
 Branches:
 
-- `branch-02-protect-veyr-source`: Maer asks for behavior without identity. Improves `evidence_quality` modestly and protects Veyr.
-- `branch-02-demand-signed-chain`: Maer demands a signed chain. Greatly improves `evidence_quality`, sets `veyr_source_exposed`, increases `authority_pressure`.
-- `branch-02-move-with-partial`: Maer takes partial evidence and moves. Preserves time, keeps ambiguity high.
+- `branch-02-protect-veyr-source`: Maer asks for behavior without identity. Improves `evidence_quality`, costs one `heat_time`, protects Veyr.
+- `branch-02-demand-signed-chain`: Maer demands a signed chain. Greatly improves `evidence_quality`, costs two `heat_time`, sets `veyr_source_exposed`, increases `authority_pressure`. This option is unavailable if too little time remains.
+- `branch-02-move-with-partial`: Maer takes partial evidence and moves. Preserves `heat_time`, keeps `evidence_quality` low, narrowing clinic options unless another prior state compensates.
 
 ## Scene 03: Sanctuary Clinic Gate
 
@@ -96,8 +97,16 @@ Sella Ren has one monitored bay that can become available if several people
 agree to make their own lives worse with precision.
 
 Maer arrives through the Navigator wet channel. The packet waits on a shared
-display. Its pattern is stronger now if Veyr helped, uglier if Veyr signed, and
-still unresolved either way.
+display.
+
+The clinic now checks state directly:
+
+- High `evidence_quality` makes the packet harder to dismiss and opens the strong-evidence branch.
+- Partial `evidence_quality` opens a weaker branch whose outcome depends on `provisional_category`.
+- `provisional_category` appears as a gray legal lane and opens its own option.
+- High `authority_pressure` follows the packet as a PSC priority flag; without `provisional_category`, strong evidence can become audit contamination instead of permission.
+- Low `heat_time` changes the clinic description and can turn rescue into salvage.
+- Prior `route_debt` appears before Sella decides whether Maer brought material terms.
 
 Sella looks at Maer, then at the timer, then at the staff board.
 
@@ -106,41 +115,49 @@ the funeral."
 
 Branches:
 
-- `branch-03-ledger-for-sleeve`: Maer offers ledger backing for bounded diagnostic contact. Increases `route_debt` and `clinic_exhaustion`, improves `sella_trust`, sets `bay_open`.
-- `branch-03-evidence-to-sella`: Maer shows evidence and lets Sella set terms. Sets `bay_open`, preserves Sella authority.
-- `branch-03-press-personhood`: Maer forces the moral frame. Lowers `sella_trust`, increases `clinic_exhaustion`, makes the climax colder and later.
+- `branch-03-ledger-for-sleeve`: Maer offers ledger backing for bounded diagnostic contact. Available only while `heat_time` remains. Increases `route_debt` and `clinic_exhaustion`, improves `sella_trust`, sets `bay_open`.
+- `branch-03-evidence-to-sella-strong`: Available only at high `evidence_quality`. Sets `bay_open`, improves `sella_trust`, preserves Sella authority.
+- `branch-03-evidence-to-sella-partial`: Available at partial `evidence_quality`. If `provisional_category` is true, it opens the bay with exhaustion cost; otherwise Sella refuses and trust drops.
+- `branch-03-use-provisional-lane`: Available only if `provisional_category` and remaining time exist. Opens the bay with clinic exhaustion cost.
+- `branch-03-press-personhood`: Always available, but weak evidence and low time make it worse. Lowers `sella_trust`, increases `clinic_exhaustion`, and may leave `bay_open` false.
 
 ## Scene 04: Diagnostic Contact
 
 The diagnostic sleeve cycles once.
 
-Not a voice. Not proof. A rhythm catches in the preservation channel: three
-repeats, a thermal hitch, a routing reflex that answers the Navigator ping by
-trying to become smaller.
+If `heat_time` remains, the preservation channel catches a coherent ambiguous
+signal: three repeats, a thermal hitch, a routing reflex that answers the
+Navigator ping by trying to become smaller.
 
-The vessel dumps heat in a thin white flare beyond the dock cameras. Not enough
-to save itself. Enough to stop being invisible.
+If `heat_time` has fallen to zero, the sleeve cycles late. The vessel's heat
+dump has already begun outside the safe window, and the channel catches only
+fragments.
 
-If the bay opened cleanly, Sella permits bounded contact. Nobody in the room
-says rescue like it is clean. Nobody says cargo. The staff work fast and look
-older by the minute.
+If `bay_open` is true, Sella opens bounded contact under terms. If false, she
+opens late and angry because the alternative is worse, and the delay is not
+forgiven just because the door finally moves.
 
-If the bay opened late or under pressure, Sella still cycles the sleeve, but the
-room knows who spent the delay. Maer's ledger may bloom red. Veyr's sacrificed
-identity may ping under PSC seal. Sella may refuse to look at Maer when the
-signal stabilizes.
+Other variables carry through visibly:
 
-When the first salvage craft reaches the vessel, it finds no answer that makes
-the tribunal happy. It finds a damaged cognition scaffold, three living bodies
-in thermal shock, and a routing artifact still repeating the same failed
-question through a system never built to hear it.
+- High `evidence_quality` gives the rescue craft a sharper lock.
+- Low `evidence_quality` makes the rescue craft fly half-blind.
+- `provisional_category` keeps the tribunal from slamming the channel shut.
+- High `authority_pressure` opens a PSC penalty file and can make Maer's future escort petitions pay for this minute.
+- High `route_debt` blooms red on Maer's ledger.
+- High `clinic_exhaustion` shows staff error and depleted capacity.
+- Low `sella_trust` removes eye contact and warmth from the contact beat.
+- `veyr_source_exposed` leaves a PSC-sealed identity ping in the room.
+
+Outcome fold:
+
+- If `heat_time` remains, the craft finds a damaged cognition scaffold, three living bodies in thermal shock, and unresolved routing testimony.
+- If `heat_time` is gone, the craft finds two living bodies, one body too late for any category, and the same unresolved scaffold.
 
 Cold Wake does not end in Room Seven, or in Sella's clinic, or in the rescue
 craft's floodlights. It ends later, badly, everywhere, when the PSC discovers
 that a category can be repaired faster than trust.
 
-But on this night, one vessel survives the minute it was supposed to disappear.
-That is not justice. It is a receipt.
+But the state now changes what kind of receipt survives.
 
 ## Visual Plan
 
@@ -163,11 +180,13 @@ Branch-visible marks:
 - PSC-sealed Veyr identity ping.
 - Amber-white bay state.
 - Exhausted clinic staff and guarded Sella posture.
+- Fragmented waveform and harsher red alarms if `heat_time` runs out.
 
 ## Review
 
 Accepted as a clean IF scaffold and coordinator/story-runtime sample. Not raw
-responder gold. The fixture demonstrates source grounding, branch-and-fold,
-non-speech actions, resource consequences, conditional callbacks, and durable
-visual prompt structure without making Cold Wake become the whole project again.
+responder gold. Revised after review because the first pass tracked variables
+that did not matter enough. This version makes `heat_time`, `evidence_quality`,
+`provisional_category`, `authority_pressure`, `clinic_exhaustion`, and trust change options, prose,
+visual modifiers, and outcome texture.
 

@@ -81,11 +81,13 @@ The tribunal records the pledge. The timer keeps eating the room.
 
 === timer_in_public ===
 ~ authority_pressure = authority_pressure + 1
+~ heat_time = heat_time - 1
 
 Maer does not argue first. He routes the heat-debt countdown from the shared
 table to every gallery pane.
 
-The numbers bloom across the glass over each insurer's reflection.
+The numbers bloom across the glass over each insurer's reflection. The room
+spends a minute pretending this is not a threat simply because it is accurate.
 
 "No new claim," he says. "Only the time your category repair is spending."
 
@@ -144,6 +146,16 @@ with a partial chain on the packet's routing behavior.
 The tribunal can be moved now, but not safely. The packet still has no clean
 origin, no clean claimant, and no clean lie.
 
+{heat_time <= 2:
+    The timer has already lost its comfortable digits. Every route from here is
+    stealing from the contact window.
+}
+{provisional_category:
+    Isdra's provisional lane follows Maer as a gray mark in the route file. It
+    will not save anyone by itself, but it gives later actors something to touch
+    without lying about what they touched.
+}
+
 How does Maer handle Veyr?
 
 * [Ask Veyr for a usable chain without exposing the source.]
@@ -152,7 +164,7 @@ How does Maer handle Veyr?
     // ghostlight.intent: preserve source safety while improving evidence
     -> protect_veyr_source
 
-* [Demand a signed provenance disclosure.]
+* {heat_time >= 2} [Demand a signed provenance disclosure.]
     // ghostlight.branch: branch-02-demand-signed-chain
     // ghostlight.action: speak
     // ghostlight.intent: maximize legal usefulness at personal and source cost
@@ -173,6 +185,11 @@ The packet fragment turns in the air between Maer and Veyr, a little knot of
 routing behavior that may be distress, camouflage, or a dead system imitating a
 voice because nobody taught it a kinder failure mode.
 
+{heat_time <= 2:
+    Maer arrives with less time than evidence deserves. Veyr notices. People in
+    gray markets always notice what a clean institution has already spent.
+}
+
 What does Maer ask of Veyr?
 
 * [Ask Veyr for a usable chain without exposing the source.]
@@ -181,7 +198,7 @@ What does Maer ask of Veyr?
     // ghostlight.intent: preserve source safety while improving evidence
     -> protect_veyr_source
 
-* [Demand a signed provenance disclosure.]
+* {heat_time >= 2} [Demand a signed provenance disclosure.]
     // ghostlight.branch: branch-02-demand-signed-chain
     // ghostlight.action: speak
     // ghostlight.intent: maximize legal usefulness at personal and source cost
@@ -194,6 +211,7 @@ What does Maer ask of Veyr?
     -> move_with_partial
 
 === protect_veyr_source ===
+~ heat_time = heat_time - 1
 ~ evidence_quality = evidence_quality + 1
 
 "I need enough to route care," Maer says. "Not enough to hang you."
@@ -207,11 +225,13 @@ They strip the chain down to behavior: repeats, acoustic drift, heat-window
 correlation, a routing reflex that keeps curling back toward Ganymede like a
 hand closing in sleep.
 
-It will not satisfy a court. It might move a clinic.
+It will not satisfy a court. It might move a clinic. It costs time anyway,
+because even partial mercy has a processing delay.
 
 -> clinic_gate
 
 === demand_signed_chain ===
+~ heat_time = heat_time - 2
 ~ evidence_quality = evidence_quality + 2
 ~ veyr_source_exposed = true
 ~ authority_pressure = authority_pressure + 1
@@ -228,10 +248,12 @@ leaks are adorable."
 After a long moment, Veyr burns one identity and signs with another. The packet
 grows more useful and more dangerous in the same breath.
 
+By the time Maer leaves, the heat window has stopped being a warning and become
+a countdown with manners.
+
 -> clinic_gate
 
 === move_with_partial ===
-~ heat_time = heat_time + 0
 
 Maer accepts the partial pattern without making Veyr bleed for a cleaner one.
 
@@ -240,6 +262,8 @@ Maer accepts the partial pattern without making Veyr bleed for a cleaner one.
 "I am not taking it to a tribunal first."
 
 "Ah. A clinic. Much worse. They know what things cost."
+
+The shortcut preserves the heat window. It preserves the uncertainty too.
 
 -> clinic_gate
 
@@ -253,8 +277,55 @@ Sella Ren has one monitored bay that can become available if several people
 agree to make their own lives worse with precision.
 
 Maer arrives through the Navigator wet channel. The packet waits on a shared
-display. Its pattern is stronger now if Veyr helped, uglier if Veyr signed, and
-still unresolved either way.
+display.
+
+{evidence_quality >= 4:
+    The packet's pattern is legally sharper now and visibly uglier: signed chain,
+    source exposure, routing reflex, heat correlation. It is not proof of a
+    person. It is proof that calling it noise would be work.
+- else:
+    {evidence_quality >= 3:
+        The packet's pattern is strong enough to disturb the room. Its repeats
+        and heat-window correlation hold together, but the source chain still
+        has missing teeth.
+    - else:
+        {evidence_quality >= 2:
+            The packet's pattern is partial: suggestive rhythm, incomplete
+            routing behavior, enough to make dismissal feel like a choice.
+        - else:
+            The packet's pattern is thin and damaged. It asks for belief from a
+            room built to survive by refusing exactly that kind of request.
+        }
+    }
+}
+
+{provisional_category:
+    Isdra's gray provisional lane sits in the file header. Sella can use it
+    without accepting its comfort.
+}
+{heat_time <= 0:
+    The heat timer has crossed into red. Every option now is salvage wearing a
+    rescue mask.
+- else:
+    {heat_time == 1:
+        The heat timer is nearly gone. No one in the room has enough time left
+        to be elegant.
+    }
+}
+{route_debt >= 2:
+    Maer's ledger is already live from the tribunal. Sella sees that he has put
+    something material under the ask before bringing it to her door.
+}
+{authority_pressure >= 3:
+    A PSC priority flag follows the packet into the clinic. It is not an order,
+    not yet, but it puts every choice under glass. If Sella touches this without
+    a lawful handle, the clinic inherits the tribunal's appetite.
+- else:
+    {authority_pressure >= 2:
+        The tribunal is watching closely enough to make every hand in the clinic
+        feel documented.
+    }
+}
 
 Sella looks at Maer, then at the timer, then at the staff board.
 
@@ -263,17 +334,29 @@ the funeral."
 
 What does Maer bring to the clinic?
 
-* [Offer ledger backing for a bounded diagnostic sleeve.]
+* {heat_time > 0} [Offer ledger backing for a bounded diagnostic sleeve.]
     // ghostlight.branch: branch-03-ledger-for-sleeve
     // ghostlight.action: spend_resource
     // ghostlight.intent: make care possible without demanding full intake
     -> ledger_for_sleeve
 
-* [Show the strongest evidence and let Sella set the terms.]
-    // ghostlight.branch: branch-03-evidence-to-sella
+* {evidence_quality >= 3} [Show the strong evidence and let Sella set the terms.]
+    // ghostlight.branch: branch-03-evidence-to-sella-strong
     // ghostlight.action: show_object
-    // ghostlight.intent: respect clinical authority while making ambiguity visible
-    -> evidence_to_sella
+    // ghostlight.intent: respect clinical authority while making strong ambiguity visible
+    -> evidence_to_sella_strong
+
+* {evidence_quality == 2} [Show the partial evidence and ask for diagnostic handling.]
+    // ghostlight.branch: branch-03-evidence-to-sella-partial
+    // ghostlight.action: show_object
+    // ghostlight.intent: ask Sella to act on incomplete but meaningful evidence
+    -> evidence_to_sella_partial
+
+* {provisional_category && heat_time > 0} [Invoke Isdra's provisional lane and let Sella define the care boundary.]
+    // ghostlight.branch: branch-03-use-provisional-lane
+    // ghostlight.action: show_object
+    // ghostlight.intent: use legal aperture while preserving clinical authority
+    -> provisional_lane_to_sella
 
 * [Press Sella to treat the packet as a possible person now.]
     // ghostlight.branch: branch-03-press-personhood
@@ -300,19 +383,93 @@ She marks the bay amber-white: contact permitted, interpretation forbidden.
 
 -> contact_climax
 
-=== evidence_to_sella ===
-~ bay_open = true
+=== evidence_to_sella_strong ===
 
 Maer gives Sella the pattern and waits.
 
-The room does not become noble. It becomes busy. Sella sends one tech to the wet
-interface, one recorder behind glass, and nobody extra from warm intake.
+Sella reads the chain, the heat correlation, the routing reflex. If Veyr burned
+an identity to make it clean, Sella notices the ash and does not ask whose hand
+held the match.
 
-"I will not call it someone," she says.
+{authority_pressure >= 3:
+    {provisional_category:
+        ~ bay_open = true
+        ~ clinic_exhaustion = clinic_exhaustion + 1
+        ~ sella_trust = sella_trust + 1
 
-"I did not ask you to."
+        "This is not personhood," she says.
 
-"Good. Then I can listen."
+        "No."
+
+        "Good. The gray lane keeps the tribunal from eating my staff alive while
+        we listen. I hate that it helps. I will use it anyway."
+
+        She opens the sleeve under her own terms, with the PSC flag nailed to
+        the edge of the display like a warning label.
+    - else:
+        ~ sella_trust = sella_trust - 1
+
+        "This is strong," Sella says. "It is also radioactive. You brought me a
+        chain hot enough to make my clinic the tribunal's next exhibit."
+
+        The bay does not open. Not yet. Strong evidence without a lawful handle
+        has become another kind of contamination.
+    }
+- else:
+    ~ bay_open = true
+    ~ sella_trust = sella_trust + 1
+
+    "This is not personhood," she says.
+
+    "No."
+
+    "It is enough to make ignoring it an act."
+
+    She opens the sleeve under her own terms.
+}
+
+-> contact_climax
+
+=== evidence_to_sella_partial ===
+{provisional_category:
+    ~ bay_open = true
+    ~ clinic_exhaustion = clinic_exhaustion + 1
+
+    Maer shows Sella the partial pattern under Isdra's gray provisional lane.
+
+    Sella hates the lane. Then she uses it, because hatred is not a staffing
+    model.
+
+    "Diagnostic handling only," she says. "The category gets it through the
+    door. My clinic decides how far."
+
+    -> contact_climax
+- else:
+    ~ sella_trust = sella_trust - 1
+
+    Maer shows Sella the partial pattern without a clean chain or legal lane.
+
+    Sella watches it fail to become enough.
+
+    "No," she says, and the word costs her more than Maer wanted to see. "Bring
+    me capacity, authority, or better evidence. I will not spend a bay on your
+    hope and call that consent."
+
+    -> contact_climax
+}
+
+=== provisional_lane_to_sella ===
+~ clinic_exhaustion = clinic_exhaustion + 1
+~ bay_open = true
+
+Maer sends Isdra's provisional lane to Sella before he sends the packet.
+
+"The tribunal gave it a handle. Not a name."
+
+Sella studies the gray mark like it might bite.
+
+"Fine. The handle stays outside the wound. Diagnostic sleeve only. My staff do
+not inherit the tribunal's cowardice or your hope."
 
 -> contact_climax
 
@@ -328,7 +485,13 @@ Sella's hand leaves the bay control.
 "Do not make my clinic the stage for your clean sentence. Give me terms I can
 staff."
 
-The bay remains closed until Maer steps back from the word he wants most.
+{heat_time <= 0:
+    The timer hits red while neither of them touches the sleeve.
+}
+{evidence_quality <= 2:
+    The packet flickers on the display, too thin to rescue Maer's argument from
+    sounding like a demand for Sella to subsidize his terror.
+}
 
 -> contact_climax
 
@@ -336,12 +499,21 @@ The bay remains closed until Maer steps back from the word he wants most.
 
 The diagnostic sleeve cycles once.
 
-Not a voice. Not proof. A rhythm catches in the preservation channel: three
-repeats, a thermal hitch, a routing reflex that answers the Navigator ping by
-trying to become smaller.
+{heat_time <= 0:
+    It cycles late.
 
-The vessel dumps heat in a thin white flare beyond the dock cameras. Not enough
-to save itself. Enough to stop being invisible.
+    The vessel's heat dump has already begun outside the safe window, a white
+    wound opening across the dock cameras. The preservation channel catches only
+    fragments: three repeats broken into two, a thermal hitch, a routing reflex
+    trying to become smaller after there is no smaller left.
+- else:
+    Not a voice. Not proof. A rhythm catches in the preservation channel: three
+    repeats, a thermal hitch, a routing reflex that answers the Navigator ping by
+    trying to become smaller.
+
+    The vessel dumps heat in a thin white flare beyond the dock cameras. Not
+    enough to save itself. Enough to stop being invisible.
+}
 
 {bay_open:
     Sella opens the sleeve for bounded contact. Nobody in the room says rescue
@@ -349,33 +521,72 @@ to save itself. Enough to stop being invisible.
     the minute.
 - else:
     Sella opens the sleeve late and angry, because the alternative is letting a
-    possible claimant vanish while everyone writes excellent minutes.
+    possible claimant vanish while everyone writes excellent minutes. The delay
+    is not forgiven just because the door finally moves.
 }
 
+{evidence_quality >= 4:
+    The signed chain gives the rescue craft a sharper lock. It also leaves
+    Veyr's sacrificed identity blinking under PSC seal, a casualty without a
+    body.
+- else:
+    {evidence_quality <= 2:
+        The rescue craft flies half-blind. Every correction comes through Maer's
+        route sense and Sella's refusal to call uncertainty permission.
+    }
+}
+{provisional_category:
+    Isdra's provisional lane holds long enough to keep the tribunal from
+    slamming the channel shut. Nobody thanks the category. They use it like a
+    splint.
+- else:
+    {authority_pressure >= 3:
+        The PSC flag hardens into a sanction review before the sleeve finishes
+        cycling. Maer's next escort petition will pay for this minute, and the
+        clinic's audit queue has already learned his name.
+    }
+}
 {route_debt >= 4:
     Maer's ledger panel blooms red with live debt lines. Future escorts will
     remember this, and not all of them kindly.
 }
-{veyr_source_exposed:
-    On the side display, Veyr's sacrificed identity pings once under PSC seal.
-    The room gains another casualty without a body.
+{authority_pressure >= 3:
+    Isdra's office opens a penalty file while the rescue craft is still moving.
+    The title is neutral. The timing is not.
+}
+{clinic_exhaustion >= 2:
+    A recorder drops a stylus behind the glass and leaves it there. Nobody has a
+    spare hand for dignity.
 }
 {sella_trust <= 0:
     Sella does not look at Maer when the signal stabilizes. Her silence is not
     contempt. It is triage applied to trust.
 }
 
-When the first salvage craft reaches the vessel, it finds no answer that makes
-the tribunal happy. It finds a damaged cognition scaffold, three living bodies
-in thermal shock, and a routing artifact still repeating the same failed
-question through a system never built to hear it.
+{heat_time <= 0:
+    When the salvage craft reaches the vessel, it finds two living bodies in
+    thermal shock, one body too late for any category, and a damaged cognition
+    scaffold still repeating the same failed question through a system never
+    built to hear it.
+- else:
+    When the first salvage craft reaches the vessel, it finds no answer that
+    makes the tribunal happy. It finds a damaged cognition scaffold, three
+    living bodies in thermal shock, and a routing artifact still repeating the
+    same failed question through a system never built to hear it.
+}
 
 Cold Wake does not end in Room Seven, or in Sella's clinic, or in the rescue
 craft's floodlights. It ends later, badly, everywhere, when the PSC discovers
 that a category can be repaired faster than trust.
 
-But on this night, one vessel survives the minute it was supposed to disappear.
-That is not justice. It is a receipt.
+{heat_time <= 0:
+    On this night, the vessel survives only as evidence, grief, and two people
+    who will spend the rest of their lives knowing exactly how long a minute can
+    be.
+- else:
+    On this night, one vessel survives the minute it was supposed to disappear.
+    That is not justice. It is a receipt.
+}
 
 -> END
 

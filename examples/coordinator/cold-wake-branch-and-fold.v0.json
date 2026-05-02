@@ -136,7 +136,7 @@
                                                                   "reason":  "Would repeat the failure mode and keep Cold Wake stuck in seam testing instead of finishing the IF scaffold."
                                                               }
                                                           ],
-                                 "rationale":  "The fixture needs a beginning, choices with durable consequences, folds to avoid combinatoric explosion, and a resolution that shows cost without claiming a clean institutional victory.",
+                                 "rationale":  "The fixture needs a beginning, choices with durable consequences, folds to avoid combinatoric explosion, and a resolution whose options and outcome texture actually read compact state variables such as heat_time, evidence_quality, provisional_category, authority_pressure, clinic_exhaustion, trust, and route_debt.",
                                  "glue_prose":  "Cold Wake became usable once the story stopped trying to prove the right category and started showing what categories cost while people were still inside them.",
                                  "glue_prose_status":  "accepted_as_narration"
                              },
@@ -242,6 +242,15 @@
                                 "authority":  "manual_review",
                                 "status":  "accepted",
                                 "rationale":  "Supports website imagery without regenerating every branch image from scratch."
+                            },
+                            {
+                                "delta_id":  "delta.if.variables_made_operational",
+                                "delta_type":  "branch_flag_update",
+                                "target_ref":  "cold_wake_branch_and_fold_fixture",
+                                "summary":  "Revised fixture so heat_time, evidence_quality, provisional_category, clinic_exhaustion, and trust alter choice availability, clinic prose, visual state, and final outcome texture.",
+                                "authority":  "manual_review",
+                                "status":  "accepted",
+                                "rationale":  "User review identified set-dressing variables; the IF scaffold now checks and spends those variables directly."
                             }
                         ],
     "branching":  {
@@ -320,7 +329,9 @@
                    "review_notes":  [
                                         "Accepted as coordinator/IF scaffold training data, not raw sandboxed responder output.",
                                         "The artifact directly addresses earlier failures: no clinic-only fragment, no prompt-contract speech, no unbounded subtree explosion, no regenerate-from-scratch visual continuity plan.",
-                                        "Cold Wake should be considered knocked out for current fixture purposes unless the user asks for polish or a future route split expansion."
+                                        "Cold Wake should be considered knocked out for current fixture purposes unless the user asks for polish or a future route split expansion.",
+                                        "Revision after user review: variables that were set dressing now affect available branches, folded scene text, visual modifiers, and outcome severity.",
+                                        "Second revision after user review: authority_pressure now creates PSC audit contamination and sanction-review consequences rather than acting as a decorative pressure gauge."
                                     ],
                    "accepted_for_training":  true,
                    "failure_labels":  [
