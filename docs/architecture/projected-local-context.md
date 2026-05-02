@@ -89,9 +89,19 @@ Embodiment is part of the prompt surface, not flavor garnish. If a character is
 a cetacean Navigator, the response model must know what kind of body is acting
 and what infrastructure surrounds it.
 
-For Navigator scenes, project habitat-native affordances directly: channels,
-wet/dry workstations, shared displays, control rails, acoustic or translation
-systems, and other infrastructure built around cetacean movement and
-communication. Do not let the model default to hands, pockets, standing,
-walking, leaning, or doorway blocking unless the fixture explicitly establishes
-that visible interface.
+For Aetheria factions, project faction-specific affordances only after checking
+the lore source. The current Navigator projection is grounded in:
+
+- `E:\Projects\AetheriaLore\Aetheria\Worldbuilding\Pre-Elysium\Factions\Powers\Major\Cetacean Navigators.md`
+- `E:\Projects\AetheriaLore\Aetheria\Worldbuilding\Pre-Elysium\Technology\Uplift.md`
+
+Those sources support fluid architecture, acoustic signaling, soft navigation
+light, layered water motifs, communal orientation chambers, mixed-species
+translation/coexistence, and specialized environments for cetacean physiology.
+They do not yet define precise clinic controls, rail layouts, or wet/dry
+workstation ergonomics. Treat those details as a lore-grounding gap until the
+Aetheria source material defines them.
+
+Do not let the model default to hands, pockets, standing, walking, leaning, or
+doorway blocking unless the fixture explicitly establishes that visible
+interface. Do not patch over missing lore with confident furniture.

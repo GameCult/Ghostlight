@@ -126,10 +126,13 @@
      raw state internals such as `current_activation`, `plasticity`, means, or
      decimal state values.
    - Embodiment correction: projected local context now includes a first-class
-     embodiment/interface section. Cetacean Navigator action should be
-     projected through habitat-native channels, wet/dry workstations, shared
-     displays, control rails, acoustic or translation systems, and other
-     Navigator-built infrastructure, not default human body assumptions.
+     embodiment/interface section. Aetheria faction affordances must be checked
+     against lore before projection. Current Navigator source supports fluid
+     architecture, acoustic signaling, soft navigation light, layered water
+     motifs, communal orientation chambers, mixed-species
+     translation/coexistence, and specialized cetacean environments; exact
+     clinic workstation ergonomics remain a lore-detail gap until patched at
+     source.
    - Sixth sequential draft: v6 routed thinking-plus-tools generation through
      projected local context instead of selected activation dictionaries. It
      produced usable Maer/Sella behavior but remains useful-needs-revision

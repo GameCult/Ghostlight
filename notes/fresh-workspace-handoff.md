@@ -105,8 +105,10 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `tools/project_local_context.py`
   - `tools/validate_projected_contexts.py`
   - includes an embodiment/interface section so Navigator action is projected
-    through habitat-native channels, workstations, displays, rails, and
-    communication systems instead of default human body assumptions
+    from checked Aetheria lore instead of default human body assumptions;
+    current source supports fluid architecture, acoustic signaling, communal
+    orientation chambers, mixed-species translation/coexistence, and specialized
+    cetacean environments, but exact clinic ergonomics remain a source-lore gap
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
 - first projection example seam:
@@ -138,10 +140,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Review the embodiment-aware materialized v10 Ink branch and mutation receipt for
-narrative quality and state-change plausibility, then either run another Qwen
-pass through the updated projector or generalize the sequential materializer for
-more accepted captures.
+Decide whether to patch AetheriaLore with precise Navigator clinic/interface
+ergonomics, then run another Qwen pass through the source-checked projector or
+generalize the sequential materializer for more accepted captures.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay

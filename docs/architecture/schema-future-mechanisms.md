@@ -145,6 +145,12 @@ model. Future work should promote body form, native habitat, movement channels,
 assistive or translation infrastructure, and visible nonverbal signal channels
 only after more projection examples prove the required shape.
 
+For Aetheria faction work, embodiment projection must check the lore vault
+before writing. If the faction page supports only general habitat aesthetics or
+social affordances, keep generated action at that level and record the missing
+ergonomic detail as a source-lore gap instead of inventing a confident local
+interface.
+
 ## Promotion Rule
 
 Promote a future mechanism into the main schema only after it has survived at

@@ -300,18 +300,26 @@ def embodiment_context(agent: dict[str, Any], source_prefix: str) -> list[dict[s
     roles = " ".join(identity.get("roles", []))
     searchable_identity = f"{origin} {roles}".lower()
     if "cetacean" in searchable_identity:
+        navigator_lore_refs = [
+            "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+            "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+        ]
         return [
             text_block(
-                "This character is a literal cetacean Navigator. Corridor habitats and Navigator-adjacent clinics are built around cetacean movement, access, and communication.",
-                [f"{source_prefix}.identity.origin"],
+                "This character is a literal cetacean Navigator. Navigator spaces favor fluid architecture, acoustic signaling, soft navigation light, layered water motifs, communal orientation chambers, and mixed-species translation/coexistence.",
+                [f"{source_prefix}.identity.origin", *navigator_lore_refs],
             ),
             text_block(
-                "Express physical action through Navigator-native channels, wet/dry workstations, shared displays, control rails, acoustic or translation systems, and other infrastructure already present in the habitat.",
-                [f"{source_prefix}.identity.roles", "scenes.scene-02-sanctuary-intake.location"],
+                "Express physical action through source-grounded habitat affordances: fluid circulation, orientation chambers, shared displays, acoustic or translation systems, and specialized environments tailored to cetacean physiology.",
+                [f"{source_prefix}.identity.roles", "scenes.scene-02-sanctuary-intake.location", *navigator_lore_refs],
+            ),
+            text_block(
+                "Do not invent exact workstation ergonomics beyond the source. If a scene needs precise controls, rails, channel geometry, or wet/dry clinic layout, treat that as a lore-detail gap to fill before generation.",
+                [f"{source_prefix}.identity.origin", *navigator_lore_refs],
             ),
             text_block(
                 "Do not describe human hands, pockets, standing, walking, leaning, doorframe blocking, or facial expressions for this character unless the fixture explicitly establishes that specific visible interface.",
-                [f"{source_prefix}.identity.origin"],
+                [f"{source_prefix}.identity.origin", *navigator_lore_refs],
             ),
         ]
     return [
