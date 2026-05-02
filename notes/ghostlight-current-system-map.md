@@ -77,7 +77,8 @@ state and re-entry discipline.
 - `docs/architecture/projected-local-context.md`
   - contract for the projector seam that turns canonical state into
     character-local operating context before a response model sees it,
-    including source-checked embodiment and interface affordances
+    including source-checked embodiment and interface affordances, runtime
+    retrieval requirements, and latent pressure handling
 - `docs/architecture/soft-model-training-artifacts.md`
   - doctrine for treating every non-deterministic judgment as reviewed
     training material for future specialized models, including
@@ -116,7 +117,9 @@ state and re-entry discipline.
   - v0 contract for grounding historical fixtures in source-backed cultural and
     factional pressure fields
 - `schemas/projected-local-context.schema.json`
-  - v0 contract for projected character-local operating context artifacts
+  - v0 contract for projected character-local operating context artifacts,
+    including structured runtime retrieval requirements and latent pressure
+    requirements
 - `schemas/coordinator-artifact.schema.json`
   - v0 contract for coordinator/story-runtime receipts: scene setup,
     next-beat choice, acting-agent choice, machinery invocations, sandboxed
@@ -299,7 +302,8 @@ state and re-entry discipline.
     relationships, memories, projection controls, and optional observed event
     into character-local operating prose; for cetacean Navigators it projects
     source-checked habitat affordances from AetheriaLore instead of generic
-    human body defaults
+    human body defaults; now emits scene-triggered compact lore retrieval
+    requirements and latent character-history pressure requirements
 - `tools/validate_projected_contexts.py`
   - validates projected context artifacts and rejects prompt text that leaks raw
     canonical state internals
@@ -309,7 +313,8 @@ state and re-entry discipline.
     hooks, and review status
 - `tools/build_responder_packet.py`
   - builds the first packet-only responder handoff from a coordinator artifact
-    and projected local context
+    and projected local context; source excerpts now come from active projected
+    runtime retrieval requirements instead of a static lore list
 - `tools/validate_responder_packets.py`
   - validates responder packets and rejects prompt surfaces that leak raw state
     internals or hidden coordinator context markers
@@ -388,6 +393,12 @@ institutional lore should not crowd out character-local backstory from the
 responder's visible pressure set, but the responder should not be rewarded for
 surfacing that backstory aloud when the mission-critical exchange does not call
 for it.
+The runtime retrieval/projector correction is now concrete: projected contexts
+carry source-backed retrieval requirements and latent pressure requirements,
+and the responder packet builder copies active retrieval requirements into
+packet source excerpts. The first Sella packet now receives Cold Wake heat-debt,
+Navigator rescue-ledger, Aya sanctuary-capacity, and Ganymede/Lightsail route
+obligation facts through that seam.
 The concrete training plan now enumerates
 eleven trainable stages and their likely model
 families: generative decoder LLMs for coordinator, responder, and structured

@@ -66,7 +66,8 @@ A packet contains:
 - `local_context_prompt`: the projected character-local context
 - `observed_event`: what the character can see or hear from the prior action
 - `allowed_action_labels`: concrete action labels, including speech and non-speech moves
-- `source_excerpts`: short source-backed facts the responder may use
+- `source_excerpts`: short source-backed facts the responder may use, copied
+  from active runtime retrieval requirements plus local packet invariants
 - `output_contract`: the required JSON response shape and rules
 - `hidden_context_audit`: refs and inference classes deliberately omitted
 - `isolation_requirements`: how the worker/model must be run
@@ -145,3 +146,10 @@ Aya sanctuary capacity politics. Follow-up review clarified that Sella's
 packet-visible sanctuary-collapse scar does not need to be spoken aloud, but it
 does need to remain visible to the responder as behavioral pressure. Both lanes
 are useful; neither should impersonate the other.
+
+The current packet builder consumes `runtime_retrieval_requirements` from the
+projected local context. For the Sella sanctuary packet, that means packet-only
+source excerpts now come from the same retrieval/projector seam that would feed
+runtime context: Cold Wake heat-debt pressure, Navigator rescue ledgers, Aya
+sanctuary capacity, and Ganymede/Lightsail route obligations. The static lore
+sandwich is dead. We thank it for its service, then bury it shallow.

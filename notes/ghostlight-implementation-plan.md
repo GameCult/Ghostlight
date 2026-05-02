@@ -120,11 +120,16 @@
    - Projector prototype: `tools/project_local_context.py` now turns canonical
      variables, memory, relationship stance, culture, and scene pressure into
      compact character-local operating context and action affordances.
-   - Projected-context artifacts use
-     `ghostlight.projected_local_context.v0` and validate through
-     `tools/validate_projected_contexts.py`; rendered prompt text must not leak
-     raw state internals such as `current_activation`, `plasticity`, means, or
-     decimal state values.
+  - Projected-context artifacts use
+    `ghostlight.projected_local_context.v0` and validate through
+    `tools/validate_projected_contexts.py`; rendered prompt text must not leak
+    raw state internals such as `current_activation`, `plasticity`, means, or
+    decimal state values.
+  - Runtime retrieval/projector correction: projected contexts now carry
+    `runtime_retrieval_requirements` and `latent_pressure_requirements`.
+    Retrieval requirements render compact lore facts for scene-relevant
+    pressures; latent pressure requirements keep character history visible as
+    behavior-shaping context without forcing it into speech.
    - Embodiment correction: projected local context now includes a first-class
      embodiment/interface section. Aetheria faction affordances must be checked
      against lore before projection. Current Navigator source supports fluid
@@ -362,9 +367,15 @@
     around heat-debt timing, rescue ledgers, dockfall burden, and sanctuary
     capacity politics, but can crowd out character-local backstory if the
     projector does not protect that pressure.
-  - Next prototype: turn the comparison lessons into retrieval/projector
-    requirements so packet-only runtime contexts can pull compact lore facts
-    when those pressures are scene-relevant.
+  - Retrieval/projector requirements are now wired into the projected-context
+    seam and responder packet builder. The Sella packet gets Cold Wake
+    heat-debt, Navigator rescue ledgers, Aya sanctuary capacity, and
+    Ganymede/Lightsail route obligations from projected runtime requirements
+    instead of a static hand-written excerpt list.
+  - Next prototype: use this corrected packet surface for a fresh sandboxed
+    responder pass, then review whether the response uses institutional lore
+    and latent pressure without prompt parroting or mission-critical
+    trauma-dumping.
 
 7. Build the first drama-scaffolding loop.
    - memory updates

@@ -113,6 +113,16 @@ def memory_lookup(agent: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return memories
 
 
+def memory_category_lookup(agent: dict[str, Any]) -> dict[str, str]:
+    categories: dict[str, str] = {}
+    for category, group in agent["memories"].items():
+        if not isinstance(group, list):
+            continue
+        for memory in group:
+            categories[memory["memory_id"]] = category
+    return categories
+
+
 def text_block(text: str, source_refs: list[str]) -> dict[str, Any]:
     return {"text": text, "source_refs": source_refs}
 
@@ -179,6 +189,26 @@ def memory_blocks(agent: dict[str, Any], memory_ids: list[str], source_prefix: s
         if memory_id in memories:
             blocks.append(text_block(memories[memory_id]["summary"], [f"{source_prefix}.memories.{memory_id}"]))
     return blocks
+
+
+def latent_pressure_requirements(agent: dict[str, Any], memory_ids: list[str], source_prefix: str) -> list[dict[str, Any]]:
+    memories = memory_lookup(agent)
+    categories = memory_category_lookup(agent)
+    requirements = []
+    for memory_id in memory_ids:
+        memory = memories.get(memory_id)
+        if not memory or categories.get(memory_id) != "episodic":
+            continue
+        requirements.append(
+            {
+                "pressure_id": f"latent.{memory_id}",
+                "text": memory["summary"],
+                "source_refs": [f"{source_prefix}.memories.{memory_id}"],
+                "projection_rule": "Keep this visible as latent behavioral pressure that can shape posture, risk tolerance, refusal, condition-setting, or attention.",
+                "review_rule": "Do not require this pressure to surface in spoken text; reject only if the behavior contradicts the pressure or if the model performs unnecessary mission-critical trauma-dumping.",
+            }
+        )
+    return requirements
 
 
 def relationship_context(
@@ -263,6 +293,78 @@ def scene_stakes(scene: dict[str, Any], speaker_id: str, scene_prefix: str) -> l
     for index, stake in enumerate(scene.get("public_stakes", [])):
         blocks.append(text_block(stake, [f"{scene_prefix}.public_stakes[{index}]"]))
     return blocks
+
+
+def runtime_retrieval_requirements(
+    fixture: dict[str, Any],
+    scene: dict[str, Any],
+    agent: dict[str, Any],
+    listener_ids: list[str],
+) -> list[dict[str, Any]]:
+    identity_text = " ".join(
+        [
+            agent["identity"].get("origin", ""),
+            " ".join(agent["identity"].get("roles", [])),
+            *[
+                " ".join(find_agent(fixture, listener_id)["identity"].get("roles", []))
+                for listener_id in listener_ids
+            ],
+        ]
+    ).lower()
+    setting_text = f"{fixture['world']['setting']} {fixture['world']['time']['label']} {scene['location']}".lower()
+    requirements: list[dict[str, Any]] = []
+
+    if "cold wake" in setting_text:
+        requirements.append(
+            {
+                "requirement_id": "lore.cold_wake_heat_debt",
+                "trigger": "Use when the scene turns on quiet-running vessels, delayed rescue, thermal stealth, ambiguous distress, or intake timing.",
+                "compact_fact": "Cold Wake pressure involves thermal stealth, ghost tracks, delayed heat dumps, misclassified quiet-running vessels, insurer categories, certified quiet-running envelopes, and heat-debt tolerances.",
+                "source_refs": [
+                    "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md"
+                ],
+                "prompt_role": "source_excerpt",
+            }
+        )
+    if "navigator" in identity_text or "rescue" in " ".join(scene.get("public_stakes", [])).lower():
+        requirements.append(
+            {
+                "requirement_id": "lore.navigator_rescue_ledgers",
+                "trigger": "Use when a Navigator invokes rescue legitimacy, obligation, escort priority, arbitration, or sanctuary promises.",
+                "compact_fact": "Navigator rescue ledgers record who answered distress calls, held formation in lethal weather, and kept sanctuary promises when a paying client wanted otherwise; those records shape credit, escort priority, arbitration, and kinship ties.",
+                "source_refs": [
+                    "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#Rescue Ledgers"
+                ],
+                "prompt_role": "source_excerpt",
+            }
+        )
+    if "aya" in identity_text or "sanctuary" in setting_text:
+        requirements.append(
+            {
+                "requirement_id": "lore.aya_sanctuary_capacity",
+                "trigger": "Use when sanctuary care, intake, triage authority, or capacity politics determines what a character can ethically do.",
+                "compact_fact": "Aya-aligned sanctuary care is practical capacity politics as much as compassion: beds, air, food, consent, repair, decontamination, staff attention, and follow-through decide what care can honestly promise.",
+                "source_refs": [
+                    "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md",
+                    "agents.sella_ren.memories.memory-care-is-capacity",
+                ],
+                "prompt_role": "source_excerpt",
+            }
+        )
+    if "ganymede" in setting_text or "lightsail" in identity_text or "route" in identity_text:
+        requirements.append(
+            {
+                "requirement_id": "lore.ganymede_lightsail_route_obligations",
+                "trigger": "Use when Ganymede corridor logistics, convoy stewardship, Lightsail reliability, or route obligation affects the available choices.",
+                "compact_fact": "The Ganymede Route Compact ties rescue obligations, shared hazard ledgers, route-steward representation, and Navigator arbitration to corridor legitimacy; Lightsail reliability depends on being the boring answer that still arrives when trust is scarce.",
+                "source_refs": [
+                    "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+                    "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
+                ],
+                "prompt_role": "source_excerpt",
+            }
+        )
+    return requirements
 
 
 def projection_control_blocks(annotation: dict[str, Any]) -> dict[str, Any]:
@@ -430,6 +532,8 @@ def render_prompt_text(context: dict[str, Any]) -> str:
         ("Active Inner Pressures", "active_inner_pressures"),
         ("Relationship Read", "relationship_read"),
         ("Tensions", "tensions"),
+        ("Retrieved Lore To Keep In View", "retrieved_lore_prompt_blocks"),
+        ("Latent Pressure Handling", "latent_pressure_prompt_blocks"),
         ("Action Affordances", "action_affordances"),
     ]:
         lines.extend(render_section(title, context[key]))
@@ -484,12 +588,36 @@ def build_projected_context(
         "active_inner_pressures": active_inner_pressures,
         "relationship_read": relationship_context(fixture, local_agent_id, listener_ids) + perceived_overlay_context(agent, listener_ids, source_prefix),
         "tensions": tension_blocks(agent, pack, annotation, source_prefix),
+        "runtime_retrieval_requirements": runtime_retrieval_requirements(fixture, scene, agent, listener_ids),
+        "latent_pressure_requirements": latent_pressure_requirements(agent, pack.get("active_memories", []), source_prefix),
         "action_affordances": action_affordances(local_agent_id, annotation),
         "projection_controls": projection_control_blocks(annotation),
         "voice_surface": voice_surface(agent, source_prefix),
         "likely_response_moves": likely_response_moves(agent, annotation, source_prefix),
         "do_not_invent": do_not_invent,
     }
+    context["retrieved_lore_prompt_blocks"] = [
+        text_block(item["compact_fact"], item["source_refs"])
+        for item in context["runtime_retrieval_requirements"]
+        if item["prompt_role"] == "source_excerpt"
+    ] or [
+        text_block(
+            "No additional lore retrieval requirements are active for this turn.",
+            ["tools.project_local_context.runtime_retrieval_requirements"],
+        )
+    ]
+    context["latent_pressure_prompt_blocks"] = [
+        text_block(
+            f"{item['text']} Use as latent behavioral pressure, not as required spoken disclosure.",
+            item["source_refs"],
+        )
+        for item in context["latent_pressure_requirements"]
+    ] or [
+        text_block(
+            "No extra latent character-history pressure is active beyond the listed inner pressures.",
+            ["tools.project_local_context.latent_pressure_requirements"],
+        )
+    ]
     if event_context:
         context["observed_event"] = event_context
         context["known_facts"].append(

@@ -47,6 +47,34 @@ def validate_text_blocks(items: Any, path: str) -> None:
         require(isinstance(item["source_refs"], list) and item["source_refs"], f"{item_path}.source_refs must be non-empty")
 
 
+def validate_retrieval_requirements(items: Any, path: str) -> None:
+    require(isinstance(items, list), f"{path} must be an array")
+    for index, item in enumerate(items):
+        item_path = f"{path}[{index}]"
+        require(isinstance(item, dict), f"{item_path} must be an object")
+        require_keys(item, ["requirement_id", "trigger", "compact_fact", "source_refs", "prompt_role"], item_path)
+        require(isinstance(item["requirement_id"], str) and item["requirement_id"].strip(), f"{item_path}.requirement_id must be non-empty")
+        require(isinstance(item["trigger"], str) and item["trigger"].strip(), f"{item_path}.trigger must be non-empty")
+        require(isinstance(item["compact_fact"], str) and item["compact_fact"].strip(), f"{item_path}.compact_fact must be non-empty")
+        require(isinstance(item["source_refs"], list) and item["source_refs"], f"{item_path}.source_refs must be non-empty")
+        require(item["prompt_role"] in {"source_excerpt", "setting_constraint", "action_affordance", "do_not_invent"}, f"{item_path}.prompt_role is invalid")
+
+
+def validate_latent_pressure_requirements(items: Any, path: str) -> None:
+    require(isinstance(items, list), f"{path} must be an array")
+    for index, item in enumerate(items):
+        item_path = f"{path}[{index}]"
+        require(isinstance(item, dict), f"{item_path} must be an object")
+        require_keys(item, ["pressure_id", "text", "source_refs", "projection_rule", "review_rule"], item_path)
+        for key in ["pressure_id", "text", "projection_rule", "review_rule"]:
+            require(isinstance(item[key], str) and item[key].strip(), f"{item_path}.{key} must be non-empty")
+        require(isinstance(item["source_refs"], list) and item["source_refs"], f"{item_path}.source_refs must be non-empty")
+        require(
+            "speech" in item["review_rule"].lower() or "spoken" in item["review_rule"].lower(),
+            f"{item_path}.review_rule must say how speech should be reviewed",
+        )
+
+
 def validate_context(path: Path) -> None:
     data = load_json(path)
     require(isinstance(data, dict), f"{path} must be an object")
@@ -71,6 +99,10 @@ def validate_context(path: Path) -> None:
             "active_inner_pressures",
             "relationship_read",
             "tensions",
+            "runtime_retrieval_requirements",
+            "latent_pressure_requirements",
+            "retrieved_lore_prompt_blocks",
+            "latent_pressure_prompt_blocks",
             "action_affordances",
             "projection_controls",
             "voice_surface",
@@ -87,6 +119,8 @@ def validate_context(path: Path) -> None:
         "embodiment_and_interface",
         "active_inner_pressures",
         "tensions",
+        "retrieved_lore_prompt_blocks",
+        "latent_pressure_prompt_blocks",
         "action_affordances",
         "voice_surface",
         "likely_response_moves",
@@ -96,6 +130,8 @@ def validate_context(path: Path) -> None:
     require(isinstance(context["relationship_read"], list), f"{path}.context.relationship_read must be an array")
     for index, item in enumerate(context["relationship_read"]):
         validate_text_blocks([item], f"{path}.context.relationship_read[{index}]")
+    validate_retrieval_requirements(context["runtime_retrieval_requirements"], f"{path}.context.runtime_retrieval_requirements")
+    validate_latent_pressure_requirements(context["latent_pressure_requirements"], f"{path}.context.latent_pressure_requirements")
 
     prompt_text = context["prompt_text"]
     require(isinstance(prompt_text, str) and prompt_text.strip(), f"{path}.context.prompt_text must be non-empty")

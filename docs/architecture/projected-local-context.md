@@ -47,12 +47,42 @@ The context contains:
 - active inner pressures rendered as ordinary language
 - relationship read and known biases
 - tensions
+- runtime retrieval requirements
+- latent pressure requirements
 - action affordances
 - projection controls
 - voice surface
 - likely response moves
 - do-not-invent boundaries
 - rendered prompt text
+
+## Retrieval And Latent Pressure
+
+The projector now emits two explicit requirement lists before the responder
+packet is built.
+
+`runtime_retrieval_requirements` are compact lore facts the runtime should
+include when their trigger is scene-relevant. They are not a license for a
+responder to browse the lore archive. They are coordinator or retriever outputs
+with source refs and a prompt role. In the Cold Wake sanctuary scene, the active
+requirements cover heat-debt timing, Navigator rescue ledgers, Aya sanctuary
+capacity politics, and Ganymede/Lightsail route obligations.
+
+`latent_pressure_requirements` are character-local history or emotional pressure
+that must remain visible to the responder because it can shape behavior. They
+are not dialogue requirements. Sella's memory of a sanctuary overpromising
+safety should bias her toward capacity suspicion, condition-setting, and hard
+triage boundaries. It should not make her announce the memory in the middle of
+a mission-critical exchange unless the scene genuinely asks for that.
+
+The rendered prompt includes these as:
+
+- `Retrieved Lore To Keep In View`
+- `Latent Pressure Handling`
+
+The responder packet also copies source-excerpt retrieval requirements into its
+`source_excerpts`, so packet-only tests can evaluate the same bounded context a
+runtime responder would receive.
 
 ## Runtime Boundary
 

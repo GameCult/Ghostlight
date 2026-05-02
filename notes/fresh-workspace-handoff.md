@@ -130,6 +130,9 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `tools/validate_projected_contexts.py`
   - includes an embodiment/interface section so Navigator action is projected
     from checked Aetheria lore instead of default human body assumptions;
+  - now includes `runtime_retrieval_requirements` and
+    `latent_pressure_requirements` so compact lore facts and character-local
+    scars survive projection without becoming mandatory confession prose;
     current source supports fluid architecture, acoustic signaling, communal
     orientation chambers, mixed-species translation/coexistence, and specialized
     cetacean environments; AetheriaLore has now been patched with mixed
@@ -199,6 +202,11 @@ access.
 The v1 Sella packet removes responder-visible references to absent coordinator
 knowledge and adds curated AetheriaLore excerpts for Cold Wake, the Ganymede
 Route Compact, Navigator rescue ledgers, and Lightsail reliability.
+The packet builder now gets those source excerpts from projected
+`runtime_retrieval_requirements` rather than from a static hand-written list.
+For the current Sella packet, that pulls Cold Wake heat-debt, Navigator rescue
+ledger, Aya sanctuary-capacity, and Ganymede/Lightsail route-obligation facts
+into packet-only context.
 The packet-only Sella capture has now been materialized into a reviewed mutation
 receipt and mutated fixture:
 `examples/agent-state.cold-wake-story-lab.after-sella-conditions.json`. The
@@ -243,13 +251,11 @@ narrow elaboration before treating the detail as available to Ghostlight.
 
 ## Current Next Action
 
-Use the corrected lane-comparison lessons for the next fresh generation pass:
-update the runtime retrieval/projector plan so packet-only contexts can pull
-compact lore facts for heat-debt timing, Navigator rescue ledgers, Aya sanctuary
-capacity politics, and Lightsail/Ganymede route obligations when scene-relevant,
-while explicitly preserving character-local scars such as Sella's
-sanctuary-collapse backstory as available behavioral pressure. Do not call Qwen
-for gold responder data yet.
+Use the corrected packet surface for the next fresh generation pass: run a
+sandboxed responder against the regenerated Sella packet, then review whether
+the output uses institutional lore and latent pressure without prompt parroting,
+omniscience, or mission-critical trauma-dumping. Do not call Qwen for gold
+responder data yet.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than

@@ -89,6 +89,38 @@ def render_packet_prompt(packet: dict[str, Any]) -> str:
     return "\n".join(lines).strip()
 
 
+def build_source_excerpts(projected: dict[str, Any]) -> list[dict[str, str]]:
+    context = projected["context"]
+    excerpts = [
+        {
+            "ref_id": "local_stakes.capacity",
+            "source_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json#context.current_stakes",
+            "text": "Sanctuary beds and repair capacity are nearly exhausted.",
+        },
+        {
+            "ref_id": "local_rule.care_capacity",
+            "source_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json#context.active_inner_pressures",
+            "text": "Care is not a feeling; it is beds, food, air, consent, repair, and someone still doing the list when the room hates them.",
+        },
+        {
+            "ref_id": "local_boundary.packet_unresolved",
+            "source_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json#context.do_not_invent",
+            "text": "Do not resolve whether the corrupted packet contains a person.",
+        },
+    ]
+    for item in context.get("runtime_retrieval_requirements", []):
+        if item.get("prompt_role") != "source_excerpt":
+            continue
+        excerpts.append(
+            {
+                "ref_id": item["requirement_id"],
+                "source_ref": "; ".join(item["source_refs"]),
+                "text": item["compact_fact"],
+            }
+        )
+    return excerpts
+
+
 def build_packet(coordinator: dict[str, Any], projected: dict[str, Any], out_ref: str) -> dict[str, Any]:
     responder_agent_id = projected["input"]["local_agent_id"]
     packet = {
@@ -125,43 +157,7 @@ def build_packet(coordinator: dict[str, Any], projected: dict[str, Any], out_ref
                 ],
             },
             "allowed_action_labels": ALLOWED_ACTION_LABELS,
-            "source_excerpts": [
-                {
-                    "ref_id": "local_stakes.capacity",
-                    "source_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json#context.current_stakes",
-                    "text": "Sanctuary beds and repair capacity are nearly exhausted.",
-                },
-                {
-                    "ref_id": "local_rule.care_capacity",
-                    "source_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json#context.active_inner_pressures",
-                    "text": "Care is not a feeling; it is beds, food, air, consent, repair, and someone still doing the list when the room hates them.",
-                },
-                {
-                    "ref_id": "local_boundary.packet_unresolved",
-                    "source_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json#context.do_not_invent",
-                    "text": "Do not resolve whether the corrupted packet contains a person.",
-                },
-                {
-                    "ref_id": "lore.cold_wake_panic",
-                    "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
-                    "text": "Cold Wake Panic was a late-Sol corridor crisis around thermal stealth, ghost tracks, delayed heat dumps, misclassified quiet-running vessels, insurer categories, certified quiet-running envelopes, and heat-debt tolerances.",
-                },
-                {
-                    "ref_id": "lore.ganymede_route_compact",
-                    "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
-                    "text": "The Ganymede Route Compact established rescue obligations, shared hazard ledgers, route-steward representation, and legal status for Navigator councils in convoy arbitration.",
-                },
-                {
-                    "ref_id": "lore.navigator_rescue_ledgers",
-                    "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md#Rescue Ledgers",
-                    "text": "Navigator rescue ledgers record who answered distress calls, held formation in lethal weather, and kept sanctuary promises when a paying client wanted otherwise; those records shape credit, escort priority, arbitration, and kinship ties.",
-                },
-                {
-                    "ref_id": "lore.lightsail_reliability",
-                    "source_ref": "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
-                    "text": "Lightsail Express is associated with the Cetacean Navigators as a bulk-carrier and convoy-management arm whose corridor reputation depends on being the boring answer that still arrives when trust is scarce.",
-                },
-            ],
+            "source_excerpts": build_source_excerpts(projected),
         },
         "output_contract": {
             "response_schema": "Return one JSON object. Do not wrap it in Markdown. The object describes this responder's next visible action and optional speech, plus private interpretation clearly labeled as interpretation.",
