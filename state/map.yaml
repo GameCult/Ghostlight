@@ -4,167 +4,109 @@ experiment:
   phase: phase_0_scaffold
   premise: >
     Build a durable research and implementation home for socially persistent
-    generative agents whose behavior emerges from latent state, culture,
-    memory, perception, and incentives rather than flat persona prompts.
+    generative agents whose behavior emerges from personality, culture,
+    memory, perception, incentives, and situation rather than flat persona
+    prompts.
 
-objective:
+mission:
   primary: >
-    Turn Ghostlight into a legible machine for persistent socially aware
-    characters that can generate interactive branching scene trees for games,
-    including speech and non-speech actions, propagate scene consequences into
-    state and memory, and eventually support procedural
-    storyline generation, psychologically grounded consumer behavior, and major
-    faction decision-making without collapsing into prompt soup.
-  current: >
-    Move from hand-authored single-turn projection artifacts toward the first
-    scene-local sequential dialogue tick: local awareness, action or dialogue
-    choice, event proposal, conservative state mutation, and validation.
+    Generate psychologically grounded branching scenes, dialogue, actions,
+    social consequences, and eventually storylines, consumer behavior,
+    faction decisions, and technology/item manifests for Aetheria.
+  near_term: >
+    Produce sandboxed, source-grounded responder training data through
+    projected local context, responder packets, reviewed outputs, and audited
+    mutation receipts.
+  active_fixture: >
+    Cold Wake is a pre-Elysium historical training fixture, not the product
+    target. Call of the Void and Elysium-era gameplay remain procedural
+    consumer targets.
 
-constraints:
-  - Prefer explicit latent state over persona theater.
-  - Culture should shape priors and incentives, not stamp out clones.
-  - Prompt text is a projection surface, not the canonical store of truth.
-  - Keep persistent state small enough to rehydrate without drowning the next session.
-  - Reuse proven machinery where it fits before inventing ornate nonsense.
-  - Do not treat an older corridor-crisis game slice as the active Ghostlight implementation target.
-  - Cold Wake may be used as a pre-Elysium historical grounding fixture, but not as the active product target unless explicitly revived.
-  - Do not use the obsolete Call of the Void colony-fleet return-home twist; current Aetheria canon sequesters the whole Solar system into Elysium.
-  - Do not treat Elysium gameplay-era outcomes as single-history Sol facts; Elysium futures are conditional canon indexed by branch lineage.
-  - Generate possible post-Rupture Elysium futures as reviewed `future_branch` training and evaluation material so models learn weird Elysium concepts as branch-local canonical histories.
-  - Some Elysium branch events may be constrained by attractors, fated events, technology order, or quest injections; do not model the future as equal-probability soup.
-  - Coordinator-led exploration must produce game-usable technology/item manifest knowledge, not only narrative branch history.
-
-invariants:
-  - The map is canonical and slow-changing.
-  - Scratch is temporary and disposable.
-  - Evidence is durable and distilled.
+hard_boundaries:
+  - Prompt text is projection, not truth storage.
   - Canonical agent state and per-agent perceived state must remain distinct.
-  - Listener misread is part of the model, not an error to flatten away.
-  - Personality must be modeled as layered organization, presentation, and situational activation, not just one bag of labels.
-  - Authoring outputs must remain explainable in terms of state, relationship, pressure, memory, and goals.
-  - Character generation should be agent-local: each acting turn should restrict context to what the character knows, feels, wants, remembers, hides, perceives, can attempt, and has authority to affect.
-  - Aetheria single-history training data should come from authored historical lore; procedural Elysium scenes are conditional branch histories.
-  - Post-Rupture future branches must distinguish source-backed Elysium concepts, generated branch assumptions, branch lineage, and sibling-branch exclusion boundaries.
-  - Elysium branch generation must track event constraint type: branch attractor, fated event, tech-order constraint, quest injection, or ordinary branch-local event.
-  - Technology and item exploration must track item families, variants, assemblies, subassemblies, components, materials, faction access, prerequisites, bottlenecks, compatibility rules, supply-chain consequences, and quest hooks.
-  - Existing nebulous named technologies in the Aetheria timeline should be elaborated into blueprint candidates with source facts, inferred engineering, and open lore gaps separated.
-  - Aetheria scene generation must check AetheriaLore source for factions, social movements, locations, time periods, species, body affordances, infrastructure, and material constraints before projection.
-  - Soft judgments that cannot be wired as deterministic code should emit reviewed training artifacts instead of becoming permanent ad hoc rules.
-  - Coordinator output must keep world and branch state shaped for future game-engine integration even while current coordination lives in authored imagination and glue prose.
+  - Characters act from local knowledge, local perception, local pressure, and bounded affordances.
+  - Listener misread is first-class; intent and interpretation are not the same object.
+  - Generated action is an event proposal; deterministic gates and reviewed mutation decide what becomes state.
+  - Fuzzy judgments become reviewed training artifacts before they become trained models.
+  - Aetheria generation is source-first; check lore for factions, bodies, locations, institutions, and constraints before projection.
+  - Elysium futures are branch-local canon indexed by lineage, not single-history Sol facts.
+  - Technology exploration must emit game-usable item, component, assembly, supply-chain, compatibility, and provenance data mapped toward Aetheria-Economy.
+  - Archived local-model prototype runners are receipts and plumbing tests, not the gold-data path.
 
-data_flow:
-  observe:
-    - research notes
-    - implementation artifacts
-    - simulation requirements
-    - setting constraints
-    - AetheriaLore source context
-  process:
-    - rehydrate from canonical state
-    - work one bounded organ
-    - verify the seam that matters
-    - distill only belief-changing evidence
-    - commit or cut the branch
-  cut:
-    - kill machinery that does not visibly serve the core model
-    - move volatile proof to git history or artifacts, not durable notes
-    - remove active scenario assumptions when the user redirects the product target
+live_architecture:
+  state_model:
+    - Layer personality through organization, disposition, behavior, presentation, situational activation, relationships, goals, and values.
+    - Canonical authored state has no certainty; perceived overlays carry observed activation, attributed disposition, and confidence.
+    - Voice style is a broad communication vector; defensive verbal behavior should emerge from state, pressure, relationship, and presentation.
+  projection:
+    - Project canonical state into character-local operating context before any responder sees it.
+    - Include scene facts, relevant memory, relationship read, stakes, embodiment/interface affordances, action affordances, projection controls, retrieved lore, and latent pressure handling.
+    - Hide raw state internals such as means, plasticity, current_activation, and numeric dimensions from prompt text.
+  responder_packets:
+    - `packet_only` tests runtime parity from curated source excerpts.
+    - `retrieval_augmented` bakes setting texture into reviewed outputs through scoped retrieval.
+    - `responder_scoped_repository_search` allows the responder to inspect only declared lore scope and requires consulted refs plus research summary.
+    - Gold responder data must preserve exact visible input, raw output, parsed/reviewed output, hidden-context refs, leakage audit, isolation method, and coordinator interventions.
+  coordinator:
+    - The coordinator is a trainable soft organ: it stages scenes, chooses next beats and acting agents, invokes specialist machinery, carries unresolved hooks, emits glue prose, and proposes game-engine-shaped state changes.
+    - Glue prose is training signal, not canonical truth.
+  training_targets:
+    - Coordinator/story runtime
+    - Memory and lore retrieval
+    - Projector/state interpreter
+    - Character agent/responder
+    - Participant appraiser
+    - State mutator
+    - Relationship/perception updater
+    - Evaluator/review classifiers
+    - Aetheria-tuned responder
+    - Institution, faction, and consumer decision models
 
 active_subgoals:
-  - Keep Ghostlight as the canonical home for its architecture notes so consumer projects do not quietly regrow duplicate brains.
-  - Define the canonical agent state model, including first-class volatility, attachment-seeking, and distance-seeking.
-  - Define how culture shapes priors, incentives, masks, and economic behavior without turning populations into clones.
-  - Define the boundary between canonical signal, perceived signal, and prompt projection.
-  - Support content generation for the Call of the Void slice in AetheriaLore and dialogue scaffolding or procedural drama for narrated Aetheria timeline stories.
-  - Ground projection training in authored Aetheria historical flashpoints before using Ghostlight to generate Elysium branch history.
+  - Keep Ghostlight focused on the architecture and data pipeline for socially persistent agents.
+  - Build schema-stable, sandboxed responder data before chasing larger runtime loops.
+  - Preserve Aetheria grounding through source-backed lore, branch labels, and reviewed assumptions.
+  - Shape every soft judgment as future training data, not permanent prompt folklore.
+  - Keep item/technology exploration database-shaped for Aetheria-Economy instead of prose-only worldbuilding.
 
-accepted_design:
-  - Ghostlight owns the deeper agent-state, personality, culture, relationship, and prompt-projection architecture; other projects can remain consumers instead of shrines.
-  - Personality is layered: underlying organization, stable dispositions, behavioral dimensions, presentation strategy, situational activation, relationship state, and goals or values.
-  - The agent model must distinguish canonical state from per-agent perceived state.
-  - Prompts are rendered projections of perceived state, active memory, and scene pressure; they are not the authoritative store of truth.
-  - Culture acts as a prior-shaping and incentive field with distributions, covariance, scripts, reward gradients, taboo maps, and prestige structure.
-  - Synthetic dialogue from known hidden state is a valid bootstrap source for training signal classifiers, but utterances themselves are not ground truth.
-  - Performance, concealment, and mask maintenance are signal, not just obstruction.
-  - The near-term Aetheria consumer is authoring support: Call of the Void content generation plus narrated timeline dialogue and procedural drama scaffolding.
-  - Ghostlight should build drama and narrative pressure, then project character-local dialogue contexts so characters can breathe and act from their own partial state.
-  - Call of the Void pressure should come from Sol's whole unresolved inheritance being trapped inside Elysium, not from a lone expedition discovering there is no way home.
-  - The first schema contract lives in schemas/agent-state.schema.json with required first-class dimensions in schemas/agent-state.required-fields.json and a validator in tools/validate_agent_state.py.
-  - Canonical authored character variables do not carry certainty; perceived dimensions do not expose canonical mean or plasticity, and instead model observed activation, attributed disposition, and confidence.
-  - Fundamental attribution bias is first-class in perceived state: observers can mistake exceptional behavior for stable character, with stubborn reads emerging from confidence drivers such as memory, stakes, emotion, prejudice, and social reinforcement.
-  - Voice style is a broad required communication vector covering lyrical speech, formality, verbosity, hedging, coded politeness, theatricality, dialect, register switching, technical compression, ritualized address, and related language mechanics.
-  - Defensive verbal responses are derived during projection from underlying organization, dispositions, behavioral dimensions, presentation strategy, situational pressure, relationship context, and voice style rather than stored as a separate canonical layer.
-  - Sarcastic deflection, sincerity evasion, emotional evasion, banter-as-boundary, and verbal aggression are target emergent behaviors for projection tests.
-  - Dialogue context packs are positive-context payloads; unknown or author-only material is omitted rather than listed as forbidden context, while known secrets are handled through goals, memories, beliefs, and presentation constraints.
-  - Relationship stance is directional; reciprocal agent pairs need separate edges because trust, fear, obligation, dependence, and betrayal expectations are not symmetric by default.
-  - Prompt projection should compile state into actor-local awareness and pressure prose through input selection, active-pressure scoring, tension detection, response affordance derivation, projection controls, compact prompt rendering, and post-generation evaluation.
-  - Projection must allow characters to act, not only speak; response turns can be dialogue, action, silence, withdrawal, violence, resource use, concealment, revelation, or mixed beats when state and scene pressure justify them.
-  - Projection distillation is the long-term optimization path: a frontier teacher model generates reviewed projection artifacts, and a smaller student projector is trained only after the artifact schema, deterministic input slicer, and evaluator are stable.
-  - Behavioral warmth and verbal warmth are separate axes: `interpersonal_warmth` describes social care or welcome, while `verbal_warmth` describes soft or reassuring language surface.
-  - Events can carry lightweight observed exchange, private interpretation, and event-effect scaffolding so prompt projection can reason from appraisal and consequence without pretending the v0 schema is already a full transition engine.
-  - Future social-simulation mechanisms should be documented and tested through projection artifacts before promotion into the canonical schema.
-  - Projection examples use `ghostlight.projection_example.v0` JSONL records with traceable known facts, active pressures, tensions, response affordances, voice surface, rendered prompt text, and audit checks.
-  - Aetheria projection training has three timeline lanes: historical grounded fixtures from authored lore, transition grounded fixtures around the Rupture/displacement, and future-branch Elysium fixtures that exercise post-Rupture concepts as conditional canon.
-  - Lore grounding digests use `ghostlight.lore_grounding_digest.v0` records to distill authored lore into cultural pressure fields, factional misread maps, role pressures, speaker knowledge boundaries, and author-only exclusions.
-  - The Cold Wake Panic is the first chosen historical grounding fixture: a draft Ganymede corridor digest now models thermal stealth panic, insurer category failure, Navigator rescue obligation, Lightsail reliability pressure, Aya-coded care pressure, pirate porosity, Cognitum firmware denial, and Cryonix/Rossum certification culture.
-  - The Cold Wake story lab uses Maer Tidecall as protagonist across a four-scene arc: tribunal freeze, sanctuary intake, Callisto provenance, and convoy threshold; early prototype runs exposed prompt weaknesses around unresolved personhood suspicion.
-  - Projection controls are now first-class in projection examples: frame_controls, authority_boundaries, object_custody, required_semantics, and forbidden_resolutions capture failure lessons before prompt prose is rendered.
-  - Prototype response captures are validated training receipts, not loose logs; accepted, rejected, and useful-needs-revision outputs should keep review status, response kind, strengths, failures, and pipeline lessons.
-  - The first complete Cold Wake short story, The Narrowest Possible Margin, is assembled from Ghostlight projection receipts plus in-session connective narration.
-  - Single-turn projection is a debug and training seam, not the final procedural-generation shape; the near-term runtime target is scene-local interactive dialogue generation with agents acting from local awareness, producing event proposals, and mutating bounded state.
-  - Generated action should become an event proposal resolved by mutation authority, not direct unrestricted edits to world or other-agent private state.
-  - Sequential runtime action primitives should stay concrete; ask, refuse, offer, reveal, conceal, and request are communicative intentions carried by actions, while listener interpretation remains separate and may be wrong.
-  - Early fuzzy social updates should be manual reviewed training data, not brittle rule-based appraisals pretending to understand relationships before the corpus exists.
-  - Scope boundary: implement interactive branching scene trees and scene-local consequences first; dialogue trees include speech and non-speech actions, while preserving training data hooks for open-world contexts, iterated decisions, economic behavior, scarcity, reputation, faction pressure, and institution decision-making.
-  - Do not train dialogue-only models that will be useless for later game-world simulation; reviewed scene data should preserve why agents buy, refuse, trade, hoard, comply, defect, conceal, punish, or help when those decisions appear.
-  - Branching scene generation should propose plausible protagonist choices, including speech, silence, movement, object use, concealment, revelation, withdrawal, violence, trade, or refusal, then record NPC responses and branch consequences such as trust loss or future hooks.
-  - Ink is the standard branching scene format for playable interactive fiction; Ghostlight should project and annotate Ink scenes rather than inventing a parallel dialogue-tree language.
-  - Ink sidecar training annotations preserve actor-local awareness, projection controls, branch rationale, action intent, reviewed consequences, and manual mutation policy while keeping Ink itself as the branch structure.
-  - Responder models may generate Ink branch candidates from a Ghostlight local-awareness packet, but generated branches must be saved as reviewed captures and accepted as draft/training material before they become Ink or mutation input.
-  - Character turns must be generated from character-local awareness only: protagonist choices are generated from protagonist-local state, then responder actions are generated from responder-local state plus observable protagonist action, not protagonist private intent.
-  - Gold responder training data must be sandboxed: the responder sees only the exact projected local packet, visible event, allowed actions, and explicitly included source excerpts; it must not inherit coordinator context, hidden state, author-only plot beats, future branch plans, or repo/lore access the trained model will not have.
-  - Responder artifacts must preserve exact visible input, raw output, reviewed output, hidden-context refs, leakage audit, isolation method, and coordinator intervention labels; coordinator repairs are useful but cannot be laundered as raw responder behavior.
-  - Interaction turns are symmetrical: an actor acts, the action resolves into an event, every affected participant appraises and updates state, then the next actor is selected from the newly consolidated state.
-  - Every meaningful scene event should update each affected character's state, memory, relationship stance, or perceived overlay through a reviewed mutation receipt; Ink variables remain playthrough-local and do not become canonical truth by accident.
-  - Early sequential prototype captures are useful training material because they exposed actor/responder isolation, per-turn participant appraisal, action-label discipline, tool-call/schema reliability, and the need to keep model plumbing separate from final Ghostlight architecture.
-  - Local-model runner code is archived scaffolding, not the active gold-data path.
-  - A projector/state interpreter must sit between canonical agent state and responder prompts, translating numbers, memories, relationships, culture, and scene pressure into compact character-local operating context and affordances.
-  - Character agents should not need to interpret `current_activation`, `plasticity`, or raw dimension scores; those belong to Ghostlight's internal state model and projector training data.
-  - The first projected local context seam now exists as `ghostlight.projected_local_context.v0`: deterministic projection turns canonical state into character-local operating prose with audit refs while hiding raw state variables from prompt text.
-  - The sequential prototype runner now consumes projected local context instead of selected raw activation dictionaries.
-  - The first projector-routed prototype captures validated the architecture boundary while preserving malformed structured-output failures as training evidence.
-  - Projector-routed next-action prompts should receive appraisal context as prose constraints, not raw numeric state deltas from the appraisal artifact.
-  - Failed sequential model calls must still write reviewed receipts instead of exiting without evidence.
-  - Prototype structured-output failures show model/tool reliability is a runner concern, not a reason to distort the projector seam; malformed tool arrays, no-call dropouts, and schema-looping must become reviewed failure receipts.
-  - The first accepted projector-routed sequential capture has been materialized into playable Ink, sidecar training annotation, reviewed mutation receipt, and a mutated Cold Wake fixture.
-  - Materialized sequential captures should still keep fuzzy state, relationship, memory, and perceived-overlay changes manual and audited until classifiers exist.
-  - Embodiment and interface affordances belong in projected local context, but Aetheria faction-specific affordances must be checked against lore source before projection; current Navigator source supports fluid architecture, acoustic signaling, soft navigation light, layered water motifs, communal orientation chambers, mixed-species translation/coexistence, specialized cetacean environments, and mixed wet/dry interface ergonomics.
-  - Ghostlight's Aetheria generation doctrine is source-first and source-repairing: if a blocking lore gap appears while generating scenes or training data, patch AetheriaLore with a narrow elaboration before treating the detail as available to Ghostlight projection.
-  - AetheriaLore now includes Navigator habitat and interface ergonomics for mixed wet/dry, acoustic, translation, and shared operational spaces, so future Navigator scenes should cite that source instead of improvising body affordances.
-  - Source-checked Navigator retries improved Maer's generated action affordances but were not materialized; remaining blockers are object-custody semantics, valid appraisal/mutation paths, structured-output reliability, and prompt-constraint leakage into responder prose.
-  - The soft organs are training targets: coordinator/story runtime, projector, character agent/responder, appraiser, state mutator, relationship/perception classifier, Aetheria responder, and later institution/faction/consumer decision models should all produce reviewed artifacts for future distillation or fine-tuning.
-  - An Aetheria-tuned responder should learn lore, tone, factional preconceptions, species affordances, and institutional pressure from strong source-grounded responses spread throughout the timeline, but it still acts only inside Ghostlight's character-local context, deterministic gates, and mutation authority.
-  - The coordinator is a trainable artifact: it glues scenes together, chooses next beats and acting agents, invokes specialist machinery, carries unresolved hooks, emits reviewed glue prose, and proposes world-state changes without bypassing deterministic gates.
-  - Coordinator artifacts use `ghostlight.coordinator_artifact.v0` to capture scene setup, next-beat choice, acting-agent choice, machinery invocations, sandboxed responder handoffs, world-state refs, proposed deltas, branch constraints, item-manifest deltas, unresolved hooks, glue prose, and review status.
-  - Responder packets use `ghostlight.responder_packet.v0` to preserve the exact packet-only prompt surface a character responder may see: projected local context, observed event, allowed action labels, source excerpts, output contract, hidden-context audit, and isolation requirements.
-  - Responder outputs use `ghostlight.responder_output.v0` to preserve raw sandboxed worker output, parsed output, no-fork isolation, hidden-context refs, leakage audit, coordinator interventions, and review status.
-  - Responder data has two explicit lanes: `packet_only` for runtime parity with curated source excerpts, and `retrieval_augmented` for coordinator- or retriever-selected scoped AetheriaLore refs that bake worldbuilding into final outputs while preserving consulted refs. This is not autonomous responder research unless the responder actually receives scoped repo access.
-  - First lane-comparison correction: retrieval-augmented output improved institutional texture, and follow-up review clarified that Sella Ren's packet-visible sanctuary-collapse scar does not need to surface in speech but must remain available to the responder as latent behavioral pressure.
-  - The first responder lane comparison shows packet-only output proves bounded runtime competence, while retrieval-augmented output adds heat-debt timing, rescue-ledger burden, dockfall responsibility, and Aya sanctuary capacity politics that should become retrieval/projector requirements.
-  - Runtime retrieval/projector requirements are now first-class projected-context fields: compact source-backed lore facts flow into packet source excerpts when scene-relevant, and latent character-history pressure remains visible without becoming required spoken disclosure.
-  - Research-enabled responder mode is now explicit: `responder_scoped_repository_search` packets must surface required lore research instructions and allowed scope, and captures must preserve consulted refs plus a research summary so ignored research access is reviewable.
-  - The first concrete research-enabled Sella packet now exists at `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`; it is generated by `tools/build_responder_packet.py --lore-access-mode responder_scoped_repository_search` and requires scoped AetheriaLore consultation before response.
-  - The concrete training plan enumerates the trainable stages and their model families: generative decoder LLMs for coordinator/responder/soft structured outputs, classifiers or cross-encoders for appraisal/evaluation/relationship movement, retrieval models for memory and lore selection, and deterministic code for gates.
-  - Training-plan sample counts are pilot schema-shakedown gates, not robust corpus targets; pilot data may be invalidated by schema fixes, while review-assistant and runtime targets are expected to be roughly an order of magnitude larger with held-out evaluation and failure audits.
-  - The timeline training plan now requires future-branch Elysium examples so the responder, coordinator, appraiser, and decision models learn post-Rupture concepts such as Aether, pseudospace, temporal nonlinearity, spirits, necrotech, mutable bodies, altered substrates, and weird institutions under branch-lineage labels.
-  - Elysium-born factions and institutions can emerge as pressure-born attractors, authored/fated events, quest injections, or branch-local developments; technology discovery order and quest prerequisites are runtime constraints, not flavor text.
-  - Future exploration should discover the Elysium technology landscape by simulating capable major-player decisions, while emitting manifests for branch-local innovations and pre-Elysium starting tech asymmetries across factions.
-  - Item blueprint candidates should decompose technologies into assemblies, subassemblies, components, materials, processes, tooling, facilities, quality tiers, failure modes, supply-chain dependencies, and gameplay hooks.
-  - Ghostlight item manifests should target Aetheria-Economy's existing CultCache item model: `SimpleCommodityData`, `CompoundCommodityData`, `ConsumableItemData`, `GearData`, and other `EquippableItemData` subclasses are technological blueprint classes, while runtime `ItemInstance` classes carry realized quality, provenance, manufacturer branding, assembly history, and world-state placement.
-  - Assembly trees, recipes, upgrade compatibility, tooling, facilities, process requirements, and supply-chain dependencies should attach to the relevant Aetheria-Economy blueprint as manifest metadata or engine-schema gaps until the economy code exposes explicit storage for them.
-  - The player-facing gear fantasy is provenance hunting: an ultimate item is the right blueprint realized through exceptional assemblies, quality, supply-chain lineage, manufacturer practice, repair history, substitutions, and operating conditions, so chasing power becomes salvage, trade, espionage, logistics, and faction conflict.
-  - Ghostlight's technology pipeline should function as a content refinery: ground ideas in lore and mechanics, decompose them into parts and supply chains, map them to Aetheria-Economy blueprint classes, define performance and instance variation, preserve review labels, and produce database-shaped candidates instead of spreadsheet sludge.
+current_artifacts:
+  canonical_docs:
+    - docs/architecture/prompt-projection-contract.md
+    - docs/architecture/projected-local-context.md
+    - docs/architecture/sequential-agent-runtime.md
+    - docs/architecture/ink-branching-scenes.md
+    - docs/architecture/aetheria-lore-grounding-architecture.md
+    - docs/architecture/sandboxed-responder-packets.md
+    - docs/architecture/soft-model-training-artifacts.md
+    - docs/architecture/training-plan.md
+    - docs/architecture/technology-item-manifest-plan.md
+  schemas:
+    - schemas/agent-state.schema.json
+    - schemas/projection-example.schema.json
+    - schemas/lore-grounding-digest.schema.json
+    - schemas/projected-local-context.schema.json
+    - schemas/coordinator-artifact.schema.json
+    - schemas/responder-packet.schema.json
+    - schemas/responder-output.schema.json
+  live_examples:
+    - examples/lore-grounding/cold-wake-panic.ganymede-corridor.json
+    - examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json
+    - examples/coordinator/cold-wake-sanctuary-intake.v0.json
+    - examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json
+    - experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json
+    - experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json
+  archived_receipts:
+    - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
+
+data_flow:
+  - Rehydrate from map, handoff, system map, implementation plan, and `npm run state:status`.
+  - Work one bounded organ.
+  - Verify the seam that matters.
+  - Add distilled evidence only when future belief changes.
+  - Commit and push completed work.
+  - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Ghostlight now has the Epiphany-style persistence spine, the first architecture payload, the v0 canonical agent-state schema seam, prompt projection docs, immediate schema fixes from evaluation, first reviewed Cat/Oz projection examples, a revised Aetheria lore-grounding architecture, a lore grounding digest schema, the first coordinator artifact schema seam, the first responder packet seam, the first sandboxed responder output seam, explicit packet-only versus retrieval-augmented responder lanes, the first concrete research-enabled Sella packet, the first responder lane comparison, the first draft Cold Wake historical grounding digest, a Cold Wake story-lab fixture, projection controls, validated prototype capture receipts, a complete Cold Wake short story assembled from accepted projection outputs, a hand-authored Ink-backed Cold Wake branching scene, the first prototype-generated Ink draft materialized from local awareness with reviewed training annotations, the first reviewed sequential branch mutation that updates both Maer and Sella after a sanctuary intake beat, sequential prototype receipts showing the symmetrical turn shape produces better action behavior, local-model tool-call smoke receipts archived as scaffolding, the first projected-local-context seam that routes sequential prompts through character-local operating prose instead of raw state variables, tightened receipt handling for projector-routed structured-output failures, archived local-model invocation lessons, the first materialized projector-routed sequential Ink scene with reviewed mutation training data, a source-checked embodiment/interface projection surface for Navigator scenes, a formal source-first Aetheria generation doctrine, source-checked retry receipts showing improved Maer embodiment plus remaining Sella response/prompt-leak blockers, a soft-model training artifact doctrine, a concrete training plan with pilot schema-shakedown gates separated from robust corpus targets, sandboxed responder-data requirements, an explicit future-branch lane, Elysium branch event constraints, and a technology/item manifest plan for turning nebulous named tech into blueprint-grade components, assemblies, faction tech bases, supply chains, upgrade paths, gameplay hooks, provenance-hunting player fantasy, and content-refinery outputs mapped onto Aetheria-Economy's CultCache blueprint and instance model.
-  next_action: Run a sandboxed no-fork research-enabled responder against `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`, allowing only the declared AetheriaLore scope, then capture exact visible input, consulted refs, research summary, raw output, review labels, and leakage audit. Review for institutional lore use, latent pressure, prompt parroting, omniscience, and mission-critical trauma-dumping. Do not use archived local-model prototype runners for gold responder data.
+  summary: Ghostlight is focused on sandboxed, source-grounded responder and coordinator training artifacts for socially persistent Aetheria agents, with archived prototype runs demoted to receipts and the live path centered on projected local context, responder packets, reviewed outputs, and audited state mutation.
+  next_action: Run a sandboxed no-fork research-enabled responder against `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`, allowing only the declared AetheriaLore scope, then capture exact visible input, consulted refs, research summary, raw output, review labels, leakage audit, and any coordinator intervention. Review for institutional lore use, latent pressure, prompt parroting, omniscience, and mission-critical trauma-dumping. Do not use archived local-model prototype runners for gold responder data.

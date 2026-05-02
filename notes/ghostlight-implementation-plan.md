@@ -1,398 +1,63 @@
 # Ghostlight Implementation Plan
 
+## Current Phase
+
+Build the first reliable data-generation loop for socially persistent Aetheria
+agents. The immediate target is not a full simulation. It is a clean, reviewed,
+sandboxed training-data pipeline for branching scenes and state consequences.
+
 ## Near-Term Sequence
 
-1. Freeze the first canonical state model. In progress.
-   - Define the latent variable families.
-   - Define first-class dimensions, including volatility, attachment-seeking,
-     and distance-seeking.
-   - Define canonical state versus perceived state.
-   - Keep authoring outputs explainable from the state, not just generated from
-     stylish prompt fog.
-   - Maintain `schemas/agent-state.schema.json`,
-     `schemas/agent-state.required-fields.json`, and the example fixtures as
-     the first executable contract.
+1. Stabilize canonical state and projection seams.
+   - Keep `schemas/agent-state.schema.json` and required vectors coherent.
+   - Keep canonical state separate from perceived overlays.
+   - Keep voice, presentation, relationship, memory, and situational pressure explainable.
+   - Do not leak raw numeric state internals into responder prompt text.
 
-2. Freeze the first event and classifier schema.
-   - Define event labels.
-   - Define canonical expression labels.
-   - Define listener perception labels.
-   - Define mask or presentation labels.
-   - Define confidence, uncertainty, and evidence accumulation rules.
+2. Stabilize responder packet and output seams.
+   - Use `schemas/responder-packet.schema.json` and `schemas/responder-output.schema.json`.
+   - Build packets from coordinator artifacts plus projected local context.
+   - Preserve exact responder-visible input, hidden-context audit, allowed actions, source excerpts, output contract, and lore-access mode.
+   - Preserve raw output, parsed output, review labels, consulted refs, research summary, leakage audit, and coordinator interventions.
 
-3. Build the prompt projection layer for authoring.
-   - Use `docs/architecture/prompt-projection-contract.md` as the first
-     renderer contract.
-   - Use `docs/architecture/schema-future-mechanisms.md` to keep appraisal,
-     transition, belief, action, conversation, resource, dyad, institution,
-     memory, and embodiment needs visible without prematurely bloating the v0
-     agent-state schema.
-   - Render scene and dialogue scaffolds from structured state, relevant
-     memories, scene pressure, cultural defaults, and perceived state.
-   - Keep the prompt renderer a projection surface instead of a second brain.
-   - Make generated moves inspectable: why this character deflects, confesses,
-     threatens, softens, bargains, or lies.
-   - Treat this as a debug/training seam for the larger sequential runtime, not
-     as the final product shape.
+3. Generate the next research-enabled responder sample.
+   - Use `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`.
+   - Run a no-fork sandboxed responder with only the packet and declared lore scope.
+   - Require actual lore consultation before answering.
+   - Review for institutional grounding, latent character pressure, non-omniscience, prompt parroting, and mission-critical trauma-dumping.
+   - Do not use archived local-model prototype runners for gold responder data.
 
-4. Build the scene-local sequential dialogue loop. New target.
-   - Use `docs/architecture/sequential-agent-runtime.md` as the first runtime
-     contract.
-   - Use `docs/architecture/ink-branching-scenes.md` as the branch-format
-     contract. Ink owns playable branching scenes; Ghostlight owns local
-     awareness, projection rationale, consequences, and reviewed state mutation.
-   - Keep the product target narrow: procedural branching scene trees for games
-     first. "Dialogue tree" means speech and non-speech actions, not only
-     spoken lines.
-   - Do not make the training data dialogue-only. Preserve labels and state
-     hooks for open-world contexts, iterated decisions, consumer behavior,
-     scarcity, reputation, faction pressure, and institution decision-making.
-   - Build local awareness from scene state, agent state, relationships,
-     memories, resources, affordances, and known constraints.
-   - Consolidate participant appraisals and state mutation after every
-     resolved action before selecting the next actor; hurt, threat,
-     reassurance, obligation, overload, and misread should alter the state any
-     affected participant acts from.
-   - Keep action primitives concrete: speech, silence, movement, gesture,
-     object use, object transfer, object blocking, resource spending, waiting,
-     and attack. Treat ask/refuse/offer/reveal/conceal/request as intended
-     communicative functions, not separate reality-mutating tools.
-   - Preserve the gap between actor intent and listener interpretation; a
-     listener is free to misread what the actor thought they were doing.
-   - Treat generated action as an event proposal, not direct truth mutation.
-   - Resolve the event against world state and mutation authority.
-   - Automate only mechanical legality, visibility, world/resource/object
-     deltas, and event append in the first prototype.
-   - Keep fuzzy updates manual at first: appraisals, relationship movement,
-     belief changes, memory writes, intent classification, misreads, and
-     activation deltas. Save those reviewed decisions as future classifier and
-     appraiser training data.
-   - Keep author control at stage-setting and high-level constraints; do not
-     require the author to script every beat.
-   - Emit game-useful artifacts: Ink scene source, compiled Ink JSON, scene
-     transcript, candidate player choices, including non-speech actions, NPC response branches,
-     state/memory/social-perception deltas, and unresolved hooks.
-   - For protagonist scenes, generate several plausible things the protagonist
-     could do from state and affordances, then generate NPC responses and branch
-     consequences such as trust loss, suspicion, obligation, debt, resource
-     cost, information exposure, or future scene hooks.
-   - Keep out of implementation scope for now: world-scale simulation loops,
-     economy simulation loops, city-scale scheduling, autonomous offscreen
-     factions as full actors, and long-horizon plot invention without author
-     scaffolding.
-   - Still record why agents buy, refuse, trade, hoard, comply, defect, conceal,
-     punish, or help when those decisions appear in scenes; those reviewed
-     decisions are seed data for later consumer-behavior and faction models.
-   - First prototype: express one Cold Wake story-lab beat as Ink, compile it,
-     and validate a sidecar training annotation that maps branches to
-     Ghostlight state basis, action intent, consequence surfaces, and manual
-     mutation policy.
-   - Archived prototype drafts produced branch candidates from local awareness and proved the Ink materialization seam.
-   - First sequential prototype draft separated actor-local choice, participant appraisal/consolidation, and
-     the next actor's move from updated state. The first saved capture is
-     useful-needs-revision because it exposed the missing per-turn appraisal
-     boundary and weak action enum discipline.
-   - First reviewed branch mutation: use
-     `tools/apply_sequential_ink_branch_mutation.py` to apply one selected
-     generated branch into
-     `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
-     and a mutation receipt, updating both Maer and Sella without treating Ink
-     variables as canonical truth.
-   - Second sequential draft: the symmetrical turn framing produced canonical
-     action labels and a concrete Sella `withhold_object` next action, but
-     still needs stricter schema or tool-call enforcement because array fields
-     drifted into strings and objects.
-   - Archived local-model invocation lesson: model-specific chat/tool
-     formatting belongs in runner code and must not leak into Ghostlight
-     artifact formats.
-   - Projector gap: the sequential runner still sends selected raw numeric
-     state variables into prompts. This is archived scaffolding for local-model
-     plumbing tests, not the final Ghostlight architecture.
-   - Projector prototype: `tools/project_local_context.py` now turns canonical
-     variables, memory, relationship stance, culture, and scene pressure into
-     compact character-local operating context and action affordances.
-  - Projected-context artifacts use
-    `ghostlight.projected_local_context.v0` and validate through
-    `tools/validate_projected_contexts.py`; rendered prompt text must not leak
-    raw state internals such as `current_activation`, `plasticity`, means, or
-    decimal state values.
-  - Runtime retrieval/projector correction: projected contexts now carry
-    `runtime_retrieval_requirements` and `latent_pressure_requirements`.
-    Retrieval requirements render compact lore facts for scene-relevant
-    pressures; latent pressure requirements keep character history visible as
-    behavior-shaping context without forcing it into speech.
-   - Embodiment correction: projected local context now includes a first-class
-     embodiment/interface section. Aetheria faction affordances must be checked
-     against lore before projection. Current Navigator source supports fluid
-     architecture, acoustic signaling, soft navigation light, layered water
-     motifs, communal orientation chambers, mixed-species
-     translation/coexistence, specialized cetacean environments, and, after a
-     source patch, mixed wet/dry habitat and interface ergonomics.
-   - Aetheria generation doctrine: before writing scenes or generating training
-     data, check AetheriaLore for factions, movements, institutions, species or
-     body types, location, and time period. If a blocking room-scale detail is
-     missing, patch AetheriaLore narrowly before treating that detail as
-     available to projection.
-   - A later sequential prototype routed structured generation through
-     projected local context instead of selected activation dictionaries and
-     proved the projector boundary while preserving malformed-output failures
-     as receipts.
-   - Runner tightening: failed Maer choice generation now writes reviewed
-     receipts instead of exiting, obvious malformed stringified tool arrays can
-     be repaired, repair notes are separated from fatal validation notes, and
-     Sella's next-action prompt receives appraisal prose instead of raw numeric
-     deltas.
-   - Later sequential prototype drafts captured malformed structured output,
-     no-call dropouts, and schema-looping as reviewed failure receipts. These
-     are runner/model reliability lessons, not active architecture targets.
-   - V10 materialization: `tools/materialize_sequential_capture.py`
-     materialized the accepted projector-routed capture into Ink, sidecar
-     annotation, reviewed mutation receipt, and a mutated Cold Wake fixture.
-   - Next prototype work should use sandboxed responder packets and reviewed
-     outputs; do not revive the archived local-model runner unless explicitly
-     testing model plumbing.
-   - Source-checked retry results: v11-v17 improved Maer's body/interface
-     behavior substantially, producing packet actions through shared clinic
-     displays and mixed wet/dry affordances instead of humanoid action. No
-     capture was materialized because later passes exposed repair notes,
-     object-custody drift, invented mutation paths, one local-model appraisal
-     tool-call dropout, and prompt-constraint leakage into Sella prose.
-   - Validation correction: the sequential runner now checks Maer embodiment,
-     Cold Wake object semantics, Sella appraisal paths/relationship ids, and
-     prompt leakage in responder prose. The next implementation move should
-     make responder prose less likely to copy constraints verbatim before
-     trying to materialize another capture.
+4. Materialize reviewed consequences.
+   - Convert accepted responder output into a mutation receipt.
+   - Update only reviewed scene state, memories, relationship stance, perceived overlays, and unresolved hooks.
+   - Keep fuzzy social changes manual and auditable until appraiser/classifier models exist.
 
-5. Build the projection distillation loop. Started.
-   - Use `docs/architecture/projection-distillation-plan.md` as the teacher to
-     student roadmap.
-   - Use `docs/architecture/soft-model-training-artifacts.md` as the boundary
-     between deterministic code and soft model-training targets.
-   - Use `docs/architecture/training-plan.md` as the concrete stage inventory:
-     lore grounding compiler, coordinator/story runtime, memory/lore retriever,
-     projector, character agent/responder, event resolver, participant
-     appraiser, state mutator, relationship/perception updater, evaluator
-     classifiers, and institution/faction/consumer decision models.
-   - Use `docs/architecture/aetheria-lore-grounding-architecture.md` to keep
-     Aetheria grounded training separate from procedural Elysium branch
-     generation.
-   - Maintain `schemas/projection-example.schema.json`,
-     `examples/projections/`, and `tools/validate_projection_examples.py` as
-     the first reviewed artifact seam.
-   - Use authored historical Aetheria flashpoints, not malleable Elysium
-     gameplay outcomes, as the first grounded lore-training corpus.
-   - Also generate reviewed post-Rupture Elysium `future_branch` fixtures so
-     models learn Aetheria's weird future concepts under supervision rather
-     than treating late-Sol history as the whole training universe.
-   - Future branches must label source-backed post-Elysium concepts separately
-     from generated branch assumptions, branch lineage, sibling-branch
-     exclusions, and branch-local canonical facts.
-   - Future branches must also label constrained events: pressure-born
-     `branch_attractor`, authorial `fated_event`, discovery-gated
-     `tech_order_constraint`, authored `quest_injection`, or ordinary
-     `branch_local_event`.
-   - Elysium-born factions and institutions, including things like Adrasteia or
-     Miss Terri's Sugarrific Snack Company, should be modeled through those
-     labels rather than hidden in prose: they may emerge from branch pressure,
-     be nudged by fate, arrive through quest injection, or remain local to one
-     branch.
-   - Use `docs/architecture/technology-item-manifest-plan.md` to make future
-     exploration produce game-usable technology data: item families, variants,
-     assemblies, subassemblies, components, materials, faction access,
-     prerequisites, bottlenecks, compatibility rules, upgrade slots, economic
-     consequences, and quest hooks.
-   - Target the existing Aetheria-Economy CultCache item model rather than a
-     Ghostlight-only taxonomy. Manifest candidates should map conceptual layers
-     onto `SimpleCommodityData`, `CompoundCommodityData`, `ConsumableItemData`,
-     `GearData`, and other `EquippableItemData` technological blueprint
-     classes. Runtime `SimpleCommodity`, `CompoundCommodity`, `ConsumableItem`,
-     and `EquippableItem` instances belong to inventory/world-state simulation,
-     carrying realized quality, provenance, manufacturer branding, and assembly
-     history.
-   - Treat recipes, assembly trees, upgrade compatibility, tooling, facilities,
-     process requirements, and supply-chain dependencies as blueprint metadata
-     or engine-schema gaps attached to the relevant `*Data` class until
-     Aetheria-Economy exposes explicit storage for them.
-   - Use the same manifest process to elaborate existing nebulous timeline
-     technologies into blueprint candidates. Named tech like a
-     super-Planckian emitter should be decomposed into candidate assemblies,
-     subassemblies, components, materials, processes, tooling, facilities,
-     failure modes, quality tiers, and supply-chain dependencies with inferred
-     fields marked as inferred.
-   - Pre-Elysium starting tech must be manifested too. Factions do not begin
-     with identical tech bases, manufacturing rights, stockpiles, maintenance
-     skills, standards, or supply-chain dependencies.
-   - Maintain `schemas/lore-grounding-digest.schema.json`,
-     `examples/lore-grounding/`, and `tools/validate_lore_grounding.py` as the
-     cultural and factional pressure seam for grounded fixtures.
-   - Use `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json` as
-     the first draft historical grounding digest.
-   - Build the first grounded projection fixture from one specific Cold Wake
-     room rather than from the whole crisis at once.
-   - Use `docs/experiments/cold-wake-story-lab.md` and
-     `examples/agent-state.cold-wake-story-lab.json` as the first story-shaped
-     writing lab.
-   - Treat projection outputs as response turns, not dialogue-only turns:
-     characters may speak, act, withdraw, stay silent, use violence, or combine
-     speech and action when state and scene pressure justify it.
-   - Keep failed and accepted prototype captures together. The Maer/Veyr v1 and v2
-     outputs are useful failed examples; v3 is the first accepted output that
-     preserves unresolved claimant status while allowing controlled physical
-     action.
-   - Treat repeated generation failures as projection architecture signals, not
-     only prompt wording problems. Projection examples now include controls for
-     frame ownership, authority boundaries, object custody, required semantics,
-     and forbidden resolutions.
-   - Keep archived local-model captures as reviewed receipts; validators keep unreviewed captures from quietly becoming training data.
-   - Use `experiments/cold-wake-story-lab/the-narrowest-possible-margin.md` as
-     the first end-to-end story artifact assembled from accepted response
-     captures plus authored connective narration.
-   - Use a frontier teacher model to produce reviewed projection artifacts from
-     structured state and lore grounding digests.
-   - Save accepted and rejected projection examples as supervised data.
-   - Train or adapt a smaller student projector only after the artifact schema,
-     input slicer, and evaluator are stable.
-   - Treat the character agent/responder as a training target too. A
-     small local model can eventually be adapted on a corpus of
-     strong Aetheria responses spread throughout the timeline, plus reviewed
-     Ghostlight receipts, so lore, tone, factional preconceptions, species
-     affordances, and institutional pressure become native responder priors
-     rather than prompt handholding.
-   - Generate gold responder data through a sandbox boundary. The coordinator
-     may know the full scene, but the responder worker should receive only the
-     projected local packet, visible event, allowed action space, and explicitly
-     included source excerpts. If the harness supports one-turn sub-agents,
-     start them without inherited conversation context for responder turns.
-     Record exact responder-visible input, raw output, reviewed output,
-     hidden-context refs, leakage audit, and every coordinator repair.
-   - Include future-branch post-Rupture responses before expecting the responder
-     to handle Elysium concepts such as Aether, pseudospace, temporal
-     nonlinearity, spirits, necrotech, mutable bodies, and altered substrates
-     without heavy prompt scaffolding.
-   - Keep deterministic gates as code even after fine-tuning: visibility,
-     action legality, object custody, resource accounting, schema validation,
-     source provenance, mutation authority, prompt leakage checks, and Ink
-     compilation.
-   - Emit reviewed artifacts for every fuzzy organ before training specialized
-     models: coordinator/story runtime, projector, character agent/responder,
-     participant appraiser, state mutator, relationship/perception classifier,
-     Aetheria responder, and later institution/faction/consumer decision
-     models.
+5. Generalize the loop.
+   - Add more historical grounded fixtures from AetheriaLore.
+   - Add future-branch Elysium fixtures with branch lineage and constraint labels.
+   - Emit technology/item manifest deltas when scenes discover or stress gear, assemblies, supply chains, or faction tech bases.
+   - Keep artifacts database-shaped enough for future game-engine integration.
 
-6. Build the coordinator artifact seam. New target.
-   - Treat the current authoring agent as the temporary coordinator: it glues
-     scenes together, decides which machinery runs, maintains continuity, emits
-     connective prose, and proposes world-state changes for deterministic gates
-     and reviewed mutation.
-   - Keep coordinator state game-engine-shaped even before a game engine exists:
-     scene ids, location ids, participants, active objects, resources, public
-     facts, unresolved facts, branch flags, event refs, fixture refs, and
-     consequences awaiting review.
-   - Save coordinator decisions as training artifacts: scene setup, next-beat
-     choice, acting-agent choice, tool/model invocation plan, glue prose,
-     branch merge or split decisions, world-state refs read, proposed state
-     changes, carried hooks, rejected prose, and reviewer notes.
-   - Coordinator artifacts that invoke a responder must preserve the sandbox
-     handoff: projected-local-context id, exact responder-visible input, hidden
-     context refs, isolation method, raw responder output id, reviewed output
-     id, and coordinator intervention labels. Do not train a responder on prose
-     the coordinator repaired unless the repair is explicitly labeled.
-   - Do not let glue prose become canonical truth. It is narrative connective
-     tissue and training signal; structured state and reviewed mutations decide
-     what happened.
-   - The long-term coordinator model should learn how to stage scenes, preserve
-     continuity, call specialist organs, and emit readable connective narration
-     while respecting deterministic gates and game-engine constraints.
-   - First concrete training-plan target: define the coordinator artifact schema
-     before generating another long story pass, so glue prose, next-beat choice,
-     world-state refs, branch flags, unresolved hooks, and machinery invocations
-     are captured as trainable data instead of living only in chat.
-   - Coordinator artifacts should be able to attach item-manifest deltas when a
-     scene or branch decision discovers, alters, upgrades, restricts, salvages,
-     counterfeits, or economically stresses a technology or item.
-  - First schema seam: `schemas/coordinator-artifact.schema.json`,
-    `examples/coordinator/cold-wake-sanctuary-intake.v0.json`, and
-    `tools/validate_coordinator_artifacts.py` now validate the coordinator
-    receipt shape through `npm run schema:validate`.
-  - First responder packet seam:
-    `schemas/responder-packet.schema.json`,
-    `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`,
-    `tools/build_responder_packet.py`, and
-    `tools/validate_responder_packets.py` now validate the exact prompt surface
-    a sandboxed character responder may see.
-  - Responder examples now have two lanes. `packet_only` uses curated source
-    excerpts and tests runtime parity. `retrieval_augmented` uses coordinator
-    or retriever-selected scoped AetheriaLore refs, preserves consulted refs,
-    and is for baking lore and tone into final responder outputs rather than
-    proving runtime prompt sufficiency. It is not autonomous responder research
-    unless the artifact explicitly says the responder had repo access.
-  - Research-enabled responder correction: `retrieval_augmented` now has an
-    explicit `responder_scoped_repository_search` mode. Those packets must
-    surface a `Required Lore Research` section, declared `allowed_scope`, and
-    `research_instructions`; output captures must preserve consulted refs and
-    a research summary. If the responder does not consult scoped lore before
-    answering, the capture should fail review.
-  - The v1 Sella packet removes responder-visible warnings about absent hidden
-    context and adds curated AetheriaLore excerpts for Cold Wake, the Ganymede
-    Route Compact, Navigator rescue ledgers, and Lightsail reliability.
-  - First responder output seam:
-    `schemas/responder-output.schema.json`,
-    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`,
-    and `tools/validate_responder_outputs.py` now preserve the raw no-fork
-    worker response, parsed response, isolation method, hidden-context refs,
-    leakage audit, and coordinator review.
-  - First responder mutation materialization:
-    `tools/apply_responder_output_mutation.py` now writes
-    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
-    and `examples/agent-state.cold-wake-story-lab.after-sella-conditions.json`
-    from the packet-only Sella capture.
-  - First retrieval-augmented comparison:
-    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-retrieval-v0.capture.json`
-    and
-    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
-    show that scoped lore access improves Aetheria-native institutional texture
-    around heat-debt timing, rescue ledgers, dockfall burden, and sanctuary
-    capacity politics, but can crowd out character-local backstory if the
-    projector does not protect that pressure.
-  - Retrieval/projector requirements are now wired into the projected-context
-    seam and responder packet builder. The Sella packet gets Cold Wake
-    heat-debt, Navigator rescue ledgers, Aya sanctuary capacity, and
-    Ganymede/Lightsail route obligations from projected runtime requirements
-    instead of a static hand-written excerpt list.
-  - Next prototype: use this corrected packet surface for a fresh sandboxed
-    responder pass, then review whether the response uses institutional lore
-    and latent pressure without prompt parroting or mission-critical
-    trauma-dumping. If the pass is research-enabled, use
-    `responder_scoped_repository_search` and require consulted refs before the
-    responder answers.
+6. Train only after schemas stop sliding.
+   - Pilot samples are schema shakedown, not robust corpus scale.
+   - Specialized future models include coordinator, retriever, projector,
+     responder, appraiser, mutator, relationship/perception updater, evaluator,
+     and institution/faction/consumer decision models.
+   - Deterministic gates remain code: visibility, action legality, object
+     custody, resource accounting, schema validation, source provenance,
+     mutation authority, prompt leakage checks, and Ink compilation.
 
-7. Build the first drama-scaffolding loop.
-   - memory updates
-   - relationship updates
-   - goal pressure
-   - situational activation
-   - cultural and institutional pressure
-   - conflict beats derived from incompatible goals and values
+## Deferred
 
-8. Build the first Aetheria authoring consumer.
-   - use the Call of the Void slice described in `AetheriaLore` as the first
-     concrete content-generation context
-   - treat Call of the Void and other Elysium gameplay-era fixtures as
-     procedural branch material unless specific outcomes are explicitly
-     promoted
-   - support dialogue scaffolding and procedural drama for narrated stories
-     across the Aetheria timeline
-   - do not treat Cold Wake as the implementation target unless explicitly
-     revived later; it is currently training feedstock
+- Full world simulation loop
+- Autonomous offscreen faction simulation
+- Economy simulation loop
+- Long-horizon plot generation without author scaffolding
+- Fine-tuning before artifact schemas, review criteria, and evaluators stabilize
 
 ## Discipline
 
-- Do not start with an MMO and call it ambition.
-- Do not train a classifier before the label schema is stable enough to deserve
-  the trouble.
-- Do not let prompt-writing outrun the structured state model.
-- Do not fine-tune a projector before the projection artifact schema, input
-  slicer, and evaluator have stopped sliding around.
-- Do not let elegant theory notes multiply faster than implementation seams.
-- Do not accidentally rebuild a game slice when the requested consumer is an
-  authoring and story-generation organ.
+- Work one bounded organ at a time.
+- Prefer explicit maps and contracts over implicit context.
+- If the diff grows while understanding shrinks, stop and simplify.
+- Keep history in git and archived receipts; keep persisted state focused on the mission.
