@@ -9,7 +9,7 @@ Use:
 
 - endpoint: `http://192.168.1.84:11434/api/chat`
 - model: `qwen3.5:9b`
-- `think: true`
+- `think: false` for strict scene-generation tool calls
 - `tools`: native Ollama function tools with JSON Schema parameters
 
 Do not use `/api/generate` plus prose-only "return JSON" instructions for
@@ -49,7 +49,7 @@ Sources:
 - `/api/chat` with `think: true` and `tools` works locally for `qwen3.5:9b`.
 - The smoke receipt lives at `experiments/ink/qwen-chat-tools-smoke.json`.
 - `tools/run_qwen_ink_sequential_generation.py` now defaults to the chat/tools
-  endpoint and keeps thinking enabled unless `--no-think` is passed.
+  endpoint and keeps thinking disabled unless `--think` is passed.
 - Tool calling improves action enum discipline over prose JSON prompting.
 - Nested tool arguments can still be double-stringified by the model. The
   runner repairs known fields such as `choices`, `appraisal`, and `response`
@@ -62,12 +62,18 @@ Sources:
 - Projector-routed v9 showed a no-tool-call dropout. This is not repairable
   from arguments because there are no arguments. The next harness step should
   be an explicit retry or fallback pass, not prompt scolding.
+- The v9 thinking trace showed a schema self-check loop that lasted minutes and
+  never emitted the tool call. For strict tool calls, disable thinking by
+  default. Thinking remains useful for diagnostics and smoke tests, not for the
+  ordinary generation path.
+- Projector-routed v10 used `think: false` and validated as
+  accepted-as-draft with no repair or failure notes.
 
 ## Current Policy
 
 For structured Ghostlight generation:
 
-1. Prefer native chat/tool calls with thinking enabled.
+1. Prefer native chat/tool calls with thinking disabled for strict generation.
 2. Keep tool schemas narrow and concrete.
 3. Preserve captures that fail formatting as `useful_needs_revision` receipts.
 4. Use repair only as a reviewed harness layer, not as proof the model obeyed

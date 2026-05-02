@@ -156,6 +156,9 @@ state and re-entry discipline.
 - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v9-projector-tightened.capture.json`
   - useful-needs-revision receipt showing Qwen can still drop tool calls
     entirely under projector-routed prompting
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json`
+  - accepted-as-draft receipt showing projector-routed sequential generation
+    works cleanly when strict tool calls run with thinking disabled
 - `examples/projected-contexts/`
   - current rendered projected local context artifacts for Maer and Sella in
     the sanctuary intake scene
@@ -196,7 +199,7 @@ state and re-entry discipline.
     annotation
 - `tools/run_qwen_ink_sequential_generation.py`
   - builds a sequential Qwen prototype through Ollama `/api/chat` with native
-    tools and thinking enabled: actor-local choices, participant
+    tools and thinking disabled by default: actor-local choices, participant
     appraisal/consolidation, then next-actor action from updated state; now
     routes character context through the projected-local-context seam, captures
     failed Maer choice calls, separates repair notes from fatal validation
@@ -241,6 +244,8 @@ characters, v2 shows the symmetrical turn model improves action behavior, v5
 proves local thinking-plus-tools invocation works for the scene runner, and v6
 routes that runner through projected character-local operating context. v8 and
 v9 show that Qwen tool-call reliability, not the projector seam, is now the
-immediate blocker. The next implementation target is an explicit retry or
-fallback strategy before any projector-routed branch is materialized into Ink
-plus mutation training data.
+immediate blocker. The v9 thinking trace also showed schema self-check looping
+instead of tool-call completion, so strict sequential generation now disables
+thinking by default. v10 validated that correction with an accepted-as-draft
+projector-routed no-thinking capture. The next implementation target is
+materializing v10 into Ink plus reviewed mutation training data.

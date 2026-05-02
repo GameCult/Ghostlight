@@ -88,6 +88,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v6-projector.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v8-projector-tightened.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v9-projector-tightened.capture.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
   - `experiments/ink/qwen-chat-tools-smoke.json`
   - `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
@@ -128,10 +129,8 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Add a deliberate retry or fallback strategy for projector-routed Qwen tool-call
-failures, then rerun until a projector-routed sequential capture is
-accepted-as-draft before materializing any branch into Ink or mutation training
-data.
+Materialize the accepted v10 projector-routed sequential capture into Ink and
+reviewed mutation training data, keeping fuzzy state changes manual and audited.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -202,7 +201,7 @@ Completed projection path items:
   `tools/check_qwen_chat_tools.py` proves local `qwen3.5:9b` returns both
   `message.thinking` and native `tool_calls` through Ollama `/api/chat`
 - update the sequential runner to use `/api/chat` with native tools and
-  `think: true` by default
+  strict tool calls
 - add v3 and v5 thinking-plus-tools captures:
   v3 preserved a useful failure where old prompt text still caused plain JSON
   content in later passes; v5 is accepted as draft and produced valid
@@ -240,15 +239,22 @@ Completed projection path items:
   v8 shows malformed stringified `choices`; v9 shows a no-tool-call dropout.
   These are Qwen tool reliability failures, so no projector-routed branch was
   materialized into Ink in this pass.
+- disable thinking by default for strict sequential generation:
+  the v9 thinking trace showed Qwen looping on schema self-checks for minutes
+  before returning no tool call, so `tools/run_qwen_ink_sequential_generation.py`
+  now defaults to `think: false`; use `--think` only for diagnostics
+- add v10 no-thinking projector-routed capture:
+  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json`
+  validates as accepted-as-draft with no repair notes or failure notes
 
 Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- add a deliberate retry or fallback strategy around projector-routed Qwen
-  tool-call failures
-- rerun until a projector-routed capture is accepted-as-draft before
-  materializing into Ink and mutation training data
+- materialize the accepted v10 projector-routed capture into Ink and reviewed
+  mutation training data
+- preserve the no-thinking default for strict tool-call generation unless a
+  diagnostic run explicitly needs `--think`
 - improve the local-awareness-to-Ink prompt so semantic `training_hooks` do not
   drift into future branch ids, object custody remains branch-local, and action
   labels come from the exact canonical enum

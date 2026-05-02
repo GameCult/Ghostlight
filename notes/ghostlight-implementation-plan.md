@@ -138,9 +138,14 @@
    - Eighth and ninth sequential drafts: v8 captured malformed stringified
      `choices`; v9 captured a no-tool-call dropout. Both validate the receipt
      path and show Qwen tool reliability is now the blocker.
-   - Next prototype: add deliberate retry or fallback behavior for
-     projector-routed Qwen tool-call failures, then materialize only an
-     accepted-as-draft projector-routed branch into Ink and sidecar annotation.
+   - Thinking policy correction: v9's thinking trace showed minutes of schema
+     self-check looping followed by no tool call. Strict sequential generation
+     now defaults to `think: false`; `--think` is reserved for diagnostics.
+   - Tenth sequential draft: v10 ran projector-routed generation with thinking
+     disabled and validated as accepted-as-draft with no repair or failure
+     notes.
+   - Next prototype: materialize the accepted v10 projector-routed branch into
+     Ink and sidecar annotation, then produce reviewed mutation training data.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

@@ -704,7 +704,7 @@ def main() -> int:
     parser.add_argument("--top-p", type=float, default=0.9)
     parser.add_argument("--num-ctx", type=int, default=8192)
     parser.add_argument("--request-timeout", type=int, default=600)
-    parser.add_argument("--think", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--think", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--capture-id", default="cold-wake-sanctuary-intake.qwen-sequential.v1")
     parser.add_argument("--preferred-action", default="show_object")
     args = parser.parse_args()
