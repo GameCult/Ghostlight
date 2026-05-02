@@ -77,7 +77,7 @@ world state + author constraints + lore grounding
   -> coordinator/story runtime
   -> deterministic state slice and source checks
   -> projector
-  -> character agent/responder
+  -> sandboxed character agent/responder
   -> event resolver and deterministic gates
   -> participant appraiser
   -> state mutator
@@ -420,6 +420,9 @@ Current implementation:
 - Qwen/local model calls through structured tools
 - manual review and capture receipts
 - no-thinking strict calls by default for tool compliance
+- future gold responder data should use isolated generation workers or
+  sub-agents that receive only the projected local packet, not coordinator
+  context
 
 Inputs:
 
@@ -431,6 +434,17 @@ Inputs:
 - Aetheria responder priors from training corpus, eventually
 - post-Rupture concept constraints when the turn is in Elysium future branch
   territory
+- explicit source excerpts included in the projected packet, if any
+
+Forbidden inputs:
+
+- coordinator rationale
+- other agents' private state
+- author-only plot beats
+- future branch plan
+- hidden canonical facts not visible to the acting character
+- raw canonical state variables the final responder model will not receive
+- repo or lore browsing beyond excerpts intentionally provided to the responder
 
 Outputs:
 
@@ -441,6 +455,9 @@ Outputs:
 - candidate alternatives
 - constraints satisfied or violated
 - response rationale
+- raw responder output before coordinator review
+- reviewed output after coordinator intervention, if any
+- coordinator intervention labels
 
 Training architecture:
 
@@ -451,6 +468,12 @@ Training architecture:
 
 Training artifacts:
 
+- exact responder-visible input packet
+- hidden context refs without hidden content
+- sandbox or isolation method
+- raw responder output
+- coordinator-reviewed output
+- coordinator intervention labels
 - action-choice receipts
 - accepted and rejected turns
 - negative examples for wrong body, wrong lore, wrong voice, omniscience, prompt
@@ -465,6 +488,10 @@ First training gate:
 - 100 rejected turns with labeled failures
 - at least 50 non-speech or mixed-action examples
 - evaluation includes speaker-local secret boundaries and body affordances
+- every accepted example preserves exact responder-visible input and raw output
+- every coordinator repair is labeled instead of being treated as raw responder
+  behavior
+- leakage evaluator catches outputs that require withheld context
 - at least 50 accepted post-Rupture future-branch turns before expecting the
   responder to handle Elysium-specific weirdness with reduced lore handholding
 
@@ -913,6 +940,9 @@ A first useful Aetheria responder fine-tune wants:
 - 200 accepted character turns
 - 50 non-speech or mixed-action turns
 - 50 rejected/negative examples with clear labels
+- exact responder-visible input for every turn
+- raw responder output separated from reviewed or coordinator-repaired output
+- hidden-context refs and leakage audits for every turn
 - at least 5 factions or institutional contexts
 - at least 3 time periods or historical flashpoints
 - at least 50 accepted future-branch post-Rupture turns before using the model

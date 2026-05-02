@@ -272,6 +272,13 @@
      Ghostlight receipts, so lore, tone, factional preconceptions, species
      affordances, and institutional pressure become native responder priors
      rather than prompt handholding.
+   - Generate gold responder data through a sandbox boundary. The coordinator
+     may know the full scene, but the responder worker should receive only the
+     projected local packet, visible event, allowed action space, and explicitly
+     included source excerpts. If the harness supports one-turn sub-agents,
+     start them without inherited conversation context for responder turns.
+     Record exact responder-visible input, raw output, reviewed output,
+     hidden-context refs, leakage audit, and every coordinator repair.
    - Include future-branch post-Rupture responses before expecting the responder
      to handle Elysium concepts such as Aether, pseudospace, temporal
      nonlinearity, spirits, necrotech, mutable bodies, and altered substrates
@@ -299,6 +306,11 @@
      choice, acting-agent choice, tool/model invocation plan, glue prose,
      branch merge or split decisions, world-state refs read, proposed state
      changes, carried hooks, rejected prose, and reviewer notes.
+   - Coordinator artifacts that invoke a responder must preserve the sandbox
+     handoff: projected-local-context id, exact responder-visible input, hidden
+     context refs, isolation method, raw responder output id, reviewed output
+     id, and coordinator intervention labels. Do not train a responder on prose
+     the coordinator repaired unless the repair is explicitly labeled.
    - Do not let glue prose become canonical truth. It is narrative connective
      tissue and training signal; structured state and reviewed mutations decide
      what happened.

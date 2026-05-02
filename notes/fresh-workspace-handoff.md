@@ -136,6 +136,14 @@ The coordinator is currently the authoring agent: it glues scenes together,
 maintains continuity, chooses which machinery runs, emits connective prose, and
 proposes world-state changes. Keep those outputs structured enough for future
 game-engine integration instead of letting them rot as chat-only intuition.
+Gold responder data must be sandboxed. The coordinator may be omniscient, but a
+responder example is only valid if the acting worker saw exactly the projected
+local packet, visible event, allowed action space, and explicitly included source
+excerpts. Do not let responder workers inherit full chat/coordinator context when
+generating training data. Preserve exact responder-visible input, raw output,
+reviewed output, hidden-context refs, leakage audit, isolation method, and
+coordinator intervention labels. Coordinator repairs are allowed, but they must
+be labeled as repairs rather than treated as raw responder behavior.
 The concrete training plan now enumerates the trainable stages, their inputs,
 outputs, likely model families, artifact families, and first corpus gates.
 It now uses three timeline lanes: `historical_grounded`,
@@ -378,6 +386,9 @@ Remaining projection path:
   of strong responses spread throughout the timeline plus reviewed Ghostlight
   receipts, while still acting only inside character-local context and
   deterministic mutation gates
+- require responder sandboxing before gold data generation: exact
+  responder-visible input, raw output, reviewed output, hidden-context refs,
+  leakage audit, isolation method, and coordinator repair labels must be saved
 
 ## Warnings
 

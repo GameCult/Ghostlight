@@ -296,8 +296,13 @@ responder prose. The soft-model artifact doctrine now makes the broader
 training boundary explicit: deterministic gates stay code, while fuzzy
 coordination, projection, action choice, appraisal, mutation, relationship
 movement, Aetheria responder training, and economic/faction decision judgments
-become reviewed artifacts for later fine-tuning or distillation. The concrete
-training plan now enumerates eleven trainable stages and their likely model
+become reviewed artifacts for later fine-tuning or distillation. Gold responder
+data now requires a sandbox boundary: the coordinator may be omniscient, but the
+responder sees only the exact projected local packet, visible event, allowed
+actions, and explicitly included source excerpts; artifacts preserve raw output,
+reviewed output, hidden-context refs, leakage audit, isolation method, and
+coordinator intervention labels. The concrete training plan now enumerates
+eleven trainable stages and their likely model
 families: generative decoder LLMs for coordinator, responder, and structured
 soft outputs; classifiers or cross-encoders for appraisal, evaluation, and
 relationship movement; embedding/retrieval models for memory and lore selection;

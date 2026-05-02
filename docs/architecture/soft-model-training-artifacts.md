@@ -44,6 +44,52 @@ A useful soft artifact should preserve:
 - whether the artifact is grounded canon, transition-grounded, procedural
   branch material, or promoted branch material
 
+## Sandboxed Responder Rule
+
+Responder training data must not be authored from an omniscient view.
+
+The coordinator may know the whole scene, hidden state, future branch plan,
+author constraints, and private facts. The responder model we eventually train
+will not. If a responder example only works because the authoring agent quietly
+used omniscient context, the artifact is poisoned. It teaches the future model to
+perform an impossible trick, then looks offended when reality asks for receipts.
+
+For gold responder or character-action data:
+
+- the coordinator prepares the scene and selects the acting character
+- the projector emits the exact character-local context
+- the responder is run from only that projected packet, visible event, allowed
+  action space, and any explicitly included source excerpts
+- the responder does not see other agents' private state, hidden canonical
+  facts, author-only plot beats, future branch plans, or coordinator rationale
+- any isolated worker or sub-agent used for responder generation should be
+  started without inherited conversation context when the harness supports it
+- repo or lore browsing is disabled for the responder unless the projected
+  packet explicitly includes the excerpts or references the future model will
+  also receive
+- the coordinator reviews after generation, not during it
+
+Artifact requirements:
+
+- `responder_visible_input`: the exact prompt or structured packet the responder
+  saw
+- `responder_raw_output`: the unedited output
+- `reviewed_output`: the accepted or repaired turn
+- `review_status`: accepted, accepted-as-draft, useful-needs-revision, rejected,
+  or superseded
+- `coordinator_interventions`: every edit, repair, deletion, or normalization
+  made after raw generation
+- `hidden_context_refs`: ids or paths for context intentionally withheld, not
+  the hidden content itself
+- `leakage_audit`: checks for private-state leakage, future-branch leakage,
+  author-only leakage, raw-state soup, prompt-constraint parroting, and
+  impossible body or object knowledge
+
+Coordinator-written replacement text can be valuable, but it is not raw
+responder output. Mark it as coordinator repair or frontier-curated final. Do
+not smuggle repaired prose into the responder corpus as if the sandbox produced
+it. That is how a dataset learns to cheat with a straight face.
+
 ## Soft Organs
 
 These organs should be treated as model-training targets, not permanent
@@ -132,6 +178,10 @@ bargain, comfort, or do nothing useful because people are built badly.
 
 Training artifacts:
 
+- exact responder-visible input packet
+- hidden context refs, without hidden content
+- raw responder output
+- coordinator interventions or repairs
 - action-choice receipts
 - candidate branch sets
 - accepted and rejected character turns
