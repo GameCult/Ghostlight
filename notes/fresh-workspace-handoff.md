@@ -199,6 +199,13 @@ responder a bounded packet. Do not use retrieval-augmented examples as proof
 that the packet-only runtime prompt has enough context, and do not describe
 them as autonomous responder research unless the responder actually had repo
 access.
+There is now an explicit research-enabled mode:
+`responder_scoped_repository_search`. Use it only when the responder is allowed
+to inspect the declared lore scope. The packet must include `Required Lore
+Research`, `allowed_scope`, and `research_instructions`; the output capture must
+include consulted refs and a research summary. A research-enabled responder that
+answers without consulting lore has failed the assignment, bless its little
+unexamined heart.
 The v1 Sella packet removes responder-visible references to absent coordinator
 knowledge and adds curated AetheriaLore excerpts for Cold Wake, the Ganymede
 Route Compact, Navigator rescue ledgers, and Lightsail reliability.
@@ -256,6 +263,10 @@ sandboxed responder against the regenerated Sella packet, then review whether
 the output uses institutional lore and latent pressure without prompt parroting,
 omniscience, or mission-critical trauma-dumping. Do not call Qwen for gold
 responder data yet.
+If this next pass is meant to test a research-enabled responder rather than
+packet-only runtime parity, build or hand off it as
+`responder_scoped_repository_search` and require it to consult the scoped
+AetheriaLore docs before answering.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than

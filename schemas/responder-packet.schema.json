@@ -40,6 +40,10 @@
       "properties": {
         "mode": { "enum": ["curated_excerpts_only", "coordinator_scoped_retrieval", "responder_scoped_repository_search"] },
         "allowed_scope": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "research_instructions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
         "required_provenance": { "type": "boolean", "const": true }
       }
     },

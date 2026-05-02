@@ -163,6 +163,9 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
             in {"coordinator_scoped_retrieval", "responder_scoped_repository_search"},
             f"{base}.retrieval_augmented must use scoped retrieval lore access",
         )
+    if lore_access["mode"] == "responder_scoped_repository_search":
+        require_string_array(lore_access["consulted_refs"], f"{base}.lore_access.consulted_refs", nonempty=True)
+        require_string(lore_access.get("research_summary"), f"{base}.lore_access.research_summary")
 
     isolation = document["isolation"]
     require_keys(isolation, ["isolation_method", "fork_context", "visible_input_ref", "hidden_context_refs", "worker_model_family"], f"{base}.isolation")
@@ -171,6 +174,11 @@ def validate_capture(document: dict[str, Any], source: Path) -> None:
     require_string(isolation["visible_input_ref"], f"{base}.isolation.visible_input_ref")
     require_string(isolation["worker_model_family"], f"{base}.isolation.worker_model_family")
     require_string_array(isolation["hidden_context_refs"], f"{base}.isolation.hidden_context_refs")
+    if lore_access["mode"] == "responder_scoped_repository_search":
+        require(
+            "repo" in isolation["visible_input_ref"].lower() or "lore" in isolation["visible_input_ref"].lower(),
+            f"{base}.isolation.visible_input_ref should describe scoped lore access",
+        )
 
     raw_output = document["raw_output"]
     parsed_raw = json.loads(raw_output)

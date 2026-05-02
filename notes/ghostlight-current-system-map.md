@@ -128,12 +128,14 @@ state and re-entry discipline.
 - `schemas/responder-packet.schema.json`
   - v0 contract for the exact input a sandboxed character responder may see,
     now lane-labeled as `packet_only` or `retrieval_augmented` with explicit
-    lore-access policy
+    lore-access policy; research-enabled packets can require
+    responder-scoped repository search with visible research instructions
 - `schemas/responder-output.schema.json`
   - v0 contract for reviewed captures from sandboxed responder workers,
     preserving raw output, parsed output, isolation method, leakage audit, and
     coordinator review; output captures also preserve generation lane and
-    consulted lore refs
+    consulted lore refs, and research-enabled captures can preserve a research
+    summary
 - `schemas/agent-state.required-fields.json`
   - required first-class variable names for canonical state and relationship
     stance
@@ -385,6 +387,11 @@ curated source excerpts, and `retrieval_augmented` for coordinator- or
 retriever-selected scoped AetheriaLore refs that can bake setting priors into
 final responses while preserving consulted refs. This is not autonomous
 responder research unless the responder actually receives scoped repo access.
+That explicit repo-access path is now named
+`responder_scoped_repository_search`: the packet must tell the responder to
+consult the declared lore docs before answering, show the allowed scope, and
+give behavior-grounding research instructions. The capture must record consulted
+refs and a research summary.
 The first lane comparison is now captured: packet-only produced a clean
 conditional repair-bay decision, while retrieval-augmented added heat-debt,
 rescue-ledger, dockfall, and Aya sanctuary politics that should inform future

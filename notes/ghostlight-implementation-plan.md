@@ -345,6 +345,12 @@
     and is for baking lore and tone into final responder outputs rather than
     proving runtime prompt sufficiency. It is not autonomous responder research
     unless the artifact explicitly says the responder had repo access.
+  - Research-enabled responder correction: `retrieval_augmented` now has an
+    explicit `responder_scoped_repository_search` mode. Those packets must
+    surface a `Required Lore Research` section, declared `allowed_scope`, and
+    `research_instructions`; output captures must preserve consulted refs and
+    a research summary. If the responder does not consult scoped lore before
+    answering, the capture should fail review.
   - The v1 Sella packet removes responder-visible warnings about absent hidden
     context and adds curated AetheriaLore excerpts for Cold Wake, the Ganymede
     Route Compact, Navigator rescue ledgers, and Lightsail reliability.
@@ -375,7 +381,9 @@
   - Next prototype: use this corrected packet surface for a fresh sandboxed
     responder pass, then review whether the response uses institutional lore
     and latent pressure without prompt parroting or mission-critical
-    trauma-dumping.
+    trauma-dumping. If the pass is research-enabled, use
+    `responder_scoped_repository_search` and require consulted refs before the
+    responder answers.
 
 7. Build the first drama-scaffolding loop.
    - memory updates

@@ -48,6 +48,7 @@ def render_packet_prompt(packet: dict[str, Any]) -> str:
     context = packet["visible_context"]
     event = context["observed_event"]
     contract = packet["output_contract"]
+    lore_access = packet["lore_access"]
     lines = [
         "# Ghostlight Sandboxed Responder Packet",
         "",
@@ -55,6 +56,25 @@ def render_packet_prompt(packet: dict[str, Any]) -> str:
         "Do not treat guesses about another character's intent as fact.",
         "If you need to guess intent, mark it as this character's interpretation, not truth.",
         "",
+    ]
+    if lore_access["mode"] == "responder_scoped_repository_search":
+        lines.extend([
+            "## Required Lore Research",
+            "Before answering, inspect the declared lore scope and ground your action in what those sources make true or likely.",
+            "Use lore to constrain behavior, affordances, institutions, vocabulary, and material stakes. Do not use it to gain hidden character state, author-only answers, or future branch knowledge.",
+            "If a scoped source contradicts the packet, follow the packet for character-local knowledge and flag the contradiction in unresolved hooks.",
+            "Your output capture must list consulted refs and a brief research summary; an answer with no consulted refs is a failed research-enabled response.",
+            "",
+            "Allowed research scope:",
+        ])
+        for scope in lore_access["allowed_scope"]:
+            lines.append(f"- {scope}")
+        if lore_access.get("research_instructions"):
+            lines.extend(["", "Research instructions:"])
+            for instruction in lore_access["research_instructions"]:
+                lines.append(f"- {instruction}")
+        lines.append("")
+    lines.extend([
         "## Local Operating Context",
         context["local_context_prompt"],
         "",
@@ -63,7 +83,7 @@ def render_packet_prompt(packet: dict[str, Any]) -> str:
         f"- Actor: {event['actor_agent_id']}",
         f"- Observable action: {event['observable_action']}",
         f"- Spoken text: {event['spoken_text']}",
-    ]
+    ])
     for note in event["visibility_notes"]:
         lines.append(f"- Visibility note: {note}")
     lines.extend([

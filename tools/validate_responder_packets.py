@@ -111,6 +111,8 @@ def validate_packet(document: dict[str, Any], source: Path) -> None:
     )
     require_string_array(lore_access["allowed_scope"], f"{base}.lore_access.allowed_scope")
     require(lore_access["required_provenance"] is True, f"{base}.lore_access.required_provenance must be true")
+    if "research_instructions" in lore_access:
+        require_string_array(lore_access["research_instructions"], f"{base}.lore_access.research_instructions", nonempty=True)
     if document["generation_lane"] == "packet_only":
         require(lore_access["mode"] == "curated_excerpts_only", f"{base}.packet_only must use curated_excerpts_only lore access")
     if document["generation_lane"] == "retrieval_augmented":
@@ -118,6 +120,12 @@ def validate_packet(document: dict[str, Any], source: Path) -> None:
             lore_access["mode"]
             in {"coordinator_scoped_retrieval", "responder_scoped_repository_search"},
             f"{base}.retrieval_augmented must use scoped retrieval lore access",
+        )
+    if lore_access["mode"] == "responder_scoped_repository_search":
+        require(lore_access["allowed_scope"], f"{base}.responder_scoped_repository_search requires allowed_scope")
+        require(
+            lore_access.get("research_instructions"),
+            f"{base}.responder_scoped_repository_search requires lore_access.research_instructions",
         )
 
     visible = document["visible_context"]
@@ -158,12 +166,20 @@ def validate_packet(document: dict[str, Any], source: Path) -> None:
     for key in ["packet_only", "no_conversation_context", "no_hidden_state_refs"]:
         require(isolation[key] is True, f"{base}.isolation_requirements.{key} must be true")
     require(isinstance(isolation["no_repo_access"], bool), f"{base}.isolation_requirements.no_repo_access must be boolean")
+    if lore_access["mode"] == "responder_scoped_repository_search":
+        require(isolation["no_repo_access"] is False, f"{base}.responder_scoped_repository_search must set no_repo_access false")
+    else:
+        require(isolation["no_repo_access"] is True, f"{base}.{lore_access['mode']} must keep no_repo_access true")
 
     prompt_text = document["packet_prompt_text"]
     reject_markers(prompt_text, RAW_STATE_MARKERS, f"{base}.packet_prompt_text")
     reject_markers(prompt_text, HIDDEN_LEAK_MARKERS, f"{base}.packet_prompt_text")
     require(document["visible_context"]["local_context_prompt"] in prompt_text, f"{base}.packet_prompt_text must contain local context prompt")
     require(event["observable_action"] in prompt_text, f"{base}.packet_prompt_text must contain observed event")
+    if lore_access["mode"] == "responder_scoped_repository_search":
+        require("## Required Lore Research" in prompt_text, f"{base}.packet_prompt_text must include required lore research instructions")
+        for scope in lore_access["allowed_scope"]:
+            require(scope in prompt_text, f"{base}.packet_prompt_text must include allowed research scope: {scope}")
 
     review = document["review"]
     require_keys(review, ["reviewer", "review_notes", "accepted_for_sandbox_use", "failure_labels"], f"{base}.review")

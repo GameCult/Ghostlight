@@ -28,6 +28,24 @@ responses and to bake setting assumptions, faction pressures, species
 affordances, and tone into later fine-tuning data without pretending the
 character model did autonomous scholarship in the walls.
 
+There are two retrieval-augmented modes:
+
+- `coordinator_scoped_retrieval`: the coordinator or retriever consults lore,
+  then hands the responder a bounded packet. The responder has no repo access.
+- `responder_scoped_repository_search`: the responder itself is explicitly
+  allowed to inspect the declared lore scope before answering. This is the
+  research-enabled lane. The packet must include a `Required Lore Research`
+  section, `allowed_scope`, and `research_instructions`.
+
+In `responder_scoped_repository_search`, the responder must consult the scoped
+docs before answering. It should use retrieved lore to constrain behavior,
+affordances, institutions, vocabulary, material stakes, and local assumptions.
+It must not use research access to infer hidden state, author-only answers,
+future branches, or private motives outside the packet. The output capture must
+preserve consulted refs and a brief research summary. No consulted refs means
+the research-enabled response failed at the first hurdle, tragic but at least
+easy to grade.
+
 Do not mix these silently. Retrieval-augmented output can be excellent training
 material for an Aetheria-tuned responder, but it does not prove packet-only
 runtime competence. Packet-only failures are also useful because they reveal
@@ -62,7 +80,8 @@ paint.
 A packet contains:
 
 - `generation_lane`: `packet_only` or `retrieval_augmented`
-- `lore_access`: curated excerpts only or coordinator-scoped retrieval
+- `lore_access`: curated excerpts, coordinator-scoped retrieval, or
+  responder-scoped repository search
 - `local_context_prompt`: the projected character-local context
 - `observed_event`: what the character can see or hear from the prior action
 - `allowed_action_labels`: concrete action labels, including speech and non-speech moves
@@ -104,10 +123,11 @@ be preserved as a coordinator intervention. Repaired prose is useful training
 data for the coordinator, but it is not raw responder behavior.
 
 Retrieval-augmented responder data requires scoped lore access before the
-responder acts. The coordinator or retrieval worker may search only the declared
-source scope, and the output capture must list consulted refs. The responder
-itself should not receive repo access unless the artifact is explicitly labeled
-as autonomous-research data.
+responder acts. The coordinator, retrieval worker, or explicitly research-enabled
+responder may search only the declared source scope, and the output capture must
+list consulted refs. The responder itself should not receive repo access unless
+the artifact uses `responder_scoped_repository_search`, sets `no_repo_access` to
+false, and includes visible research instructions in the prompt.
 
 Retrieval can also make the packet worse if it floods the scene with faction or
 event context and starves the character's own scars. The Sella v0 comparison is
