@@ -105,9 +105,17 @@
      action labels and a concrete Sella `withhold_object` next action, but
      still needs stricter schema or tool-call enforcement because array fields
      drifted into strings and objects.
-   - Next prototype: replace prose-only JSON compliance with a stricter
-     tool-shaped schema or repair/review pass before materializing the branch
-     into Ink.
+   - Qwen invocation correction: use Ollama `/api/chat` with native tools and
+     `think: true`, not `/api/generate` with prose-only JSON instructions.
+     Qwen's XML-shaped tool format belongs to the chat-template/tool-call
+     layer; Ghostlight artifacts do not need XML wrappers.
+   - Third sequential draft: v3 proved the tool path could work for Maer while
+     later passes still fell back to plain JSON because old prompt contract
+     text conflicted with tool calling.
+   - Fifth sequential draft: v5 is accepted as draft. It used thinking plus
+     native tools for Maer choice, Sella appraisal, and Sella next action.
+   - Next prototype: materialize the accepted v5 capture into Ink and sidecar
+     annotation, then apply reviewed state mutation only after validation.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

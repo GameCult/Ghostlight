@@ -67,6 +67,9 @@ state and re-entry discipline.
 - `docs/architecture/lore-grounding-digest-format.md`
   - human-facing format guide for cultural, factional, institutional, role, and
     speaker-boundary lore digests
+- `docs/architecture/qwen-invocation-notes.md`
+  - verified local Qwen invocation policy: Ollama `/api/chat`, native tools,
+    thinking enabled, repair for known nested-argument double-stringify cases
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
     historical projection feedstock rather than the active product target
@@ -129,6 +132,17 @@ state and re-entry discipline.
     model; it produced canonical action labels and a concrete Sella
     `withhold_object` next action, but still needs stricter schema enforcement
     because some array fields came back as strings or objects
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v3.capture.json`
+  - useful-needs-revision thinking-plus-tools receipt that proved Maer could
+    call the tool while later passes still fell back to plain JSON content
+    because old prompt text conflicted with the tool path
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v5.capture.json`
+  - accepted-as-draft thinking-plus-tools receipt using Ollama `/api/chat`,
+    native tools, and `think: true` for Maer choice, Sella appraisal, and Sella
+    next action
+- `experiments/ink/qwen-chat-tools-smoke.json`
+  - smoke receipt proving local `qwen3.5:9b` returns both `message.thinking`
+    and native `tool_calls`
 - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
   - first reviewed branch mutation receipt, including manual participant
     appraisal/consolidation, normalized action labels, applied state deltas, and
@@ -162,8 +176,11 @@ state and re-entry discipline.
   - turns a reviewed Qwen branch capture into a playable Ink draft and sidecar
     annotation
 - `tools/run_qwen_ink_sequential_generation.py`
-  - builds a sequential Qwen prototype: actor-local choices, participant
+  - builds a sequential Qwen prototype through Ollama `/api/chat` with native
+    tools and thinking enabled: actor-local choices, participant
     appraisal/consolidation, then next-actor action from updated state
+- `tools/check_qwen_chat_tools.py`
+  - fast smoke test for local Qwen thinking plus native tool calling
 - `tools/apply_sequential_ink_branch_mutation.py`
   - applies a reviewed replay of one selected branch into a mutated agent-state
     fixture and mutation receipt without letting Ink variables become
@@ -190,7 +207,8 @@ story-lab Qwen captures now exist as v0 seams. The first complete Cold Wake
 story pass exists with receipts, projection controls have been promoted, and
 Ink is now the standard branching scene format. The first Qwen-generated Ink
 draft now exists with a reviewed capture, the first selected branch now has a
-reviewed mutation replay that updates both involved characters, and v2 shows
-the symmetrical turn model improves action behavior. The next implementation
-target is stricter sequential capture schema enforcement before Ink
-materialization.
+reviewed mutation replay that updates both involved characters, v2 shows the
+symmetrical turn model improves action behavior, and v5 proves local
+thinking-plus-tools invocation works for the scene runner. The next
+implementation target is materializing the accepted v5 capture into Ink and a
+sidecar annotation.

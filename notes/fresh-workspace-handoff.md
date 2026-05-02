@@ -45,6 +45,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 - Aetheria lore grounding docs:
   - `docs/architecture/aetheria-lore-grounding-architecture.md`
   - `docs/architecture/lore-grounding-digest-format.md`
+  - `docs/architecture/qwen-invocation-notes.md`
 - lore grounding seam:
   - `schemas/lore-grounding-digest.schema.json`
   - `examples/lore-grounding/historical-flashpoint.template.json`
@@ -81,7 +82,10 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 - sequential branch mutation seam:
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v2.capture.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v3.capture.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v5.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
+  - `experiments/ink/qwen-chat-tools-smoke.json`
   - `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
@@ -114,9 +118,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Replace prose-only sequential Qwen JSON generation with a stricter
-tool-shaped schema or post-generation repair pass for array fields, then
-materialize only a fully validated sequential branch into Ink.
+Materialize the accepted v5 thinking-plus-tools sequential capture into an Ink
+branch draft and sidecar, then apply reviewed state mutation only after
+validation.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -183,13 +187,22 @@ Completed projection path items:
   (`show_object` followed by Sella's `withhold_object`), but remains
   useful-needs-revision because prose prompting did not force array-typed JSON
   fields
+- verify Qwen invocation:
+  `tools/check_qwen_chat_tools.py` proves local `qwen3.5:9b` returns both
+  `message.thinking` and native `tool_calls` through Ollama `/api/chat`
+- update the sequential runner to use `/api/chat` with native tools and
+  `think: true` by default
+- add v3 and v5 thinking-plus-tools captures:
+  v3 preserved a useful failure where old prompt text still caused plain JSON
+  content in later passes; v5 is accepted as draft and produced valid
+  tool-shaped Maer choice, Sella appraisal, and Sella next action
 
 Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- replace prose-only sequential Qwen JSON generation with stricter tool-shaped
-  schema enforcement or an explicit post-generation repair/review pass
+- materialize the accepted v5 thinking-plus-tools sequential capture into Ink
+  and sidecar annotation
 - improve the local-awareness-to-Ink prompt so semantic `training_hooks` do not
   drift into future branch ids, object custody remains branch-local, and action
   labels come from the exact canonical enum

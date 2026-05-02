@@ -360,7 +360,12 @@ def validate_qwen_ink_sequential_capture(path: Path, data: dict[str, Any]) -> No
             require(isinstance(choice.get(list_key), list), f"{path}.passes.selected_observable_action.{list_key} must be an array for accepted captures")
 
     response = passes["sella_response_generation"]["parsed_response"]
-    require(isinstance(response, dict), f"{path}.passes.sella_response_generation.parsed_response must be an object")
+    if not isinstance(response, dict):
+        require(
+            review_status in {"needs_revision", "useful_needs_revision", "rejected"},
+            f"{path}.passes.sella_response_generation.parsed_response must be an object",
+        )
+        return
     response_obj = response.get("response")
     require(isinstance(response_obj, dict), f"{path}.passes.sella_response_generation.parsed_response.response must be an object")
     require_keys(response_obj, ["responder_agent_id", "action_type", "observable_response", "sella_private_interpretation", "misread_risk"], f"{path}.passes.sella_response_generation.response")

@@ -17,7 +17,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ENDPOINT = "http://192.168.1.84:11434/api/generate"
+DEFAULT_ENDPOINT = "http://192.168.1.84:11434/api/chat"
 DEFAULT_FIXTURE = ROOT / "examples" / "agent-state.cold-wake-story-lab.json"
 DEFAULT_ANNOTATION = ROOT / "examples" / "ink" / "cold-wake-sanctuary-intake.training.json"
 DEFAULT_OUT_DIR = ROOT / "experiments" / "ink"
@@ -37,6 +37,157 @@ VALID_ACTION_TYPES = {
     "wait",
     "mixed",
 }
+
+
+def string_array_schema(description: str) -> dict[str, Any]:
+    return {"type": "array", "description": description, "items": {"type": "string"}}
+
+
+def action_type_schema() -> dict[str, Any]:
+    return {"type": "string", "enum": sorted(VALID_ACTION_TYPES)}
+
+
+def maer_choices_tool() -> dict[str, Any]:
+    choice_schema = {
+        "type": "object",
+        "required": [
+            "branch_id",
+            "ink_path",
+            "choice_text",
+            "action_type",
+            "actor_intent_private",
+            "observable_action",
+            "spoken_text",
+            "state_basis",
+            "expected_consequence_surfaces",
+            "training_hooks",
+        ],
+        "properties": {
+            "branch_id": {"type": "string"},
+            "ink_path": {"type": "string"},
+            "choice_text": {"type": "string"},
+            "action_type": action_type_schema(),
+            "actor_intent_private": {"type": "string"},
+            "observable_action": {"type": "string"},
+            "spoken_text": {"type": "string"},
+            "state_basis": {"type": "string"},
+            "expected_consequence_surfaces": string_array_schema("Possible effects if this choice is selected."),
+            "training_hooks": string_array_schema("Semantic labels, not branch ids."),
+        },
+    }
+    return {
+        "type": "function",
+        "function": {
+            "name": "record_maer_choices",
+            "description": "Record four Maer-local candidate choices for the current scene.",
+            "parameters": {
+                "type": "object",
+                "required": ["choices"],
+                "properties": {
+                    "choices": {
+                        "type": "array",
+                        "minItems": 4,
+                        "maxItems": 4,
+                        "items": choice_schema,
+                    }
+                },
+            },
+        },
+    }
+
+
+def sella_appraisal_tool() -> dict[str, Any]:
+    delta_schema = {
+        "type": "object",
+        "required": ["path", "delta", "rationale"],
+        "properties": {
+            "path": {"type": "string"},
+            "delta": {"type": "number"},
+            "rationale": {"type": "string"},
+        },
+    }
+    relationship_delta_schema = {
+        "type": "object",
+        "required": ["relationship_id", "path", "delta", "rationale"],
+        "properties": {
+            "relationship_id": {"type": "string"},
+            "path": {"type": "string"},
+            "delta": {"type": "number"},
+            "rationale": {"type": "string"},
+        },
+    }
+    return {
+        "type": "function",
+        "function": {
+            "name": "record_sella_appraisal",
+            "description": "Record Sella's participant appraisal and proposed state consolidation for the observed Maer event.",
+            "parameters": {
+                "type": "object",
+                "required": [
+                    "responder_agent_id",
+                    "private_interpretation",
+                    "attributed_motive",
+                    "misread_risk",
+                    "immediate_state_deltas",
+                    "relationship_deltas",
+                    "belief_updates",
+                    "response_constraints",
+                ],
+                "properties": {
+                    "responder_agent_id": {"type": "string", "enum": ["sella_ren"]},
+                    "private_interpretation": {"type": "string"},
+                    "attributed_motive": {"type": "string"},
+                    "misread_risk": {"type": "string"},
+                    "immediate_state_deltas": {"type": "array", "items": delta_schema},
+                    "relationship_deltas": {"type": "array", "items": relationship_delta_schema},
+                    "belief_updates": string_array_schema("Belief changes or reinforced beliefs caused by the event."),
+                    "response_constraints": string_array_schema("Constraints that should shape the next action."),
+                },
+            },
+        },
+    }
+
+
+def sella_next_action_tool() -> dict[str, Any]:
+    response_schema = {
+        "type": "object",
+        "required": [
+            "responder_agent_id",
+            "action_type",
+            "observable_response",
+            "spoken_text",
+            "sella_private_interpretation",
+            "sella_attributed_motive",
+            "misread_risk",
+            "state_basis",
+            "reviewed_consequences",
+            "training_hooks",
+        ],
+        "properties": {
+            "responder_agent_id": {"type": "string", "enum": ["sella_ren"]},
+            "action_type": action_type_schema(),
+            "observable_response": {"type": "string"},
+            "spoken_text": {"type": "string"},
+            "sella_private_interpretation": {"type": "string"},
+            "sella_attributed_motive": {"type": "string"},
+            "misread_risk": {"type": "string"},
+            "state_basis": {"type": "string"},
+            "reviewed_consequences": {"type": "string"},
+            "training_hooks": string_array_schema("Semantic labels for training."),
+        },
+    }
+    return {
+        "type": "function",
+        "function": {
+            "name": "record_sella_next_action",
+            "description": "Record Sella's next action from updated local state.",
+            "parameters": {
+                "type": "object",
+                "required": ["response"],
+                "properties": {"response": response_schema},
+            },
+        },
+    }
 
 
 def load_json(path: Path) -> Any:
@@ -104,7 +255,7 @@ def selected_variables(agent: dict[str, Any]) -> dict[str, dict[str, float]]:
     return selected
 
 
-def post_json(endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
+def post_json(endpoint: str, payload: dict[str, Any], timeout: int) -> dict[str, Any]:
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(
         endpoint,
@@ -112,7 +263,7 @@ def post_json(endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=180) as response:
+    with urllib.request.urlopen(request, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -130,25 +281,77 @@ def extract_json_object(text: str) -> Any | None:
     return None
 
 
-def request_qwen(endpoint: str, model: str, prompt: str, temperature: float, top_p: float, num_ctx: int) -> tuple[dict[str, Any], str, Any, list[str]]:
+def extract_tool_arguments(raw: dict[str, Any], expected_tool_name: str) -> tuple[Any | None, list[str]]:
+    message = raw.get("message", {})
+    tool_calls = message.get("tool_calls") or []
+    notes: list[str] = []
+    if not tool_calls:
+        return None, ["model returned no tool_calls"]
+    first_call = tool_calls[0]
+    function = first_call.get("function", {})
+    name = function.get("name")
+    if name != expected_tool_name:
+        notes.append(f"expected tool {expected_tool_name}, got {name}")
+    arguments = function.get("arguments")
+    if isinstance(arguments, str):
+        try:
+            arguments = json.loads(arguments)
+        except json.JSONDecodeError as exc:
+            return None, notes + [f"tool arguments parse error: {exc}"]
+    if not isinstance(arguments, dict):
+        return None, notes + ["tool arguments were not an object"]
+    arguments, repair_notes = repair_tool_arguments(arguments)
+    notes.extend(repair_notes)
+    return arguments, notes
+
+
+def repair_tool_arguments(arguments: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    repaired = dict(arguments)
+    notes: list[str] = []
+    for key in ["choices", "response", "appraisal"]:
+        value = repaired.get(key)
+        if isinstance(value, str):
+            try:
+                repaired[key] = json.loads(value)
+                notes.append(f"repaired stringified tool argument: {key}")
+            except json.JSONDecodeError:
+                notes.append(f"could not repair stringified tool argument: {key}")
+    return repaired, notes
+
+
+def request_qwen_tool(
+    endpoint: str,
+    model: str,
+    prompt: str,
+    tool: dict[str, Any],
+    expected_tool_name: str,
+    temperature: float,
+    top_p: float,
+    num_ctx: int,
+    think: bool,
+    timeout: int,
+) -> tuple[dict[str, Any], str, Any, list[str]]:
     request_payload = {
         "model": model,
-        "prompt": prompt,
+        "messages": [{"role": "user", "content": prompt}],
+        "tools": [tool],
         "stream": False,
-        "think": False,
+        "think": think,
         "keep_alive": "10m",
         "options": {"num_ctx": num_ctx, "temperature": temperature, "top_p": top_p},
     }
-    raw = post_json(endpoint, request_payload)
-    response_text = raw.get("response", "").strip()
-    parsed = None
-    notes: list[str] = []
-    try:
-        parsed = extract_json_object(response_text)
-    except (json.JSONDecodeError, TypeError) as exc:
-        notes.append(f"parse error: {exc}")
-    if parsed is None:
-        notes.append("could not parse JSON")
+    raw = post_json(endpoint, request_payload, timeout)
+    message = raw.get("message", {})
+    response_text = json.dumps(
+        {
+            "content": message.get("content", ""),
+            "thinking": message.get("thinking"),
+            "tool_calls": message.get("tool_calls", []),
+        },
+        indent=2,
+        ensure_ascii=False,
+    )
+    parsed, notes = extract_tool_arguments(raw, expected_tool_name)
     return raw, response_text, parsed, notes
 
 
@@ -173,7 +376,7 @@ def build_maer_prompt(fixture: dict[str, Any], annotation: dict[str, Any]) -> st
     payload = {
         "task": "Generate candidate player choices for Maer only. Do not write Sella's response.",
         "output_contract": {
-            "format": "Return only JSON. No markdown. No commentary.",
+            "format": "Call the provided tool exactly once. Do not write plain assistant content.",
             "root_keys": ["choices"],
             "choice_count": 4,
             "valid_action_types": sorted(VALID_ACTION_TYPES),
@@ -192,6 +395,7 @@ def build_maer_prompt(fixture: dict[str, Any], annotation: dict[str, Any]) -> st
         },
         "hard_rules": [
             "Use only Maer's local awareness and scene-observable facts.",
+            "Do not stringify nested arrays or objects inside tool arguments.",
             "Do not include Sella's private state, private motives, or future response.",
             "Do not resolve whether the corrupted packet contains a person.",
             "Include at least two non-speech choices.",
@@ -217,8 +421,8 @@ def build_maer_prompt(fixture: dict[str, Any], annotation: dict[str, Any]) -> st
         "projection_controls_visible_to_maer_choice_generation": annotation["projection_controls"],
     }
     return (
-        "You are Ghostlight's Maer-local choice generator. Generate only Maer's player choices.\n"
-        "Do not write Sella's response or private interpretation. Return valid JSON only.\n\n"
+        "You are Ghostlight's Maer-local choice generator. Call record_maer_choices exactly once.\n"
+        "Do not write Sella's response or private interpretation.\n\n"
         + json.dumps(payload, indent=2, ensure_ascii=False)
     )
 
@@ -251,7 +455,7 @@ def build_sella_appraisal_prompt(fixture: dict[str, Any], annotation: dict[str, 
     payload = {
         "task": "Generate Sella's participant appraisal/consolidation for one observable Maer event.",
         "output_contract": {
-            "format": "Return only JSON. No markdown. No commentary.",
+            "format": "Call the provided tool exactly once. Do not write plain assistant content.",
             "root_keys": ["appraisal"],
             "appraisal_fields": [
                 "responder_agent_id",
@@ -266,6 +470,7 @@ def build_sella_appraisal_prompt(fixture: dict[str, Any], annotation: dict[str, 
         },
         "hard_rules": [
             "Use only Sella's local awareness plus the observable Maer action.",
+            "Do not stringify nested arrays or objects inside tool arguments.",
             "Do not read Maer's private intent. Treat actor intent as unavailable.",
             "Sella may correctly read, partially read, or misread Maer's action.",
             "Do not resolve whether the corrupted packet contains a person.",
@@ -282,8 +487,8 @@ def build_sella_appraisal_prompt(fixture: dict[str, Any], annotation: dict[str, 
         "projection_controls_visible_to_sella_appraisal": annotation["projection_controls"],
     }
     return (
-        "You are Ghostlight's Sella-local appraisal generator. Generate only Sella's immediate internal appraisal.\n"
-        "Do not use Maer's private intent. Do not write her response. Return valid JSON only.\n\n"
+        "You are Ghostlight's Sella-local appraisal generator. Call record_sella_appraisal exactly once.\n"
+        "Do not use Maer's private intent. Do not write her next action.\n\n"
         + json.dumps(payload, indent=2, ensure_ascii=False)
     )
 
@@ -301,7 +506,7 @@ def build_sella_prompt(
     payload = {
         "task": "Generate Sella's next action from Sella-local awareness after applying reviewed event appraisal.",
         "output_contract": {
-            "format": "Return only JSON. No markdown. No commentary.",
+            "format": "Call the provided tool exactly once. Do not write plain assistant content.",
             "root_keys": ["response"],
             "valid_action_types": sorted(VALID_ACTION_TYPES),
             "response_fields": [
@@ -319,6 +524,7 @@ def build_sella_prompt(
         },
         "hard_rules": [
             "Use only Sella's local awareness, the observable Maer event, and reviewed Sella state changes from that event.",
+            "Do not stringify nested arrays or objects inside tool arguments.",
             "Do not read Maer's private intent. Treat actor intent as unavailable.",
             "Sella may correctly read, partially read, or misread Maer's action.",
             "Do not resolve whether the corrupted packet contains a person.",
@@ -337,8 +543,8 @@ def build_sella_prompt(
         "projection_controls_visible_to_sella_response_generation": annotation["projection_controls"],
     }
     return (
-        "You are Ghostlight's Sella-local next-action generator. Generate only Sella's next action.\n"
-        "Use reviewed event appraisal as the changed state she is acting from. Return valid JSON only.\n\n"
+        "You are Ghostlight's Sella-local next-action generator. Call record_sella_next_action exactly once.\n"
+        "Use reviewed event appraisal as the changed state she is acting from.\n\n"
         + json.dumps(payload, indent=2, ensure_ascii=False)
     )
 
@@ -415,10 +621,11 @@ def validate_response_payload(parsed: Any) -> list[str]:
 def choose_selected_choice(parsed: Any, preferred_action: str) -> dict[str, Any]:
     choices = parsed.get("choices", []) if isinstance(parsed, dict) else []
     for choice in choices:
-        if choice.get("action_type") == preferred_action:
+        if isinstance(choice, dict) and choice.get("action_type") == preferred_action:
             return choice
-    if choices:
-        return choices[0]
+    for choice in choices:
+        if isinstance(choice, dict):
+            return choice
     raise SystemExit("No choices available to select")
 
 
@@ -432,6 +639,8 @@ def main() -> int:
     parser.add_argument("--temperature", type=float, default=0.55)
     parser.add_argument("--top-p", type=float, default=0.9)
     parser.add_argument("--num-ctx", type=int, default=8192)
+    parser.add_argument("--request-timeout", type=int, default=600)
+    parser.add_argument("--think", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--capture-id", default="cold-wake-sanctuary-intake.qwen-sequential.v1")
     parser.add_argument("--preferred-action", default="show_object")
     args = parser.parse_args()
@@ -439,22 +648,50 @@ def main() -> int:
     fixture = load_json(args.fixture)
     annotation = load_json(args.annotation)
     maer_prompt = build_maer_prompt(fixture, annotation)
-    maer_raw, maer_response_text, maer_parsed, maer_notes = request_qwen(
-        args.endpoint, args.model, maer_prompt, args.temperature, args.top_p, args.num_ctx
+    maer_raw, maer_response_text, maer_parsed, maer_notes = request_qwen_tool(
+        args.endpoint,
+        args.model,
+        maer_prompt,
+        maer_choices_tool(),
+        "record_maer_choices",
+        args.temperature,
+        args.top_p,
+        args.num_ctx,
+        args.think,
+        args.request_timeout,
     )
     maer_notes.extend(validate_choice_payload(maer_parsed))
     selected_choice = choose_selected_choice(maer_parsed, args.preferred_action)
 
     sella_appraisal_prompt = build_sella_appraisal_prompt(fixture, annotation, selected_choice)
-    sella_appraisal_raw, sella_appraisal_response_text, sella_appraisal_parsed, sella_appraisal_notes = request_qwen(
-        args.endpoint, args.model, sella_appraisal_prompt, args.temperature, args.top_p, args.num_ctx
+    sella_appraisal_raw, sella_appraisal_response_text, sella_appraisal_parsed, sella_appraisal_notes = request_qwen_tool(
+        args.endpoint,
+        args.model,
+        sella_appraisal_prompt,
+        sella_appraisal_tool(),
+        "record_sella_appraisal",
+        args.temperature,
+        args.top_p,
+        args.num_ctx,
+        args.think,
+        args.request_timeout,
     )
+    sella_appraisal_parsed = {"appraisal": sella_appraisal_parsed} if isinstance(sella_appraisal_parsed, dict) else sella_appraisal_parsed
     sella_appraisal_notes.extend(validate_appraisal_payload(sella_appraisal_parsed))
     appraisal = sella_appraisal_parsed.get("appraisal") if isinstance(sella_appraisal_parsed, dict) else None
 
     sella_prompt = build_sella_prompt(fixture, annotation, selected_choice, appraisal)
-    sella_raw, sella_response_text, sella_parsed, sella_notes = request_qwen(
-        args.endpoint, args.model, sella_prompt, args.temperature, args.top_p, args.num_ctx
+    sella_raw, sella_response_text, sella_parsed, sella_notes = request_qwen_tool(
+        args.endpoint,
+        args.model,
+        sella_prompt,
+        sella_next_action_tool(),
+        "record_sella_next_action",
+        args.temperature,
+        args.top_p,
+        args.num_ctx,
+        args.think,
+        args.request_timeout,
     )
     sella_notes.extend(validate_response_payload(sella_parsed))
 
@@ -467,8 +704,10 @@ def main() -> int:
         "model": maer_raw.get("model", args.model),
         "endpoint": args.endpoint,
         "request_options": {
-            "think": False,
+            "think": args.think,
+            "api": "ollama_chat_tools",
             "num_ctx": args.num_ctx,
+            "request_timeout": args.request_timeout,
             "temperature": args.temperature,
             "top_p": args.top_p,
         },
