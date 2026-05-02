@@ -47,6 +47,68 @@ Future-branch examples must label:
 - the post-Rupture concept being exercised
 - the old social pressure being re-expressed
 
+## Lore Coverage Matrix
+
+Cold Wake is a fixture, not a corpus. A complete Aetheria training corpus needs
+coverage across the setting's institutional ecology before the models can be
+trusted to carry tone, conflict, and cultural priors without constant hand
+feeding.
+
+Before calling the corpus complete, generate reviewed story/scenario coverage
+for:
+
+- every major faction
+- every minor faction
+- every movement and counter-project
+- every major historical flashpoint
+- every major post-Rupture concept or branch-attractor family used in gameplay
+- faction-adjacent institutions that strongly shape daily life, trade, law,
+  care, warfare, media, faith, logistics, or embodiment
+
+Major factions need at least two distinct story types:
+
+- `founding_era_story`: the faction's formative pressure, first stable myth,
+  early institutional compromise, or founding betrayal.
+- `day_in_the_life_story`: ordinary operating texture after the faction has
+  matured, showing how people actually live inside its systems.
+
+Minor factions, movements, and flashpoints need at least one strong story or
+branching-scene fixture each, plus negative or rejected examples where the first
+attempt collapses into stereotype, lore drift, or generic sci-fi wallpaper.
+
+Every accepted coverage story should involve cultural collision. Do not write
+sealed terrariums where one faction monologues at itself and calls that
+worldbuilding. The useful data comes from contact:
+
+- major faction versus major faction
+- major faction versus minor faction
+- faction versus movement
+- movement versus movement
+- institution versus care network
+- local colony versus imported authority
+- species/body affordance versus human-default infrastructure
+- technical standard versus ritual, law, class, scarcity, or dignity
+
+Coverage records should tag:
+
+- primary faction or movement
+- secondary and tertiary factions or movements
+- flashpoint or era
+- story type: `founding_era_story`, `day_in_the_life_story`,
+  `flashpoint_story`, `movement_story`, `future_branch_story`, or
+  `trade_life_story`
+- collision axis: law, care, class, logistics, species/body, labor, faith,
+  media, war, trade, personhood, ecology, memory, technology, or legitimacy
+- involved cultures and their mutual misreads
+- item/economy hooks discovered, including colony-consumed trade goods
+- source refs and open lore gaps
+- accepted, rejected, or needs-revision review status
+
+The first pass can be shallow and uneven. The final corpus cannot be. If one
+flashpoint starts producing all the examples, stop and rebalance before the
+model learns that Aetheria is mostly one corridor argument wearing different
+coats.
+
 Some Elysium events are not globally fixed, but they are not equally optional
 either. Founding events for Elysium-born factions, technology discoveries,
 metaphysical practices, and quest hooks should be represented as attractors,

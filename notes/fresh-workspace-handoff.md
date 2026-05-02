@@ -75,6 +75,11 @@ current gold-data route.
   only gear assemblies or manufacturing inputs; a Navigator wet-interface cradle
   is the current example of generated texture that should become a possible
   demand-profiled trade-good candidate.
+- Corpus completeness requires broad Aetheria coverage, not repeated Cold Wake
+  refinement. Generate stories for every major faction, minor faction,
+  movement, and major flashpoint. Major factions need both founding-era and
+  day-in-the-life stories. All coverage stories should involve cultural
+  collision so faction and movement dynamics appear in the training data.
 
 ## Current Next Action
 

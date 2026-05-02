@@ -38,6 +38,12 @@ sandboxed training-data pipeline for branching scenes and state consequences.
 5. Generalize the loop.
    - Add more historical grounded fixtures from AetheriaLore.
    - Add future-branch Elysium fixtures with branch lineage and constraint labels.
+   - Track coverage across every major faction, minor faction, movement, and
+     major flashpoint; major factions require both founding-era and
+     day-in-the-life stories.
+   - Require cultural collision in coverage stories so training data captures
+     inter-faction dynamics, mutual misreads, and movement pressure instead of
+     sealed faction portraits.
    - Emit technology/item manifest deltas when scenes discover or stress gear, assemblies, supply chains, or faction tech bases.
    - Keep artifacts database-shaped enough for future game-engine integration.
 
