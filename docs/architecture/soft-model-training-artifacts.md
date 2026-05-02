@@ -49,6 +49,63 @@ A useful soft artifact should preserve:
 These organs should be treated as model-training targets, not permanent
 hand-authored rule nests.
 
+### Coordinator Or Story Runtime
+
+Glues scenes together, maintains world state, chooses which machinery runs, and
+emits the connective prose around character turns.
+
+For now, the coordinator is the authoring agent in the loop. In practice, that
+means Codex or another frontier model reads the current fixture, source
+grounding, prior receipts, and author constraints, then decides what scene beat
+comes next, which character acts, which deterministic tools or soft organs are
+needed, and what prose connects the generated turns.
+
+This is a trainable artifact too. Do not let coordinator judgment evaporate into
+chat history just because a large model is currently doing the stage management
+with jazz hands and plausible deniability.
+
+Training artifacts:
+
+- scene setup receipts
+- coordinator plans
+- selected next scene or next beat
+- chosen acting agent
+- selected tools or soft organs invoked
+- world-state refs read
+- world-state changes proposed
+- unresolved hooks carried forward
+- branch merge or branch split decisions
+- authored glue prose
+- rejected glue prose
+- reviewer notes about pacing, legibility, state continuity, lore grounding,
+  game usefulness, and machinery misuse
+
+The coordinator output should be shaped for a future game engine. Even while the
+prototype lives in model imagination and authored prose, it should preserve
+structured refs for:
+
+- scene id
+- location id
+- time or sequence marker
+- participating agents
+- active objects
+- active resources
+- public world facts
+- unresolved facts
+- branch flags
+- event log refs
+- state fixture refs
+- consequences awaiting review
+
+Glue prose is part of the artifact. It is not canonical state, but it is useful
+training signal for how scenes are bridged, how pressure is restated without
+exposition sludge, and how a procedural branch becomes readable narrative.
+
+The coordinator may propose state changes, scene transitions, and tool calls. It
+does not bypass deterministic gates. It does not silently decide hidden facts. It
+does not mutate another organ's private output after review. It conducts the
+little orchestra; it does not eat the violins.
+
 ### Projector
 
 Turns canonical state, perceived state, memory, culture, scene pressure, and
@@ -225,6 +282,7 @@ JSONL wearing a crown.
 
 - projection corpus
 - projected-local-context corpus
+- coordinator/story-runtime corpus
 - character-action corpus
 - dialogue/prose response corpus
 - participant-appraisal corpus
@@ -248,9 +306,10 @@ A sensible long-term stack looks like this:
 ```text
 AetheriaLore source corpus
   -> source-grounded digests and scene fixtures
+  -> coordinator scene plans and glue-prose receipts
   -> reviewed Ghostlight action/dialogue/appraisal artifacts
   -> Aetheria-tuned responder or agent model
-  -> specialized projector/appraiser/mutator students
+  -> specialized coordinator/projector/appraiser/mutator students
   -> deterministic runtime gates and validators
 ```
 

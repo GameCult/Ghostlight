@@ -127,9 +127,13 @@ first Qwen-generated Ink draft with reviewed training annotations, and the
 first reviewed mutation receipt showing how a selected generated branch changes
 both involved characters. The soft-model training doctrine is now explicit:
 deterministic gates stay code, while fuzzy judgments become reviewed artifacts
-for future projector, character-agent, appraiser, mutator,
-relationship/perception, Aetheria responder, and institution/faction/consumer
-decision models.
+for future coordinator/story-runtime, projector, character-agent, appraiser,
+mutator, relationship/perception, Aetheria responder, and
+institution/faction/consumer decision models.
+The coordinator is currently the authoring agent: it glues scenes together,
+maintains continuity, chooses which machinery runs, emits connective prose, and
+proposes world-state changes. Keep those outputs structured enough for future
+game-engine integration instead of letting them rot as chat-only intuition.
 
 ## Current Direction
 

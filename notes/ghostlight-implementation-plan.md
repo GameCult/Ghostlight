@@ -231,11 +231,32 @@
      source provenance, mutation authority, prompt leakage checks, and Ink
      compilation.
    - Emit reviewed artifacts for every fuzzy organ before training specialized
-     models: projector, character agent/responder, participant appraiser,
-     state mutator, relationship/perception classifier, Aetheria responder, and
-     later institution/faction/consumer decision models.
+     models: coordinator/story runtime, projector, character agent/responder,
+     participant appraiser, state mutator, relationship/perception classifier,
+     Aetheria responder, and later institution/faction/consumer decision
+     models.
 
-6. Build the first drama-scaffolding loop.
+6. Build the coordinator artifact seam. New target.
+   - Treat the current authoring agent as the temporary coordinator: it glues
+     scenes together, decides which machinery runs, maintains continuity, emits
+     connective prose, and proposes world-state changes for deterministic gates
+     and reviewed mutation.
+   - Keep coordinator state game-engine-shaped even before a game engine exists:
+     scene ids, location ids, participants, active objects, resources, public
+     facts, unresolved facts, branch flags, event refs, fixture refs, and
+     consequences awaiting review.
+   - Save coordinator decisions as training artifacts: scene setup, next-beat
+     choice, acting-agent choice, tool/model invocation plan, glue prose,
+     branch merge or split decisions, world-state refs read, proposed state
+     changes, carried hooks, rejected prose, and reviewer notes.
+   - Do not let glue prose become canonical truth. It is narrative connective
+     tissue and training signal; structured state and reviewed mutations decide
+     what happened.
+   - The long-term coordinator model should learn how to stage scenes, preserve
+     continuity, call specialist organs, and emit readable connective narration
+     while respecting deterministic gates and game-engine constraints.
+
+7. Build the first drama-scaffolding loop.
    - memory updates
    - relationship updates
    - goal pressure
@@ -243,7 +264,7 @@
    - cultural and institutional pressure
    - conflict beats derived from incompatible goals and values
 
-7. Build the first Aetheria authoring consumer.
+8. Build the first Aetheria authoring consumer.
    - use the Call of the Void slice described in `AetheriaLore` as the first
      concrete content-generation context
    - treat Call of the Void and other Elysium gameplay-era fixtures as
