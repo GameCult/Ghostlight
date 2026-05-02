@@ -142,6 +142,10 @@ current_artifacts:
     - experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.capture.json
     - experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.mutation.json
     - examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json
+    - examples/ink/cold-wake-branch-and-fold.v0.ink
+    - examples/ink/cold-wake-branch-and-fold.v0.training.json
+    - examples/coordinator/cold-wake-branch-and-fold.v0.json
+    - experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md
   archived_receipts:
     - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
 
@@ -154,5 +158,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Cold Wake v0/v1 fragments exposed two design corrections. First, v0 had over-procedural speech and is diagnostic, not gold. Second, v1 starts near the clinic climax and is not a full story arc. The next accepted pass must be interactive-fiction-shaped: opening pressure, branch points, cross-scene consequence carryover, climax, and resolution.
-  next_action: Restart the accepted Cold Wake story run as an interactive fiction fixture from the opening tribunal/route pressure, not from the clinic climax. Design a beginning-to-ending spine with meaningful branch points whose consequences carry across scenes through branch-and-fold state variables, relationship state, resource costs, available options, final resolution, and scene imagery. Use responder artifacts only at material branch/action beats, with compressed in-character speech and procedural detail outside dialogue.
+  summary: Cold Wake now has a clean accepted-as-draft branch-and-fold interactive-fiction scaffold. The run starts at the Ganymede route freeze tribunal, folds through Veyr provenance and Sella's clinic, carries compact consequence variables into the diagnostic-contact climax, and includes durable base image prompts plus branch/state modifiers. It is coordinator/IF scaffold training data, not raw responder gold.
+  next_action: Move to a different Aetheria setting fixture. Pick the next faction, movement, flashpoint, or day-in-the-life target from the coverage plan, source-ground it in AetheriaLore, then build a similarly compact branch-and-fold IF scaffold with visual prompt anchors and reviewed consequence surfaces.

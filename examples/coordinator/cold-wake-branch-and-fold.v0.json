@@ -1,0 +1,330 @@
+{
+    "schema_version":  "ghostlight.coordinator_artifact.v0",
+    "artifact_id":  "coordinator.cold_wake.branch_and_fold.v0",
+    "review_status":  "accepted_as_draft",
+    "fixture_lane":  "historical_grounded",
+    "canon_status":  "single_history",
+    "source_refs":  [
+                        {
+                            "ref_id":  "cw_event",
+                            "path":  "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+                            "purpose":  "Grounds the historical flashpoint and thermal category failure."
+                        },
+                        {
+                            "ref_id":  "thermal_warfare",
+                            "path":  "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Politics/Thermal Signature Warfare.md",
+                            "purpose":  "Grounds heat debt, quiet doctrine, thermal posture, and PSC classification pressure."
+                        },
+                        {
+                            "ref_id":  "psc",
+                            "path":  "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+                            "purpose":  "Grounds PSC category language and market arbitration logic."
+                        },
+                        {
+                            "ref_id":  "navigators",
+                            "path":  "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+                            "purpose":  "Grounds Navigator rescue ledgers, route obligation, and wet/dry habitat interface."
+                        },
+                        {
+                            "ref_id":  "aya",
+                            "path":  "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md",
+                            "purpose":  "Grounds Aya care-as-infrastructure and clinic capacity politics."
+                        },
+                        {
+                            "ref_id":  "territories",
+                            "path":  "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+                            "purpose":  "Grounds Ganymede, Callisto, Jovian corridor, and sanctuary context."
+                        }
+                    ],
+    "input_refs":  {
+                       "agent_state_ref":  "examples/agent-state.cold-wake-story-lab.json",
+                       "lore_grounding_refs":  [
+                                                   "examples/lore-grounding/cold-wake-panic.ganymede-corridor.json"
+                                               ],
+                       "prior_artifact_refs":  [
+                                                   "experiments/cold-wake-story-lab/cold-wake-full-story-run.v0.md",
+                                                   "docs/architecture/ink-branching-scenes.md"
+                                               ],
+                       "projected_context_refs":  [
+
+                                                  ],
+                       "ink_refs":  [
+                                        "examples/ink/cold-wake-branch-and-fold.v0.ink",
+                                        "examples/ink/cold-wake-branch-and-fold.v0.training.json"
+                                    ],
+                       "item_manifest_refs":  [
+
+                                              ]
+                   },
+    "scene_context":  {
+                          "scene_id":  "cold-wake-branch-and-fold-v0",
+                          "sequence_marker":  "clean interactive-fiction restart from route freeze tribunal through ambiguous rescue resolution",
+                          "location_id":  "jovian_corridor.ganymede_route_tribunal.callisto_relay.sanctuary_clinic",
+                          "participant_ids":  [
+                                                  "maer_tidecall",
+                                                  "isdra_vel",
+                                                  "veyr_oss",
+                                                  "sella_ren"
+                                              ],
+                          "active_object_ids":  [
+                                                    "quiet_running_vessel",
+                                                    "corrupted_distress_packet",
+                                                    "navigator_rescue_ledger",
+                                                    "psc_freeze_order",
+                                                    "sanctuary_diagnostic_sleeve"
+                                                ],
+                          "active_resource_ids":  [
+                                                      "heat_time",
+                                                      "route_debt",
+                                                      "clinic_staff_capacity",
+                                                      "evidence_quality",
+                                                      "authority_pressure"
+                                                  ],
+                          "public_facts":  [
+                                               {
+                                                   "text":  "A quiet-running vessel in the Jovian corridor is frozen under PSC category uncertainty while its heat-debt window closes.",
+                                                   "refs":  [
+                                                                "cw_event",
+                                                                "thermal_warfare",
+                                                                "psc"
+                                                            ]
+                                               },
+                                               {
+                                                   "text":  "Navigator route culture treats rescue as a material obligation recorded in ledgers, not a decorative moral preference.",
+                                                   "refs":  [
+                                                                "navigators"
+                                                            ]
+                                               },
+                                               {
+                                                   "text":  "Aya-aligned clinic care can be generous only through capacity, staffing, access, and accountable logistics.",
+                                                   "refs":  [
+                                                                "aya"
+                                                            ]
+                                               }
+                                           ],
+                          "scene_pressure":  [
+                                                 {
+                                                     "text":  "The vessel may be pirate lure, refugee craft, cognition contraband, decoy, or several incompatible categories at once; the story must not resolve this before the diagnostic contact.",
+                                                     "refs":  [
+                                                                  "cw_event",
+                                                                  "docs/architecture/aetheria-cold-wake-training-fixture.md"
+                                                              ]
+                                                 },
+                                                 {
+                                                     "text":  "Every delay improves category safety for someone and thermal danger for someone else.",
+                                                     "refs":  [
+                                                                  "thermal_warfare"
+                                                              ]
+                                                 }
+                                             ]
+                      },
+    "coordinator_decision":  {
+                                 "decision_id":  "decision.cold_wake.clean_if_spine.v0",
+                                 "selected_next_beat":  "Author a complete branch-and-fold Ink fixture from tribunal opening to ambiguous rescue resolution, using compact consequence variables and durable visual prompt anchors.",
+                                 "selected_acting_agent_id":  "coordinator",
+                                 "candidate_next_beats":  [
+                                                              {
+                                                                  "choice_id":  "beat.clean_if_fixture",
+                                                                  "summary":  "Create a clean IF run with planned branches, folds, visual prompts, and reviewed consequence surfaces.",
+                                                                  "status":  "selected",
+                                                                  "reason":  "The prior clinic-fragment run was diagnostic and tedious; a complete fixture is needed before moving to another setting region."
+                                                              },
+                                                              {
+                                                                  "choice_id":  "beat.more_responder_receipts",
+                                                                  "summary":  "Generate more isolated responder packets around the clinic climax.",
+                                                                  "status":  "rejected",
+                                                                  "reason":  "Would repeat the failure mode and keep Cold Wake stuck in seam testing instead of finishing the IF scaffold."
+                                                              }
+                                                          ],
+                                 "rationale":  "The fixture needs a beginning, choices with durable consequences, folds to avoid combinatoric explosion, and a resolution that shows cost without claiming a clean institutional victory.",
+                                 "glue_prose":  "Cold Wake became usable once the story stopped trying to prove the right category and started showing what categories cost while people were still inside them.",
+                                 "glue_prose_status":  "accepted_as_narration"
+                             },
+    "machinery_plan":  {
+                           "invocations":  [
+                                               {
+                                                   "invocation_id":  "invoke.lore.source_check",
+                                                   "organ":  "memory_lore_retriever",
+                                                   "purpose":  "Source-check Cold Wake, thermal signature warfare, PSC, Navigators, Aya, and Jovian territory before authoring the fixture.",
+                                                   "input_refs":  [
+                                                                      "cw_event",
+                                                                      "thermal_warfare",
+                                                                      "psc",
+                                                                      "navigators",
+                                                                      "aya",
+                                                                      "territories"
+                                                                  ],
+                                                   "output_refs":  [
+                                                                       "examples/ink/cold-wake-branch-and-fold.v0.training.json#local_awareness_summary"
+                                                                   ],
+                                                   "status":  "accepted_as_draft"
+                                               },
+                                               {
+                                                   "invocation_id":  "invoke.coordinator.author_if",
+                                                   "organ":  "other",
+                                                   "purpose":  "Author the branch-and-fold Ink scene and readable coordinator story artifact.",
+                                                   "input_refs":  [
+                                                                      "docs/architecture/ink-branching-scenes.md",
+                                                                      "state/map.yaml#current_status"
+                                                                  ],
+                                                   "output_refs":  [
+                                                                       "examples/ink/cold-wake-branch-and-fold.v0.ink",
+                                                                       "examples/ink/cold-wake-branch-and-fold.v0.training.json",
+                                                                       "experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md"
+                                                                   ],
+                                                   "status":  "accepted_as_draft"
+                                               },
+                                               {
+                                                   "invocation_id":  "invoke.ink.validate",
+                                                   "organ":  "output_evaluator",
+                                                   "purpose":  "Compile Ink and validate sidecar annotations through the existing Ink validator.",
+                                                   "input_refs":  [
+                                                                      "examples/ink/cold-wake-branch-and-fold.v0.ink"
+                                                                  ],
+                                                   "output_refs":  [
+
+                                                                   ],
+                                                   "status":  "accepted_as_draft"
+                                               }
+                                           ]
+                       },
+    "world_state_refs":  {
+                             "read_refs":  [
+                                               {
+                                                   "ref_id":  "fixture_base_state",
+                                                   "ref_type":  "scene",
+                                                   "path":  "examples/agent-state.cold-wake-story-lab.json",
+                                                   "visibility":  "coordinator_only"
+                                               },
+                                               {
+                                                   "ref_id":  "if_architecture",
+                                                   "ref_type":  "other",
+                                                   "path":  "docs/architecture/ink-branching-scenes.md",
+                                                   "visibility":  "public"
+                                               }
+                                           ],
+                             "write_candidate_refs":  [
+                                                          {
+                                                              "ref_id":  "ink_fixture",
+                                                              "ref_type":  "branch",
+                                                              "path":  "examples/ink/cold-wake-branch-and-fold.v0.ink",
+                                                              "visibility":  "public"
+                                                          },
+                                                          {
+                                                              "ref_id":  "training_sidecar",
+                                                              "ref_type":  "branch",
+                                                              "path":  "examples/ink/cold-wake-branch-and-fold.v0.training.json",
+                                                              "visibility":  "coordinator_only"
+                                                          },
+                                                          {
+                                                              "ref_id":  "readable_run",
+                                                              "ref_type":  "event",
+                                                              "path":  "experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md",
+                                                              "visibility":  "public"
+                                                          }
+                                                      ]
+                         },
+    "proposed_deltas":  [
+                            {
+                                "delta_id":  "delta.if.branch_fold_fixture_added",
+                                "delta_type":  "branch_flag_update",
+                                "target_ref":  "cold_wake_fixture_status",
+                                "summary":  "Cold Wake now has a clean accepted-as-draft branch-and-fold IF scaffold separate from diagnostic responder fragments.",
+                                "authority":  "manual_review",
+                                "status":  "accepted",
+                                "rationale":  "The fixture compiles, has a sidecar, and implements the documented branch-and-fold process."
+                            },
+                            {
+                                "delta_id":  "delta.visual_prompt_structure_added",
+                                "delta_type":  "world_fact_update",
+                                "target_ref":  "cold_wake_visual_art_direction",
+                                "summary":  "The fixture includes durable base image prompts and additive branch/state modifiers for each major scene.",
+                                "authority":  "manual_review",
+                                "status":  "accepted",
+                                "rationale":  "Supports website imagery without regenerating every branch image from scratch."
+                            }
+                        ],
+    "branching":  {
+                      "branch_action":  "merge_branch",
+                      "branch_id":  "cold-wake-branch-and-fold-v0",
+                      "branch_lineage":  [
+                                             "cold-wake-clean-if-v0"
+                                         ],
+                      "active_branch_flags":  [
+                                                  "branch_and_fold_fixture",
+                                                  "packet_personhood_unresolved",
+                                                  "visual_prompts_durable_base_plus_modifiers",
+                                                  "not_raw_responder_gold"
+                                              ],
+                      "event_constraints":  [
+                                                {
+                                                    "constraint_id":  "constraint.packet_unresolved",
+                                                    "constraint_type":  "branch_local_event",
+                                                    "summary":  "The packet remains unresolved as person, cargo, machine residue, lure, or testimony through the fixture.",
+                                                    "pull_strength":  "locked"
+                                                },
+                                                {
+                                                    "constraint_id":  "constraint.cold_wake_historical_pressure",
+                                                    "constraint_type":  "branch_attractor",
+                                                    "summary":  "PSC thermal category repair and insurer pricing pressure remain the historical attractor after this local rescue.",
+                                                    "pull_strength":  "strong"
+                                                }
+                                            ],
+                      "sibling_exclusion_notes":  [
+                                                      "This accepted-as-draft scaffold does not canonize one exact historical outcome for all Cold Wake incidents; it is a training fixture inside the broader flashpoint."
+                                                  ]
+                  },
+    "item_manifest_deltas":  [
+                                 {
+                                     "delta_id":  "item.candidate.sanctuary_diagnostic_sleeve",
+                                     "delta_type":  "blueprint_candidate",
+                                     "summary":  "Sanctuary diagnostic sleeve as a manufactured clinic/trade good for mixed wet/dry rescue and bounded contact workflows.",
+                                     "target_class":  "CompoundCommodityData",
+                                     "artifact_ref":  "examples/ink/cold-wake-branch-and-fold.v0.training.json#visual_art_direction.scene_03_sanctuary_clinic_gate",
+                                     "status":  "proposed"
+                                 },
+                                 {
+                                     "delta_id":  "item.candidate.signature_managed_skin",
+                                     "delta_type":  "blueprint_candidate",
+                                     "summary":  "Signature-managed thermal skin implicated by Cold Wake thermal stealth and Cryonix strategic infrastructure.",
+                                     "target_class":  "CompoundCommodityData",
+                                     "artifact_ref":  "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Politics/Thermal Signature Warfare.md#The Corporate Split",
+                                     "status":  "proposed"
+                                 }
+                             ],
+    "unresolved_hooks":  [
+                             {
+                                 "hook_id":  "hook.cold_wake.source_exposure_route",
+                                 "hook_type":  "branch",
+                                 "summary":  "If Veyr\u0027s source is exposed in a larger fixture, that can justify a real retaliation/legal route split rather than a folded callback.",
+                                 "owner":  "coordinator",
+                                 "status":  "deferred"
+                             },
+                             {
+                                 "hook_id":  "hook.cold_wake.vessel_loss_route",
+                                 "hook_type":  "branch",
+                                 "summary":  "If the clinic bay never opens or heat_time falls too far in a larger fixture, vessel loss can justify a major route split.",
+                                 "owner":  "coordinator",
+                                 "status":  "deferred"
+                             },
+                             {
+                                 "hook_id":  "hook.item_manifest_candidates",
+                                 "hook_type":  "item_manifest",
+                                 "summary":  "Diagnostic sleeve and signature-managed skin should be revisited when item manifest schemas are added.",
+                                 "owner":  "coordinator",
+                                 "status":  "deferred"
+                             }
+                         ],
+    "review":  {
+                   "reviewer":  "Codex",
+                   "review_notes":  [
+                                        "Accepted as coordinator/IF scaffold training data, not raw sandboxed responder output.",
+                                        "The artifact directly addresses earlier failures: no clinic-only fragment, no prompt-contract speech, no unbounded subtree explosion, no regenerate-from-scratch visual continuity plan.",
+                                        "Cold Wake should be considered knocked out for current fixture purposes unless the user asks for polish or a future route split expansion."
+                                    ],
+                   "accepted_for_training":  true,
+                   "failure_labels":  [
+
+                                      ]
+               }
+}

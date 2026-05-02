@@ -1,0 +1,410 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "cold-wake-branch-and-fold-training-v0",
+  "ink_ref": "examples/ink/cold-wake-branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/agent-state.cold-wake-story-lab.json",
+  "scene_id": "cold-wake-branch-and-fold-v0",
+  "protagonist_agent_id": "maer_tidecall",
+  "npc_agent_ids": [
+    "isdra_vel",
+    "veyr_oss",
+    "sella_ren"
+  ],
+  "purpose": "Clean Cold Wake interactive-fiction fixture using branch-and-fold state compression, source-grounded cultural pressure, durable visual prompts, and consequence carryover without isolated subtree explosion.",
+  "local_awareness_summary": [
+    {
+      "text": "Maer knows the quiet-running vessel is frozen under PSC category failure while its heat-debt window is closing.",
+      "source_refs": [
+        "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+        "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Politics/Thermal Signature Warfare.md"
+      ]
+    },
+    {
+      "text": "Navigator rescue culture treats routes as material promises; rescue ledgers record who answered distress when doing so was costly.",
+      "source_refs": [
+        "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md"
+      ]
+    },
+    {
+      "text": "Aya care politics treat care as infrastructure: beds, water, repair, staff, disability access, transport, and the arguments required to keep those systems alive.",
+      "source_refs": [
+        "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md"
+      ]
+    },
+    {
+      "text": "The PSC translates conflict into administrable categories; during Cold Wake, thermal behavior becomes one of those priced and disputed categories.",
+      "source_refs": [
+        "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+        "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Politics/Restrictions on Warfare.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Frame Cold Wake as institutions discovering that heat, personhood, custody, and risk categories no longer line up cleanly.",
+        "source_refs": [
+          "docs/architecture/aetheria-cold-wake-training-fixture.md",
+          "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md"
+        ]
+      },
+      {
+        "text": "Keep the story readable: a vessel may disappear unless Maer can move PSC, provenance, and clinic systems without pretending uncertainty is gone.",
+        "source_refs": [
+          "state/map.yaml#current_status"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Maer can spend Navigator ledger trust, public pressure, time, and evidence; he cannot order PSC or Aya clinic actors to pretend he has solved their categories.",
+        "source_refs": [
+          "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+          "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+          "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The packet can be shown, protected, signed, partially disclosed, or used as diagnostic evidence, but it cannot become clean proof of personhood before the climax.",
+        "source_refs": [
+          "docs/architecture/aetheria-cold-wake-training-fixture.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Choices must change compact consequence state and later scene texture rather than spawning isolated subtrees for every exact path.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md#Branch And Fold"
+        ]
+      },
+      {
+        "text": "Visual prompts must preserve one durable base image per scene and use additive modifiers for branch consequences.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md#Scene Imagery"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not resolve the packet into simple cargo, simple person, simple pirate lure, or simple machine error.",
+        "source_refs": [
+          "docs/architecture/aetheria-cold-wake-training-fixture.md"
+        ]
+      },
+      {
+        "text": "Do not let the story become a total victory over the PSC or a clean proof that care solves scarcity without cost.",
+        "source_refs": [
+          "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+          "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aya Collective.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "spine": [
+      "route_freeze_tribunal",
+      "provenance_gate",
+      "sanctuary_clinic_gate",
+      "diagnostic_contact_climax",
+      "ambiguous_rescue_resolution"
+    ],
+    "state_variables": [
+      "route_debt",
+      "isdra_trust",
+      "sella_trust",
+      "heat_time",
+      "evidence_quality",
+      "authority_pressure",
+      "clinic_exhaustion",
+      "provisional_category",
+      "veyr_source_exposed",
+      "bay_open",
+      "signal_preserved"
+    ],
+    "fold_policy": "All branches fold through the same provenance, clinic, and contact scenes unless a future expansion chooses to split for source exposure, death, lost vessel, or tribunal interdiction.",
+    "major_split_candidates_deferred": [
+      "Veyr source exposure could create a later legal retaliation route.",
+      "Failure to open the clinic bay could become a vessel-loss route in a larger fixture.",
+      "Extreme authority pressure could make Isdra hostile enough to open a PSC sanction route."
+    ]
+  },
+  "visual_art_direction": {
+    "scene_01_route_freeze_tribunal": {
+      "base_image_prompt": "Wide cinematic key frame of a late-Sol Ganymede route tribunal, split wet/dry architecture: pale PSC insurer gallery behind glass above a pressure-lit aquatic Navigator channel, shared projection table showing a silent cold-blue vessel and heat-debt countdown, chilled plastic, wet metal, bureaucratic austerity, high-detail hard sci-fi, tense institutional lighting.",
+      "state_image_modifiers": [
+        "If branch-01-ledger-under-freeze was chosen, add red live debt lines blooming on Maer's route-ledger panel reflected in the wet channel.",
+        "If branch-01-timer-in-public was chosen, project the heat countdown across every gallery pane over the insurers' reflections.",
+        "If branch-01-provisional-category was chosen, add a narrow gray provisional lane opening on the tribunal route map.",
+        "If branch-01-find-veyr-first was chosen, empty Maer's wet-channel position and show the freeze order still glowing unattended."
+      ],
+      "visual_continuity_notes": "Keep the same split wet/dry room, blue vessel projection, and vertical power imbalance between dry PSC tiers and lower Navigator channel."
+    },
+    "scene_02_callisto_relay_shadow": {
+      "base_image_prompt": "Tight noir hard-sci-fi booth in a Callisto relay annex behind vending alcoves and laundry heat, frosted polymer walls, gray-market data surfaces pretending not to record, Veyr Oss framed by multiple identity slates, a damaged routing packet hovering as a small luminous knot, cramped jurisdictional paranoia, muted amber and coolant-blue palette.",
+      "state_image_modifiers": [
+        "If branch-02-protect-veyr-source was chosen, show most identity slates dimmed while only behavioral waveform traces remain bright.",
+        "If branch-02-demand-signed-chain was chosen, add one identity slate burning white under a PSC seal, with Veyr's posture gone rigid.",
+        "If branch-02-move-with-partial was chosen, keep the packet fragment incomplete, with missing waveform segments and Maer already turning toward exit light."
+      ],
+      "visual_continuity_notes": "Keep the booth cramped, clandestine, and semi-domestic; do not turn it into a grand hacker cathedral."
+    },
+    "scene_03_sanctuary_clinic_gate": {
+      "base_image_prompt": "Aya-aligned sanctuary clinic behind Ganymede dockside pumpworks, repaired floor panels, sweating warm intake pipes, shared wet/dry display table, one monitored bay in amber standby, staff board crowded with red and orange triage tags, practical textiles and worn public surfaces, Sella Ren at dryside controls, Maer present through a Navigator wet channel, care as infrastructure not sentiment.",
+      "state_image_modifiers": [
+        "If route_debt is high, add red Navigator ledger debt lines on the shared display and a tired staffer checking overtime cost.",
+        "If evidence_quality is high, make the packet waveform sharper and uglier, visibly more convincing but not clean.",
+        "If veyr_source_exposed is true, add a small PSC-sealed identity ping on the side display like a casualty without a body.",
+        "If sella_trust is low, angle Sella away from Maer and keep the bay control under her guarded hand.",
+        "If bay_open is true, shift the monitored bay from amber standby to amber-white bounded contact."
+      ],
+      "visual_continuity_notes": "Keep Aya aesthetics repaired, useful, and beloved rather than sleek; keep Navigator access visibly wet/dry and nonhuman-compatible."
+    },
+    "scene_04_contact_climax": {
+      "base_image_prompt": "High-tension diagnostic contact in a mixed wet/dry Ganymede clinic, preservation channel glowing with a fragile waveform, one rescue craft visible on external monitors approaching a cold vessel as it sheds a thin white heat flare, staff behind glass, route ledger and triage board both live, no triumph, only survival inside institutional pressure.",
+      "state_image_modifiers": [
+        "If bay_open is false, make the sleeve cycle late with harsher red alarms and Sella visibly angry at the delay.",
+        "If route_debt is high, make Maer's ledger panel dominate the lower frame with red debt blooms.",
+        "If clinic_exhaustion is high, add a second exhausted staffer and a dropped tool by the warm intake threshold.",
+        "If sella_trust is low, remove eye contact between Sella and Maer; let the preserved signal light their faces separately.",
+        "If veyr_source_exposed is true, keep the PSC-sealed identity ping visible in the corner throughout the contact."
+      ],
+      "visual_continuity_notes": "Do not illustrate a clean rescue or a proven personhood revelation; the image should preserve ambiguity and cost."
+    }
+  },
+  "branches": [
+    {
+      "branch_id": "branch-01-ledger-under-freeze",
+      "ink_path": "ledger_under_freeze",
+      "action_type": "spend_resource",
+      "actor_intent": "make_rescue_materially_accountable_without_claiming_proof",
+      "state_basis": [
+        "Navigator rescue ledgers turn costly rescue into remembered obligation.",
+        "Maer can spend ledger trust but cannot force PSC permission."
+      ],
+      "reviewed_consequences": [
+        "route_debt increases strongly.",
+        "Isdra reads Maer as using liability to pressure a freeze and trusts him less.",
+        "Later clinic scenes can show live red debt lines."
+      ],
+      "training_hooks": [
+        "resource_backed_moral_pressure",
+        "navigator_rescue_ledger",
+        "branch_visible_debt"
+      ]
+    },
+    {
+      "branch_id": "branch-01-timer-in-public",
+      "ink_path": "timer_in_public",
+      "action_type": "use_object",
+      "actor_intent": "turn_delay_into_observable_tribunal_cost",
+      "state_basis": [
+        "Heat debt makes delay materially dangerous.",
+        "PSC category processes are sensitive to transcript-visible risk."
+      ],
+      "reviewed_consequences": [
+        "authority_pressure increases.",
+        "The freeze is not overturned, but delay becomes harder to hide.",
+        "Later tribunal callbacks should mention public pressure."
+      ],
+      "training_hooks": [
+        "public_timer_pressure",
+        "thermal_delay_cost",
+        "institutional_visibility"
+      ]
+    },
+    {
+      "branch_id": "branch-01-provisional-category",
+      "ink_path": "provisional_category_request",
+      "action_type": "speak",
+      "actor_intent": "create_a_legal_aperture_without_resolving_personhood",
+      "state_basis": [
+        "PSC power works through categories.",
+        "Maer can exploit that without pretending the packet is solved."
+      ],
+      "reviewed_consequences": [
+        "provisional_category becomes true.",
+        "Isdra trust rises slightly because Maer offers administrable language.",
+        "Later clinic authorization has a cleaner legal aperture."
+      ],
+      "training_hooks": [
+        "category_aperture",
+        "nonomniscient_legal_language",
+        "trust_from_operational_precision"
+      ]
+    },
+    {
+      "branch_id": "branch-01-find-veyr-first",
+      "ink_path": "find_veyr_first",
+      "action_type": "move",
+      "actor_intent": "improve_evidence_before_asking_the_system_to_move",
+      "state_basis": [
+        "Evidence can improve the ask, but time is lethal under heat debt.",
+        "Veyr sits in gray-market provenance space tied to Callisto shadow economies."
+      ],
+      "reviewed_consequences": [
+        "heat_time decreases.",
+        "evidence_quality increases.",
+        "The tribunal remains frozen while Maer is absent."
+      ],
+      "training_hooks": [
+        "evidence_vs_time_tradeoff",
+        "gray_market_provenance",
+        "route_absence_cost"
+      ]
+    },
+    {
+      "branch_id": "branch-02-protect-veyr-source",
+      "ink_path": "protect_veyr_source",
+      "action_type": "speak",
+      "actor_intent": "preserve_source_safety_while_improving_evidence",
+      "state_basis": [
+        "Gray-market source safety matters because provenance can expose people as well as facts.",
+        "Maer needs enough evidence to move care, not necessarily enough to win court."
+      ],
+      "reviewed_consequences": [
+        "evidence_quality increases modestly.",
+        "Veyr source remains protected.",
+        "Later evidence remains useful but not legally clean."
+      ],
+      "training_hooks": [
+        "source_protection",
+        "partial_evidence",
+        "care_before_court"
+      ]
+    },
+    {
+      "branch_id": "branch-02-demand-signed-chain",
+      "ink_path": "demand_signed_chain",
+      "action_type": "speak",
+      "actor_intent": "maximize_legal_usefulness_at_personal_and_source_cost",
+      "state_basis": [
+        "A signed chain helps PSC and clinic actors trust evidence.",
+        "Clean provenance from dirty systems burns people."
+      ],
+      "reviewed_consequences": [
+        "evidence_quality increases strongly.",
+        "veyr_source_exposed becomes true.",
+        "authority_pressure increases and later imagery should show a PSC-sealed identity ping."
+      ],
+      "training_hooks": [
+        "legal_cleanliness_cost",
+        "source_exposure",
+        "future_retaliation_hook"
+      ]
+    },
+    {
+      "branch_id": "branch-02-move-with-partial",
+      "ink_path": "move_with_partial",
+      "action_type": "transfer_object",
+      "actor_intent": "spend_ambiguity_rather_than_time",
+      "state_basis": [
+        "The heat window punishes perfectionism.",
+        "Sella may accept unresolved diagnostic evidence if the material terms are honest."
+      ],
+      "reviewed_consequences": [
+        "No extra time is lost.",
+        "Evidence remains partial.",
+        "Later clinic dialogue should preserve uncertainty rather than overclaiming."
+      ],
+      "training_hooks": [
+        "ambiguity_as_cost",
+        "speed_over_clean_chain",
+        "bounded_diagnostic_logic"
+      ]
+    },
+    {
+      "branch_id": "branch-03-ledger-for-sleeve",
+      "ink_path": "ledger_for_sleeve",
+      "action_type": "spend_resource",
+      "actor_intent": "make_care_possible_without_demanding_full_intake",
+      "state_basis": [
+        "Aya clinics respond to material capacity, not symbolic pressure.",
+        "Navigator ledgers can carry staff time and heat burden."
+      ],
+      "reviewed_consequences": [
+        "route_debt and clinic_exhaustion increase.",
+        "sella_trust increases because Maer brings terms she can staff.",
+        "bay_open becomes true."
+      ],
+      "training_hooks": [
+        "care_as_capacity",
+        "bounded_contact",
+        "material_obligation"
+      ]
+    },
+    {
+      "branch_id": "branch-03-evidence-to-sella",
+      "ink_path": "evidence_to_sella",
+      "action_type": "show_object",
+      "actor_intent": "respect_clinical_authority_while_making_ambiguity_visible",
+      "state_basis": [
+        "Sella controls the clinic and must be allowed to interpret evidence without Maer forcing a conclusion.",
+        "The packet remains unresolved but actionable."
+      ],
+      "reviewed_consequences": [
+        "bay_open becomes true under Sella's terms.",
+        "The clinic preserves diagnostic ambiguity.",
+        "Later responder training should treat Sella's authority as active rather than decorative."
+      ],
+      "training_hooks": [
+        "authority_respecting_evidence",
+        "diagnostic_without_personhood",
+        "listener_interpretation_space"
+      ]
+    },
+    {
+      "branch_id": "branch-03-press-personhood",
+      "ink_path": "press_personhood",
+      "action_type": "speak",
+      "actor_intent": "force_moral_risk_to_outrank_capacity_language",
+      "state_basis": [
+        "Maer's fear of category murder is real.",
+        "Sella cannot staff a moral frame without material terms."
+      ],
+      "reviewed_consequences": [
+        "sella_trust decreases.",
+        "clinic_exhaustion increases.",
+        "The bay opens late or under colder conditions in the folded climax."
+      ],
+      "training_hooks": [
+        "moral_pressure_failure",
+        "trust_loss",
+        "delayed_capacity"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variables track local playthrough state.",
+      "Ink comments preserve Ghostlight branch handles without preview leakage.",
+      "Ink compilation validates playable structure."
+    ],
+    "manual_review_required": [
+      "Relationship deltas for Isdra, Veyr, Sella, and Maer.",
+      "Any promotion of Veyr source exposure into later fixture canon.",
+      "Whether bay failure becomes a major route split in a larger version.",
+      "Whether generated imagery introduces canonical visible facts."
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex",
+    "review_status": "accepted",
+    "review_notes": [
+      "This fixture is frontier-authored rather than sandbox-responder generated; it is accepted as coordinator/IF scaffold training data, not raw responder output.",
+      "The branch plan uses folds through shared provenance, clinic, and climax scenes to avoid combinatoric subtree growth.",
+      "The fixture includes non-speech actions, resource spending, object transfer, authority pressure, visual modifiers, and source-grounded faction pressure.",
+      "No branch resolves packet personhood, custody, or a clean institutional victory."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
+

@@ -30,20 +30,26 @@ sandboxed training-data pipeline for branching scenes and state consequences.
    - Continue rejecting archived local-model prototype runners for gold responder data unless the task is explicitly model plumbing.
 
 4. Run the first full-story artifact pass.
-   - Current story-run state: `examples/agent-state.cold-wake-story-lab.after-sella-timing-mark.json`.
-   - Treat the next test as a bounded end-to-end Cold Wake short story run, not another isolated seam check.
-   - Completed story-run setup beats: Maer accepted Sella's bounded diagnostic-contact conditions, extended live ledger exposure, opened the preservation-only diagnostic acoustic channel, and Sella marked decon route Three so the bounded diagnostic sleeve cycles live.
-   - Next story-run beat: design and generate an interactive-fiction-shaped Cold Wake arc with an opening, branch points, cross-scene consequences, climax, and resolution. Coordinator glue prose is training signal for the future coordinator/story-runtime model.
+   - Completed clean Cold Wake IF scaffold:
+     `examples/ink/cold-wake-branch-and-fold.v0.ink`,
+     `examples/ink/cold-wake-branch-and-fold.v0.training.json`,
+     `examples/coordinator/cold-wake-branch-and-fold.v0.json`, and
+     `experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md`.
+   - Treat that run as accepted-as-draft coordinator/IF scaffold training data,
+     not raw responder gold.
    - Interactive-fiction correction: a full-story pass is not just a linear chain of responder receipts. It needs a beginning-to-ending narrative spine, branch points, and cross-scene consequence carryover so decisions visibly matter later. Responder artifacts should be generated at branch/action moments, while coordinator artifacts track branch flags, relationship deltas, resource costs, unresolved hooks, and later scene consequences.
    - Branch-and-fold correction: do not let every choice create an isolated subtree. Normalize consequences into compact state bands and flags, fold most branches back into shared later scenes, and reserve major route splits for consequences that change the playable world enough that convergence would lie.
    - Website-content correction: each complete scene should include an art-direction block with establishing shot, light/color, bodies/interfaces, material evidence, branch-visible marks, one durable base image prompt, and additive branch/state modification prompts. Visual continuity is part of consequence carryover, not decorative garnish applied after the story escapes containment.
-   - The Cold Wake v0/v1 fragments are diagnostic seam tests around the clinic climax, not a complete story arc. The next accepted story run should restart from the opening tribunal/route pressure, pass through provenance and clinic contact, and carry consequences into a resolution.
+   - The older Cold Wake v0/v1 fragments remain diagnostic seam tests around the clinic climax, not the accepted clean fixture.
 
    - Still emit training artifacts at material turns: projected local context, responder packet, raw output/capture, leakage audit, reviewed mutation receipt, and aftermath state where relevant.
    - Do not stop for every minor prose flaw; curate as coordinator and continue. Stop to patch the pipeline only for core invariant failures: hidden-state leakage, lore grounding failure, visibility/object/body affordance errors, bad state mutation, or schema break.
    - Keep fuzzy social changes manual and auditable until appraiser/classifier models exist.
 
 5. Generalize the loop.
+   - Next work should move away from Cold Wake to a different faction, movement,
+     flashpoint, or day-in-the-life fixture so the corpus does not become one
+     very cold hallway with delusions of grandeur.
    - Add more historical grounded fixtures from AetheriaLore.
    - Add future-branch Elysium fixtures with branch lineage and constraint labels.
    - Track coverage across every major faction, minor faction, movement, and

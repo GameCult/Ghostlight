@@ -107,9 +107,23 @@ current gold-data route.
 
 ## Current Next Action
 
-Do not continue the clinic-fragment story as the accepted full run. Cold Wake v0 is diagnostic because of over-procedural speech. Cold Wake v1 repaired speech locally but starts near the climax, so it is still not a full story or interactive-fiction fixture.
+Cold Wake now has a clean accepted-as-draft interactive-fiction scaffold:
 
-Restart the accepted Cold Wake run from the opening tribunal/route pressure. Design a beginning-to-ending interactive-fiction spine with meaningful branch points and cross-scene consequence carryover. Consequences should mutate relationship state, perceived motives, resources, branch flags, object custody, available later options, and final resolution texture. Use responder artifacts at material branch/action beats, but keep spoken dialogue compressed and put procedural detail in visible actions, state candidates, mutation receipts, and coordinator prose.
+- `examples/ink/cold-wake-branch-and-fold.v0.ink`
+- `examples/ink/cold-wake-branch-and-fold.v0.training.json`
+- `examples/coordinator/cold-wake-branch-and-fold.v0.json`
+- `experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md`
+
+It starts at the Ganymede route freeze tribunal, folds through Veyr provenance
+and Sella's clinic, carries compact consequence variables into the diagnostic
+contact climax, and includes durable base image prompts plus branch/state
+modifiers. Treat it as coordinator/IF scaffold training data, not raw responder
+gold.
+
+Next: move to a different Aetheria setting fixture. Pick the next faction,
+movement, flashpoint, or day-in-the-life target from the coverage plan,
+source-ground it in AetheriaLore, then build a similarly compact branch-and-fold
+IF scaffold with visual prompt anchors and reviewed consequence surfaces.
 
 ## Warnings
 
