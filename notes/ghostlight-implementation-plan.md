@@ -178,6 +178,8 @@
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to
      student roadmap.
+   - Use `docs/architecture/soft-model-training-artifacts.md` as the boundary
+     between deterministic code and soft model-training targets.
    - Use `docs/architecture/aetheria-lore-grounding-architecture.md` to keep
      Aetheria grounded training separate from procedural Elysium branch
      generation.
@@ -218,6 +220,19 @@
    - Save accepted and rejected projection examples as supervised data.
    - Train or adapt a smaller student projector only after the artifact schema,
      input slicer, and evaluator are stable.
+   - Treat the character agent/responder as a training target too. A
+     Qwen-class or similar local model can eventually be adapted on the
+     Aetheria corpus and reviewed Ghostlight receipts so lore, tone, factional
+     priors, species affordances, and institutional pressure are baked into the
+     response model's priors rather than pasted into every prompt.
+   - Keep deterministic gates as code even after fine-tuning: visibility,
+     action legality, object custody, resource accounting, schema validation,
+     source provenance, mutation authority, prompt leakage checks, and Ink
+     compilation.
+   - Emit reviewed artifacts for every fuzzy organ before training specialized
+     models: projector, character agent/responder, participant appraiser,
+     state mutator, relationship/perception classifier, lore-tone adapter, and
+     later institution/faction/consumer decision models.
 
 6. Build the first drama-scaffolding loop.
    - memory updates

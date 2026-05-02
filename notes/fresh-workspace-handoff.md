@@ -47,6 +47,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `docs/architecture/lore-grounding-digest-format.md`
   - `docs/architecture/qwen-invocation-notes.md`
   - `docs/architecture/projected-local-context.md`
+  - `docs/architecture/soft-model-training-artifacts.md`
 - lore grounding seam:
   - `schemas/lore-grounding-digest.schema.json`
   - `examples/lore-grounding/historical-flashpoint.template.json`
@@ -124,7 +125,11 @@ discipline, a cleaner repo boundary, the first executable state contract, a
 documented projection path, the first Ink-backed playable branching scene, the
 first Qwen-generated Ink draft with reviewed training annotations, and the
 first reviewed mutation receipt showing how a selected generated branch changes
-both involved characters.
+both involved characters. The soft-model training doctrine is now explicit:
+deterministic gates stay code, while fuzzy judgments become reviewed artifacts
+for future projector, character-agent, appraiser, mutator,
+relationship/perception, lore-tone, and institution/faction/consumer decision
+models.
 
 ## Current Direction
 
@@ -309,6 +314,11 @@ Remaining projection path:
 - use a frontier teacher model to generate/audit projection artifacts
 - train a smaller student projector only after the artifact schema, input
   slicer, and evaluator stabilize
+- treat the character agent/responder as a training target too: an
+  Aetheria-tuned local model can eventually learn lore, tone, factional priors,
+  species affordances, and institutional pressure from source-grounded
+  Aetheria corpora plus reviewed Ghostlight receipts, while still acting only
+  inside character-local context and deterministic mutation gates
 
 ## Warnings
 

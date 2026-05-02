@@ -7,6 +7,10 @@ stable.
 
 This is a staged plan, not an immediate fine-tune order.
 
+This plan covers the projector specifically. The broader rule for soft
+judgments lives in `docs/architecture/soft-model-training-artifacts.md`.
+Projection is one student organ, not the whole animal.
+
 ## Goal
 
 Train or adapt a smaller projection model that can turn structured Ghostlight
@@ -84,6 +88,17 @@ Rejected examples are useful as negative cases if the failure mode is clear.
 A smaller model learns the reviewed projection task. It receives structured
 state and emits the projection artifact. It should be optimized for consistency,
 latency, and cost, not for final prose quality.
+
+### Aetheria-Tuned Agent Model
+
+The character agent or responder is a separate training target. It may be
+adapted on Aetheria source-grounded scenes, reviewed Ghostlight action/dialogue
+receipts, and negative examples so setting priors and tone live in the model
+rather than in a giant prompt sack.
+
+That model still receives only character-local context at runtime. Fine-tuning
+should teach it Aetheria's pressure ecology, not grant it author vision,
+mutation authority, or access to private state.
 
 ## Dataset Shape
 
@@ -221,3 +236,7 @@ The student projector is not the character. It is not the dialogue writer. It is
 not the action choreographer. It is not the evaluator. It is a compiler from
 structured social state to compact character-local pressure. Keep those
 responsibilities separate.
+
+Likewise, an Aetheria-tuned character model is not the resolver, not the state
+store, and not the canon oracle. It proposes local action from local context.
+Code and reviewed mutation authority decide what becomes world state.

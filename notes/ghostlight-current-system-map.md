@@ -76,6 +76,12 @@ state and re-entry discipline.
   - contract for the projector seam that turns canonical state into
     character-local operating context before a response model sees it,
     including source-checked embodiment and interface affordances
+- `docs/architecture/soft-model-training-artifacts.md`
+  - doctrine for treating every non-deterministic judgment as reviewed
+    training material for future specialized models, including projector,
+    character agent/responder, appraiser, state mutator, relationship/perception
+    classifier, lore-tone adapter, and institution/faction/consumer decision
+    models
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
     historical projection feedstock rather than the active product target
@@ -272,5 +278,9 @@ plus reviewed mutation training data. The next implementation target is
 fixing the Sella next-action prompt/rendering path after source-checked v11-v17
 retries improved Maer's Navigator embodiment but exposed object-custody drift,
 invalid appraisal paths, Qwen tool dropout, and prompt-constraint leakage into
-responder prose. Do not materialize another capture until it has no failure or
-repair notes.
+responder prose. The soft-model artifact doctrine now makes the broader
+training boundary explicit: deterministic gates stay code, while fuzzy
+projection, action choice, appraisal, mutation, relationship movement, lore-tone
+adaptation, and economic/faction decision judgments become reviewed artifacts
+for later fine-tuning or distillation. Do not materialize another capture until
+it has no failure or repair notes.
