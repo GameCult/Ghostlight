@@ -221,17 +221,18 @@
    - Train or adapt a smaller student projector only after the artifact schema,
      input slicer, and evaluator are stable.
    - Treat the character agent/responder as a training target too. A
-     Qwen-class or similar local model can eventually be adapted on the
-     Aetheria corpus and reviewed Ghostlight receipts so lore, tone, factional
-     priors, species affordances, and institutional pressure are baked into the
-     response model's priors rather than pasted into every prompt.
+     Qwen-class or similar local model can eventually be adapted on a corpus of
+     strong Aetheria responses spread throughout the timeline, plus reviewed
+     Ghostlight receipts, so lore, tone, factional preconceptions, species
+     affordances, and institutional pressure become native responder priors
+     rather than prompt handholding.
    - Keep deterministic gates as code even after fine-tuning: visibility,
      action legality, object custody, resource accounting, schema validation,
      source provenance, mutation authority, prompt leakage checks, and Ink
      compilation.
    - Emit reviewed artifacts for every fuzzy organ before training specialized
      models: projector, character agent/responder, participant appraiser,
-     state mutator, relationship/perception classifier, lore-tone adapter, and
+     state mutator, relationship/perception classifier, Aetheria responder, and
      later institution/faction/consumer decision models.
 
 6. Build the first drama-scaffolding loop.

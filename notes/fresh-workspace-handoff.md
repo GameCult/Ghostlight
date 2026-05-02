@@ -128,8 +128,8 @@ first reviewed mutation receipt showing how a selected generated branch changes
 both involved characters. The soft-model training doctrine is now explicit:
 deterministic gates stay code, while fuzzy judgments become reviewed artifacts
 for future projector, character-agent, appraiser, mutator,
-relationship/perception, lore-tone, and institution/faction/consumer decision
-models.
+relationship/perception, Aetheria responder, and institution/faction/consumer
+decision models.
 
 ## Current Direction
 
@@ -315,10 +315,11 @@ Remaining projection path:
 - train a smaller student projector only after the artifact schema, input
   slicer, and evaluator stabilize
 - treat the character agent/responder as a training target too: an
-  Aetheria-tuned local model can eventually learn lore, tone, factional priors,
-  species affordances, and institutional pressure from source-grounded
-  Aetheria corpora plus reviewed Ghostlight receipts, while still acting only
-  inside character-local context and deterministic mutation gates
+  Aetheria-tuned local model can eventually learn lore, tone, factional
+  preconceptions, species affordances, and institutional pressure from a corpus
+  of strong responses spread throughout the timeline plus reviewed Ghostlight
+  receipts, while still acting only inside character-local context and
+  deterministic mutation gates
 
 ## Warnings
 

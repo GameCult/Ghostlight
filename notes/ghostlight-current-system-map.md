@@ -80,7 +80,7 @@ state and re-entry discipline.
   - doctrine for treating every non-deterministic judgment as reviewed
     training material for future specialized models, including projector,
     character agent/responder, appraiser, state mutator, relationship/perception
-    classifier, lore-tone adapter, and institution/faction/consumer decision
+    classifier, Aetheria responder, and institution/faction/consumer decision
     models
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
@@ -280,7 +280,9 @@ retries improved Maer's Navigator embodiment but exposed object-custody drift,
 invalid appraisal paths, Qwen tool dropout, and prompt-constraint leakage into
 responder prose. The soft-model artifact doctrine now makes the broader
 training boundary explicit: deterministic gates stay code, while fuzzy
-projection, action choice, appraisal, mutation, relationship movement, lore-tone
-adaptation, and economic/faction decision judgments become reviewed artifacts
-for later fine-tuning or distillation. Do not materialize another capture until
-it has no failure or repair notes.
+projection, action choice, appraisal, mutation, relationship movement,
+Aetheria responder training, and economic/faction decision judgments become
+reviewed artifacts for later fine-tuning or distillation. The lore/tone goal is
+not a separate adapter; it is a responder trained on strong timeline-spread
+Aetheria responses until the setting's assumptions become native priors. Do not
+materialize another capture until it has no failure or repair notes.

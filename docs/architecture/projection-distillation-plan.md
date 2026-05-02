@@ -92,9 +92,11 @@ latency, and cost, not for final prose quality.
 ### Aetheria-Tuned Agent Model
 
 The character agent or responder is a separate training target. It may be
-adapted on Aetheria source-grounded scenes, reviewed Ghostlight action/dialogue
-receipts, and negative examples so setting priors and tone live in the model
-rather than in a giant prompt sack.
+adapted on a corpus of strong source-grounded Aetheria responses and reviewed
+Ghostlight action/dialogue receipts spread throughout the timeline. The point is
+for setting priors, tone, factional preconceptions, institutional assumptions,
+species affordances, and recurring social failure patterns to live in the
+responder model rather than in a giant prompt sack.
 
 That model still receives only character-local context at runtime. Fine-tuning
 should teach it Aetheria's pressure ecology, not grant it author vision,

@@ -85,10 +85,16 @@ Training artifacts:
 - constraints violated
 - reviewer notes about voice, lore, embodiment, agency, and scene fit
 
-This model should be fine-tuned or adapted on Aetheria material eventually. A
-local general model can learn the world, tone, institutions, factional pressures,
-species affordances, and recurring social failure patterns better than a raw
-model prompted from cold storage every time.
+This model should be fine-tuned or adapted on a corpus of strong Aetheria
+responses spread across the timeline. The goal is not a bolt-on lore module.
+The goal is for the responder to internalize the shape of the setting: what
+people assume, what institutions feel like, which pressures are normal, which
+metaphors appear, what bodies can do, and how the universe tends to hurt people
+while insisting it is only doing math.
+
+That reduces lore handholding at runtime. It does not remove character-local
+context. The tuned responder still needs the specific room, speaker, listener,
+state, memory, affordances, and known facts for the current turn.
 
 ### Appraiser
 
@@ -145,10 +151,7 @@ Training artifacts:
 This is where confidence belongs. Do not grow a second correction-resistance
 organ because the first one got lonely.
 
-### Lore And Tone Adapter
-
-Bakes Aetheria source material into the response model's priors so it does not
-need the entire vault in every prompt.
+### Aetheria Responder Corpus
 
 Training artifacts:
 
@@ -159,11 +162,15 @@ Training artifacts:
 - negative examples where generic sci-fi assumptions were rejected
 - reviewer notes tied to AetheriaLore paths
 
-This is the likely home for an Aetheria-tuned model built from a Qwen-class base
-or another local model. The tuned model should know the smell of the setting:
-Dominion severity, Aya-coded care pressure, Navigator embodiment, corporate
-certification culture, insurer cruelty, upload personhood fights, factional
-misreads, and the dry little horrors of systems pretending to be neutral.
+This corpus trains the character agent/responder directly. It is how a
+Qwen-class base or another local model learns Aetheria's native assumptions
+rather than waiting for every prompt to drag the whole lore vault behind it in a
+little wagon.
+
+The tuned responder should learn the smell of the setting: Dominion severity,
+Aya-coded care pressure, Navigator embodiment, corporate certification culture,
+insurer cruelty, upload personhood fights, factional misreads, and the dry
+little horrors of systems pretending to be neutral.
 
 It still must receive character-local context at runtime. Fine-tuning gives it
 priors, not omniscience.
@@ -224,6 +231,7 @@ JSONL wearing a crown.
 - state-mutation corpus
 - relationship/perception corpus
 - lore-grounding digest corpus
+- Aetheria responder corpus
 - Ink branch annotation corpus
 - institution/faction/consumer decision corpus
 - negative-example corpus
