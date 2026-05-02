@@ -123,6 +123,10 @@ state and re-entry discipline.
     item-manifest deltas, unresolved hooks, glue prose, and review notes
 - `schemas/responder-packet.schema.json`
   - v0 contract for the exact input a sandboxed character responder may see
+- `schemas/responder-output.schema.json`
+  - v0 contract for reviewed captures from sandboxed responder workers,
+    preserving raw output, parsed output, isolation method, leakage audit, and
+    coordinator review
 - `schemas/agent-state.required-fields.json`
   - required first-class variable names for canonical state and relationship
     stance
@@ -145,6 +149,9 @@ state and re-entry discipline.
   - first responder-packet schema-shakedown example for Sella's sanctuary
     response; accepted as draft for sandbox handoff testing, not gold responder
     output
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
+  - first no-fork sandboxed responder output capture from the Sella packet;
+    accepted as draft with no leakage flags and no coordinator prose repair
 - `experiments/cold-wake-story-lab/`
   - Qwen response captures and reviews from the writing experiment
   - `the-narrowest-possible-margin.md`, the first readable short story
@@ -283,6 +290,10 @@ state and re-entry discipline.
 - `tools/validate_responder_packets.py`
   - validates responder packets and rejects prompt surfaces that leak raw state
     internals or hidden coordinator context markers
+- `tools/validate_responder_outputs.py`
+  - validates sandboxed responder output captures, including exact raw-to-parsed
+    JSON agreement, no-fork isolation, action labels, leakage audit, and review
+    metadata
 - `tools/apply_sequential_ink_branch_mutation.py`
   - applies a reviewed replay of one selected branch into a mutated agent-state
     fixture and mutation receipt without letting Ink variables become
@@ -335,7 +346,10 @@ reviewed output, hidden-context refs, leakage audit, isolation method, and
 coordinator intervention labels. The responder packet seam now turns that
 requirement into a concrete artifact and validator, so the next gold-data pass
 can hand a worker the exact prompt surface instead of hoping nobody leaks the
-coordinator's brain into the room. The concrete training plan now enumerates
+coordinator's brain into the room. The first no-fork Sella responder capture now
+exists and validates as accepted-as-draft with raw output preserved, parsed
+output matched exactly, leakage audit clear, and no coordinator prose repair.
+The concrete training plan now enumerates
 eleven trainable stages and their likely model
 families: generative decoder LLMs for coordinator, responder, and structured
 soft outputs; classifiers or cross-encoders for appraisal, evaluation, and

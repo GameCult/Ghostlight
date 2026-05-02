@@ -1,4 +1,4 @@
-﻿{
+{
   "schema_version": "ghostlight.coordinator_artifact.v0",
   "artifact_id": "coordinator.cold_wake.sanctuary_intake.v0",
   "review_status": "accepted_as_draft",
@@ -22,7 +22,9 @@
       "examples/lore-grounding/cold-wake-panic.ganymede-corridor.json"
     ],
     "prior_artifact_refs": [
-      "experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json"
+      "experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json",
+      "examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json",
+      "experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json"
     ],
     "projected_context_refs": [
       "examples/projected-contexts/scene-02-sanctuary-intake.maer_tidecall.projected-context.json",
@@ -106,12 +108,12 @@
       {
         "invocation_id": "invoke.respond.sella",
         "organ": "sandboxed_responder",
-        "purpose": "Generate Sella's local response from projected context and the visible packet action.",
+        "purpose": "Generate Sella response from the packet-only sandbox handoff and preserve the reviewed output capture.",
         "input_refs": [
-          "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json"
+          "examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json"
         ],
         "output_refs": [
-          "experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json"
+          "experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json"
         ],
         "status": "accepted_as_draft"
       },
@@ -132,22 +134,23 @@
   },
   "sandboxed_responder_handoffs": [
     {
-      "handoff_id": "handoff.sella.v10",
+      "handoff_id": "handoff.sella.packet_v0",
       "responder_agent_id": "sella_ren",
       "projected_context_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json",
-      "visible_input_ref": "experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json#passes.sella_response_generation.prompt",
+      "visible_input_ref": "examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json#packet_prompt_text",
       "hidden_context_refs": [
-        "maer_tidecall.private_state",
-        "author_only.branch_future",
-        "coordinator.rationale"
+        "maer_tidecall.canonical_private_state",
+        "coordinator_artifact.coordinator_decision.rationale",
+        "author_only.packet_personhood_resolution",
+        "future_branch_plans"
       ],
-      "isolation_method": "external_model_packet_only",
-      "raw_output_ref": "experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v10-no-think.capture.json#passes.sella_response_generation.response",
-      "reviewed_output_ref": "examples/ink/cold-wake-sanctuary-intake.qwen-sequential-v10.training.json",
+      "isolation_method": "subagent_no_fork",
+      "raw_output_ref": "experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json#raw_output",
+      "reviewed_output_ref": "experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json#parsed_output",
       "coordinator_interventions": [
         {
-          "intervention_type": "normalization",
-          "description": "Materializer normalized accepted capture into Ink and sidecar annotations without treating glue prose as state."
+          "intervention_type": "none",
+          "description": "Raw no-fork worker output was parsed and reviewed without prose repair."
         }
       ],
       "leakage_audit": {
@@ -158,7 +161,8 @@
         "prompt_parroting": false,
         "body_or_object_omniscience": false,
         "notes": [
-          "Accepted as draft; future gold responder data should use subagent_no_fork or equivalent sandboxing rather than old Qwen plumbing."
+          "Generated through a no-fork worker that received only the packet prompt.",
+          "Output preserves Sella interpretation as interpretation and does not resolve packet personhood."
         ]
       }
     }

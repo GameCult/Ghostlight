@@ -63,10 +63,14 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 - sandboxed responder packet seam:
   - `docs/architecture/sandboxed-responder-packets.md`
   - `schemas/responder-packet.schema.json`
+  - `schemas/responder-output.schema.json`
   - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
+  - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
   - `tools/build_responder_packet.py`
   - `tools/validate_responder_packets.py`
+  - `tools/validate_responder_outputs.py`
   - `npm run responder-packets:validate`
+  - `npm run responder-outputs:validate`
 - Cold Wake story-lab seam:
   - `docs/experiments/cold-wake-story-lab.md`
   - `examples/agent-state.cold-wake-story-lab.json`
@@ -175,7 +179,10 @@ character responder may see, with visible event, allowed actions, source
 excerpts, hidden-context audit, isolation requirements, output contract, and
 validator checks against raw-state or coordinator-context leakage. The first
 Sella packet is accepted as draft for sandbox testing, not as gold responder
-output.
+output. The first no-fork responder output capture now also exists and is
+accepted as draft: the worker received only the packet prompt, returned valid
+JSON, preserved Sella's read as interpretation, left packet personhood
+unresolved, and required no coordinator prose repair.
 It now uses three timeline lanes: `historical_grounded`,
 `transition_grounded`, and `future_branch`. Future branches are required
 training/evaluation material for post-Rupture Elysium concepts, but generated
@@ -204,12 +211,11 @@ narrow elaboration before treating the detail as available to Ghostlight.
 
 ## Current Next Action
 
-Use the responder packet seam for the next fresh generation pass: generate the
-first actual sandboxed responder output from
-`examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
-through a packet-only worker, then preserve raw output, reviewed output,
-hidden-context refs, leakage audit, and coordinator repair labels. Do not call
-Qwen for gold responder data yet.
+Use the accepted Sella responder capture for the next fresh generation pass:
+review and materialize the response into the scene-local mutation path. Treat
+its state and relationship updates as candidates only; consolidate participant
+appraisals and write a reviewed mutation receipt before changing any canonical
+fixture. Do not call Qwen for gold responder data yet.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than

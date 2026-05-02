@@ -1,0 +1,125 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/GameCult/Ghostlight/schemas/responder-output.schema.json",
+  "title": "Ghostlight Responder Output Schema",
+  "description": "Reviewed output capture from a sandboxed character responder packet, preserving raw output, parsed response, leakage audit, and coordinator review.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "capture_id",
+    "review_status",
+    "fixture_lane",
+    "canon_status",
+    "packet_ref",
+    "coordinator_artifact_ref",
+    "responder_agent_id",
+    "isolation",
+    "raw_output",
+    "parsed_output",
+    "leakage_audit",
+    "coordinator_review"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "ghostlight.responder_output.v0" },
+    "capture_id": { "type": "string", "minLength": 1 },
+    "review_status": { "$ref": "#/$defs/review_status" },
+    "fixture_lane": { "enum": ["historical_grounded", "transition_grounded", "future_branch"] },
+    "canon_status": { "enum": ["single_history", "branch_local", "promoted_branch", "template", "draft"] },
+    "packet_ref": { "type": "string", "minLength": 1 },
+    "coordinator_artifact_ref": { "type": "string", "minLength": 1 },
+    "responder_agent_id": { "type": "string", "minLength": 1 },
+    "isolation": {
+      "type": "object",
+      "required": ["isolation_method", "fork_context", "visible_input_ref", "hidden_context_refs", "worker_model_family"],
+      "additionalProperties": false,
+      "properties": {
+        "isolation_method": { "enum": ["subagent_no_fork", "manual_packet_only", "external_model_packet_only"] },
+        "fork_context": { "type": "boolean" },
+        "visible_input_ref": { "type": "string", "minLength": 1 },
+        "hidden_context_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "worker_model_family": { "type": "string", "minLength": 1 }
+      }
+    },
+    "raw_output": { "type": "string", "minLength": 1 },
+    "parsed_output": { "$ref": "#/$defs/parsed_response" },
+    "leakage_audit": { "$ref": "#/$defs/leakage_audit" },
+    "coordinator_review": {
+      "type": "object",
+      "required": ["reviewer", "accepted_for_training", "review_notes", "coordinator_interventions", "failure_labels"],
+      "additionalProperties": false,
+      "properties": {
+        "reviewer": { "type": "string", "minLength": 1 },
+        "accepted_for_training": { "type": "boolean" },
+        "review_notes": { "type": "array", "items": { "type": "string" } },
+        "coordinator_interventions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/coordinator_intervention" }
+        },
+        "failure_labels": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  },
+  "$defs": {
+    "review_status": {
+      "enum": ["draft", "accepted", "accepted_as_draft", "useful_needs_revision", "rejected", "superseded"]
+    },
+    "parsed_response": {
+      "type": "object",
+      "required": [
+        "responder_agent_id",
+        "action_label",
+        "visible_action",
+        "spoken_text",
+        "private_interpretation",
+        "intended_effect",
+        "state_update_candidates",
+        "relationship_update_candidates",
+        "unresolved_hooks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "responder_agent_id": { "type": "string", "minLength": 1 },
+        "action_label": { "type": "string", "minLength": 1 },
+        "visible_action": { "type": "string", "minLength": 1 },
+        "spoken_text": { "type": "string" },
+        "private_interpretation": { "type": "string", "minLength": 1 },
+        "intended_effect": { "type": "string", "minLength": 1 },
+        "state_update_candidates": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "relationship_update_candidates": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "unresolved_hooks": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "leakage_audit": {
+      "type": "object",
+      "required": [
+        "private_state_leak",
+        "author_only_leak",
+        "future_branch_leak",
+        "raw_state_soup",
+        "prompt_parroting",
+        "body_or_object_omniscience",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "private_state_leak": { "type": "boolean" },
+        "author_only_leak": { "type": "boolean" },
+        "future_branch_leak": { "type": "boolean" },
+        "raw_state_soup": { "type": "boolean" },
+        "prompt_parroting": { "type": "boolean" },
+        "body_or_object_omniscience": { "type": "boolean" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "coordinator_intervention": {
+      "type": "object",
+      "required": ["intervention_type", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "intervention_type": { "enum": ["none", "normalization", "schema_repair", "prose_edit", "lore_correction", "leakage_removal", "rejection"] },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

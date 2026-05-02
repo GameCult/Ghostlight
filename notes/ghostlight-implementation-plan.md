@@ -334,10 +334,16 @@
     `tools/build_responder_packet.py`, and
     `tools/validate_responder_packets.py` now validate the exact prompt surface
     a sandboxed character responder may see.
-  - Next prototype: generate the first actual responder output from the Sella
-    packet through a packet-only worker. Preserve the raw output, reviewed
-    output, hidden-context refs, leakage audit, and coordinator repair labels
-    before accepting anything as training material.
+  - First responder output seam:
+    `schemas/responder-output.schema.json`,
+    `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`,
+    and `tools/validate_responder_outputs.py` now preserve the raw no-fork
+    worker response, parsed response, isolation method, hidden-context refs,
+    leakage audit, and coordinator review.
+  - Next prototype: review and materialize the accepted-as-draft Sella response
+    into the scene-local mutation path. Treat its state and relationship updates
+    as candidates only; consolidate participant appraisals and write a reviewed
+    mutation receipt before changing any canonical fixture.
 
 7. Build the first drama-scaffolding loop.
    - memory updates

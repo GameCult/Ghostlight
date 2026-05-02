@@ -20,10 +20,16 @@ The v0 packet seam is:
 - `tools/build_responder_packet.py`
 - `tools/validate_responder_packets.py`
 - `npm run responder-packets:validate`
+- `schemas/responder-output.schema.json`
+- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
+- `tools/validate_responder_outputs.py`
+- `npm run responder-outputs:validate`
 
 The first example is accepted as draft. It is suitable for testing the sandbox
-handoff shape, not for gold responder training yet, because no actually isolated
-worker has generated from it.
+handoff shape. The first no-fork worker output from that packet is also accepted
+as draft, because the output is useful and clean but the review protocol is
+fresh enough to deserve some suspicion. Tiny ceremonies keep us from eating the
+paint.
 
 ## Packet Contents
 
@@ -67,3 +73,21 @@ Gold responder data requires packet-only isolation. Valid approaches include:
 Any coordinator rewrite, schema repair, lore correction, or leakage removal must
 be preserved as a coordinator intervention. Repaired prose is useful training
 data for the coordinator, but it is not raw responder behavior.
+
+## Output Captures
+
+A responder output capture preserves:
+
+- the packet ref
+- the coordinator artifact ref
+- the isolation method
+- the exact visible input ref
+- hidden context refs that were withheld
+- raw responder output
+- parsed responder output
+- leakage audit
+- coordinator review and intervention labels
+
+The raw output must parse to the reviewed `parsed_output` exactly. If the
+coordinator edits prose, repairs schema, removes leakage, or corrects lore, the
+capture must say so directly.
