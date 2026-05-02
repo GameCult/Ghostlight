@@ -232,6 +232,91 @@ is created, the artifact should name the reason and the expected future writing
 debt. Trees are cheap to grow and expensive to prune. The machine should not
 act surprised by botany.
 
+## IF Artifact Review
+
+Branching fixtures need an independent review pass before acceptance. The
+coordinator should not be the only thing grading its own Ink, sidecar, and
+branch logic. That is how a scene ends up proudly tracking variables that do
+nothing except sit there in a tiny uniform.
+
+The reviewer may start as a prompted specialist sub-agent. Later it should
+become evaluator/classifier training data and eventually a trainable review
+organ. Its job is not prose polish. Its job is to catch false consequence.
+
+The reviewer receives:
+
+- the Ink file
+- the `.training.json` sidecar
+- the coordinator artifact
+- the intended branch plan, when available
+- the declared state variables, flags, bands, resources, risks, and visual
+  modifiers
+- any compiled Ink or validation output available for the fixture
+
+The reviewer emits:
+
+- `accepted`, `needs_revision`, or `rejected`
+- severity-ranked findings
+- a fake-variable audit
+- a choice-consequence audit
+- a fold/callback audit
+- a state-gated prose audit
+- a visual-continuity audit
+- major-route-split justification notes
+- specific required fixes
+
+Acceptance requires every material choice to change at least one later surface:
+
+- available options
+- scene route or justified route split
+- relationship, trust, appraisal, or social standing
+- resource cost, time pressure, legal exposure, authority pressure, heat burden,
+  exhaustion, or other risk
+- object custody, evidence quality, access, or technology state
+- later callback prose implemented as an actual conditional
+- ending texture or outcome band
+- visual state modifier tied to a real branch flag or state variable
+
+Every declared variable must either be read later or be marked as telemetry-only
+in the sidecar. Ominous variables need threshold behavior. If a variable named
+`authority_pressure` rises and nobody with authority ever reacts, the artifact
+fails review. If `heat_time` counts down and no route, ending, resource cost, or
+staff condition changes, the artifact fails review. The name is allowed to be
+dramatic only if the machinery has teeth.
+
+Any prose that says "if X happened" must be implemented as an actual conditional
+or moved into reviewer/coordinator notes. Writer-facing text should not name a
+branch possibility while dodging the state check that proves which version of
+history occurred.
+
+Common failure labels:
+
+- `potemkin_state`: a tracked variable never materially changes the artifact
+- `cosmetic_choice`: a choice changes wording but not affordance, cost, risk,
+  appraisal, callback, visual state, or outcome
+- `missing_state_read`: a set variable is never read by later Ink, sidecar, or
+  coordinator consequence logic
+- `fake_fold`: branches claim to fold, but the folded scene ignores their state
+- `unearned_convergence`: branches converge despite consequences that should
+  make convergence false
+- `unjustified_route_split`: a separate route exists without enough world or
+  story consequence to justify the writing debt
+- `state_named_instead_of_checked`: prose mentions alternate branch states
+  instead of checking variables
+- `visual_callback_missing`: image modifiers or visual prose ignore branch
+  consequences that should be visible
+- `authority_without_consequence`: institutional pressure rises but never bites
+- `resource_without_cost`: ledgers, heat, staff time, supplies, or access are
+  invoked without affecting later choices or outcomes
+- `ending_ignores_major_state`: the ending does not respond to major variables
+  established earlier
+
+The first Cold Wake branch-and-fold review exposed this exact class of failure:
+`heat_time`, `clinic_exhaustion`, `evidence_quality`, `provisional_category`,
+and `authority_pressure` initially looked important before review forced them
+to alter gates, callbacks, and outcomes. That review belongs in the evaluator
+training seed, not in a shame drawer. Shame drawers have terrible indexing.
+
 ## Scene Imagery
 
 Ghostlight scenes are also website content. A complete fixture should emit
