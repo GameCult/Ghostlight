@@ -15,6 +15,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from project_local_context import build_projected_context
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ENDPOINT = "http://192.168.1.84:11434/api/chat"
@@ -237,24 +239,6 @@ def goal_summaries(agent: dict[str, Any], goal_ids: list[str]) -> list[str]:
     ]
 
 
-def selected_variables(agent: dict[str, Any]) -> dict[str, dict[str, float]]:
-    groups = agent["canonical_state"]
-    names_by_group = {
-        "behavioral_dimensions": ["interpersonal_warmth", "control_pressure", "suspicion", "rigidity", "volatility"],
-        "presentation_strategy": ["detachment", "competence_theater", "strategic_opacity", "ironic_distance"],
-        "voice_style": ["formality", "lexical_precision", "ritualized_address", "verbal_warmth", "pointedness"],
-        "situational_state": ["exhaustion", "panic", "grievance_activation", "overstimulation"],
-    }
-    selected: dict[str, dict[str, float]] = {}
-    for group_name, variable_names in names_by_group.items():
-        selected[group_name] = {
-            name: groups[group_name][name]["current_activation"]
-            for name in variable_names
-            if name in groups[group_name]
-        }
-    return selected
-
-
 def post_json(endpoint: str, payload: dict[str, Any], timeout: int) -> dict[str, Any]:
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(
@@ -319,6 +303,29 @@ def repair_tool_arguments(arguments: dict[str, Any]) -> tuple[dict[str, Any], li
     return repaired, notes
 
 
+def repair_nested_list_fields(payload: Any, fields: list[str]) -> tuple[Any, list[str]]:
+    notes: list[str] = []
+    if not isinstance(payload, dict):
+        return payload, notes
+    repaired = dict(payload)
+    for field in fields:
+        value = repaired.get(field)
+        if not isinstance(value, str):
+            continue
+        candidate = value.strip()
+        if candidate.endswith(","):
+            candidate = candidate[:-1]
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            notes.append(f"could not repair stringified nested list field: {field}")
+            continue
+        if isinstance(parsed, list):
+            repaired[field] = parsed
+            notes.append(f"repaired stringified nested list field: {field}")
+    return repaired, notes
+
+
 def request_qwen_tool(
     endpoint: str,
     model: str,
@@ -367,11 +374,7 @@ def observable_action_payload(actor_id: str, selected_choice: dict[str, Any]) ->
 def build_maer_prompt(fixture: dict[str, Any], annotation: dict[str, Any]) -> str:
     scene_id = annotation["scene_id"]
     actor_id = annotation["protagonist_agent_id"]
-    responder_id = annotation["npc_agent_ids"][0]
-    scene = find_scene(fixture, scene_id)
-    actor = find_agent(fixture, actor_id)
-    pack = find_pack(scene, actor_id)
-    rel_actor_to_responder = find_relationship(fixture, actor_id, responder_id)
+    projected = build_projected_context(fixture, annotation, actor_id, "choice_generation")
 
     payload = {
         "task": "Generate candidate player choices for Maer only. Do not write Sella's response.",
@@ -403,22 +406,8 @@ def build_maer_prompt(fixture: dict[str, Any], annotation: dict[str, Any]) -> st
             "The selected branch must be reducible to observable action for Sella.",
             "Use semantic training hooks, not branch ids.",
         ],
-        "scene_observable_context": {
-            "scene_id": scene_id,
-            "location": scene["location"],
-            "public_stakes": scene["public_stakes"],
-        },
-        "maer_local_awareness": {
-            "identity": actor["identity"],
-            "local_truth": pack["speaker_local_truth"],
-            "beliefs": pack["speaker_beliefs"],
-            "goals": goal_summaries(actor, pack["active_goals"]),
-            "memories": memory_summaries(actor, pack["active_memories"]),
-            "relationship_read": rel_actor_to_responder["summary"],
-            "presentation_constraints": pack["presentation_constraints"],
-            "selected_current_activation": selected_variables(actor),
-        },
-        "projection_controls_visible_to_maer_choice_generation": annotation["projection_controls"],
+        "projected_local_context": projected["context"]["prompt_text"],
+        "projector_audit": projected["audit"],
     }
     return (
         "You are Ghostlight's Maer-local choice generator. Call record_maer_choices exactly once.\n"
@@ -428,23 +417,9 @@ def build_maer_prompt(fixture: dict[str, Any], annotation: dict[str, Any]) -> st
 
 
 def sella_local_payload(fixture: dict[str, Any], annotation: dict[str, Any]) -> dict[str, Any]:
-    scene_id = annotation["scene_id"]
     responder_id = annotation["npc_agent_ids"][0]
-    actor_id = annotation["protagonist_agent_id"]
-    scene = find_scene(fixture, scene_id)
-    responder = find_agent(fixture, responder_id)
-    pack = find_pack(scene, responder_id)
-    rel_responder_to_actor = find_relationship(fixture, responder_id, actor_id)
-    return {
-        "identity": responder["identity"],
-        "local_truth": pack["speaker_local_truth"],
-        "beliefs": pack["speaker_beliefs"],
-        "goals": goal_summaries(responder, pack["active_goals"]),
-        "memories": memory_summaries(responder, pack["active_memories"]),
-        "relationship_read": rel_responder_to_actor["summary"],
-        "presentation_constraints": pack["presentation_constraints"],
-        "selected_current_activation": selected_variables(responder),
-    }
+    projected = build_projected_context(fixture, annotation, responder_id, "response_generation")
+    return projected["context"]["prompt_text"]
 
 
 def build_sella_appraisal_prompt(fixture: dict[str, Any], annotation: dict[str, Any], selected_choice: dict[str, Any]) -> str:
@@ -452,6 +427,8 @@ def build_sella_appraisal_prompt(fixture: dict[str, Any], annotation: dict[str, 
     responder_id = annotation["npc_agent_ids"][0]
     actor_id = annotation["protagonist_agent_id"]
     scene = find_scene(fixture, scene_id)
+    event_context = observable_action_payload(actor_id, selected_choice)
+    projected = build_projected_context(fixture, annotation, responder_id, "event_appraisal", event_context)
     payload = {
         "task": "Generate Sella's participant appraisal/consolidation for one observable Maer event.",
         "output_contract": {
@@ -482,9 +459,9 @@ def build_sella_appraisal_prompt(fixture: dict[str, Any], annotation: dict[str, 
             "location": scene["location"],
             "public_stakes": scene["public_stakes"],
         },
-        "observable_maer_action": observable_action_payload(actor_id, selected_choice),
-        "sella_local_awareness": sella_local_payload(fixture, annotation),
-        "projection_controls_visible_to_sella_appraisal": annotation["projection_controls"],
+        "observable_maer_action": event_context,
+        "projected_local_context": projected["context"]["prompt_text"],
+        "projector_audit": projected["audit"],
     }
     return (
         "You are Ghostlight's Sella-local appraisal generator. Call record_sella_appraisal exactly once.\n"
@@ -503,6 +480,8 @@ def build_sella_prompt(
     responder_id = annotation["npc_agent_ids"][0]
     actor_id = annotation["protagonist_agent_id"]
     scene = find_scene(fixture, scene_id)
+    event_context = observable_action_payload(actor_id, selected_choice)
+    projected = build_projected_context(fixture, annotation, responder_id, "next_action_generation", event_context)
     payload = {
         "task": "Generate Sella's next action from Sella-local awareness after applying reviewed event appraisal.",
         "output_contract": {
@@ -537,10 +516,10 @@ def build_sella_prompt(
             "location": scene["location"],
             "public_stakes": scene["public_stakes"],
         },
-        "observable_maer_action": observable_action_payload(actor_id, selected_choice),
+        "observable_maer_action": event_context,
         "sella_immediate_appraisal": appraisal,
-        "sella_local_awareness": sella_local_payload(fixture, annotation),
-        "projection_controls_visible_to_sella_response_generation": annotation["projection_controls"],
+        "projected_local_context": projected["context"]["prompt_text"],
+        "projector_audit": projected["audit"],
     }
     return (
         "You are Ghostlight's Sella-local next-action generator. Call record_sella_next_action exactly once.\n"
@@ -677,6 +656,12 @@ def main() -> int:
         args.request_timeout,
     )
     sella_appraisal_parsed = {"appraisal": sella_appraisal_parsed} if isinstance(sella_appraisal_parsed, dict) else sella_appraisal_parsed
+    if isinstance(sella_appraisal_parsed, dict) and isinstance(sella_appraisal_parsed.get("appraisal"), dict):
+        sella_appraisal_parsed["appraisal"], nested_repair_notes = repair_nested_list_fields(
+            sella_appraisal_parsed["appraisal"],
+            ["belief_updates", "response_constraints"],
+        )
+        sella_appraisal_notes.extend(nested_repair_notes)
     sella_appraisal_notes.extend(validate_appraisal_payload(sella_appraisal_parsed))
     appraisal = sella_appraisal_parsed.get("appraisal") if isinstance(sella_appraisal_parsed, dict) else None
 
@@ -747,6 +732,7 @@ def main() -> int:
             "pipeline_lessons": [
                 "Sequential generation needs event appraisal/consolidation before next actor selection.",
                 "Action type selection should be tool-shaped or schema-constrained, not left to prose compliance.",
+                "Character-local prompts should consume projected operating context, not raw canonical state variables.",
                 "Next pass should materialize the sequential capture into Ink and mutation training data.",
             ],
         },

@@ -1,0 +1,227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/GameCult/Ghostlight/schemas/projected-local-context.schema.json",
+  "title": "Ghostlight Projected Local Context Schema",
+  "description": "Character-local operating context compiled from canonical state before response-model prompting.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "projection_id",
+    "input",
+    "context",
+    "audit"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "ghostlight.projected_local_context.v0"
+    },
+    "projection_id": {
+      "type": "string"
+    },
+    "input": {
+      "type": "object",
+      "required": [
+        "fixture_ref",
+        "annotation_ref",
+        "scene_id",
+        "local_agent_id",
+        "listener_ids",
+        "projection_mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "fixture_ref": {
+          "type": "string"
+        },
+        "annotation_ref": {
+          "type": "string"
+        },
+        "scene_id": {
+          "type": "string"
+        },
+        "local_agent_id": {
+          "type": "string"
+        },
+        "listener_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "projection_mode": {
+          "type": "string"
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "local_agent_id",
+        "identity",
+        "setting",
+        "known_facts",
+        "current_stakes",
+        "active_inner_pressures",
+        "relationship_read",
+        "tensions",
+        "action_affordances",
+        "projection_controls",
+        "voice_surface",
+        "likely_response_moves",
+        "do_not_invent",
+        "prompt_text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "local_agent_id": {
+          "type": "string"
+        },
+        "identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "setting": {
+          "type": "string",
+          "minLength": 1
+        },
+        "known_facts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "current_stakes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "active_inner_pressures": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "relationship_read": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "tensions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "action_affordances": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "projection_controls": {
+          "type": "object"
+        },
+        "voice_surface": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "likely_response_moves": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "do_not_invent": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_block"
+          }
+        },
+        "observed_event": {
+          "type": "object"
+        },
+        "prompt_text": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "required": [
+        "projector",
+        "raw_state_hidden_from_prompt",
+        "character_local_context_only",
+        "omitted_private_context",
+        "review_status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "projector": {
+          "type": "string"
+        },
+        "raw_state_hidden_from_prompt": {
+          "type": "boolean",
+          "const": true
+        },
+        "character_local_context_only": {
+          "type": "boolean",
+          "const": true
+        },
+        "omitted_private_context": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "review_status": {
+          "enum": [
+            "draft",
+            "accepted",
+            "needs_revision",
+            "rejected"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "text_block": {
+      "type": "object",
+      "required": [
+        "text",
+        "source_refs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

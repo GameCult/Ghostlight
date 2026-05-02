@@ -117,12 +117,22 @@
    - Projector gap: the sequential runner still sends selected raw numeric
      state variables into prompts. This is acceptable scaffolding for Qwen
      plumbing tests, not the final Ghostlight architecture.
-   - Next prototype: build the projector artifact seam that turns canonical
+   - Projector prototype: `tools/project_local_context.py` now turns canonical
      variables, memory, relationship stance, culture, and scene pressure into
      compact character-local operating context and action affordances.
-   - After projector seam exists, rerun or adapt v5-style thinking-plus-tools
-     sequential generation through projected context, then materialize only a
-     validated branch into Ink and sidecar annotation.
+   - Projected-context artifacts use
+     `ghostlight.projected_local_context.v0` and validate through
+     `tools/validate_projected_contexts.py`; rendered prompt text must not leak
+     raw state internals such as `current_activation`, `plasticity`, means, or
+     decimal state values.
+   - Sixth sequential draft: v6 routed thinking-plus-tools generation through
+     projected local context instead of selected activation dictionaries. It
+     produced usable Maer/Sella behavior but remains useful-needs-revision
+     because Qwen stringified nested `response_constraints` in the appraisal
+     payload.
+   - Next prototype: tighten nested tool-argument repair or schema enforcement,
+     then materialize only a validated projector-routed branch into Ink and
+     sidecar annotation.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

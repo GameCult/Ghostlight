@@ -70,6 +70,9 @@ state and re-entry discipline.
 - `docs/architecture/qwen-invocation-notes.md`
   - verified local Qwen invocation policy: Ollama `/api/chat`, native tools,
     thinking enabled, repair for known nested-argument double-stringify cases
+- `docs/architecture/projected-local-context.md`
+  - contract for the projector seam that turns canonical state into
+    character-local operating context before a response model sees it
 - `docs/architecture/aetheria-cold-wake-training-fixture.md`
   - human-facing note that reframes the recovered Cold Wake scenario as
     historical projection feedstock rather than the active product target
@@ -83,6 +86,8 @@ state and re-entry discipline.
 - `schemas/lore-grounding-digest.schema.json`
   - v0 contract for grounding historical fixtures in source-backed cultural and
     factional pressure fields
+- `schemas/projected-local-context.schema.json`
+  - v0 contract for projected character-local operating context artifacts
 - `schemas/agent-state.required-fields.json`
   - required first-class variable names for canonical state and relationship
     stance
@@ -140,6 +145,13 @@ state and re-entry discipline.
   - accepted-as-draft thinking-plus-tools receipt using Ollama `/api/chat`,
     native tools, and `think: true` for Maer choice, Sella appraisal, and Sella
     next action
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v6-projector.capture.json`
+  - useful-needs-revision projector-routed receipt proving Qwen prompts can use
+    character-local operating prose instead of raw state variables; still
+    exposed nested `response_constraints` stringification in appraisal output
+- `examples/projected-contexts/`
+  - current rendered projected local context artifacts for Maer and Sella in
+    the sanctuary intake scene
 - `experiments/ink/qwen-chat-tools-smoke.json`
   - smoke receipt proving local `qwen3.5:9b` returns both `message.thinking`
     and native `tool_calls`
@@ -178,9 +190,17 @@ state and re-entry discipline.
 - `tools/run_qwen_ink_sequential_generation.py`
   - builds a sequential Qwen prototype through Ollama `/api/chat` with native
     tools and thinking enabled: actor-local choices, participant
-    appraisal/consolidation, then next-actor action from updated state
+    appraisal/consolidation, then next-actor action from updated state; now
+    routes character context through the projected-local-context seam
 - `tools/check_qwen_chat_tools.py`
   - fast smoke test for local Qwen thinking plus native tool calling
+- `tools/project_local_context.py`
+  - deterministic first projector that compiles canonical state, scene facts,
+    relationships, memories, projection controls, and optional observed event
+    into character-local operating prose
+- `tools/validate_projected_contexts.py`
+  - validates projected context artifacts and rejects prompt text that leaks raw
+    canonical state internals
 - `tools/apply_sequential_ink_branch_mutation.py`
   - applies a reviewed replay of one selected branch into a mutated agent-state
     fixture and mutation receipt without letting Ink variables become
@@ -202,14 +222,15 @@ state and re-entry discipline.
 - automatic promotion of Ink branch outcomes into canonical state
 
 The canonical agent-state schema, projection example schema, lore grounding
-digest schema, first draft Cold Wake grounding digest, and first Cold Wake
-story-lab Qwen captures now exist as v0 seams. The first complete Cold Wake
-story pass exists with receipts, projection controls have been promoted, and
-Ink is now the standard branching scene format. The first Qwen-generated Ink
-draft now exists with a reviewed capture, the first selected branch now has a
-reviewed mutation replay that updates both involved characters, v2 shows the
-symmetrical turn model improves action behavior, and v5 proves local
-thinking-plus-tools invocation works for the scene runner. The runner is still
-scaffolding because it sends selected raw numeric state variables into the
-model. The next implementation target is the projector artifact seam: canonical
-state becomes compact character-local operating context before Qwen sees it.
+digest schema, projected-local-context schema, first draft Cold Wake grounding
+digest, and first Cold Wake story-lab Qwen captures now exist as v0 seams. The
+first complete Cold Wake story pass exists with receipts, projection controls
+have been promoted, and Ink is now the standard branching scene format. The
+first Qwen-generated Ink draft now exists with a reviewed capture, the first
+selected branch now has a reviewed mutation replay that updates both involved
+characters, v2 shows the symmetrical turn model improves action behavior, v5
+proves local thinking-plus-tools invocation works for the scene runner, and v6
+routes that runner through projected character-local operating context. The
+next implementation target is tightening nested tool-argument validation and
+deciding whether to materialize a projector-routed branch into Ink plus mutation
+training data.

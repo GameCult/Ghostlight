@@ -46,6 +46,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `docs/architecture/aetheria-lore-grounding-architecture.md`
   - `docs/architecture/lore-grounding-digest-format.md`
   - `docs/architecture/qwen-invocation-notes.md`
+  - `docs/architecture/projected-local-context.md`
 - lore grounding seam:
   - `schemas/lore-grounding-digest.schema.json`
   - `examples/lore-grounding/historical-flashpoint.template.json`
@@ -84,9 +85,16 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v2.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v3.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v5.capture.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v6-projector.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
   - `experiments/ink/qwen-chat-tools-smoke.json`
   - `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
+- projected local context seam:
+  - `schemas/projected-local-context.schema.json`
+  - `examples/projected-contexts/scene-02-sanctuary-intake.maer_tidecall.projected-context.json`
+  - `examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json`
+  - `tools/project_local_context.py`
+  - `tools/validate_projected_contexts.py`
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
 - first projection example seam:
@@ -118,9 +126,10 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Build the projector artifact seam that translates canonical state into compact
-character-local operating context, then rerun or materialize v5-style
-sequential generation through that projector rather than raw state soup.
+Tighten the projector-routed sequential loop by repairing or preventing nested
+tool-argument stringification, then decide whether the v6-style output should
+be materialized into Ink and a reviewed mutation receipt or rerun after stricter
+tool validation.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -203,15 +212,32 @@ Completed projection path items:
   stance, culture, and scene pressure into readable character-local operating
   context and action affordances. Character agents should not need to interpret
   `current_activation`, `plasticity`, or numeric dimension scores.
+- add the first projector seam:
+  `tools/project_local_context.py` creates
+  `ghostlight.projected_local_context.v0` artifacts and rendered prompt prose
+  from canonical state, scene, relationship, memories, projection controls, and
+  event context while hiding raw state variables from the prompt text
+- add projected-context validation:
+  `tools/validate_projected_contexts.py` rejects projected prompt text that
+  leaks raw state markers such as `current_activation`, `plasticity`, means, or
+  decimal state values
+- route the sequential Qwen runner through projected local context:
+  `tools/run_qwen_ink_sequential_generation.py` now sends projected operating
+  prose instead of selected activation dictionaries
+- add v6 projector-routed Qwen capture:
+  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v6-projector.capture.json`
+  validates the architecture boundary and produces usable Maer/Sella behavior,
+  but remains useful-needs-revision because Qwen stringified a nested
+  `response_constraints` field in Sella appraisal
 
 Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- build the projector artifact seam before materializing more generated
-  branches
-- rerun or adapt v5-style thinking-plus-tools sequential generation through
-  projected character-local context instead of raw state variables
+- tighten nested tool-argument repair or schema enforcement so projector-routed
+  sequential captures can become accepted-as-draft without hand-cleaning
+- decide whether the v6 projector-routed output should be materialized into Ink
+  and mutation training data or rerun after stricter validation
 - improve the local-awareness-to-Ink prompt so semantic `training_hooks` do not
   drift into future branch ids, object custody remains branch-local, and action
   labels come from the exact canonical enum
