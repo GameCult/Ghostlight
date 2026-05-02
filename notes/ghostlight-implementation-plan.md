@@ -324,6 +324,14 @@
    - Coordinator artifacts should be able to attach item-manifest deltas when a
      scene or branch decision discovers, alters, upgrades, restricts, salvages,
      counterfeits, or economically stresses a technology or item.
+   - First schema seam: `schemas/coordinator-artifact.schema.json`,
+     `examples/coordinator/cold-wake-sanctuary-intake.v0.json`, and
+     `tools/validate_coordinator_artifacts.py` now validate the coordinator
+     receipt shape through `npm run schema:validate`.
+   - Next prototype: use the coordinator artifact before generating fresh story
+     or lore elaboration. The coordinator must write the receipt first, then any
+     responder turn must be generated through a sandboxed packet-only worker and
+     reviewed into the artifact rather than improvised into chat.
 
 7. Build the first drama-scaffolding loop.
    - memory updates

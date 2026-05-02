@@ -1,0 +1,858 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/GameCult/Ghostlight/schemas/coordinator-artifact.schema.json",
+  "title": "Ghostlight Coordinator Artifact Schema",
+  "description": "Reviewed artifact for coordinator/story-runtime decisions, scene glue, machinery invocations, world-state refs, branch flags, unresolved hooks, sandboxed responder handoffs, and proposed deltas.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "review_status",
+    "fixture_lane",
+    "canon_status",
+    "source_refs",
+    "input_refs",
+    "scene_context",
+    "coordinator_decision",
+    "machinery_plan",
+    "world_state_refs",
+    "proposed_deltas",
+    "branching",
+    "unresolved_hooks",
+    "review"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "ghostlight.coordinator_artifact.v0"
+    },
+    "artifact_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "review_status": {
+      "$ref": "#/$defs/review_status"
+    },
+    "fixture_lane": {
+      "enum": [
+        "historical_grounded",
+        "transition_grounded",
+        "future_branch"
+      ]
+    },
+    "canon_status": {
+      "enum": [
+        "single_history",
+        "branch_local",
+        "promoted_branch",
+        "template",
+        "draft"
+      ]
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/source_ref"
+      }
+    },
+    "input_refs": {
+      "type": "object",
+      "required": [
+        "agent_state_ref",
+        "lore_grounding_refs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "agent_state_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lore_grounding_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "prior_artifact_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "projected_context_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "ink_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "item_manifest_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "scene_context": {
+      "type": "object",
+      "required": [
+        "scene_id",
+        "sequence_marker",
+        "location_id",
+        "participant_ids",
+        "active_object_ids",
+        "public_facts",
+        "scene_pressure"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "scene_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sequence_marker": {
+          "type": "string",
+          "minLength": 1
+        },
+        "location_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "participant_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "active_object_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "active_resource_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "public_facts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_with_refs"
+          }
+        },
+        "scene_pressure": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text_with_refs"
+          }
+        }
+      }
+    },
+    "coordinator_decision": {
+      "type": "object",
+      "required": [
+        "decision_id",
+        "selected_next_beat",
+        "selected_acting_agent_id",
+        "rationale",
+        "glue_prose",
+        "glue_prose_status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "decision_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_next_beat": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_acting_agent_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidate_next_beats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/candidate_choice"
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "glue_prose": {
+          "type": "string"
+        },
+        "glue_prose_status": {
+          "enum": [
+            "not_canonical",
+            "accepted_as_narration",
+            "needs_revision",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "machinery_plan": {
+      "type": "object",
+      "required": [
+        "invocations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "invocations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/invocation"
+          }
+        }
+      }
+    },
+    "sandboxed_responder_handoffs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sandbox_handoff"
+      }
+    },
+    "world_state_refs": {
+      "type": "object",
+      "required": [
+        "read_refs",
+        "write_candidate_refs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "read_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/state_ref"
+          }
+        },
+        "write_candidate_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/state_ref"
+          }
+        }
+      }
+    },
+    "proposed_deltas": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/proposed_delta"
+      }
+    },
+    "branching": {
+      "type": "object",
+      "required": [
+        "branch_action",
+        "active_branch_flags",
+        "event_constraints"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "branch_action": {
+          "enum": [
+            "none",
+            "continue_branch",
+            "split_branch",
+            "merge_branch",
+            "promote_branch_fact"
+          ]
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "branch_lineage": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "active_branch_flags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "event_constraints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event_constraint"
+          }
+        },
+        "sibling_exclusion_notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "item_manifest_deltas": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/item_manifest_delta"
+      }
+    },
+    "unresolved_hooks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/unresolved_hook"
+      }
+    },
+    "review": {
+      "type": "object",
+      "required": [
+        "reviewer",
+        "review_notes",
+        "accepted_for_training",
+        "failure_labels"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reviewer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "review_notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "accepted_for_training": {
+          "type": "boolean"
+        },
+        "failure_labels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "review_status": {
+      "enum": [
+        "draft",
+        "accepted",
+        "accepted_as_draft",
+        "useful_needs_revision",
+        "rejected",
+        "superseded"
+      ]
+    },
+    "source_ref": {
+      "type": "object",
+      "required": [
+        "ref_id",
+        "path",
+        "purpose"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ref_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "text_with_refs": {
+      "type": "object",
+      "required": [
+        "text",
+        "refs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "candidate_choice": {
+      "type": "object",
+      "required": [
+        "choice_id",
+        "summary",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "choice_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "selected",
+            "rejected",
+            "deferred"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "invocation": {
+      "type": "object",
+      "required": [
+        "invocation_id",
+        "organ",
+        "purpose",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "invocation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "organ": {
+          "enum": [
+            "lore_grounding_compiler",
+            "memory_lore_retriever",
+            "projector",
+            "sandboxed_responder",
+            "event_resolver",
+            "participant_appraiser",
+            "state_mutator",
+            "relationship_perception_updater",
+            "output_evaluator",
+            "item_manifest_generator",
+            "institution_faction_consumer_model",
+            "human_review",
+            "other"
+          ]
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "input_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "output_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "$ref": "#/$defs/review_status"
+        }
+      }
+    },
+    "sandbox_handoff": {
+      "type": "object",
+      "required": [
+        "handoff_id",
+        "responder_agent_id",
+        "projected_context_ref",
+        "visible_input_ref",
+        "hidden_context_refs",
+        "isolation_method",
+        "raw_output_ref",
+        "reviewed_output_ref",
+        "coordinator_interventions",
+        "leakage_audit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "handoff_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "responder_agent_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "projected_context_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visible_input_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hidden_context_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "isolation_method": {
+          "enum": [
+            "subagent_no_fork",
+            "manual_packet_only",
+            "external_model_packet_only",
+            "not_sandboxed"
+          ]
+        },
+        "raw_output_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewed_output_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coordinator_interventions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/coordinator_intervention"
+          }
+        },
+        "leakage_audit": {
+          "type": "object",
+          "required": [
+            "private_state_leak",
+            "author_only_leak",
+            "future_branch_leak",
+            "raw_state_soup",
+            "prompt_parroting",
+            "body_or_object_omniscience"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "private_state_leak": {
+              "type": "boolean"
+            },
+            "author_only_leak": {
+              "type": "boolean"
+            },
+            "future_branch_leak": {
+              "type": "boolean"
+            },
+            "raw_state_soup": {
+              "type": "boolean"
+            },
+            "prompt_parroting": {
+              "type": "boolean"
+            },
+            "body_or_object_omniscience": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "coordinator_intervention": {
+      "type": "object",
+      "required": [
+        "intervention_type",
+        "description"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "intervention_type": {
+          "enum": [
+            "none",
+            "normalization",
+            "schema_repair",
+            "prose_edit",
+            "lore_correction",
+            "leakage_removal",
+            "rejection"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "state_ref": {
+      "type": "object",
+      "required": [
+        "ref_id",
+        "ref_type",
+        "path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ref_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref_type": {
+          "enum": [
+            "agent",
+            "relationship",
+            "scene",
+            "event",
+            "object",
+            "resource",
+            "branch",
+            "item_manifest",
+            "world_fact",
+            "memory",
+            "other"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visibility": {
+          "enum": [
+            "public",
+            "character_local",
+            "coordinator_only",
+            "author_only"
+          ]
+        }
+      }
+    },
+    "proposed_delta": {
+      "type": "object",
+      "required": [
+        "delta_id",
+        "delta_type",
+        "target_ref",
+        "summary",
+        "authority",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "delta_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "delta_type": {
+          "enum": [
+            "memory_write",
+            "relationship_update",
+            "perceived_overlay_update",
+            "world_fact_update",
+            "object_state_update",
+            "resource_delta",
+            "branch_flag_update",
+            "item_manifest_delta",
+            "no_delta"
+          ]
+        },
+        "target_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "enum": [
+            "deterministic_gate",
+            "manual_review",
+            "coordinator_proposal",
+            "blocked"
+          ]
+        },
+        "status": {
+          "enum": [
+            "proposed",
+            "accepted",
+            "rejected",
+            "deferred",
+            "blocked"
+          ]
+        },
+        "rationale": {
+          "type": "string"
+        }
+      }
+    },
+    "event_constraint": {
+      "type": "object",
+      "required": [
+        "constraint_id",
+        "constraint_type",
+        "summary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "constraint_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constraint_type": {
+          "enum": [
+            "branch_attractor",
+            "fated_event",
+            "tech_order_constraint",
+            "quest_injection",
+            "branch_local_event"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pull_strength": {
+          "enum": [
+            "weak",
+            "medium",
+            "strong",
+            "locked"
+          ]
+        }
+      }
+    },
+    "item_manifest_delta": {
+      "type": "object",
+      "required": [
+        "delta_id",
+        "delta_type",
+        "summary",
+        "target_class",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "delta_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "delta_type": {
+          "enum": [
+            "blueprint_candidate",
+            "instance_provenance_candidate",
+            "faction_tech_base_delta",
+            "supply_chain_delta",
+            "engine_schema_gap",
+            "source_gap",
+            "rejected_design"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_ref": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "proposed",
+            "accepted",
+            "rejected",
+            "deferred"
+          ]
+        }
+      }
+    },
+    "unresolved_hook": {
+      "type": "object",
+      "required": [
+        "hook_id",
+        "hook_type",
+        "summary",
+        "owner",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "hook_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hook_type": {
+          "enum": [
+            "story",
+            "relationship",
+            "world_state",
+            "branch",
+            "item_manifest",
+            "lore_gap",
+            "schema_gap",
+            "review"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "open",
+            "carried",
+            "resolved",
+            "deferred",
+            "blocked"
+          ]
+        }
+      }
+    }
+  }
+}

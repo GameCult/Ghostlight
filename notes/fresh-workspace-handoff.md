@@ -55,6 +55,11 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `examples/lore-grounding/historical-flashpoint.template.json`
   - `examples/lore-grounding/cold-wake-panic.ganymede-corridor.json`
   - `tools/validate_lore_grounding.py`
+- coordinator artifact seam:
+  - `schemas/coordinator-artifact.schema.json`
+  - `examples/coordinator/cold-wake-sanctuary-intake.v0.json`
+  - `tools/validate_coordinator_artifacts.py`
+  - `npm run coordinator:validate`
 - Cold Wake story-lab seam:
   - `docs/experiments/cold-wake-story-lab.md`
   - `examples/agent-state.cold-wake-story-lab.json`
@@ -151,6 +156,12 @@ targets. They exist to expose missing fields, bad boundaries, leakage risks, and
 validator gaps before large data generation. Robust organs will need roughly an
 order of magnitude more examples, with separate review-assistant and runtime
 targets.
+The first coordinator artifact seam now exists. It captures scene setup,
+next-beat choice, acting-agent choice, machinery invocation plan, sandboxed
+responder handoffs, world-state refs, proposed deltas, branch constraints,
+item-manifest deltas, unresolved hooks, glue prose, and review status. The first
+example is a backfilled Cold Wake sanctuary packet-assessment artifact accepted
+as draft for schema shakedown, not gold responder data.
 It now uses three timeline lanes: `historical_grounded`,
 `transition_grounded`, and `future_branch`. Future branches are required
 training/evaluation material for post-Rupture Elysium concepts, but generated
@@ -179,10 +190,11 @@ narrow elaboration before treating the detail as available to Ghostlight.
 
 ## Current Next Action
 
-Define the coordinator artifact schema so future story passes capture
-next-beat choice, glue prose, world-state refs, branch flags, unresolved hooks,
-and machinery invocations as trainable data, then return to the Sella
-prompt/rendering fix.
+Use the coordinator artifact schema for the next fresh generation pass: produce
+a source-grounded coordinator receipt first, then generate any responder turn
+through a sandboxed packet-only worker and preserve raw output, reviewed output,
+hidden-context refs, leakage audit, and coordinator repair labels. Do not call
+Qwen for gold responder data yet.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than

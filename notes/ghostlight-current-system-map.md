@@ -111,6 +111,11 @@ state and re-entry discipline.
     factional pressure fields
 - `schemas/projected-local-context.schema.json`
   - v0 contract for projected character-local operating context artifacts
+- `schemas/coordinator-artifact.schema.json`
+  - v0 contract for coordinator/story-runtime receipts: scene setup,
+    next-beat choice, acting-agent choice, machinery invocations, sandboxed
+    responder handoffs, world-state refs, proposed deltas, branch constraints,
+    item-manifest deltas, unresolved hooks, glue prose, and review notes
 - `schemas/agent-state.required-fields.json`
   - required first-class variable names for canonical state and relationship
     stance
@@ -125,6 +130,10 @@ state and re-entry discipline.
 - `examples/projections/cold-wake-story-lab.jsonl`
   - response-turn projection examples for the Cold Wake story lab, including
     rejected and accepted Maer/Veyr prompt revisions
+- `examples/coordinator/cold-wake-sanctuary-intake.v0.json`
+  - first coordinator artifact schema-shakedown example, backfilled from the
+    accepted-as-draft sanctuary packet-assessment beat and explicitly marked as
+    not gold responder data
 - `experiments/cold-wake-story-lab/`
   - Qwen response captures and reviews from the writing experiment
   - `the-narrowest-possible-margin.md`, the first readable short story
@@ -253,6 +262,10 @@ state and re-entry discipline.
 - `tools/validate_projected_contexts.py`
   - validates projected context artifacts and rejects prompt text that leaks raw
     canonical state internals
+- `tools/validate_coordinator_artifacts.py`
+  - validates v0 coordinator artifacts, including sandboxed responder handoff
+    fields, world-state refs, branch constraints, proposed deltas, unresolved
+    hooks, and review status
 - `tools/apply_sequential_ink_branch_mutation.py`
   - applies a reviewed replay of one selected branch into a mutated agent-state
     fixture and mutation receipt without letting Ink variables become
@@ -274,8 +287,9 @@ state and re-entry discipline.
 - automatic promotion of Ink branch outcomes into canonical state
 
 The canonical agent-state schema, projection example schema, lore grounding
-digest schema, projected-local-context schema, first draft Cold Wake grounding
-digest, and first Cold Wake story-lab Qwen captures now exist as v0 seams. The
+digest schema, projected-local-context schema, coordinator artifact schema,
+first draft Cold Wake grounding digest, and first Cold Wake story-lab Qwen
+captures now exist as v0 seams. The
 first complete Cold Wake story pass exists with receipts, projection controls
 have been promoted, and Ink is now the standard branching scene format. The
 first Qwen-generated Ink draft now exists with a reviewed capture, the first
@@ -310,7 +324,9 @@ and deterministic code for gates. The listed per-stage counts are pilot
 schema-shakedown gates, not robust training targets; review-assistant and runtime
 targets are larger corpus tiers meant to avoid declaring victory after the first
 small pile of sacrificial data merely shows where the schema is wrong. The
-coordinator is currently the authoring
+first coordinator artifact seam now validates through `npm run schema:validate`
+and backfills the sanctuary packet-assessment beat as an accepted-as-draft
+schema shakedown example. The coordinator is currently the authoring
 agent: it glues scenes together, carries world-state refs and unresolved hooks,
 decides which machinery runs, and emits glue prose. That output should stay
 game-engine-shaped even while the prose lives in model imagination. The
