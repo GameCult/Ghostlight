@@ -66,6 +66,7 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `schemas/responder-output.schema.json`
   - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
   - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v1.json`
+  - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
   - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
   - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
   - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-retrieval-v0.capture.json`
@@ -206,6 +207,12 @@ Research`, `allowed_scope`, and `research_instructions`; the output capture must
 include consulted refs and a research summary. A research-enabled responder that
 answers without consulting lore has failed the assignment, bless its little
 unexamined heart.
+The first concrete research-enabled Sella packet now exists at
+`examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`.
+It is generated with
+`tools/build_responder_packet.py --lore-access-mode responder_scoped_repository_search`,
+sets `no_repo_access` false, and requires `consulted_refs` plus
+`research_summary` in the responder object.
 The v1 Sella packet removes responder-visible references to absent coordinator
 knowledge and adds curated AetheriaLore excerpts for Cold Wake, the Ganymede
 Route Compact, Navigator rescue ledgers, and Lightsail reliability.
@@ -258,15 +265,13 @@ narrow elaboration before treating the detail as available to Ghostlight.
 
 ## Current Next Action
 
-Use the corrected packet surface for the next fresh generation pass: run a
-sandboxed responder against the regenerated Sella packet, then review whether
-the output uses institutional lore and latent pressure without prompt parroting,
-omniscience, or mission-critical trauma-dumping. Do not call Qwen for gold
-responder data yet.
-If this next pass is meant to test a research-enabled responder rather than
-packet-only runtime parity, build or hand off it as
-`responder_scoped_repository_search` and require it to consult the scoped
-AetheriaLore docs before answering.
+Run a sandboxed no-fork research-enabled responder against
+`examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`,
+allowing only the declared AetheriaLore scope. Capture exact visible input,
+consulted refs, research summary, raw output, review labels, and leakage audit.
+Review whether the output uses institutional lore and latent pressure without
+prompt parroting, omniscience, or mission-critical trauma-dumping. Do not call
+Qwen for gold responder data yet.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
 single-history grounding should start from authored historical lore rather than

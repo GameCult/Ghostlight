@@ -57,6 +57,7 @@ The v0 packet seam is:
 
 - `schemas/responder-packet.schema.json`
 - `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
+- `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
 - `tools/build_responder_packet.py`
 - `tools/validate_responder_packets.py`
 - `npm run responder-packets:validate`
@@ -128,6 +129,12 @@ responder may search only the declared source scope, and the output capture must
 list consulted refs. The responder itself should not receive repo access unless
 the artifact uses `responder_scoped_repository_search`, sets `no_repo_access` to
 false, and includes visible research instructions in the prompt.
+
+The current Sella research packet can be regenerated with:
+
+```powershell
+& 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' .\tools\build_responder_packet.py --lore-access-mode responder_scoped_repository_search
+```
 
 Retrieval can also make the packet worse if it floods the scene with faction or
 event context and starves the character's own scars. The Sella v0 comparison is

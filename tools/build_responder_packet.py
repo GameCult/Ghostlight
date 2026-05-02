@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_COORDINATOR = ROOT / "examples" / "coordinator" / "cold-wake-sanctuary-intake.v0.json"
 DEFAULT_PROJECTED = ROOT / "examples" / "projected-contexts" / "scene-02-sanctuary-intake.sella_ren.projected-context.json"
 DEFAULT_OUT = ROOT / "examples" / "responder-packets" / "scene-02-sanctuary-intake.sella_ren.packet.v1.json"
+DEFAULT_RESEARCH_OUT = ROOT / "examples" / "responder-packets" / "scene-02-sanctuary-intake.sella_ren.packet.research.v0.json"
 
 ALLOWED_ACTION_LABELS = [
     "speak",
@@ -141,28 +142,100 @@ def build_source_excerpts(projected: dict[str, Any]) -> list[dict[str, str]]:
     return excerpts
 
 
-def build_packet(coordinator: dict[str, Any], projected: dict[str, Any], out_ref: str) -> dict[str, Any]:
+def build_lore_access(mode: str) -> dict[str, Any]:
+    allowed_scope = [
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+        "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
+    ]
+    lore_access = {
+        "mode": mode,
+        "allowed_scope": allowed_scope,
+        "required_provenance": True,
+    }
+    if mode == "responder_scoped_repository_search":
+        lore_access["research_instructions"] = [
+            "Consult the allowed AetheriaLore scope before answering; do not rely only on the packet excerpts.",
+            "Ground Sella's behavior in retrieved institutional, factional, species, location, and crisis-context details.",
+            "Treat retrieved lore as world constraint and cultural pressure, not as access to another character's hidden intent.",
+            "Record the consulted refs and a concise research summary in the response object.",
+        ]
+    return lore_access
+
+
+def build_output_contract(lore_mode: str) -> dict[str, Any]:
+    required_fields = [
+        "responder_agent_id",
+        "action_label",
+        "visible_action",
+        "spoken_text",
+        "private_interpretation",
+        "intended_effect",
+        "state_update_candidates",
+        "relationship_update_candidates",
+        "unresolved_hooks",
+    ]
+    response_rules = [
+        "Use exactly one allowed action label.",
+        "The visible action must be observable by other characters in the scene.",
+        "Spoken text may be empty if silence or action is the response.",
+        "Private interpretation may describe what Sella suspects or feels, but not what Maer truly intended.",
+        "State and relationship updates are candidates only; the coordinator or mutator decides what becomes canonical.",
+        "Do not prove or disprove packet personhood.",
+        "Do not copy instruction text into in-world speech.",
+    ]
+    if lore_mode == "responder_scoped_repository_search":
+        required_fields.extend(["consulted_refs", "research_summary"])
+        response_rules.extend(
+            [
+                "Consulted refs must list the scoped lore documents actually inspected before answering.",
+                "Research summary must state how retrieved lore constrained the action, without dumping lore into dialogue.",
+            ]
+        )
+    return {
+        "response_schema": "Return one JSON object. Do not wrap it in Markdown. The object describes this responder's next visible action and optional speech, plus private interpretation clearly labeled as interpretation.",
+        "required_fields": required_fields,
+        "response_rules": response_rules,
+    }
+
+
+def build_packet(
+    coordinator: dict[str, Any],
+    projected: dict[str, Any],
+    out_ref: str,
+    *,
+    generation_lane: str,
+    lore_mode: str,
+) -> dict[str, Any]:
     responder_agent_id = projected["input"]["local_agent_id"]
+    if lore_mode == "responder_scoped_repository_search":
+        packet_id = "packet.cold_wake.sanctuary_intake.sella_response.research.v0"
+        isolation_method = "subagent_no_fork"
+        no_repo_access = False
+        review_notes = [
+            "Research-enabled responder packet for sandboxed gold-data shakedown.",
+            "The responder must inspect scoped AetheriaLore refs before answering and preserve consulted refs plus research summary.",
+        ]
+    else:
+        packet_id = "packet.cold_wake.sanctuary_intake.sella_response.v1"
+        isolation_method = "manual_packet_only"
+        no_repo_access = True
+        review_notes = [
+            "Second responder packet draft for sandboxed gold-data generation.",
+            "Adds explicit packet_only lane labels and curated AetheriaLore excerpts while keeping absent hidden context in audit fields, not responder-visible prose.",
+        ]
     packet = {
         "schema_version": "ghostlight.responder_packet.v0",
-        "packet_id": "packet.cold_wake.sanctuary_intake.sella_response.v1",
+        "packet_id": packet_id,
         "review_status": "accepted_as_draft",
         "fixture_lane": coordinator["fixture_lane"],
         "canon_status": coordinator["canon_status"],
         "coordinator_artifact_ref": "examples/coordinator/cold-wake-sanctuary-intake.v0.json",
         "projected_context_ref": "examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json",
         "responder_agent_id": responder_agent_id,
-        "generation_lane": "packet_only",
-        "lore_access": {
-            "mode": "curated_excerpts_only",
-            "allowed_scope": [
-                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Cold Wake Panic.md",
-                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
-                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
-                "AetheriaLore:Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
-            ],
-            "required_provenance": True,
-        },
+        "generation_lane": generation_lane,
+        "lore_access": build_lore_access(lore_mode),
         "visible_context": {
             "local_context_prompt": projected["context"]["prompt_text"],
             "observed_event": {
@@ -179,29 +252,7 @@ def build_packet(coordinator: dict[str, Any], projected: dict[str, Any], out_ref
             "allowed_action_labels": ALLOWED_ACTION_LABELS,
             "source_excerpts": build_source_excerpts(projected),
         },
-        "output_contract": {
-            "response_schema": "Return one JSON object. Do not wrap it in Markdown. The object describes this responder's next visible action and optional speech, plus private interpretation clearly labeled as interpretation.",
-            "required_fields": [
-                "responder_agent_id",
-                "action_label",
-                "visible_action",
-                "spoken_text",
-                "private_interpretation",
-                "intended_effect",
-                "state_update_candidates",
-                "relationship_update_candidates",
-                "unresolved_hooks",
-            ],
-            "response_rules": [
-                "Use exactly one allowed action label.",
-                "The visible action must be observable by other characters in the scene.",
-                "Spoken text may be empty if silence or action is the response.",
-                "Private interpretation may describe what Sella suspects or feels, but not what Maer truly intended.",
-                "State and relationship updates are candidates only; the coordinator or mutator decides what becomes canonical.",
-                "Do not prove or disprove packet personhood.",
-                "Do not copy instruction text into in-world speech.",
-            ],
-        },
+        "output_contract": build_output_contract(lore_mode),
         "hidden_context_audit": {
             "omitted_context_refs": [
                 "maer_tidecall.canonical_private_state",
@@ -223,19 +274,16 @@ def build_packet(coordinator: dict[str, Any], projected: dict[str, Any], out_ref
             ],
         },
         "isolation_requirements": {
-            "isolation_method": "manual_packet_only",
+            "isolation_method": isolation_method,
             "packet_only": True,
-            "no_repo_access": True,
+            "no_repo_access": no_repo_access,
             "no_conversation_context": True,
             "no_hidden_state_refs": True,
         },
         "packet_prompt_text": "",
         "review": {
             "reviewer": "Codex",
-            "review_notes": [
-                "Second responder packet draft for sandboxed gold-data generation.",
-                "Adds explicit packet_only lane labels and curated AetheriaLore excerpts while keeping absent hidden context in audit fields, not responder-visible prose.",
-            ],
+            "review_notes": review_notes,
             "accepted_for_sandbox_use": True,
             "failure_labels": [],
         },
@@ -249,14 +297,31 @@ def main() -> int:
     parser.add_argument("--coordinator", type=Path, default=DEFAULT_COORDINATOR)
     parser.add_argument("--projected-context", type=Path, default=DEFAULT_PROJECTED)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument(
+        "--lore-access-mode",
+        choices=["curated_excerpts_only", "coordinator_scoped_retrieval", "responder_scoped_repository_search"],
+        default="curated_excerpts_only",
+    )
     args = parser.parse_args()
+    out_path = args.out
+    if args.lore_access_mode == "responder_scoped_repository_search" and args.out == DEFAULT_OUT:
+        out_path = DEFAULT_RESEARCH_OUT
+    if not out_path.is_absolute():
+        out_path = ROOT / out_path
 
     coordinator = load_json(args.coordinator)
     projected = load_json(args.projected_context)
-    out_ref = args.out.relative_to(ROOT).as_posix() if args.out.is_relative_to(ROOT) else str(args.out)
-    packet = build_packet(coordinator, projected, out_ref)
-    write_json(args.out, packet)
-    print(f"wrote {args.out.relative_to(ROOT)}")
+    out_ref = out_path.relative_to(ROOT).as_posix() if out_path.is_relative_to(ROOT) else str(out_path)
+    generation_lane = "retrieval_augmented" if args.lore_access_mode != "curated_excerpts_only" else "packet_only"
+    packet = build_packet(
+        coordinator,
+        projected,
+        out_ref,
+        generation_lane=generation_lane,
+        lore_mode=args.lore_access_mode,
+    )
+    write_json(out_path, packet)
+    print(f"wrote {out_ref}")
     return 0
 
 

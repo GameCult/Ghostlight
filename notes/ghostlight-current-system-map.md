@@ -163,6 +163,11 @@ state and re-entry discipline.
     responder-visible prose and curated AetheriaLore excerpts added for Cold
     Wake, Ganymede rescue obligations, Navigator rescue ledgers, and Lightsail
     reliability
+- `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
+  - first concrete research-enabled Sella handoff; it uses
+    `responder_scoped_repository_search`, declares the allowed AetheriaLore
+    scope, permits repo access only for that scope, and requires consulted refs
+    plus research summary in the responder object
 - `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
   - first no-fork sandboxed responder output capture from the Sella packet;
     accepted as draft with no leakage flags and no coordinator prose repair
@@ -314,9 +319,9 @@ state and re-entry discipline.
     fields, world-state refs, branch constraints, proposed deltas, unresolved
     hooks, and review status
 - `tools/build_responder_packet.py`
-  - builds the first packet-only responder handoff from a coordinator artifact
-    and projected local context; source excerpts now come from active projected
-    runtime retrieval requirements instead of a static lore list
+  - builds packet-only or research-enabled responder handoffs from a coordinator
+    artifact and projected local context; source excerpts now come from active
+    projected runtime retrieval requirements instead of a static lore list
 - `tools/validate_responder_packets.py`
   - validates responder packets and rejects prompt surfaces that leak raw state
     internals or hidden coordinator context markers
@@ -392,6 +397,8 @@ That explicit repo-access path is now named
 consult the declared lore docs before answering, show the allowed scope, and
 give behavior-grounding research instructions. The capture must record consulted
 refs and a research summary.
+The first concrete research-enabled Sella packet has now been generated and
+validates alongside the packet-only handoffs.
 The first lane comparison is now captured: packet-only produced a clean
 conditional repair-bay decision, while retrieval-augmented added heat-debt,
 rescue-ledger, dockfall, and Aya sanctuary politics that should inform future
