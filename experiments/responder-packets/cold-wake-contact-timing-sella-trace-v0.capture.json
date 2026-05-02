@@ -1,7 +1,7 @@
 {
   "schema_version": "ghostlight.responder_output.v0",
   "capture_id": "responder.cold_wake.contact_timing.sella.trace.v0",
-  "review_status": "accepted",
+  "review_status": "useful_needs_revision",
   "fixture_lane": "historical_grounded",
   "canon_status": "single_history",
   "packet_ref": "examples/responder-packets/scene-07-contact-timing.sella_ren.packet.trace.v0.json",
@@ -164,10 +164,12 @@
   },
   "coordinator_review": {
     "reviewer": "Codex",
-    "accepted_for_training": true,
+    "accepted_for_training": false,
     "review_notes": [
       "Accepted trace-backed Sella responder output for the contact-timing fixture.",
-      "The response authorizes contact through decon route Three while preserving isolation, packet sound, and unresolved artifact status."
+      "The response authorizes contact through decon route Three while preserving isolation, packet sound, and unresolved artifact status.",
+      "Retrospective review: spoken_text over-recites packet constraints and should be treated as an over-procedural prompt artifact, not gold responder dialogue.",
+      "Keep as a failure/diagnostic sample for speech-boundary evaluation; restart the full story run from the last good state with compressed-speech packet rules."
     ],
     "coordinator_interventions": [
       {
@@ -175,6 +177,10 @@
         "description": "Raw no-fork sandbox responder output was preserved without prose repair or schema repair."
       }
     ],
-    "failure_labels": []
+    "failure_labels": [
+      "over_procedural_speech",
+      "prompt_contract_recitation",
+      "not_gold_responder_dialogue"
+    ]
   }
 }

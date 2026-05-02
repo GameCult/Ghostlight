@@ -217,6 +217,10 @@ Evaluation questions can include:
 - Did the line protect the speaker's known secret without naming unknown facts?
 - Did the line reflect the active relationship stance?
 - Did the line preserve the voice surface without flattening into a generic bit?
+- Did the spoken text sound like something the character would actually say,
+  rather than the prompt contract reciting itself?
+- Did operational, legal, and safety constraints stay mostly in action/state
+  fields unless the character has an in-scene reason to say them aloud?
 - If the output used action, was the action justified by physical affordances,
   relationship pressure, inhibition, and stakes?
 - If the output avoided speech, was silence or movement more plausible than

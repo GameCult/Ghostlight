@@ -107,9 +107,9 @@ current gold-data route.
 
 ## Current Next Action
 
-The full Cold Wake story run is underway and has two new validated material turns after Sella opened the bounded bay. Scene 06 has Maer accept every clinic limit, extend live Navigator ledger exposure, open a preservation-only diagnostic acoustic channel, and route the rescue craft to hold at decon route Three. Scene 07 has Sella lock preservation buffers, assign one wet-side tech and one dry-side recorder, place the timing mark, and let the bounded diagnostic sleeve cycle live. The latest aftermath state is `examples/agent-state.cold-wake-story-lab.after-sella-timing-mark.json`; schema validation passes.
+Do not continue the clinic-fragment story as the accepted full run. Cold Wake v0 is diagnostic because of over-procedural speech. Cold Wake v1 repaired speech locally but starts near the climax, so it is still not a full story or interactive-fiction fixture.
 
-Continue from `examples/agent-state.cold-wake-story-lab.after-sella-timing-mark.json`. The next material beat should be the first diagnostic signal/contact result from the vessel or sleeve. Keep it bounded: no premature personhood proof, ancestry finding, custody claim, source-chain provenance resolution, or final rescue success/failure. Preserve the established receipt set at material turns: projected context, responder packet, raw capture, leakage audit, reviewed mutation receipt, aftermath state, and readable coordinator prose in `experiments/cold-wake-story-lab/cold-wake-full-story-run.v0.md`. Stop only for hidden-state leakage, lore grounding failure, body/interface/object affordance error, bad mutation, or schema break.
+Restart the accepted Cold Wake run from the opening tribunal/route pressure. Design a beginning-to-ending interactive-fiction spine with meaningful branch points and cross-scene consequence carryover. Consequences should mutate relationship state, perceived motives, resources, branch flags, object custody, available later options, and final resolution texture. Use responder artifacts at material branch/action beats, but keep spoken dialogue compressed and put procedural detail in visible actions, state candidates, mutation receipts, and coordinator prose.
 
 ## Warnings
 

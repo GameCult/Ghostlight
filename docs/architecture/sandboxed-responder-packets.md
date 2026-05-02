@@ -131,6 +131,32 @@ The responder may output:
 - candidate relationship updates
 - unresolved hooks
 
+`spoken_text` is not the place to dump the packet contract. Characters should
+not recite every legal, procedural, or safety constraint simply because the
+packet made those constraints visible. Keep speech to what the character would
+actually say under pressure. Put the full checklist in `visible_action`,
+`state_update_candidates`, `relationship_update_candidates`, and the mutation
+receipt.
+
+Good future-institutional speech is compressed and situated:
+
+```text
+I hold the line shallow. Your bay, your mark; my ledger stays awake for every
+cost the tide takes.
+```
+
+Bad future-institutional speech is the output contract wearing a mask:
+
+```text
+Bounded diagnostic contact only. No full intake, no custody, no personhood
+finding, no cargo designation...
+```
+
+That second kind of line may be useful as a failure sample. It is not gold
+responder behavior unless the scene specifically calls for formal oath,
+courtroom language, ritual compliance, or someone deliberately reading terms
+aloud.
+
 Those candidates are not canonical. The coordinator, event resolver, appraiser,
 state mutator, and reviewer decide what becomes truth.
 

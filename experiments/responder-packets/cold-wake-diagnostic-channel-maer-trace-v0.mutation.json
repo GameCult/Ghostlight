@@ -249,11 +249,13 @@
   "manual_review_notes": [
     "The responder output was accepted without prose repair.",
     "Both Sella and Maer receive state, relationship, memory, and perceived-overlay updates.",
-    "The event advances contact setup but does not resolve personhood, provenance, custody, or rescue outcome."
+    "The event advances contact setup but does not resolve personhood, provenance, custody, or rescue outcome.",
+    "Retrospective review: source capture spoken_text is over-procedural prompt artifact. Do not train responder dialogue on this mutation receipt as gold; restart full-story run from last good state."
   ],
   "deferred_mutations": [
     "No personhood claim is proven or disproven.",
     "No Cognitum provenance confession is canonized.",
-    "No final rescue outcome is canonized yet."
+    "No final rescue outcome is canonized yet.",
+    "Full-story branch should not continue from this receipt as gold; retain only as diagnostic failure data."
   ]
 }

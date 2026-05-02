@@ -33,7 +33,10 @@ sandboxed training-data pipeline for branching scenes and state consequences.
    - Current story-run state: `examples/agent-state.cold-wake-story-lab.after-sella-timing-mark.json`.
    - Treat the next test as a bounded end-to-end Cold Wake short story run, not another isolated seam check.
    - Completed story-run setup beats: Maer accepted Sella's bounded diagnostic-contact conditions, extended live ledger exposure, opened the preservation-only diagnostic acoustic channel, and Sella marked decon route Three so the bounded diagnostic sleeve cycles live.
-   - Next story-run beat: generate the first diagnostic signal/contact result, keep the story readable, and continue toward an ending. Coordinator glue prose is training signal for the future coordinator/story-runtime model.
+   - Next story-run beat: design and generate an interactive-fiction-shaped Cold Wake arc with an opening, branch points, cross-scene consequences, climax, and resolution. Coordinator glue prose is training signal for the future coordinator/story-runtime model.
+   - Interactive-fiction correction: a full-story pass is not just a linear chain of responder receipts. It needs a beginning-to-ending narrative spine, branch points, and cross-scene consequence carryover so decisions visibly matter later. Responder artifacts should be generated at branch/action moments, while coordinator artifacts track branch flags, relationship deltas, resource costs, unresolved hooks, and later scene consequences.
+   - The Cold Wake v0/v1 fragments are diagnostic seam tests around the clinic climax, not a complete story arc. The next accepted story run should restart from the opening tribunal/route pressure, pass through provenance and clinic contact, and carry consequences into a resolution.
+
    - Still emit training artifacts at material turns: projected local context, responder packet, raw output/capture, leakage audit, reviewed mutation receipt, and aftermath state where relevant.
    - Do not stop for every minor prose flaw; curate as coordinator and continue. Stop to patch the pipeline only for core invariant failures: hidden-state leakage, lore grounding failure, visibility/object/body affordance errors, bad state mutation, or schema break.
    - Keep fuzzy social changes manual and auditable until appraiser/classifier models exist.

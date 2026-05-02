@@ -144,3 +144,30 @@ The first prototype lives in
 
 The first Qwen-generated draft lives in
 `examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`.
+
+## Cross-Scene Consequence Carryover
+
+Ghostlight branching scenes should not behave like disconnected dialogue samples.
+Interactive fiction needs consequences that survive the scene boundary. A branch
+choice should write durable effects into later context: relationship stance,
+perceived motives, resource costs, authority flags, object custody, active
+constraints, unresolved hooks, and available future options.
+
+For training data, every material branch should preserve:
+
+- the player/NPC-visible choice or action
+- the immediate responder output
+- accepted world-state, resource, memory, and relationship deltas
+- branch flags that later scenes must read
+- deferred consequences that should surface later rather than immediately
+- scene text showing how the consequence changes the feel of the next beat
+
+The coordinator owns this continuity for now. Later, the trainable coordinator
+model should learn to carry these consequences forward without flattening them
+into cosmetic callbacks. If a choice does not change later affordances, trust,
+resources, risk, or interpretation, it is probably not a meaningful branch.
+
+Cold Wake lesson: the clinic contact sequence is a useful climax seam, but it is
+not a full story by itself. A complete interactive fixture needs an opening
+pressure, at least one consequential branch before the clinic, and a resolution
+that visibly reflects earlier choices.

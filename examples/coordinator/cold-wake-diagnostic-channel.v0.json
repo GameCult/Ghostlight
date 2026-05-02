@@ -1,7 +1,7 @@
 {
   "schema_version": "ghostlight.coordinator_artifact.v0",
   "artifact_id": "coordinator.cold_wake.diagnostic_channel.v0",
-  "review_status": "accepted_as_draft",
+  "review_status": "useful_needs_revision",
   "fixture_lane": "historical_grounded",
   "canon_status": "single_history",
   "source_refs": [
@@ -226,9 +226,13 @@
     "reviewer": "Codex",
     "review_notes": [
       "Accepted as the next material full-story-run turn after Sella opened the bay.",
-      "This artifact preserves responder isolation and source grounding while moving toward actual vessel contact."
+      "This artifact preserves responder isolation and source grounding while moving toward actual vessel contact.",
+      "Retrospective review: downstream responder speech exposed a projection/packet failure. This artifact remains useful as a diagnostic receipt, but the story run must restart from the last good state rather than build on it."
     ],
-    "accepted_for_training": true,
-    "failure_labels": []
+    "accepted_for_training": false,
+    "failure_labels": [
+      "over_procedural_speech",
+      "restart_required"
+    ]
   }
 }

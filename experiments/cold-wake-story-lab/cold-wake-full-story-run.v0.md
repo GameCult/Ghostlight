@@ -14,6 +14,10 @@ This is the active full-story pass starting after Sella opens the bounded repair
 - Scene 06 mutation: `experiments/responder-packets/cold-wake-diagnostic-channel-maer-trace-v0.mutation.json`
 - Current aftermath state: `examples/agent-state.cold-wake-story-lab.after-maer-channel-opened.json`
 
+## Retrospective Review
+
+This v0 story run is diagnostic, not gold. Scene 06 and Scene 07 exposed an over-procedural speech failure: responders recited the packet's legal and safety constraints as dialogue. Do not continue this branch as the accepted full-story run. Restart from `examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json` with compressed-speech packet rules, keeping procedural detail in visible actions, state candidates, mutation receipts, and coordinator prose.
+
 ## Story Draft
 
 Sella's board did not soften after she spoke. It became more specific.

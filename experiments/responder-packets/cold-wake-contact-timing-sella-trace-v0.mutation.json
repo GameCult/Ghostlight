@@ -163,9 +163,11 @@
   ],
   "manual_review_notes": [
     "Responder output accepted without prose repair.",
-    "Contact is authorized but outcome remains unresolved."
+    "Contact is authorized but outcome remains unresolved.",
+    "Retrospective review: source capture spoken_text is over-procedural prompt artifact. Do not train responder dialogue on this mutation receipt as gold; restart full-story run from last good state."
   ],
   "deferred_mutations": [
-    "No personhood, provenance, custody, or final rescue outcome resolved."
+    "No personhood, provenance, custody, or final rescue outcome resolved.",
+    "Full-story branch should not continue from this receipt as gold; retain only as diagnostic failure data."
   ]
 }
