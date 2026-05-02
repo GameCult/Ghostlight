@@ -197,8 +197,8 @@
      models learn Aetheria's weird future concepts under supervision rather
      than treating late-Sol history as the whole training universe.
    - Future branches must label source-backed post-Elysium concepts separately
-     from generated branch assumptions, promotion candidates, and non-canon
-     local facts.
+     from generated branch assumptions, branch lineage, sibling-branch
+     exclusions, and branch-local canonical facts.
    - Maintain `schemas/lore-grounding-digest.schema.json`,
      `examples/lore-grounding/`, and `tools/validate_lore_grounding.py` as the
      cultural and factional pressure seam for grounded fixtures.

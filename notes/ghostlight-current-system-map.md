@@ -62,8 +62,9 @@ state and re-entry discipline.
     resource, dyad, institution, memory, and embodiment mechanisms not yet
     promoted into the v0 schema
 - `docs/architecture/aetheria-lore-grounding-architecture.md`
-  - boundary and plan for grounding training data in authored Aetheria history
-    while treating Elysium gameplay-era outcomes as procedural branch space;
+  - boundary and plan for grounding single-history training data in authored
+    Aetheria history while treating Elysium gameplay-era outcomes as
+    conditional branch canon;
     includes the source-first doctrine for checking AetheriaLore and patching
     blocking lore gaps before generation, plus a `future_branch` lane for
     reviewed possible post-Rupture Elysium futures
@@ -301,5 +302,5 @@ lore/tone goal is not a separate adapter; it is a responder trained on strong
 timeline-spread Aetheria responses until the setting's assumptions become
 native priors. The timeline plan now includes generated possible futures in
 Elysium as reviewed `future_branch` artifacts so models learn post-Rupture
-concepts without canonizing every shiny catastrophe they produce. Do not
-materialize another capture until it has no failure or repair notes.
+concepts as branch-local canon indexed by lineage. Do not materialize another
+capture until it has no failure or repair notes.

@@ -18,7 +18,7 @@ Ghostlight training should cover three timeline lanes:
 - `transition_grounded`: the rupture, displacement, and early Elysium shock,
   used for continuity between old institutions and altered conditions.
 - `future_branch`: possible post-Rupture Elysium futures, used to teach models
-  Aetheria's stranger concepts without canonizing generated outcomes.
+  Aetheria's stranger concepts as branch-local canonical histories.
 
 The future branch lane is not optional. The models need to handle post-Rupture
 concepts such as Aether, pseudospace, temporal nonlinearity, spirits, necrotech,
@@ -26,13 +26,21 @@ mutable bodies, altered substrates, and new species or institutional forms. Late
 Sol teaches the old damage. Elysium teaches what the damage does when reality
 starts handing out knives with metaphysics on the receipt.
 
+Sol timeline data is a single-history artifact. Elysium timeline data is
+conditional canon: every possible future is true inside the branch whose prior
+state produced it. Training data must preserve branch lineage so the model
+learns conditional continuity instead of mashing incompatible futures into one
+omnivorous sludge.
+
 Future-branch examples must label:
 
 - source constraints from authored post-Elysium concepts
 - generated branch assumptions
 - local branch facts
-- promotion eligibility
-- non-canon facts that must not leak into grounded training
+- branch lineage and prior conditions
+- sibling-branch exclusion boundaries
+- branch-local facts that must not leak into single-history Sol training or
+  unrelated Elysium branches
 - the post-Rupture concept being exercised
 - the old social pressure being re-expressed
 
@@ -163,6 +171,7 @@ Outputs:
 - author-only exclusions
 - open lore gaps
 - generated branch assumptions, for future branches
+- branch lineage and sibling-branch exclusion boundaries
 
 Training architecture:
 
@@ -224,6 +233,7 @@ Outputs:
 - glue prose
 - reviewer-facing rationale
 - generated branch assumptions and promotion candidates, for future branches
+- branch lineage and conditional truth boundaries
 
 Training architecture:
 
@@ -278,6 +288,8 @@ Outputs:
 - retrieval rationale or labels
 - source-constraint versus branch-assumption labels when retrieving future
   branch context
+- branch-lineage labels so sibling futures are not retrieved as if they were
+  shared facts
 
 Training architecture:
 
@@ -329,6 +341,7 @@ Outputs:
 - rendered prompt/context text
 - audit refs to source state
 - explicit distinction between source-backed facts and branch-local assumptions
+- branch lineage and conditional truth boundaries
 
 Training architecture:
 
@@ -398,8 +411,8 @@ Training artifacts:
 - negative examples for wrong body, wrong lore, wrong voice, omniscience, prompt
   leakage, and agency collapse
 - timeline-spread Aetheria response corpus
-- future-branch responses exercising post-Rupture concepts without claiming
-  branch facts as canon
+- future-branch responses exercising post-Rupture concepts as branch-local canon
+  without claiming branch facts apply to sibling histories
 
 First training gate:
 
@@ -439,6 +452,7 @@ Outputs:
 - blocked or modified action result
 - unresolved facts
 - branch-local mechanical facts versus promoted facts
+- branch-local mechanical facts versus cross-branch source constraints
 
 Training architecture:
 
@@ -557,6 +571,7 @@ Training artifacts:
 - deferred unresolved facts
 - validator failures
 - branch-local patches separated from promoted state patches
+- branch-local patches separated from cross-branch source constraints
 
 First training gate:
 
@@ -745,9 +760,11 @@ A first useful Aetheria responder fine-tune wants:
   for Elysium-era generation with reduced lore scaffolding
 - source refs for every grounded example
 - explicit local-context boundary for every turn
-- no unreviewed procedural branch material mixed into grounded canon data
+- no Elysium branch facts mixed into single-history Sol data or unrelated
+  sibling branches
 - clear labels separating source-backed Elysium concepts from generated future
   branch facts
+- branch lineage for every future-branch example
 
 A first coordinator fine-tune wants:
 

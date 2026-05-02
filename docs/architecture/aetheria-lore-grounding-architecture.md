@@ -6,8 +6,8 @@ Ghostlight needs three different Aetheria modes:
 - post-Rupture procedural future training
 - procedural Elysium generation
 
-Do not blur them. That is how a useful mystery becomes accidental canon with a
-badge and a clipboard.
+Do not blur them. That is how a useful mystery becomes a filing cabinet full of
+branch facts with the labels scraped off.
 
 ## Core Boundary
 
@@ -33,10 +33,12 @@ nonlinearity, spirits, altered substrates, necrotech, mutable bodies, and all
 the new ways power learns to monetize miracles while pretending it found ethics
 in a drawer.
 
-Elysium future data belongs in a separate lane. It should be generated,
-reviewed, and labeled as possible future branch material unless a specific
-outcome is promoted. It teaches the model how post-Rupture worlds feel and
-behave without claiming those futures already happened.
+Elysium future data belongs in a separate lane because its canon is conditional,
+not because it is fake. Sol history is a single artifact. Elysium history is a
+branching state-space: every possible future is canon inside the branch whose
+prior conditions produced it. A generated future must therefore carry branch
+lineage, dependencies, and local truth boundaries instead of being treated as
+scratch material waiting for permission to matter.
 
 ## Revised Architecture
 
@@ -62,7 +64,7 @@ grounded pre-Elysium priors
   -> Ghostlight agents and institutions
   -> projected dialogue and drama
   -> simulated branch history
-  -> optional promoted canon after review
+  -> branch-local canonical state
 ```
 
 Post-Rupture future training flow:
@@ -74,12 +76,13 @@ authored Elysium concepts and constraints
   -> coordinator plan and projected local contexts
   -> generated action, dialogue, and event consequences
   -> reviewed future-branch training artifact
-  -> optional promoted branch or discarded branch after review
+  -> branch-local canonical history indexed by lineage
 ```
 
 The first flow teaches the machine what grounded social pressure looks like.
 The second and third flows teach it how those pressures mutate under Elysium's
-stranger conditions without pretending every generated future is settled canon.
+stranger conditions while keeping branch-local canon separate from the Sol
+artifact and from sibling Elysium branches.
 
 ## Source Priority
 
@@ -91,12 +94,13 @@ For projection training, prefer sources in this order:
 3. Historical fiction or scene fragments that remain canon-compatible.
 4. Authored post-Elysium concept documents that define altered conditions,
    technologies, species, metaphysics, or social pressures.
-5. Elysium-era procedural fixtures marked as provisional branch material.
+5. Elysium-era procedural fixtures marked with explicit branch lineage and
+   conditional truth boundaries.
 
 Call of the Void and Cat/Oz can remain useful for testing projection mechanics,
 speaker-local boundaries, and prompt shape. They should not be treated as the
-primary grounded training corpus unless the relevant Elysium branch facts are
-intentionally authored or promoted.
+primary linear-history training corpus because their facts belong to Elysium's
+conditional branch space.
 
 ## Historical Flashpoint Candidates
 
@@ -172,18 +176,20 @@ Use explicit fixture status:
 - `historical_grounded`
 - `transition_grounded`
 - `procedural_branch`
-- `promoted_branch`
+- `future_branch`
+- `branch_lineage_canon`
 
 `historical_grounded` and `transition_grounded` examples can become primary
-training data.
+single-history training data.
 
-`procedural_branch` and `future_branch` examples are useful for testing,
-generation, responder training, coordinator training, and post-Rupture concept
-coverage, but should not train any model as if the branch facts were fixed
-canon.
+`procedural_branch` and `future_branch` examples are canonical inside their own
+branch lineage. They are useful for testing, generation, responder training,
+coordinator training, and post-Rupture concept coverage, but must not be treated
+as facts that also apply to sibling branches or to the Sol artifact.
 
-`promoted_branch` examples are procedural outputs that have been reviewed and
-accepted into canon or into a specific authored continuity.
+`branch_lineage_canon` examples are reviewed branch histories whose lineage,
+prior conditions, and local state have been made explicit enough to serve as
+stable training or gameplay continuity.
 
 Use `future_branch` when the point of the fixture is to explore possible
 post-Rupture Elysium outcomes and weird-concept behavior. Use
@@ -216,8 +222,9 @@ Each possible future fixture should declare:
 - which facts are fixed source constraints
 - which facts are generated branch assumptions
 - which branch facts are local to this possible future
-- which facts are eligible for promotion later
-- which generated facts must not leak back into grounded historical training
+- which prior conditions make this branch true
+- which facts belong to this branch lineage and not to sibling branches
+- which generated facts must not leak back into single-history Sol training
 - what new social pressure the weird concept creates
 - what old pre-Elysium pressure is returning in a new costume
 
@@ -243,9 +250,9 @@ These branches should feed:
   respond to miracles as markets, threats, privileges, and dependencies
 
 Keep source provenance strict. A branch can invent a local future, but it should
-say what it invented. The machine may hallucinate futures under supervision; it
-does not get to launder them into the vault while everyone is looking at the
-shiny ghost.
+say what it invented and what branch conditions make it true. The machine may
+generate futures under supervision; it does not get to erase the branch index
+while everyone is looking at the shiny ghost.
 
 ## Operating Doctrine
 
@@ -304,6 +311,6 @@ should stay out of prompt text so they do not harden by accident.
 7. Compare those examples against Cat/Oz to separate grounded historical
    pressure from procedural Elysium branch generation.
 
-Ground the machine in the past. Then make it hallucinate possible futures under
-supervision, with labels sharp enough that the hallucinations cannot steal a
-badge.
+Ground the machine in the past. Then generate possible futures under
+supervision, with branch labels sharp enough that infinity does not show up
+wearing one nametag.

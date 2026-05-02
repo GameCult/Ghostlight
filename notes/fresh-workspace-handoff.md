@@ -140,7 +140,8 @@ outputs, likely model families, artifact families, and first corpus gates.
 It now uses three timeline lanes: `historical_grounded`,
 `transition_grounded`, and `future_branch`. Future branches are required
 training/evaluation material for post-Rupture Elysium concepts, but generated
-branch assumptions must not be treated as canon unless promoted.
+branch assumptions are branch-local canon indexed by lineage, not global facts
+shared by every Elysium history.
 
 ## Current Direction
 
@@ -169,9 +170,9 @@ next-beat choice, glue prose, world-state refs, branch flags, unresolved hooks,
 and machinery invocations as trainable data, then return to the Sella
 prompt/rendering fix.
 
-Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
-training data should start from authored historical lore rather than gameplay
-era Elysium outcomes.
+Cat/Oz remains useful as an Elysium procedural mechanics fixture, but
+single-history grounding should start from authored historical lore rather than
+gameplay-era Elysium outcomes.
 Post-Rupture future branches should be generated too, under explicit branch
 labels, so the models learn Aetheria concepts that only exist after the
 Rupture: Aether, pseudospace, temporal nonlinearity, spirits, necrotech,
