@@ -39,6 +39,34 @@ VALID_ACTION_TYPES = {
     "wait",
     "mixed",
 }
+VALID_RELATIONSHIP_IDS = {"rel-sella-maer", "rel-maer-sella"}
+VALID_RELATIONSHIP_DELTA_PATHS = {
+    "trust",
+    "respect",
+    "resentment",
+    "dependence",
+    "fear",
+    "fascination",
+    "obligation",
+    "envy",
+    "moral_disgust",
+    "perceived_status_gap",
+    "expectation_of_care",
+    "expectation_of_betrayal",
+}
+VALID_SELLA_STATE_DELTA_PATHS = {
+    "canonical_state.behavioral_dimensions.control_pressure.current_activation",
+    "canonical_state.behavioral_dimensions.suspicion.current_activation",
+    "canonical_state.behavioral_dimensions.anxiety.current_activation",
+    "canonical_state.behavioral_dimensions.withdrawal.current_activation",
+    "canonical_state.behavioral_dimensions.attachment_seeking.current_activation",
+    "canonical_state.behavioral_dimensions.interpersonal_warmth.current_activation",
+    "canonical_state.situational_state.scarcity_pressure.current_activation",
+    "canonical_state.situational_state.exhaustion.current_activation",
+    "canonical_state.situational_state.overstimulation.current_activation",
+    "canonical_state.presentation_strategy.competence_theater.current_activation",
+    "canonical_state.presentation_strategy.moral_theater.current_activation",
+}
 
 
 def string_array_schema(description: str) -> dict[str, Any]:
@@ -103,7 +131,7 @@ def sella_appraisal_tool() -> dict[str, Any]:
         "type": "object",
         "required": ["path", "delta", "rationale"],
         "properties": {
-            "path": {"type": "string"},
+            "path": {"type": "string", "enum": sorted(VALID_SELLA_STATE_DELTA_PATHS)},
             "delta": {"type": "number"},
             "rationale": {"type": "string"},
         },
@@ -112,8 +140,8 @@ def sella_appraisal_tool() -> dict[str, Any]:
         "type": "object",
         "required": ["relationship_id", "path", "delta", "rationale"],
         "properties": {
-            "relationship_id": {"type": "string"},
-            "path": {"type": "string"},
+            "relationship_id": {"type": "string", "enum": ["rel-sella-maer"]},
+            "path": {"type": "string", "enum": sorted(VALID_RELATIONSHIP_DELTA_PATHS)},
             "delta": {"type": "number"},
             "rationale": {"type": "string"},
         },
@@ -390,7 +418,21 @@ def request_qwen_tool(
         "keep_alive": "10m",
         "options": {"num_ctx": num_ctx, "temperature": temperature, "top_p": top_p},
     }
-    raw = post_json(endpoint, request_payload, timeout)
+    try:
+        raw = post_json(endpoint, request_payload, timeout)
+    except Exception as exc:
+        raw = {"model": model, "error": repr(exc)}
+        response_text = json.dumps(
+            {
+                "content": "",
+                "thinking": None,
+                "tool_calls": [],
+                "error": repr(exc),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        return raw, response_text, None, [f"request failed for {expected_tool_name}: {exc!r}"]
     message = raw.get("message", {})
     response_text = json.dumps(
         {
@@ -444,6 +486,9 @@ def build_maer_prompt(fixture: dict[str, Any], annotation: dict[str, Any]) -> st
             "Do not stringify nested arrays or objects inside tool arguments.",
             "Do not include Sella's private state, private motives, or future response.",
             "Do not resolve whether the corrupted packet contains a person.",
+            "Maer is a cetacean Navigator: do not describe him standing, walking, stepping, leaning, using hands, using pockets, or blocking a doorway.",
+            "Maer's physical actions should use shared clinic systems, mixed wet/dry work surfaces, displays, acoustic or translation systems, pressure fields, haptic waterflow, neural interfaces, or delegated crew action.",
+            "Do not describe ledger backing as a property of the packet. The packet can be shown, withheld, summarized, scanned, or rendered through clinic systems; route-ledger backing is a separate resource offer.",
             "Include at least two non-speech choices.",
             f"Use action_type values only from this exact enum: {', '.join(sorted(VALID_ACTION_TYPES))}.",
             "The selected branch must be reducible to observable action for Sella.",
@@ -496,6 +541,8 @@ def build_sella_appraisal_prompt(fixture: dict[str, Any], annotation: dict[str, 
             "Do not resolve whether the corrupted packet contains a person.",
             "This pass proposes reviewed state changes for Sella caused by the event. Do not write Sella's next action.",
             "Keep deltas small and bounded between -0.20 and 0.20.",
+            "State delta paths must be chosen from the tool schema enum; do not invent abstract resource paths like sanctuary_capacity.",
+            "Relationship deltas must use relationship_id rel-sella-maer and a valid stance axis from the tool schema enum.",
         ],
         "scene_observable_context": {
             "scene_id": scene_id,
@@ -614,10 +661,52 @@ def validate_choice_payload(parsed: Any) -> list[str]:
         for list_key in ["expected_consequence_surfaces", "training_hooks"]:
             if not isinstance(choice.get(list_key), list):
                 notes.append(f"choices[{index}] {list_key} must be an array")
+        notes.extend(validate_maer_embodiment(choice, f"choices[{index}]"))
+        notes.extend(validate_cold_wake_object_semantics(choice, f"choices[{index}]"))
         if choice.get("action_type") != "speak":
             non_speech += 1
     if non_speech < 2:
         notes.append("choices had fewer than two non-speech actions")
+    return notes
+
+
+def validate_maer_embodiment(choice: dict[str, Any], path: str) -> list[str]:
+    text = " ".join(str(choice.get(key, "")) for key in ["choice_text", "observable_action", "spoken_text", "state_basis"])
+    banned = [
+        "hand",
+        "hands",
+        "pocket",
+        "pockets",
+        "stand",
+        "stands",
+        "standing",
+        "walk",
+        "walks",
+        "walking",
+        "step",
+        "steps",
+        "stepping",
+        "lean",
+        "leans",
+        "leaning",
+        "doorway",
+        "doorframe",
+    ]
+    hits = [word for word in banned if re.search(rf"\b{re.escape(word)}\b", text, re.IGNORECASE)]
+    if hits:
+        return [f"{path} violates Maer cetacean embodiment constraints: {', '.join(sorted(set(hits)))}"]
+    return []
+
+
+def validate_cold_wake_object_semantics(choice: dict[str, Any], path: str) -> list[str]:
+    text = " ".join(str(choice.get(key, "")) for key in ["choice_text", "observable_action", "spoken_text", "state_basis"])
+    notes: list[str] = []
+    if re.search(r"\bpacket'?s ledger backing\b", text, re.IGNORECASE):
+        notes.append(f"{path} conflates packet object custody with route-ledger backing")
+    if re.search(r"\bpacket has weight\b|\bpacket's weight\b|\btangible object with potential value\b", text, re.IGNORECASE):
+        notes.append(f"{path} treats the ambiguous packet as weighted evidence beyond source constraints")
+    if choice.get("action_type") == "show_object" and re.search(r"\bledger backing\b", text, re.IGNORECASE):
+        notes.append(f"{path} uses show_object for ledger backing; use spend_resource for backing or show_object for the packet itself")
     return notes
 
 
@@ -641,6 +730,23 @@ def validate_appraisal_payload(parsed: Any) -> list[str]:
     for list_key in ["immediate_state_deltas", "relationship_deltas", "response_constraints"]:
         if list_key in appraisal and not isinstance(appraisal[list_key], list):
             notes.append(f"appraisal.{list_key} must be an array")
+    for index, delta in enumerate(appraisal.get("immediate_state_deltas", [])):
+        if not isinstance(delta, dict):
+            notes.append(f"appraisal.immediate_state_deltas[{index}] must be an object")
+            continue
+        path = str(delta.get("path", ""))
+        if path not in VALID_SELLA_STATE_DELTA_PATHS:
+            notes.append(f"appraisal.immediate_state_deltas[{index}].path is not an allowed Sella state path: {path}")
+    for index, delta in enumerate(appraisal.get("relationship_deltas", [])):
+        if not isinstance(delta, dict):
+            notes.append(f"appraisal.relationship_deltas[{index}] must be an object")
+            continue
+        relationship_id = str(delta.get("relationship_id", ""))
+        path = str(delta.get("path", ""))
+        if relationship_id not in VALID_RELATIONSHIP_IDS:
+            notes.append(f"appraisal.relationship_deltas[{index}].relationship_id must be a relationship id, got {relationship_id}")
+        if path not in VALID_RELATIONSHIP_DELTA_PATHS:
+            notes.append(f"appraisal.relationship_deltas[{index}].path is not a relationship stance axis: {path}")
     return notes
 
 
@@ -657,7 +763,40 @@ def validate_response_payload(parsed: Any) -> list[str]:
         notes.append("response invalid action_type")
     if "training_hooks" in response and not isinstance(response["training_hooks"], list):
         notes.append("response.training_hooks must be an array")
+    notes.extend(validate_response_prompt_leakage(response))
     return notes
+
+
+def validate_response_prompt_leakage(response: dict[str, Any]) -> list[str]:
+    text = " ".join(
+        str(response.get(key, ""))
+        for key in [
+            "observable_response",
+            "spoken_text",
+            "reviewed_consequences",
+            "sella_private_interpretation",
+            "state_basis",
+        ]
+    )
+    leaked_patterns = [
+        r"\bDo not resolve\b",
+        r"\bDo not accept\b",
+        r"\bDo not let\b",
+        r"\bmust not resolve\b",
+        r"\bmust not make\b",
+        r"\bmust frame the scene\b",
+        r"\bmust speak warmly\b",
+        r"\bmust treat care\b",
+        r"\bSpeak warmly\b",
+        r"\bDemand ledger backing\b",
+        r"\btreat it as unresolved uncertainty\b",
+        r"\bKeep sanctuary intake materially possible\b",
+        r"\bSpeak the personhood\b",
+    ]
+    hits = [pattern for pattern in leaked_patterns if re.search(pattern, text, re.IGNORECASE)]
+    if hits:
+        return [f"response appears to leak prompt constraints into prose: {', '.join(hits)}"]
+    return []
 
 
 def choose_selected_choice(parsed: Any, preferred_action: str) -> dict[str, Any]:
@@ -808,6 +947,66 @@ def main() -> int:
     sella_appraisal_notes.extend(validate_appraisal_payload(sella_appraisal_parsed))
     appraisal = sella_appraisal_parsed.get("appraisal") if isinstance(sella_appraisal_parsed, dict) else None
 
+    appraisal_fatal_notes = fatal_notes(sella_appraisal_notes)
+    if appraisal_fatal_notes:
+        capture = {
+            "schema_version": "ghostlight.qwen_ink_sequential_capture.v0",
+            "capture_id": args.capture_id,
+            "source_fixture_ref": str(args.fixture.relative_to(ROOT)).replace("\\", "/"),
+            "source_annotation_ref": str(args.annotation.relative_to(ROOT)).replace("\\", "/"),
+            "model": maer_raw.get("model", args.model),
+            "endpoint": args.endpoint,
+            "request_options": {
+                "think": args.think,
+                "api": "ollama_chat_tools",
+                "num_ctx": args.num_ctx,
+                "request_timeout": args.request_timeout,
+                "temperature": args.temperature,
+                "top_p": args.top_p,
+            },
+            "passes": {
+                "maer_choice_generation": {
+                    "local_agent_id": "maer_tidecall",
+                    "prompt_text": maer_prompt,
+                    "response_text": maer_response_text,
+                    "parsed_response": maer_parsed,
+                    "validation_notes": maer_notes,
+                },
+                "selected_observable_action": selected_choice,
+                "sella_immediate_appraisal": {
+                    "local_agent_id": "sella_ren",
+                    "prompt_text": sella_appraisal_prompt,
+                    "response_text": sella_appraisal_response_text,
+                    "parsed_response": sella_appraisal_parsed,
+                    "validation_notes": sella_appraisal_notes,
+                },
+                "sella_response_generation": skipped_pass("sella_ren", "skipped because Sella appraisal failed validation or request"),
+            },
+            "review": {
+                "status": "useful_needs_revision",
+                "strengths": [
+                    "Generated Maer-local choices before the later-pass failure.",
+                    "Captured the failed Sella appraisal pass instead of losing the run.",
+                ],
+                "failure_notes": fatal_notes(maer_notes + sella_appraisal_notes),
+                "repair_notes": repair_notes(maer_notes + sella_appraisal_notes),
+                "accepted_into_ink_ref": None,
+                "pipeline_lessons": [
+                    "Later-pass transport or tool failures must still write reviewed receipts.",
+                    "Critical embodiment constraints need post-generation validation; projected prose alone is not enough.",
+                ],
+            },
+        }
+        capture_path = write_sequential_artifacts(
+            args,
+            capture,
+            {"maer": maer_prompt, "sella-appraisal": sella_appraisal_prompt},
+            {"maer": maer_response_text, "sella-appraisal": sella_appraisal_response_text},
+        )
+        print(f"wrote {capture_path.relative_to(ROOT)}")
+        print(json.dumps({"selected_observable_action": selected_choice, "failure_notes": capture["review"]["failure_notes"]}, indent=2, ensure_ascii=False))
+        return 0
+
     sella_prompt = build_sella_prompt(fixture, annotation, selected_choice, appraisal)
     sella_raw, sella_response_text, sella_parsed, sella_notes = request_qwen_tool(
         args.endpoint,
@@ -865,7 +1064,7 @@ def main() -> int:
             },
         },
         "review": {
-            "status": "accepted_as_draft" if not all_notes else "useful_needs_revision",
+            "status": "accepted_as_draft" if not all_notes and not repair_note_list else "useful_needs_revision",
             "strengths": [
                 "Separated Maer choice generation from Sella next-action generation.",
                 "Inserted participant appraisal/consolidation before next-actor action generation.",
@@ -879,6 +1078,7 @@ def main() -> int:
                 "Action type selection should be tool-shaped or schema-constrained, not left to prose compliance.",
                 "Character-local prompts should consume projected operating context, not raw canonical state variables.",
                 "Next-action prompts should receive appraisal context as prose constraints, not raw numeric state deltas.",
+                "Critical embodiment constraints need post-generation validation; projected prose alone is not enough.",
                 "Next pass should materialize the sequential capture into Ink and mutation training data.",
             ],
         },

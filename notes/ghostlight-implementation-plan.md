@@ -163,6 +163,17 @@
      projector, review whether the patched AetheriaLore ergonomics produce
      cleaner action proposals, then decide whether to polish the branch or
      generalize the materializer for additional accepted captures.
+   - Source-checked retry results: v11-v17 improved Maer's body/interface
+     behavior substantially, producing packet actions through shared clinic
+     displays and mixed wet/dry affordances instead of humanoid action. No
+     capture was materialized because later passes exposed repair notes,
+     object-custody drift, invented mutation paths, one Qwen appraisal
+     tool-call dropout, and prompt-constraint leakage into Sella prose.
+   - Validation correction: the sequential runner now checks Maer embodiment,
+     Cold Wake object semantics, Sella appraisal paths/relationship ids, and
+     prompt leakage in responder prose. The next implementation move should
+     make responder prose less likely to copy constraints verbatim before
+     trying to materialize another capture.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

@@ -148,9 +148,10 @@ narrow elaboration before treating the detail as available to Ghostlight.
 
 ## Current Next Action
 
-Run another Qwen pass through the source-checked Navigator projector, then
-review whether the patched AetheriaLore ergonomics produce cleaner action
-proposals before generalizing the sequential materializer.
+Revise the Sella next-action prompt/rendering path so responder prose does not
+copy prompt constraints into in-world dialogue, then rerun the source-checked
+Navigator sequential pass and materialize only a capture with no failure or
+repair notes.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -283,6 +284,12 @@ Remaining projection path:
 - run another Qwen pass through the source-checked projector to test whether
   patched Navigator habitat/interface lore improves Maer's generated action
   proposals
+- v11-v17 did improve Maer's source-grounded embodiment, but no capture was
+  materialized because Sella appraisal/response still exposed object-custody
+  drift, invented mutation paths, Qwen tool dropout, or prompt-constraint
+  leakage
+- next pass should focus on separating response constraints from in-world prose
+  before chasing another materialized Ink branch
 - decide whether to polish this Ink text by hand or generalize the sequential
   materializer for future accepted captures
 - preserve the no-thinking default for strict tool-call generation unless a

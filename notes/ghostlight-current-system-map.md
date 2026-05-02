@@ -269,6 +269,8 @@ instead of tool-call completion, so strict sequential generation now disables
 thinking by default. v10 validated that correction with an accepted-as-draft
 projector-routed no-thinking capture, which has now been materialized into Ink
 plus reviewed mutation training data. The next implementation target is
-running another source-checked Qwen pass after the AetheriaLore Navigator
-habitat/interface patch, then reviewing whether the generated action proposals
-improve before generalizing the materializer.
+fixing the Sella next-action prompt/rendering path after source-checked v11-v17
+retries improved Maer's Navigator embodiment but exposed object-custody drift,
+invalid appraisal paths, Qwen tool dropout, and prompt-constraint leakage into
+responder prose. Do not materialize another capture until it has no failure or
+repair notes.
