@@ -13,6 +13,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INK_FILES = sorted((ROOT / "examples" / "ink").glob("*.ink"))
+DEFAULT_QWEN_INK_CAPTURES = sorted((ROOT / "experiments" / "ink").glob("*.capture.json"))
 VALID_ACTION_TYPES = {
     "speak",
     "silence",
@@ -29,6 +30,7 @@ VALID_ACTION_TYPES = {
     "wait",
     "mixed",
 }
+VALID_CAPTURE_REVIEW_STATUSES = {"accepted", "accepted_as_draft", "rejected", "needs_revision", "useful_needs_revision"}
 
 
 class ValidationError(Exception):
@@ -208,6 +210,71 @@ def validate_annotation(path: Path, ink_path: Path) -> None:
         require(isinstance(value, bool), f"{path}.audit.checks.{key} must be boolean")
 
 
+def validate_qwen_ink_capture(path: Path) -> None:
+    data = load_json(path)
+    require(isinstance(data, dict), f"{path} must be an object")
+    require_keys(
+        data,
+        [
+            "schema_version",
+            "capture_id",
+            "source_fixture_ref",
+            "source_annotation_ref",
+            "model",
+            "endpoint",
+            "request_options",
+            "prompt_text",
+            "response_text",
+            "parsed_response",
+            "review",
+        ],
+        str(path),
+    )
+    require(data["schema_version"] == "ghostlight.qwen_ink_branch_capture.v0", f"{path}.schema_version is wrong")
+    require((ROOT / data["source_fixture_ref"]).exists(), f"{path}.source_fixture_ref does not exist")
+    require((ROOT / data["source_annotation_ref"]).exists(), f"{path}.source_annotation_ref does not exist")
+    require(isinstance(data["prompt_text"], str) and data["prompt_text"].strip(), f"{path}.prompt_text must be non-empty")
+    require(isinstance(data["response_text"], str) and data["response_text"].strip(), f"{path}.response_text must be non-empty")
+
+    parsed = data["parsed_response"]
+    require(isinstance(parsed, dict), f"{path}.parsed_response must be an object")
+    branches = parsed.get("branches")
+    require(isinstance(branches, list) and branches, f"{path}.parsed_response.branches must be non-empty")
+    non_speech_count = 0
+    for index, branch in enumerate(branches):
+        branch_path = f"{path}.parsed_response.branches[{index}]"
+        require(isinstance(branch, dict), f"{branch_path} must be an object")
+        require_keys(
+            branch,
+            [
+                "branch_id",
+                "ink_path",
+                "choice_text",
+                "action_type",
+                "actor_intent",
+                "maer_action_prose",
+                "sella_response_prose",
+                "state_basis",
+                "reviewed_consequences",
+                "training_hooks",
+            ],
+            branch_path,
+        )
+        require(branch["action_type"] in VALID_ACTION_TYPES, f"{branch_path}.action_type is invalid")
+        non_speech_count += 0 if branch["action_type"] == "speak" else 1
+    require(non_speech_count >= 2, f"{path}.parsed_response.branches must include at least two non-speech branches")
+
+    review = data["review"]
+    require(isinstance(review, dict), f"{path}.review must be an object")
+    require_keys(review, ["status", "strengths", "failure_notes", "accepted_into_ink_ref", "pipeline_lessons"], f"{path}.review")
+    require(review["status"] in VALID_CAPTURE_REVIEW_STATUSES, f"{path}.review.status is invalid or unreviewed")
+    for list_key in ["strengths", "failure_notes", "pipeline_lessons"]:
+        require(isinstance(review[list_key], list), f"{path}.review.{list_key} must be an array")
+    accepted_ref = review["accepted_into_ink_ref"]
+    if accepted_ref is not None:
+        require((ROOT / accepted_ref).exists(), f"{path}.review.accepted_into_ink_ref does not exist")
+
+
 def validate_ink(path: Path) -> None:
     compile_ink(path)
     annotation_path = path.with_suffix(".training.json")
@@ -225,6 +292,9 @@ def main() -> int:
     require(paths, "no Ink examples found")
     for path in paths:
         validate_ink(path)
+    for path in DEFAULT_QWEN_INK_CAPTURES:
+        validate_qwen_ink_capture(path)
+        print(f"ok: {path}")
     return 0
 
 

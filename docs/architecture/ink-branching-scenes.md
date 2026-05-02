@@ -11,6 +11,7 @@ Ghostlight's job is the machinery around Ink:
 
 - build actor-local awareness from agent state and scene state
 - project plausible speech and non-speech choices
+- save generation receipts when a model proposes branches
 - annotate why those choices make sense
 - preserve listener interpretation as separate from actor intent
 - record consequence surfaces for later state mutation
@@ -38,6 +39,23 @@ agent state + scene state + lore grounding
 The Ink file should be readable as Aetheria content on its own. The sidecar
 training annotation should explain which Ghostlight state produced each branch
 and which consequences are automatic, reviewed, or deferred.
+
+The first generated draft path is:
+
+```text
+examples/agent-state.cold-wake-story-lab.json
+  + examples/ink/cold-wake-sanctuary-intake.training.json
+  -> tools/run_qwen_ink_branch_generation.py
+  -> experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json
+  -> tools/materialize_qwen_ink_draft.py
+  -> examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink
+  -> examples/ink/cold-wake-sanctuary-intake.qwen-draft.training.json
+```
+
+The Qwen draft is accepted as training material, not as final polished prose.
+That distinction matters. A generated branch can be useful because it exposes a
+decision shape, an action type, a misread, or a prompt failure even when the
+line writing still needs a human with a knife.
 
 ## Ink Tags
 
@@ -98,3 +116,6 @@ Manual reviewed until trained:
 
 The first prototype lives in
 `examples/ink/cold-wake-sanctuary-intake.ink`.
+
+The first Qwen-generated draft lives in
+`examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`.

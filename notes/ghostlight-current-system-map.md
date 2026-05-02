@@ -110,6 +110,15 @@ state and re-entry discipline.
   - reviewed sidecar annotation tying Ink branches to Ghostlight local
     awareness, projection controls, branch rationale, consequence surfaces, and
     manual mutation policy
+- `examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`
+  - first Qwen-generated playable Ink draft materialized from a Ghostlight
+    local-awareness prompt
+- `examples/ink/cold-wake-sanctuary-intake.qwen-draft.training.json`
+  - sidecar annotation for the generated draft, accepted as training material
+    rather than final polished prose
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json`
+  - reviewed Qwen branch-generation receipt, including prompt, parsed response,
+    strengths, failure notes, and pipeline lessons
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
@@ -127,7 +136,13 @@ state and re-entry discipline.
   - dependency-free validator for lore grounding digest examples
 - `tools/validate_ink_examples.py`
   - compiles Ink examples with `inkjs` and validates sidecar training
-    annotations
+    annotations plus reviewed Qwen Ink-generation captures
+- `tools/run_qwen_ink_branch_generation.py`
+  - builds a local-awareness prompt from the Cold Wake fixture and asks Qwen
+    for Ink branch candidates
+- `tools/materialize_qwen_ink_draft.py`
+  - turns a reviewed Qwen branch capture into a playable Ink draft and sidecar
+    annotation
 - `tools/build_cold_wake_story_lab_fixture.py`
   - generator for the verbose Cold Wake story-lab state fixture
 
@@ -147,8 +162,8 @@ state and re-entry discipline.
 The canonical agent-state schema, projection example schema, lore grounding
 digest schema, first draft Cold Wake grounding digest, and first Cold Wake
 story-lab Qwen captures now exist as v0 seams. The first complete Cold Wake
-story pass exists with receipts, and projection controls have been promoted as
-the architectural answer to repeated prompt leaks. Ink is now the standard
-branching scene format; the next implementation target is projecting or
-generating Ink branches from local awareness and testing selected branch
-mutation through reviewed state, memory, and relationship updates.
+story pass exists with receipts, projection controls have been promoted, and
+Ink is now the standard branching scene format. The first Qwen-generated Ink
+draft now exists with a reviewed capture. The next implementation target is
+testing selected branch mutation through reviewed state, memory, and
+relationship updates.

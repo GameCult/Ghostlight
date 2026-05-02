@@ -67,6 +67,13 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 - Ink branching seam:
   - `examples/ink/cold-wake-sanctuary-intake.ink`
   - `examples/ink/cold-wake-sanctuary-intake.training.json`
+  - `examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`
+  - `examples/ink/cold-wake-sanctuary-intake.qwen-draft.training.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.prompt.md`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.response.md`
+  - `tools/run_qwen_ink_branch_generation.py`
+  - `tools/materialize_qwen_ink_draft.py`
   - `tools/validate_ink_examples.py`
   - `inkjs` dev dependency and `npm run ink:validate`
 - Cold Wake fixture note:
@@ -80,8 +87,8 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 
 There is still no full runtime yet. The live machine is design, state
 discipline, a cleaner repo boundary, the first executable state contract, a
-documented projection path, and the first Ink-backed playable branching scene
-with reviewed training annotations.
+documented projection path, the first Ink-backed playable branching scene, and
+the first Qwen-generated Ink draft with reviewed training annotations.
 
 ## Current Direction
 
@@ -98,10 +105,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Build the next Ink-backed scene prototype pass: generate or project branch
-choices from local awareness, compile Ink, validate sidecar training
-annotations, and test one selected branch's reviewed state/memory/relationship
-mutation.
+Test one selected Qwen-generated Ink branch's reviewed
+state/memory/relationship mutation without letting Ink variables silently become
+canonical Ghostlight state.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -146,14 +152,18 @@ Completed projection path items:
   `examples/ink/cold-wake-sanctuary-intake.ink`, with a reviewed sidecar
   annotation tying branches to Ghostlight state, projection controls,
   consequence surfaces, and manual mutation policy
+- add the first local-awareness-to-Qwen-to-Ink pass:
+  `tools/run_qwen_ink_branch_generation.py` produced a reviewed capture, and
+  `tools/materialize_qwen_ink_draft.py` materialized
+  `examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`
 
 Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- build the first local-awareness-to-Ink generation pass so an agent can act
-  from local awareness, produce branchable speech or non-speech choices, trigger
-  NPC responses, and annotate mutations without replacing Ink
+- improve the local-awareness-to-Ink prompt so semantic `training_hooks` do not
+  drift into future branch ids and object custody remains branch-local
+- test one selected generated branch through reviewed event/state mutation
 - keep the near-term product target to interactive dialogue trees and
   scene-local consequences
 - preserve training-data hooks for future open-world behavior, iterated

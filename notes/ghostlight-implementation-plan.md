@@ -83,6 +83,12 @@
      and validate a sidecar training annotation that maps branches to
      Ghostlight state basis, action intent, consequence surfaces, and manual
      mutation policy.
+   - First generated draft: use `tools/run_qwen_ink_branch_generation.py` to
+     ask Qwen for branch candidates from local awareness, then materialize the
+     reviewed result with `tools/materialize_qwen_ink_draft.py`.
+   - Next prototype: pick one generated branch and apply only reviewed
+     state/memory/relationship mutation, keeping Ink variables as local
+     playthrough state rather than canonical truth.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to
