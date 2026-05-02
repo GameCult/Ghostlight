@@ -86,6 +86,8 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v3.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v5.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v6-projector.capture.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v8-projector-tightened.capture.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v9-projector-tightened.capture.json`
   - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
   - `experiments/ink/qwen-chat-tools-smoke.json`
   - `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
@@ -126,10 +128,10 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Tighten the projector-routed sequential loop by repairing or preventing nested
-tool-argument stringification, then decide whether the v6-style output should
-be materialized into Ink and a reviewed mutation receipt or rerun after stricter
-tool validation.
+Add a deliberate retry or fallback strategy for projector-routed Qwen tool-call
+failures, then rerun until a projector-routed sequential capture is
+accepted-as-draft before materializing any branch into Ink or mutation training
+data.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -229,15 +231,24 @@ Completed projection path items:
   validates the architecture boundary and produces usable Maer/Sella behavior,
   but remains useful-needs-revision because Qwen stringified a nested
   `response_constraints` field in Sella appraisal
+- tighten the sequential runner:
+  repair notes are separated from fatal validation notes, obvious truncated
+  stringified tool arrays can be repaired, failed Maer choice generation writes
+  a reviewed capture instead of exiting, and Sella's next-action prompt receives
+  appraisal context as prose constraints rather than raw numeric deltas
+- add v8 and v9 projector-routed failure receipts:
+  v8 shows malformed stringified `choices`; v9 shows a no-tool-call dropout.
+  These are Qwen tool reliability failures, so no projector-routed branch was
+  materialized into Ink in this pass.
 
 Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
-- tighten nested tool-argument repair or schema enforcement so projector-routed
-  sequential captures can become accepted-as-draft without hand-cleaning
-- decide whether the v6 projector-routed output should be materialized into Ink
-  and mutation training data or rerun after stricter validation
+- add a deliberate retry or fallback strategy around projector-routed Qwen
+  tool-call failures
+- rerun until a projector-routed capture is accepted-as-draft before
+  materializing into Ink and mutation training data
 - improve the local-awareness-to-Ink prompt so semantic `training_hooks` do not
   drift into future branch ids, object custody remains branch-local, and action
   labels come from the exact canonical enum

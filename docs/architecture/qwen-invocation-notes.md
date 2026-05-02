@@ -55,6 +55,13 @@ Sources:
   runner repairs known fields such as `choices`, `appraisal`, and `response`
   when they arrive as JSON strings, and records validation notes when repair
   fails.
+- Projector-routed v8 showed a malformed stringified `choices` array with an
+  obvious missing closing bracket. The runner can now repair that class of
+  truncated tool-string wrapper, but the capture stays useful-needs-revision if
+  no valid choice remains.
+- Projector-routed v9 showed a no-tool-call dropout. This is not repairable
+  from arguments because there are no arguments. The next harness step should
+  be an explicit retry or fallback pass, not prompt scolding.
 
 ## Current Policy
 
@@ -65,7 +72,9 @@ For structured Ghostlight generation:
 3. Preserve captures that fail formatting as `useful_needs_revision` receipts.
 4. Use repair only as a reviewed harness layer, not as proof the model obeyed
    the schema perfectly.
-5. Only materialize Ink or canonical mutation from captures that validate after
+5. If a pass returns no tool call, retry or route through a deliberate fallback
+   before continuing the sequence.
+6. Only materialize Ink or canonical mutation from captures that validate after
    tool parsing and repair.
 
 Qwen-Agent remains a future option if we need its higher-level tool loop,

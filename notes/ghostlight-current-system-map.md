@@ -149,6 +149,13 @@ state and re-entry discipline.
   - useful-needs-revision projector-routed receipt proving Qwen prompts can use
     character-local operating prose instead of raw state variables; still
     exposed nested `response_constraints` stringification in appraisal output
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v8-projector-tightened.capture.json`
+  - useful-needs-revision receipt proving failed Maer choice generation is now
+    captured instead of crashing the runner; exposed malformed stringified
+    `choices`
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v9-projector-tightened.capture.json`
+  - useful-needs-revision receipt showing Qwen can still drop tool calls
+    entirely under projector-routed prompting
 - `examples/projected-contexts/`
   - current rendered projected local context artifacts for Maer and Sella in
     the sanctuary intake scene
@@ -191,7 +198,9 @@ state and re-entry discipline.
   - builds a sequential Qwen prototype through Ollama `/api/chat` with native
     tools and thinking enabled: actor-local choices, participant
     appraisal/consolidation, then next-actor action from updated state; now
-    routes character context through the projected-local-context seam
+    routes character context through the projected-local-context seam, captures
+    failed Maer choice calls, separates repair notes from fatal validation
+    notes, and keeps numeric appraisal deltas out of next-action prompt context
 - `tools/check_qwen_chat_tools.py`
   - fast smoke test for local Qwen thinking plus native tool calling
 - `tools/project_local_context.py`
@@ -230,7 +239,8 @@ first Qwen-generated Ink draft now exists with a reviewed capture, the first
 selected branch now has a reviewed mutation replay that updates both involved
 characters, v2 shows the symmetrical turn model improves action behavior, v5
 proves local thinking-plus-tools invocation works for the scene runner, and v6
-routes that runner through projected character-local operating context. The
-next implementation target is tightening nested tool-argument validation and
-deciding whether to materialize a projector-routed branch into Ink plus mutation
-training data.
+routes that runner through projected character-local operating context. v8 and
+v9 show that Qwen tool-call reliability, not the projector seam, is now the
+immediate blocker. The next implementation target is an explicit retry or
+fallback strategy before any projector-routed branch is materialized into Ink
+plus mutation training data.

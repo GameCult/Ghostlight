@@ -130,9 +130,17 @@
      produced usable Maer/Sella behavior but remains useful-needs-revision
      because Qwen stringified nested `response_constraints` in the appraisal
      payload.
-   - Next prototype: tighten nested tool-argument repair or schema enforcement,
-     then materialize only a validated projector-routed branch into Ink and
-     sidecar annotation.
+   - Runner tightening: failed Maer choice generation now writes reviewed
+     receipts instead of exiting, obvious malformed stringified tool arrays can
+     be repaired, repair notes are separated from fatal validation notes, and
+     Sella's next-action prompt receives appraisal prose instead of raw numeric
+     deltas.
+   - Eighth and ninth sequential drafts: v8 captured malformed stringified
+     `choices`; v9 captured a no-tool-call dropout. Both validate the receipt
+     path and show Qwen tool reliability is now the blocker.
+   - Next prototype: add deliberate retry or fallback behavior for
+     projector-routed Qwen tool-call failures, then materialize only an
+     accepted-as-draft projector-routed branch into Ink and sidecar annotation.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

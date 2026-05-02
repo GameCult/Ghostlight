@@ -295,12 +295,30 @@ def repair_tool_arguments(arguments: dict[str, Any]) -> tuple[dict[str, Any], li
     for key in ["choices", "response", "appraisal"]:
         value = repaired.get(key)
         if isinstance(value, str):
-            try:
-                repaired[key] = json.loads(value)
+            parsed = parse_jsonish_tool_string(value)
+            if parsed is not None:
+                repaired[key] = parsed
                 notes.append(f"repaired stringified tool argument: {key}")
-            except json.JSONDecodeError:
+            else:
                 notes.append(f"could not repair stringified tool argument: {key}")
     return repaired, notes
+
+
+def parse_jsonish_tool_string(value: str) -> Any | None:
+    candidate = value.strip()
+    candidates = [candidate]
+    if candidate.startswith("[") and not candidate.endswith("]"):
+        candidates.append(candidate + "]")
+    if candidate.startswith("{") and not candidate.endswith("}"):
+        candidates.append(candidate + "}")
+    if candidate.endswith(","):
+        candidates.append(candidate[:-1])
+    for item in candidates:
+        try:
+            return json.loads(item)
+        except json.JSONDecodeError:
+            continue
+    return None
 
 
 def repair_nested_list_fields(payload: Any, fields: list[str]) -> tuple[Any, list[str]]:
@@ -315,15 +333,40 @@ def repair_nested_list_fields(payload: Any, fields: list[str]) -> tuple[Any, lis
         candidate = value.strip()
         if candidate.endswith(","):
             candidate = candidate[:-1]
-        try:
-            parsed = json.loads(candidate)
-        except json.JSONDecodeError:
+        parsed = parse_jsonish_tool_string(candidate)
+        if parsed is None:
             notes.append(f"could not repair stringified nested list field: {field}")
             continue
         if isinstance(parsed, list):
             repaired[field] = parsed
             notes.append(f"repaired stringified nested list field: {field}")
     return repaired, notes
+
+
+def normalize_appraisal_payload(parsed: Any) -> tuple[Any, list[str]]:
+    notes: list[str] = []
+    if not isinstance(parsed, dict):
+        return parsed, notes
+    if isinstance(parsed.get("appraisal"), dict):
+        appraisal = parsed["appraisal"]
+    elif "responder_agent_id" in parsed:
+        appraisal = parsed
+    else:
+        return parsed, notes
+    appraisal, nested_repair_notes = repair_nested_list_fields(
+        appraisal,
+        ["belief_updates", "response_constraints"],
+    )
+    notes.extend(nested_repair_notes)
+    return {"appraisal": appraisal}, notes
+
+
+def fatal_notes(notes: list[str]) -> list[str]:
+    return [note for note in notes if not note.startswith("repaired ")]
+
+
+def repair_notes(notes: list[str]) -> list[str]:
+    return [note for note in notes if note.startswith("repaired ")]
 
 
 def request_qwen_tool(
@@ -517,7 +560,7 @@ def build_sella_prompt(
             "public_stakes": scene["public_stakes"],
         },
         "observable_maer_action": event_context,
-        "sella_immediate_appraisal": appraisal,
+        "sella_immediate_appraisal_context": appraisal_context_for_prompt(appraisal),
         "projected_local_context": projected["context"]["prompt_text"],
         "projector_audit": projected["audit"],
     }
@@ -526,6 +569,26 @@ def build_sella_prompt(
         "Use reviewed event appraisal as the changed state she is acting from.\n\n"
         + json.dumps(payload, indent=2, ensure_ascii=False)
     )
+
+
+def appraisal_context_for_prompt(appraisal: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(appraisal, dict):
+        return None
+    state_change_summary = []
+    for delta in appraisal.get("immediate_state_deltas", []):
+        if isinstance(delta, dict) and delta.get("rationale"):
+            state_change_summary.append(delta["rationale"])
+    for delta in appraisal.get("relationship_deltas", []):
+        if isinstance(delta, dict) and delta.get("rationale"):
+            state_change_summary.append(delta["rationale"])
+    return {
+        "private_interpretation": appraisal.get("private_interpretation", ""),
+        "attributed_motive": appraisal.get("attributed_motive", ""),
+        "misread_risk": appraisal.get("misread_risk", ""),
+        "belief_updates": appraisal.get("belief_updates", []),
+        "response_constraints": appraisal.get("response_constraints", []),
+        "state_change_summary": state_change_summary,
+    }
 
 
 def validate_choice_payload(parsed: Any) -> list[str]:
@@ -608,6 +671,28 @@ def choose_selected_choice(parsed: Any, preferred_action: str) -> dict[str, Any]
     raise SystemExit("No choices available to select")
 
 
+def write_sequential_artifacts(args: argparse.Namespace, capture: dict[str, Any], prompts: dict[str, str], responses: dict[str, str]) -> Path:
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    base = args.capture_id.replace(".", "-")
+    capture_path = args.out_dir / f"{base}.capture.json"
+    write_json(capture_path, capture)
+    for name, text in prompts.items():
+        write_text(args.out_dir / f"{base}.{name}.prompt.md", text + "\n")
+    for name, text in responses.items():
+        write_text(args.out_dir / f"{base}.{name}.response.md", text + "\n")
+    return capture_path
+
+
+def skipped_pass(local_agent_id: str, reason: str) -> dict[str, Any]:
+    return {
+        "local_agent_id": local_agent_id,
+        "prompt_text": f"Skipped: {reason}",
+        "response_text": f"Skipped: {reason}",
+        "parsed_response": None,
+        "validation_notes": [reason],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a sequential local-awareness Qwen Ink prototype.")
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
@@ -640,7 +725,70 @@ def main() -> int:
         args.request_timeout,
     )
     maer_notes.extend(validate_choice_payload(maer_parsed))
-    selected_choice = choose_selected_choice(maer_parsed, args.preferred_action)
+    try:
+        selected_choice = choose_selected_choice(maer_parsed, args.preferred_action)
+    except SystemExit as exc:
+        selected_choice = {
+            "branch_id": "no-selection",
+            "ink_path": "no_selection",
+            "choice_text": "No selectable Maer choice was produced.",
+            "action_type": "no_valid_action",
+            "observable_action": "No observable action was selected because Maer choice generation failed.",
+            "spoken_text": "",
+            "expected_consequence_surfaces": [],
+            "training_hooks": [],
+        }
+        maer_notes.append(str(exc))
+        all_notes = fatal_notes(maer_notes)
+        capture = {
+            "schema_version": "ghostlight.qwen_ink_sequential_capture.v0",
+            "capture_id": args.capture_id,
+            "source_fixture_ref": str(args.fixture.relative_to(ROOT)).replace("\\", "/"),
+            "source_annotation_ref": str(args.annotation.relative_to(ROOT)).replace("\\", "/"),
+            "model": maer_raw.get("model", args.model),
+            "endpoint": args.endpoint,
+            "request_options": {
+                "think": args.think,
+                "api": "ollama_chat_tools",
+                "num_ctx": args.num_ctx,
+                "request_timeout": args.request_timeout,
+                "temperature": args.temperature,
+                "top_p": args.top_p,
+            },
+            "passes": {
+                "maer_choice_generation": {
+                    "local_agent_id": "maer_tidecall",
+                    "prompt_text": maer_prompt,
+                    "response_text": maer_response_text,
+                    "parsed_response": maer_parsed,
+                    "validation_notes": maer_notes,
+                },
+                "selected_observable_action": selected_choice,
+                "sella_response_generation": skipped_pass("sella_ren", "skipped because no selectable Maer choice was produced"),
+            },
+            "review": {
+                "status": "useful_needs_revision",
+                "strengths": [
+                    "Captured a failed projector-routed Qwen call instead of exiting without a receipt.",
+                ],
+                "failure_notes": all_notes,
+                "repair_notes": repair_notes(maer_notes),
+                "accepted_into_ink_ref": None,
+                "pipeline_lessons": [
+                    "Sequential generation failures should still produce reviewed receipts.",
+                    "Maer choice generation needs a retry or stricter tool-call fallback before later passes run.",
+                ],
+            },
+        }
+        capture_path = write_sequential_artifacts(
+            args,
+            capture,
+            {"maer": maer_prompt},
+            {"maer": maer_response_text},
+        )
+        print(f"wrote {capture_path.relative_to(ROOT)}")
+        print(json.dumps({"selected_observable_action": selected_choice, "failure_notes": all_notes}, indent=2, ensure_ascii=False))
+        return 0
 
     sella_appraisal_prompt = build_sella_appraisal_prompt(fixture, annotation, selected_choice)
     sella_appraisal_raw, sella_appraisal_response_text, sella_appraisal_parsed, sella_appraisal_notes = request_qwen_tool(
@@ -655,13 +803,8 @@ def main() -> int:
         args.think,
         args.request_timeout,
     )
-    sella_appraisal_parsed = {"appraisal": sella_appraisal_parsed} if isinstance(sella_appraisal_parsed, dict) else sella_appraisal_parsed
-    if isinstance(sella_appraisal_parsed, dict) and isinstance(sella_appraisal_parsed.get("appraisal"), dict):
-        sella_appraisal_parsed["appraisal"], nested_repair_notes = repair_nested_list_fields(
-            sella_appraisal_parsed["appraisal"],
-            ["belief_updates", "response_constraints"],
-        )
-        sella_appraisal_notes.extend(nested_repair_notes)
+    sella_appraisal_parsed, appraisal_repair_notes = normalize_appraisal_payload(sella_appraisal_parsed)
+    sella_appraisal_notes.extend(appraisal_repair_notes)
     sella_appraisal_notes.extend(validate_appraisal_payload(sella_appraisal_parsed))
     appraisal = sella_appraisal_parsed.get("appraisal") if isinstance(sella_appraisal_parsed, dict) else None
 
@@ -680,7 +823,8 @@ def main() -> int:
     )
     sella_notes.extend(validate_response_payload(sella_parsed))
 
-    all_notes = maer_notes + sella_appraisal_notes + sella_notes
+    repair_note_list = repair_notes(maer_notes + sella_appraisal_notes + sella_notes)
+    all_notes = fatal_notes(maer_notes + sella_appraisal_notes + sella_notes)
     capture = {
         "schema_version": "ghostlight.qwen_ink_sequential_capture.v0",
         "capture_id": args.capture_id,
@@ -728,32 +872,32 @@ def main() -> int:
                 "Sella prompt received observable Maer event and reviewed Sella state changes, not Maer's private intent.",
             ],
             "failure_notes": all_notes,
+            "repair_notes": repair_note_list,
             "accepted_into_ink_ref": None,
             "pipeline_lessons": [
                 "Sequential generation needs event appraisal/consolidation before next actor selection.",
                 "Action type selection should be tool-shaped or schema-constrained, not left to prose compliance.",
                 "Character-local prompts should consume projected operating context, not raw canonical state variables.",
+                "Next-action prompts should receive appraisal context as prose constraints, not raw numeric state deltas.",
                 "Next pass should materialize the sequential capture into Ink and mutation training data.",
             ],
         },
     }
 
-    args.out_dir.mkdir(parents=True, exist_ok=True)
-    base = args.capture_id.replace(".", "-")
-    capture_path = args.out_dir / f"{base}.capture.json"
-    maer_prompt_path = args.out_dir / f"{base}.maer.prompt.md"
-    maer_response_path = args.out_dir / f"{base}.maer.response.md"
-    sella_appraisal_prompt_path = args.out_dir / f"{base}.sella-appraisal.prompt.md"
-    sella_appraisal_response_path = args.out_dir / f"{base}.sella-appraisal.response.md"
-    sella_prompt_path = args.out_dir / f"{base}.sella.prompt.md"
-    sella_response_path = args.out_dir / f"{base}.sella.response.md"
-    write_json(capture_path, capture)
-    write_text(maer_prompt_path, maer_prompt + "\n")
-    write_text(maer_response_path, maer_response_text + "\n")
-    write_text(sella_appraisal_prompt_path, sella_appraisal_prompt + "\n")
-    write_text(sella_appraisal_response_path, sella_appraisal_response_text + "\n")
-    write_text(sella_prompt_path, sella_prompt + "\n")
-    write_text(sella_response_path, sella_response_text + "\n")
+    capture_path = write_sequential_artifacts(
+        args,
+        capture,
+        {
+            "maer": maer_prompt,
+            "sella-appraisal": sella_appraisal_prompt,
+            "sella": sella_prompt,
+        },
+        {
+            "maer": maer_response_text,
+            "sella-appraisal": sella_appraisal_response_text,
+            "sella": sella_response_text,
+        },
+    )
     print(f"wrote {capture_path.relative_to(ROOT)}")
     print(json.dumps({"selected_observable_action": selected_choice, "sella_appraisal": sella_appraisal_parsed, "sella_response": sella_parsed}, indent=2, ensure_ascii=False))
     return 0
