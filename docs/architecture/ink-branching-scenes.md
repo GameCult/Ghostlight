@@ -30,8 +30,10 @@ agent state + scene state + lore grounding
   -> local awareness
   -> projected branch choices for the acting character
   -> selected branch as observable action
-  -> responder local awareness built from only what the responder can perceive
-  -> responder action
+  -> event resolution from selected observable action
+  -> participant appraisals and reviewed state mutation
+  -> next actor local awareness from updated state
+  -> next actor action
   -> Ink scene
   -> compiled Ink JSON
   -> reviewed training annotations
@@ -48,6 +50,13 @@ The protagonist-choice generator should not receive the responder's private
 state. The responder generator should not receive the protagonist's private
 intent except as an observable action, spoken text, gesture, object use,
 silence, or other perceivable cue. A listener is allowed to misunderstand.
+
+Participant appraisal is symmetrical. If an action hurts, threatens, reassures,
+humiliates, obligates, or overloads anyone present, that change is consolidated
+for the affected character before the next actor is selected. The next actor may
+reply, walk away, comply, escalate, or end the interaction. A branch artifact can
+still display this as `choice -> reaction`, but Ghostlight should model it as
+turns over updated state, not as a mandatory paired response.
 
 One-shot generation of both sides is allowed only as bootstrap scaffolding, and
 must be marked as such in the capture review. It is not the target runtime

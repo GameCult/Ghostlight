@@ -38,10 +38,11 @@ One runtime tick should look like this:
 2. Build that agent's local awareness.
 3. Derive available actions and constraints.
 4. Let the agent choose a response.
-5. Resolve the response against the scene.
-6. Mutate world, relationship, memory, belief, and activation state.
-7. Append an event record with participant-local interpretations.
-8. Choose the next acting agent or end the scene.
+5. Resolve the action into an observable event.
+6. Apply every affected participant's appraisal and state mutation for that
+   event.
+7. Append the event record with participant-local interpretations.
+8. Select the next acting agent from the updated scene state, or end the scene.
 
 The author sets the initial scene, player role if any, and high-level branch
 constraints. The author should not need to decide every line, interruption,
@@ -57,10 +58,24 @@ are separate generation steps:
    perceives, wants, can attempt, and can affect.
 3. When one choice is selected, reduce it to observable action: words, silence,
    gesture, movement, object use, resource spend, or other perceivable change.
-4. Build the responder's local awareness from the responder's own state plus
-   the observable action, not the protagonist's private intent.
-5. Generate the responder's action from that responder-local packet.
-6. Store actor intent and listener interpretation separately.
+4. Resolve the selected choice into an event visible to affected characters.
+5. Apply reviewed participant appraisals and state mutations for that event:
+   hurt, threat, reassurance, obligation, resentment, trust movement, overload,
+   misread, world/object/resource changes, and scene-ending choices when they
+   occur.
+6. Select the next acting agent from the updated state. The next agent may
+   answer, walk away, escalate, comply, refuse, call for help, attack, or end
+   the interaction.
+7. Generate that next action from the newly consolidated local state.
+8. Store actor intent, listener appraisal, and durable interpretation
+   separately.
+
+There is no privileged paired exchange inside the runtime. For authoring
+convenience a branch artifact may show `player action -> NPC action`, but
+Ghostlight should treat that as two turns stitched together, not one fused
+response object. If Maer wounds Sella with a ledger threat, Sella's state
+changes before she is considered as the next actor; she is not obligated to
+produce a line just because the author expected one.
 
 One-shot paired generation, where a model writes both the player's move and the
 NPC response from a shared omniscient packet, is acceptable only as bootstrap
@@ -338,8 +353,9 @@ agent state + scene state
   -> action affordances
   -> agent response/action
   -> event resolution
-  -> state mutation
-  -> next agent
+  -> participant appraisals and state mutation
+  -> next actor selection
+  -> next agent action from updated local state
 ```
 
 ## First Prototype
@@ -359,7 +375,8 @@ Prototype one tiny Ink-backed branching scene loop:
 8. Apply selected branch consequences only through reviewed mutation:
    - Ink variables can track local playthrough facts
    - canonical state changes require resolver/reviewer approval
-9. Manually review fuzzy state effects:
+9. Manually review fuzzy participant appraisals and state effects each turn:
+   - update every affected participant before selecting the next actor
    - add one memory or belief update
    - adjust one or two `current_activation` values
    - update one relationship stance if justified

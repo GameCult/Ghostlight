@@ -49,6 +49,10 @@
      scarcity, reputation, faction pressure, and institution decision-making.
    - Build local awareness from scene state, agent state, relationships,
      memories, resources, affordances, and known constraints.
+   - Consolidate participant appraisals and state mutation after every
+     resolved action before selecting the next actor; hurt, threat,
+     reassurance, obligation, overload, and misread should alter the state any
+     affected participant acts from.
    - Keep action primitives concrete: speech, silence, movement, gesture,
      object use, object transfer, object blocking, resource spending, waiting,
      and attack. Treat ask/refuse/offer/reveal/conceal/request as intended
@@ -86,9 +90,24 @@
    - First generated draft: use `tools/run_qwen_ink_branch_generation.py` to
      ask Qwen for branch candidates from local awareness, then materialize the
      reviewed result with `tools/materialize_qwen_ink_draft.py`.
-   - Next prototype: pick one generated branch and apply only reviewed
-     state/memory/relationship mutation, keeping Ink variables as local
-     playthrough state rather than canonical truth.
+   - First sequential draft: use `tools/run_qwen_ink_sequential_generation.py`
+     to separate actor-local choice, participant appraisal/consolidation, and
+     the next actor's move from updated state. The first saved capture is
+     useful-needs-revision because it exposed the missing per-turn appraisal
+     boundary and weak action enum discipline.
+   - First reviewed branch mutation: use
+     `tools/apply_sequential_ink_branch_mutation.py` to apply one selected
+     generated branch into
+     `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
+     and a mutation receipt, updating both Maer and Sella without treating Ink
+     variables as canonical truth.
+   - Second sequential draft: the symmetrical turn framing produced canonical
+     action labels and a concrete Sella `withhold_object` next action, but
+     still needs stricter schema or tool-call enforcement because array fields
+     drifted into strings and objects.
+   - Next prototype: replace prose-only JSON compliance with a stricter
+     tool-shaped schema or repair/review pass before materializing the branch
+     into Ink.
 
 5. Build the projection distillation loop. Started.
    - Use `docs/architecture/projection-distillation-plan.md` as the teacher to

@@ -75,7 +75,14 @@ Ghostlight now has the persistence spine plus the first architecture payload:
   - `tools/run_qwen_ink_branch_generation.py`
   - `tools/materialize_qwen_ink_draft.py`
   - `tools/validate_ink_examples.py`
+  - `tools/run_qwen_ink_sequential_generation.py`
+  - `tools/apply_sequential_ink_branch_mutation.py`
   - `inkjs` dev dependency and `npm run ink:validate`
+- sequential branch mutation seam:
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.capture.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v2.capture.json`
+  - `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
+  - `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
 - Cold Wake fixture note:
   - `docs/architecture/aetheria-cold-wake-training-fixture.md`
 - first projection example seam:
@@ -87,8 +94,10 @@ Ghostlight now has the persistence spine plus the first architecture payload:
 
 There is still no full runtime yet. The live machine is design, state
 discipline, a cleaner repo boundary, the first executable state contract, a
-documented projection path, the first Ink-backed playable branching scene, and
-the first Qwen-generated Ink draft with reviewed training annotations.
+documented projection path, the first Ink-backed playable branching scene, the
+first Qwen-generated Ink draft with reviewed training annotations, and the
+first reviewed mutation receipt showing how a selected generated branch changes
+both involved characters.
 
 ## Current Direction
 
@@ -105,9 +114,9 @@ training feedstock for projection and dialogue scaffolding.
 
 ## Current Next Action
 
-Test one selected Qwen-generated Ink branch's reviewed
-state/memory/relationship mutation without letting Ink variables silently become
-canonical Ghostlight state.
+Replace prose-only sequential Qwen JSON generation with a stricter
+tool-shaped schema or post-generation repair pass for array fields, then
+materialize only a fully validated sequential branch into Ink.
 
 Cat/Oz remains useful as an Elysium procedural mechanics fixture, but grounded
 training data should start from authored historical lore rather than gameplay
@@ -156,14 +165,35 @@ Completed projection path items:
   `tools/run_qwen_ink_branch_generation.py` produced a reviewed capture, and
   `tools/materialize_qwen_ink_draft.py` materialized
   `examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`
+- add the first sequential Qwen branch capture:
+  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.capture.json`
+  is useful-needs-revision because it separated actor and responder context but
+  lacked the per-turn participant appraisal boundary and returned non-canonical
+  action labels
+- add the first reviewed state mutation replay:
+  `tools/apply_sequential_ink_branch_mutation.py` writes
+  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
+  and
+  `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`,
+  updating Maer and Sella state, relationship stance, memories, perceived
+  overlays, and the event log after the selected event
+- add the second sequential Qwen capture:
+  `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v2.capture.json`
+  uses the symmetrical turn framing and produces better action behavior
+  (`show_object` followed by Sella's `withhold_object`), but remains
+  useful-needs-revision because prose prompting did not force array-typed JSON
+  fields
 
 Remaining projection path:
 
 - build a deterministic speaker-local input slicer
 - build a renderer that emits projection controls before prompt prose
+- replace prose-only sequential Qwen JSON generation with stricter tool-shaped
+  schema enforcement or an explicit post-generation repair/review pass
 - improve the local-awareness-to-Ink prompt so semantic `training_hooks` do not
-  drift into future branch ids and object custody remains branch-local
-- test one selected generated branch through reviewed event/state mutation
+  drift into future branch ids, object custody remains branch-local, and action
+  labels come from the exact canonical enum
+- materialize a validated sequential branch into Ink
 - keep the near-term product target to interactive dialogue trees and
   scene-local consequences
 - preserve training-data hooks for future open-world behavior, iterated

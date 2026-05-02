@@ -119,6 +119,24 @@ state and re-entry discipline.
 - `experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json`
   - reviewed Qwen branch-generation receipt, including prompt, parsed response,
     strengths, failure notes, and pipeline lessons
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.capture.json`
+  - useful-needs-revision sequential Qwen receipt that separates Maer-local
+    choice generation from Sella-local next-action generation, while preserving
+    the discovered failure around missing per-turn appraisal/consolidation and
+    invalid action labels
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v2.capture.json`
+  - useful-needs-revision sequential Qwen receipt using the symmetrical turn
+    model; it produced canonical action labels and a concrete Sella
+    `withhold_object` next action, but still needs stricter schema enforcement
+    because some array fields came back as strings or objects
+- `experiments/ink/cold-wake-sanctuary-intake-qwen-sequential-v1.mutation.json`
+  - first reviewed branch mutation receipt, including manual participant
+    appraisal/consolidation, normalized action labels, applied state deltas, and
+    deferred unresolved facts
+- `examples/agent-state.cold-wake-story-lab.after-sanctuary-ledger.json`
+  - mutated Cold Wake fixture after the selected sanctuary ledger branch,
+    updating Maer and Sella state, relationship stance, memories, perceived
+    overlays, event log, and active scene memories
 - `tools/ghostlight_state.py`
   - compact state inspection and evidence or branch updates
 - `tools/ghostlight_prepare_compaction.py`
@@ -143,6 +161,13 @@ state and re-entry discipline.
 - `tools/materialize_qwen_ink_draft.py`
   - turns a reviewed Qwen branch capture into a playable Ink draft and sidecar
     annotation
+- `tools/run_qwen_ink_sequential_generation.py`
+  - builds a sequential Qwen prototype: actor-local choices, participant
+    appraisal/consolidation, then next-actor action from updated state
+- `tools/apply_sequential_ink_branch_mutation.py`
+  - applies a reviewed replay of one selected branch into a mutated agent-state
+    fixture and mutation receipt without letting Ink variables become
+    canonical truth
 - `tools/build_cold_wake_story_lab_fixture.py`
   - generator for the verbose Cold Wake story-lab state fixture
 
@@ -164,6 +189,8 @@ digest schema, first draft Cold Wake grounding digest, and first Cold Wake
 story-lab Qwen captures now exist as v0 seams. The first complete Cold Wake
 story pass exists with receipts, projection controls have been promoted, and
 Ink is now the standard branching scene format. The first Qwen-generated Ink
-draft now exists with a reviewed capture. The next implementation target is
-testing selected branch mutation through reviewed state, memory, and
-relationship updates.
+draft now exists with a reviewed capture, the first selected branch now has a
+reviewed mutation replay that updates both involved characters, and v2 shows
+the symmetrical turn model improves action behavior. The next implementation
+target is stricter sequential capture schema enforcement before Ink
+materialization.
