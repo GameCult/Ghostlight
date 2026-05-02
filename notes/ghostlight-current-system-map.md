@@ -79,6 +79,14 @@ Aetheria lore/source context
   lore on Cold Wake, PSC category law, Ganymede rescue ledgers, heat debt, and
   Navigator mixed-interface spaces, then mutates state into
   `examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json`.
+- Third accepted runner-traced coordinator-scoped sample:
+  `experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.capture.json`
+- It starts from `examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json`,
+  projects Sella for `scene-05-sanctuary-authorized-contact`, embeds
+  coordinator-retrieved lore on Aya care capacity, Ganymede rescue ledgers,
+  Navigator mixed-interface clinics, Cold Wake category failure, and heat debt,
+  then mutates state into
+  `examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json`.
 - Parent sessions currently receive only the subagent final message, not a
   visible tool-call transcript. Treat subagent research as self-reported unless
   the worker returns explicit research notes or a future runner captures calls.

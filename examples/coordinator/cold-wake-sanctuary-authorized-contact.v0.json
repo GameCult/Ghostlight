@@ -1,0 +1,248 @@
+{
+  "schema_version": "ghostlight.coordinator_artifact.v0",
+  "artifact_id": "coordinator.cold_wake.sanctuary_authorized_contact.v0",
+  "review_status": "draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "source_refs": [
+    {
+      "ref_id": "after_isdra_state",
+      "path": "examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json",
+      "purpose": "Reviewed state after Isdra authorized limited contact."
+    },
+    {
+      "ref_id": "runner_retrieval_trace",
+      "path": "experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.capture.json#lore_access.research_trace",
+      "purpose": "Preserve runner-captured coordinator lore trace used to ground Sella packet."
+    }
+  ],
+  "input_refs": {
+    "agent_state_ref": "examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json",
+    "lore_grounding_refs": [
+      "examples/lore-grounding/cold-wake-panic.ganymede-corridor.json"
+    ],
+    "prior_artifact_refs": [
+      "experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.capture.json",
+      "experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.mutation.json"
+    ],
+    "projected_context_refs": [
+      "examples/projected-contexts/scene-05-sanctuary-authorized-contact.sella_ren.projected-context.json"
+    ],
+    "ink_refs": [
+      "examples/ink/cold-wake-sanctuary-intake.training.json"
+    ],
+    "item_manifest_refs": []
+  },
+  "scene_context": {
+    "scene_id": "scene-05-sanctuary-authorized-contact",
+    "sequence_marker": "after Isdra authorizes limited contact and Maer files the Navigator ledger signature",
+    "location_id": "ganymede_dockside_sanctuary.conditional_repair_bay",
+    "participant_ids": [
+      "maer_tidecall",
+      "sella_ren"
+    ],
+    "active_object_ids": [
+      "navigator_rescue_ledger_signature",
+      "limited_contact_permit_shell",
+      "nonperson_diagnostic_handling_category",
+      "cold_repair_bay_status",
+      "heat_window_countdown",
+      "packet_sound_preservation_channel"
+    ],
+    "active_resource_ids": [
+      "conditional_repair_bay",
+      "decontamination_route",
+      "staff_attention",
+      "sanctuary_air",
+      "navigator_ledger_backing",
+      "heat_debt_window"
+    ],
+    "public_facts": [
+      {
+        "text": "Maer has filed the Navigator ledger signature required by Isdra's authorization.",
+        "refs": [
+          "event-isdra-limited-contact",
+          "trace.ganymede_route_compact.lines7_11"
+        ]
+      },
+      {
+        "text": "Sella still controls whether the conditional repair bay actually opens and under what limits.",
+        "refs": [
+          "event-sanctuary-conditional-repair-bay",
+          "trace.aya_collective.lines13_35"
+        ]
+      }
+    ],
+    "scene_pressure": [
+      {
+        "text": "The scene pressure is whether legal authorization plus ledger backing becomes operational care without pretending capacity is clean or personhood is proven.",
+        "refs": [
+          "after_isdra_state",
+          "trace.aya_collective.lines19_23",
+          "trace.thermal_management.lines21_31"
+        ]
+      }
+    ]
+  },
+  "coordinator_decision": {
+    "decision_id": "decision.sanctuary_authorized_contact.sella_bay_response",
+    "selected_next_beat": "Maer returns to Sella with the filed Navigator ledger signature and Isdra's limited-contact authorization; Sella decides how the conditional bay path can actually open.",
+    "selected_acting_agent_id": "sella_ren",
+    "candidate_next_beats": [
+      {
+        "choice_id": "beat.open_bounded_bay",
+        "summary": "Sella opens the bay as bounded diagnostic contact under hard decon, staff, heat, ledger, and packet-preservation limits.",
+        "status": "selected",
+        "reason": "Tests whether Ghostlight can convert authorization into operational care without resolving hidden artifact truth."
+      },
+      {
+        "choice_id": "beat.refuse_capacity",
+        "summary": "Sella refuses because staffing and contamination load would collapse existing intake.",
+        "status": "deferred",
+        "reason": "Plausible branch, but less useful for testing downstream rescue-path propagation."
+      },
+      {
+        "choice_id": "beat.demand_more_labor",
+        "summary": "Sella refuses to move until Maer supplies additional labor or materials.",
+        "status": "deferred",
+        "reason": "Useful later if the bay path needs a resource bottleneck branch."
+      }
+    ],
+    "rationale": "This beat returns to Sella because Isdra can authorize contact but cannot create care. The responder must act from Aya capacity politics, Navigator ledger reality, and Cold Wake heat pressure while preserving unresolved personhood.",
+    "glue_prose": "The authorization reached Sella before the vessel did. That was the trouble with paperwork: sometimes it arrived alive and demanded a room.",
+    "glue_prose_status": "accepted_as_narration"
+  },
+  "machinery_plan": {
+    "invocations": [
+      {
+        "invocation_id": "invoke.retrieve.scene05.sella",
+        "organ": "memory_lore_retriever",
+        "purpose": "Capture source-backed lore trace for Aya care capacity, Ganymede rescue ledgers, Navigator mixed-interface clinic affordances, Cold Wake category failure, and heat debt.",
+        "input_refs": [
+          "AetheriaLore local rg/Get-Content retrieval after voidbot transport failure"
+        ],
+        "output_refs": [
+          "experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.capture.json#lore_access.research_trace"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "invoke.project.sella.scene05",
+        "organ": "projector",
+        "purpose": "Compile Sella-local operating context from reviewed state and runner-captured lore constraints.",
+        "input_refs": [
+          "examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json"
+        ],
+        "output_refs": [
+          "examples/projected-contexts/scene-05-sanctuary-authorized-contact.sella_ren.projected-context.json"
+        ],
+        "status": "draft"
+      },
+      {
+        "invocation_id": "invoke.respond.sella.scene05",
+        "organ": "sandboxed_responder",
+        "purpose": "Generate Sella response from packet-only sandbox handoff with coordinator-scoped retrieval embedded.",
+        "input_refs": [
+          "examples/responder-packets/scene-05-sanctuary-authorized-contact.sella_ren.packet.trace.v0.json"
+        ],
+        "output_refs": [
+          "experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.capture.json"
+        ],
+        "status": "draft"
+      }
+    ]
+  },
+  "sandboxed_responder_handoffs": [],
+  "world_state_refs": {
+    "read_refs": [
+      {
+        "ref_id": "state.scene02",
+        "ref_type": "scene",
+        "path": "examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json#scenes.scene-02-sanctuary-intake",
+        "visibility": "coordinator_only"
+      },
+      {
+        "ref_id": "state.sella",
+        "ref_type": "agent",
+        "path": "examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json#agents.sella_ren",
+        "visibility": "coordinator_only"
+      }
+    ],
+    "write_candidate_refs": [
+      {
+        "ref_id": "state.after_scene05_pending",
+        "ref_type": "event",
+        "path": "examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json#events",
+        "visibility": "coordinator_only"
+      }
+    ]
+  },
+  "proposed_deltas": [
+    {
+      "delta_id": "delta.sella.conditional_bay_operational",
+      "delta_type": "world_fact_update",
+      "target_ref": "scene-05-sanctuary-authorized-contact.conditional_repair_bay",
+      "summary": "Sella may make the conditional repair bay operational under hard isolation, decon, ledger, packet-preservation, and capacity limits.",
+      "authority": "coordinator_proposal",
+      "status": "proposed"
+    }
+  ],
+  "branching": {
+    "branch_action": "continue_branch",
+    "active_branch_flags": [
+      "cold_wake_claimant_status_unresolved",
+      "sella_conditional_bay_open",
+      "veyr_handling_category_offered",
+      "isdra_limited_contact_authorized",
+      "navigator_ledger_signature_filed",
+      "heat_debt_window_closing"
+    ],
+    "event_constraints": [
+      {
+        "constraint_id": "constraint.personhood_unresolved",
+        "constraint_type": "branch_local_event",
+        "summary": "The artifact may represent testimony or firmware residue, but this beat must not prove or disprove personhood.",
+        "pull_strength": "locked"
+      },
+      {
+        "constraint_id": "constraint.care_is_capacity",
+        "constraint_type": "branch_local_event",
+        "summary": "Any acceptance must preserve Aya material care constraints: staff, air, decon, repair, consent, heat handling, and follow-through.",
+        "pull_strength": "locked"
+      }
+    ],
+    "sibling_exclusion_notes": []
+  },
+  "item_manifest_deltas": [],
+  "unresolved_hooks": [
+    {
+      "hook_id": "hook.packet_personhood",
+      "hook_type": "story",
+      "summary": "Whether the corrupted packet represents a person remains unresolved.",
+      "owner": "coordinator",
+      "status": "carried"
+    },
+    {
+      "hook_id": "hook.sella_bay_operational",
+      "hook_type": "world_state",
+      "summary": "Whether Sella opens the conditional bay remains pending responder output.",
+      "owner": "coordinator",
+      "status": "open"
+    },
+    {
+      "hook_id": "hook.final_rescue_outcome",
+      "hook_type": "world_state",
+      "summary": "Whether the vessel survives limited contact remains unresolved.",
+      "owner": "coordinator",
+      "status": "carried"
+    }
+  ],
+  "review": {
+    "reviewer": "Codex",
+    "review_notes": [
+      "Draft coordinator artifact for the trace-backed Scene 05 Sella responder sample."
+    ],
+    "accepted_for_training": false,
+    "failure_labels": []
+  }
+}

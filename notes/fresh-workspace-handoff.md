@@ -64,6 +64,12 @@ path is:
 - Trace-backed Isdra capture: `experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.capture.json`
 - Trace-backed Isdra mutation: `experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.mutation.json`
 - Trace-backed Isdra aftermath state: `examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json`
+- Trace-backed Sella authorized-contact projected context: `examples/projected-contexts/scene-05-sanctuary-authorized-contact.sella_ren.projected-context.json`
+- Trace-backed Sella authorized-contact packet: `examples/responder-packets/scene-05-sanctuary-authorized-contact.sella_ren.packet.trace.v0.json`
+- Trace-backed Sella authorized-contact coordinator artifact: `examples/coordinator/cold-wake-sanctuary-authorized-contact.v0.json`
+- Trace-backed Sella authorized-contact capture: `experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.capture.json`
+- Trace-backed Sella authorized-contact mutation: `experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.mutation.json`
+- Trace-backed Sella authorized-contact aftermath state: `examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json`
 - Research sanity probe: `experiments/research-sanity/navigator-embodiment-sanity-v0.capture.json`
 - Packet builder: `tools/build_responder_packet.py`
 - Packet/output validators: `tools/validate_responder_packets.py`, `tools/validate_responder_outputs.py`
@@ -101,19 +107,9 @@ current gold-data route.
 
 ## Current Next Action
 
-The first no-fork research-enabled Sella responder sample exists and has a
-reviewed mutation receipt. It carries `coordinator_reconstructed` trace entries
-and remains draft-grade audit data, not proof of the responder's actual tool
-path. The Veyr/Callisto sample is accepted coordinator-scoped retrieval with
-`runner_captured` trace, and the Isdra convoy-threshold sample is now accepted
-with `runner_captured` trace as well.
+The first no-fork research-enabled Sella responder sample exists and has a reviewed mutation receipt. It carries `coordinator_reconstructed` trace entries and remains draft-grade audit data, not proof of the responder's actual tool path. The Veyr/Callisto, Isdra convoy-threshold, and Sella authorized-contact samples are accepted coordinator-scoped retrieval passes with `runner_captured` traces.
 
-Continue from `examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json`.
-The next beat should carry Isdra's limited-contact authorization back into
-Sella's conditional bay path while Maer files Navigator ledger backing. Preserve
-runner-captured retrieval trace, exact packet-visible input, raw responder
-output, leakage audit, and reviewed mutation receipt. Artifact personhood,
-source-chain provenance, and final rescue outcome remain unresolved.
+Continue from `examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json`. The next beat should have Maer accept Sella's bounded diagnostic-contact conditions and initiate the actual vessel contact or extraction attempt while keeping personhood, source-chain provenance, and final rescue outcome unresolved until evidence actually reaches the scene. Preserve runner-captured retrieval trace, exact packet-visible input, raw responder output, leakage audit, and reviewed mutation receipt.
 
 ## Warnings
 
