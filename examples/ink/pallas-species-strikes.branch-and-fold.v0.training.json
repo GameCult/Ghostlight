@@ -1,0 +1,367 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "pallas-species-strikes-branch-and-fold-training-v0",
+  "ink_ref": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/agent-state.pallas-species-strikes.v0.json",
+  "scene_id": "pallas-species-strikes-branch-and-fold-v0",
+  "protagonist_agent_id": "lio_vale",
+  "npc_agent_ids": [
+    "nara_7",
+    "orrin_dax",
+    "teth_inkwise",
+    "ilya_marne"
+  ],
+  "purpose": "Accepted-as-draft coordinator and branch-compiler training artifact for a historical grounded Pallas Species Strikes IF scaffold.",
+  "local_awareness_summary": [
+    {
+      "text": "Lio knows the ordinary operating texture of AU Yard Twelve: wet-side cephalopod maintenance, baseline dry anchors, engineered seal labor, and management's schedule discipline.",
+      "source_refs": [
+        "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
+        "examples/agent-state.pallas-species-strikes.v0.json"
+      ]
+    },
+    {
+      "text": "Lio does not know any character's private state unless it has become observable through action, speech, role history, or prior relationship knowledge.",
+      "source_refs": [
+        "examples/agent-state.pallas-species-strikes.v0.json"
+      ]
+    },
+    {
+      "text": "The fixture must begin in status quo before crisis so later choices have social and material meaning.",
+      "source_refs": [
+        "examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Use Hero's Journey structurally: ordinary world, pressure, threshold, tests, ordeal, changed return. Do not mythologize the prose or turn the strike into destiny theatre.",
+        "source_refs": [
+          "examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json"
+        ]
+      },
+      {
+        "text": "Keep conflict revelatory. Every escalation should expose a material fact about labor, body affordance, corporate classification, or survival margin.",
+        "source_refs": [
+          "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Character choices may alter tracked branch variables and proposed social consequences, but fuzzy appraisals remain manual-review training targets.",
+        "source_refs": [
+          "examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json"
+        ]
+      },
+      {
+        "text": "Do not resolve the entire Pallas Species Strikes. The fixture can change later labor politics but must fold back into a still-unfinished historical struggle.",
+        "source_refs": [
+          "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The cephalopod zero-g maintenance harness and bypass kit are concrete work objects, not decorative nouns. They affect leverage, safety margin, and visual state.",
+        "source_refs": [
+          "examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json"
+        ]
+      },
+      {
+        "text": "The biodrone limiter interface and BioElevate liability frame can shape legal danger, but the fixture must not claim a full technical implementation not yet documented.",
+        "source_refs": [
+          "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Choices must include speech and non-speech actions, including moving, blocking an inspection line, showing an object, staging equipment, waiting, and transferring evidence.",
+        "source_refs": [
+          "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "Every tracked variable must matter later through option availability, prose changes, visual modifiers, appraisal hooks, or outcome text.",
+        "source_refs": [
+          "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make AU instantly benevolent, BioElevate instantly honest, or baseline resentment vanish because one speech was tidy.",
+        "source_refs": [
+          "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
+        ]
+      },
+      {
+        "text": "Do not expose Nara's private experience as omniscient narration in moments where the fixture is training local character visibility.",
+        "source_refs": [
+          "examples/agent-state.pallas-species-strikes.v0.json"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "folding_rule": "Most branches return to shared knots after mutating variables. Later knots read those variables to alter prose, options, appraisal surfaces, visual modifiers, and outcomes.",
+    "true_split_threshold": "A true route split is reserved for major casualty, recognition collapse, or security crackdown scenes that would produce incompatible later world states.",
+    "variables": [
+      "strike_cohesion",
+      "baseline_solidarity",
+      "security_pressure",
+      "life_support_margin",
+      "evidence_of_sentience",
+      "cephalopod_leverage",
+      "bioelevate_liability",
+      "worker_injury",
+      "media_visibility"
+    ]
+  },
+  "visual_art_direction": {
+    "base_scene_prompt": "Inside an asteroid cavity maintenance yard in the Pallas Bloom Cluster, Service Ring Kappa curves along a mineral wall, wet-service cradles and cephalopod harness rails on one side, dry anchor rigs and baseline workers on the other, engineered seal technicians in gray suits near an amber manifold, industrial mist, worn safety paint, hard work light, lived-in future infrastructure.",
+    "modification_prompts": [
+      {
+        "state": "formal_stoppage",
+        "prompt": "Add workers halted in coordinated stillness at the manifold, with AU supervisor lights turning cold blue in the background."
+      },
+      {
+        "state": "bypass_ready",
+        "prompt": "Add a portable wet-service bypass bridge glowing with temporary pressure lines between Teth's harness and the seal assembly."
+      },
+      {
+        "state": "security_pressure_high",
+        "prompt": "Add security drones at the far hatch, small and sterile against the crowded maintenance ring."
+      }
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "branch-01-walk-with-nara",
+      "ink_path": "walk_with_nara",
+      "action_type": "move",
+      "actor_intent": "Learn Nara's ordinary hazard routine before crisis.",
+      "state_basis": [
+        "Lio's role lets them walk the manifold line without making it look like interrogation.",
+        "Nara's observable touch sequence can raise evidence_of_sentience without exposing private narration."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_of_sentience and centers Nara for later protection and liability pressure."
+      ],
+      "training_hooks": [
+        "Projector should convert procedural memory into observable ritual, not omniscient confession."
+      ]
+    },
+    {
+      "branch_id": "branch-01-sit-with-orrin",
+      "ink_path": "sit_with_orrin",
+      "action_type": "wait",
+      "actor_intent": "Let baseline resentment appear as lived class pressure before the strike asks for solidarity.",
+      "state_basis": [
+        "Orrin's displacement fear is role-visible through complaints and break-table behavior."
+      ],
+      "reviewed_consequences": [
+        "Raises baseline_solidarity because Lio treats Orrin as a worker with material concerns rather than an obstacle."
+      ],
+      "training_hooks": [
+        "Coordinator should not flatten reactionary risk into pure villainy when material injury exists."
+      ]
+    },
+    {
+      "branch_id": "branch-01-check-teth-harness",
+      "ink_path": "check_teth_harness",
+      "action_type": "touch_object",
+      "actor_intent": "Ground cephalopod body affordance and technical leverage in equipment.",
+      "state_basis": [
+        "Teth's harness is public work equipment and a future economy hook."
+      ],
+      "reviewed_consequences": [
+        "Raises cephalopod_leverage and unlocks the bypass-kit option later."
+      ],
+      "training_hooks": [
+        "Item hooks should emerge from scene use, not separate encyclopedia garnish."
+      ]
+    },
+    {
+      "branch_id": "branch-02-quiet-safety-pause",
+      "ink_path": "quiet_safety_pause",
+      "action_type": "speak",
+      "actor_intent": "Protect life support and evidence while keeping the incident local.",
+      "state_basis": [
+        "Lio can classify the event in maintenance language before Ilya fully seizes the frame."
+      ],
+      "reviewed_consequences": [
+        "Raises life_support_margin and evidence_of_sentience, but also security_pressure because the wording is politically loaded."
+      ],
+      "training_hooks": [
+        "Branch compiler should let safety language do political work without overexplaining it."
+      ]
+    },
+    {
+      "branch_id": "branch-02-formalize-stoppage",
+      "ink_path": "formalize_stoppage",
+      "action_type": "speak",
+      "actor_intent": "Name the refusal as labor action before AU can erase it.",
+      "state_basis": [
+        "Nara's spoken refusal is observable enough for Lio to log a coordinated stoppage."
+      ],
+      "reviewed_consequences": [
+        "Raises strike_cohesion, media_visibility, and security_pressure."
+      ],
+      "training_hooks": [
+        "Formal recognition should increase both power and danger."
+      ]
+    },
+    {
+      "branch_id": "branch-02-shield-nara",
+      "ink_path": "shield_nara",
+      "action_type": "block_object",
+      "actor_intent": "Use body position and role authority to stop direct inspection of Nara.",
+      "state_basis": [
+        "Lio can see the inspector cam and Nara's exposure risk as public scene facts."
+      ],
+      "reviewed_consequences": [
+        "Raises strike_cohesion and security_pressure, and marks Nara as centered."
+      ],
+      "training_hooks": [
+        "Non-speech protection can be a branch action with social consequences."
+      ]
+    },
+    {
+      "branch_id": "branch-03-show-nara-memory",
+      "ink_path": "show_nara_memory",
+      "action_type": "show_object",
+      "actor_intent": "Use route memory as visible evidence without forcing private confession.",
+      "state_basis": [
+        "Nara has already made the remembered injury observable by naming Rell."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_of_sentience and bioelevate_liability."
+      ],
+      "training_hooks": [
+        "Evidence should be an object-mediated action when private state is unsafe."
+      ]
+    },
+    {
+      "branch_id": "branch-03-ask-orrin-solidarity",
+      "ink_path": "ask_orrin_solidarity",
+      "action_type": "speak",
+      "actor_intent": "Ask baseline workers to defend safety through their own expertise.",
+      "state_basis": [
+        "Orrin's dry-side authority is publicly relevant to the safety decision."
+      ],
+      "reviewed_consequences": [
+        "Raises baseline_solidarity and strike_cohesion; later it can unlock Orrin fronting the demand."
+      ],
+      "training_hooks": [
+        "Solidarity should be requested through material work authority, not moral decoration."
+      ]
+    },
+    {
+      "branch_id": "branch-03-bypass-kit",
+      "ink_path": "bypass_kit",
+      "action_type": "use_object",
+      "actor_intent": "Turn cephalopod leverage into temporary life-support margin.",
+      "state_basis": [
+        "Requires earlier cephalopod_leverage from checking Teth's harness."
+      ],
+      "reviewed_consequences": [
+        "Sets bypass_ready and raises life_support_margin, changing climax prose."
+      ],
+      "training_hooks": [
+        "Branch variables should unlock concrete options rather than idle flavor."
+      ]
+    },
+    {
+      "branch_id": "branch-03-public-liability",
+      "ink_path": "public_liability",
+      "action_type": "transfer_object",
+      "actor_intent": "Move the incident packet outside AU's classification control.",
+      "state_basis": [
+        "Lio has access to ALF legal mirror channels as an embedded organizer."
+      ],
+      "reviewed_consequences": [
+        "Raises media_visibility, bioelevate_liability, and security_pressure."
+      ],
+      "training_hooks": [
+        "Evidence transfer should create protection and retaliation risk at the same time."
+      ]
+    },
+    {
+      "branch_id": "branch-04-hold-for-recognition",
+      "ink_path": "hold_for_recognition",
+      "action_type": "speak",
+      "actor_intent": "Force Ilya to record worker judgment before safety work resumes.",
+      "state_basis": [
+        "High strike cohesion can hold the line, but low life_support_margin can make the cost visible."
+      ],
+      "reviewed_consequences": [
+        "Raises strike_cohesion and security_pressure; may increase worker_injury if life_support_margin is too low."
+      ],
+      "training_hooks": [
+        "The branch compiler must allow principled choices to carry real costs."
+      ]
+    },
+    {
+      "branch_id": "branch-04-trade-bypass-for-evidence",
+      "ink_path": "trade_bypass_for_evidence",
+      "action_type": "transfer_object",
+      "actor_intent": "Trade temporary bypass control for preserved evidence and no forced crawl.",
+      "state_basis": [
+        "The scene has generated both safety pressure and evidence custody pressure."
+      ],
+      "reviewed_consequences": [
+        "Raises life_support_margin, evidence_of_sentience, and bioelevate_liability."
+      ],
+      "training_hooks": [
+        "Compromise branches should preserve partial victory rather than pretending all objectives aligned."
+      ]
+    },
+    {
+      "branch_id": "branch-04-orrin-front-demand",
+      "ink_path": "orrin_front_demand",
+      "action_type": "mixed",
+      "actor_intent": "Let baseline workers make the safety demand while Lio protects Nara.",
+      "state_basis": [
+        "Requires baseline_solidarity already raised by earlier choices."
+      ],
+      "reviewed_consequences": [
+        "Raises baseline_solidarity and strike_cohesion while reducing security_pressure."
+      ],
+      "training_hooks": [
+        "Folded branches can make prior social investment matter without spawning a whole new route tree."
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "deterministic Ink variable changes",
+      "option-gating from explicit numeric thresholds",
+      "visual modifier eligibility from explicit state flags"
+    ],
+    "manual_review_required": [
+      "relationship deltas after politically loaded choices",
+      "participant appraisal of recognition, fear, betrayal, and solidarity",
+      "future corpus labels for coordinator and branch-compiler training",
+      "economy/item promotion into Aetheria-Economy blueprint data"
+    ]
+  },
+  "audit": {
+    "reviewer": "codex",
+    "review_status": "accepted",
+    "review_notes": [
+      "Sidecar is accepted as draft training annotation for coordinator/IF scaffold and branch compiler behavior.",
+      "No local-model output was used.",
+      "Character private state is documented in the agent fixture but the Ink only relies on observable behavior and role knowledge."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

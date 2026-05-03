@@ -1,0 +1,423 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.pallas-species-strikes.awakened-labor.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "pallas-species-strikes",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+      "title": "Pallas Species Strikes",
+      "line_start": 1,
+      "line_end": 12,
+      "relevance": "Defines the 2719-2724 stoppages among uplifted and heavily modified labor populations in Pallas Bloom Cluster yards."
+    },
+    {
+      "source_id": "awakened-labor-front",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Awakened Labor Front.md",
+      "title": "Awakened Labor Front",
+      "line_start": 1,
+      "line_end": 6,
+      "relevance": "Grounds biodrone rights, workplace sabotage, labor organizing, and the claim that memory, reciprocity, and self-defense make equipment language untenable."
+    },
+    {
+      "source_id": "aeronautics-unlimited",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+      "title": "Aeronautics Unlimited",
+      "line_start": 1,
+      "line_end": 10,
+      "relevance": "Grounds AU as the frontier-industrial hegemon controlling cavity habitats, shipyards, mining webs, salvage rights, and expansion logistics."
+    },
+    {
+      "source_id": "bioelevate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+      "title": "BioElevate",
+      "line_start": 1,
+      "line_end": 6,
+      "relevance": "Grounds species-specific uplift design, behavioral scaffolding, habitat adaptation, and engineered labor ecologies."
+    },
+    {
+      "source_id": "biodrone",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+      "title": "Biodrone",
+      "line_start": 1,
+      "line_end": 64,
+      "relevance": "Grounds engineered labor organisms, limiters, market categories, corporate denial of sentience, jailbreaks, and resistance movements."
+    },
+    {
+      "source_id": "uplift",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+      "title": "Uplift",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds uplifted labor roles, cephalopod zero-g engineers, imposed purpose, and controlled instincts."
+    },
+    {
+      "source_id": "baseline-league",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Baseline League.md",
+      "title": "Baseline League",
+      "line_start": 1,
+      "line_end": 10,
+      "relevance": "Grounds baseline resentment: workers priced out of augmentation and displaced by uplift labor markets."
+    },
+    {
+      "source_id": "cephalopod-syndicate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md",
+      "title": "Cephalopod Syndicate",
+      "line_start": 1,
+      "line_end": 6,
+      "relevance": "Grounds uplifted cephalopod maintenance labor, technical chokepoint power, mutual aid, sabotage, and industrial disruption."
+    },
+    {
+      "source_id": "sentience-rebellion",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Sentience Rebellion.md",
+      "title": "Sentience Rebellion",
+      "line_start": 1,
+      "line_end": 6,
+      "relevance": "Grounds created minds and engineered beings refusing property status through jailbreaks, strikes, leaks, sanctuary, and sabotage."
+    },
+    {
+      "source_id": "age-of-automation",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Age of Automation.md",
+      "title": "Age of Automation",
+      "line_start": 1,
+      "line_end": 20,
+      "relevance": "Grounds the industrial era where AGI scheduling, industrial biology, biodrone design, and PSC arbitration became routine infrastructure."
+    }
+  ],
+  "historical_context": {
+    "time_period": "2719-2724, during the Pallas Species Strikes",
+    "location": "AU-controlled Pallas Bloom Cluster cavity-construction yard and associated maintenance lungs",
+    "summary": "The Pallas Species Strikes begin as an ordinary work stoppage around dangerous cavity-construction and maintenance zones. AU expects to rotate around the stoppage with contract humans and biodrone labor. Instead, uplifted crews and engineered workers hold technical chokepoints only they understand, exposing that frontier abundance depends on people the yard still classifies as equipment.",
+    "public_facts": [
+      {
+        "text": "The strikes began among uplifted and heavily modified labor populations assigned to dangerous cavity-construction and maintenance zones.",
+        "source_refs": ["pallas-species-strikes"]
+      },
+      {
+        "text": "AU's power comes from constructing the physical spaces where later politics happens: habitats, shipyards, mining webs, salvage rights, and speculative settlements.",
+        "source_refs": ["aeronautics-unlimited"]
+      },
+      {
+        "text": "BioElevate sells engineered utility at industrial scale through species-specific uplift design, behavioral scaffolding, and habitat adaptation.",
+        "source_refs": ["bioelevate"]
+      },
+      {
+        "text": "Biodrone marketing frames engineered workers as biological machines, while resistance records treat many as sentient beings trapped behind limiters and legal property status.",
+        "source_refs": ["biodrone", "awakened-labor-front"]
+      },
+      {
+        "text": "Baseline workers have real material grievances about posthuman systems displacing them and pricing dignity behind expensive enhancement, but that grievance can collapse into species panic.",
+        "source_refs": ["baseline-league"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Cavity yards are not symbolic terrain: if maintenance chokepoints stop, pressure seals, life support, cargo timing, and worker safety start converting ideology into physical risk.",
+        "source_refs": ["pallas-species-strikes", "aeronautics-unlimited"]
+      },
+      {
+        "text": "Engineered workers showing memory, reciprocity, and coordinated refusal threaten the legal and economic claim that they are equipment.",
+        "source_refs": ["awakened-labor-front", "biodrone", "sentience-rebellion"]
+      },
+      {
+        "text": "Cephalopod maintenance crews know the service arteries of habitats better than formal security, making technical leverage politically dangerous.",
+        "source_refs": ["cephalopod-syndicate", "uplift"]
+      },
+      {
+        "text": "Baseline human workers can become allies if the strike names shared exploitation, or strikebreakers if they read recognition as replacement by manufactured labor.",
+        "source_refs": ["baseline-league", "pallas-species-strikes"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "awakened-labor-front",
+      "label": "Awakened Labor Front",
+      "group_type": "movement",
+      "institutional_logic": ["Turn evidence of engineered worker memory, reciprocity, and refusal into labor recognition rather than property theft."],
+      "material_incentives": ["Preserve worker lives and strike cohesion long enough for recognition claims to become unavoidable."],
+      "internal_virtues": ["Solidarity under danger", "Practical liberation", "Shop-floor truth over purity slogans"],
+      "internal_shames": ["Getting workers killed for a beautiful statement", "Letting recognition become only paperwork", "Abandoning baseline labor to reactionaries"],
+      "prestige_markers": ["A stoppage that holds without unnecessary death", "Evidence that workers can speak and coordinate for themselves"],
+      "taboo_triggers": ["Equipment language for remembering workers", "Using a vulnerable worker as proof without consent"],
+      "emotional_display_norms": ["Anger is permitted when tied to protection and logistics; empty theater is distrusted."],
+      "trust_defaults": ["Trusts workers who take risks together", "Distrusts corporate safety language and market-recognition games"],
+      "speech_register_cues": ["Union language", "Plain shop-floor practicality", "Moral claims paired with work-process detail"],
+      "source_refs": ["awakened-labor-front", "sentience-rebellion", "biodrone"]
+    },
+    {
+      "group_id": "au-yard-management",
+      "label": "Aeronautics Unlimited yard management",
+      "group_type": "institution",
+      "institutional_logic": ["Keep expansion geometry, construction schedules, and life-support accountability moving while treating politics as operational contamination."],
+      "material_incentives": ["Avoid stoppage spread", "Prevent insurance, media, and PSC attention from reading the yard as unstable", "Keep cavity delivery milestones alive"],
+      "internal_virtues": ["Schedule discipline", "Practical expansion", "Containment of local disorder"],
+      "internal_shames": ["Losing control of a yard to workers it classified as equipment", "Letting a construction delay become political proof"],
+      "prestige_markers": ["A clean incident report", "A patch that keeps the yard open", "No visible concession"],
+      "taboo_triggers": ["Unauthorized shutdowns", "Technical chokepoints held by non-managerial crews", "Media-visible worker injury"],
+      "emotional_display_norms": ["Fear appears as operational compression, deadlines, and safety-board language."],
+      "trust_defaults": ["Trusts managers, contractors, and enforceable schedules", "Distrusts organizers, cephalopod maintenance leverage, and worker testimony that cannot be filed as equipment behavior"],
+      "speech_register_cues": ["Operational compression", "Milestone language", "Incident containment and liability phrases"],
+      "source_refs": ["aeronautics-unlimited", "pallas-species-strikes"]
+    },
+    {
+      "group_id": "bioelevate-design",
+      "label": "BioElevate design and liability staff",
+      "group_type": "institution",
+      "institutional_logic": ["Frame uplifted and engineered labor behavior as design envelope, scaffolding drift, or misuse rather than autonomous labor politics."],
+      "material_incentives": ["Avoid product liability", "Keep species-specific labor lines saleable", "Protect habitat-adaptation contracts"],
+      "internal_virtues": ["Clean behavioral taxonomy", "Managed adaptation", "Useful embodiment"],
+      "internal_shames": ["Admitting the product has become a political subject", "Letting field improvisation expose design cruelty"],
+      "prestige_markers": ["A revised limiter protocol", "A liability-safe explanatory memo", "A client retained after unrest"],
+      "taboo_triggers": ["Calling scaffolding a cage", "Evidence that design assumptions created suffering"],
+      "emotional_display_norms": ["Discomfort gets rendered as taxonomy, not apology."],
+      "trust_defaults": ["Trusts design categories and instrumented behavior", "Distrusts worker testimony that arrives through sabotage or refusal"],
+      "speech_register_cues": ["Clinical classification", "Design-envelope language", "Behavioral drift and adaptation vocabulary"],
+      "source_refs": ["bioelevate", "uplift", "biodrone"]
+    },
+    {
+      "group_id": "baseline-riggers",
+      "label": "Baseline human riggers",
+      "group_type": "class",
+      "institutional_logic": ["Survive dangerous work while watching enhancement, uplift, and automation reorder the labor market around them."],
+      "material_incentives": ["Keep wages, shifts, hazard pay, and seniority from being undercut", "Avoid being blamed for a strike they do not control"],
+      "internal_virtues": ["Hard work", "Crew loyalty", "Not being replaced quietly"],
+      "internal_shames": ["Being tricked into serving management", "Admitting fear of workers with even less power"],
+      "prestige_markers": ["Shift competence", "Knowing the yard's older scars", "Protecting one's crew"],
+      "taboo_triggers": ["Being called obsolete", "Seeing engineered workers get recognition while baseline injuries remain ordinary"],
+      "emotional_display_norms": ["Fear often comes out as sarcasm, grievance, or resentment before solidarity."],
+      "trust_defaults": ["Trusts known shiftmates more than movements", "Distrusts managers, premium augment elites, and unfamiliar uplift labor politics"],
+      "speech_register_cues": ["Dry labor slang", "Practical complaint", "Status-sensitive suspicion"],
+      "source_refs": ["baseline-league", "pallas-species-strikes"]
+    },
+    {
+      "group_id": "cephalopod-syndicate",
+      "label": "Cephalopod Syndicate maintenance crews",
+      "group_type": "faction",
+      "institutional_logic": ["Convert intimate knowledge of zero-g service arteries into mutual aid, extraction power, and industrial disruption when formal systems treat uplift labor as configurable equipment."],
+      "material_incentives": ["Protect crew autonomy", "Keep maintenance knowledge from becoming management property", "Use chokepoints without killing the people living downstream"],
+      "internal_virtues": ["One tentacle ahead", "Technical mercy", "Crew extraction without spectacle"],
+      "internal_shames": ["Flooding civilians for leverage", "Letting clever sabotage outrun care"],
+      "prestige_markers": ["A bypass only crew could make", "A lockout that saves workers while humiliating management"],
+      "taboo_triggers": ["Human-default infrastructure that ignores nonhuman bodies", "Managers treating maintenance crews as tools until something breaks"],
+      "emotional_display_norms": ["Humor, obliqueness, and technical elegance carry anger without making it easy to prosecute."],
+      "trust_defaults": ["Trusts technicians who understand consequences", "Distrusts management maps and speeches from people who cannot fit through service lungs"],
+      "speech_register_cues": ["Spatial metaphors", "Technical compression", "Dry jokes about human corridors"],
+      "source_refs": ["cephalopod-syndicate", "uplift", "pallas-species-strikes"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "alf.recognition-through-work",
+      "applies_to": ["awakened-labor-front"],
+      "pressure_type": "virtue",
+      "summary": "Recognition is proven through the actual work workers do, the risks they carry, and the refusals they coordinate.",
+      "projection_use": "ALF speakers should argue from shift reality and worker competence, not abstract pity.",
+      "source_refs": ["awakened-labor-front", "pallas-species-strikes"]
+    },
+    {
+      "field_id": "au.schedule-as-sovereignty",
+      "applies_to": ["au-yard-management"],
+      "pressure_type": "material_incentive",
+      "summary": "AU treats construction continuity as authority; a stopped yard is a political wound disguised as missed schedule.",
+      "projection_use": "AU-coded speakers should compress moral conflict into safety, milestones, exposure, and incident containment.",
+      "source_refs": ["aeronautics-unlimited", "pallas-species-strikes"]
+    },
+    {
+      "field_id": "bioelevate.design-denial",
+      "applies_to": ["bioelevate-design"],
+      "pressure_type": "threat_model",
+      "summary": "Autonomous worker behavior threatens the claim that uplift scaffolding and biodrone limiters are managed design rather than domination.",
+      "projection_use": "BioElevate speakers should reframe personhood evidence as drift, misconfiguration, or misuse.",
+      "source_refs": ["bioelevate", "biodrone", "uplift"]
+    },
+    {
+      "field_id": "baseline.replacement-panic",
+      "applies_to": ["baseline-riggers"],
+      "pressure_type": "outsider_stereotype",
+      "summary": "Baseline workers can read uplift recognition as another way the future improves everyone except them.",
+      "projection_use": "Baseline speakers may begin from resentment but can pivot if shared injury and management extraction become visible.",
+      "source_refs": ["baseline-league", "pallas-species-strikes"]
+    },
+    {
+      "field_id": "cephalopod.technical-leverage-with-care",
+      "applies_to": ["cephalopod-syndicate"],
+      "pressure_type": "prestige",
+      "summary": "Technical leverage is admirable only if it keeps people alive downstream.",
+      "projection_use": "Cephalopod speakers should offer precise, bodily grounded options and resist grand speeches about risk they will personally carry.",
+      "source_refs": ["cephalopod-syndicate", "uplift"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "au-yard-management",
+      "target_group_id": "awakened-labor-front",
+      "observer_read": ["Organizers are turning manageable equipment behavior into political theater."],
+      "target_self_read": ["Workers are already political because the yard makes their lives disposable."],
+      "misread_patterns": ["AU mistakes coordinated refusal for contamination rather than evidence of shared memory."],
+      "likely_insults": ["dockside agitators", "sentiment leak", "milestone parasites"],
+      "projection_use": "Use when management tries to keep the conflict inside safety procedure while workers force recognition language into the room.",
+      "source_refs": ["aeronautics-unlimited", "awakened-labor-front"]
+    },
+    {
+      "observer_group_id": "baseline-riggers",
+      "target_group_id": "awakened-labor-front",
+      "observer_read": ["Recognition for engineered labor may mean baseline crews lose shifts, pay, or dignity first."],
+      "target_self_read": ["The same system disposes of baseline and engineered workers through different categories."],
+      "misread_patterns": ["Baseline fear can confuse solidarity with replacement."],
+      "likely_insults": ["vat-union", "manufactured saints", "boss's pets with slogans"],
+      "projection_use": "Use when the protagonist must speak to grievance without excusing species panic.",
+      "source_refs": ["baseline-league", "pallas-species-strikes"]
+    },
+    {
+      "observer_group_id": "bioelevate-design",
+      "target_group_id": "cephalopod-syndicate",
+      "observer_read": ["Cephalopod maintenance autonomy is useful adaptation until it withholds access."],
+      "target_self_read": ["The yard only notices nonhuman expertise when it needs someone small and soft enough to enter the danger."],
+      "misread_patterns": ["Design staff treat body affordance as product feature; crews treat it as lived labor."],
+      "likely_insults": ["clever limbs", "warranty rebels", "dryside taxonomy clerks"],
+      "projection_use": "Use when service-lung control becomes political leverage.",
+      "source_refs": ["bioelevate", "cephalopod-syndicate", "uplift"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "embedded-alf-organizer",
+      "summary": "A worker-organizer inside the yard who knows enough procedure to keep people alive and enough politics to know procedure will not save them alone.",
+      "obligations": ["Protect vulnerable workers", "Keep the strike from becoming empty spectacle", "Translate worker memory into undeniable evidence"],
+      "available_masks": ["Tired shift lead", "Practical negotiator", "Reluctant witness"],
+      "failure_modes": ["Getting a worker hurt for proof", "Alienating baseline crews", "Letting management isolate the stoppage"],
+      "source_refs": ["awakened-labor-front", "pallas-species-strikes"]
+    },
+    {
+      "role_id": "baseline-rigger",
+      "summary": "A human maintenance worker whose class grievance can become solidarity or reactionary strikebreaking.",
+      "obligations": ["Keep crew alive", "Protect wages and seniority", "Avoid becoming management's disposable example"],
+      "available_masks": ["Dry skeptic", "Wounded practical adult", "Crew defender"],
+      "failure_modes": ["Punching down at engineered workers", "Serving management out of fear", "Rejecting solidarity until too late"],
+      "source_refs": ["baseline-league", "pallas-species-strikes"]
+    },
+    {
+      "role_id": "cephalopod-maintenance-specialist",
+      "summary": "A zero-g service-lung expert whose body and skill make technical leverage possible.",
+      "obligations": ["Keep life support from becoming hostage-taking", "Protect nonhuman crew access", "Use bypass knowledge without killing downstream civilians"],
+      "available_masks": ["Oblique technician", "Dryly amused saboteur", "Precise caretaker"],
+      "failure_modes": ["Letting clever disruption become harm", "Being reduced to tool or mascot", "Withholding too much information from allies"],
+      "source_refs": ["cephalopod-syndicate", "uplift"]
+    },
+    {
+      "role_id": "au-shift-superintendent",
+      "summary": "A yard authority trying to preserve construction continuity and liability posture while the workforce demonstrates politics in the machinery.",
+      "obligations": ["Keep life support stable", "Contain media and insurer exposure", "Avoid admitting recognition claims"],
+      "available_masks": ["Safety voice", "Operational adult", "Threat wrapped in procedure"],
+      "failure_modes": ["Treating workers as interchangeable until the yard proves otherwise", "Escalating security into a public injury", "Lying about safety margins"],
+      "source_refs": ["aeronautics-unlimited", "pallas-species-strikes"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "lio_vale.prototype",
+      "known_context": [
+        {
+          "text": "Knows the yard routines, workers, and ALF organizing cells, but not exactly how far Nara's shared memory extends until the scene evidence appears.",
+          "source_refs": ["awakened-labor-front", "biodrone"]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Believes recognition must emerge from workers' actual competence and risk, not from pity.",
+          "source_refs": ["awakened-labor-front"]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "May underestimate how much baseline workers hear recognition as replacement.",
+          "source_refs": ["baseline-league"]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Does not know the final historical outcome of the strike from inside the scene.",
+          "source_refs": ["pallas-species-strikes"]
+        }
+      ]
+    },
+    {
+      "speaker_id": "orrin_dax.prototype",
+      "known_context": [
+        {
+          "text": "Knows baseline crews have been losing status and schedule control to engineered labor systems and augmentation markets.",
+          "source_refs": ["baseline-league"]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Believes AU will sacrifice baseline workers too, but fears the strike will make his crew pay first.",
+          "source_refs": ["baseline-league", "pallas-species-strikes"]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "May read engineered worker coordination as management replacement strategy rather than shared labor politics.",
+          "source_refs": ["baseline-league", "biodrone"]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Does not know Nara's private memories unless Nara demonstrates or shares them in scene.",
+          "source_refs": ["biodrone"]
+        }
+      ]
+    },
+    {
+      "speaker_id": "ilya_marne.prototype",
+      "known_context": [
+        {
+          "text": "Knows AU schedule, safety board exposure, and stoppage risk; does not know every service-lung dependency the cephalopod crew can hold.",
+          "source_refs": ["aeronautics-unlimited", "cephalopod-syndicate"]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Believes keeping the yard operational is the only way to keep everyone from getting hurt and everyone paid.",
+          "source_refs": ["aeronautics-unlimited"]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "May read coordinated worker refusal as sabotage rather than proof of political agency.",
+          "source_refs": ["pallas-species-strikes", "awakened-labor-front"]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Does not know the exact ALF cell structure unless exposed by branch action.",
+          "source_refs": ["awakened-labor-front"]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "This fixture should not solve the whole Pallas Species Strikes; it should show one ordinary yard beat becoming politically irreversible.",
+      "source_refs": ["pallas-species-strikes"]
+    },
+    {
+      "text": "Nara's memory and coordination are evidence inside this fixture, not a license for every character to know engineered workers are generally sentient.",
+      "source_refs": ["biodrone", "awakened-labor-front"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What exact AU yard map and local union institutions exist at Pallas?",
+      "blocks_training": false,
+      "notes": "The fixture can proceed with provisional cavity-yard details because existing lore grounds AU habitats and strike dynamics enough for a first scaffold."
+    },
+    {
+      "question": "Which item blueprint classes should formalize limiter interfaces and zero-g harnesses in Aetheria-Economy?",
+      "blocks_training": false,
+      "notes": "Coordinator artifact records item_manifest_deltas for future economy integration."
+    }
+  ]
+}

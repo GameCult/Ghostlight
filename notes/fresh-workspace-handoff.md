@@ -83,6 +83,12 @@ path is a source-grounded branching-scene data loop:
 - Clean Cold Wake IF sidecar: `examples/ink/cold-wake-branch-and-fold.v0.training.json`
 - Clean Cold Wake coordinator artifact: `examples/coordinator/cold-wake-branch-and-fold.v0.json`
 - Clean Cold Wake readable run: `experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md`
+- Pallas Species Strikes lore digest: `examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json`
+- Pallas Species Strikes agent state: `examples/agent-state.pallas-species-strikes.v0.json`
+- Pallas Species Strikes coordinator artifact: `examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json`
+- Pallas Species Strikes Ink scaffold: `examples/ink/pallas-species-strikes.branch-and-fold.v0.ink`
+- Pallas Species Strikes Ink sidecar: `examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json`
+- Pallas Species Strikes readable run: `experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md`
 - Branch compiler and IF reviewer contract: `docs/architecture/ink-branching-scenes.md`
 
 Archived prototype captures and tools remain as evidence under `experiments/`,
@@ -118,23 +124,26 @@ current gold-data route.
 
 ## Current Next Action
 
-Cold Wake now has a clean accepted-as-draft interactive-fiction scaffold:
+Pallas Species Strikes now has an accepted-as-draft interactive-fiction scaffold:
 
-- `examples/ink/cold-wake-branch-and-fold.v0.ink`
-- `examples/ink/cold-wake-branch-and-fold.v0.training.json`
-- `examples/coordinator/cold-wake-branch-and-fold.v0.json`
-- `experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md`
+- `examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json`
+- `examples/agent-state.pallas-species-strikes.v0.json`
+- `examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json`
+- `examples/ink/pallas-species-strikes.branch-and-fold.v0.ink`
+- `examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json`
+- `experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md`
 
-It starts at the Ganymede route freeze tribunal, folds through Veyr provenance
-and Sella's clinic, carries compact consequence variables into the diagnostic
-contact climax, and includes durable base image prompts plus branch/state
-modifiers. Treat it as coordinator/IF scaffold training data, not raw responder
-gold.
+It starts in ordinary AU cavity-yard maintenance texture, then escalates through
+Nara-7's coordinated hazard refusal, baseline rigger solidarity pressure,
+BioElevate liability framing, cephalopod wet-service leverage, and a folded
+recognition/safety climax. Treat it as coordinator/IF scaffold training data,
+not raw responder gold.
 
-Next: move to a different Aetheria setting fixture. Pick the next faction,
-movement, flashpoint, or day-in-the-life target from the coverage plan,
-source-ground it in AetheriaLore, then build a similarly compact branch-and-fold
-IF scaffold with visual prompt anchors and reviewed consequence surfaces.
+Next: review the Pallas fixture directly as playable/readable IF. If accepted,
+add the corpus coverage ledger seam or choose the next Aetheria fixture from
+the 100-150 broad coverage target. If the review finds Potemkin variables,
+cosmetic choices, missing visual callbacks, or weak grounding, revise Pallas
+before moving on.
 
 ## Warnings
 

@@ -1,0 +1,3551 @@
+{
+  "schema_version": "ghostlight.agent_state.v0",
+  "world": {
+    "world_id": "aetheria-pallas-species-strikes-v0",
+    "setting": "Aetheria pre-Elysium historical flashpoint: an Aeronautics Unlimited cavity yard in the Pallas Bloom Cluster during the Pallas Species Strikes.",
+    "time": {
+      "label": "2721, during the early Pallas Species Strikes"
+    },
+    "canon_context": [
+      "Pallas stoppages spread through AU cavity-construction and maintenance zones when uplifted and heavily modified labor crews used technical chokepoints that management did not fully understand.",
+      "BioElevate uplift and biodrone systems made engineered workers indispensable while corporate language continued to treat many of them as tools, assets, or design outcomes.",
+      "The Awakened Labor Front frames memory, reciprocity, coordinated refusal, and collective self-defense as evidence that engineered workers cannot be ethically administered as equipment.",
+      "Baseline workers in the yards have real class grievances and displacement fears, which reactionary actors can turn into species panic unless solidarity is made materially credible.",
+      "Cephalopod maintenance specialists have body-specific habitat needs, service-lung expertise, and quiet leverage over zero-g yard systems."
+    ],
+    "ambient_pressures": [
+      {
+        "pressure_id": "pressure-cavity-life-support",
+        "label": "Life-support and cavity-integrity margins are real, perishable constraints.",
+        "intensity": 0.86
+      },
+      {
+        "pressure_id": "pressure-engineered-worker-recognition",
+        "label": "Engineered workers must prove personhood under conditions designed to deny it.",
+        "intensity": 0.92
+      },
+      {
+        "pressure_id": "pressure-baseline-replacement-fear",
+        "label": "Baseline riggers fear being priced out by corporate uplift labor markets.",
+        "intensity": 0.74
+      }
+    ]
+  },
+  "agents": [
+    {
+      "agent_id": "lio_vale",
+      "identity": {
+        "name": "Lio Vale",
+        "roles": [
+          "embedded Awakened Labor Front organizer",
+          "AU maintenance scheduler",
+          "fixture protagonist"
+        ],
+        "origin": "Pallas Bloom Cluster contract yards; raised in rotating Belt labor housing.",
+        "public_description": "A tired shift scheduler who knows every patch plate, favor debt, and quiet grievance on Service Ring Kappa.",
+        "private_notes": [
+          "Lio is close enough to the workers to care and close enough to the yard systems to know that breaking the wrong thing kills people.",
+          "Lio is trying to make engineered-worker refusal legible without turning vulnerable workers into evidence meat."
+        ]
+      },
+      "canonical_state": {
+        "underlying_organization": {
+          "systems_thinking": {
+            "mean": 0.86,
+            "plasticity": 0.28,
+            "current_activation": 0.9,
+            "evidence": [
+              "Keeps shift schedules, fault trees, worker trust, and legal exposure in the same mental frame."
+            ]
+          },
+          "protective_identification": {
+            "mean": 0.8,
+            "plasticity": 0.34,
+            "current_activation": 0.88
+          },
+          "self_coherence": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "contingent_worth": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "shame_sensitivity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "reciprocity_capacity": {
+            "mean": 0.82,
+            "plasticity": 0.45,
+            "current_activation": 0.82
+          },
+          "mentalization_quality": {
+            "mean": 0.84,
+            "plasticity": 0.45,
+            "current_activation": 0.84
+          },
+          "authenticity_tolerance": {
+            "mean": 0.74,
+            "plasticity": 0.45,
+            "current_activation": 0.74
+          },
+          "mask_rigidity": {
+            "mean": 0.42,
+            "plasticity": 0.45,
+            "current_activation": 0.42
+          },
+          "external_regulation_dependence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "stable_dispositions": {
+          "cautious_courage": {
+            "mean": 0.78,
+            "plasticity": 0.3,
+            "current_activation": 0.82
+          },
+          "class_patience": {
+            "mean": 0.7,
+            "plasticity": 0.42,
+            "current_activation": 0.74
+          },
+          "novelty_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conformity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "status_hunger": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "risk_tolerance": {
+            "mean": 0.64,
+            "plasticity": 0.45,
+            "current_activation": 0.64
+          },
+          "sociability": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "baseline_threat_sensitivity": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "aesthetic_appetite": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ideological_rigidity": {
+            "mean": 0.52,
+            "plasticity": 0.45,
+            "current_activation": 0.52
+          }
+        },
+        "behavioral_dimensions": {
+          "coalition_building": {
+            "mean": 0.84,
+            "plasticity": 0.36,
+            "current_activation": 0.91
+          },
+          "risk_triage": {
+            "mean": 0.82,
+            "plasticity": 0.3,
+            "current_activation": 0.87
+          },
+          "interpersonal_warmth": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "drive": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "grandiosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "validation_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "anxiety": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "control_pressure": {
+            "mean": 0.66,
+            "plasticity": 0.45,
+            "current_activation": 0.66
+          },
+          "hostility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "suspicion": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "rigidity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "withdrawal": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "volatility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "attachment_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "distance_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "presentation_strategy": {
+          "maintenance_plainness": {
+            "mean": 0.76,
+            "plasticity": 0.32,
+            "current_activation": 0.81
+          },
+          "authority_deflection": {
+            "mean": 0.66,
+            "plasticity": 0.45,
+            "current_activation": 0.7
+          },
+          "charm": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "compliance": {
+            "mean": 0.38,
+            "plasticity": 0.45,
+            "current_activation": 0.38
+          },
+          "superiority": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "detachment": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "seductiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "competence_theater": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "moral_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "strategic_opacity": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "cultivated_harmlessness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "abrasive_boundary": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ironic_distance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "voice_style": {
+          "technical_plain_speech": {
+            "mean": 0.8,
+            "plasticity": 0.24,
+            "current_activation": 0.86
+          },
+          "controlled_warmth": {
+            "mean": 0.68,
+            "plasticity": 0.37,
+            "current_activation": 0.72
+          },
+          "low_theatricality": {
+            "mean": 0.72,
+            "plasticity": 0.21,
+            "current_activation": 0.77
+          },
+          "dryness": {
+            "mean": 0.54,
+            "plasticity": 0.45,
+            "current_activation": 0.54
+          },
+          "verbal_warmth": {
+            "mean": 0.56,
+            "plasticity": 0.45,
+            "current_activation": 0.56
+          },
+          "formality": {
+            "mean": 0.48,
+            "plasticity": 0.45,
+            "current_activation": 0.48
+          },
+          "verbosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pace": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "plainspoken_directness": {
+            "mean": 0.82,
+            "plasticity": 0.45,
+            "current_activation": 0.82
+          },
+          "lexical_precision": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "technical_density": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "technical_compression": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "figurative_language": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lyricism": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "narrative_detail": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "emotional_explicitness": {
+            "mean": 0.42,
+            "plasticity": 0.45,
+            "current_activation": 0.42
+          },
+          "pointedness": {
+            "mean": 0.64,
+            "plasticity": 0.45,
+            "current_activation": 0.64
+          },
+          "self_disclosure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hedging": {
+            "mean": 0.32,
+            "plasticity": 0.45,
+            "current_activation": 0.32
+          },
+          "certainty_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "coded_politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ritualized_address": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "register_switching": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "dialect_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "theatricality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humor": {
+            "mean": 0.24,
+            "plasticity": 0.45,
+            "current_activation": 0.24
+          },
+          "conversational_dominance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "listening_responsiveness": {
+            "mean": 0.8,
+            "plasticity": 0.45,
+            "current_activation": 0.8
+          },
+          "question_asking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "profanity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "situational_state": {
+          "fatigue": {
+            "mean": 0.45,
+            "plasticity": 0.58,
+            "current_activation": 0.7
+          },
+          "protective_alarm": {
+            "mean": 0.5,
+            "plasticity": 0.62,
+            "current_activation": 0.84
+          },
+          "exhaustion": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "scarcity_pressure": {
+            "mean": 0.76,
+            "plasticity": 0.45,
+            "current_activation": 0.76
+          },
+          "humiliation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "panic": {
+            "mean": 0.38,
+            "plasticity": 0.45,
+            "current_activation": 0.38
+          },
+          "triumph": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grief": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "overstimulation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grievance_activation": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "acute_shame": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "perceived_status_threat": {
+            "mean": 0.48,
+            "plasticity": 0.45,
+            "current_activation": 0.48
+          }
+        },
+        "values": [
+          {
+            "value_id": "value-recognition-without-sacrifice",
+            "label": "Recognition must not require workers to bleed for proof.",
+            "priority": 0.96,
+            "unforgivable_if_betrayed": true
+          },
+          {
+            "value_id": "value-solidarity-with-material-costs",
+            "label": "Solidarity must account for who pays the cost of delay.",
+            "priority": 0.88,
+            "unforgivable_if_betrayed": false
+          }
+        ]
+      },
+      "goals": [
+        {
+          "goal_id": "goal-lio-keep-workers-alive",
+          "description": "Prevent the stoppage from becoming a fatal life-support or cavity-integrity incident.",
+          "scope": "scene",
+          "priority": 0.98,
+          "emotional_stake": "If Lio lets the yard turn workers into corpses, every later legal victory is ash.",
+          "status": "active"
+        },
+        {
+          "goal_id": "goal-lio-make-refusal-legible",
+          "description": "Make the engineered workers' coordinated refusal visible as labor action, not equipment drift.",
+          "scope": "arc",
+          "priority": 0.9,
+          "emotional_stake": "The ALF needs proof that does not destroy the people proving it.",
+          "status": "active"
+        }
+      ],
+      "memories": {
+        "episodic": [
+          {
+            "memory_id": "mem-lio-nara-reset",
+            "summary": "Lio watched Nara-7 return from a limiter reset remembering the route order anyway, then pretend not to.",
+            "salience": 0.86,
+            "confidence": 0.82
+          }
+        ],
+        "semantic": [
+          {
+            "memory_id": "mem-lio-kappa-map",
+            "summary": "Service Ring Kappa's seal manifold can be slowed safely only if cephalopod crews hold the wet-service bypass and baseline riggers keep the dry anchor points clear.",
+            "salience": 0.94,
+            "confidence": 0.9
+          }
+        ],
+        "relationship_summaries": [
+          {
+            "memory_id": "mem-lio-orrin-trust",
+            "summary": "Orrin trusts Lio on safety and resents Lio on uplift politics.",
+            "salience": 0.72,
+            "confidence": 0.78,
+            "linked_relationship_id": "rel-lio-orrin"
+          }
+        ]
+      },
+      "perceived_state_overlays": [
+        {
+          "observer_agent_id": "lio_vale",
+          "target_agent_id": "orrin_dax",
+          "perceived_dimensions": {
+            "replacement_fear": {
+              "observed_activation": 0.78,
+              "attributed_disposition": 0.64,
+              "confidence": 0.72
+            }
+          },
+          "beliefs": [
+            {
+              "belief_id": "belief-lio-orrin-not-lost",
+              "claim": "Orrin can be moved toward solidarity if the choice protects baseline jobs instead of shaming baseline fear.",
+              "confidence": 0.68,
+              "subject_id": "orrin_dax",
+              "claim_type": "prediction",
+              "visibility": "private",
+              "emotional_charge": 0.55
+            }
+          ],
+          "distortions": [
+            "care_underread"
+          ]
+        }
+      ]
+    },
+    {
+      "agent_id": "nara_7",
+      "identity": {
+        "name": "Nara-7",
+        "roles": [
+          "BioDrone Standard seal technician",
+          "engineered worker",
+          "evidence-bearing participant"
+        ],
+        "origin": "BioElevate-aligned contract labor batch assigned to AU Pallas maintenance.",
+        "public_description": "A precise seal technician whose work record reads like equipment reliability until she refuses a blind crawl.",
+        "private_notes": [
+          "Nara remembers routes, injuries, faces, and bargains more completely than her classification admits.",
+          "Nara knows that if she displays too much selfhood, humans may inspect her instead of listening to the danger."
+        ]
+      },
+      "canonical_state": {
+        "underlying_organization": {
+          "procedural_memory_depth": {
+            "mean": 0.9,
+            "plasticity": 0.22,
+            "current_activation": 0.96
+          },
+          "self_protective_recognition": {
+            "mean": 0.62,
+            "plasticity": 0.48,
+            "current_activation": 0.79
+          },
+          "self_coherence": {
+            "mean": 0.66,
+            "plasticity": 0.45,
+            "current_activation": 0.66
+          },
+          "contingent_worth": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "shame_sensitivity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "reciprocity_capacity": {
+            "mean": 0.74,
+            "plasticity": 0.45,
+            "current_activation": 0.74
+          },
+          "mentalization_quality": {
+            "mean": 0.7,
+            "plasticity": 0.45,
+            "current_activation": 0.7
+          },
+          "authenticity_tolerance": {
+            "mean": 0.42,
+            "plasticity": 0.45,
+            "current_activation": 0.42
+          },
+          "mask_rigidity": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "external_regulation_dependence": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          }
+        },
+        "stable_dispositions": {
+          "task_fidelity": {
+            "mean": 0.88,
+            "plasticity": 0.24,
+            "current_activation": 0.84
+          },
+          "quiet_defiance": {
+            "mean": 0.7,
+            "plasticity": 0.46,
+            "current_activation": 0.89
+          },
+          "novelty_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conformity": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "status_hunger": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "risk_tolerance": {
+            "mean": 0.46,
+            "plasticity": 0.45,
+            "current_activation": 0.46
+          },
+          "sociability": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "baseline_threat_sensitivity": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "aesthetic_appetite": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ideological_rigidity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "behavioral_dimensions": {
+          "hazard_refusal": {
+            "mean": 0.58,
+            "plasticity": 0.62,
+            "current_activation": 0.92
+          },
+          "body_economy": {
+            "mean": 0.86,
+            "plasticity": 0.18,
+            "current_activation": 0.83
+          },
+          "interpersonal_warmth": {
+            "mean": 0.42,
+            "plasticity": 0.45,
+            "current_activation": 0.42
+          },
+          "drive": {
+            "mean": 0.66,
+            "plasticity": 0.45,
+            "current_activation": 0.66
+          },
+          "grandiosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "validation_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "anxiety": {
+            "mean": 0.7,
+            "plasticity": 0.45,
+            "current_activation": 0.7
+          },
+          "control_pressure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hostility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "suspicion": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "rigidity": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "withdrawal": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "volatility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "attachment_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "distance_seeking": {
+            "mean": 0.66,
+            "plasticity": 0.45,
+            "current_activation": 0.66
+          }
+        },
+        "presentation_strategy": {
+          "compliance_mask": {
+            "mean": 0.76,
+            "plasticity": 0.5,
+            "current_activation": 0.68
+          },
+          "minimal_disclosure": {
+            "mean": 0.82,
+            "plasticity": 0.36,
+            "current_activation": 0.9
+          },
+          "charm": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "compliance": {
+            "mean": 0.76,
+            "plasticity": 0.45,
+            "current_activation": 0.76
+          },
+          "superiority": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "detachment": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "seductiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "competence_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "moral_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "strategic_opacity": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "cultivated_harmlessness": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "abrasive_boundary": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ironic_distance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "voice_style": {
+          "compressed_literalism": {
+            "mean": 0.84,
+            "plasticity": 0.28,
+            "current_activation": 0.88
+          },
+          "ritualized_work_reference": {
+            "mean": 0.7,
+            "plasticity": 0.38,
+            "current_activation": 0.76
+          },
+          "dryness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "verbal_warmth": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "formality": {
+            "mean": 0.48,
+            "plasticity": 0.45,
+            "current_activation": 0.48
+          },
+          "verbosity": {
+            "mean": 0.22,
+            "plasticity": 0.45,
+            "current_activation": 0.22
+          },
+          "pace": {
+            "mean": 0.36,
+            "plasticity": 0.45,
+            "current_activation": 0.36
+          },
+          "plainspoken_directness": {
+            "mean": 0.76,
+            "plasticity": 0.45,
+            "current_activation": 0.76
+          },
+          "lexical_precision": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "technical_density": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "technical_compression": {
+            "mean": 0.8,
+            "plasticity": 0.45,
+            "current_activation": 0.8
+          },
+          "figurative_language": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lyricism": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "narrative_detail": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "emotional_explicitness": {
+            "mean": 0.22,
+            "plasticity": 0.45,
+            "current_activation": 0.22
+          },
+          "pointedness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "self_disclosure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hedging": {
+            "mean": 0.26,
+            "plasticity": 0.45,
+            "current_activation": 0.26
+          },
+          "certainty_marking": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "coded_politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ritualized_address": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "register_switching": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "dialect_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "theatricality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humor": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conversational_dominance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "listening_responsiveness": {
+            "mean": 0.66,
+            "plasticity": 0.45,
+            "current_activation": 0.66
+          },
+          "question_asking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "profanity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "situational_state": {
+          "injury_watch": {
+            "mean": 0.52,
+            "plasticity": 0.66,
+            "current_activation": 0.85
+          },
+          "exposure_fear": {
+            "mean": 0.5,
+            "plasticity": 0.7,
+            "current_activation": 0.81
+          },
+          "exhaustion": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "scarcity_pressure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humiliation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "panic": {
+            "mean": 0.54,
+            "plasticity": 0.45,
+            "current_activation": 0.54
+          },
+          "triumph": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grief": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "overstimulation": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "grievance_activation": {
+            "mean": 0.74,
+            "plasticity": 0.45,
+            "current_activation": 0.74
+          },
+          "acute_shame": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "perceived_status_threat": {
+            "mean": 0.82,
+            "plasticity": 0.45,
+            "current_activation": 0.82
+          }
+        },
+        "values": [
+          {
+            "value_id": "value-nara-no-blind-crawl",
+            "label": "No worker should enter a known cutting path blind.",
+            "priority": 0.94,
+            "unforgivable_if_betrayed": true
+          }
+        ]
+      },
+      "goals": [
+        {
+          "goal_id": "goal-nara-stop-blind-crawl",
+          "description": "Stop the Kappa crawl order until the cutting fault is acknowledged.",
+          "scope": "scene",
+          "priority": 0.96,
+          "emotional_stake": "The route remembers Rell's injury even if management language does not.",
+          "status": "active"
+        }
+      ],
+      "memories": {
+        "episodic": [
+          {
+            "memory_id": "mem-nara-rell-cut",
+            "summary": "Rell entered the same blind path and came out with a seal saw through the suit arm.",
+            "salience": 0.95,
+            "confidence": 0.96
+          }
+        ],
+        "semantic": [
+          {
+            "memory_id": "mem-nara-kappa-song",
+            "summary": "Kappa manifold vibration is wrong before the board declares a fault.",
+            "salience": 0.89,
+            "confidence": 0.88
+          }
+        ],
+        "relationship_summaries": [
+          {
+            "memory_id": "mem-nara-lio",
+            "summary": "Lio asks fewer trap questions than inspectors do.",
+            "salience": 0.74,
+            "confidence": 0.7,
+            "linked_relationship_id": "rel-nara-lio"
+          }
+        ]
+      },
+      "perceived_state_overlays": []
+    },
+    {
+      "agent_id": "orrin_dax",
+      "identity": {
+        "name": "Orrin Dax",
+        "roles": [
+          "baseline human rigger",
+          "old-shift informal speaker"
+        ],
+        "origin": "Inner Belt maintenance families displaced by automation and corporate uplift contracting.",
+        "public_description": "A dry-side rigger whose hands know the old anchor work and whose mouth knows where the bitterness is kept.",
+        "private_notes": [
+          "Orrin's first response to engineered-worker recognition is replacement panic, and he is ashamed of how fast it arrives.",
+          "He believes safety lies are management's language, not the workers'."
+        ]
+      },
+      "canonical_state": {
+        "underlying_organization": {
+          "status_injury_sensitivity": {
+            "mean": 0.76,
+            "plasticity": 0.42,
+            "current_activation": 0.82
+          },
+          "crew_loyalty": {
+            "mean": 0.82,
+            "plasticity": 0.34,
+            "current_activation": 0.79
+          },
+          "self_coherence": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "contingent_worth": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "shame_sensitivity": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "reciprocity_capacity": {
+            "mean": 0.64,
+            "plasticity": 0.45,
+            "current_activation": 0.64
+          },
+          "mentalization_quality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "authenticity_tolerance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "mask_rigidity": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "external_regulation_dependence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "stable_dispositions": {
+          "work_pride": {
+            "mean": 0.84,
+            "plasticity": 0.28,
+            "current_activation": 0.8
+          },
+          "institutional_suspicion": {
+            "mean": 0.74,
+            "plasticity": 0.38,
+            "current_activation": 0.86
+          },
+          "novelty_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conformity": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "status_hunger": {
+            "mean": 0.54,
+            "plasticity": 0.45,
+            "current_activation": 0.54
+          },
+          "risk_tolerance": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "sociability": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "baseline_threat_sensitivity": {
+            "mean": 0.82,
+            "plasticity": 0.45,
+            "current_activation": 0.82
+          },
+          "aesthetic_appetite": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ideological_rigidity": {
+            "mean": 0.56,
+            "plasticity": 0.45,
+            "current_activation": 0.56
+          }
+        },
+        "behavioral_dimensions": {
+          "protective_grumbling": {
+            "mean": 0.7,
+            "plasticity": 0.43,
+            "current_activation": 0.82
+          },
+          "line_holding": {
+            "mean": 0.78,
+            "plasticity": 0.35,
+            "current_activation": 0.77
+          },
+          "interpersonal_warmth": {
+            "mean": 0.46,
+            "plasticity": 0.45,
+            "current_activation": 0.46
+          },
+          "drive": {
+            "mean": 0.66,
+            "plasticity": 0.45,
+            "current_activation": 0.66
+          },
+          "grandiosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "validation_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "anxiety": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "control_pressure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hostility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "suspicion": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "rigidity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "withdrawal": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "volatility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "attachment_seeking": {
+            "mean": 0.38,
+            "plasticity": 0.45,
+            "current_activation": 0.38
+          },
+          "distance_seeking": {
+            "mean": 0.54,
+            "plasticity": 0.45,
+            "current_activation": 0.54
+          }
+        },
+        "presentation_strategy": {
+          "old_shift_bluntness": {
+            "mean": 0.82,
+            "plasticity": 0.24,
+            "current_activation": 0.86
+          },
+          "joke_as_status_cover": {
+            "mean": 0.68,
+            "plasticity": 0.4,
+            "current_activation": 0.73
+          },
+          "charm": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "compliance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "superiority": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "detachment": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "seductiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "competence_theater": {
+            "mean": 0.64,
+            "plasticity": 0.45,
+            "current_activation": 0.64
+          },
+          "moral_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "strategic_opacity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "cultivated_harmlessness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "abrasive_boundary": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "ironic_distance": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          }
+        },
+        "voice_style": {
+          "plainspoken_belt_register": {
+            "mean": 0.84,
+            "plasticity": 0.2,
+            "current_activation": 0.88
+          },
+          "dry_complaint": {
+            "mean": 0.76,
+            "plasticity": 0.3,
+            "current_activation": 0.83
+          },
+          "dryness": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "verbal_warmth": {
+            "mean": 0.28,
+            "plasticity": 0.45,
+            "current_activation": 0.28
+          },
+          "formality": {
+            "mean": 0.24,
+            "plasticity": 0.45,
+            "current_activation": 0.24
+          },
+          "verbosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pace": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "plainspoken_directness": {
+            "mean": 0.84,
+            "plasticity": 0.45,
+            "current_activation": 0.84
+          },
+          "lexical_precision": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "technical_density": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "technical_compression": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "figurative_language": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lyricism": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "narrative_detail": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "emotional_explicitness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pointedness": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "self_disclosure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hedging": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "certainty_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "coded_politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ritualized_address": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "register_switching": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "dialect_marking": {
+            "mean": 0.46,
+            "plasticity": 0.45,
+            "current_activation": 0.46
+          },
+          "theatricality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humor": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "conversational_dominance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "listening_responsiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "question_asking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "profanity": {
+            "mean": 0.34,
+            "plasticity": 0.45,
+            "current_activation": 0.34
+          }
+        },
+        "situational_state": {
+          "replacement_fear": {
+            "mean": 0.55,
+            "plasticity": 0.68,
+            "current_activation": 0.82
+          },
+          "safety_alarm": {
+            "mean": 0.48,
+            "plasticity": 0.62,
+            "current_activation": 0.76
+          },
+          "exhaustion": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "scarcity_pressure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humiliation": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "panic": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "triumph": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grief": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "overstimulation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grievance_activation": {
+            "mean": 0.82,
+            "plasticity": 0.45,
+            "current_activation": 0.82
+          },
+          "acute_shame": {
+            "mean": 0.46,
+            "plasticity": 0.45,
+            "current_activation": 0.46
+          },
+          "perceived_status_threat": {
+            "mean": 0.84,
+            "plasticity": 0.45,
+            "current_activation": 0.84
+          }
+        },
+        "values": [
+          {
+            "value_id": "value-orrin-no-one-disposable",
+            "label": "No crew member should be spent to protect a schedule.",
+            "priority": 0.88,
+            "unforgivable_if_betrayed": true
+          }
+        ]
+      },
+      "goals": [
+        {
+          "goal_id": "goal-orrin-protect-baseline-crew",
+          "description": "Keep baseline riggers from being blamed, replaced, or locked out by the stoppage.",
+          "scope": "scene",
+          "priority": 0.82,
+          "emotional_stake": "He cannot admit solidarity if it feels like signing his own crew's obsolescence.",
+          "status": "active"
+        }
+      ],
+      "memories": {
+        "episodic": [
+          {
+            "memory_id": "mem-orrin-sister-contract",
+            "summary": "Orrin's sister lost a berth when a BioElevate line underbid the dry-side crew.",
+            "salience": 0.83,
+            "confidence": 0.9
+          }
+        ],
+        "semantic": [
+          {
+            "memory_id": "mem-orrin-anchor-points",
+            "summary": "Dry anchor points must be cleared before any safe wet-service bypass can take load.",
+            "salience": 0.82,
+            "confidence": 0.91
+          }
+        ],
+        "relationship_summaries": []
+      },
+      "perceived_state_overlays": []
+    },
+    {
+      "agent_id": "teth_inkwise",
+      "identity": {
+        "name": "Teth Inkwise",
+        "roles": [
+          "cephalopod maintenance specialist",
+          "Syndicate-adjacent service-lung expert"
+        ],
+        "origin": "BioElevate cephalopod engineering lineage with ties to mutual-aid extraction networks.",
+        "public_description": "A many-armed wet-service technician who moves through AU service arteries like the yard forgot to lock the real doors.",
+        "private_notes": [
+          "Teth will sabotage a bad order, but not in a way that leaves civilians gasping.",
+          "Teth understands that the yard's dependence on cephalopod labor is leverage only while everyone survives."
+        ]
+      },
+      "canonical_state": {
+        "underlying_organization": {
+          "distributed_attention": {
+            "mean": 0.9,
+            "plasticity": 0.18,
+            "current_activation": 0.94
+          },
+          "mutual_aid_orientation": {
+            "mean": 0.78,
+            "plasticity": 0.34,
+            "current_activation": 0.82
+          },
+          "self_coherence": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "contingent_worth": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "shame_sensitivity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "reciprocity_capacity": {
+            "mean": 0.8,
+            "plasticity": 0.45,
+            "current_activation": 0.8
+          },
+          "mentalization_quality": {
+            "mean": 0.76,
+            "plasticity": 0.45,
+            "current_activation": 0.76
+          },
+          "authenticity_tolerance": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "mask_rigidity": {
+            "mean": 0.46,
+            "plasticity": 0.45,
+            "current_activation": 0.46
+          },
+          "external_regulation_dependence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "stable_dispositions": {
+          "tactical_mischief": {
+            "mean": 0.72,
+            "plasticity": 0.36,
+            "current_activation": 0.76
+          },
+          "civilian_care": {
+            "mean": 0.82,
+            "plasticity": 0.3,
+            "current_activation": 0.85
+          },
+          "novelty_seeking": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "conformity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "status_hunger": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "risk_tolerance": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "sociability": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "baseline_threat_sensitivity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "aesthetic_appetite": {
+            "mean": 0.64,
+            "plasticity": 0.45,
+            "current_activation": 0.64
+          },
+          "ideological_rigidity": {
+            "mean": 0.42,
+            "plasticity": 0.45,
+            "current_activation": 0.42
+          }
+        },
+        "behavioral_dimensions": {
+          "technical_leverage": {
+            "mean": 0.9,
+            "plasticity": 0.24,
+            "current_activation": 0.92
+          },
+          "route_evasion": {
+            "mean": 0.76,
+            "plasticity": 0.38,
+            "current_activation": 0.8
+          },
+          "interpersonal_warmth": {
+            "mean": 0.56,
+            "plasticity": 0.45,
+            "current_activation": 0.56
+          },
+          "drive": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "grandiosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "validation_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "anxiety": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "control_pressure": {
+            "mean": 0.52,
+            "plasticity": 0.45,
+            "current_activation": 0.52
+          },
+          "hostility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "suspicion": {
+            "mean": 0.6,
+            "plasticity": 0.45,
+            "current_activation": 0.6
+          },
+          "rigidity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "withdrawal": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "volatility": {
+            "mean": 0.28,
+            "plasticity": 0.45,
+            "current_activation": 0.28
+          },
+          "attachment_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "distance_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "presentation_strategy": {
+          "amiable_understatement": {
+            "mean": 0.74,
+            "plasticity": 0.32,
+            "current_activation": 0.77
+          },
+          "plausible_compliance": {
+            "mean": 0.68,
+            "plasticity": 0.44,
+            "current_activation": 0.72
+          },
+          "charm": {
+            "mean": 0.52,
+            "plasticity": 0.45,
+            "current_activation": 0.52
+          },
+          "compliance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "superiority": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "detachment": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "seductiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "competence_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "moral_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "strategic_opacity": {
+            "mean": 0.66,
+            "plasticity": 0.45,
+            "current_activation": 0.66
+          },
+          "cultivated_harmlessness": {
+            "mean": 0.44,
+            "plasticity": 0.45,
+            "current_activation": 0.44
+          },
+          "abrasive_boundary": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ironic_distance": {
+            "mean": 0.54,
+            "plasticity": 0.45,
+            "current_activation": 0.54
+          }
+        },
+        "voice_style": {
+          "fluid_register_switching": {
+            "mean": 0.82,
+            "plasticity": 0.26,
+            "current_activation": 0.84
+          },
+          "soft_technical_humor": {
+            "mean": 0.7,
+            "plasticity": 0.38,
+            "current_activation": 0.73
+          },
+          "dryness": {
+            "mean": 0.48,
+            "plasticity": 0.45,
+            "current_activation": 0.48
+          },
+          "verbal_warmth": {
+            "mean": 0.46,
+            "plasticity": 0.45,
+            "current_activation": 0.46
+          },
+          "formality": {
+            "mean": 0.42,
+            "plasticity": 0.45,
+            "current_activation": 0.42
+          },
+          "verbosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pace": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "plainspoken_directness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lexical_precision": {
+            "mean": 0.74,
+            "plasticity": 0.45,
+            "current_activation": 0.74
+          },
+          "technical_density": {
+            "mean": 0.7,
+            "plasticity": 0.45,
+            "current_activation": 0.7
+          },
+          "technical_compression": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "figurative_language": {
+            "mean": 0.52,
+            "plasticity": 0.45,
+            "current_activation": 0.52
+          },
+          "lyricism": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "narrative_detail": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "emotional_explicitness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "pointedness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "self_disclosure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hedging": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "certainty_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "coded_politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ritualized_address": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "register_switching": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "dialect_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "theatricality": {
+            "mean": 0.32,
+            "plasticity": 0.45,
+            "current_activation": 0.32
+          },
+          "humor": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "conversational_dominance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "listening_responsiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "question_asking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "profanity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "situational_state": {
+          "pressure_sense": {
+            "mean": 0.52,
+            "plasticity": 0.62,
+            "current_activation": 0.86
+          },
+          "exhaustion": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "scarcity_pressure": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "humiliation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "panic": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "triumph": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grief": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "overstimulation": {
+            "mean": 0.44,
+            "plasticity": 0.45,
+            "current_activation": 0.44
+          },
+          "grievance_activation": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "acute_shame": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "perceived_status_threat": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "values": [
+          {
+            "value_id": "value-teth-no-suffocation-politics",
+            "label": "Leverage must not become suffocation politics.",
+            "priority": 0.92,
+            "unforgivable_if_betrayed": true
+          }
+        ]
+      },
+      "goals": [
+        {
+          "goal_id": "goal-teth-keep-bypass-honest",
+          "description": "Keep the wet-service bypass available without giving AU a way to erase the refusal.",
+          "scope": "scene",
+          "priority": 0.88,
+          "emotional_stake": "A clever trick that kills civilians is just management with better arms.",
+          "status": "active"
+        }
+      ],
+      "memories": {
+        "episodic": [],
+        "semantic": [
+          {
+            "memory_id": "mem-teth-service-lung",
+            "summary": "The service lung can carry Kappa's load for minutes if the harness valves are staged by someone with wet-side reach.",
+            "salience": 0.91,
+            "confidence": 0.9
+          }
+        ],
+        "relationship_summaries": []
+      },
+      "perceived_state_overlays": []
+    },
+    {
+      "agent_id": "ilya_marne",
+      "identity": {
+        "name": "Ilya Marne",
+        "roles": [
+          "AU shift superintendent",
+          "incident authority"
+        ],
+        "origin": "Aeronautics Unlimited management track, Pallas Bloom operations.",
+        "public_description": "A superintendent trained to turn danger into schedule language before the board notices blood.",
+        "private_notes": [
+          "Ilya knows the yard depends on workers the board does not respect.",
+          "Admitting that dependence risks her career and AU's liability posture."
+        ]
+      },
+      "canonical_state": {
+        "underlying_organization": {
+          "schedule_sovereignty": {
+            "mean": 0.82,
+            "plasticity": 0.3,
+            "current_activation": 0.9
+          },
+          "liability_reflex": {
+            "mean": 0.86,
+            "plasticity": 0.24,
+            "current_activation": 0.88
+          },
+          "self_coherence": {
+            "mean": 0.7,
+            "plasticity": 0.45,
+            "current_activation": 0.7
+          },
+          "contingent_worth": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "shame_sensitivity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "reciprocity_capacity": {
+            "mean": 0.38,
+            "plasticity": 0.45,
+            "current_activation": 0.38
+          },
+          "mentalization_quality": {
+            "mean": 0.62,
+            "plasticity": 0.45,
+            "current_activation": 0.62
+          },
+          "authenticity_tolerance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "mask_rigidity": {
+            "mean": 0.76,
+            "plasticity": 0.45,
+            "current_activation": 0.76
+          },
+          "external_regulation_dependence": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "stable_dispositions": {
+          "command_presence": {
+            "mean": 0.8,
+            "plasticity": 0.28,
+            "current_activation": 0.84
+          },
+          "controlled_pragmatism": {
+            "mean": 0.72,
+            "plasticity": 0.38,
+            "current_activation": 0.76
+          },
+          "novelty_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conformity": {
+            "mean": 0.76,
+            "plasticity": 0.45,
+            "current_activation": 0.76
+          },
+          "status_hunger": {
+            "mean": 0.64,
+            "plasticity": 0.45,
+            "current_activation": 0.64
+          },
+          "risk_tolerance": {
+            "mean": 0.48,
+            "plasticity": 0.45,
+            "current_activation": 0.48
+          },
+          "sociability": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "baseline_threat_sensitivity": {
+            "mean": 0.6,
+            "plasticity": 0.45,
+            "current_activation": 0.6
+          },
+          "aesthetic_appetite": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ideological_rigidity": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          }
+        },
+        "behavioral_dimensions": {
+          "classification_pressure": {
+            "mean": 0.84,
+            "plasticity": 0.32,
+            "current_activation": 0.9
+          },
+          "security_escalation": {
+            "mean": 0.58,
+            "plasticity": 0.6,
+            "current_activation": 0.68
+          },
+          "interpersonal_warmth": {
+            "mean": 0.26,
+            "plasticity": 0.45,
+            "current_activation": 0.26
+          },
+          "drive": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "grandiosity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "validation_seeking": {
+            "mean": 0.48,
+            "plasticity": 0.45,
+            "current_activation": 0.48
+          },
+          "anxiety": {
+            "mean": 0.56,
+            "plasticity": 0.45,
+            "current_activation": 0.56
+          },
+          "control_pressure": {
+            "mean": 0.86,
+            "plasticity": 0.45,
+            "current_activation": 0.86
+          },
+          "hostility": {
+            "mean": 0.46,
+            "plasticity": 0.45,
+            "current_activation": 0.46
+          },
+          "suspicion": {
+            "mean": 0.66,
+            "plasticity": 0.45,
+            "current_activation": 0.66
+          },
+          "rigidity": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "withdrawal": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "volatility": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "attachment_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "distance_seeking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "presentation_strategy": {
+          "procedural_authority": {
+            "mean": 0.9,
+            "plasticity": 0.18,
+            "current_activation": 0.92
+          },
+          "charm": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "compliance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "superiority": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "detachment": {
+            "mean": 0.68,
+            "plasticity": 0.45,
+            "current_activation": 0.68
+          },
+          "seductiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "competence_theater": {
+            "mean": 0.82,
+            "plasticity": 0.45,
+            "current_activation": 0.82
+          },
+          "moral_theater": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "strategic_opacity": {
+            "mean": 0.54,
+            "plasticity": 0.45,
+            "current_activation": 0.54
+          },
+          "cultivated_harmlessness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "abrasive_boundary": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ironic_distance": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "voice_style": {
+          "corporate_precision": {
+            "mean": 0.86,
+            "plasticity": 0.22,
+            "current_activation": 0.88
+          },
+          "low_hedging": {
+            "mean": 0.74,
+            "plasticity": 0.24,
+            "current_activation": 0.78
+          },
+          "dryness": {
+            "mean": 0.36,
+            "plasticity": 0.45,
+            "current_activation": 0.36
+          },
+          "verbal_warmth": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "formality": {
+            "mean": 0.84,
+            "plasticity": 0.45,
+            "current_activation": 0.84
+          },
+          "verbosity": {
+            "mean": 0.42,
+            "plasticity": 0.45,
+            "current_activation": 0.42
+          },
+          "pace": {
+            "mean": 0.58,
+            "plasticity": 0.45,
+            "current_activation": 0.58
+          },
+          "plainspoken_directness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lexical_precision": {
+            "mean": 0.82,
+            "plasticity": 0.45,
+            "current_activation": 0.82
+          },
+          "technical_density": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "technical_compression": {
+            "mean": 0.64,
+            "plasticity": 0.45,
+            "current_activation": 0.64
+          },
+          "figurative_language": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "lyricism": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "narrative_detail": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "emotional_explicitness": {
+            "mean": 0.18,
+            "plasticity": 0.45,
+            "current_activation": 0.18
+          },
+          "pointedness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "self_disclosure": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "hedging": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "certainty_marking": {
+            "mean": 0.8,
+            "plasticity": 0.45,
+            "current_activation": 0.8
+          },
+          "politeness": {
+            "mean": 0.42,
+            "plasticity": 0.45,
+            "current_activation": 0.42
+          },
+          "coded_politeness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "ritualized_address": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "register_switching": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "dialect_marking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "theatricality": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "humor": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "conversational_dominance": {
+            "mean": 0.78,
+            "plasticity": 0.45,
+            "current_activation": 0.78
+          },
+          "listening_responsiveness": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "question_asking": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "profanity": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          }
+        },
+        "situational_state": {
+          "loss_of_control_alarm": {
+            "mean": 0.48,
+            "plasticity": 0.66,
+            "current_activation": 0.8
+          },
+          "exhaustion": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "scarcity_pressure": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          },
+          "humiliation": {
+            "mean": 0.38,
+            "plasticity": 0.45,
+            "current_activation": 0.38
+          },
+          "panic": {
+            "mean": 0.42,
+            "plasticity": 0.45,
+            "current_activation": 0.42
+          },
+          "triumph": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grief": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "overstimulation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "grievance_activation": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "acute_shame": {
+            "mean": 0.5,
+            "plasticity": 0.45,
+            "current_activation": 0.5
+          },
+          "perceived_status_threat": {
+            "mean": 0.72,
+            "plasticity": 0.45,
+            "current_activation": 0.72
+          }
+        },
+        "values": [
+          {
+            "value_id": "value-ilya-keep-yard-operating",
+            "label": "The yard must keep operating without a reportable catastrophe.",
+            "priority": 0.9,
+            "unforgivable_if_betrayed": false
+          }
+        ]
+      },
+      "goals": [
+        {
+          "goal_id": "goal-ilya-contain-incident",
+          "description": "Contain the refusal as an irregularity before it becomes a recognized strike.",
+          "scope": "scene",
+          "priority": 0.92,
+          "emotional_stake": "If the board sees species politics in the shift log, Ilya loses control of the yard and her career.",
+          "status": "active"
+        }
+      ],
+      "memories": {
+        "episodic": [],
+        "semantic": [
+          {
+            "memory_id": "mem-ilya-au-liability",
+            "summary": "BioElevate documentation says emergent behavior should be framed as drift until legal review says otherwise.",
+            "salience": 0.84,
+            "confidence": 0.82
+          }
+        ],
+        "relationship_summaries": []
+      },
+      "perceived_state_overlays": []
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "rel-lio-nara",
+      "source_id": "lio_vale",
+      "target_id": "nara_7",
+      "stance": {
+        "protective_trust": {
+          "mean": 0.82,
+          "plasticity": 0.35,
+          "current_activation": 0.9
+        },
+        "trust": {
+          "mean": 0.82,
+          "plasticity": 0.5,
+          "current_activation": 0.82
+        },
+        "respect": {
+          "mean": 0.86,
+          "plasticity": 0.5,
+          "current_activation": 0.86
+        },
+        "resentment": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.78,
+          "plasticity": 0.5,
+          "current_activation": 0.78
+        },
+        "envy": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "moral_disgust": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.76,
+          "plasticity": 0.5,
+          "current_activation": 0.76
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.22,
+          "plasticity": 0.5,
+          "current_activation": 0.22
+        }
+      },
+      "summary": "Lio trusts Nara's hazard sense and wants her recognition to matter without making her a specimen."
+    },
+    {
+      "relationship_id": "rel-nara-lio",
+      "source_id": "nara_7",
+      "target_id": "lio_vale",
+      "stance": {
+        "cautious_reliance": {
+          "mean": 0.7,
+          "plasticity": 0.46,
+          "current_activation": 0.78
+        },
+        "trust": {
+          "mean": 0.62,
+          "plasticity": 0.5,
+          "current_activation": 0.62
+        },
+        "respect": {
+          "mean": 0.68,
+          "plasticity": 0.5,
+          "current_activation": 0.68
+        },
+        "resentment": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.22,
+          "plasticity": 0.5,
+          "current_activation": 0.22
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "moral_disgust": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.58,
+          "plasticity": 0.5,
+          "current_activation": 0.58
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.36,
+          "plasticity": 0.5,
+          "current_activation": 0.36
+        }
+      },
+      "summary": "Nara treats Lio as safer than management but not safe enough for careless disclosure."
+    },
+    {
+      "relationship_id": "rel-lio-orrin",
+      "source_id": "lio_vale",
+      "target_id": "orrin_dax",
+      "stance": {
+        "frustrated_respect": {
+          "mean": 0.72,
+          "plasticity": 0.4,
+          "current_activation": 0.76
+        },
+        "trust": {
+          "mean": 0.56,
+          "plasticity": 0.5,
+          "current_activation": 0.56
+        },
+        "respect": {
+          "mean": 0.72,
+          "plasticity": 0.5,
+          "current_activation": 0.72
+        },
+        "resentment": {
+          "mean": 0.28,
+          "plasticity": 0.5,
+          "current_activation": 0.28
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "moral_disgust": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.54,
+          "plasticity": 0.5,
+          "current_activation": 0.54
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.38,
+          "plasticity": 0.5,
+          "current_activation": 0.38
+        }
+      },
+      "summary": "Lio sees Orrin as hard to move but too honest about safety to dismiss."
+    },
+    {
+      "relationship_id": "rel-orrin-nara",
+      "source_id": "orrin_dax",
+      "target_id": "nara_7",
+      "stance": {
+        "uneasy_solidarity": {
+          "mean": 0.44,
+          "plasticity": 0.7,
+          "current_activation": 0.58
+        },
+        "trust": {
+          "mean": 0.36,
+          "plasticity": 0.5,
+          "current_activation": 0.36
+        },
+        "respect": {
+          "mean": 0.44,
+          "plasticity": 0.5,
+          "current_activation": 0.44
+        },
+        "resentment": {
+          "mean": 0.48,
+          "plasticity": 0.5,
+          "current_activation": 0.48
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.42,
+          "plasticity": 0.5,
+          "current_activation": 0.42
+        },
+        "moral_disgust": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "perceived_status_gap": {
+          "mean": 0.58,
+          "plasticity": 0.5,
+          "current_activation": 0.58
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.44,
+          "plasticity": 0.5,
+          "current_activation": 0.44
+        }
+      },
+      "summary": "Orrin sees Nara as both a fellow worker in danger and a symbol of the labor market that hurt his family."
+    },
+    {
+      "relationship_id": "rel-teth-ilya",
+      "source_id": "teth_inkwise",
+      "target_id": "ilya_marne",
+      "stance": {
+        "polite_containment": {
+          "mean": 0.74,
+          "plasticity": 0.38,
+          "current_activation": 0.8
+        },
+        "trust": {
+          "mean": 0.24,
+          "plasticity": 0.5,
+          "current_activation": 0.24
+        },
+        "respect": {
+          "mean": 0.42,
+          "plasticity": 0.5,
+          "current_activation": 0.42
+        },
+        "resentment": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.24,
+          "plasticity": 0.5,
+          "current_activation": 0.24
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "moral_disgust": {
+          "mean": 0.56,
+          "plasticity": 0.5,
+          "current_activation": 0.56
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.68,
+          "plasticity": 0.5,
+          "current_activation": 0.68
+        }
+      },
+      "summary": "Teth will let Ilya believe she is commanding the wet-side routes only while that fiction keeps civilians breathing."
+    },
+    {
+      "relationship_id": "rel-ilya-lio",
+      "source_id": "ilya_marne",
+      "target_id": "lio_vale",
+      "stance": {
+        "operational_suspicion": {
+          "mean": 0.7,
+          "plasticity": 0.5,
+          "current_activation": 0.82
+        },
+        "trust": {
+          "mean": 0.28,
+          "plasticity": 0.5,
+          "current_activation": 0.28
+        },
+        "respect": {
+          "mean": 0.52,
+          "plasticity": 0.5,
+          "current_activation": 0.52
+        },
+        "resentment": {
+          "mean": 0.48,
+          "plasticity": 0.5,
+          "current_activation": 0.48
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.3,
+          "plasticity": 0.5,
+          "current_activation": 0.3
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "moral_disgust": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.72,
+          "plasticity": 0.5,
+          "current_activation": 0.72
+        }
+      },
+      "summary": "Ilya suspects Lio knows more about the refusal than a scheduler should."
+    },
+    {
+      "relationship_id": "rel-orrin-lio",
+      "source_id": "orrin_dax",
+      "target_id": "lio_vale",
+      "stance": {
+        "trust": {
+          "mean": 0.58,
+          "plasticity": 0.5,
+          "current_activation": 0.58
+        },
+        "respect": {
+          "mean": 0.68,
+          "plasticity": 0.5,
+          "current_activation": 0.68
+        },
+        "resentment": {
+          "mean": 0.34,
+          "plasticity": 0.5,
+          "current_activation": 0.34
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "moral_disgust": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.46,
+          "plasticity": 0.5,
+          "current_activation": 0.46
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.42,
+          "plasticity": 0.5,
+          "current_activation": 0.42
+        }
+      },
+      "summary": "Orrin trusts Lio on safety more than politics and suspects the organizer sees through him."
+    },
+    {
+      "relationship_id": "rel-nara-orrin",
+      "source_id": "nara_7",
+      "target_id": "orrin_dax",
+      "stance": {
+        "trust": {
+          "mean": 0.28,
+          "plasticity": 0.5,
+          "current_activation": 0.28
+        },
+        "respect": {
+          "mean": 0.42,
+          "plasticity": 0.5,
+          "current_activation": 0.42
+        },
+        "resentment": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.52,
+          "plasticity": 0.5,
+          "current_activation": 0.52
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "moral_disgust": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.24,
+          "plasticity": 0.5,
+          "current_activation": 0.24
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.62,
+          "plasticity": 0.5,
+          "current_activation": 0.62
+        }
+      },
+      "summary": "Nara treats Orrin as dangerous until his actions prove whether he sees her as crew or replacement."
+    },
+    {
+      "relationship_id": "rel-ilya-teth",
+      "source_id": "ilya_marne",
+      "target_id": "teth_inkwise",
+      "stance": {
+        "trust": {
+          "mean": 0.3,
+          "plasticity": 0.5,
+          "current_activation": 0.3
+        },
+        "respect": {
+          "mean": 0.64,
+          "plasticity": 0.5,
+          "current_activation": 0.64
+        },
+        "resentment": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "dependence": {
+          "mean": 0.62,
+          "plasticity": 0.5,
+          "current_activation": 0.62
+        },
+        "fear": {
+          "mean": 0.34,
+          "plasticity": 0.5,
+          "current_activation": 0.34
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "moral_disgust": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.58,
+          "plasticity": 0.5,
+          "current_activation": 0.58
+        }
+      },
+      "summary": "Ilya needs Teth's competence and resents how visible that dependence becomes during crisis."
+    },
+    {
+      "relationship_id": "rel-lio-ilya",
+      "source_id": "lio_vale",
+      "target_id": "ilya_marne",
+      "stance": {
+        "trust": {
+          "mean": 0.2,
+          "plasticity": 0.5,
+          "current_activation": 0.2
+        },
+        "respect": {
+          "mean": 0.42,
+          "plasticity": 0.5,
+          "current_activation": 0.42
+        },
+        "resentment": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "dependence": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "fear": {
+          "mean": 0.38,
+          "plasticity": 0.5,
+          "current_activation": 0.38
+        },
+        "fascination": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "obligation": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "envy": {
+          "mean": 0.35,
+          "plasticity": 0.5,
+          "current_activation": 0.35
+        },
+        "moral_disgust": {
+          "mean": 0.44,
+          "plasticity": 0.5,
+          "current_activation": 0.44
+        },
+        "perceived_status_gap": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_care": {
+          "mean": 0.5,
+          "plasticity": 0.5,
+          "current_activation": 0.5
+        },
+        "expectation_of_betrayal": {
+          "mean": 0.78,
+          "plasticity": 0.5,
+          "current_activation": 0.78
+        }
+      },
+      "summary": "Lio expects Ilya to protect AU first but still tries to leave her a survivable safety path."
+    }
+  ],
+  "events": [
+    {
+      "event_id": "event-pallas-status-quo-shift-begin",
+      "kind": "author_note",
+      "summary": "The fixture begins before crisis, in ordinary maintenance texture: pressure checks, wet-side harness rituals, baseline break-table resentment, AU schedule discipline, and engineered-worker accommodations that normalize exploitation.",
+      "participants": [
+        "lio_vale",
+        "nara_7",
+        "orrin_dax",
+        "teth_inkwise",
+        "ilya_marne"
+      ],
+      "pressure_tags": [
+        "status_quo",
+        "ordinary_world",
+        "cavity_yard_labor"
+      ]
+    },
+    {
+      "event_id": "event-pallas-kappa-refusal",
+      "kind": "action",
+      "summary": "Nara-7 and other engineered workers stop before a blind crawl through Kappa manifold, naming remembered injury rather than a board-approved fault.",
+      "participants": [
+        "nara_7",
+        "lio_vale",
+        "orrin_dax",
+        "teth_inkwise"
+      ],
+      "pressure_tags": [
+        "inciting_pressure",
+        "sentience_evidence",
+        "hazard_refusal"
+      ],
+      "observed_exchange": [
+        {
+          "speaker_id": "nara_7",
+          "utterance_summary": "Nara says Kappa remembers cutting Rell and refuses the blind crawl.",
+          "dialogue_function": "hazard refusal",
+          "observable_cues": [
+            "touches the manifold in the same sequence used by three other engineered workers",
+            "keeps body low and away from inspector sightlines"
+          ]
+        }
+      ],
+      "private_interpretations": [
+        {
+          "agent_id": "lio_vale",
+          "interpretation": "This is coordinated memory and labor refusal, but Nara will be at risk if Lio names it too fast.",
+          "attributed_motive": "protect workers from a known cutting path",
+          "appraisal_tags": [
+            "recognition_pressure",
+            "protective_alarm"
+          ],
+          "confidence": 0.84
+        }
+      ],
+      "event_effects": [
+        {
+          "agent_id": "lio_vale",
+          "summary": "Lio's protective alarm rises and the fixture opens the threshold choice.",
+          "state_deltas": [
+            {
+              "path": "canonical_state.situational_state.protective_alarm.current_activation",
+              "delta": 0.08
+            }
+          ],
+          "new_belief_ids": [],
+          "memory_update_ids": []
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "scene_id": "scene-01-ordinary-yard-round",
+      "location": "Pallas Bloom Cluster, AU Yard Twelve, Service Ring Kappa and adjacent break-galley.",
+      "participants": [
+        "lio_vale",
+        "nara_7",
+        "orrin_dax",
+        "teth_inkwise"
+      ],
+      "public_stakes": [
+        "A routine cavity-habitat seal shift needs to stay on schedule.",
+        "Wet-side and dry-side crews must coordinate body-specific work in a shared pressure environment."
+      ],
+      "hidden_stakes": [
+        "The fixture must teach ordinary exploitation before asking the reader to judge the strike.",
+        "Lio is already watching for coordinated refusal but cannot make that fact public."
+      ],
+      "dialogue_context_packs": [
+        {
+          "speaker_agent_id": "lio_vale",
+          "listener_ids": [
+            "nara_7",
+            "orrin_dax",
+            "teth_inkwise"
+          ],
+          "speaker_local_truth": [
+            "Lio knows the Kappa route has been patched too many times and that different body types notice different hazards first.",
+            "Lio can see baseline resentment and engineered-worker caution in the same room."
+          ],
+          "speaker_beliefs": [
+            "A direct sermon about rights would harden Orrin and expose Nara.",
+            "Ordinary safety language can carry political work if it names material costs."
+          ],
+          "active_memories": [
+            "mem-lio-kappa-map",
+            "mem-lio-orrin-trust"
+          ],
+          "active_goals": [
+            "goal-lio-keep-workers-alive",
+            "goal-lio-make-refusal-legible"
+          ],
+          "presentation_constraints": [
+            "Speak like a maintenance scheduler first and an organizer second.",
+            "Do not reveal Nara's private memory unless Nara makes it observable."
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "scene-02-chokepoint-refusal",
+      "location": "Service Ring Kappa, near a seal manifold with wet-service access and dry anchor points.",
+      "participants": [
+        "lio_vale",
+        "nara_7",
+        "orrin_dax",
+        "teth_inkwise",
+        "ilya_marne"
+      ],
+      "public_stakes": [
+        "A blind crawl order has stopped, and the cavity margin will not wait forever.",
+        "AU wants the event classified as equipment irregularity or worker noncompliance."
+      ],
+      "hidden_stakes": [
+        "The coordinated refusal is evidence of memory, reciprocity, and collective self-defense.",
+        "BioElevate liability language can erase the action if the crew cannot hold a better frame."
+      ],
+      "dialogue_context_packs": [
+        {
+          "speaker_agent_id": "lio_vale",
+          "listener_ids": [
+            "nara_7",
+            "orrin_dax",
+            "teth_inkwise",
+            "ilya_marne"
+          ],
+          "speaker_local_truth": [
+            "Nara has made the memory observable by naming Rell.",
+            "The life-support margin is real, and turning delay into pure theatre would be reckless.",
+            "Orrin's dry-side crew is needed for any safe bypass."
+          ],
+          "speaker_beliefs": [
+            "Ilya will reach for liability language before recognition language.",
+            "Teth can make a bypass possible if the refusal is not erased.",
+            "Orrin can be asked to defend safety before he is asked to endorse species politics."
+          ],
+          "active_memories": [
+            "mem-lio-kappa-map",
+            "mem-lio-nara-reset",
+            "mem-lio-orrin-trust"
+          ],
+          "active_goals": [
+            "goal-lio-keep-workers-alive",
+            "goal-lio-make-refusal-legible"
+          ],
+          "presentation_constraints": [
+            "Name observable behavior, not private state.",
+            "Keep the speech short enough to function under alarm pressure.",
+            "Offer a path that preserves safety and evidence."
+          ]
+        }
+      ]
+    }
+  ]
+}

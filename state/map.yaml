@@ -153,6 +153,12 @@ current_artifacts:
     - examples/ink/cold-wake-branch-and-fold.v0.training.json
     - examples/coordinator/cold-wake-branch-and-fold.v0.json
     - experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md
+    - examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json
+    - examples/agent-state.pallas-species-strikes.v0.json
+    - examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json
+    - examples/ink/pallas-species-strikes.branch-and-fold.v0.ink
+    - examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json
+    - experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md
   archived_receipts:
     - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
     - docs/architecture/qwen-invocation-notes.md is archived local-model plumbing guidance, not the current gold-data route.
@@ -166,5 +172,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Cold Wake now has a clean accepted-as-draft branch-and-fold interactive-fiction scaffold, and the docs have a navigation inventory separating architecture contracts, planning surfaces, archived experiments, raw imported source, research backlog, and state ledgers.
-  next_action: Move to a different Aetheria setting fixture. Pick the next faction, movement, flashpoint, or day-in-the-life target from the coverage plan, source-ground it in AetheriaLore, then build a similarly compact branch-and-fold IF scaffold with visual prompt anchors and reviewed consequence surfaces.
+  summary: Pallas Species Strikes now has an accepted-as-draft branch-and-fold IF fixture grounded in AU cavity-yard labor, Awakened Labor organizing, BioElevate uplift/biodrone systems, baseline displacement fear, and cephalopod maintenance leverage. Cold Wake remains an archived historical fixture and local-model receipt surface, not the active gold-data path.
+  next_action: Review the Pallas fixture as a readable IF artifact and training scaffold; then either revise it from review, add the corpus coverage ledger, or select the next Aetheria fixture from the 100-150 broad coverage target.

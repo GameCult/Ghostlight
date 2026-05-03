@@ -1,0 +1,364 @@
+{
+  "schema_version": "ghostlight.coordinator_artifact.v0",
+  "artifact_id": "coordinator.pallas_species_strikes.branch_and_fold.v0",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "source_refs": [
+    {
+      "ref_id": "aetheria.pallas_species_strikes",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Pallas Species Strikes.md",
+      "purpose": "Historical flashpoint, actors, location, strike dynamics, and AU dependency on uplifted labor."
+    },
+    {
+      "ref_id": "aetheria.awakened_labor_front",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Awakened Labor Front.md",
+      "purpose": "Organizer ideology and recognition frame."
+    },
+    {
+      "ref_id": "aetheria.aeronautics_unlimited",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Aeronautics Unlimited.md",
+      "purpose": "Corporate yard power and frontier infrastructure assumptions."
+    },
+    {
+      "ref_id": "aetheria.bioelevate",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/BioElevate.md",
+      "purpose": "Uplift labor design and liability posture."
+    },
+    {
+      "ref_id": "aetheria.biodrone",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Biodrone.md",
+      "purpose": "Limiter and suppressed-cognition context."
+    },
+    {
+      "ref_id": "aetheria.uplift",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Uplift.md",
+      "purpose": "Cephalopod uplift, imposed purpose, and body-affordance context."
+    },
+    {
+      "ref_id": "aetheria.baseline_league",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Baseline League.md",
+      "purpose": "Baseline displacement fear and reactionary species panic."
+    },
+    {
+      "ref_id": "aetheria.cephalopod_syndicate",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Cephalopod Syndicate.md",
+      "purpose": "Wet-service technical leverage and mutual-aid extraction politics."
+    },
+    {
+      "ref_id": "aetheria.sentience_rebellion",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Sentience Rebellion.md",
+      "purpose": "Created-mind emancipation frame."
+    },
+    {
+      "ref_id": "aetheria.age_of_automation",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Age of Automation.md",
+      "purpose": "Automation-era labor, AGI scheduling, and industrial biology backdrop."
+    }
+  ],
+  "input_refs": {
+    "agent_state_ref": "examples/agent-state.pallas-species-strikes.v0.json",
+    "lore_grounding_refs": [
+      "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
+    ],
+    "ink_refs": [
+      "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+      "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json"
+    ],
+    "item_manifest_refs": []
+  },
+  "scene_context": {
+    "scene_id": "pallas-species-strikes-branch-and-fold-v0",
+    "sequence_marker": "ordinary yard round through first irreversible species-strike beat",
+    "location_id": "pallas_bloom_cluster.au_yard_twelve.service_ring_kappa",
+    "participant_ids": [
+      "lio_vale",
+      "nara_7",
+      "orrin_dax",
+      "teth_inkwise",
+      "ilya_marne"
+    ],
+    "active_object_ids": [
+      "cephalopod_zero_g_maintenance_harness",
+      "biodrone_limiter_interface",
+      "cavity_habitat_seal_assembly",
+      "strike_safe_life_support_bypass_kit",
+      "au_shift_board"
+    ],
+    "active_resource_ids": [
+      "strike_cohesion",
+      "baseline_solidarity",
+      "security_pressure",
+      "life_support_margin",
+      "evidence_of_sentience",
+      "cephalopod_leverage",
+      "bioelevate_liability",
+      "worker_injury",
+      "media_visibility"
+    ],
+    "public_facts": [
+      {
+        "text": "AU Yard Twelve is a dangerous Pallas cavity-maintenance site where wet-side uplift crews, baseline riggers, and engineered seal technicians keep habitat seals inside operating margins.",
+        "refs": [
+          "aetheria.pallas_species_strikes",
+          "aetheria.aeronautics_unlimited",
+          "aetheria.uplift"
+        ]
+      },
+      {
+        "text": "A coordinated refusal at a technical chokepoint can be read as labor action, equipment drift, sabotage, or safety procedure depending on who controls the incident language.",
+        "refs": [
+          "aetheria.pallas_species_strikes",
+          "aetheria.awakened_labor_front",
+          "aetheria.bioelevate"
+        ]
+      }
+    ],
+    "scene_pressure": [
+      {
+        "text": "Life-support margin makes delay materially dangerous, but rushing the blind crawl would erase the reason workers refused.",
+        "refs": [
+          "aetheria.pallas_species_strikes"
+        ]
+      },
+      {
+        "text": "Baseline displacement fear and engineered-worker recognition must collide in concrete work decisions, not abstract slogans.",
+        "refs": [
+          "aetheria.baseline_league",
+          "aetheria.awakened_labor_front"
+        ]
+      }
+    ]
+  },
+  "coordinator_decision": {
+    "decision_id": "coord-pallas-v0-spine",
+    "selected_next_beat": "Build an accepted-as-draft branch-and-fold IF scaffold that begins in ordinary yard life, escalates through a coordinated refusal, and folds outcomes into later labor politics.",
+    "selected_acting_agent_id": "lio_vale",
+    "rationale": "The protagonist must be embedded enough to show normal exploitation before crisis and technically literate enough to make branch variables materially consequential.",
+    "glue_prose": "Begin with the yard waking, not a riot siren. Let the reader feel the pressure checks, harness work, break-table resentment, and corporate schedule rituals before Nara's refusal turns ordinary maintenance into a historical hinge.",
+    "glue_prose_status": "accepted_as_narration"
+  },
+  "machinery_plan": {
+    "invocations": [
+      {
+        "invocation_id": "invoke-pallas-lore-grounding",
+        "organ": "memory_lore_retriever",
+        "purpose": "Ground faction, body-affordance, labor, and historical details in AetheriaLore before writing the fixture.",
+        "status": "accepted_as_draft",
+        "input_refs": [
+          "aetheria.pallas_species_strikes",
+          "aetheria.awakened_labor_front",
+          "aetheria.bioelevate",
+          "aetheria.uplift",
+          "aetheria.baseline_league",
+          "aetheria.cephalopod_syndicate"
+        ],
+        "output_refs": [
+          "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
+        ]
+      },
+      {
+        "invocation_id": "invoke-pallas-branch-compiler",
+        "organ": "other",
+        "purpose": "Manual branch-and-fold compiler pass for an IF scaffold where variables alter later options, prose, visual modifiers, appraisal, or outcome.",
+        "status": "accepted_as_draft",
+        "input_refs": [
+          "examples/agent-state.pallas-species-strikes.v0.json"
+        ],
+        "output_refs": [
+          "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+          "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json"
+        ]
+      },
+      {
+        "invocation_id": "invoke-pallas-human-review",
+        "organ": "human_review",
+        "purpose": "Manual review of readability, variable consequence, lore grounding, and training-artifact usefulness.",
+        "status": "accepted_as_draft",
+        "input_refs": [
+          "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+          "experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md"
+        ],
+        "output_refs": [
+          "examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json"
+        ]
+      }
+    ]
+  },
+  "world_state_refs": {
+    "read_refs": [
+      {
+        "ref_id": "agent-state-pallas-v0",
+        "ref_type": "agent_state",
+        "path": "examples/agent-state.pallas-species-strikes.v0.json"
+      },
+      {
+        "ref_id": "lore-digest-pallas-v0",
+        "ref_type": "lore_grounding_digest",
+        "path": "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
+      }
+    ],
+    "write_candidate_refs": [
+      {
+        "ref_id": "ink-pallas-v0",
+        "ref_type": "playable_ink",
+        "path": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink"
+      },
+      {
+        "ref_id": "ink-training-pallas-v0",
+        "ref_type": "ink_training_sidecar",
+        "path": "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json"
+      },
+      {
+        "ref_id": "clean-run-pallas-v0",
+        "ref_type": "readable_clean_run",
+        "path": "experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md"
+      }
+    ]
+  },
+  "proposed_deltas": [
+    {
+      "delta_id": "delta-pallas-fixture-added",
+      "delta_type": "world_fact_update",
+      "target_ref": "state.map.live_examples",
+      "summary": "Add the Pallas Species Strikes accepted-as-draft fixture set to live examples.",
+      "authority": "manual_review",
+      "status": "accepted"
+    },
+    {
+      "delta_id": "delta-pallas-item-hooks-added",
+      "delta_type": "item_manifest_delta",
+      "target_ref": "future.item_manifest",
+      "summary": "Record four economy/item hooks as database-shaped candidates for later Aetheria item blueprint elaboration.",
+      "authority": "coordinator_proposal",
+      "status": "deferred"
+    },
+    {
+      "delta_id": "delta-pallas-fuzzy-social-updates",
+      "delta_type": "relationship_update",
+      "target_ref": "future.training_artifacts.participant_appraiser",
+      "summary": "Mark baseline solidarity, recognition appraisal, liability framing, and security pressure as manual-review social interpretation targets.",
+      "authority": "manual_review",
+      "status": "deferred"
+    }
+  ],
+  "branching": {
+    "branch_action": "merge_branch",
+    "active_branch_flags": [
+      "ordinary_world_first",
+      "branch_and_fold",
+      "historical_grounded",
+      "manual_social_interpretation"
+    ],
+    "event_constraints": [
+      {
+        "constraint_id": "constraint-pallas-branch-fold",
+        "constraint_type": "branch_attractor",
+        "summary": "Most choices alter shared later scenes through tracked variables; only a major safety or recognition collapse earns a true route split."
+      },
+      {
+        "constraint_id": "constraint-pallas-single-history",
+        "constraint_type": "tech_order_constraint",
+        "summary": "This is pre-Elysium single-history training material, so outcomes can alter later labor politics but cannot resolve or erase the whole Pallas Species Strikes."
+      }
+    ]
+  },
+  "item_manifest_deltas": [
+    {
+      "item_id": "cephalopod_zero_g_maintenance_harness",
+      "item_type": "CompoundCommodityData candidate",
+      "gameplay_role": "Body-affordance maintenance platform for cephalopod zero-g work, consumed by yards and colonies rather than only installed in player gear.",
+      "subassembly_hints": [
+        "soft-anchor loop web",
+        "coolant-safe clasp cluster",
+        "pressure-distribution cuff",
+        "wet-service tool rail"
+      ],
+      "performance_hooks": [
+        "maintenance reach",
+        "crew safety",
+        "wet-service throughput"
+      ]
+    },
+    {
+      "item_id": "biodrone_limiter_interface",
+      "item_type": "CompoundCommodityData candidate",
+      "gameplay_role": "Corporate control and diagnostic interface for engineered-worker cognition suppression, legally volatile and politically explosive.",
+      "subassembly_hints": [
+        "limiter bus coupler",
+        "behavioral scaffold firmware",
+        "audit port seal"
+      ],
+      "performance_hooks": [
+        "compliance enforcement",
+        "diagnostic access",
+        "legal exposure"
+      ]
+    },
+    {
+      "item_id": "cavity_habitat_seal_assembly",
+      "item_type": "CompoundCommodityData candidate",
+      "gameplay_role": "Large habitat seal assembly for asteroid cavity infrastructure.",
+      "subassembly_hints": [
+        "seal membrane stack",
+        "load-bearing anchor frame",
+        "fault-sense manifold",
+        "service-lung adapter"
+      ],
+      "performance_hooks": [
+        "pressure integrity",
+        "maintenance burden",
+        "fault tolerance"
+      ]
+    },
+    {
+      "item_id": "strike_safe_life_support_bypass_kit",
+      "item_type": "GearData or ConsumableData candidate",
+      "gameplay_role": "Emergency bypass kit used during labor stoppages to keep civilians alive without erasing strike leverage.",
+      "subassembly_hints": [
+        "portable scrubber bridge",
+        "manual valve logic plate",
+        "tamper-evident evidence recorder",
+        "wet-dry crew adapter"
+      ],
+      "performance_hooks": [
+        "temporary life-support margin",
+        "evidence preservation",
+        "crew coordination requirement"
+      ]
+    }
+  ],
+  "unresolved_hooks": [
+    {
+      "hook_id": "hook-pallas-coverage-ledger",
+      "hook_type": "coverage_ledger",
+      "summary": "Add this fixture to the future corpus coverage ledger for faction, movement, flashpoint, and item/economy hook accounting.",
+      "owner": "coordinator",
+      "status": "deferred"
+    },
+    {
+      "hook_id": "hook-pallas-yard-map-gap",
+      "hook_type": "aetheria_lore_gap",
+      "summary": "AetheriaLore may need a narrow AU Pallas yard-room map if later scenes require exact geography beyond Service Ring Kappa.",
+      "owner": "aetheria_lore",
+      "status": "open"
+    },
+    {
+      "hook_id": "hook-pallas-item-blueprints",
+      "hook_type": "economy_item_schema",
+      "summary": "Economy hooks are database-shaped but not yet mapped into Aetheria-Economy classes or CultCache definitions.",
+      "owner": "economy_pipeline",
+      "status": "deferred"
+    }
+  ],
+  "review": {
+    "reviewer": "codex",
+    "review_notes": [
+      "Accepted as coordinator/IF scaffold training data, not raw responder gold.",
+      "Fuzzy social interpretations are marked for manual review rather than treated as settled automation.",
+      "The fixture starts with ordinary work texture before crisis and uses branch variables to fold consequences into later scenes."
+    ],
+    "accepted_for_training": true,
+    "failure_labels": []
+  }
+}
