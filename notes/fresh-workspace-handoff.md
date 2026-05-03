@@ -124,9 +124,9 @@ current gold-data route.
 - Technology exploration should emit database-shaped item/assembly/component/
   supply-chain candidates mapped toward Aetheria-Economy's CultCache item model.
   `CompoundCommodityData` includes colony-consumed manufactured trade goods, not
-  only gear assemblies or manufacturing inputs; a Navigator wet-interface cradle
-  is the current example of generated texture that should become a possible
-  demand-profiled trade-good candidate.
+  only gear assemblies or manufacturing inputs; a specialized habitat support
+  rig or species-specific workstation is the current example of generated
+  texture that should become a possible demand-profiled trade-good candidate.
 - Corpus completeness requires broad Aetheria coverage, not repeated Cold Wake
   refinement. Generate stories for every major faction, minor faction,
   movement, and major flashpoint. Major factions need both founding-era and
@@ -153,7 +153,7 @@ interactive-fiction scaffold:
 It starts in ordinary AU cavity-yard maintenance texture, introduces the major
 participants before branch-only deepening, then escalates through Nara-7's
 coordinated hazard refusal, baseline rigger solidarity pressure, BioElevate
-liability framing, cephalopod wet-service leverage, and a folded
+liability framing, AU dry-operation cephalopod crawl leverage, and a folded
 recognition/safety climax. The Ink now gates Nara's marked path and Teth's
 bypass, gives `evidence_of_sentience`, `nara_centered`, and
 `formal_stoppage` later reads, and gives visual sidecar states explicit

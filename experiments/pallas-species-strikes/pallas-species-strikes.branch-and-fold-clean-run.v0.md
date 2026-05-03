@@ -32,7 +32,7 @@ Pallas Yard Twelve woke without ceremony.
 
 The cavity wall hummed through the deck plates before the shift bell, a low mineral throat-note that everyone pretended not to hear unless it changed. Lio Vale walked Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU called this a routine seal-maintenance cycle. The workers called it breathing for people rich enough to forget what kept the air inside.
 
-Wet-side crew drifted in harness cradles shaped for limbs that did not stand. Baseline riggers clipped dry anchors along the outer rail and complained with the solemnity of a religious rite. Engineered seal techs waited by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: warmer mist for cephalopod lungs, softer tool grips for grafted hands, break-table charts that translated three kinds of body clock into one AU shift.
+Cephalopod crawl crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. Baseline riggers clipped dry anchors along the outer rail and complained with the solemnity of a religious rite. Engineered seal techs waited by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translated three kinds of body clock into one AU shift.
 
 The yard was normal. That was the first horror.
 
@@ -40,13 +40,13 @@ Nara-7 stood at the Kappa manifold with the other engineered seal technicians, e
 
 Orrin Dax's dry-side crew worked the anchor rail with cold-stiff hands and old tools. They were baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complained like a man trying not to notice he was scared.
 
-Teth Inkwise hung in a wet-service cradle, four arms managing valves while the rest of the body floated inside the harness rig. The cephalopod crew kept the service lungs alive in spaces built by companies that still described their bodies as accommodation costs.
+Teth Inkwise hung in a dry-operation support harness, four arms managing valves while the rest of the body floated inside compression loops and oxygenation tubes. The cephalopod crew kept the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
 
 Ilya Marne watched from the supervisor glass with AU polish and AU hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
 
 Lio knew the day would probably go wrong. The only question was whether it went wrong before everyone had finished pretending this was maintenance.
 
-Teth Inkwise turned in the wet-service cradle, four arms working while the rest of the body hung in careful suspension. The cephalopod zero-g maintenance harness was not a suit so much as a negotiated truce between flesh, tool, coolant, and vacuum: soft-anchor loops, pressure cuffs, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement.
+Teth Inkwise turned in the dry-operation harness, four arms working while the rest of the body hung in careful suspension. The cephalopod zero-g maintenance harness was not a suit so much as a negotiated truce between flesh, dry air, tool, coolant, and vacuum: compression anchor loops, humidity collar, oxygenation tubes, pressure cuffs, limiter socket, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement.
 
 "Your cuff is patched again," Lio said.
 
@@ -116,7 +116,7 @@ The bypass timer was still kind. Not generous, but kind enough to make choices r
 
 Lio did not ask Orrin to be noble. That would insult everyone present.
 
-"Dry anchors decide whether wet service can carry load," Lio said. "You know the route. Are you signing the crawl order as safe?"
+"Dry anchors decide whether crawl-access support can carry load," Lio said. "You know the route. Are you signing the crawl order as safe?"
 
 Orrin looked at Nara, then at the crawl throat, then at the faces of his own crew.
 
@@ -180,7 +180,7 @@ Nara-7 stayed one worker among many in the first reports. It protected her body 
 
 Because Lio named the stoppage early, the later committees inherited a hard word instead of a rumor. Security inherited it too.
 
-The event remained local for now: a story passed through harness checks, anchor lockers, and the soft clicks of workers touching a manifold twice, waiting, then touching it again.
+The event remained local for now: a story passed through dry-operation harness checks, anchor lockers, and the soft clicks of workers touching a manifold twice, waiting, then touching it again.
 
 Ilya settled for disciplinary interviews and a private vow to find whoever taught the yard to speak through maintenance.
 

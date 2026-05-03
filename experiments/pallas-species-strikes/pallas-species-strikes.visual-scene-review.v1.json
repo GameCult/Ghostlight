@@ -12,7 +12,7 @@
     {
       "severity": "major",
       "location": "visual_scene_plan.scenes[*].base_image_prompt",
-      "problem": "Multiple scene prompts used environment handles such as anchor rail, supervisor glass, crawl throat, seal assembly, wet-service station, and manifold without enough standalone visible geometry.",
+      "problem": "Multiple scene prompts used environment handles such as anchor rail, supervisor glass, crawl throat, seal assembly, dry-operation support station, and manifold without enough standalone visible geometry.",
       "why_it_matters": "A general image model only sees the assembled prompt; labels that are meaningful to Aetheria readers are not drawable unless translated into materials, shape, scale, lights, panels, pipes, rails, doors, and surrounding space.",
       "evidence": "Examples included prompts centered on 'dry-side anchor rail', 'AU supervisor glass', 'Kappa access throat', and 'Kappa seal assembly' before visible structures were expanded.",
       "fix_direction": "Expand every base image prompt so environment handles are backed by visible geometry and materials."

@@ -564,7 +564,7 @@
         "semantic": [
           {
             "memory_id": "mem-lio-kappa-map",
-            "summary": "Service Ring Kappa's seal manifold can be slowed safely only if cephalopod crews hold the wet-service bypass and baseline riggers keep the dry anchor points clear.",
+            "summary": "Service Ring Kappa's seal manifold can be slowed safely only if cephalopod crews hold the crawl-access bypass and baseline riggers keep the dry anchor points clear.",
             "salience": 0.94,
             "confidence": 0.9
           }
@@ -1643,7 +1643,7 @@
         "semantic": [
           {
             "memory_id": "mem-orrin-anchor-points",
-            "summary": "Dry anchor points must be cleared before any safe wet-service bypass can take load.",
+            "summary": "Dry anchor points must be cleared before any safe crawl-access bypass can take load.",
             "salience": 0.82,
             "confidence": 0.91
           }
@@ -1660,8 +1660,8 @@
           "cephalopod maintenance specialist",
           "Syndicate-adjacent service-lung expert"
         ],
-        "origin": "BioElevate cephalopod engineering lineage with ties to mutual-aid extraction networks.",
-        "public_description": "A many-armed wet-service technician who moves through AU service arteries like the yard forgot to lock the real doors.",
+        "origin": "BioElevate cephalopod dry-operation engineering lineage with ties to mutual-aid extraction networks.",
+        "public_description": "A many-armed dry-operation crawl technician who moves through AU service arteries like the yard forgot to lock the real doors.",
         "private_notes": [
           "Teth will sabotage a bad order, but not in a way that leaves civilians gasping.",
           "Teth understands that the yard's dependence on cephalopod labor is leverage only while everyone survives."
@@ -2137,7 +2137,7 @@
       "goals": [
         {
           "goal_id": "goal-teth-keep-bypass-honest",
-          "description": "Keep the wet-service bypass available without giving AU a way to erase the refusal.",
+          "description": "Keep the crawl-access bypass available without giving AU a way to erase the refusal.",
           "scope": "scene",
           "priority": 0.88,
           "emotional_stake": "A clever trick that kills civilians is just management with better arms.",
@@ -2149,7 +2149,7 @@
         "semantic": [
           {
             "memory_id": "mem-teth-service-lung",
-            "summary": "The service lung can carry Kappa's load for minutes if the harness valves are staged by someone with wet-side reach.",
+            "summary": "The service lung can carry Kappa's load for minutes if the harness valves are staged by someone with crawl-space reach.",
             "salience": 0.91,
             "confidence": 0.9
           }
@@ -3024,7 +3024,7 @@
           "current_activation": 0.68
         }
       },
-      "summary": "Teth will let Ilya believe she is commanding the wet-side routes only while that fiction keeps civilians breathing."
+      "summary": "Teth will let Ilya believe she is commanding the cephalopod crawl routes only while that fiction keeps civilians breathing."
     },
     {
       "relationship_id": "rel-ilya-lio",
@@ -3376,7 +3376,7 @@
     {
       "event_id": "event-pallas-status-quo-shift-begin",
       "kind": "author_note",
-      "summary": "The fixture begins before crisis, in ordinary maintenance texture: pressure checks, wet-side harness rituals, baseline break-table resentment, AU schedule discipline, and engineered-worker accommodations that normalize exploitation.",
+      "summary": "The fixture begins before crisis, in ordinary maintenance texture: pressure checks, dry-operation harness checks, baseline break-table resentment, AU schedule discipline, and engineered-worker accommodations that normalize exploitation.",
       "participants": [
         "lio_vale",
         "nara_7",
@@ -3495,7 +3495,7 @@
     },
     {
       "scene_id": "scene-02-chokepoint-refusal",
-      "location": "Service Ring Kappa, near a seal manifold with wet-service access and dry anchor points.",
+      "location": "Service Ring Kappa, near a seal manifold with cephalopod crawl access and dry anchor points.",
       "participants": [
         "lio_vale",
         "nara_7",

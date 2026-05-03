@@ -98,7 +98,7 @@
     ],
     "public_facts": [
       {
-        "text": "AU Yard Twelve is a dangerous Pallas cavity-maintenance site where wet-side uplift crews, baseline riggers, and engineered seal technicians keep habitat seals inside operating margins.",
+        "text": "AU Yard Twelve is a dangerous Pallas cavity-maintenance site where dry-yard uplift crews, baseline riggers, and engineered seal technicians keep habitat seals inside operating margins.",
         "refs": [
           "aetheria.pallas_species_strikes",
           "aetheria.aeronautics_unlimited",
@@ -272,12 +272,12 @@
         "soft-anchor loop web",
         "coolant-safe clasp cluster",
         "pressure-distribution cuff",
-        "wet-service tool rail"
+        "many-armed tool rail"
       ],
       "performance_hooks": [
         "maintenance reach",
         "crew safety",
-        "wet-service throughput"
+        "dry-operation crawl throughput"
       ]
     },
     {
@@ -319,7 +319,7 @@
         "portable scrubber bridge",
         "manual valve logic plate",
         "tamper-evident evidence recorder",
-        "wet-dry crew adapter"
+        "dry-crawl crew adapter"
       ],
       "performance_hooks": [
         "temporary life-support margin",

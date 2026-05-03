@@ -14,7 +14,7 @@
   "purpose": "Revised coordinator and branch-compiler training artifact for a historical grounded Pallas Species Strikes IF scaffold.",
   "local_awareness_summary": [
     {
-      "text": "Lio knows the ordinary operating texture of AU Yard Twelve: wet-side cephalopod maintenance, baseline dry anchors, engineered seal labor, and management's schedule discipline.",
+      "text": "Lio knows the ordinary operating texture of AU Yard Twelve: dry-yard cephalopod maintenance, baseline dry anchors, engineered seal labor, and management's schedule discipline.",
       "source_refs": [
         "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
         "examples/agent-state.pallas-species-strikes.v0.json"
@@ -127,7 +127,7 @@
     ]
   },
   "visual_art_direction": {
-    "base_scene_prompt": "Inside an asteroid cavity maintenance yard in the Pallas Bloom Cluster: Service Ring Kappa is a curved industrial lane built against raw asteroid rock, with ribbed metal wall supports, scuffed deck plates, amber work lights, pipe-and-cable manifold panels, wet-side cephalopod cradle bays with hoses and many-armed tool rails, dry-side anchor tracks with hooks and safety tethers, engineered seal technicians in gray suits, industrial mist, worn yellow-white safety paint, and lived-in future infrastructure.",
+    "base_scene_prompt": "Inside an asteroid cavity maintenance yard in the Pallas Bloom Cluster: Service Ring Kappa is a curved industrial lane built against raw asteroid rock, with ribbed metal wall supports, scuffed deck plates, amber work lights, pipe-and-cable manifold panels, dry-operation cephalopod harness bays with humidity collars, oxygenation loops, pressure cuffs, limiter sockets, and many-armed tool rails, dry-side anchor tracks with hooks and safety tethers, engineered seal technicians in gray suits, industrial haze, worn yellow-white safety paint, and lived-in future infrastructure.",
     "modification_prompts": [
       {
         "state": "formal_stoppage",
@@ -137,7 +137,7 @@
       {
         "state": "bypass_ready",
         "trigger": "bypass_ready == true",
-        "prompt": "Add a portable wet-service bypass bridge glowing with temporary pressure lines between Teth's harness and the seal assembly."
+        "prompt": "Add a portable crawl-access bypass bridge glowing with temporary pressure lines between Teth's harness and the seal assembly."
       },
       {
         "state": "security_pressure_high",
@@ -432,7 +432,7 @@
       {
         "visual_scene_id": "pallas_yard_wake",
         "ink_anchor": "intro_yard_wake",
-        "base_image_prompt": "Wide establishing shot inside an asteroid cavity maintenance yard before shift bell: a hollowed asteroid chamber with a huge curved raw-rock wall reinforced by dark metal ribs, scuffed deck plates bolted into the curve, overhead amber work lamps, wall-mounted pressure gauges, sleeping maintenance carts, folded harness frames, cable trays, worn yellow-white safety stripes, faint industrial mist, and no crowd yet; the infrastructure looks old, hand-repaired, and tired rather than sleek.",
+        "base_image_prompt": "Wide establishing shot inside an asteroid cavity maintenance yard before shift bell: a hollowed asteroid chamber with a huge curved raw-rock wall reinforced by dark metal ribs, scuffed deck plates bolted into the curve, overhead amber work lamps, wall-mounted pressure gauges, sleeping maintenance carts, folded harness frames, cable trays, worn yellow-white safety stripes, faint industrial haze, and no crowd yet; the infrastructure looks old, hand-repaired, and tired rather than sleek.",
         "visible_characters": [
           {
             "agent_id": "none_named",
@@ -441,7 +441,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "Use this as the broad location anchor for the fixture."
         ]
@@ -449,7 +449,7 @@
       {
         "visual_scene_id": "pallas_service_ring_kappa",
         "ink_anchor": "intro_service_ring",
-        "base_image_prompt": "Wide-to-medium view down Service Ring Kappa, a curved maintenance lane inside the asteroid wall: on the left, wet-side cephalopod work bays hold suspended mist-lined body cradles, fluid hoses, soft restraint loops, rounded valve clusters, and many-armed tool rails; on the right, a dry-side rail of bolted steel track, anchor posts, heavy hooks, route bolts, and clipped safety tethers supports baseline human riggers. Along the rock wall, a glowing amber manifold panel spreads into pipe trunks, cable bundles, gauges, and route-diagram screens; engineered seal technicians in numbered gray suits wait near it while Lio walks through the center carrying a slate.",
+        "base_image_prompt": "Wide-to-medium view down Service Ring Kappa, a curved maintenance lane inside the asteroid wall: on the left, dry-operation cephalopod work bays hold suspended dry-operation support frames with humidity collars, oxygenation tubes, soft restraint loops, rounded valve clusters, and many-armed tool rails; on the right, a dry-side rail of bolted steel track, anchor posts, heavy hooks, route bolts, and clipped safety tethers supports baseline human riggers. Along the rock wall, a glowing amber manifold panel spreads into pipe trunks, cable bundles, gauges, and route-diagram screens; engineered seal technicians in numbered gray suits wait near it while Lio walks through the center carrying a slate.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -468,13 +468,13 @@
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "partly visible in a misted suspended harness at wet-side equipment",
+            "default_stance": "partly visible in a compact suspended dry-operation harness at dry-operation support equipment",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
@@ -496,7 +496,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
@@ -518,31 +518,31 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
-        "visual_scene_id": "pallas_teth_wet_service",
+        "visual_scene_id": "pallas_teth_dry_operation",
         "ink_anchor": "intro_teth",
-        "base_image_prompt": "Medium shot of a cephalopod wet-service station in low gravity: a padded mist-lined maintenance cradle is bolted to the asteroid wall, surrounded by transparent fluid hoses, soft pressure cuffs, rounded valve clusters, flexible many-armed tool rails, small diagnostic screens, and life-support lung diagrams painted on a nearby panel. Teth Inkwise floats in the cradle while several arms manage valves and tools; the station is heavily patched but carefully maintained.",
+        "base_image_prompt": "Medium shot of a cephalopod bare-minimum dry-operation support station in low gravity: a padded dry-operation support frame with humidity collar is bolted to the asteroid wall, surrounded by transparent oxygenation tubes, soft pressure cuffs, rounded valve clusters, flexible many-armed tool rails, small diagnostic screens, and life-support lung diagrams painted on a nearby panel. Teth Inkwise floats in the support rig while several arms manage valves and tools; the station is heavily patched, carefully maintained, and visibly built for productivity rather than comfort.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "suspended in the cradle, several arms managing valves and tools",
+            "default_stance": "suspended in the support rig, several arms managing valves and tools",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "standing beside the cradle checking the harness cuff",
+            "default_stance": "standing beside the support rig checking the harness cuff",
             "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
-          "This prompt must always explain the wet-service cradle in visible terms."
+          "This prompt must always explain the dry-operation harness station in visible terms."
         ]
       },
       {
@@ -563,14 +563,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_ordinary_round_choice",
         "ink_anchor": "ordinary_round_choice",
-        "base_image_prompt": "Three-way workday choice frame in the curved Service Ring Kappa lane: Nara stands at the amber manifold wall of pipe trunks, cable bundles, gauges, and touch panels; Orrin waits beside the dry-side bolted anchor track with his old hook and coffee mug; Teth floats in a misted cephalopod cradle surrounded by hoses and many-armed tool rails; Lio pauses between these work zones holding a slate. The yard is still calm enough that choosing where to stand feels like choosing what kind of truth to notice.",
+        "base_image_prompt": "Three-way workday choice frame in the curved Service Ring Kappa lane: Nara stands at the amber manifold wall of pipe trunks, cable bundles, gauges, and touch panels; Orrin waits beside the dry-side bolted anchor track with his old hook and coffee mug; Teth floats in a dry-operation cephalopod harness station surrounded by oxygenation tubes and many-armed tool rails; Lio pauses between these work zones holding a slate. The yard is still calm enough that choosing where to stand feels like choosing what kind of truth to notice.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -589,20 +589,20 @@
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "in wet-service cradle",
+            "default_stance": "in dry-operation harness station",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_nara_manifold_walk",
         "ink_anchor": "walk_with_nara",
-        "base_image_prompt": "Close medium shot inside Service Ring Kappa, a narrow industrial maintenance corridor built against a curved asteroid-rock wall: the manifold line is a waist-high run of ribbed bronze-gray pipe trunks, bundled fiber cables, bolted valve housings, removable patch plates, small amber route-diagram screens, pressure gauges, warning glyphs, and hand-sized diagnostic touch panels mounted along the wall like a long mechanical spine. Scuffed deck plates with yellow-white safety stripes curve underfoot; overhead work lights cast hard amber reflections through faint industrial mist. Lio walks beside Nara-7 along this pipe-and-panel service wall; amber fault diagrams glow on Lio's slate, Nara's numbered batch tag is visible but not dominant, and her fingers hover near a ribbed access plate as if listening through touch.",
+        "base_image_prompt": "Close medium shot inside Service Ring Kappa, a narrow industrial maintenance corridor built against a curved asteroid-rock wall: the manifold line is a waist-high run of ribbed bronze-gray pipe trunks, bundled fiber cables, bolted valve housings, removable patch plates, small amber route-diagram screens, pressure gauges, warning glyphs, and hand-sized diagnostic touch panels mounted along the wall like a long mechanical spine. Scuffed deck plates with yellow-white safety stripes curve underfoot; overhead work lights cast hard amber reflections through faint industrial haze. Lio walks beside Nara-7 along this pipe-and-panel service wall; amber fault diagrams glow on Lio's slate, Nara's numbered batch tag is visible but not dominant, and her fingers hover near a ribbed access plate as if listening through touch.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -617,7 +617,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
@@ -639,14 +639,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_teth_harness_check",
         "ink_anchor": "check_teth_harness",
-        "base_image_prompt": "Close-up at Teth's cephalopod zero-g maintenance harness: padded body loops, soft pressure cuffs, tiny valve patches, transparent fluid hoses, sealed implements, flexible many-armed tool rails, mist beads, and a patched wall cradle form a practical support rig rather than clothing. Lio's hand checks a worn cuff seam while Teth's arms continue working around the inspection under hard amber work light.",
+        "base_image_prompt": "Close-up at Teth's cephalopod zero-g maintenance harness: padded body loops, soft pressure cuffs, tiny valve patches, transparent oxygenation tubes, sealed implements, flexible many-armed tool rails, humidity beads, and a wall-mounted dry-operation support frame form a practical productivity rig rather than comfort architecture. Lio's hand checks a worn cuff seam while Teth's arms continue working around the inspection under hard amber work light.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -661,14 +661,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_chokepoint_refusal",
         "ink_anchor": "chokepoint_refusal",
-        "base_image_prompt": "Threshold shot at the lip of the Kappa access throat: a dark oval crawl opening cuts into the curved asteroid wall, ringed by overlapping patch plates, red-edged gasket seals, small amber warning lights, pressure gauges, scratched route arrows, and handholds leading inward. Nara-7 and three engineered seal technicians stop in a coordinated line with hands on the manifold wall of pipes and touch panels; dry-side riggers freeze beside the bolted anchor track; Teth's harness valves hold still in the misted cradle; Ilya enters fast from the raised supervisor-side walkway.",
+        "base_image_prompt": "Threshold shot at the lip of the Kappa access throat: a dark oval crawl opening cuts into the curved asteroid wall, ringed by overlapping patch plates, red-edged gasket seals, small amber warning lights, pressure gauges, scratched route arrows, and handholds leading inward. Nara-7 and three engineered seal technicians stop in a coordinated line with hands on the manifold wall of pipes and touch panels; dry-side riggers freeze beside the bolted anchor track; Teth's harness valves hold still in the dry-operation harness station; Ilya enters fast from the raised supervisor-side walkway.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -707,14 +707,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_quiet_safety_pause",
         "ink_anchor": "quiet_safety_pause",
-        "base_image_prompt": "Local-channel containment frame at the Kappa access throat: Lio holds a work slate low with a small amber safety-pause label, standing between the dark gasket-rimmed crawl opening, the manifold wall of pipes and touch panels, and the raised supervisor walkway. Nara and the engineered technicians remain stopped at the pipe-and-panel wall; Ilya watches Lio closely from the management side; Teth's misted cradle and Orrin's anchor track remain visible in the same curved maintenance lane, but the room has not yet exploded into open strike posture.",
+        "base_image_prompt": "Local-channel containment frame at the Kappa access throat: Lio holds a work slate low with a small amber safety-pause label, standing between the dark gasket-rimmed crawl opening, the manifold wall of pipes and touch panels, and the raised supervisor walkway. Nara and the engineered technicians remain stopped at the pipe-and-panel wall; Ilya watches Lio closely from the management side; Teth's dry-operation harness station and Orrin's anchor track remain visible in the same curved maintenance lane, but the room has not yet exploded into open strike posture.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -738,13 +738,13 @@
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "still in wet-service harness, monitoring load",
+            "default_stance": "still in dry-operation support harness, monitoring load",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "Visually distinguish this from public escalation: small local board, contained amber light, no outside-feed indicator."
         ]
@@ -752,7 +752,7 @@
       {
         "visual_scene_id": "pallas_formalize_stoppage",
         "ink_anchor": "formalize_stoppage",
-        "base_image_prompt": "Formal stoppage frame inside the full work lane: Lio keys the slate with a cold blue incident-log marker reading coordinated labor stoppage; workers across the wet-side cradle bays and dry-side anchor track go still in a shared held breath. Ilya's posture hardens on the raised supervisor walkway; the amber manifold wall, dark anchor hooks, suspended cephalopod cradle, route bolts, pressure gauges, and warning lights all remain visible as parts of one work system refusing at once.",
+        "base_image_prompt": "Formal stoppage frame inside the full work lane: Lio keys the slate with a cold blue incident-log marker reading coordinated labor stoppage; workers across the dry-operation harness bays and dry-side anchor track go still in a shared held breath. Ilya's posture hardens on the raised supervisor walkway; the amber manifold wall, dark anchor hooks, suspended cephalopod support rig, route bolts, pressure gauges, and warning lights all remain visible as parts of one work system refusing at once.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -791,7 +791,7 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
@@ -832,14 +832,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_classification_pressure",
         "ink_anchor": "tests_and_reversals",
-        "base_image_prompt": "Tense administrative pressure frame inside the curved maintenance ring: AU incident-board screens on the supervisor wall label the event irregularity in cold blue-white text; a BioElevate legal window glows sterile white with scaffold drift language; Lio's slate shows an Awakened Labor Front mirror channel outside AU control. Workers wait around the amber pipe-and-panel manifold while the dry anchor track, misted cradle bays, and raised supervisor glass make the same physical refusal look like three competing legal realities.",
+        "base_image_prompt": "Tense administrative pressure frame inside the curved maintenance ring: AU incident-board screens on the supervisor wall label the event irregularity in cold blue-white text; a BioElevate legal window glows sterile white with scaffold drift language; Lio's slate shows an Awakened Labor Front mirror channel outside AU control. Workers wait around the amber pipe-and-panel manifold while the dry anchor track, dry-operation harness station bays, and raised supervisor glass make the same physical refusal look like three competing legal realities.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -863,7 +863,7 @@
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "watching pressure diagrams from wet-service cradle",
+            "default_stance": "watching pressure diagrams from dry-operation harness station",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
@@ -874,7 +874,7 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
@@ -901,7 +901,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
@@ -928,14 +928,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_bypass_kit",
         "ink_anchor": "bypass_kit",
-        "base_image_prompt": "Wet-service equipment shot inside the cephalopod work bay: Teth opens a sealed service pouch beside the misted wall cradle and reveals a compact strike-safe life-support bypass bridge wrapped in maintenance cloth. The device has a squat valve block, glowing pressure-line ports, manual logic plates, tamper-evident evidence seals, flexible tubes, and adapters sized for both cephalopod manipulators and human hands; surrounding hoses and many-armed tool rails show where it can connect.",
+        "base_image_prompt": "Dry-operation equipment shot inside the cephalopod work bay: Teth opens a sealed service pouch beside the wall-mounted dry-operation harness station with humidity collar and reveals a compact strike-safe life-support bypass bridge wrapped in maintenance cloth. The device has a squat valve block, glowing pressure-line ports, manual logic plates, tamper-evident evidence seals, flexible tubes, and adapters sized for both cephalopod manipulators and human hands; surrounding oxygenation tubes and many-armed tool rails show where it can connect.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -950,7 +950,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
@@ -972,14 +972,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_kappa_red_alert",
         "ink_anchor": "climax",
-        "base_image_prompt": "Single-impact red alert frame inside Service Ring Kappa: the amber manifold wall of pipe trunks, cable bundles, route screens, pressure gauges, and diagnostic panels suddenly floods the curved maintenance lane with hard red light. Dust jumps from old bolt heads, warning glyphs flare on wall panels, the dark gasket-rimmed crawl throat looks suddenly alive, wet-side mist glows red around the cephalopod cradle, and every worker freezes for one dangerous breath.",
+        "base_image_prompt": "Single-impact red alert frame inside Service Ring Kappa: the amber manifold wall of pipe trunks, cable bundles, route screens, pressure gauges, and diagnostic panels suddenly floods the curved maintenance lane with hard red light. Dust jumps from old bolt heads, warning glyphs flare on wall panels, the dark gasket-rimmed crawl throat looks suddenly alive, humidity vapor glows red around the cephalopod support rig, and every worker freezes for one dangerous breath.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1014,7 +1014,7 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "This screen may be only one sentence in replay; let the red alert breathe."
         ]
@@ -1022,7 +1022,7 @@
       {
         "visual_scene_id": "pallas_climax_decision_line",
         "ink_anchor": "climax_decision",
-        "base_image_prompt": "Crowded decision-line frame under red alert in the same curved maintenance lane: Lio stands between Ilya on the raised supervisor side, Nara near the amber pipe-and-panel manifold, Orrin's dry-side crew at the bolted anchor track, and Teth's misted cradle station with hoses and tool rails. The dark crawl throat, anchor hooks, transparent supervisor wall, route screens, valve housings, and red warning lights all occupy one room, making recognition language, evidence custody, and forced crawl authority feel like competing doors in the same physical space.",
+        "base_image_prompt": "Crowded decision-line frame under red alert in the same curved maintenance lane: Lio stands between Ilya on the raised supervisor side, Nara near the amber pipe-and-panel manifold, Orrin's dry-side crew at the bolted anchor track, and Teth's dry-operation harness station with oxygenation tubes and tool rails. The dark crawl throat, anchor hooks, transparent supervisor wall, route screens, valve housings, and red warning lights all occupy one room, making recognition language, evidence custody, and forced crawl authority feel like competing doors in the same physical space.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1046,7 +1046,7 @@
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "in wet-service harness near pressure diagrams",
+            "default_stance": "in dry-operation support harness near pressure diagrams",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
@@ -1069,14 +1069,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_hold_for_recognition",
         "ink_anchor": "hold_for_recognition",
-        "base_image_prompt": "Recognition standoff under red emergency light: Lio keeps both hands visible while facing Ilya and the red AU incident board; the demand for worker judgment hangs between the supervisor glass, the amber-red manifold wall, and the halted workers. Nara stays beside the ribbed access panels, Orrin's crew holds position by the anchor track, and Teth's misted cradle station frames the other side with hoses and valve clusters.",
+        "base_image_prompt": "Recognition standoff under red emergency light: Lio keeps both hands visible while facing Ilya and the red AU incident board; the demand for worker judgment hangs between the supervisor glass, the amber-red manifold wall, and the halted workers. Nara stays beside the ribbed access panels, Orrin's crew holds position by the anchor track, and Teth's dry-operation harness station frames the other side with oxygenation tubes and valve clusters.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1100,7 +1100,7 @@
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "at wet-service station",
+            "default_stance": "at dry-operation support station",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
@@ -1111,14 +1111,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_trade_bypass_for_evidence",
         "ink_anchor": "trade_bypass_for_evidence",
-        "base_image_prompt": "Evidence-for-bypass custody frame: Teth's portable bypass bridge is connected under shared custody between the wet-service cradle and a wall-mounted seal assembly made of bolted pressure housings, gasket rings, glowing tube ports, and emergency valve plates. Lio's slate shows sealed copies routed to the Awakened Labor Front mirror, AU incident board, and yard safety; Ilya accepts with controlled fury while red warning light reflects from pipework and glass.",
+        "base_image_prompt": "Evidence-for-bypass custody frame: Teth's portable bypass bridge is connected under shared custody between the dry-operation harness station and a wall-mounted seal assembly made of bolted pressure housings, gasket rings, glowing tube ports, and emergency valve plates. Lio's slate shows sealed copies routed to the Awakened Labor Front mirror, AU incident board, and yard safety; Ilya accepts with controlled fury while red warning light reflects from pipework and glass.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1138,7 +1138,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
@@ -1165,7 +1165,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
@@ -1197,14 +1197,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_seal_holds",
         "ink_anchor": "return_fold",
-        "base_image_prompt": "Aftermath wide shot inside Service Ring Kappa: the red alert has faded to bruised amber across the curved rock wall, and the Kappa seal assembly holds as bolted pressure housings, gasket rings, glowing tubes, and emergency valve plates settle back into safe readings. Workers remain in small tense clusters around the pipe-and-panel manifold, dry anchor track, and misted cephalopod cradle; scuffed boots, tool marks, faint mist, slack safety tethers, and dirty deck plates show the physical exhaustion of people who won only enough to keep breathing.",
+        "base_image_prompt": "Aftermath wide shot inside Service Ring Kappa: the red alert has faded to bruised amber across the curved rock wall, and the Kappa seal assembly holds as bolted pressure housings, gasket rings, glowing tubes, and emergency valve plates settle back into safe readings. Workers remain in small tense clusters around the pipe-and-panel manifold, dry anchor track, and dry-operation cephalopod harness station; scuffed boots, tool marks, faint industrial humidity haze, slack safety tethers, and dirty deck plates show the physical exhaustion of people who won only enough to keep breathing.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1223,7 +1223,7 @@
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "patching or checking wet-service gear",
+            "default_stance": "patching or checking dry-operation support gear",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
@@ -1267,14 +1267,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_object_callback",
         "ink_anchor": "return_object_callback",
-        "base_image_prompt": "Quiet object callback after the crisis in a small break-rack alcove: a battered recycler coffee mug with a fresh hairline crack sits on a narrow metal shelf beside patched gloves and route bolts; under a small work light, Teth's repaired pressure cuff rests near transparent fluid hose and soft harness loops; in the background, Nara's hand repeats the twice-pause-third touch against a ribbed wall access panel while other workers pretend not to watch.",
+        "base_image_prompt": "Quiet object callback after the crisis in a small break-rack alcove: a battered recycler coffee mug with a fresh hairline crack sits on a narrow metal shelf beside patched gloves and route bolts; under a small work light, Teth's repaired pressure cuff rests near transparent oxygenation tube and soft harness loops; in the background, Nara's hand repeats the twice-pause-third touch against a ribbed wall access panel while other workers pretend not to watch.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -1289,7 +1289,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "This is the final visual memory, not a victory poster. Keep it intimate and ordinary."
         ],
@@ -1331,7 +1331,7 @@
       {
         "modifier_id": "bypass_ready_visible",
         "trigger": "bypass_ready == true",
-        "prompt": "Show the portable bypass bridge: compact valve block, glowing pressure tubes, manual logic plate, and tamper-evident seals attached between wet-service harness and seal assembly."
+        "prompt": "Show the portable bypass bridge: compact valve block, glowing pressure tubes, manual logic plate, and tamper-evident seals attached between dry-operation support harness and seal assembly."
       },
       {
         "modifier_id": "worker_injury_visible",
@@ -1392,13 +1392,13 @@
       },
       "teth_inkwise": {
         "display_name": "Teth Inkwise",
-        "species_or_body": "uplifted cephalopod wet-service maintenance specialist",
-        "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible arms supported in a misted low-gravity maintenance cradle. Wears soft pressure cuffs, tool loops, and a body-support harness rather than human clothing; often surrounded by fluid hoses, valve clusters, padded supports, and curved tool rails sized for many arms.",
-        "silhouette_notes": "Nonhuman, horizontal or suspended silhouette inside wet-service equipment; never standing upright like a human.",
+        "species_or_body": "uplifted cephalopod dry-operation crawl maintenance specialist",
+        "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible arms supported in a compact low-gravity dry-operation harness station with a bare-minimum humidity collar and oxygenation loop. The rig uses pressure cuffs, compression anchor loops, limiter socket, tool loops, and a body-support frame rather than human clothing; oxygenation tubes, valve clusters, padded supports, and curved tool rails make the body productive in dry cramped AU maintenance spaces rather than comfortable.",
+        "silhouette_notes": "Nonhuman, horizontal or suspended silhouette inside dry-operation support equipment; never standing upright like a human.",
         "do_not_change": [
           "mottled blue-gray cephalopod body",
-          "misted low-gravity cradle",
-          "soft pressure cuffs",
+          "dry-operation harness station",
+          "pressure cuffs and oxygenation loop",
           "multiple arms",
           "not human-shaped or upright"
         ]
@@ -1423,7 +1423,7 @@
       "Added a global Media Molecule Dreams-style volumetric brushstroke cue so image prompt assembly carries the intended non-photoreal handmade visual language without repeating it in every scene.",
       "Corrected image prompt assembly: visual_continuity_notes are non-prompt tooling constraints, and assembled prompts include only character refs for characters actually visible in the frame.",
       "Expanded pallas_nara_manifold_walk so the environment is self-contained; manifold line is described as visible pipe trunks, cable bundles, valve housings, patch plates, screens, gauges, and touch panels rather than assumed lore.",
-      "Visual reviewer full pass expanded all Pallas base image prompts so setting labels such as anchor rail, supervisor glass, crawl throat, seal assembly, wet-service station, and manifold are backed by visible geometry and materials."
+      "Visual reviewer full pass expanded all Pallas base image prompts so setting labels such as anchor rail, supervisor glass, crawl throat, seal assembly, dry-operation support station, and manifold are backed by visible geometry and materials.", "Revised cephalopod visual and story assumptions: AU dry-operation support rigs are bare-minimum productivity equipment, not Navigator-style or cephalopod-native comfort habitat."
     ]
   }
 }

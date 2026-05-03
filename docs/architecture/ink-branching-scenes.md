@@ -412,13 +412,13 @@ identity, clothing and equipment, silhouette, posture language, and
 character refs instead of repeating the whole description every time.
 
 Prompts must be imagegen-ready. Do not rely on unexplained Aetheria jargon as
-if the image model knows the lore. If the prompt says "wet-service cradle," it
-should also describe the visible thing: a suspended mist-lined maintenance
-frame with padded body supports, fluid hoses, tool rails, and soft restraints
-for cephalopod workers in low gravity. If a scene uses a biodrone limiter
-interface, cavity seal assembly, or life-support bypass kit, describe the
-shape, scale, materials, lights, cables, seals, or displays that make it
-drawable.
+if the image model knows the lore. If the prompt says "wet-service cradle" or
+"dry-operation harness," it should also describe the visible thing according to
+the faction, location, and labor regime. A Navigator comfort habitat and an AU
+industrial yard should not quietly become the same room. If a scene uses a
+biodrone limiter interface, cavity seal assembly, or life-support bypass kit,
+describe the shape, scale, materials, lights, cables, seals, or displays that
+make it drawable.
 
 The same rule applies to environments. "Manifold line," "cavity yard,"
 "supervisor glass," and "anchor rail" are not images by themselves. A base

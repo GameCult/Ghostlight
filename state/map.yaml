@@ -24,9 +24,9 @@ mission:
     trust, concern, irritation, respect, boundaries, and expectations from
     evidence rather than generic friendliness.
   active_fixture: >
-    Cold Wake is a pre-Elysium historical training fixture, not the product
-    target. Call of the Void and Elysium-era gameplay remain procedural
-    consumer targets.
+    Pallas Species Strikes is the current pre-Elysium historical fixture. Cold
+    Wake remains an archived prototype fixture, not the product target. Call of
+    the Void and Elysium-era gameplay remain procedural consumer targets.
 
 hard_boundaries:
   - Prompt text is projection, not truth storage.
@@ -38,6 +38,7 @@ hard_boundaries:
   - Generated action is an event proposal; deterministic gates and reviewed mutation decide what becomes state.
   - Fuzzy judgments become reviewed training artifacts before they become trained models.
   - Aetheria generation is source-first; check lore for factions, bodies, locations, institutions, and constraints before projection.
+  - Do not import species-comfort assumptions across institutions. AU dry-operation cephalopod labor is bare-minimum productivity support, not Navigator-style or cephalopod-native comfort habitat, unless source lore says otherwise.
   - Elysium futures are branch-local canon indexed by lineage, not single-history Sol facts.
   - Technology exploration must emit game-usable item, component, assembly, supply-chain, compatibility, and provenance data mapped toward Aetheria-Economy.
   - Interactive-fiction fixtures should branch and fold: normalize most consequences into compact state variables and shared-scene conditionals, reserving isolated route splits for major world-changing divergence.

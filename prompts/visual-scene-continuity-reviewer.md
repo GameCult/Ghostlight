@@ -8,8 +8,9 @@ work, while the replay experience still fails because too much text sits on one
 screen, the visual plan is too coarse, or image prompts require private lore
 that an image model does not have.
 
-Be strict. A visual plan that says "wet-service cradle" without explaining what
-the viewer should see is not an image prompt. It is a lore password.
+Be strict. A visual plan that says "cephalopod support rig," "wet-service
+cradle," or "dry-operation harness" without explaining what the viewer should
+see is not an image prompt. It is a lore password.
 
 ## Inputs
 
@@ -50,7 +51,9 @@ intent, but they do not excuse missing reader/player-facing structure.
 - Does the prompt describe geometry, camera distance, lighting, palette,
   atmosphere, materials, visible interfaces, bodies, tools, and important props?
 - Are specialized terms translated into visible forms? For example, explain
-  what a wet-service cradle looks like, not just what it is called.
+  what a cephalopod dry-operation harness or wet-service cradle looks like
+  according to the faction, location, and labor regime. Do not import
+  Navigator-style comfort assumptions into an AU industrial yard.
 - Are environment labels translated into visible forms? For example, explain
   what a manifold line, cavity yard, supervisor glass, or anchor rail looks
   like instead of treating the label as a picture.

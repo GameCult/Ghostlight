@@ -27,7 +27,7 @@ Pallas Yard Twelve wakes without ceremony. The cavity wall hums through the deck
 // ghostlight.scene: pallas.intro.service_ring_kappa; visual_scene_id: pallas_service_ring_kappa
 Lio Vale walks Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
 
-Wet-side crew drift in harness cradles shaped for limbs that do not stand. Baseline riggers clip dry anchors along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: warmer mist for cephalopod lungs, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
+Cephalopod crawl crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. Baseline riggers clip dry anchors along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
 
 The yard is normal. That is the first horror.
 
@@ -46,8 +46,8 @@ Orrin Dax's dry-side crew works the anchor rail with cold-stiff hands and old to
 -> intro_teth
 
 === intro_teth ===
-// ghostlight.scene: pallas.intro.teth_wet_service; visual_scene_id: pallas_teth_wet_service
-Teth Inkwise hangs in a wet-service cradle, four arms managing valves while the rest of the body floats inside the harness rig. The cephalopod crew keeps the service lungs alive in spaces built by companies that still describe their bodies as accommodation costs.
+// ghostlight.scene: pallas.intro.teth_dry_operation; visual_scene_id: pallas_teth_dry_operation
+Teth Inkwise hangs in a dry-operation support harness, four arms managing valves while the rest of the body floats inside compression loops and oxygenation tubes. The cephalopod crew keeps the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
 
 -> intro_ilya
 
@@ -71,7 +71,7 @@ Lio knows the day will probably go wrong. The only question is whether it goes w
     ~ baseline_solidarity += 1
     -> sit_with_orrin
 // ghostlight.branch: branch-01-check-teth-harness; action: touch_object; intent: Ground cephalopod body affordances and technical leverage in equipment.
-* [Check Teth's zero-g maintenance harness before the wet-side crawl.]
+* [Check Teth's dry-operation harness before the crawl.]
     ~ cephalopod_leverage += 1
     -> check_teth_harness
 
@@ -101,7 +101,7 @@ Across the galley, two engineered techs eat in precise silence. Orrin watches th
 
 "Funny how the future always needs fewer of us," he says.
 
-Lio lets the complaint breathe before answering. "Future still needs dry anchors cleared before wet service can carry load."
+Lio lets the complaint breathe before answering. "Future still needs dry anchors cleared before crawl-access support can carry load."
 
 Orrin snorts. "Then tell the future to remember who taught it where the bolts are."
 
@@ -109,7 +109,7 @@ Orrin snorts. "Then tell the future to remember who taught it where the bolts ar
 
 === check_teth_harness ===
 // ghostlight.scene: pallas.branch.teth_harness_check; visual_scene_id: pallas_teth_harness_check
-Teth Inkwise turns in the wet-service cradle, four arms working while the rest of the body hangs in careful suspension. The cephalopod zero-g maintenance harness is not a suit so much as a negotiated truce between flesh, tool, coolant, and vacuum: soft-anchor loops, pressure cuffs, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement.
+Teth Inkwise turns in the dry-operation harness, four arms working while the rest of the body hangs in careful suspension. The cephalopod zero-g maintenance harness is not a suit so much as a negotiated truce between flesh, dry air, tool, coolant, and vacuum: compression anchor loops, humidity collar, oxygenation tubes, pressure cuffs, limiter socket, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement.
 
 "Your cuff is patched again," Lio says.
 
@@ -157,7 +157,7 @@ The dry-side riggers go quiet. Teth's harness valves click once, then stop. Ilya
 
 === quiet_safety_pause ===
 // ghostlight.scene: pallas.branch.quiet_safety_pause; visual_scene_id: pallas_quiet_safety_pause
-"Safety pause," Lio says. "Local channel. Kappa amber, worker hazard report, no blind crawl until wet-service confirms load."
+"Safety pause," Lio says. "Local channel. Kappa amber, worker hazard report, no blind crawl until Teth confirms load."
 
 Ilya's eyes narrow at the word worker. She hears the legal trap even when Lio buries it in maintenance language.
 
@@ -251,7 +251,7 @@ Orrin says, "Trained route residue does not remember the part procurement lied a
 // ghostlight.scene: pallas.branch.orrin_solidarity; visual_scene_id: pallas_orrin_solidarity
 Lio does not ask Orrin to be noble. That would insult everyone present.
 
-"Dry anchors decide whether wet service can carry load. You know the route. Are you signing the crawl order as safe?"
+"Dry anchors decide whether crawl-access support can carry load. You know the route. Are you signing the crawl order as safe?"
 
 Orrin looks at Nara, then at the crawl throat, then at the faces of his own crew.
 
@@ -267,7 +267,7 @@ Teth opens a service pouch and produces a bypass bridge wrapped in maintenance c
 
 "This gives Kappa minutes," Teth says. "Not obedience. Minutes."
 
-The wet-service crew moves like a quiet animal with too many hands and exactly enough discipline. Pressure steadies.
+The dry-operation crew moves like a quiet animal with too many hands and exactly enough discipline, oxygenation tubes flexing as bodies fold through workspaces AU made cheap because they could. Pressure steadies.
 
 -> climax
 
