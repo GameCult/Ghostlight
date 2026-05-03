@@ -12,8 +12,8 @@ This reviewer does not judge clean-run prose receipts. Clean runs can be useful
 debugging mirrors, but they are not the player experience and they are not the
 artifact this prompt reviews.
 
-Be strict. A visual plan that says "cephalopod support rig," "anchor crew,"
-"engineered technicians," or "dry-operation harness" without explaining what
+Be strict. A visual plan that says "cephalopod work-support rig," "anchor crew,"
+"engineered technicians," or "dry-operation work-support rig" without explaining what
 the viewer should see is not an image prompt. It is a lore password.
 
 ## Inputs
@@ -75,10 +75,10 @@ the visual artifact.
   composition, stance, lighting, and state deltas, with forbidden assumptions
   handled by reviewer findings or validation rather than imagegen prompt text?
 - Are specialized terms translated into visible forms? For example, explain
-  what a cephalopod dry-operation harness, baseline anchor rail, or engineered
+  what a cephalopod dry-operation work-support rig, baseline anchor rail, or engineered
   seal-technician group looks like according to the faction, location, and
   labor regime. An AU industrial yard prompt should positively describe sparse
-  productivity hardware, bare-minimum life support, restraint geometry, and
+  productivity hardware, bare-minimum life support, work-support geometry, and
   hard work lighting.
 - Are environment labels translated into visible forms? For example, explain
   what a manifold line, cavity yard, supervisor catwalk, transparent safety
@@ -116,6 +116,12 @@ the visual artifact.
   manipulators, tails, distributed bodies, synthetic limbs, or other altered
   affordances into human shoulders, elbows, hands, arms, or biped staging
   unless the source explicitly calls for that anatomy.
+- When a nonhuman character uses assistive or workplace equipment, does the
+  prompt make the equipment read as the intended object class? If the fixture
+  calls for a work-support rig, mobility aid, cockpit, medical cradle, tool
+  frame, or habitat interface, flag language that visually drifts into a
+  cage, torture chair, prison tank, trophy display, aquarium, or containment
+  device unless containment is explicitly the story beat.
 - Do branch modifiers describe changes to posture and position, not just
   abstract emotional labels?
 
@@ -219,9 +225,13 @@ Each finding must include:
   position in the frame.
 - Do not accept nonhuman body prompts that use human-limb shorthand when the
   supplied body plan says otherwise. A cephalopod should be prompted with
-  tentacles, mantle, eyes, suckers, support harness geometry, and reachable
+  tentacles, mantle, eyes, suckers, work-support geometry, and reachable
   tool positions; a winged, synthetic, distributed, or otherwise altered body
   needs the same body-specific treatment.
+- Do not accept assistive or workplace equipment prompts that accidentally
+  change object class. Sparse, exploitative, or uncomfortable equipment still
+  needs to look like usable work support unless the story explicitly calls for
+  captivity, medical confinement, punishment, or display.
 - Do not accept terminology that contradicts the supplied lore, fixture brief,
   or visual plan constraints. If a term implies an institutional geography,
   species affordance, faction practice, or technology assumption that the
@@ -270,6 +280,7 @@ Use these labels when applicable:
 - `named_character_as_lore_password`
 - `unnamed_group_as_lore_password`
 - `nonhuman_anatomy_humanized`
+- `equipment_object_class_drift`
 - `stale_lore_language`
 - `off_frame_character_ref_in_prompt`
 - `continuity_note_used_as_prompt_text`
