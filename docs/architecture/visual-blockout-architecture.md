@@ -75,17 +75,16 @@ spacing, attachment, repetition, and later Geometry Nodes conversion. The
 visible mesh is the output of the construction logic, not the whole graph.
 
 For scripted prototypes, hidden empties and hidden curve paths are acceptable
-control objects. For production organs, the same idea should move into authored
-Geometry Nodes / Geometry Script modules: curves, points, fields, indices,
-attributes, and intermediate geometry can exist purely to place or transform
-other geometry. If every artifact in the graph is visible, the graph is probably
-doing layout by brute force.
+control objects. The target path is authored Geometry Nodes / Geometry Script
+modules: curves, points, fields, indices, attributes, and intermediate geometry
+can exist purely to place or transform other geometry. If every artifact in the
+graph is visible, the graph is probably doing layout by brute force.
 
 ## Geometry Script Direction
 
-The first generator used straightforward Blender Python primitives to prove that
-Ghostlight could emit a Blender scene, cameras, and guide renders from fixture
-data. That proved the seam, not the final method.
+The legacy generator used straightforward Blender Python primitives to prove
+that Ghostlight could emit a Blender scene, cameras, and guide renders from
+fixture data. That proved the seam, not the final method.
 
 Primitive stacking is not expressive enough for production illustrated IF
 blockouts. It creates plausible-looking clutter without readable authored
@@ -93,7 +92,7 @@ silhouettes, and it fails quickly on rooms that need clear construction logic,
 nonhuman work affordances, and camera-safe spatial staging. Do not keep adding
 more cylinders to compensate for weak shape language.
 
-Production blockouts should move to authored Geometry Nodes / Geometry Script
+Production blockouts should use authored Geometry Nodes / Geometry Script
 modules or hand-authored Blender kit pieces driven by plan parameters. The plan
 format is shaped for that replacement:
 
@@ -103,11 +102,14 @@ format is shaped for that replacement:
 - the generator can replace a Python primitive builder with a Geometry Script
   implementation one module at a time
 
-This keeps the early blockout useful as a receipt while making the next real
-step explicit: build reusable Geometry Nodes organs for shells, corridors,
-cutouts, catwalks, manifold walls, service rigs, and crowd blocking. If an organ
-cannot be recognized from silhouette before material detail, the blockout has
-failed its job.
+The current Geometry Nodes builder creates one stage object with a GN modifier
+and builds the service-ring maquette inside that node tree. The graph uses a
+generated mesh grid, position fields, math nodes, instancing on placement lines,
+curve-to-mesh tubes, material assignment, and joined output geometry. Reusable
+organs for shells, corridors, cutouts, catwalks, manifold walls, service rigs,
+and crowd blocking should keep moving in that direction. If an organ cannot be
+recognized from silhouette before material detail, the blockout has failed its
+job.
 
 ## Prompt Use
 
