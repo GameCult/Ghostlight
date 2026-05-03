@@ -36,6 +36,13 @@ should be authored here first and referenced from artifacts or tools.
   fixture can need several click-through screens inside one narrative scene;
   each distinct place, focal area, pivotal moment, and branch-visible state
   needs an imagegen-ready prompt or modifier.
+- Treat visual review as IF replay review, not clean-run review. Clean-run
+  renderings are receipts and debugging mirrors; the visual reviewer judges
+  playable Ink plus the visual plan artifact.
+- Treat visual artifacts as entertainment and website collateral for the
+  Ghostlight corpus. They can make the corpus more legible and valuable, but
+  they are not core training targets for responder, appraiser, mutator, or
+  relationship models.
 - Treat visual style as prompt-relevant state when the fixture needs a specific
   look. Store the style cue once in the visual plan artifact and include it
   during prompt assembly for every generated image.

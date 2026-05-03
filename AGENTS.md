@@ -146,6 +146,9 @@ When the user says to prepare for imminent compaction:
   sections. Distinct places, focal areas, object closeups, arrivals, alarms,
   pivotal one-sentence beats, and aftermath states need stable visual scene ids
   and imagegen-ready prompts.
+- Treat visual artifacts as illustrated replay and website collateral, not core
+  social-model training signal. Visual review judges the playable Ink
+  experience plus the visual plan, not clean-run prose receipts.
 - Write visual prompts for a general image model, not a lore expert. Explain
   fictional objects and body affordances in visible terms: geometry, materials,
   lighting, stance, interfaces, tools, supports, cables, fluids, screens, and

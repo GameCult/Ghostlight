@@ -43,8 +43,9 @@ hard_boundaries:
   - Technology exploration must emit game-usable item, component, assembly, supply-chain, compatibility, and provenance data mapped toward Aetheria-Economy.
   - Interactive-fiction fixtures should branch and fold: normalize most consequences into compact state variables and shared-scene conditionals, reserving isolated route splits for major world-changing divergence.
   - Interactive-fiction fixtures require independent artifact review before acceptance; tracked variables must materially affect later affordances, risk, appraisal, callbacks, visual state, or outcomes, unless explicitly marked telemetry-only.
-    - Complete interactive-fiction fixtures must emit visual art direction for website imagery, with click-through visual scene segmentation, stable visual character refs for recurring named characters, a global style cue when the visual language matters, one durable base image prompt per distinct section, character visibility and stance controls, and additive modification prompts for branch-visible consequences and scene-state changes; assembled prompts include only actually visible character refs, while continuity notes stay in tooling unless rewritten as concrete visible description.
+    - Complete illustrated interactive-fiction fixtures should emit visual art direction for website imagery and replay value, with click-through visual scene segmentation, stable visual character refs for recurring named characters, a global style cue when the visual language matters, one durable base image prompt per distinct section, character visibility and stance controls, and additive modification prompts for branch-visible consequences and scene-state changes; assembled prompts include only actually visible character refs, while continuity notes stay in tooling unless rewritten as concrete visible description.
     - Image prompts must be affirmative target descriptions. Describe visible geometry, materials, composition, lighting, bodies, tools, and state deltas; keep forbidden assumptions in reviewer findings or validation errors instead of feeding negative constructions to imagegen.
+    - Visual artifacts are auxiliary illustrated replay and website collateral for the corpus, not core training targets for responder, appraiser, mutator, or relationship models. Visual review judges the playable IF experience and visual plan, not clean-run prose receipts.
   - Archived local-model prototype runners are receipts and plumbing tests, not the gold-data path.
 
 live_architecture:
@@ -66,7 +67,7 @@ live_architecture:
     - Glue prose is training signal, not canonical truth.
     - Coordinator prose should choose an intentional tonal mode for the scene and protect breathing room when the story needs routine, levity, domestic texture, wonder, or slow dread before consequence.
   branch_compiler:
-    - The branch compiler turns fixture briefs, lore digests, scene/world state, actor-local branch candidates, reviewed consequence packets, fold plans, and visual continuity requirements into playable Ink plus training sidecars, separate visual plan artifacts when illustrated replay is in scope, and compiler notes.
+    - The branch compiler turns fixture briefs, lore digests, scene/world state, actor-local branch candidates, reviewed consequence packets, fold plans, and optional visual replay requirements into playable Ink plus training sidecars, separate visual plan artifacts when illustrated replay is in scope, and compiler notes.
     - The branch compiler owns playable structure, click-through segmentation, conditionals, variables, callbacks, fold materialization, visual scene ids, and image prompt handles; it stores visual prompt data in `.visual.json` artifacts rather than bloating training annotations; it does not own hidden character truth, participant appraisal, or durable social mutation.
   training_targets:
     - Coordinator/story runtime
@@ -76,9 +77,9 @@ live_architecture:
     - Participant appraiser
     - State mutator
     - Relationship/perception updater
-    - Branch compiler for Ink materialization, fold/callback structure, sidecar generation, separate visual plan generation, and visual prompt handles
+    - Branch compiler for Ink materialization, fold/callback structure, and sidecar generation; visual plan generation is auxiliary illustrated replay support when a fixture is meant for website or art presentation
     - Interactive-fiction artifact reviewer for fake variables, cosmetic choices, missing state reads, fake folds, and visual callback gaps
-    - Visual scene continuity reviewer for click-through segmentation, imagegen-ready prompts, character visibility, stance control, and branch/state visual modifiers
+    - Visual scene continuity reviewer for illustrated IF replay, click-through segmentation, imagegen-ready prompts, character visibility, stance control, and branch/state visual modifiers; this reviewer protects entertainment and presentation value, not core social-model training signal
     - Human-facing appraisal and opinion model for VoidBot
     - Evaluator/review classifiers
     - Aetheria-tuned responder

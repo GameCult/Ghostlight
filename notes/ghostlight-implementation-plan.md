@@ -50,8 +50,8 @@ not carry live next-action lists.
      not raw responder gold.
    - Interactive-fiction correction: a full-story pass is not just a linear chain of responder receipts. It needs a beginning-to-ending narrative spine, branch points, and cross-scene consequence carryover so decisions visibly matter later. Responder artifacts should be generated at branch/action moments, while coordinator artifacts track branch flags, relationship deltas, resource costs, unresolved hooks, and later scene consequences.
    - Branch-and-fold correction: do not let every choice create an isolated subtree. Normalize consequences into compact state bands and flags, fold most branches back into shared later scenes, and reserve major route splits for consequences that change the playable world enough that convergence would lie.
-   - Branch compiler correction: treat Ink materialization as its own organ. It receives fixture brief, lore digest, scene/world/relationship state, actor-local branch candidates, consequence packets, fold plan, and visual continuity requirements; it emits playable Ink plus a training sidecar, a separate visual plan artifact when illustrated replay is in scope, and compiler notes. It does not own hidden character truth or social mutation.
-   - Website-content correction: each complete scene should include an art-direction block with establishing shot, light/color, bodies/interfaces, material evidence, branch-visible marks, one durable base image prompt, and additive branch/state modification prompts. Visual continuity is part of consequence carryover, not decorative garnish applied after the story escapes containment.
+   - Branch compiler correction: treat Ink materialization as its own organ. It receives fixture brief, lore digest, scene/world/relationship state, actor-local branch candidates, consequence packets, fold plan, and optional visual replay requirements; it emits playable Ink plus a training sidecar, a separate visual plan artifact when illustrated replay is in scope, and compiler notes. It does not own hidden character truth or social mutation.
+   - Website-content correction: illustrated fixtures should include an art-direction block with establishing shot, light/color, bodies/interfaces, material evidence, branch-visible marks, one durable base image prompt, and additive branch/state modification prompts. Visual continuity is presentation and replay support for the corpus, not a core social-model training target.
    - Illustrated-IF correction: a narrative scene can contain multiple visual
      sections. The branch compiler should segment introductions, focal areas,
      object closeups, arrivals, alarms, pivotal one-sentence beats, standoffs,
@@ -68,7 +68,8 @@ not carry live next-action lists.
    - Visual review correction: run a visual scene continuity reviewer for
      illustrated fixtures. It audits oversized Ink screens, missing visual
      scene anchors, lore-password image prompts, missing character visibility,
-     weak stance control, and missing branch/state visual modifiers.
+     weak stance control, and missing branch/state visual modifiers. It judges
+     the playable IF plus `.visual.json` plan, not clean-run prose receipts.
    - The older Cold Wake v0/v1 fragments remain diagnostic seam tests around the clinic climax, not the accepted clean fixture.
 
    - Still emit training artifacts at material turns: projected local context, responder packet, raw output/capture, leakage audit, reviewed mutation receipt, and aftermath state where relevant.
