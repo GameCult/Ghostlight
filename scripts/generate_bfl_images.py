@@ -1,8 +1,10 @@
 """Generate Ghostlight images through the Black Forest Labs API.
 
 The script can submit a plain prompt or assemble prompts from a Ghostlight
-`.visual.json` plan. It writes each downloaded image beside a metadata receipt
-that preserves the prompt, request id, polling result, and source scene.
+`.visual.json` plan. For modifier renders, it generates the base image first,
+then sends that image back to BFL with only the modifier prompt as the edit
+instruction. It writes downloaded images beside metadata receipts that preserve
+the prompt, request id, polling result, and source scene.
 """
 
 from __future__ import annotations
@@ -38,6 +40,7 @@ class RenderJob:
     source_ref: str
     scene_id: str | None = None
     modifier_ids: tuple[str, ...] = ()
+    edit_prompt: str | None = None
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -146,14 +149,11 @@ def selected_global_modifiers(
     return modifiers
 
 
-def assemble_visual_prompt(
+def assemble_visual_base_prompt(
     data: dict[str, Any],
     scene: dict[str, Any],
-    scene_modifier_ids: set[str],
-    global_modifier_ids: set[str],
-) -> tuple[str, tuple[str, ...]]:
+) -> str:
     plan = data.get("visual_scene_plan", {})
-    scene_id = scene["visual_scene_id"]
     sections: list[str] = []
 
     style = plan.get("global_style_cue", "").strip()
@@ -173,19 +173,25 @@ def assemble_visual_prompt(
         sections.append("Visible character references:\n" + "\n".join(character_lines))
 
     sections.append("Scene base image:\n" + scene.get("base_image_prompt", "").strip())
+    return "\n\n".join(section for section in sections if section.strip())
 
+
+def assemble_visual_edit_prompt(
+    data: dict[str, Any],
+    scene: dict[str, Any],
+    scene_modifier_ids: set[str],
+    global_modifier_ids: set[str],
+) -> tuple[str | None, tuple[str, ...]]:
+    plan = data.get("visual_scene_plan", {})
+    scene_id = scene["visual_scene_id"]
     applied: list[tuple[str, str]] = []
     applied.extend(selected_scene_modifiers(scene, scene_modifier_ids))
     applied.extend(selected_global_modifiers(scene_id, plan, global_modifier_ids))
-    if applied:
-        sections.append(
-            "Apply these additive visible state changes:\n"
-            + "\n".join(f"- {modifier_id}: {prompt}" for modifier_id, prompt in applied if prompt)
-        )
+    if not applied:
+        return None, ()
 
-    return "\n\n".join(section for section in sections if section.strip()), tuple(
-        modifier_id for modifier_id, _ in applied
-    )
+    prompt = "\n".join(prompt for _modifier_id, prompt in applied if prompt).strip()
+    return prompt, tuple(modifier_id for modifier_id, _ in applied)
 
 
 def build_visual_jobs(args: argparse.Namespace) -> list[RenderJob]:
@@ -212,7 +218,13 @@ def build_visual_jobs(args: argparse.Namespace) -> list[RenderJob]:
     jobs: list[RenderJob] = []
     for scene in selected:
         scene_id = scene["visual_scene_id"]
-        prompt, applied = assemble_visual_prompt(data, scene, scene_modifier_ids, global_modifier_ids)
+        prompt = assemble_visual_base_prompt(data, scene)
+        edit_prompt, applied = assemble_visual_edit_prompt(
+            data,
+            scene,
+            scene_modifier_ids,
+            global_modifier_ids,
+        )
         suffix = "-".join(slugify(item) for item in applied)
         render_id = slugify(f"{visual_plan_id}-{scene_id}" + (f"-{suffix}" if suffix else ""))
         jobs.append(
@@ -222,6 +234,7 @@ def build_visual_jobs(args: argparse.Namespace) -> list[RenderJob]:
                 source_ref=f"{args.visual_plan}#{scene_id}",
                 scene_id=scene_id,
                 modifier_ids=applied,
+                edit_prompt=edit_prompt,
             )
         )
     return jobs
@@ -260,7 +273,7 @@ def download_file(url: str, output_path: Path) -> None:
         output_path.write_bytes(response.read())
 
 
-def build_payload(args: argparse.Namespace, prompt: str) -> dict[str, Any]:
+def build_payload(args: argparse.Namespace, prompt: str, input_images: list[str] | None = None) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "prompt": prompt,
         "output_format": args.output_format,
@@ -278,10 +291,22 @@ def build_payload(args: argparse.Namespace, prompt: str) -> dict[str, Any]:
         payload["webhook_url"] = args.webhook_url
     if args.webhook_secret:
         payload["webhook_secret"] = args.webhook_secret
-    for index, value in enumerate(args.input_image or [], start=1):
+    for index, value in enumerate(input_images if input_images is not None else (args.input_image or []), start=1):
         key = "input_image" if index == 1 else f"input_image_{index}"
         payload[key] = encode_input_image(value)
     return payload
+
+
+def receipt_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    receipt = dict(payload)
+    for key, value in list(receipt.items()):
+        if key.startswith("input_image") and isinstance(value, str):
+            parsed = urllib.parse.urlparse(value)
+            if parsed.scheme in {"http", "https"}:
+                receipt[key] = value
+            else:
+                receipt[key] = f"<base64 image omitted: {len(value)} chars>"
+    return receipt
 
 
 def poll_until_ready(
@@ -316,11 +341,34 @@ def extension_for(args: argparse.Namespace, sample_url: str | None) -> str:
     return guessed.lstrip(".")
 
 
+def submit_and_download(
+    args: argparse.Namespace,
+    api_key: str,
+    payload: dict[str, Any],
+    output_base: Path,
+    label: str,
+) -> tuple[Path, dict[str, Any], dict[str, Any]]:
+    print(f"submitting {label}")
+    submit = request_json(args.endpoint, api_key, method="POST", payload=payload)
+    polling_url = submit.get("polling_url")
+    if not polling_url:
+        raise RuntimeError(f"BFL response did not include polling_url: {json.dumps(submit)}")
+
+    result = poll_until_ready(polling_url, api_key, args.poll_interval, args.timeout)
+    sample_url = (result.get("result") or {}).get("sample")
+    if not sample_url:
+        raise RuntimeError(f"BFL ready result did not include result.sample: {json.dumps(result)}")
+
+    image_path = output_base.with_suffix("." + extension_for(args, sample_url))
+    download_file(sample_url, image_path)
+    return image_path, submit, result
+
+
 def run_job(args: argparse.Namespace, api_key: str | None, job: RenderJob, index: int, total: int) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     render_base = output_dir / f"{index:03d}-{job.render_id}"
-    payload = build_payload(args, job.prompt)
+    base_payload = build_payload(args, job.prompt)
 
     metadata: dict[str, Any] = {
         "render_id": job.render_id,
@@ -328,39 +376,65 @@ def run_job(args: argparse.Namespace, api_key: str | None, job: RenderJob, index
         "scene_id": job.scene_id,
         "modifier_ids": list(job.modifier_ids),
         "endpoint": args.endpoint,
-        "request_payload": payload,
+        "base_request_payload": receipt_payload(base_payload),
     }
 
-    prompt_path = render_base.with_suffix(".prompt.txt")
+    prompt_path = render_base.with_suffix(".base.prompt.txt")
     prompt_path.write_text(job.prompt + "\n", encoding="utf-8")
+    if job.edit_prompt:
+        edit_prompt_path = render_base.with_suffix(".edit.prompt.txt")
+        edit_prompt_path.write_text(job.edit_prompt + "\n", encoding="utf-8")
+        metadata["edit_prompt_path"] = display_path(edit_prompt_path)
 
     if args.dry_run:
         metadata["dry_run"] = True
+        if job.edit_prompt:
+            edit_payload = build_payload(args, job.edit_prompt, input_images=[])
+            edit_payload["input_image"] = "<base image generated by this job>"
+            metadata["edit_request_payload"] = edit_payload
         write_json(render_base.with_suffix(".metadata.json"), metadata)
         print(f"[{index}/{total}] dry-run wrote {display_path(prompt_path)}")
+        if job.edit_prompt:
+            print(f"[{index}/{total}] dry-run wrote {display_path(render_base.with_suffix('.edit.prompt.txt'))}")
         return
 
     if api_key is None:
         raise SystemExit("Internal error: api_key missing outside dry-run mode.")
 
-    print(f"[{index}/{total}] submitting {job.render_id}")
-    submit = request_json(args.endpoint, api_key, method="POST", payload=payload)
-    metadata["submit_response"] = submit
-    polling_url = submit.get("polling_url")
-    if not polling_url:
-        raise RuntimeError(f"BFL response did not include polling_url: {json.dumps(submit)}")
+    print(f"[{index}/{total}] generating base {job.render_id}")
+    base_image_path, base_submit, base_result = submit_and_download(
+        args,
+        api_key,
+        base_payload,
+        render_base.with_name(render_base.name + ".base"),
+        f"{job.render_id} base",
+    )
+    metadata["base_submit_response"] = base_submit
+    metadata["base_poll_result"] = base_result
+    metadata["base_image"] = display_path(base_image_path)
 
-    result = poll_until_ready(polling_url, api_key, args.poll_interval, args.timeout)
-    metadata["poll_result"] = result
-    sample_url = (result.get("result") or {}).get("sample")
-    if not sample_url:
-        raise RuntimeError(f"BFL ready result did not include result.sample: {json.dumps(result)}")
+    if job.edit_prompt:
+        print(f"[{index}/{total}] editing from base {job.render_id}")
+        edit_payload = build_payload(args, job.edit_prompt, input_images=[str(base_image_path)])
+        metadata["edit_request_payload"] = receipt_payload(edit_payload)
+        edit_image_path, edit_submit, edit_result = submit_and_download(
+            args,
+            api_key,
+            edit_payload,
+            render_base.with_name(render_base.name + ".edit"),
+            f"{job.render_id} edit",
+        )
+        metadata["edit_submit_response"] = edit_submit
+        metadata["edit_poll_result"] = edit_result
+        metadata["edited_image"] = display_path(edit_image_path)
+        metadata["downloaded_image"] = display_path(edit_image_path)
+        write_json(render_base.with_suffix(".metadata.json"), metadata)
+        print(f"[{index}/{total}] wrote {display_path(edit_image_path)}")
+        return
 
-    image_path = render_base.with_suffix("." + extension_for(args, sample_url))
-    download_file(sample_url, image_path)
-    metadata["downloaded_image"] = display_path(image_path)
+    metadata["downloaded_image"] = display_path(base_image_path)
     write_json(render_base.with_suffix(".metadata.json"), metadata)
-    print(f"[{index}/{total}] wrote {display_path(image_path)}")
+    print(f"[{index}/{total}] wrote {display_path(base_image_path)}")
 
 
 def parse_args() -> argparse.Namespace:
