@@ -12,9 +12,9 @@ This reviewer does not judge clean-run prose receipts. Clean runs can be useful
 debugging mirrors, but they are not the player experience and they are not the
 artifact this prompt reviews.
 
-Be strict. A visual plan that says "cephalopod support rig," "wet-service
-cradle," or "dry-operation harness" without explaining what the viewer should
-see is not an image prompt. It is a lore password.
+Be strict. A visual plan that says "cephalopod support rig," "anchor crew,"
+"engineered technicians," or "dry-operation harness" without explaining what
+the viewer should see is not an image prompt. It is a lore password.
 
 ## Inputs
 
@@ -75,10 +75,11 @@ the visual artifact.
   composition, stance, lighting, and state deltas, with forbidden assumptions
   handled by reviewer findings or validation rather than imagegen prompt text?
 - Are specialized terms translated into visible forms? For example, explain
-  what a cephalopod dry-operation harness or wet-service cradle looks like
-  according to the faction, location, and labor regime. An AU industrial yard
-  prompt should positively describe sparse productivity hardware, bare-minimum
-  life support, restraint geometry, and hard work lighting.
+  what a cephalopod dry-operation harness, baseline anchor rail, or engineered
+  seal-technician group looks like according to the faction, location, and
+  labor regime. An AU industrial yard prompt should positively describe sparse
+  productivity hardware, bare-minimum life support, restraint geometry, and
+  hard work lighting.
 - Are environment labels translated into visible forms? For example, explain
   what a manifold line, cavity yard, supervisor glass, or anchor rail looks
   like instead of treating the label as a picture.
@@ -98,6 +99,11 @@ the visual artifact.
 - Does each named visible character point to a stable visual identity ref, or
   does the scene prompt itself include enough description to render the person
   consistently?
+- Are visible unnamed groups described as drawable bodies instead of only
+  social labels? A prompt that says "riggers," "technicians," "guards,"
+  "workers," or "engineered crew" must include visible clothing, equipment,
+  body language, posture, scale, lighting, and placement, or point to an
+  explicit group visual reference.
 - Are character refs limited to characters actually visible in that frame,
   excluding absent, off-frame, merely mentioned, or object-represented
   characters?
@@ -202,6 +208,17 @@ Each finding must include:
 - Do not accept named characters as visual descriptions. "Lio Vale stands by
   the manifold" is not enough unless the visual plan provides a stable visual
   reference for Lio and the prompt assembly path says to include it.
+- Do not accept unnamed group labels as visual descriptions. "Orrin's riggers,"
+  "gray-suited technicians," "security," or "workers" is not enough unless the
+  prompt describes visible bodies, clothing, gear, posture, formation, and
+  position in the frame.
+- Do not accept terminology that contradicts the supplied lore, fixture brief,
+  or visual plan constraints. If a term implies an institutional geography,
+  species affordance, faction practice, or technology assumption that the
+  source context rejects, flag it as stale lore language and ask for concrete
+  work-zone, body-affordance, faction, or object language instead. Do not
+  hardcode one fixture's banned terms into future reviews; derive the problem
+  from the provided sources and artifact constraints.
 - Do not accept assembled prompts that include refs for characters not actually
   visible in the frame. The model will draw the bodies it is told about,
   because of course it will. Little beast has no stage manager.
@@ -241,6 +258,8 @@ Use these labels when applicable:
 - `missing_character_visibility`
 - `missing_character_design_ref`
 - `named_character_as_lore_password`
+- `unnamed_group_as_lore_password`
+- `stale_lore_language`
 - `off_frame_character_ref_in_prompt`
 - `continuity_note_used_as_prompt_text`
 - `missing_branch_visual_modifier`

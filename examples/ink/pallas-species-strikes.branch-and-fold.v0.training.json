@@ -14,7 +14,7 @@
   "purpose": "Revised coordinator and branch-compiler training artifact for a historical grounded Pallas Species Strikes IF scaffold.",
   "local_awareness_summary": [
     {
-      "text": "Lio knows the ordinary operating texture of AU Yard Twelve: dry-yard cephalopod maintenance, baseline dry anchors, engineered seal labor, and management's schedule discipline.",
+      "text": "Lio knows the ordinary operating texture of AU Yard Twelve: dry-yard cephalopod maintenance, baseline anchor hardware, engineered seal labor, and management's schedule discipline.",
       "source_refs": [
         "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
         "examples/agent-state.pallas-species-strikes.v0.json"
@@ -239,7 +239,7 @@
       "action_type": "speak",
       "actor_intent": "Ask baseline workers to defend safety through their own expertise.",
       "state_basis": [
-        "Orrin's dry-side authority is publicly relevant to the safety decision."
+        "Orrin's anchor-rail authority is publicly relevant to the safety decision."
       ],
       "reviewed_consequences": [
         "Raises baseline_solidarity and strike_cohesion; later it can unlock Orrin fronting the demand."

@@ -6,7 +6,7 @@ Selected path:
 
 1. Check Teth's zero-g maintenance harness.
 2. Log the refusal as a coordinated labor stoppage.
-3. Ask Orrin to put dry-side authority behind the refusal.
+3. Ask Orrin to put anchor-rail authority behind the refusal.
 4. Let Orrin front the safety demand while Lio protects Nara.
 
 Rendering note: this artifact may add connective narration and dialogue consistent with the selected path. The authoritative playable structure remains `examples/ink/pallas-species-strikes.branch-and-fold.v0.ink`.
@@ -34,13 +34,13 @@ The engineered Bloom shell hummed through the deck plates before the shift bell,
 
 It was not a mine and not a factory floor, though Aeronautics Unlimited priced it like both when that helped. It was a built world turned slowly enough to fake down, and Kappa's seals were one of the reasons the air stayed on the inside. Lio's official job was maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous ring without killing each other before lunch. The unofficial job had worse hours and better people.
 
-Cephalopod crawl crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs kept them alive in dry air, which was not the same as letting them be comfortable. Baseline riggers clipped dry anchors along the outer rail and complained with the solemnity of a religious rite. Engineered seal techs waited by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translated three kinds of body clock into one AU shift.
+Cephalopod crawl crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs kept them alive in dry air, which was not the same as letting them be comfortable. Baseline riggers clipped anchor hardware along the outer rail and complained with the solemnity of a religious rite. Engineered seal techs waited by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translated three kinds of body clock into one AU shift.
 
 The yard was normal. That was the first horror.
 
 Nara-7 stood at the Kappa manifold with the other engineered seal technicians, each gray skinsuit numbered for a task stream instead of a family line. She touched the wall twice, paused, and touched it again with two fingers spread wide. AU called that retained route behavior. Lio had watched enough shifts to know a warning when it learned manners.
 
-Orrin Dax's dry-side crew worked the anchor rail with cold-stiff hands and old tools. They were baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complained like a man trying not to notice he was scared.
+Orrin Dax's anchor crew worked the anchor rail with cold-stiff hands and old tools. They were baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complained like a man trying not to notice he was scared.
 
 Teth Inkwise hung in a dry-operation support harness, four arms managing valves while the rest of the body floated inside compression loops and oxygenation tubes. One cuff had rubbed a pale groove into the mantle where the padding thinned out months ago. Teth never mentioned it. The cephalopod crew kept the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
 
@@ -58,7 +58,7 @@ The joke landed dry. Teth's eyes stayed on the pressure ghost beneath the glass,
 
 The service lung diagram flickered under one of Teth's arms. If Kappa went hard red, AU would discover exactly how much of its schedule lived in equipment designed for bodies it refused to honor.
 
-Across the ring, Orrin Dax checked dry anchors with the sour devotion of a man who expected the future to arrive carrying someone else's invoice. He had a rigger's shoulders, a frost scar along the jaw, and the kind of coffee mug that had survived more restructurings than some families.
+Across the ring, Orrin Dax checked anchor hardware with the sour devotion of a man who expected the future to arrive carrying someone else's invoice. He had a rigger's shoulders, a frost scar along the jaw, and the kind of coffee mug that had survived more restructurings than some families.
 
 "Soft-sleeves get a humidity credit again?" he asked without looking up.
 
@@ -80,7 +80,7 @@ The board did not understand a ritual unless someone billed it.
 
 Nara's voice was small and clear. "No blind crawl. Kappa remembers cutting Rell. We remember Rell."
 
-The dry-side riggers went quiet. Teth's harness valves clicked once, then stopped.
+The baseline anchor riggers went quiet. Teth's harness valves clicked once, then stopped.
 
 Ilya arrived fast enough to prove she had been watching. The room changed shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard had stopped being a place where a problem could be fixed quietly.
 
@@ -118,7 +118,7 @@ The Awakened Labor Front mirror sat outside AU's incident board: a recognition c
 
 The formal log had already narrowed everyone's exits. Ilya could punish a stoppage, but she could not pretend no one named it.
 
-Orrin's dry-side crew waited by the anchors. Their faces said what nobody wanted to admit: if engineered workers were people, then baseline workers had been angry at the wrong enemy and still poor afterward.
+Orrin's anchor crew waited by the anchors. Their faces said what nobody wanted to admit: if engineered workers were people, then baseline workers had been angry at the wrong enemy and still poor afterward.
 
 The Kappa pressure-margin clock was still kind. Not generous, but kind enough to make choices real.
 
@@ -146,13 +146,13 @@ Kappa went red.
 
 The seal assembly shuddered hard enough to make dust jump from old bolt heads. There was no bypass bridge waiting in Teth's harness, only skill, bad margin, and the hideous corporate optimism that calls a known weakness pending review. Nara's hands stayed on the rail, flat and deliberate. No one had the luxury of a pure victory.
 
-Orrin's dry-side crew cleared the anchor rail without waiting for an AU order.
+Orrin's anchor crew cleared the anchor rail without waiting for an AU order.
 
 "Stop," Ilya snapped.
 
 Orrin stepped forward before Lio had to spend Nara again.
 
-"Dry side refuses the crawl," he said. "Our call. Our anchors. You want a body in that throat, superintendent, put the board in first."
+"Anchor rail refuses the crawl," he said. "Our call. Our anchors. You want a body in that throat, superintendent, put the board in first."
 
 For one bright second, the old lie broke: baseline and engineered labor were not natural enemies. They were different answers to the same invoice.
 

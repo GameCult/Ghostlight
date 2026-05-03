@@ -29,7 +29,7 @@ It is not a mine and not a factory floor, though Aeronautics Unlimited prices it
 // ghostlight.scene: pallas.intro.service_ring_kappa; visual_scene_id: pallas_service_ring_kappa
 Lio Vale walks Service Ring Kappa with a shift-control slate under one arm and yesterday's sleep still folded behind the eyes. Lio's official job is maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous ring without killing each other before lunch. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
 
-Cephalopod crawl crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs keep them alive in dry air, which is not the same as letting them be comfortable. Baseline riggers clip dry anchors along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
+Cephalopod crawl crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs keep them alive in dry air, which is not the same as letting them be comfortable. Baseline riggers clip anchor hardware along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
 
 The yard is normal. That is the first horror.
 
@@ -43,7 +43,7 @@ Nara-7 stands at the Kappa manifold with the other engineered seal technicians, 
 
 === intro_orrin ===
 // ghostlight.scene: pallas.intro.orrin_anchor_rail; visual_scene_id: pallas_orrin_anchor_rail
-Orrin Dax's dry-side crew works the anchor rail with cold-stiff hands and old tools. They are baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complains like a man trying not to notice he is scared.
+Orrin Dax's anchor crew works the anchor rail with cold-stiff hands and old tools. They are baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complains like a man trying not to notice he is scared.
 
 -> intro_teth
 
@@ -103,7 +103,7 @@ Across the galley, two engineered techs eat in precise silence. Orrin watches th
 
 "Funny how the future always needs fewer of us," he says.
 
-Lio lets the complaint breathe before answering. "Future still needs dry anchors cleared before crawl-access support can carry load."
+Lio lets the complaint breathe before answering. "Future still needs anchor hardware cleared before crawl-access support can carry load."
 
 Orrin snorts. "Then tell the future to remember who taught it where the bolts are."
 
@@ -135,7 +135,7 @@ The board does not understand a ritual unless someone bills it.
 
 Nara's voice is small and clear. "No blind crawl. Kappa remembers cutting Rell. We remember Rell."
 
-The dry-side riggers go quiet. Teth's harness valves click once, then stop.
+The baseline anchor riggers go quiet. Teth's harness valves click once, then stop.
 
 -> ilya_arrival
 
@@ -215,7 +215,7 @@ The Awakened Labor Front mirror sits outside AU's incident board: a recognition 
 The formal log has already narrowed everyone's exits. Ilya can punish a stoppage, but she cannot pretend no one named it.
 }
 
-Orrin's dry-side crew waits by the anchors. Their faces say what nobody wants to admit: if engineered workers are people, then baseline workers have been angry at the wrong enemy and still poor afterward.
+Orrin's anchor crew waits by the anchors. Their faces say what nobody wants to admit: if engineered workers are people, then baseline workers have been angry at the wrong enemy and still poor afterward.
 
 {life_support_margin <= 2:
     The air plant pings a margin warning. Every political word in the ring gets heavier.
@@ -230,7 +230,7 @@ The Kappa pressure-margin clock is still kind. Not generous, but kind enough to 
     ~ nara_centered = true
     -> show_nara_memory
 // ghostlight.branch: branch-03-ask-orrin-solidarity; action: speak; intent: Ask baseline riggers to defend safety through their own expertise.
-* [Ask Orrin to put dry-side authority behind the refusal.]
+* [Ask Orrin to put anchor-rail authority behind the refusal.]
     ~ baseline_solidarity += 2
     ~ strike_cohesion += 1
     -> ask_orrin_solidarity
@@ -316,7 +316,7 @@ The seal assembly shudders hard enough to make dust jump from old bolt heads. Th
 }
 
 {baseline_solidarity >= 2:
-Orrin's dry-side crew clears the anchor rail without waiting for an AU order.
+Orrin's anchor crew clears the anchor rail without waiting for an AU order.
 - else:
 The baseline riggers hesitate, trapped between fear of replacement and fear of being blamed for whatever dies next.
 ~ life_support_margin -= 1
@@ -405,7 +405,7 @@ There is no bypass bridge to soften the bargain. The margin stays ugly. But the 
 // ghostlight.scene: pallas.branch.orrin_front_demand; visual_scene_id: pallas_orrin_front_demand
 Orrin steps forward before Lio has to spend Nara again.
 
-"Dry side refuses the crawl," he says. "Our call. Our anchors. You want a body in that throat, superintendent, put the board in first."
+"Anchor rail refuses the crawl," he says. "Our call. Our anchors. You want a body in that throat, superintendent, put the board in first."
 
 For one bright second, the old lie breaks: baseline and engineered labor are not natural enemies. They are different answers to the same invoice.
 
