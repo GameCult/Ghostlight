@@ -61,16 +61,21 @@ missing reader/player-facing structure.
   without requiring Aetheria lore knowledge?
 - Does the prompt describe geometry, camera distance, lighting, palette,
   atmosphere, materials, visible interfaces, bodies, tools, and important props?
+- Does the prompt use affirmative image direction: visible targets, materials,
+  composition, stance, lighting, and state deltas, with forbidden assumptions
+  handled by reviewer findings or validation rather than imagegen prompt text?
 - Are specialized terms translated into visible forms? For example, explain
   what a cephalopod dry-operation harness or wet-service cradle looks like
-  according to the faction, location, and labor regime. Do not import
-  Navigator-style comfort assumptions into an AU industrial yard.
+  according to the faction, location, and labor regime. An AU industrial yard
+  prompt should positively describe sparse productivity hardware, bare-minimum
+  life support, restraint geometry, and hard work lighting.
 - Are environment labels translated into visible forms? For example, explain
   what a manifold line, cavity yard, supervisor glass, or anchor rail looks
   like instead of treating the label as a picture.
 - If the scene is inside a Bloom cavity, does the plan show an engineered
-  rotating habitat shell built from consolidated asteroid rubble/aggregate and
-  TCS substrate, rather than a natural cave or hollowed solid asteroid?
+  rotating habitat shell built from consolidated asteroid rubble/aggregate, TCS
+  substrate, shell plating, ribbed supports, seals, manifolds, and service
+  systems?
 - Does the art plan distinguish wide establishing shots, medium character
   staging, object closeups, and alert/climax frames when the prose focus shifts?
 
@@ -170,13 +175,15 @@ Each finding must include:
   assembly. A beautiful scene prompt in the wrong visual language is still the
   wrong prompt.
 - Do not accept visual prompts that rely on unexplained setting jargon.
+- Flag image prompts that use negative prompt constructions such as "do not
+  draw X," "without X," "avoid X," or "rather than X." Ask for affirmative
+  visible target descriptions instead.
 - Do not accept environment labels as visual descriptions. "Along the manifold
   line" is not enough unless the prompt describes the pipe/cable/panel/valve
   structure and surrounding corridor geometry.
-- Do not accept popular-solid-rock asteroid assumptions for Bloom habitats.
-  Bloom interiors are engineered cavity shells formed from contained asteroid
-  rubble/debris, aggregate, and TCS. Unless source lore says otherwise, reject
-  cave, mine-room, or carved-monolith visual language.
+- For Bloom habitats, require positive engineered-shell description: contained
+  asteroid rubble/debris, aggregate, TCS, shell plating, support ribs, seals,
+  manifolds, and service systems.
 - Do not accept named characters as visual descriptions. "Lio Vale stands by
   the manifold" is not enough unless the visual plan provides a stable visual
   reference for Lio and the prompt assembly path says to include it.

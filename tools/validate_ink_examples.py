@@ -40,6 +40,16 @@ VALID_VISUAL_SCENE_KEYS = {
     "state_image_modifiers",
     "visual_continuity_notes",
 }
+NEGATIVE_IMAGE_PROMPT_MARKERS = (
+    "do not",
+    "don't",
+    "must not",
+    "without",
+    "rather than",
+    "instead of",
+    "avoid",
+    "exclude",
+)
 
 
 class ValidationError(Exception):
@@ -54,6 +64,13 @@ def require(condition: bool, message: str) -> None:
 def require_keys(obj: dict[str, Any], keys: list[str], path: str) -> None:
     missing = [key for key in keys if key not in obj]
     require(not missing, f"{path} missing required keys: {', '.join(missing)}")
+
+
+def require_affirmative_image_prompt(text: Any, path: str) -> None:
+    require(isinstance(text, str) and text.strip(), f"{path} must be non-empty")
+    lowered = text.lower()
+    marker = next((item for item in NEGATIVE_IMAGE_PROMPT_MARKERS if item in lowered), None)
+    require(marker is None, f"{path} uses negative image prompting marker '{marker}'; describe the desired visible target affirmatively")
 
 
 def require_0_1(value: Any, path: str) -> None:
@@ -274,10 +291,27 @@ def validate_ink_visual_plan(path: Path, ink_path: Path, annotation_path: Path) 
         require(scene_id not in seen_scene_ids, f"{scene_path}.visual_scene_id duplicates {scene_id}")
         seen_scene_ids.add(scene_id)
         require(isinstance(scene["ink_anchor"], str) and scene["ink_anchor"].strip(), f"{scene_path}.ink_anchor must be non-empty")
-        require(isinstance(scene["base_image_prompt"], str) and scene["base_image_prompt"].strip(), f"{scene_path}.base_image_prompt must be non-empty")
+        require_affirmative_image_prompt(scene["base_image_prompt"], f"{scene_path}.base_image_prompt")
         require(isinstance(scene["visible_characters"], list), f"{scene_path}.visible_characters must be an array")
+        for character_index, visible_character in enumerate(scene["visible_characters"]):
+            character_path = f"{scene_path}.visible_characters[{character_index}]"
+            require(isinstance(visible_character, dict), f"{character_path} must be an object")
+            if "default_stance" in visible_character:
+                require_affirmative_image_prompt(visible_character["default_stance"], f"{character_path}.default_stance")
         require(isinstance(scene["state_image_modifiers"], list), f"{scene_path}.state_image_modifiers must be an array")
+        for modifier_index, modifier in enumerate(scene["state_image_modifiers"]):
+            modifier_path = f"{scene_path}.state_image_modifiers[{modifier_index}]"
+            require(isinstance(modifier, dict), f"{modifier_path} must be an object")
+            if "prompt" in modifier:
+                require_affirmative_image_prompt(modifier["prompt"], f"{modifier_path}.prompt")
         require(isinstance(scene["visual_continuity_notes"], list), f"{scene_path}.visual_continuity_notes must be an array")
+
+    require(isinstance(plan["global_branch_image_modifiers"], list), f"{path}.visual_scene_plan.global_branch_image_modifiers must be an array")
+    for modifier_index, modifier in enumerate(plan["global_branch_image_modifiers"]):
+        modifier_path = f"{path}.visual_scene_plan.global_branch_image_modifiers[{modifier_index}]"
+        require(isinstance(modifier, dict), f"{modifier_path} must be an object")
+        if "prompt" in modifier:
+            require_affirmative_image_prompt(modifier["prompt"], f"{modifier_path}.prompt")
 
     refs = data["visual_character_refs"]
     require_keys(refs, ["purpose", "prompt_assembly_rule", "characters"], f"{path}.visual_character_refs")
@@ -285,6 +319,11 @@ def validate_ink_visual_plan(path: Path, ink_path: Path, annotation_path: Path) 
     for character_id, ref in refs["characters"].items():
         ref_path = f"{path}.visual_character_refs.characters.{character_id}"
         require_keys(ref, ["display_name", "species_or_body", "stable_visual_description", "silhouette_notes", "do_not_change"], ref_path)
+        require_affirmative_image_prompt(ref["stable_visual_description"], f"{ref_path}.stable_visual_description")
+        require_affirmative_image_prompt(ref["silhouette_notes"], f"{ref_path}.silhouette_notes")
+        require(isinstance(ref["do_not_change"], list), f"{ref_path}.do_not_change must be an array")
+        for item_index, item in enumerate(ref["do_not_change"]):
+            require_affirmative_image_prompt(item, f"{ref_path}.do_not_change[{item_index}]")
 
 
 def validate_qwen_ink_capture(path: Path) -> None:

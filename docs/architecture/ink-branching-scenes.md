@@ -434,13 +434,18 @@ corridor shape, wall/ceiling/floor geometry, pipe runs, cable bundles, panels,
 screens, rails, doors, windows, gauges, warning lights, materials, scale, and
 where bodies stand inside that geometry.
 
-For Aetheria Bloom habitats, do not default to the popular image of an asteroid
-as a solid rock with rooms carved into it. The Bloom process consolidates
-asteroid rubble/debris and TCS into engineered rotating cavity shells. Visual
-and prose artifacts should show constructed shell infrastructure, exposed
-aggregate/substrate where appropriate, seals, supports, hub/spoke interfaces,
-and service systems rather than natural caves or hollowed monoliths unless a
-source explicitly says the location is something else.
+Image prompts should be affirmative. Describe the desired geometry, material,
+composition, lighting, bodies, tools, and state. Negative prompt constructions
+such as "do not draw X," "without X," or "rather than X" tend to feed the image
+model the wrong object and then hope it obeys the minus sign. That is weak
+magic. Put the target in the prompt, and keep forbidden assumptions in reviewer
+notes or validation errors.
+
+For Aetheria Bloom habitats, prompt the engineered object directly: rotating
+cavity-shell infrastructure, consolidated asteroid rubble/debris, TCS
+substrate, shell plating, ribbed supports, seals, hub/spoke interfaces,
+manifolds, and service systems. Source-specific exceptions should be represented
+as their own positive visible description.
 
 Every visual section should identify:
 
@@ -470,10 +475,11 @@ itself. The same applies to visual style: if a fixture depends on a specific
 look, the assembled prompt must carry that style cue every time. Names are
 handles, not faces.
 
-Do not include `visual_continuity_notes` verbatim in the image prompt. They are
-tooling and review constraints for keeping repeated generations coherent. If a
-continuity fact needs to reach the image model, rewrite it as concrete visible
-prompt text in the base prompt, a character ref, or a branch/state modifier.
+Keep `visual_continuity_notes` out of assembled image prompts. They are tooling
+and review constraints for keeping repeated generations coherent. If a
+continuity fact needs to reach the image model, rewrite it as affirmative,
+concrete visible prompt text in the base prompt, a character ref, or a
+branch/state modifier.
 The image generator only sees the prompt you send it. It does not remember the
 previous scene unless a real image-editing workflow supplies that image as
 input.
@@ -489,8 +495,7 @@ that cost somewhere on the page or in the frame. Otherwise the choice may be
 mechanically recorded while still feeling fake, which is the stupid little
 trapdoor interactive fiction keeps setting for itself.
 
-Do not regenerate every branch image from scratch when continuity matters.
-Each scene should have one durable base visual prompt and branch/state
+When continuity matters, use one durable base visual prompt and branch/state
 modification prompts that describe only what changed. The base prompt owns the
 room, palette, dominant geometry, key props, bodies, and interface layout. A
 modification prompt owns the delta: Sella moves from the dryside console to the

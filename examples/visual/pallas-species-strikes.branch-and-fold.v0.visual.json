@@ -8,12 +8,12 @@
   "visual_scene_plan": {
     "purpose": "Illustrated Ink replay segmentation for website and imagegen use. Each entry maps a click-through Ink section or branch location to an imagegen-ready visual anchor.",
     "segmentation_rule": "Distinct places, focal areas, object closeups, arrivals, legal/authority reframes, red-alert beats, branch locations, and aftermath states receive visual_scene_id anchors. If a new actor or institution changes the room's power geometry, stage the pre-arrival beat first, then give the arrival/reframe its own click-through and visual transition. Pivotal one-sentence beats may stand alone.",
-    "prompting_rule": "Prompts describe visible geometry, bodies, tools, lighting, material state, and stance without requiring the image model to know Aetheria lore terms.",
+    "prompting_rule": "Prompts describe visible geometry, bodies, tools, lighting, material state, and stance as concrete drawable targets for the image model.",
     "scenes": [
       {
         "visual_scene_id": "pallas_yard_wake",
         "ink_anchor": "intro_yard_wake",
-        "base_image_prompt": "Wide establishing shot inside an AU Bloom cavity maintenance yard before shift bell: a curved service lane built into the engineered inner shell of a rotating cavity habitat, with consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed metal supports, scuffed deck plates bolted to the shell curve, overhead amber work lamps, wall-mounted pressure gauges, sleeping maintenance carts, folded harness frames, cable trays, worn yellow-white safety stripes, faint industrial haze, and no crowd yet; the infrastructure looks old, hand-repaired, and tired rather than sleek.",
+        "base_image_prompt": "Wide establishing shot inside an AU Bloom cavity maintenance yard before shift bell: a curved service lane built into the engineered inner shell of a rotating cavity habitat, with consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed metal supports, scuffed deck plates bolted to the shell curve, overhead amber work lamps, wall-mounted pressure gauges, sleeping maintenance carts, folded harness frames, cable trays, worn yellow-white safety stripes, faint industrial haze, and no crowd yet; the infrastructure looks old, hand-repaired, scuffed, patched, and tired.",
         "visible_characters": [
           {
             "agent_id": "none_named",
@@ -22,8 +22,8 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "Use this as the broad location anchor for the fixture."
         ]
       },
@@ -55,8 +55,8 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
@@ -71,14 +71,14 @@
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "watching from nearby without interrupting",
+            "default_stance": "watching from nearby as a quiet observer",
             "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
@@ -99,14 +99,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_teth_dry_operation",
         "ink_anchor": "intro_teth",
-        "base_image_prompt": "Medium shot of a cephalopod bare-minimum dry-operation support station in low gravity: a padded dry-operation support frame with humidity collar is bolted to the Bloom cavity service shell, surrounded by transparent oxygenation tubes, soft pressure cuffs, rounded valve clusters, flexible many-armed tool rails, small diagnostic screens, and life-support lung diagrams painted on a nearby panel. Teth Inkwise floats in the support rig while several arms manage valves and tools; one pressure cuff has thin padding and leaves a pale rub mark on the mantle. Teth's posture is controlled and stoic rather than theatrical, and the station is heavily patched, carefully maintained, and visibly built for productivity rather than comfort.",
+        "base_image_prompt": "Medium shot of a cephalopod bare-minimum dry-operation support station in low gravity: a padded dry-operation support frame with humidity collar is bolted to the Bloom cavity service shell, surrounded by transparent oxygenation tubes, soft pressure cuffs, rounded valve clusters, flexible many-armed tool rails, small diagnostic screens, and life-support lung diagrams painted on a nearby panel. Teth Inkwise floats in the support rig while several arms manage valves and tools; one pressure cuff has thin padding and leaves a pale rub mark on the mantle. Teth's posture is controlled and stoic; the station is heavily patched, carefully maintained, sparse, industrial, and visibly built around productivity, restraint, and survival margins.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -121,8 +121,8 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This prompt must always explain the dry-operation harness station in visible terms."
         ]
       },
@@ -144,8 +144,8 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
@@ -176,14 +176,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_nara_manifold_walk",
         "ink_anchor": "walk_with_nara",
-        "base_image_prompt": "Close medium shot inside Service Ring Kappa, a narrow industrial maintenance corridor built against a curved engineered Bloom inner shell: the manifold line is a waist-high run of ribbed bronze-gray pipe trunks, bundled fiber cables, bolted valve housings, removable patch plates, small amber route-diagram screens, pressure gauges, warning glyphs, and hand-sized diagnostic touch panels mounted over consolidated asteroid rubble/aggregate and dark TCS substrate like a long mechanical spine. Scuffed deck plates with yellow-white safety stripes curve underfoot; overhead work lights cast hard amber reflections through faint industrial haze. Lio walks beside Nara-7 along this pipe-and-panel service wall; amber fault diagrams glow on Lio's slate, Nara's numbered batch tag is visible but not dominant, and her fingers hover near a ribbed access plate as if listening through touch.",
+        "base_image_prompt": "Close medium shot inside Service Ring Kappa, a narrow industrial maintenance corridor built against a curved engineered Bloom inner shell: the manifold line is a waist-high run of ribbed bronze-gray pipe trunks, bundled fiber cables, bolted valve housings, removable patch plates, small amber route-diagram screens, pressure gauges, warning glyphs, and hand-sized diagnostic touch panels mounted over consolidated asteroid rubble/aggregate and dark TCS substrate like a long mechanical spine. Scuffed deck plates with yellow-white safety stripes curve underfoot; overhead work lights cast hard amber reflections through faint industrial haze. Lio walks beside Nara-7 along this pipe-and-panel service wall; amber fault diagrams glow on Lio's slate, Nara's numbered batch tag is small on the suit, and her fingers hover near a ribbed access plate as if listening through touch.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -198,14 +198,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_orrin_break_table",
         "ink_anchor": "sit_with_orrin",
-        "base_image_prompt": "Break-table corner beside the dry-side anchor rail: a narrow fold-out metal ledge is bolted below scratched tool lockers and anchor hooks, with recycler coffee mugs, patched gloves, route bolts, and grease-stained cloths scattered across it. Orrin sits with a battered mug and an old anchor hook across his knees; Lio sits nearby without crowding him; in the background, engineered seal technicians eat in precise silence under harsh cafeteria strip lights beside curved Bloom shell plating, exposed consolidated aggregate, and pipework.",
+        "base_image_prompt": "Break-table corner beside the dry-side anchor rail: a narrow fold-out metal ledge is bolted below scratched tool lockers and anchor hooks, with recycler coffee mugs, patched gloves, route bolts, and grease-stained cloths scattered across it. Orrin sits with a battered mug and an old anchor hook across his knees; Lio sits nearby at a respectful distance; in the background, engineered seal technicians eat in precise silence under harsh cafeteria strip lights beside curved Bloom shell plating, exposed consolidated aggregate, and pipework.",
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
@@ -214,20 +214,20 @@
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "seated beside him, listening rather than arguing",
+            "default_stance": "seated beside him, posture quiet and receptive",
             "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_teth_harness_check",
         "ink_anchor": "check_teth_harness",
-        "base_image_prompt": "Close-up at Teth's cephalopod zero-g maintenance harness: padded body loops, worn soft pressure cuffs, tiny valve patches, transparent oxygenation tubes, sealed implements, flexible many-armed tool rails, humidity beads, and a wall-mounted dry-operation support frame form a practical productivity rig rather than comfort architecture. One cuff seam is frayed and has rubbed a pale groove into Teth's mantle; Lio's hand checks the worn seam while Teth's arms continue working with resigned precision around the inspection under hard amber work light.",
+        "base_image_prompt": "Close-up at Teth's cephalopod zero-g maintenance harness: padded body loops, worn soft pressure cuffs, tiny valve patches, transparent oxygenation tubes, sealed implements, flexible many-armed tool rails, humidity beads, and a wall-mounted dry-operation support frame form a practical productivity rig with sparse padding, exposed utility hardware, and industrial restraint geometry. One cuff seam is frayed and has rubbed a pale groove into Teth's mantle; Lio's hand checks the worn seam while Teth's arms continue working with resigned precision around the inspection under hard amber work light.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -242,8 +242,8 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
@@ -274,9 +274,9 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
-          "Ilya must not be visible in this frame; this is the room before authority reclassifies it."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
+          "This frame shows the room before authority reclassifies it: Nara, Lio, Orrin, Teth, riggers, engineered technicians, the manifold, and the crawl throat hold the composition."
         ]
       },
       {
@@ -321,15 +321,15 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This is a click-through tonal turn: the refusal has already happened, and Ilya's arrival makes it an authority problem."
         ]
       },
       {
         "visual_scene_id": "pallas_quiet_safety_pause",
         "ink_anchor": "quiet_safety_pause",
-        "base_image_prompt": "Local-channel containment frame at the Kappa access throat: Lio holds a work slate low with a small amber safety-pause label, standing between the dark gasket-rimmed crawl opening, the manifold wall of pipes and touch panels, and the raised supervisor walkway. Nara and the engineered technicians remain stopped at the pipe-and-panel wall; Ilya watches Lio closely from the management side; Teth's dry-operation harness station and Orrin's anchor track remain visible in the same curved maintenance lane, but the room has not yet exploded into open strike posture.",
+        "base_image_prompt": "Local-channel containment frame at the Kappa access throat: Lio holds a work slate low with a small amber safety-pause label, standing between the dark gasket-rimmed crawl opening, the manifold wall of pipes and touch panels, and the raised supervisor walkway. Nara and the engineered technicians remain stopped at the pipe-and-panel wall; Ilya watches Lio closely from the management side; Teth's dry-operation harness station and Orrin's anchor track remain visible in the same curved maintenance lane, but the room remains in contained amber safety-pause posture.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -338,7 +338,7 @@
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "still at manifold, protected by procedure rather than body blocking",
+            "default_stance": "still at manifold, held inside a procedural safety frame near the manifold",
             "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
@@ -348,7 +348,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "watching from dry anchor rail, not yet committed",
+            "default_stance": "watching from the dry anchor rail with undecided posture",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -359,8 +359,8 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "Visually distinguish this from public escalation: small local board, contained amber light, no outside-feed indicator."
         ]
       },
@@ -406,14 +406,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_shield_nara",
         "ink_anchor": "shield_nara",
-        "base_image_prompt": "Protective body-position frame near the crawl throat: Lio steps directly between Nara-7 and a small black inspector camera mounted above the gasket-rimmed crawl opening, blocking the camera's line to Nara without looking like a shove. Nara's hands stay flat on the ribbed manifold rail behind Lio; Orrin watches from the dry-side anchor track with his hook lowered; Ilya's view from the supervisor walkway is partly blocked by Lio's body and the pipework.",
+        "base_image_prompt": "Protective body-position frame near the crawl throat: Lio stands directly in the sightline between Nara-7 and a small black inspector camera mounted above the gasket-rimmed crawl opening, using calm worker posture and body placement as a procedural shield. Nara's hands stay flat on the ribbed manifold rail behind Lio; Orrin watches from the dry-side anchor track with his hook lowered; Ilya's view from the supervisor walkway is partly blocked by Lio's body and the pipework.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -439,7 +439,7 @@
         "state_image_modifiers": [
           {
             "trigger": "nara_centered == true",
-            "prompt": "Keep Nara visible but partially protected behind Lio's shoulder rather than isolated in the frame."
+            "prompt": "Keep Nara visible behind Lio's shoulder, visually connected to the group and partially shielded by Lio's stance."
           },
           {
             "trigger": "security_pressure >= 1",
@@ -447,14 +447,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_classification_pressure",
         "ink_anchor": "tests_and_reversals",
-        "base_image_prompt": "Tense administrative pressure frame inside the curved maintenance ring: AU incident-board screens on the supervisor wall label the event irregularity in cold blue-white text while the worker channel on Lio's slate labels it refusal. BioElevate legal has not yet entered the display; this frame is about the first split between management classification and worker language. Workers wait around the amber pipe-and-panel manifold while the dry anchor track, dry-operation harness station bays, and raised supervisor glass make the same physical refusal look like two competing realities.",
+        "base_image_prompt": "Tense administrative pressure frame inside the curved maintenance ring: AU incident-board screens on the supervisor wall label the event irregularity in cold blue-white text while the worker channel on Lio's slate labels it refusal. This frame centers the first split between management classification and worker language; the display shows AU incident-board screens and Lio's worker-channel slate. Workers wait around the amber pipe-and-panel manifold while the dry anchor track, dry-operation harness station bays, and raised supervisor glass make the same physical refusal look like two competing realities.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -468,7 +468,7 @@
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "near manifold, visible but not isolated",
+            "default_stance": "near the manifold, visible and connected to nearby workers",
             "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
@@ -489,9 +489,9 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
-          "BioElevate legal must not be visible yet; the next screen introduces that frame."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
+          "This frame centers AU management classification and worker language; BioElevate legal enters as the next visual reframe."
         ]
       },
       {
@@ -532,8 +532,8 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This is a click-through tonal turn: BioElevate legal enters as a new institutional actor, changing refusal into liability grammar."
         ]
       },
@@ -560,18 +560,18 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_orrin_solidarity",
         "ink_anchor": "ask_orrin_solidarity",
-        "base_image_prompt": "Dry-side authority frame beside the anchor track: Lio faces Orrin across a foreground of heavy anchor hooks, clipped safety tethers, route bolts, scratched rail plates, and old tool lockers. Orrin looks from Nara at the amber pipe-and-panel manifold to the dark gasket-rimmed crawl throat and then to his own crew; the geometry makes the decision visibly about work expertise, not a speech podium.",
+        "base_image_prompt": "Dry-side authority frame beside the anchor track: Lio faces Orrin across a foreground of heavy anchor hooks, clipped safety tethers, route bolts, scratched rail plates, and old tool lockers. Orrin looks from Nara at the amber pipe-and-panel manifold to the dark gasket-rimmed crawl throat and then to his own crew; the geometry frames the decision through work expertise: anchors, route bolts, crawl throat, manifold, and crew sightlines..",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "standing open-handed, not crowding Orrin",
+            "default_stance": "standing open-handed at a respectful distance from Orrin",
             "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
@@ -587,14 +587,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_bypass_kit",
         "ink_anchor": "bypass_kit",
-        "base_image_prompt": "Dry-operation equipment shot inside the cephalopod work bay: Teth opens a sealed service pouch beside the wall-mounted dry-operation harness station with humidity collar and reveals a compact strike-safe life-support bypass bridge wrapped in maintenance cloth. The device has a squat valve block, glowing pressure-line ports, manual logic plates, tamper-evident evidence seals, flexible tubes, and adapters sized for both cephalopod manipulators and human hands; surrounding oxygenation tubes and many-armed tool rails show where it can connect. Teth holds the tool with practiced calm while the harness collar bites slightly into the mantle, making the cost visible without melodrama.",
+        "base_image_prompt": "Dry-operation equipment shot inside the cephalopod work bay: Teth opens a sealed service pouch beside the wall-mounted dry-operation harness station with humidity collar and reveals a compact strike-safe life-support bypass bridge wrapped in maintenance cloth. The device has a squat valve block, glowing pressure-line ports, manual logic plates, tamper-evident evidence seals, flexible tubes, and adapters sized for both cephalopod manipulators and human hands; surrounding oxygenation tubes and many-armed tool rails show where it can connect. Teth holds the tool with practiced calm while the harness collar bites slightly into the mantle, making the cost visible through small bodily strain and hard industrial light.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -603,14 +603,14 @@
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "watching the device rather than touching it yet",
+            "default_stance": "watching the device with hands held back",
             "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
@@ -631,8 +631,8 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
@@ -673,8 +673,8 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This screen may be only one sentence in replay; let the red alert breathe."
         ]
       },
@@ -728,8 +728,8 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
@@ -770,8 +770,8 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
@@ -797,14 +797,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_seal_evidence_without_bypass",
         "ink_anchor": "seal_evidence_without_bypass",
-        "base_image_prompt": "Evidence-custody frame without safety bridge: Lio holds the slate up to a small black inspector camera mounted by the gasket-rimmed crawl throat so the custody seal is visible. No bypass device is present; only red warning light, patched valve housings, pipe bundles, pressure gauges, bolted seal plates, and the dark crawl opening show how physically dangerous the legal protection is.",
+        "base_image_prompt": "Evidence-custody frame at the bare gasket-rimmed crawl throat: Lio holds the slate up to a small black inspector camera so the custody seal is visible. Red warning light, patched valve housings, pipe bundles, pressure gauges, bolted seal plates, and the dark crawl opening fill the frame, making the legal protection look physically dangerous.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -818,20 +818,20 @@
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "near manifold, not centered unless prior branch did so",
+            "default_stance": "near the manifold, centered only when branch state places her there",
             "visual_ref": "visual_character_refs.characters.nara_7"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_orrin_front_demand",
         "ink_anchor": "orrin_front_demand",
-        "base_image_prompt": "Solidarity climax frame at the dry-side anchor track: Orrin steps in front of the riggers with an anchor hook lowered like a work credential, not a weapon; behind him are clipped tethers, route bolts, scratched rail plates, and old tool lockers. Nara remains behind or beside Lio near the amber pipe-and-panel manifold; Ilya faces a demand coming from baseline workers instead of the engineered worker she expected to isolate.",
+        "base_image_prompt": "Solidarity climax frame at the dry-side anchor track: Orrin steps in front of the riggers with an anchor hook lowered like a work credential, gripped low and away from bodies; behind him are clipped tethers, route bolts, scratched rail plates, and old tool lockers. Nara remains behind or beside Lio near the amber pipe-and-panel manifold; Ilya faces a demand coming from baseline workers while Nara remains held inside the worker group near the manifold.",
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
@@ -840,7 +840,7 @@
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "near Nara, protecting without speaking over Orrin",
+            "default_stance": "near Nara, protective and quiet while Orrin fronts the demand",
             "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
@@ -856,8 +856,8 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
@@ -867,7 +867,7 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "standing with slate lowered, not triumphant",
+            "default_stance": "standing with slate lowered, exhausted and contained",
             "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
@@ -914,7 +914,7 @@
           },
           {
             "trigger": "evidence_of_sentience >= 4",
-            "prompt": "Show the evidence packet as strong and organized: Lio's slate displays the marked route path, refusal log, and custody seals together rather than scattered fragments."
+            "prompt": "Show the evidence packet as strong and organized: Lio's slate displays the marked route path, refusal log, and custody seals together in one clear grouped layout."
           },
           {
             "trigger": "nara_centered == true",
@@ -926,14 +926,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_object_callback",
         "ink_anchor": "return_object_callback",
-        "base_image_prompt": "Quiet object callback after the crisis in a small break-rack alcove: a battered recycler coffee mug with a fresh hairline crack sits on a narrow metal shelf beside patched gloves and route bolts; under a small work light, Teth's repaired pressure cuff rests near transparent oxygenation tube and soft harness loops; in the background, Nara's hand repeats the twice-pause-third touch against a ribbed wall access panel while other workers pretend not to watch.",
+        "base_image_prompt": "Quiet object callback after the crisis in a small break-rack alcove: a battered recycler coffee mug with a fresh hairline crack sits on a narrow metal shelf beside patched gloves and route bolts; under a small work light, Teth's repaired pressure cuff rests near transparent oxygenation tube and soft harness loops; in the background, Nara's hand repeats the twice-pause-third touch against a ribbed wall access panel while other workers watch indirectly from the edge of the alcove.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -948,9 +948,9 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. Do not depict a natural cave or a hollowed solid asteroid.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
-          "This is the final visual memory, not a victory poster. Keep it intimate and ordinary."
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
+          "This is the final visual memory: intimate, ordinary, small, and work-worn."
         ],
         "represented_objects": [
           {
@@ -975,7 +975,7 @@
       {
         "modifier_id": "high_baseline_solidarity",
         "trigger": "baseline_solidarity >= 3",
-        "prompt": "Move Orrin and baseline riggers closer to the engineered workers, anchor tools lowered as signs of work authority rather than threat."
+        "prompt": "Move Orrin and baseline riggers closer to the engineered workers, anchor tools lowered at waist height as signs of work authority and crew solidarity."
       },
       {
         "modifier_id": "nara_centered_risk",
@@ -1004,17 +1004,17 @@
       }
     ],
     "global_style_cue": "Style: Media Molecule Dreams-style 3D volumetric brushstroke painting; visible sculpted fleck strokes; painterly VR-made geometry; every detail is made of brush matter that feels partly solid, partly liquid, partly gas. Extremely detailed but soft, handmade, and non-photoreal. Tiny brushstrokes are allowed and encouraged, but the broad composition must remain readable.",
-    "prompt_assembly_rule": "Assemble each image prompt from visual_scene_plan.global_style_cue, visual refs only for characters actually visible in the rendered frame, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers. Do not include visual_continuity_notes verbatim; use them only as tooling/review constraints unless rewritten as concrete visible prompt text."
+    "prompt_assembly_rule": "Assemble each image prompt from visual_scene_plan.global_style_cue, visual refs only for characters actually visible in the rendered frame, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers. Use visual_continuity_notes only as tooling/review constraints; assembled image prompts use concrete visible scene, character, and modifier text."
   },
   "visual_character_refs": {
-    "purpose": "Stable named-character visual identities for prompt assembly. Image prompts must include these refs for every named visible character; scene prompts alone are not expected to teach imagegen what Lio, Nara, Orrin, Teth, or Ilya look like.",
-    "prompt_assembly_rule": "For each visual_scene_plan scene, include only the visual_character_refs for named characters actually visible in that rendered frame. Do not include refs for absent, off-frame, merely mentioned, or object-represented characters.",
+    "purpose": "Stable named-character visual identities for prompt assembly. Image prompts include these refs for every named visible character because stable recurring character appearance comes from visual_character_refs.",
+    "prompt_assembly_rule": "For each visual_scene_plan scene, include the visual_character_refs for named characters actually visible in that rendered frame. Omit refs for characters outside the frame, merely mentioned, or represented only by objects.",
     "characters": {
       "lio_vale": {
         "display_name": "Lio Vale",
         "species_or_body": "baseline human adult from Belt labor housing",
-        "stable_visual_description": "Lean, compact adult human with medium-brown skin, short black hair clipped close at the sides, tired dark eyes, and a scheduler's stillness that reads as careful rather than passive. Wears a worn slate-gray AU maintenance jacket over a practical work harness, soft-soled magnetic boots, a utility belt with tags and seals, and carries a rectangular work slate with scuffed edges.",
-        "silhouette_notes": "Usually centered between groups, shoulders slightly forward, one hand near the slate; visually reads as a tired worker-organizer rather than a heroic commander.",
+        "stable_visual_description": "Lean, compact adult human with medium-brown skin, short black hair clipped close at the sides, tired dark eyes, and a scheduler's stillness that reads as careful and controlled. Wears a worn slate-gray AU maintenance jacket over a practical work harness, soft-soled magnetic boots, a utility belt with tags and seals, and carries a rectangular work slate with scuffed edges.",
+        "silhouette_notes": "Usually centered between groups, shoulders slightly forward, one hand near the slate; visually reads as a tired worker-organizer with practical shop-floor presence.",
         "do_not_change": [
           "medium-brown skin",
           "short black close-clipped hair",
@@ -1052,14 +1052,14 @@
       "teth_inkwise": {
         "display_name": "Teth Inkwise",
         "species_or_body": "uplifted cephalopod dry-operation crawl maintenance specialist",
-        "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible arms supported in a compact low-gravity dry-operation harness station with a bare-minimum humidity collar and oxygenation loop. The rig uses pressure cuffs, compression anchor loops, limiter socket, tool loops, and a body-support frame rather than human clothing; oxygenation tubes, valve clusters, padded supports, and curved tool rails make the body productive in dry cramped AU maintenance spaces rather than comfortable. One cuff is visibly worn and leaves a pale rub mark, while Teth's controlled posture suggests stoic endurance rather than ease.",
+        "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible arms supported in a compact low-gravity dry-operation harness station with a bare-minimum humidity collar and oxygenation loop. The rig uses pressure cuffs, compression anchor loops, limiter socket, tool loops, and a body-support frame as body-support equipment; oxygenation tubes, valve clusters, padded supports, and curved tool rails make the body productive in dry cramped AU maintenance spaces with sparse industrial comfort. One cuff is visibly worn and leaves a pale rub mark, while Teth's controlled posture suggests stoic endurance under visible strain.",
         "silhouette_notes": "Nonhuman, horizontal or suspended silhouette inside dry-operation support equipment; never standing upright like a human.",
         "do_not_change": [
           "mottled blue-gray cephalopod body",
           "dry-operation harness station",
           "pressure cuffs and oxygenation loop",
           "multiple arms",
-          "not human-shaped or upright"
+          "cephalopod body plan supported horizontally in a harness"
         ]
       },
       "ilya_marne": {
@@ -1078,14 +1078,14 @@
     }
   },
   "visual_review_notes": [
-    "Added a global Media Molecule Dreams-style volumetric brushstroke cue so image prompt assembly carries the intended non-photoreal handmade visual language without repeating it in every scene.",
+    "Added a global Media Molecule Dreams-style volumetric brushstroke cue so image prompt assembly carries the intended non-photoreal handmade visual language through global prompt assembly.",
     "Corrected image prompt assembly: visual_continuity_notes are non-prompt tooling constraints, and assembled prompts include only character refs for characters actually visible in the frame.",
-    "Expanded pallas_nara_manifold_walk so the environment is self-contained; manifold line is described as visible pipe trunks, cable bundles, valve housings, patch plates, screens, gauges, and touch panels rather than assumed lore.",
+    "Expanded pallas_nara_manifold_walk so the environment is self-contained; manifold line is described as visible pipe trunks, cable bundles, valve housings, patch plates, screens, gauges, and touch panels as concrete visible infrastructure.",
     "Visual reviewer full pass expanded all Pallas base image prompts so setting labels such as anchor rail, supervisor glass, crawl throat, seal assembly, dry-operation support station, and manifold are backed by visible geometry and materials.",
-    "Revised cephalopod visual and story assumptions: AU dry-operation support rigs are bare-minimum productivity equipment, not Navigator-style or cephalopod-native comfort habitat.",
+    "Revised cephalopod visual and story assumptions: AU dry-operation support rigs are bare-minimum productivity equipment, AU industrial productivity hardware with sparse comfort and bare-minimum life support.",
     "Visual scene plan added after review noted that illustrated Ink needs click-through segmentation, per-section base prompts, character visibility controls, and imagegen-ready descriptions of fictional equipment.",
     "Visual reviewer pass added missing branch-02 visual scenes and aftermath modifiers for strike spread, BioElevate liability, evidence strength, Nara exposure/protection, and high security pressure.",
     "Follow-up visual review returned accepted_with_minor_revisions; cleanup removed future-state modifiers from intro anchors and normalized ASCII possessives in visual prompts.",
-    "Added visual_character_refs so image prompts can assemble stable named-character identities instead of expecting imagegen to know what Lio Vale or other Pallas characters look like."
+    "Added visual_character_refs so image prompts can assemble stable named-character identities so prompt assembly supplies stable visible identity for Lio Vale and other Pallas characters."
   ]
 }

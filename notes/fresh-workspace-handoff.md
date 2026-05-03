@@ -166,8 +166,8 @@ Molecule Dreams-style volumetric brushstroke cue, and imagegen-ready prompts
 that explain fictional equipment in visible terms. Its location grounding now
 uses the Bloom process correctly: engineered rotating shell, consolidated
 asteroid rubble/aggregate, TCS substrate, seals, supports, and service systems,
-not a cave carved into a solid asteroid. Treat it as coordinator/IF scaffold
-training data, not raw responder gold.
+with image prompts written as affirmative visible targets. Treat it as
+coordinator/IF scaffold training data, not raw responder gold.
 
 Next: add the corpus coverage ledger seam or choose the next Aetheria fixture
 from the 100-150 broad coverage target.

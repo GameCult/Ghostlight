@@ -34,7 +34,7 @@
       "title": "Bloom",
       "line_start": 1,
       "line_end": 31,
-      "relevance": "Grounds Orbital Cavity Construction: asteroid rubble and debris are contained, aggregated, processed into TCS, and formed into rotating cylindrical cavity habitats rather than carved out as solid-rock caves."
+      "relevance": "Grounds Orbital Cavity Construction: asteroid rubble and debris are contained, aggregated, processed into TCS, and formed into rotating cylindrical cavity habitats with engineered shell infrastructure."
     },
     {
       "source_id": "bioelevate",
@@ -105,7 +105,7 @@
         ]
       },
       {
-        "text": "Bloom cavities are engineered habitat shells made by containing asteroid rubble/debris, aggregating it into a rotating cylindrical shell, processing material into TCS, and hardening/terraforming the interior; they are not natural caves hollowed from solid asteroid rock.",
+        "text": "Bloom cavities are engineered habitat shells made by containing asteroid rubble/debris, aggregating it into a rotating cylindrical shell, processing material into TCS, and hardening/terraforming the interior with constructed shell infrastructure.",
         "source_refs": [
           "bloom"
         ]
