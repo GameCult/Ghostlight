@@ -85,22 +85,6 @@ def add_cube(name: str, location: tuple[float, float, float], scale: tuple[float
     return obj
 
 
-def add_mesh_object(name: str, vertices: list[tuple[float, float, float]], faces: list[tuple[int, ...]], material: bpy.types.Material) -> bpy.types.Object:
-    mesh = bpy.data.meshes.new(f"{name}_mesh")
-    mesh.from_pydata(vertices, [], faces)
-    mesh.update()
-    obj = bpy.data.objects.new(name, mesh)
-    bpy.context.collection.objects.link(obj)
-    obj.data.materials.append(material)
-    return obj
-
-
-def make_runtime_material(material_id: str, color: tuple[float, float, float, float]) -> bpy.types.Material:
-    material = bpy.data.materials.get(material_id) or bpy.data.materials.new(material_id)
-    material.diffuse_color = color
-    return material
-
-
 def mark_actor_object(obj: bpy.types.Object, actor_id: str) -> bpy.types.Object:
     obj["ghostlight_actor_id"] = actor_id
     return obj
@@ -145,67 +129,28 @@ def build_service_ring_shell(module: dict[str, Any], materials: dict[str, bpy.ty
     length = float(p.get("length", 18.0))
     radius = float(p.get("radius", 4.2))
     rib_count = int(p.get("rib_count", 18))
-    arc_degrees = float(p.get("arc_degrees", 130.0))
-    y0 = -1.0
-    y1 = length - 1.0
-    half_arc = math.radians(arc_degrees / 2.0)
-    arch_steps = 18
-    arch_points: list[tuple[float, float]] = []
-    for index in range(arch_steps + 1):
-        angle = math.pi / 2.0 + half_arc - index * (2.0 * half_arc / arch_steps)
-        arch_points.append((math.cos(angle) * radius, math.sin(angle) * radius))
-
-    vertices: list[tuple[float, float, float]] = []
-    for y in (y0, y1):
-        for x, z in arch_points:
-            vertices.append((x, y, max(z, 0.18)))
-    faces: list[tuple[int, ...]] = []
-    row = len(arch_points)
-    for index in range(row - 1):
-        faces.append((index, index + 1, row + index + 1, row + index))
-    add_mesh_object("service_ring_curved_inner_shell", vertices, faces, material)
-
-    deck_width = max(abs(arch_points[0][0]), abs(arch_points[-1][0])) * 1.95
-    add_cube("service_lane_bolted_deck", (0, length / 2 - 1.0, 0.03), (deck_width, length, 0.12), material)
-    add_cube("left_shell_base_sill", (-deck_width / 2, length / 2 - 1.0, 0.22), (0.22, length, 0.35), material)
-    add_cube("right_shell_base_sill", (deck_width / 2, length / 2 - 1.0, 0.22), (0.22, length, 0.35), material)
+    # A readable maquette: curved ceiling ribs plus a flat service deck. Full
+    # boolean shell carving can arrive when Geometry Script takes over.
+    add_cube("service_lane_deck", (0, length / 2 - 1.0, 0.0), (6.4, length, 0.12), material)
+    add_cube("left_shell_wall", (-3.25, length / 2 - 1.0, 1.65), (0.18, length, 3.2), material)
+    add_cube("right_shell_wall", (3.25, length / 2 - 1.0, 1.65), (0.18, length, 3.2), material)
     for index in range(rib_count):
-        y = y0 + index * ((y1 - y0) / max(rib_count - 1, 1))
+        y = -1.0 + index * (length / max(rib_count - 1, 1))
         add_curve_pipe(
             f"shell_rib_{index:02d}",
-            [(x, y, max(z + 0.04, 0.24)) for x, z in arch_points],
+            [(-3.2, y, 0.35), (-2.4, y, 2.6), (0.0, y, radius), (2.4, y, 2.6), (3.2, y, 0.35)],
             material,
-            bevel_depth=0.035,
+            bevel_depth=0.045,
         )
-    for x_offset in (-1.2, 0.0, 1.2):
-        name = "overhead_service_spine" if x_offset == 0 else f"overhead_service_spine_{x_offset:+.1f}"
-        add_curve_pipe(name, [(x_offset, y0, radius + 0.02), (x_offset, y1, radius + 0.02)], material, bevel_depth=0.055)
-    for index in range(7):
-        y = y0 + 1.0 + index * 2.2
-        add_cube(f"deck_cross_plate_{index:02d}", (0, y, 0.11), (deck_width * 0.82, 0.08, 0.035), material)
+    add_curve_pipe("overhead_service_spine", [(0.0, -1.0, 3.85), (0.0, length - 1.0, 3.85)], material, bevel_depth=0.10)
 
 
 def build_crawl_throat(module: dict[str, Any], materials: dict[str, bpy.types.Material]) -> None:
     p = module["parameters"]
     material = materials[module["material_id"]]
-    dark = make_runtime_material("crawl_void_black", (0.02, 0.018, 0.014, 1.0))
-    x, y, z = p.get("position", [0, 8.2, 1.15])
-    radius = float(p.get("radius", 1.15))
-    depth = float(p.get("depth", 0.35))
-    add_cube("kappa_end_bulkhead_plate", (x, y + depth * 0.55, z), (3.35, 0.16, 2.75), material)
-    bpy.ops.mesh.primitive_torus_add(major_radius=radius, minor_radius=0.13, major_segments=64, minor_segments=10, location=(x, y, z), rotation=(math.pi / 2, 0, 0))
-    ring = bpy.context.object
-    ring.name = "kappa_crawl_throat_gasket_ring"
-    ring.scale.y = 0.68
-    ring.data.materials.append(material)
-    add_cylinder("kappa_crawl_throat_dark_inset", (x, y - 0.03, z), radius * 0.84, 0.05, dark, vertices=48, rotation=(math.pi / 2, 0, 0))
-    for sx in (-1, 1):
-        add_curve_pipe(
-            f"crawl_warning_conduit_{sx}",
-            [(x + sx * (radius + 0.25), y - 0.06, z - 0.8), (x + sx * (radius + 0.45), y - 0.06, z), (x + sx * (radius + 0.25), y - 0.06, z + 0.8)],
-            material,
-            bevel_depth=0.035,
-        )
+    pos = tuple(p.get("position", [0, 8.2, 1.15]))
+    add_cylinder("kappa_crawl_throat_dark_oval", pos, float(p.get("radius", 1.15)), float(p.get("depth", 0.35)), material, rotation=(math.pi / 2, 0, 0))
+    add_cylinder("kappa_crawl_throat_gasket", (pos[0], pos[1] - 0.02, pos[2]), float(p.get("radius", 1.28)), 0.08, material, rotation=(math.pi / 2, 0, 0))
 
 
 def build_manifold_wall(module: dict[str, Any], materials: dict[str, bpy.types.Material]) -> None:
@@ -215,18 +160,13 @@ def build_manifold_wall(module: dict[str, Any], materials: dict[str, bpy.types.M
     length = float(p.get("length", 11.0))
     pipe_count = int(p.get("pipe_count", 8))
     panel_count = int(p.get("panel_count", 6))
-    add_cube("manifold_wall_backplane", (x - 0.02, y + length / 2, z + 0.15), (0.16, length + 0.8, 2.45), material)
     for index in range(pipe_count):
-        yy = y + 0.25 + index * (length - 0.5) / max(pipe_count - 1, 1)
-        add_curve_pipe(f"manifold_vertical_pipe_{index:02d}", [(x + 0.10, yy, 0.45), (x + 0.10, yy, 2.72)], material, bevel_depth=0.032 + 0.006 * (index % 3))
-        if index % 2 == 0:
-            add_curve_pipe(f"manifold_bypass_loop_{index:02d}", [(x + 0.10, yy, 1.15), (x + 0.38, yy + 0.18, 1.45), (x + 0.10, yy + 0.42, 1.85)], material, bevel_depth=0.026)
+        yy = y + index * length / max(pipe_count - 1, 1)
+        add_curve_pipe(f"manifold_pipe_{index:02d}", [(x, yy, 0.65), (x, yy, 2.35)], material, bevel_depth=0.035)
     for index in range(panel_count):
-        yy = y + 0.6 + index * (length - 1.2) / max(panel_count - 1, 1)
-        panel_z = z + 0.22 * (index % 3)
-        add_cube(f"manifold_route_panel_{index:02d}", (x + 0.14, yy, panel_z), (0.10, 0.72, 0.48), material)
-        add_cube(f"manifold_status_screen_{index:02d}", (x + 0.20, yy - 0.16, panel_z + 0.18), (0.05, 0.26, 0.16), material)
-        add_cylinder(f"manifold_valve_wheel_{index:02d}", (x + 0.24, yy + 0.32, z - 0.08), 0.16, 0.06, material, vertices=24, rotation=(0, math.pi / 2, 0))
+        yy = y + 0.5 + index * (length - 1.0) / max(panel_count - 1, 1)
+        add_cube(f"manifold_panel_{index:02d}", (x + 0.05, yy, z + 0.25 * (index % 3)), (0.08, 0.65, 0.42), material)
+        add_cylinder(f"manifold_valve_{index:02d}", (x + 0.12, yy + 0.38, z), 0.14, 0.05, material, vertices=24, rotation=(0, math.pi / 2, 0))
 
 
 def build_anchor_rail(module: dict[str, Any], materials: dict[str, bpy.types.Material]) -> None:
@@ -249,21 +189,12 @@ def build_supervisor_catwalk(module: dict[str, Any], materials: dict[str, bpy.ty
     length = float(p.get("length", 6.5))
     width = float(p.get("width", 1.5))
     rail_height = float(p.get("rail_height", 0.9))
-    add_cube("supervisor_catwalk_grated_deck", (x, y, z), (width, length, 0.10), material)
-    add_cube("supervisor_catwalk_wall_mount", (x + width / 2 + 0.08, y, z + 0.18), (0.14, length, 0.34), material)
-    for side, sx in (("inner", -1), ("outer", 1)):
-        rail_x = x + sx * width / 2
-        add_curve_pipe(f"supervisor_catwalk_{side}_top_rail", [(rail_x, y - length / 2, z + rail_height), (rail_x, y + length / 2, z + rail_height)], material, bevel_depth=0.035)
-        add_curve_pipe(f"supervisor_catwalk_{side}_mid_rail", [(rail_x, y - length / 2, z + rail_height * 0.52), (rail_x, y + length / 2, z + rail_height * 0.52)], material, bevel_depth=0.022)
-        for index in range(5):
-            yy = y - length / 2 + index * length / 4
-            add_curve_pipe(f"supervisor_catwalk_{side}_post_{index:02d}", [(rail_x, yy, z), (rail_x, yy, z + rail_height)], material, bevel_depth=0.026)
+    add_cube("supervisor_catwalk_deck", (x, y, z), (width, length, 0.12), material)
+    add_cube("supervisor_catwalk_rail_top", (x - width / 2, y, z + rail_height), (0.08, length, 0.08), material)
+    add_cube("supervisor_catwalk_rail_lower", (x - width / 2, y, z + rail_height * 0.5), (0.05, length, 0.05), material)
     for index in range(5):
-        yy = y - length / 2 + 0.45 + index * (length - 0.9) / 4
-        add_cube(f"supervisor_screen_{index:02d}", (x - width / 2 - 0.10, yy, z + 1.12), (0.06, 0.72, 0.44), material)
-    for index in range(3):
-        yy = y - length / 2 + index * length / 2
-        add_curve_pipe(f"supervisor_catwalk_diagonal_brace_{index:02d}", [(x + width / 2, yy, z), (x + width / 2 + 0.45, yy + 0.7, 1.0)], material, bevel_depth=0.035)
+        yy = y - length / 2 + index * length / 4
+        add_cube(f"supervisor_screen_{index:02d}", (x + 0.05, yy, z + 1.35), (0.06, 0.75, 0.5), material)
 
 
 def build_cephalopod_work_support_station(module: dict[str, Any], materials: dict[str, bpy.types.Material]) -> None:
@@ -273,25 +204,18 @@ def build_cephalopod_work_support_station(module: dict[str, Any], materials: dic
     width = float(p.get("width", 2.5))
     depth = float(p.get("depth", 1.6))
     height = float(p.get("height", 1.2))
-    add_cube("teth_work_support_low_service_sled", (x, y, z - 0.18), (width, depth, 0.12), material)
+    add_cube("teth_work_support_open_frame", (x, y, z), (width, depth, 0.10), material)
     for sx in (-1, 1):
-        rail_x = x + sx * width * 0.42
-        add_curve_pipe(f"teth_longitudinal_side_rail_{sx}", [(rail_x, y - depth / 2, z + 0.10), (rail_x, y + depth / 2, z + 0.10)], material, bevel_depth=0.035)
-        add_curve_pipe(f"teth_padded_contact_arc_{sx}", [(rail_x, y - depth * 0.36, z + 0.06), (rail_x + sx * 0.08, y, z + height * 0.82), (rail_x, y + depth * 0.36, z + 0.06)], material, bevel_depth=0.030)
-    for yy_factor in (-0.35, 0.0, 0.35):
-        yy = y + yy_factor * depth
-        add_curve_pipe(f"teth_cross_support_band_{yy_factor:+.2f}", [(x - width * 0.44, yy, z + 0.18), (x, yy, z + 0.36), (x + width * 0.44, yy, z + 0.18)], material, bevel_depth=0.026)
-    for index, yy in enumerate((y - depth * 0.45, y + depth * 0.45)):
-        add_curve_pipe(f"teth_oxygenation_tube_{index:02d}", [(x - width * 0.55, yy, z + 0.12), (x, yy, z + height * 0.74), (x + width * 0.55, yy, z + 0.12)], material, bevel_depth=0.024)
-    for index in range(4):
-        offset = -0.45 + index * 0.30
+        add_curve_pipe(f"teth_support_loop_{sx}", [(x + sx * width / 2, y - depth / 2, z), (x + sx * width / 2, y, z + height), (x + sx * width / 2, y + depth / 2, z)], material, bevel_depth=0.025)
+    for index in range(5):
+        angle = (index / 5.0) * math.tau
         add_curve_pipe(
-            f"teth_front_tool_arm_{index:02d}",
-            [(x - width * 0.18 + offset, y - depth * 0.62, z + 0.18), (x - width * 0.12 + offset, y - depth * 0.92, z + 0.42)],
+            f"teth_tool_rail_{index:02d}",
+            [(x, y, z + 0.25), (x + math.cos(angle) * width * 0.45, y + math.sin(angle) * depth * 0.45, z + 0.55)],
             material,
-            bevel_depth=0.020,
+            bevel_depth=0.018,
         )
-    add_cube("teth_radial_tool_block", (x - width * 0.10, y - depth * 0.95, z + 0.38), (0.9, 0.12, 0.16), material)
+    add_curve_pipe("teth_oxygenation_loop", [(x - 0.8, y - 0.75, z + 0.25), (x, y, z + 1.0), (x + 0.8, y - 0.75, z + 0.25)], material, bevel_depth=0.028)
 
 
 def build_object_callback_props(module: dict[str, Any], materials: dict[str, bpy.types.Material]) -> None:
