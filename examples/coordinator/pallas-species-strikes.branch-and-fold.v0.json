@@ -210,6 +210,11 @@
         "path": "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json"
       },
       {
+        "ref_id": "ink-visual-pallas-v0",
+        "ref_type": "ink_visual_plan",
+        "path": "examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json"
+      },
+      {
         "ref_id": "clean-run-pallas-v0",
         "ref_type": "readable_clean_run",
         "path": "experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md"

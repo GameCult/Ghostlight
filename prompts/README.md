@@ -37,12 +37,12 @@ should be authored here first and referenced from artifacts or tools.
   each distinct place, focal area, pivotal moment, and branch-visible state
   needs an imagegen-ready prompt or modifier.
 - Treat visual style as prompt-relevant state when the fixture needs a specific
-  look. Store the style cue once in the sidecar and include it during prompt
-  assembly for every generated image.
+  look. Store the style cue once in the visual plan artifact and include it
+  during prompt assembly for every generated image.
 - Treat named characters as handles, not visual descriptions. Illustrated IF
-  sidecars need stable visual character refs for recurring named characters, and
-  prompt assembly must include those refs only when the character is actually
-  visible in the rendered frame.
+  visual plans need stable visual character refs for recurring named
+  characters, and prompt assembly must include those refs only when the
+  character is actually visible in the rendered frame.
 - Treat continuity notes as tooling constraints, not prompt text. If the image
   model needs a continuity fact, put it in visible terms inside the base prompt,
   character ref, or modifier.

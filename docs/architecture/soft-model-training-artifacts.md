@@ -298,7 +298,8 @@ priors, not omniscience.
 ### Branch Compiler
 
 Turns scene intent, reviewed branch candidates, consequence packets, fold plans,
-and visual continuity requirements into playable Ink plus sidecar receipts.
+and visual continuity requirements into playable Ink plus sidecar receipts and,
+when illustrated replay is in scope, a separate visual plan artifact.
 
 The Branch Compiler is trainable because good branching structure is not just
 syntax. It needs to decide where choices belong, which consequences can fold
@@ -316,6 +317,7 @@ Training artifacts:
 - fold plan
 - generated Ink
 - generated sidecar
+- generated visual plan
 - compiler notes
 - variable set/read map
 - route split or fold rationale

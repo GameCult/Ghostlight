@@ -32,6 +32,14 @@ VALID_ACTION_TYPES = {
     "mixed",
 }
 VALID_CAPTURE_REVIEW_STATUSES = {"accepted", "accepted_as_draft", "rejected", "needs_revision", "useful_needs_revision"}
+VALID_VISUAL_SCENE_KEYS = {
+    "visual_scene_id",
+    "ink_anchor",
+    "base_image_prompt",
+    "visible_characters",
+    "state_image_modifiers",
+    "visual_continuity_notes",
+}
 
 
 class ValidationError(Exception):
@@ -166,6 +174,10 @@ def validate_annotation(path: Path, ink_path: Path) -> None:
     require(data["schema_version"] == "ghostlight.ink_training_annotation.v0", f"{path}.schema_version is wrong")
     require((ROOT / data["ink_ref"]).resolve() == ink_path.resolve(), f"{path}.ink_ref does not match {ink_path}")
     require((ROOT / data["source_fixture_ref"]).exists(), f"{path}.source_fixture_ref does not exist")
+    if "visual_plan_ref" in data:
+        visual_plan_path = ROOT / data["visual_plan_ref"]
+        require(visual_plan_path.exists(), f"{path}.visual_plan_ref does not exist")
+        validate_ink_visual_plan(visual_plan_path, ink_path, path)
     validate_text_blocks(data["local_awareness_summary"], f"{path}.local_awareness_summary")
 
     controls = data["projection_controls"]
@@ -224,6 +236,60 @@ def validate_annotation(path: Path, ink_path: Path) -> None:
     )
     for key, value in audit["checks"].items():
         require(isinstance(value, bool), f"{path}.audit.checks.{key} must be boolean")
+
+
+def validate_ink_visual_plan(path: Path, ink_path: Path, annotation_path: Path) -> None:
+    data = load_json(path)
+    require(isinstance(data, dict), f"{path} must be an object")
+    require_keys(
+        data,
+        [
+            "schema_version",
+            "visual_plan_id",
+            "ink_ref",
+            "source_training_annotation_ref",
+            "scene_id",
+            "purpose",
+            "visual_art_direction",
+            "visual_scene_plan",
+            "visual_character_refs",
+        ],
+        str(path),
+    )
+    require(data["schema_version"] == "ghostlight.ink_visual_plan.v0", f"{path}.schema_version is wrong")
+    require((ROOT / data["ink_ref"]).resolve() == ink_path.resolve(), f"{path}.ink_ref does not match {ink_path}")
+    require((ROOT / data["source_training_annotation_ref"]).resolve() == annotation_path.resolve(), f"{path}.source_training_annotation_ref does not match {annotation_path}")
+
+    art = data["visual_art_direction"]
+    require_keys(art, ["base_scene_prompt", "modification_prompts"], f"{path}.visual_art_direction")
+    require(isinstance(art["base_scene_prompt"], str) and art["base_scene_prompt"].strip(), f"{path}.visual_art_direction.base_scene_prompt must be non-empty")
+    require(isinstance(art["modification_prompts"], list), f"{path}.visual_art_direction.modification_prompts must be an array")
+
+    plan = data["visual_scene_plan"]
+    require_keys(plan, ["global_style_cue", "segmentation_rule", "scenes", "global_branch_image_modifiers", "prompt_assembly_rule"], f"{path}.visual_scene_plan")
+    require(isinstance(plan["global_style_cue"], str) and plan["global_style_cue"].strip(), f"{path}.visual_scene_plan.global_style_cue must be non-empty")
+    require(isinstance(plan["scenes"], list) and plan["scenes"], f"{path}.visual_scene_plan.scenes must be non-empty")
+    seen_scene_ids: set[str] = set()
+    for index, scene in enumerate(plan["scenes"]):
+        scene_path = f"{path}.visual_scene_plan.scenes[{index}]"
+        require(isinstance(scene, dict), f"{scene_path} must be an object")
+        require(set(scene.keys()).issuperset(VALID_VISUAL_SCENE_KEYS), f"{scene_path} missing visual scene keys")
+        scene_id = scene["visual_scene_id"]
+        require(isinstance(scene_id, str) and scene_id.strip(), f"{scene_path}.visual_scene_id must be non-empty")
+        require(scene_id not in seen_scene_ids, f"{scene_path}.visual_scene_id duplicates {scene_id}")
+        seen_scene_ids.add(scene_id)
+        require(isinstance(scene["ink_anchor"], str) and scene["ink_anchor"].strip(), f"{scene_path}.ink_anchor must be non-empty")
+        require(isinstance(scene["base_image_prompt"], str) and scene["base_image_prompt"].strip(), f"{scene_path}.base_image_prompt must be non-empty")
+        require(isinstance(scene["visible_characters"], list), f"{scene_path}.visible_characters must be an array")
+        require(isinstance(scene["state_image_modifiers"], list), f"{scene_path}.state_image_modifiers must be an array")
+        require(isinstance(scene["visual_continuity_notes"], list), f"{scene_path}.visual_continuity_notes must be an array")
+
+    refs = data["visual_character_refs"]
+    require_keys(refs, ["purpose", "prompt_assembly_rule", "characters"], f"{path}.visual_character_refs")
+    require(isinstance(refs["characters"], dict) and refs["characters"], f"{path}.visual_character_refs.characters must be non-empty")
+    for character_id, ref in refs["characters"].items():
+        ref_path = f"{path}.visual_character_refs.characters.{character_id}"
+        require_keys(ref, ["display_name", "species_or_body", "stable_visual_description", "silhouette_notes", "do_not_change"], ref_path)
 
 
 def validate_qwen_ink_capture(path: Path) -> None:

@@ -880,21 +880,22 @@ Outputs:
 - Ink variables, choices, knots, gathers, and conditionals
 - `.training.json` sidecar tying branches to state basis, action intent,
   consequences, callbacks, and review status
+- `.visual.json` visual plan tying visual scene ids, image prompts, character
+  refs, style cues, and branch/state modifiers to Ink anchors
 - compiler notes for fold decisions, route-split decisions, and known review
   risks
-- base image prompt handles and branch/state modification handles
 
 Training architecture:
 
 - start as reviewed structured authoring
 - generative decoder LLM for fixture drafting once sidecar shape stabilizes
-- deterministic validators for Ink syntax, branch ids, sidecar refs, and schema
-  shape
+- deterministic validators for Ink syntax, branch ids, sidecar refs, visual
+  plan refs, and schema shape
 
 Training artifacts:
 
 - accepted and rejected compiled fixtures
-- Ink/sidecar pairs
+- Ink/sidecar/visual-plan sets
 - compiler notes
 - fold and route-split decisions
 - state-variable read/write maps
@@ -905,8 +906,8 @@ Pilot schema shakedown gate:
 
 - 25 accepted fixtures across multiple story shapes
 - 25 rejected or needs-revision fixtures with labeled compiler failures
-- every accepted fixture has an Ink file, sidecar, compiler notes, and review
-  status
+- every accepted fixture has an Ink file, sidecar, visual plan, compiler notes,
+  and review status when illustrated replay is in scope
 - every material variable is read later or marked telemetry-only before
   acceptance
 - branch compiler output is reviewed by the IF artifact reviewer before it
@@ -926,6 +927,7 @@ Inputs:
 
 - Ink file
 - `.training.json` sidecar
+- `.visual.json` visual plan, when illustrated replay is in scope
 - coordinator artifact
 - branch compiler notes
 - declared variables, resources, risks, relationship bands, and visual

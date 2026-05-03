@@ -95,6 +95,7 @@ path is a source-grounded branching-scene data loop:
 - Pallas Species Strikes coordinator artifact: `examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json`
 - Pallas Species Strikes Ink scaffold: `examples/ink/pallas-species-strikes.branch-and-fold.v0.ink`
 - Pallas Species Strikes Ink sidecar: `examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json`
+- Pallas Species Strikes visual plan: `examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json`
 - Pallas Species Strikes readable run: `experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md`
 - Branch compiler and IF reviewer contract: `docs/architecture/ink-branching-scenes.md`
 
@@ -148,6 +149,7 @@ interactive-fiction scaffold:
 - `examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json`
 - `examples/ink/pallas-species-strikes.branch-and-fold.v0.ink`
 - `examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json`
+- `examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json`
 - `experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md`
 
 It starts in ordinary AU cavity-yard maintenance texture, introduces the major
@@ -156,13 +158,13 @@ coordinated hazard refusal, baseline rigger solidarity pressure, BioElevate
 liability framing, AU dry-operation cephalopod crawl leverage, and a folded
 recognition/safety climax. The Ink now gates Nara's marked path and Teth's
 bypass, gives `evidence_of_sentience`, `nara_centered`, and
-`formal_stoppage` later reads, and gives visual sidecar states explicit
-trigger mappings. It now segments the introduction, branch locations, Kappa red
-alert, climax decision, and aftermath into click-through visual sections with
-`visual_scene_id` anchors, stable `visual_character_refs`, a global
-Media Molecule Dreams-style volumetric brushstroke cue, and imagegen-ready
-prompts that explain fictional equipment in visible terms. Treat it as
-coordinator/IF scaffold training data, not raw responder gold.
+`formal_stoppage` later reads, and gives visual plan states explicit trigger
+mappings. It now segments the introduction, branch locations, Kappa red alert,
+climax decision, and aftermath into click-through visual sections with
+`visual_scene_id` anchors, stable `visual_character_refs`, a global Media
+Molecule Dreams-style volumetric brushstroke cue, and imagegen-ready prompts
+that explain fictional equipment in visible terms. Treat it as coordinator/IF
+scaffold training data, not raw responder gold.
 
 Next: add the corpus coverage ledger seam or choose the next Aetheria fixture
 from the 100-150 broad coverage target.

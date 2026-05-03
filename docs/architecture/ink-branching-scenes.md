@@ -118,6 +118,13 @@ This sidecar is intentionally not a new branching format. It is a receipt. Ink
 remains the scene tree; the sidecar says why the tree grew that way and which
 state changes a reviewer accepted.
 
+Visual planning should live beside the sidecar, not inside it. Use a separate
+`.visual.json` artifact for illustrated replay data: style cue, visual scene
+anchors, image prompts, character refs, prompt assembly rules, and visual
+modifiers. The training annotation may reference that file with
+`visual_plan_ref`, but it should remain focused on branch semantics and
+mutation surfaces.
+
 ## Mutation Policy
 
 Ink variables can record local playthrough outcomes. They should not silently
@@ -371,9 +378,9 @@ training seed, not in a shame drawer. Shame drawers have terrible indexing.
 
 ## Scene Imagery
 
-Ghostlight scenes are also website content. A complete fixture should emit
-vivid visual direction alongside prose and training receipts so story branches
-can be illustrated without a later model guessing what the room looked like.
+Ghostlight scenes are also website content. A complete fixture should emit a
+visual plan artifact alongside prose and training receipts so story branches can
+be illustrated without a later model guessing what the room looked like.
 
 Interactive fiction replay also needs screen rhythm. A narrative scene may move
 through several visual sections: establishing shot, workstation, break table,

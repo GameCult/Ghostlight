@@ -35,7 +35,7 @@ Aetheria lore/source context
   -> mutation receipt
   -> updated scene/world/social state
   -> coordinator continuity and next-beat plan
-  -> branch compiler materializes Ink + sidecar + compiler notes
+  -> branch compiler materializes Ink + sidecar + visual plan + compiler notes
   -> IF artifact reviewer audits consequence, fold, and visual continuity
   -> visual scene reviewer audits click-through segmentation and imagegen-ready prompts
   -> accepted fixture / future training corpus
@@ -56,11 +56,13 @@ Visual replay is a live seam too. Illustrated IF fixtures need click-through
 sections with stable `visual_scene_id` anchors, stable visual character refs
 for recurring named characters, a global style cue when the visual language
 matters, imagegen-ready base prompts, character visibility and stance controls,
-and branch/state modifiers. Prompt assembly includes only refs for characters
-actually visible in the frame, and continuity notes are not prompt text unless
-rewritten as concrete visible description. One whole-fixture image prompt is
-not enough when the prose moves through several places, focal objects, alarms,
-standoffs, and aftermath states. Names are handles, not faces.
+and branch/state modifiers. This data belongs in a separate `.visual.json`
+artifact referenced by the training sidecar, not inside the training annotation
+itself. Prompt assembly includes only refs for characters actually visible in
+the frame, and continuity notes are not prompt text unless rewritten as
+concrete visible description. One whole-fixture image prompt is not enough when
+the prose moves through several places, focal objects, alarms, standoffs, and
+aftermath states. Names are handles, not faces.
 
 ## Important Contracts
 

@@ -1,6 +1,6 @@
 {
   "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
-  "artifact_ref": "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json",
+  "artifact_ref": "examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json",
   "review_prompt_ref": "prompts/visual-scene-continuity-reviewer.md",
   "overall_status": "accepted",
   "segmentation_score": 5,
