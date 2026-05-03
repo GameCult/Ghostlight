@@ -22,11 +22,11 @@ def plural(count: int, singular: str, plural_form: str | None = None) -> str:
 
 def count_visual_plan(path: Path) -> dict[str, Any]:
     data = load_json(path)
+    if "visual_art_direction" in data:
+        raise ValueError(f"{path} uses legacy visual_art_direction; count visual_scene_plan instead")
     scene_plan = data.get("visual_scene_plan", {})
     scenes = scene_plan.get("scenes", [])
     global_branch_modifiers = scene_plan.get("global_branch_image_modifiers", [])
-    legacy_modifiers = data.get("visual_art_direction", {}).get("modification_prompts", [])
-
     scene_variant_counts = []
     for scene in scenes:
         modifiers = scene.get("state_image_modifiers", [])
@@ -42,7 +42,6 @@ def count_visual_plan(path: Path) -> dict[str, Any]:
     base_images = len(scenes)
     scene_variants = sum(item["scene_variants"] for item in scene_variant_counts)
     global_variants = len(global_branch_modifiers)
-    legacy_variants = len(legacy_modifiers)
 
     return {
         "path": path,
@@ -50,9 +49,8 @@ def count_visual_plan(path: Path) -> dict[str, Any]:
         "base_images": base_images,
         "scene_variants": scene_variants,
         "global_branch_variants": global_variants,
-        "legacy_summary_variants": legacy_variants,
-        "total_variants": scene_variants + global_variants + legacy_variants,
-        "max_exhaustive_renders": base_images + scene_variants + global_variants + legacy_variants,
+        "total_variants": scene_variants + global_variants,
+        "max_exhaustive_renders": base_images + scene_variants + global_variants,
         "scene_variant_counts": scene_variant_counts,
     }
 
@@ -62,8 +60,7 @@ def format_report(results: list[dict[str, Any]], verbose: bool) -> str:
     total_base = sum(item["base_images"] for item in results)
     total_scene_variants = sum(item["scene_variants"] for item in results)
     total_global_variants = sum(item["global_branch_variants"] for item in results)
-    total_legacy_variants = sum(item["legacy_summary_variants"] for item in results)
-    total_variants = total_scene_variants + total_global_variants + total_legacy_variants
+    total_variants = total_scene_variants + total_global_variants
 
     lines.append("Ghostlight visual image inventory")
     lines.append("")
@@ -74,7 +71,6 @@ def format_report(results: list[dict[str, Any]], verbose: bool) -> str:
         lines.append(f"  variants: {item['total_variants']}")
         lines.append(f"    scene-local variants: {item['scene_variants']}")
         lines.append(f"    global branch variants: {item['global_branch_variants']}")
-        lines.append(f"    legacy summary variants: {item['legacy_summary_variants']}")
         lines.append(f"  max exhaustive renders: {item['max_exhaustive_renders']}")
         if verbose:
             lines.append("  scene breakdown:")
@@ -90,7 +86,6 @@ def format_report(results: list[dict[str, Any]], verbose: bool) -> str:
     lines.append(f"- variants: {total_variants}")
     lines.append(f"  scene-local variants: {total_scene_variants}")
     lines.append(f"  global branch variants: {total_global_variants}")
-    lines.append(f"  legacy summary variants: {total_legacy_variants}")
     lines.append(f"- max exhaustive renders: {total_base + total_variants}")
     return "\n".join(lines)
 

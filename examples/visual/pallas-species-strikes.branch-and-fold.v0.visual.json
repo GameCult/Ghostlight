@@ -5,57 +5,6 @@
   "source_training_annotation_ref": "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json",
   "scene_id": "pallas-species-strikes-branch-and-fold-v0",
   "purpose": "Visual scene plan, style cue, character refs, and image prompt controls for the Pallas Species Strikes branch-and-fold IF fixture.",
-  "visual_art_direction": {
-    "base_scene_prompt": "Inside an asteroid cavity maintenance yard in the Pallas Bloom Cluster: Service Ring Kappa is a curved industrial lane built against raw asteroid rock, with ribbed metal wall supports, scuffed deck plates, amber work lights, pipe-and-cable manifold panels, dry-operation cephalopod harness bays with humidity collars, oxygenation loops, pressure cuffs, limiter sockets, and many-armed tool rails, dry-side anchor tracks with hooks and safety tethers, engineered seal technicians in gray suits, industrial haze, worn yellow-white safety paint, and lived-in future infrastructure.",
-    "modification_prompts": [
-      {
-        "state": "formal_stoppage",
-        "trigger": "formal_stoppage == true",
-        "prompt": "Add workers halted in coordinated stillness at the manifold, with AU supervisor lights turning cold blue in the background."
-      },
-      {
-        "state": "bypass_ready",
-        "trigger": "bypass_ready == true",
-        "prompt": "Add a portable crawl-access bypass bridge glowing with temporary pressure lines between Teth's harness and the seal assembly."
-      },
-      {
-        "state": "security_pressure_high",
-        "trigger": "security_pressure >= 4",
-        "prompt": "Add security drones at the far hatch, small and sterile against the crowded maintenance ring."
-      },
-      {
-        "state": "worker_injury",
-        "trigger": "worker_injury > 0",
-        "prompt": "Add a baseline rigger with a pressure-lash injury being steadied by coworkers, with emergency sealant and blood-dark coolant marks near the anchor rail."
-      },
-      {
-        "state": "media_visibility_high",
-        "trigger": "media_visibility >= 2",
-        "prompt": "Add an outside-feed recorder light reflected on Lio's slate, suggesting the Kappa Refusal has escaped the yard's internal board."
-      },
-      {
-        "state": "baseline_solidarity_high",
-        "trigger": "baseline_solidarity >= 3",
-        "prompt": "Show baseline riggers standing with anchor hooks at the front of the safety line beside engineered seal technicians instead of across from them."
-      },
-      {
-        "state": "nara_path_marked",
-        "trigger": "nara_path_marked == true",
-        "prompt": "Show Lio's slate displaying a marked crawl path with a false seam highlighted while Nara keeps both hands visible near the manifold."
-      },
-      {
-        "state": "sealed_evidence_custody",
-        "trigger": "branch-04-trade-bypass-for-evidence OR branch-04-seal-evidence-without-bypass selected",
-        "prompt": "Add a sealed incident packet icon split across AU safety, the yard board, and an outside Awakened Labor Front mirror on the slate display."
-      },
-      {
-        "state": "local_aftermath",
-        "trigger": "return_fold reached",
-        "prompt": "Quiet the scene into a post-shift maintenance ring: Orrin's cracked mug in the break rack, Teth patching a harness cuff, and workers repeating the manifold touch without open celebration."
-      }
-    ],
-    "legacy_summary_note": "Compatibility summary only. Use visual_scene_plan for illustrated replay and per-section image generation."
-  },
   "visual_scene_plan": {
     "purpose": "Illustrated Ink replay segmentation for website and imagegen use. Each entry maps a click-through Ink section or branch location to an imagegen-ready visual anchor.",
     "segmentation_rule": "Distinct places, focal areas, object closeups, arrivals, legal/authority reframes, red-alert beats, branch locations, and aftermath states receive visual_scene_id anchors. If a new actor or institution changes the room's power geometry, stage the pre-arrival beat first, then give the arrival/reframe its own click-through and visual transition. Pivotal one-sentence beats may stand alone.",

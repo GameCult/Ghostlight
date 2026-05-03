@@ -250,7 +250,6 @@ def validate_ink_visual_plan(path: Path, ink_path: Path, annotation_path: Path) 
             "source_training_annotation_ref",
             "scene_id",
             "purpose",
-            "visual_art_direction",
             "visual_scene_plan",
             "visual_character_refs",
         ],
@@ -259,11 +258,7 @@ def validate_ink_visual_plan(path: Path, ink_path: Path, annotation_path: Path) 
     require(data["schema_version"] == "ghostlight.ink_visual_plan.v0", f"{path}.schema_version is wrong")
     require((ROOT / data["ink_ref"]).resolve() == ink_path.resolve(), f"{path}.ink_ref does not match {ink_path}")
     require((ROOT / data["source_training_annotation_ref"]).resolve() == annotation_path.resolve(), f"{path}.source_training_annotation_ref does not match {annotation_path}")
-
-    art = data["visual_art_direction"]
-    require_keys(art, ["base_scene_prompt", "modification_prompts"], f"{path}.visual_art_direction")
-    require(isinstance(art["base_scene_prompt"], str) and art["base_scene_prompt"].strip(), f"{path}.visual_art_direction.base_scene_prompt must be non-empty")
-    require(isinstance(art["modification_prompts"], list), f"{path}.visual_art_direction.modification_prompts must be an array")
+    require("visual_art_direction" not in data, f"{path}.visual_art_direction is legacy cruft; use visual_scene_plan instead")
 
     plan = data["visual_scene_plan"]
     require_keys(plan, ["global_style_cue", "segmentation_rule", "scenes", "global_branch_image_modifiers", "prompt_assembly_rule"], f"{path}.visual_scene_plan")
