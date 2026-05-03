@@ -41,6 +41,10 @@ should be authored here first and referenced from artifacts or tools.
   assembly for every generated image.
 - Treat named characters as handles, not visual descriptions. Illustrated IF
   sidecars need stable visual character refs for recurring named characters, and
-  prompt assembly must include those refs when the character is visible.
+  prompt assembly must include those refs only when the character is actually
+  visible in the rendered frame.
+- Treat continuity notes as tooling constraints, not prompt text. If the image
+  model needs a continuity fact, put it in visible terms inside the base prompt,
+  character ref, or modifier.
 - If a prompt is used for a capture, preserve the exact rendered prompt in the
   capture and include the prompt file path when the capture schema allows it.

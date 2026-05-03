@@ -436,8 +436,7 @@ Prompt assembly for illustrated replay should combine:
 
 ```text
 global style cue
-  + global visual continuity
-  + visual_character_refs for visible named characters
+  + visual_character_refs for named characters actually visible in this rendered frame
   + visual section base_image_prompt
   + triggered state or branch image modifiers
 ```
@@ -448,6 +447,14 @@ prompt alone to imagegen, the base prompt must carry enough character detail by
 itself. The same applies to visual style: if a fixture depends on a specific
 look, the assembled prompt must carry that style cue every time. Names are
 handles, not faces.
+
+Do not include `visual_continuity_notes` verbatim in the image prompt. They are
+tooling and review constraints for keeping repeated generations coherent. If a
+continuity fact needs to reach the image model, rewrite it as concrete visible
+prompt text in the base prompt, a character ref, or a branch/state modifier.
+The image generator only sees the prompt you send it. It does not remember the
+previous scene unless a real image-editing workflow supplies that image as
+input.
 
 The coordinator owns this surface for now. The responder should not receive
 omniscient visual art direction unless the character can observe it. Character

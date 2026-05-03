@@ -1289,7 +1289,8 @@
           {
             "agent_id": "orrin_dax",
             "default_stance": "absent or off-frame, represented by cracked mug",
-            "visual_ref": "visual_character_refs.characters.orrin_dax"
+            "visual_ref": "visual_character_refs.characters.orrin_dax",
+            "prompt_ref_policy": "omit_visual_ref_unless_rendered_in_frame"
           }
         ],
         "state_image_modifiers": [],
@@ -1343,11 +1344,11 @@
       }
     ],
     "global_style_cue": "Style: Media Molecule Dreams-style 3D volumetric brushstroke painting; visible sculpted fleck strokes; painterly VR-made geometry; every detail is made of brush matter that feels partly solid, partly liquid, partly gas. Extremely detailed but soft, handmade, and non-photoreal. Tiny brushstrokes are allowed and encouraged, but the broad composition must remain readable.",
-    "prompt_assembly_rule": "Assemble each image prompt from visual_scene_plan.global_style_cue, global location continuity, visible character visual refs, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers."
+    "prompt_assembly_rule": "Assemble each image prompt from visual_scene_plan.global_style_cue, visual refs only for characters actually visible in the rendered frame, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers. Do not include visual_continuity_notes verbatim; use them only as tooling/review constraints unless rewritten as concrete visible prompt text."
   },
   "visual_character_refs": {
     "purpose": "Stable named-character visual identities for prompt assembly. Image prompts must include these refs for every named visible character; scene prompts alone are not expected to teach imagegen what Lio, Nara, Orrin, Teth, or Ilya look like.",
-    "prompt_assembly_rule": "For each visual_scene_plan scene, assemble the image prompt from visual_scene_plan.global_style_cue, global location continuity, each visible character visual_ref, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers.",
+    "prompt_assembly_rule": "For each visual_scene_plan scene, include only the visual_character_refs for named characters actually visible in that rendered frame. Do not include refs for absent, off-frame, merely mentioned, or object-represented characters.",
     "characters": {
       "lio_vale": {
         "display_name": "Lio Vale",
@@ -1418,7 +1419,8 @@
   },
   "branch_compiler_notes": {
     "review_notes": [
-      "Added a global Media Molecule Dreams-style volumetric brushstroke cue so image prompt assembly carries the intended non-photoreal handmade visual language without repeating it in every scene."
+      "Added a global Media Molecule Dreams-style volumetric brushstroke cue so image prompt assembly carries the intended non-photoreal handmade visual language without repeating it in every scene.",
+      "Corrected image prompt assembly: visual_continuity_notes are non-prompt tooling constraints, and assembled prompts include only character refs for characters actually visible in the frame."
     ]
   }
 }

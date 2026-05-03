@@ -56,9 +56,11 @@ Visual replay is a live seam too. Illustrated IF fixtures need click-through
 sections with stable `visual_scene_id` anchors, stable visual character refs
 for recurring named characters, a global style cue when the visual language
 matters, imagegen-ready base prompts, character visibility and stance controls,
-and branch/state modifiers. One whole-fixture image prompt is not enough when
-the prose moves through several places, focal objects, alarms, standoffs, and
-aftermath states. Names are handles, not faces.
+and branch/state modifiers. Prompt assembly includes only refs for characters
+actually visible in the frame, and continuity notes are not prompt text unless
+rewritten as concrete visible description. One whole-fixture image prompt is
+not enough when the prose moves through several places, focal objects, alarms,
+standoffs, and aftermath states. Names are handles, not faces.
 
 ## Important Contracts
 

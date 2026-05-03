@@ -63,6 +63,9 @@ intent, but they do not excuse missing reader/player-facing structure.
 - Does each named visible character point to a stable visual identity ref, or
   does the scene prompt itself include enough description to render the person
   consistently?
+- Are character refs limited to characters actually visible in that frame,
+  excluding absent, off-frame, merely mentioned, or object-represented
+  characters?
 - Are character positions and stances controlled by branch state where needed?
 - Are nonhuman or altered bodies represented through visible affordances:
   harnesses, supports, water/mist interfaces, manipulators, suit geometry,
@@ -150,6 +153,12 @@ Each finding must include:
 - Do not accept named characters as visual descriptions. "Lio Vale stands by
   the manifold" is not enough unless the sidecar provides a stable visual
   reference for Lio and the prompt assembly path says to include it.
+- Do not accept assembled prompts that include refs for characters not actually
+  visible in the frame. The model will draw the bodies it is told about,
+  because of course it will. Little beast has no stage manager.
+- Do not accept `visual_continuity_notes` as prompt text. They are tooling
+  constraints; prompt-visible continuity must be rewritten as visible scene,
+  character, or modifier description.
 - Do not require every sentence to have a unique image. Require every distinct
   place, focal area, pivotal visual beat, and branch-visible state to have a
   durable visual anchor or modifier.
@@ -180,6 +189,8 @@ Use these labels when applicable:
 - `missing_character_visibility`
 - `missing_character_design_ref`
 - `named_character_as_lore_password`
+- `off_frame_character_ref_in_prompt`
+- `continuity_note_used_as_prompt_text`
 - `missing_branch_visual_modifier`
 - `missing_state_trigger`
 - `branch_delta_not_visual`

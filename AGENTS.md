@@ -157,6 +157,12 @@ When the user says to prepare for imminent compaction:
   need stable character visual refs for every recurring named character, and
   scene prompts should either include those refs during prompt assembly or carry
   enough appearance detail to stand alone.
+- Include visual character refs only for characters actually visible in the
+  rendered frame. Do not feed imagegen refs for absent, off-frame, merely
+  mentioned, or object-represented characters.
+- Treat visual continuity notes as tool/reviewer constraints, not prompt text.
+  If imagegen needs the fact, rewrite it as concrete visible description in the
+  base prompt, character ref, or branch/state modifier.
 - Ground scene writing in the source's material details: habitat form,
   infrastructure, law, class pressure, money, route access, surveillance,
   communication channels, body affordances, and local failure costs.
