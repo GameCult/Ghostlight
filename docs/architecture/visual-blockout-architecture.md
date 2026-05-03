@@ -58,29 +58,6 @@ therefore be readable in ordinary visual terms:
 
 Color helps a human and may help the model, but shape carries the real burden.
 
-## Construction Controls
-
-A useful blockout is not just visible geometry. The `.blend` may contain hidden
-construction controls that define the stage:
-
-- lane centerlines
-- station footprints
-- catwalk walkable zones
-- manifold and rail axes
-- reach envelopes
-- camera-safe staging points
-
-These controls are allowed to be invisible. Their job is to drive placement,
-spacing, attachment, repetition, and later Geometry Nodes conversion. The
-visible mesh is the output of the construction logic, not the whole graph.
-
-For scripted prototypes, hidden empties and hidden curve paths are acceptable
-control objects. For production organs, the same idea should move into authored
-Geometry Nodes / Geometry Script modules: curves, points, fields, indices,
-attributes, and intermediate geometry can exist purely to place or transform
-other geometry. If every artifact in the graph is visible, the graph is probably
-doing layout by brute force.
-
 ## Geometry Script Direction
 
 The first generator used straightforward Blender Python primitives to prove that

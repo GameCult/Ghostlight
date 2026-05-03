@@ -77,27 +77,15 @@
     },
     {
       "material_id": "teth_blue_gray",
-      "display_name": "Teth cephalopod body proxy",
+      "display_name": "Teth and cephalopod work-support rig",
       "base_color": [
-        0.1,
-        0.26,
-        0.36,
-        1
-      ],
-      "intended_read": "Cephalopod body volume: horizontal mantle and tentacle reach.",
-      "use_in_prompt": "Preserve nonhuman horizontal body volume; do not reinterpret as a humanoid in a chair."
-    },
-    {
-      "material_id": "support_rig_steel_blue",
-      "display_name": "Open cephalopod work-support rig",
-      "base_color": [
+        0.18,
+        0.32,
         0.42,
-        0.56,
-        0.62,
         1
       ],
-      "intended_read": "Low open dry-operation support sled, soft pad, side rails, contact arcs, oxygenation tubes, and reachable tool rail.",
-      "use_in_prompt": "Preserve as workplace support equipment around the cephalopod body, not a tank, cage, or restraint chair."
+      "intended_read": "Cephalopod body and open dry-operation work-support frame.",
+      "use_in_prompt": "Preserve nonhuman horizontal body volume and open work-support object class."
     },
     {
       "material_id": "callback_ivory",
@@ -146,11 +134,7 @@
         "length": 18,
         "radius": 4.2,
         "arc_degrees": 130,
-        "rib_count": 18,
-        "half_width": 3.35,
-        "knee_height": 1.05,
-        "crown_height": 3.25,
-        "arch_steps": 20
+        "rib_count": 18
       },
       "material_id": "shell_aggregate",
       "notes": "Curved shell, deck floor, support ribs, and overhead pipe spine."
@@ -214,13 +198,13 @@
       "geometry_script_tree": "supervisor_catwalk",
       "parameters": {
         "position": [
-          2.55,
+          3.1,
           3.2,
-          1.55
+          2.75
         ],
         "length": 6.5,
-        "width": 0.95,
-        "rail_height": 0.65
+        "width": 1.5,
+        "rail_height": 0.9
       },
       "material_id": "supervisor_blue",
       "notes": "Open elevated platform, transparent safety rail proxy, and blue screen slabs."
@@ -232,15 +216,15 @@
       "geometry_script_tree": "cephalopod_work_support_station",
       "parameters": {
         "position": [
-          1.75,
+          1.8,
           4.7,
-          0.44
+          0.95
         ],
         "width": 2.5,
         "depth": 1.6,
-        "height": 0.82
+        "height": 1.2
       },
-      "material_id": "support_rig_steel_blue",
+      "material_id": "teth_blue_gray",
       "notes": "Open work-support frame with contact-band arcs, oxygenation tubes, and radial tool rails."
     },
     {
@@ -268,7 +252,7 @@
       "default_position": [
         0,
         3.2,
-        0
+        0.9
       ],
       "default_rotation": [
         0,
@@ -288,9 +272,9 @@
       "proxy_shape": "humanoid_capsule_supervisor",
       "material_id": "supervisor_blue",
       "default_position": [
-        2.55,
+        3.2,
         3.4,
-        1.6
+        3.65
       ],
       "default_rotation": [
         0,
@@ -298,9 +282,9 @@
         -1.5708
       ],
       "scale": [
-        0.38,
-        0.28,
-        1.05
+        0.45,
+        0.35,
+        1.85
       ],
       "notes": "Elevated on catwalk, visible above waist rail."
     },
@@ -312,7 +296,7 @@
       "default_position": [
         -2.15,
         3.85,
-        0
+        0.85
       ],
       "default_rotation": [
         0,
@@ -334,7 +318,7 @@
       "default_position": [
         2.25,
         2.35,
-        0
+        0.95
       ],
       "default_rotation": [
         0,
@@ -356,7 +340,7 @@
       "default_position": [
         1.45,
         5,
-        0.36
+        1
       ],
       "default_rotation": [
         0,
@@ -406,9 +390,9 @@
         "pallas_bypass_kit"
       ],
       "position": [
-        0.65,
-        2.35,
-        1.35
+        3.45,
+        2.25,
+        1.85
       ],
       "rotation": [
         1.3,
@@ -416,11 +400,11 @@
         2.15
       ],
       "target": [
-        1.62,
+        1.75,
         4.75,
-        0.62
+        1.12
       ],
-      "lens_mm": 35,
+      "lens_mm": 32,
       "shot_role": "cephalopod work-support station medium shot",
       "framing_notes": "Centers Teth, support loops, oxygenation tubes, radial tool rails, and Lio's inspection position without making the equipment read as containment."
     },
@@ -442,9 +426,9 @@
         -0.45
       ],
       "target": [
-        2.55,
+        3.15,
         3.35,
-        2.08
+        3.35
       ],
       "lens_mm": 28,
       "shot_role": "low floor view toward raised supervisor catwalk",
@@ -471,7 +455,7 @@
       "target": [
         1.2,
         4.75,
-        0.85
+        1.4
       ],
       "lens_mm": 30,
       "shot_role": "crowded decision-line ensemble",
@@ -526,10 +510,6 @@
         "flat_material",
         "clay",
         "depth_optional"
-      ],
-      "visible_actor_ids": [
-        "lio_vale",
-        "teth_inkwise"
       ],
       "output_refs": [
         "experiments/blender/pallas-species-strikes/renders/pallas_teth_dry_operation.blockout.png"
