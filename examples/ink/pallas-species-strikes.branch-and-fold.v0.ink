@@ -8,6 +8,7 @@ VAR bioelevate_liability = 0
 VAR worker_injury = 0
 VAR media_visibility = 0
 VAR nara_centered = false
+VAR nara_path_marked = false
 VAR bypass_ready = false
 VAR formal_stoppage = false
 
@@ -21,6 +22,16 @@ Lio Vale walks Service Ring Kappa with a slate under one arm and yesterday's sle
 Wet-side crew drift in harness cradles shaped for limbs that do not stand. Baseline riggers clip dry anchors along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: warmer mist for cephalopod lungs, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
 
 The yard is normal. That is the first horror.
+
+Nara-7 stands at the Kappa manifold with the other engineered seal technicians, each gray skinsuit numbered for a task stream instead of a family line. She touches the wall twice, pauses, and touches it again with two fingers spread wide. AU calls that retained route behavior. Lio has watched enough shifts to know a warning when it learns manners.
+
+Orrin Dax's dry-side crew works the anchor rail with cold-stiff hands and old tools. They are baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complains like a man trying not to notice he is scared.
+
+Teth Inkwise hangs in a wet-service cradle, four arms managing valves while the rest of the body floats inside the harness rig. The cephalopod crew keeps the service lungs alive in spaces built by companies that still describe their bodies as accommodation costs.
+
+Ilya Marne watches from the supervisor glass with AU polish and AU hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stops showing decimals.
+
+Lio knows the day will probably go wrong. The only question is whether it goes wrong before everyone has finished pretending this is maintenance.
 
 // ghostlight.branch: branch-01-walk-with-nara; action: move; intent: Learn the engineered worker's ordinary hazard routine before crisis.
 * [Walk the manifold line with Nara-7.]
@@ -144,6 +155,14 @@ Nara's hands stay flat on the rail. Orrin watches the move, and his expression d
 === tests_and_reversals ===
 The official board calls it irregularity. The worker channel calls it refusal. BioElevate legal, summoned by Ilya with two clipped phrases, calls it potential scaffold drift.
 
+BioElevate built and leased the engineered seal tech line under language that turned cognition into product behavior and injury into maintenance variance. If Nara remembers Rell, BioElevate has not merely sold AU labor. It has sold AU a worker and called her equipment.
+
+The Awakened Labor Front mirror sits outside AU's incident board: a recognition channel for created and altered workers, slow, underfunded, and inconveniently hard to edit once a packet lands there.
+
+{formal_stoppage:
+The formal log has already narrowed everyone's exits. Ilya can punish a stoppage, but she cannot pretend no one named it.
+}
+
 Orrin's dry-side crew waits by the anchors. Their faces say what nobody wants to admit: if engineered workers are people, then baseline workers have been angry at the wrong enemy and still poor afterward.
 
 {life_support_margin <= 2:
@@ -180,6 +199,8 @@ The bypass timer is still kind. Not generous, but kind enough to make choices re
 Lio turns the slate outward instead of handing it to Ilya.
 
 "Mark the path. Only the path."
+
+~ nara_path_marked = true
 
 Nara taps the crawl diagram with frightening precision: two safe plates, one false seam, the cut line where Rell's suit opened, the manual valve AU replaced in the report but not in the wall.
 
@@ -247,7 +268,7 @@ Security drones appear at the far hatch, polite little coffins with blue lights.
 The cavity breath turns shallow. No one has the luxury of a pure victory.
 }
 
-Ilya demands a decision: recognition language in the incident log, immediate bypass control under AU authority, or emergency clearance to force the crawl.
+Ilya demands a decision: recognition language in the incident log, {bypass_ready:immediate bypass control under AU authority, |sealed evidence custody, }or emergency clearance to force the crawl.
 
 // ghostlight.branch: branch-04-hold-for-recognition; action: speak; intent: Hold safety work behind formal recognition of the refusal as worker judgment.
 * [Hold the line until Ilya records worker judgment.]
@@ -258,11 +279,17 @@ Ilya demands a decision: recognition language in the incident log, immediate byp
     }
     -> hold_for_recognition
 // ghostlight.branch: branch-04-trade-bypass-for-evidence; action: transfer_object; intent: Trade temporary bypass control for preserved evidence and no forced crawl.
-* [Trade bypass control for sealed evidence and no forced crawl.]
+* {bypass_ready} [Trade bypass control for sealed evidence and no forced crawl.]
     ~ life_support_margin += 1
     ~ evidence_of_sentience += 1
     ~ bioelevate_liability += 1
     -> trade_bypass_for_evidence
+// ghostlight.branch: branch-04-seal-evidence-without-bypass; action: transfer_object; intent: Preserve evidence and forbid forced crawl when there is no bypass leverage to trade.
+* {not bypass_ready} [Seal the evidence packet and forbid a forced crawl.]
+    ~ evidence_of_sentience += 1
+    ~ bioelevate_liability += 1
+    ~ security_pressure += 1
+    -> seal_evidence_without_bypass
 // ghostlight.branch: branch-04-orrin-front-demand; action: mixed; intent: Let baseline workers front the safety demand so solidarity becomes material.
 * {baseline_solidarity >= 2} [Let Orrin front the safety demand while Lio protects Nara.]
     ~ baseline_solidarity += 1
@@ -275,7 +302,13 @@ Lio keeps both hands visible.
 
 "Record it as worker judgment. Not drift. Not sabotage. Judgment."
 
-Ilya looks at the red board, at Nara's marked path, at Orrin's crew, at Teth's waiting bypass. She hates every door and all of them are open.
+Ilya looks at the red board, {nara_path_marked:at Nara's marked path, |at Nara's steady hands, }at Orrin's crew, {bypass_ready:at Teth's waiting bypass.|at Teth's harness flexing without a bridge to spend.} She hates every door and all of them are open.
+
+{evidence_of_sentience >= 4:
+Even Ilya cannot make the scene look like equipment drift without leaving fingerprints on the lie.
+- else:
+The evidence is thinner than Lio wants. The phrase will survive, but it will have to survive lawyers with clean sleeves and excellent lighting.
+}
 
 {worker_injury > 0:
 The delay costs blood. A baseline rigger catches a pressure lash across the shoulder before Teth can bleed the surge. The room will remember that too.
@@ -291,6 +324,15 @@ Lio nods to Teth.
 "Bypass under shared custody. Sealed packet to ALF mirror, AU incident board, and yard safety. No forced crawl."
 
 Ilya accepts because the alternative is a casualty report she cannot classify out of existence. BioElevate legal immediately begins sanding the word memory into residue, but the packet has already left the room.
+
+-> return_fold
+
+=== seal_evidence_without_bypass ===
+Lio lifts the slate where the inspector cam can see the custody seal.
+
+"Packet to yard safety, AU incident board, and the Awakened Labor Front mirror. No blind crawl while Kappa is red. If you want a body in that throat, you will sign your name above it."
+
+There is no bypass bridge to soften the bargain. The margin stays ugly. But the evidence now has three homes, and none of them are inside Ilya's pocket.
 
 -> return_fold
 
@@ -330,6 +372,24 @@ BioElevate's liability memo leaks with enough redactions to make the missing wor
 BioElevate keeps the cleanest language for itself and leaves the yard with the dirty work of remembering.
 }
 
+{evidence_of_sentience >= 4:
+The incident packet carries enough observable pattern, route memory, and refusal language that even hostile reviewers have to argue against the evidence instead of around it.
+- else:
+The evidence remains real but fragile: a worker's refusal, a remembered name, and a pattern AU will spend money teaching outsiders not to see.
+}
+
+{nara_centered:
+Nara-7 becomes the story's easiest face and therefore its easiest target. Lio writes her name into protective copies before the next shift can turn witness into culprit.
+- else:
+Nara-7 stays one worker among many in the first reports. It protects her body for a little while and blurs the shape of what she risked.
+}
+
+{formal_stoppage:
+Because Lio named the stoppage early, the later committees inherit a hard word instead of a rumor. Security inherits it too.
+- else:
+Because Lio kept the language softer, the yard buys a quieter day and loses the cleanest early claim.
+}
+
 {media_visibility >= 2:
 The outside feed calls it the Kappa Refusal before AU can rename it.
 - else:
@@ -347,6 +407,8 @@ Later histories will not call this the beginning of the Pallas Species Strikes. 
 But one line entered the incident log and could not be fully removed:
 
 Worker judgment.
+
+Orrin's old mug goes back into the break rack with a new hairline crack. Teth patches the harness cuff again. Nara touches the manifold twice, waits, and touches it a third time while everyone pretends not to watch.
 
 That is not freedom. It is the first tool small enough to smuggle through a shift bell.
 

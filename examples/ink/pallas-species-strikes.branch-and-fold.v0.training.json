@@ -11,7 +11,7 @@
     "teth_inkwise",
     "ilya_marne"
   ],
-  "purpose": "Accepted-as-draft coordinator and branch-compiler training artifact for a historical grounded Pallas Species Strikes IF scaffold.",
+  "purpose": "Revised coordinator and branch-compiler training artifact for a historical grounded Pallas Species Strikes IF scaffold.",
   "local_awareness_summary": [
     {
       "text": "Lio knows the ordinary operating texture of AU Yard Twelve: wet-side cephalopod maintenance, baseline dry anchors, engineered seal labor, and management's schedule discipline.",
@@ -84,7 +84,7 @@
         ]
       },
       {
-        "text": "Every tracked variable must matter later through option availability, prose changes, visual modifiers, appraisal hooks, or outcome text.",
+        "text": "Every tracked variable must matter later through option availability, prose changes, visual modifiers, appraisal hooks, outcome text, or an explicit telemetry-only label.",
         "source_refs": [
           "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink"
         ]
@@ -118,6 +118,12 @@
       "bioelevate_liability",
       "worker_injury",
       "media_visibility"
+    ],
+    "internal_callback_flags": [
+      "nara_centered",
+      "nara_path_marked",
+      "bypass_ready",
+      "formal_stoppage"
     ]
   },
   "visual_art_direction": {
@@ -125,15 +131,48 @@
     "modification_prompts": [
       {
         "state": "formal_stoppage",
+        "trigger": "formal_stoppage == true",
         "prompt": "Add workers halted in coordinated stillness at the manifold, with AU supervisor lights turning cold blue in the background."
       },
       {
         "state": "bypass_ready",
+        "trigger": "bypass_ready == true",
         "prompt": "Add a portable wet-service bypass bridge glowing with temporary pressure lines between Teth's harness and the seal assembly."
       },
       {
         "state": "security_pressure_high",
+        "trigger": "security_pressure >= 4",
         "prompt": "Add security drones at the far hatch, small and sterile against the crowded maintenance ring."
+      },
+      {
+        "state": "worker_injury",
+        "trigger": "worker_injury > 0",
+        "prompt": "Add a baseline rigger with a pressure-lash injury being steadied by coworkers, with emergency sealant and blood-dark coolant marks near the anchor rail."
+      },
+      {
+        "state": "media_visibility_high",
+        "trigger": "media_visibility >= 2",
+        "prompt": "Add an outside-feed recorder light reflected on Lio's slate, suggesting the Kappa Refusal has escaped the yard's internal board."
+      },
+      {
+        "state": "baseline_solidarity_high",
+        "trigger": "baseline_solidarity >= 3",
+        "prompt": "Show baseline riggers standing with anchor hooks at the front of the safety line beside engineered seal technicians instead of across from them."
+      },
+      {
+        "state": "nara_path_marked",
+        "trigger": "nara_path_marked == true",
+        "prompt": "Show Lio's slate displaying a marked crawl path with a false seam highlighted while Nara keeps both hands visible near the manifold."
+      },
+      {
+        "state": "sealed_evidence_custody",
+        "trigger": "branch-04-trade-bypass-for-evidence OR branch-04-seal-evidence-without-bypass selected",
+        "prompt": "Add a sealed incident packet icon split across AU safety, the yard board, and an outside Awakened Labor Front mirror on the slate display."
+      },
+      {
+        "state": "local_aftermath",
+        "trigger": "return_fold reached",
+        "prompt": "Quiet the scene into a post-shift maintenance ring: Orrin's cracked mug in the break rack, Teth patching a harness cuff, and workers repeating the manifold touch without open celebration."
       }
     ]
   },
@@ -238,7 +277,7 @@
         "Nara has already made the remembered injury observable by naming Rell."
       ],
       "reviewed_consequences": [
-        "Raises evidence_of_sentience and bioelevate_liability."
+        "Raises evidence_of_sentience and bioelevate_liability, sets nara_path_marked for later climax and visual callbacks."
       ],
       "training_hooks": [
         "Evidence should be an object-mediated action when private state is unsafe."
@@ -320,6 +359,21 @@
       ]
     },
     {
+      "branch_id": "branch-04-seal-evidence-without-bypass",
+      "ink_path": "seal_evidence_without_bypass",
+      "action_type": "transfer_object",
+      "actor_intent": "Preserve evidence and forbid a forced crawl when no bypass leverage exists.",
+      "state_basis": [
+        "The scene has generated evidence custody pressure, but bypass_ready is false, so Lio cannot trade a nonexistent safety bridge."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_of_sentience, bioelevate_liability, and security_pressure while leaving life_support_margin ugly."
+      ],
+      "training_hooks": [
+        "Branch compiler must not offer object trades when the object was never established."
+      ]
+    },
+    {
       "branch_id": "branch-04-orrin-front-demand",
       "ink_path": "orrin_front_demand",
       "action_type": "mixed",
@@ -352,7 +406,8 @@
     "reviewer": "codex",
     "review_status": "accepted",
     "review_notes": [
-      "Sidecar is accepted as draft training annotation for coordinator/IF scaffold and branch compiler behavior.",
+      "Sidecar was revised after independent narrative quality review found branch-only onboarding, folded-scene assumptions, decorative variables, and thin visual modifiers.",
+      "Follow-up review returned accept_with_revisions; final cleanup made the shared climax bypass wording conditional and added explicit visual trigger mapping.",
       "No local-model output was used.",
       "Character private state is documented in the agent fixture but the Ink only relies on observable behavior and role knowledge."
     ],

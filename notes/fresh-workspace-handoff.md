@@ -138,7 +138,8 @@ current gold-data route.
 
 ## Current Next Action
 
-Pallas Species Strikes now has an accepted-as-draft interactive-fiction scaffold:
+Pallas Species Strikes now has a reviewer-revised accepted-as-draft
+interactive-fiction scaffold:
 
 - `examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json`
 - `examples/agent-state.pallas-species-strikes.v0.json`
@@ -147,17 +148,18 @@ Pallas Species Strikes now has an accepted-as-draft interactive-fiction scaffold
 - `examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json`
 - `experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md`
 
-It starts in ordinary AU cavity-yard maintenance texture, then escalates through
-Nara-7's coordinated hazard refusal, baseline rigger solidarity pressure,
-BioElevate liability framing, cephalopod wet-service leverage, and a folded
-recognition/safety climax. Treat it as coordinator/IF scaffold training data,
-not raw responder gold.
+It starts in ordinary AU cavity-yard maintenance texture, introduces the major
+participants before branch-only deepening, then escalates through Nara-7's
+coordinated hazard refusal, baseline rigger solidarity pressure, BioElevate
+liability framing, cephalopod wet-service leverage, and a folded
+recognition/safety climax. The Ink now gates Nara's marked path and Teth's
+bypass, gives `evidence_of_sentience`, `nara_centered`, and
+`formal_stoppage` later reads, and gives visual sidecar states explicit
+trigger mappings. Treat it as coordinator/IF scaffold training data, not raw
+responder gold.
 
-Next: review the Pallas fixture directly as playable/readable IF. If accepted,
-add the corpus coverage ledger seam or choose the next Aetheria fixture from
-the 100-150 broad coverage target. If the review finds Potemkin variables,
-cosmetic choices, missing visual callbacks, or weak grounding, revise Pallas
-before moving on.
+Next: add the corpus coverage ledger seam or choose the next Aetheria fixture
+from the 100-150 broad coverage target.
 
 ## Warnings
 

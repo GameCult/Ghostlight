@@ -1,6 +1,6 @@
 # Pallas Species Strikes: The First Tool Small Enough
 
-Status: accepted-as-draft coordinator/IF scaffold clean run. This is not raw responder gold. It is a readable story-path artifact for branch compiler, coordinator, and future appraisal training.
+Status: accepted-as-draft coordinator/IF scaffold expanded clean run. This is not raw responder gold and not an exact Ink transcript. It is a polished readable rendering of one selected path for branch compiler, coordinator, and future appraisal training.
 
 Selected path:
 
@@ -9,17 +9,22 @@ Selected path:
 3. Ask Orrin to put dry-side authority behind the refusal.
 4. Let Orrin front the safety demand while Lio protects Nara.
 
+Rendering note: this artifact may add connective narration and dialogue consistent with the selected path. The authoritative playable structure remains `examples/ink/pallas-species-strikes.branch-and-fold.v0.ink`.
+
 Final variable shape:
 
 - `strike_cohesion`: high
 - `baseline_solidarity`: high
 - `security_pressure`: present but reduced at climax
 - `life_support_margin`: tight but survivable
-- `evidence_of_sentience`: initial observable evidence preserved
+- `evidence_of_sentience`: initial observable evidence only
 - `cephalopod_leverage`: high enough to matter
-- `bioelevate_liability`: present but not yet public
+- `bioelevate_liability`: low, because this path does not foreground BioElevate evidence
 - `worker_injury`: none
 - `media_visibility`: limited
+- `nara_path_marked`: false
+- `bypass_ready`: false
+- `formal_stoppage`: true
 
 ## Ordinary World
 
@@ -30,6 +35,16 @@ The cavity wall hummed through the deck plates before the shift bell, a low mine
 Wet-side crew drifted in harness cradles shaped for limbs that did not stand. Baseline riggers clipped dry anchors along the outer rail and complained with the solemnity of a religious rite. Engineered seal techs waited by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: warmer mist for cephalopod lungs, softer tool grips for grafted hands, break-table charts that translated three kinds of body clock into one AU shift.
 
 The yard was normal. That was the first horror.
+
+Nara-7 stood at the Kappa manifold with the other engineered seal technicians, each gray skinsuit numbered for a task stream instead of a family line. She touched the wall twice, paused, and touched it again with two fingers spread wide. AU called that retained route behavior. Lio had watched enough shifts to know a warning when it learned manners.
+
+Orrin Dax's dry-side crew worked the anchor rail with cold-stiff hands and old tools. They were baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complained like a man trying not to notice he was scared.
+
+Teth Inkwise hung in a wet-service cradle, four arms managing valves while the rest of the body floated inside the harness rig. The cephalopod crew kept the service lungs alive in spaces built by companies that still described their bodies as accommodation costs.
+
+Ilya Marne watched from the supervisor glass with AU polish and AU hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
+
+Lio knew the day would probably go wrong. The only question was whether it went wrong before everyone had finished pretending this was maintenance.
 
 Teth Inkwise turned in the wet-service cradle, four arms working while the rest of the body hung in careful suspension. The cephalopod zero-g maintenance harness was not a suit so much as a negotiated truce between flesh, tool, coolant, and vacuum: soft-anchor loops, pressure cuffs, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement.
 
@@ -89,6 +104,12 @@ Lio looked at Nara's hands on the rail, at Orrin's crew around the anchor hooks,
 
 The official board called it irregularity. The worker channel called it refusal. BioElevate legal, summoned by Ilya with two clipped phrases, called it potential scaffold drift.
 
+BioElevate had built and leased the engineered seal tech line under language that turned cognition into product behavior and injury into maintenance variance. If Nara remembered Rell, BioElevate had not merely sold AU labor. It had sold AU a worker and called her equipment.
+
+The Awakened Labor Front mirror sat outside AU's incident board: a recognition channel for created and altered workers, slow, underfunded, and inconveniently hard to edit once a packet landed there.
+
+The formal log had already narrowed everyone's exits. Ilya could punish a stoppage, but she could not pretend no one named it.
+
 Orrin's dry-side crew waited by the anchors. Their faces said what nobody wanted to admit: if engineered workers were people, then baseline workers had been angry at the wrong enemy and still poor afterward.
 
 The bypass timer was still kind. Not generous, but kind enough to make choices real.
@@ -115,7 +136,7 @@ BioElevate legal began sanding the word memory into residue. Training artifact. 
 
 Kappa went red.
 
-The seal assembly shuddered hard enough to make dust jump from old bolt heads. Teth's harness flexed against the cradle. Nara's hands stayed on the rail, flat and deliberate. No one had the luxury of a pure victory.
+The seal assembly shuddered hard enough to make dust jump from old bolt heads. There was no bypass bridge waiting in Teth's harness, only skill, bad margin, and the hideous corporate optimism that calls a known weakness pending review. Nara's hands stayed on the rail, flat and deliberate. No one had the luxury of a pure victory.
 
 Orrin's dry-side crew cleared the anchor rail without waiting for an AU order.
 
@@ -127,11 +148,13 @@ Orrin stepped forward before Lio had to spend Nara again.
 
 For one bright second, the old lie broke: baseline and engineered labor were not natural enemies. They were different answers to the same invoice.
 
-Teth's arms moved through the harness in a blur of exact mercy. The service lung took partial load. Nara marked the false seam on Lio's slate without being asked to perform her soul for a camera.
+Teth's arms moved through the harness in a blur of exact mercy, bleeding surge through hand valves and patched cuffs that procurement would later describe as adequate. Nara did not mark the false seam for the room. She had already said enough to make herself dangerous.
 
-Ilya looked at the red board, at Nara's marked path, at Orrin's crew, at Teth's waiting bypass. She hated every door and all of them were open.
+Ilya looked at the red board, at Nara's steady hands, at Orrin's crew, at Teth's harness flexing without a bridge to spend. She hated every door and all of them were open.
 
-"Shared custody on the evidence packet," Lio said. "No forced crawl. Worker judgment in the incident log."
+The evidence was thinner than Lio wanted. The phrase would survive, but it would have to survive lawyers with clean sleeves and excellent lighting.
+
+"Worker judgment in the incident log," Lio said. "No forced crawl."
 
 "Temporary language," Ilya said.
 
@@ -151,6 +174,12 @@ Orrin's crew started correcting anyone who said the engineered techs panicked. T
 
 BioElevate kept the cleanest language for itself and left the yard with the dirty work of remembering.
 
+The evidence remained real but fragile: a worker's refusal, a remembered name, and a pattern AU would spend money teaching outsiders not to see.
+
+Nara-7 stayed one worker among many in the first reports. It protected her body for a little while and blurred the shape of what she risked.
+
+Because Lio named the stoppage early, the later committees inherited a hard word instead of a rumor. Security inherited it too.
+
 The event remained local for now: a story passed through harness checks, anchor lockers, and the soft clicks of workers touching a manifold twice, waiting, then touching it again.
 
 Ilya settled for disciplinary interviews and a private vow to find whoever taught the yard to speak through maintenance.
@@ -161,12 +190,14 @@ But one line entered the incident log and could not be fully removed:
 
 Worker judgment.
 
+Orrin's old mug went back into the break rack with a new hairline crack. Teth patched the harness cuff again. Nara touched the manifold twice, waited, and touched it a third time while everyone pretended not to watch.
+
 That was not freedom. It was the first tool small enough to smuggle through a shift bell.
 
 ## Receipt Notes
 
 - The scene starts in ordinary yard texture before the refusal: body-specific work, maintenance rituals, break-table resentment, and AU schedule discipline.
 - The selected path uses a non-speech object interaction first, then formal speech, then social coalition work, then a mixed action climax.
-- Branch variables visibly matter: cephalopod leverage grounds Teth's bypass competence; baseline solidarity changes the climax; strike cohesion changes the return; security pressure remains a future consequence; media visibility stays limited because this path did not leak the packet publicly.
+- Branch variables visibly matter: cephalopod leverage grounds Teth's harness competence but does not create a bypass without the bypass branch; baseline solidarity changes the climax; formal stoppage changes the return; strike cohesion changes the return; security pressure remains a future consequence; media visibility stays limited because this path did not leak the packet publicly.
 - Character visibility is local: Lio reads what people do and say, not omniscient private state.
 - Item/economy hooks are scene-embedded rather than loose glossary nouns.
