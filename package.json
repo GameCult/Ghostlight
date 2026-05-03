@@ -16,7 +16,8 @@
     "responder-outputs:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_responder_outputs.py",
     "qwen-captures:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_qwen_captures.py",
     "ink:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_ink_examples.py",
-    "qwen:check-tools": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\check_qwen_chat_tools.py"
+    "qwen:check-tools": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\check_qwen_chat_tools.py",
+    "images:bfl": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\generate_bfl_images.py"
   },
   "devDependencies": {
     "inkjs": "^2.4.0"
