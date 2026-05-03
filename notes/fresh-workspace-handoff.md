@@ -54,6 +54,9 @@ path is a source-grounded branching-scene data loop:
 - Coordinator artifact schema: `schemas/coordinator-artifact.schema.json`
 - Responder packet schema: `schemas/responder-packet.schema.json`
 - Responder output schema: `schemas/responder-output.schema.json`
+- Prompt folder: `prompts/`
+- Sandboxed responder prompt template: `prompts/sandboxed-responder-packet.md`
+- Research sanity responder prompt template: `prompts/research-sanity-responder.md`
 - Research-enabled Sella packet: `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
 - Research-enabled Sella capture: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
 - Research-enabled Sella mutation: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`

@@ -18,6 +18,7 @@ DEFAULT_COORDINATOR = ROOT / "examples" / "coordinator" / "cold-wake-sanctuary-i
 DEFAULT_PROJECTED = ROOT / "examples" / "projected-contexts" / "scene-02-sanctuary-intake.sella_ren.projected-context.json"
 DEFAULT_OUT = ROOT / "examples" / "responder-packets" / "scene-02-sanctuary-intake.sella_ren.packet.v1.json"
 DEFAULT_RESEARCH_OUT = ROOT / "examples" / "responder-packets" / "scene-02-sanctuary-intake.sella_ren.packet.research.v0.json"
+PACKET_PROMPT_TEMPLATE = ROOT / "prompts" / "sandboxed-responder-packet.md"
 
 ALLOWED_ACTION_LABELS = [
     "speak",
@@ -45,87 +46,75 @@ def write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def render_template(template_path: Path, values: dict[str, str]) -> str:
+    text = template_path.read_text(encoding="utf-8")
+    for key, value in values.items():
+        text = text.replace("{{" + key + "}}", value)
+    return text.strip()
+
+
+def render_required_lore_research(lore_access: dict[str, Any]) -> str:
+    if lore_access["mode"] != "responder_scoped_repository_search":
+        return ""
+    traversal_policy = lore_access["traversal_policy"]
+    lines = [
+        "## Required Lore Research",
+        "Before answering, inspect the declared seed scope and follow relevant links within the traversal policy.",
+        "Use lore to constrain behavior, affordances, institutions, vocabulary, material stakes, social movements, territory, and cultural pressure. Do not use it to gain hidden character state, author-only answers, or future branch knowledge.",
+        "If a source contradicts the packet, follow the packet for character-local knowledge and flag the contradiction in unresolved hooks.",
+        "Your output capture must list consulted seed refs, followed refs, research trace entries, and a brief research summary; an answer with no consulted refs is a failed research-enabled response.",
+        "",
+        "Seed research scope:",
+    ]
+    for scope in lore_access["allowed_scope"]:
+        lines.append(f"- {scope}")
+    lines.extend([
+        "",
+        "Traversal policy:",
+        f"- Max link depth: {traversal_policy['max_link_depth']}",
+        "- Allowed prefixes:",
+    ])
+    for prefix in traversal_policy["allowed_prefixes"]:
+        lines.append(f"  - {prefix}")
+    lines.append("- Required seed refs:")
+    for ref in traversal_policy["required_seed_refs"]:
+        lines.append(f"  - {ref}")
+    lines.append("- Follow link classes:")
+    for link_class in traversal_policy["follow_link_classes"]:
+        lines.append(f"  - {link_class}")
+    lines.append("- Stop conditions:")
+    for condition in traversal_policy["stop_conditions"]:
+        lines.append(f"  - {condition}")
+    if lore_access.get("research_instructions"):
+        lines.extend(["", "Research instructions:"])
+        for instruction in lore_access["research_instructions"]:
+            lines.append(f"- {instruction}")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def render_packet_prompt(packet: dict[str, Any]) -> str:
     context = packet["visible_context"]
     event = context["observed_event"]
     contract = packet["output_contract"]
     lore_access = packet["lore_access"]
-    lines = [
-        "# Ghostlight Sandboxed Responder Packet",
-        "",
-        "You are acting only as the named responder. Use only this packet.",
-        "Do not treat guesses about another character's intent as fact.",
-        "If you need to guess intent, mark it as this character's interpretation, not truth.",
-        "",
-    ]
-    if lore_access["mode"] == "responder_scoped_repository_search":
-        traversal_policy = lore_access["traversal_policy"]
-        lines.extend([
-            "## Required Lore Research",
-            "Before answering, inspect the declared seed scope and follow relevant links within the traversal policy.",
-            "Use lore to constrain behavior, affordances, institutions, vocabulary, material stakes, social movements, territory, and cultural pressure. Do not use it to gain hidden character state, author-only answers, or future branch knowledge.",
-            "If a source contradicts the packet, follow the packet for character-local knowledge and flag the contradiction in unresolved hooks.",
-            "Your output capture must list consulted seed refs, followed refs, research trace entries, and a brief research summary; an answer with no consulted refs is a failed research-enabled response.",
-            "",
-            "Seed research scope:",
-        ])
-        for scope in lore_access["allowed_scope"]:
-            lines.append(f"- {scope}")
-        lines.extend([
-            "",
-            "Traversal policy:",
-            f"- Max link depth: {traversal_policy['max_link_depth']}",
-            "- Allowed prefixes:",
-        ])
-        for prefix in traversal_policy["allowed_prefixes"]:
-            lines.append(f"  - {prefix}")
-        lines.append("- Required seed refs:")
-        for ref in traversal_policy["required_seed_refs"]:
-            lines.append(f"  - {ref}")
-        lines.append("- Follow link classes:")
-        for link_class in traversal_policy["follow_link_classes"]:
-            lines.append(f"  - {link_class}")
-        lines.append("- Stop conditions:")
-        for condition in traversal_policy["stop_conditions"]:
-            lines.append(f"  - {condition}")
-        if lore_access.get("research_instructions"):
-            lines.extend(["", "Research instructions:"])
-            for instruction in lore_access["research_instructions"]:
-                lines.append(f"- {instruction}")
-        lines.append("")
-    lines.extend([
-        "## Local Operating Context",
-        context["local_context_prompt"],
-        "",
-        "## Observed Event",
-        f"- Event id: {event['event_id']}",
-        f"- Actor: {event['actor_agent_id']}",
-        f"- Observable action: {event['observable_action']}",
-        f"- Spoken text: {event['spoken_text']}",
-    ])
-    for note in event["visibility_notes"]:
-        lines.append(f"- Visibility note: {note}")
-    lines.extend([
-        "",
-        "## Allowed Action Labels",
-        ", ".join(context["allowed_action_labels"]),
-        "",
-        "## Source Excerpts",
-    ])
-    for excerpt in context["source_excerpts"]:
-        lines.append(f"- {excerpt['ref_id']}: {excerpt['text']}")
-    lines.extend([
-        "",
-        "## Output Contract",
-        contract["response_schema"],
-        "",
-        "Required fields: " + ", ".join(contract["required_fields"]),
-        "",
-        "Rules:",
-    ])
-    for rule in contract["response_rules"]:
-        lines.append(f"- {rule}")
-    return "\n".join(lines).strip()
+    return render_template(
+        PACKET_PROMPT_TEMPLATE,
+        {
+            "required_lore_research": render_required_lore_research(lore_access),
+            "local_context_prompt": context["local_context_prompt"],
+            "event_id": event["event_id"],
+            "actor_agent_id": event["actor_agent_id"],
+            "observable_action": event["observable_action"],
+            "spoken_text": event["spoken_text"],
+            "visibility_notes": "\n".join(f"- Visibility note: {note}" for note in event["visibility_notes"]),
+            "allowed_action_labels": ", ".join(context["allowed_action_labels"]),
+            "source_excerpts": "\n".join(f"- {excerpt['ref_id']}: {excerpt['text']}" for excerpt in context["source_excerpts"]),
+            "response_schema": contract["response_schema"],
+            "required_fields": ", ".join(contract["required_fields"]),
+            "response_rules": "\n".join(f"- {rule}" for rule in contract["response_rules"]),
+        },
+    )
 
 
 def build_source_excerpts(projected: dict[str, Any]) -> list[dict[str, str]]:
