@@ -159,7 +159,8 @@ bypass, gives `evidence_of_sentience`, `nara_centered`, and
 `formal_stoppage` later reads, and gives visual sidecar states explicit
 trigger mappings. It now segments the introduction, branch locations, Kappa red
 alert, climax decision, and aftermath into click-through visual sections with
-`visual_scene_id` anchors, stable `visual_character_refs`, and imagegen-ready
+`visual_scene_id` anchors, stable `visual_character_refs`, a global
+Media Molecule Dreams-style volumetric brushstroke cue, and imagegen-ready
 prompts that explain fictional equipment in visible terms. Treat it as
 coordinator/IF scaffold training data, not raw responder gold.
 

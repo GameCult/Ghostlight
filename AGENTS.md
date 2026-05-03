@@ -150,6 +150,9 @@ When the user says to prepare for imminent compaction:
   fictional objects and body affordances in visible terms: geometry, materials,
   lighting, stance, interfaces, tools, supports, cables, fluids, screens, and
   crowd positions.
+- If a fixture has a target visual style, store that style cue once in the
+  sidecar and include it in every assembled image prompt. Do not rely on memory
+  or unstated website context to carry the look.
 - Do not treat a character name as a visual description. Illustrated fixtures
   need stable character visual refs for every recurring named character, and
   scene prompts should either include those refs during prompt assembly or carry

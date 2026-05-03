@@ -384,6 +384,8 @@ the point is to let the image and silence do the work.
 
 Each distinct visual section should preserve an art-direction block with:
 
+- global style cue: the fixture-level visual language when the art direction
+  depends on a specific non-default look
 - establishing shot: location, scale, camera distance, and dominant geometry
 - light and color: practical light sources, palette, exposure, haze, glare,
   reflection, water, vacuum, screen glow, or other atmosphere
@@ -433,7 +435,8 @@ Every visual section should identify:
 Prompt assembly for illustrated replay should combine:
 
 ```text
-global visual continuity
+global style cue
+  + global visual continuity
   + visual_character_refs for visible named characters
   + visual section base_image_prompt
   + triggered state or branch image modifiers
@@ -442,7 +445,9 @@ global visual continuity
 The base image prompt is allowed to focus on the room and staging only if the
 assembled prompt includes the relevant character refs. If a tool sends the base
 prompt alone to imagegen, the base prompt must carry enough character detail by
-itself. Names are handles, not faces.
+itself. The same applies to visual style: if a fixture depends on a specific
+look, the assembled prompt must carry that style cue every time. Names are
+handles, not faces.
 
 The coordinator owns this surface for now. The responder should not receive
 omniscient visual art direction unless the character can observe it. Character

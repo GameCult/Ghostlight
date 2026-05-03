@@ -36,6 +36,9 @@ should be authored here first and referenced from artifacts or tools.
   fixture can need several click-through screens inside one narrative scene;
   each distinct place, focal area, pivotal moment, and branch-visible state
   needs an imagegen-ready prompt or modifier.
+- Treat visual style as prompt-relevant state when the fixture needs a specific
+  look. Store the style cue once in the sidecar and include it during prompt
+  assembly for every generated image.
 - Treat named characters as handles, not visual descriptions. Illustrated IF
   sidecars need stable visual character refs for recurring named characters, and
   prompt assembly must include those refs when the character is visible.

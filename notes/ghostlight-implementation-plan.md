@@ -59,7 +59,8 @@ not carry live next-action lists.
      Each visual section needs an imagegen-ready prompt that describes
      fictional equipment and body affordances in visible terms. Named
      recurring characters need stable visual character refs; names are handles,
-     not faces.
+     not faces. When a fixture targets a specific image language, store one
+     global style cue and include it in every assembled image prompt.
    - IF review correction: run an independent artifact reviewer after branch/Ink generation and before acceptance. The reviewer audits fake variables, cosmetic choices, missing state reads, fake folds, unearned convergence, state-named-instead-of-checked prose, visual callback gaps, and endings that ignore major state. The first Cold Wake user review is a seed failure taxonomy for this evaluator path.
    - Visual review correction: run a visual scene continuity reviewer for
      illustrated fixtures. It audits oversized Ink screens, missing visual

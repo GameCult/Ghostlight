@@ -1341,11 +1341,13 @@
         "trigger": "media_visibility >= 2",
         "prompt": "Add an outside-feed or public mirror indicator reflected on a slate or wall display."
       }
-    ]
+    ],
+    "global_style_cue": "Style: Media Molecule Dreams-style 3D volumetric brushstroke painting; visible sculpted fleck strokes; painterly VR-made geometry; every detail is made of brush matter that feels partly solid, partly liquid, partly gas. Extremely detailed but soft, handmade, and non-photoreal. Tiny brushstrokes are allowed and encouraged, but the broad composition must remain readable.",
+    "prompt_assembly_rule": "Assemble each image prompt from visual_scene_plan.global_style_cue, global location continuity, visible character visual refs, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers."
   },
   "visual_character_refs": {
     "purpose": "Stable named-character visual identities for prompt assembly. Image prompts must include these refs for every named visible character; scene prompts alone are not expected to teach imagegen what Lio, Nara, Orrin, Teth, or Ilya look like.",
-    "prompt_assembly_rule": "For each visual_scene_plan scene, assemble the image prompt from global location continuity, each visible character visual_ref, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers.",
+    "prompt_assembly_rule": "For each visual_scene_plan scene, assemble the image prompt from visual_scene_plan.global_style_cue, global location continuity, each visible character visual_ref, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers.",
     "characters": {
       "lio_vale": {
         "display_name": "Lio Vale",
@@ -1413,5 +1415,10 @@
         ]
       }
     }
+  },
+  "branch_compiler_notes": {
+    "review_notes": [
+      "Added a global Media Molecule Dreams-style volumetric brushstroke cue so image prompt assembly carries the intended non-photoreal handmade visual language without repeating it in every scene."
+    ]
   }
 }

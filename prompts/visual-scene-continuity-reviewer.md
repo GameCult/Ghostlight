@@ -41,6 +41,10 @@ intent, but they do not excuse missing reader/player-facing structure.
 ### Visual Scene Anchors
 
 - Does each major section or location have a stable visual scene id?
+- Does the sidecar define a global style cue when the fixture depends on a
+  specific image language?
+- Does prompt assembly include the global style cue in every generated image
+  prompt rather than relying on a reviewer or human to remember it?
 - Does each visual scene have a base image prompt specific enough for imagegen
   without requiring Aetheria lore knowledge?
 - Does the prompt describe geometry, camera distance, lighting, palette,
@@ -139,6 +143,9 @@ Each finding must include:
 - Judge replay experience, not only prose quality.
 - Do not accept one all-purpose base prompt for a multi-location or
   multi-focus scene.
+- Do not accept style-critical fixtures that omit the style cue from prompt
+  assembly. A beautiful scene prompt in the wrong visual language is still the
+  wrong prompt.
 - Do not accept visual prompts that rely on unexplained setting jargon.
 - Do not accept named characters as visual descriptions. "Lio Vale stands by
   the manifold" is not enough unless the sidecar provides a stable visual
@@ -167,6 +174,8 @@ Use these labels when applicable:
 - `single_prompt_for_multi_scene_fixture`
 - `image_prompt_lore_password`
 - `weak_geometry_prompt`
+- `missing_global_style_cue`
+- `style_cue_not_in_prompt_assembly`
 - `weak_character_staging`
 - `missing_character_visibility`
 - `missing_character_design_ref`
