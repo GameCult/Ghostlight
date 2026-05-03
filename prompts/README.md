@@ -46,5 +46,8 @@ should be authored here first and referenced from artifacts or tools.
 - Treat continuity notes as tooling constraints, not prompt text. If the image
   model needs a continuity fact, put it in visible terms inside the base prompt,
   character ref, or modifier.
+- Treat environment labels as handles, not images. A prompt that names a
+  location or fixture must also describe its visible geometry, materials,
+  lights, interfaces, and scale.
 - If a prompt is used for a capture, preserve the exact rendered prompt in the
   capture and include the prompt file path when the capture schema allows it.

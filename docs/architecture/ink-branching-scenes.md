@@ -420,6 +420,13 @@ interface, cavity seal assembly, or life-support bypass kit, describe the
 shape, scale, materials, lights, cables, seals, or displays that make it
 drawable.
 
+The same rule applies to environments. "Manifold line," "cavity yard,"
+"supervisor glass," and "anchor rail" are not images by themselves. A base
+prompt should describe the physical space a general image model can draw:
+corridor shape, wall/ceiling/floor geometry, pipe runs, cable bundles, panels,
+screens, rails, doors, windows, gauges, warning lights, materials, scale, and
+where bodies stand inside that geometry.
+
 Every visual section should identify:
 
 - `visual_scene_id`: stable handle for the screen or key frame

@@ -602,7 +602,7 @@
       {
         "visual_scene_id": "pallas_nara_manifold_walk",
         "ink_anchor": "walk_with_nara",
-        "base_image_prompt": "Close medium shot of Lio walking beside Nara-7 along the manifold line: overlapping patch plates on the wall look like metal scars, amber fault diagrams glow on Lio's slate, Nara's numbered batch tag is visible but not dominant, and her fingers hover near the wall as if listening through touch.",
+        "base_image_prompt": "Close medium shot inside Service Ring Kappa, a narrow industrial maintenance corridor built against a curved asteroid-rock wall: the manifold line is a waist-high run of ribbed bronze-gray pipe trunks, bundled fiber cables, bolted valve housings, removable patch plates, small amber route-diagram screens, pressure gauges, warning glyphs, and hand-sized diagnostic touch panels mounted along the wall like a long mechanical spine. Scuffed deck plates with yellow-white safety stripes curve underfoot; overhead work lights cast hard amber reflections through faint industrial mist. Lio walks beside Nara-7 along this pipe-and-panel service wall; amber fault diagrams glow on Lio's slate, Nara's numbered batch tag is visible but not dominant, and her fingers hover near a ribbed access plate as if listening through touch.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1420,7 +1420,8 @@
   "branch_compiler_notes": {
     "review_notes": [
       "Added a global Media Molecule Dreams-style volumetric brushstroke cue so image prompt assembly carries the intended non-photoreal handmade visual language without repeating it in every scene.",
-      "Corrected image prompt assembly: visual_continuity_notes are non-prompt tooling constraints, and assembled prompts include only character refs for characters actually visible in the frame."
+      "Corrected image prompt assembly: visual_continuity_notes are non-prompt tooling constraints, and assembled prompts include only character refs for characters actually visible in the frame.",
+      "Expanded pallas_nara_manifold_walk so the environment is self-contained; manifold line is described as visible pipe trunks, cable bundles, valve housings, patch plates, screens, gauges, and touch panels rather than assumed lore."
     ]
   }
 }

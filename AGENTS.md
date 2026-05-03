@@ -150,6 +150,10 @@ When the user says to prepare for imminent compaction:
   fictional objects and body affordances in visible terms: geometry, materials,
   lighting, stance, interfaces, tools, supports, cables, fluids, screens, and
   crowd positions.
+- Do the same for environments. A location label like "manifold line," "cavity
+  yard," "supervisor glass," or "anchor rail" is not a drawable scene until the
+  prompt describes its visible geometry, materials, interfaces, lights, and
+  scale.
 - If a fixture has a target visual style, store that style cue once in the
   sidecar and include it in every assembled image prompt. Do not rely on memory
   or unstated website context to carry the look.

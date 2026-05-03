@@ -51,6 +51,9 @@ intent, but they do not excuse missing reader/player-facing structure.
   atmosphere, materials, visible interfaces, bodies, tools, and important props?
 - Are specialized terms translated into visible forms? For example, explain
   what a wet-service cradle looks like, not just what it is called.
+- Are environment labels translated into visible forms? For example, explain
+  what a manifold line, cavity yard, supervisor glass, or anchor rail looks
+  like instead of treating the label as a picture.
 - Does the art plan distinguish wide establishing shots, medium character
   staging, object closeups, and alert/climax frames when the prose focus shifts?
 
@@ -150,6 +153,9 @@ Each finding must include:
   assembly. A beautiful scene prompt in the wrong visual language is still the
   wrong prompt.
 - Do not accept visual prompts that rely on unexplained setting jargon.
+- Do not accept environment labels as visual descriptions. "Along the manifold
+  line" is not enough unless the prompt describes the pipe/cable/panel/valve
+  structure and surrounding corridor geometry.
 - Do not accept named characters as visual descriptions. "Lio Vale stands by
   the manifold" is not enough unless the sidecar provides a stable visual
   reference for Lio and the prompt assembly path says to include it.
@@ -182,6 +188,8 @@ Use these labels when applicable:
 - `pivotal_moment_not_segmented`
 - `single_prompt_for_multi_scene_fixture`
 - `image_prompt_lore_password`
+- `environment_lore_password`
+- `weak_environment_geometry`
 - `weak_geometry_prompt`
 - `missing_global_style_cue`
 - `style_cue_not_in_prompt_assembly`
