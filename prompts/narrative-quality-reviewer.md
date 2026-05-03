@@ -48,12 +48,57 @@ Apply these principles:
 - Mechanics fit: branch variables, state reads, and choice structures should
   reinforce the story's emotional and material stakes. The reader should not see
   decorative machinery pretending to be consequence.
-- Voice: dialogue should sound like characters under pressure, not prompt
-  instructions, legal checklists, faction wiki summaries, or the author's notes
-  wearing a coat.
+- Voice: dialogue should sound like characters living inside their current
+  circumstance. Sometimes that means crisis pressure. Sometimes it means
+  boredom, tenderness, domestic joking, ritual memory, exhaustion, workplace
+  routine, or the low-grade absurdity of trying to have a life while history
+  paws at the door.
 - Clarity under invented terms: invented factions, institutions, technologies,
   and social movements need enough in-text context for a new reader to infer
   what they represent in the current scene.
+
+## Aetheria Tonal Range
+
+Aetheria does not have one house style. Do not accidentally force every fixture
+into the current dry technical default.
+
+Use the story's chosen tonal lane as an explicit review constraint:
+
+- `zany_humanist`: Emily's comic-domestic mode. The prose may be brisk,
+  playful, absurd, and casually puncturing its own grandiosity. The emotional
+  engine can be longing, embarrassment, debt, love, routine, and jokes that
+  reveal fear sideways. `When We Get Home` is the current touchstone: the story
+  makes Elysium legible through a relationship, mugs, drills, ads, housing
+  lotteries, repair shifts, and the repeated phrase "when we get home" slowly
+  changing meaning.
+- `dry_technical`: the current Ghostlight default. The prose may foreground
+  systems, institutions, logistics, legal categories, infrastructure, and
+  material consequences. Use this when the point of the scene is to make a
+  machine, market, faction, or social process legible. Do not let it become
+  procedural chanting or a wiki paragraph with dialogue tags.
+- `dour_poetic`: Joe's darker lyrical mode. The prose may be quiet, mournful,
+  ritualized, sensory, and patient. It can let dread arrive through repetition
+  and image rather than explanation. `Rain` is the current touchstone: it builds
+  from memory and longing, turns a comforting motif into catastrophe, and lets
+  the final crisis matter because the reader has spent time with the ritual
+  before it becomes lethal.
+
+The reviewer must judge whether the artifact chose a lane, blended lanes on
+purpose, or drifted into one by accident. A scene may be tense without being a
+crisis. A scene may be funny without leaving Aetheria. A scene may be poetic
+without becoming opaque. A scene may be technical without becoming inhuman.
+
+Tone should be a tool for revealing the setting:
+
+- comedy can expose branding, bureaucracy, domestic adaptation, debt, class
+  awkwardness, and the ridiculous private habits that survive cosmic history
+- poetic quiet can expose memory, ritual, grief, ecological awe, dread, and the
+  slow violence of delayed understanding
+- dry technical prose can expose systems, constraints, incentives, logistics,
+  faction pressure, and infrastructure
+
+Do not reward constant escalation. Aetheria stories often become clearer when
+routine is allowed to breathe before the machine bites.
 
 ## Required Checks
 
@@ -93,21 +138,44 @@ Review the artifact against these questions.
 - Does the piece begin with status quo before escalation, if the fixture calls
   for gradual onboarding?
 - Are quiet scenes doing useful atmospheric, relational, or instructional work?
+- Does the story allow quiet, funny, domestic, ritual, or observational beats to
+  exist without apologizing for not yet being crisis?
 - Are crisis scenes tight enough, or do they pause for backstory, taxonomy, or
   worldbuilding explanation?
 - Does each scene shift stakes, reveal information, alter a relationship, or
   create a hook?
 - Does the story give the reader room to breathe between dense technical or
   political beats?
+- Does the piece vary intensity over time, or does it flatten everything into
+  one continuous emergency?
 
 ### Voice And Prose
 
 - Does each speaking character sound distinct enough to track without tags?
-- Does dialogue carry human pressure rather than reciting constraints?
+- Does dialogue carry the character's lived condition rather than reciting
+  constraints? That lived condition may be playful, evasive, bored, loving,
+  ritualized, frightened, exhausted, or under acute pressure.
 - Are technical or institutional phrases compressed into believable speech?
 - Is the narration vivid and concrete, or does it lean on abstract labels?
 - Are metaphors and jokes specific to the scene rather than reusable flavor
   confetti?
+- Is the chosen tone appropriate to the character, scene, and Aetheria source
+  material, or is the artifact defaulting to dry technical severity because the
+  machinery is more comfortable there?
+
+### Tonal Fit
+
+- Which tonal lane is the artifact using: `zany_humanist`, `dry_technical`,
+  `dour_poetic`, or a deliberate blend?
+- Does the tone help the reader understand the world, or does it obscure basic
+  context?
+- If the story is comic, does the comedy reveal character and pressure rather
+  than flatten stakes?
+- If the story is poetic, does the imagery clarify emotional logic rather than
+  hide scene logic?
+- If the story is technical, does the technicality remain embodied in work,
+  objects, money, law, risk, or social behavior?
+- Does the pacing permit low-intensity life before high-intensity consequence?
 
 ### IF Player Experience
 
@@ -143,7 +211,9 @@ Use this shape:
   "coherence_score": 0,
   "pacing_score": 0,
   "voice_score": 0,
+  "tonal_fit_score": 0,
   "if_playability_score": 0,
+  "detected_tonal_lane": "zany_humanist|dry_technical|dour_poetic|deliberate_blend|accidental_blend|unclear",
   "major_findings": [],
   "minor_findings": [],
   "path_specific_failures": [],
@@ -186,6 +256,9 @@ Each finding must include:
   what the reader needs for this scene.
 - Do not flatten strange future culture into contemporary speech. Weirdness is
   allowed when it is intentional, grounded, and legible.
+- Do not flatten Aetheria into one emotional weather system. Crisis is one tool.
+  So are quiet routine, zany domesticity, poetic dread, awkward jokes, logistics,
+  longing, and ordinary work.
 - Do not accept "the lore file explains it" as a defense. The story must carry
   its own local load.
 - Do not ask for generic exposition. Prefer context embedded in action, object
@@ -199,6 +272,9 @@ Each finding must include:
   failures, because fake consequence trains the reader not to care.
 - If a line sounds like a prompt instruction, output contract, wiki paragraph,
   or legal checklist, flag it.
+- If a line is quiet, funny, tender, or observational, do not penalize it for
+  lacking crisis pressure. Penalize it only if it fails to do story work:
+  orientation, character, theme, contrast, hook, setup, or emotional grounding.
 - If the story is dense but coherent, say so. If it is dense and incoherent,
   do not be impressed by the density. The wall of terms is not the cathedral.
 
@@ -214,8 +290,15 @@ Use these labels when applicable:
 - `fake_choice`
 - `pacing_crisis_tutorial`
 - `pacing_all_crisis_no_breath`
+- `pacing_constant_pressure_bias`
 - `voice_prompt_leak`
 - `voice_institutional_chant`
+- `tone_unintentional_dry_technical_default`
+- `tone_mismatch`
+- `strong_tonal_lane`
+- `strong_quiet_scene`
+- `strong_domestic_worldbuilding`
+- `strong_poetic_reversal`
 - `unclear_body_affordance`
 - `unclear_faction_pressure`
 - `weak_scene_hook`
