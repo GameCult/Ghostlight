@@ -32,6 +32,8 @@ Pallas Yard Twelve woke without ceremony.
 
 The engineered Bloom shell hummed through the deck plates before the shift bell, a low composite throat-note from consolidated asteroid rubble, TCS substrate, pressure seals, and spin-loaded supports doing the ugly miracle of pretending to be ground. Lio Vale walked Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU called this a routine seal-maintenance cycle. The workers called it breathing for people rich enough to forget what kept the air inside.
 
+It was not a mine and not a factory floor, though Aeronautics Unlimited priced it like both when that helped. It was a built world turned slowly enough to fake down, and Kappa's seals were one of the reasons the air stayed on the inside. Lio's official job was maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous ring without killing each other before lunch. The unofficial job had worse hours and better people.
+
 Cephalopod crawl crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs kept them alive in dry air, which was not the same as letting them be comfortable. Baseline riggers clipped dry anchors along the outer rail and complained with the solemnity of a religious rite. Engineered seal techs waited by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translated three kinds of body clock into one AU shift.
 
 The yard was normal. That was the first horror.
@@ -42,7 +44,7 @@ Orrin Dax's dry-side crew worked the anchor rail with cold-stiff hands and old t
 
 Teth Inkwise hung in a dry-operation support harness, four arms managing valves while the rest of the body floated inside compression loops and oxygenation tubes. One cuff had rubbed a pale groove into the mantle where the padding thinned out months ago. Teth never mentioned it. The cephalopod crew kept the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
 
-Ilya Marne watched from the supervisor glass with AU polish and AU hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
+Ilya Marne, Kappa's AU shift superintendent, watched from the supervisor glass with corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
 
 Lio knew the day would probably go wrong. The only question was whether it went wrong before everyone had finished pretending this was maintenance.
 
@@ -112,13 +114,13 @@ BioElevate legal, summoned by Ilya with two clipped phrases, called it potential
 
 BioElevate had built and leased the engineered seal tech line under language that turned cognition into product behavior and injury into maintenance variance. If Nara remembered Rell, BioElevate had not merely sold AU labor. It had sold AU a worker and called her equipment.
 
-The Awakened Labor Front mirror sat outside AU's incident board: a recognition channel for created and altered workers, slow, underfunded, and inconveniently hard to edit once a packet landed there.
+The Awakened Labor Front mirror sat outside AU's incident board: a recognition channel for created and altered workers, slow, underfunded, and inconveniently hard to edit once a packet landed there. Its little green receipt light meant a copy had left the yard for volunteers who could not stop retaliation, but could make erasure expensive.
 
 The formal log had already narrowed everyone's exits. Ilya could punish a stoppage, but she could not pretend no one named it.
 
 Orrin's dry-side crew waited by the anchors. Their faces said what nobody wanted to admit: if engineered workers were people, then baseline workers had been angry at the wrong enemy and still poor afterward.
 
-The bypass timer was still kind. Not generous, but kind enough to make choices real.
+The Kappa pressure-margin clock was still kind. Not generous, but kind enough to make choices real.
 
 Lio did not ask Orrin to be noble. That would insult everyone present.
 

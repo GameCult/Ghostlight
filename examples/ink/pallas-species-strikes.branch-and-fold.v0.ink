@@ -21,11 +21,13 @@ VAR formal_stoppage = false
 === intro_yard_wake ===
 Pallas Yard Twelve wakes without ceremony. The engineered Bloom shell hums through the deck plates before the shift bell, a low composite throat-note from consolidated asteroid rubble, TCS substrate, pressure seals, and spin-loaded supports doing the ugly miracle of pretending to be ground.
 
+It is not a mine and not a factory floor, though Aeronautics Unlimited prices it like both when that helps. It is a built world turned slowly enough to fake down, and Kappa's seals are one of the reasons the air stays on the inside.
+
 -> intro_service_ring
 
 === intro_service_ring ===
 // ghostlight.scene: pallas.intro.service_ring_kappa; visual_scene_id: pallas_service_ring_kappa
-Lio Vale walks Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
+Lio Vale walks Service Ring Kappa with a shift-control slate under one arm and yesterday's sleep still folded behind the eyes. Lio's official job is maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous ring without killing each other before lunch. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
 
 Cephalopod crawl crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs keep them alive in dry air, which is not the same as letting them be comfortable. Baseline riggers clip dry anchors along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
 
@@ -53,7 +55,7 @@ Teth Inkwise hangs in a dry-operation support harness, four arms managing valves
 
 === intro_ilya ===
 // ghostlight.scene: pallas.intro.ilya_supervisor_glass; visual_scene_id: pallas_ilya_supervisor_glass
-Ilya Marne watches from the supervisor glass with AU polish and AU hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stops showing decimals.
+Ilya Marne, Kappa's AU shift superintendent, watches from the supervisor glass with corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stops showing decimals.
 
 Lio knows the day will probably go wrong. The only question is whether it goes wrong before everyone has finished pretending this is maintenance.
 
@@ -207,7 +209,7 @@ BioElevate legal, summoned by Ilya with two clipped phrases, calls it potential 
 
 BioElevate built and leased the engineered seal tech line under language that turned cognition into product behavior and injury into maintenance variance. If Nara remembers Rell, BioElevate has not merely sold AU labor. It has sold AU a worker and called her equipment.
 
-The Awakened Labor Front mirror sits outside AU's incident board: a recognition channel for created and altered workers, slow, underfunded, and inconveniently hard to edit once a packet lands there.
+The Awakened Labor Front mirror sits outside AU's incident board: a recognition channel for created and altered workers, slow, underfunded, and inconveniently hard to edit once a packet lands there. Its little green receipt light means a copy has left the yard for volunteers who cannot stop retaliation, but can make erasure expensive.
 
 {formal_stoppage:
 The formal log has already narrowed everyone's exits. Ilya can punish a stoppage, but she cannot pretend no one named it.
@@ -216,9 +218,9 @@ The formal log has already narrowed everyone's exits. Ilya can punish a stoppage
 Orrin's dry-side crew waits by the anchors. Their faces say what nobody wants to admit: if engineered workers are people, then baseline workers have been angry at the wrong enemy and still poor afterward.
 
 {life_support_margin <= 2:
-The air plant pings a margin warning. Every political word in the ring gets heavier.
+    The air plant pings a margin warning. Every political word in the ring gets heavier.
 - else:
-The bypass timer is still kind. Not generous, but kind enough to make choices real.
+The Kappa pressure-margin clock is still kind. Not generous, but kind enough to make choices real.
 }
 
 // ghostlight.branch: branch-03-show-nara-memory; action: show_object; intent: Use observable route memory as evidence without forcing private confession.
@@ -406,6 +408,22 @@ Orrin steps forward before Lio has to spend Nara again.
 "Dry side refuses the crawl," he says. "Our call. Our anchors. You want a body in that throat, superintendent, put the board in first."
 
 For one bright second, the old lie breaks: baseline and engineered labor are not natural enemies. They are different answers to the same invoice.
+
+-> red_alert_worker_judgment
+
+=== red_alert_worker_judgment ===
+// ghostlight.scene: pallas.branch.red_alert_worker_judgment; visual_scene_id: pallas_red_alert_worker_judgment
+Teth's arms move through the harness in a blur of exact mercy, bleeding surge through hand valves and patched cuffs that procurement will later describe as adequate. The ugly part of the load goes through Teth first; the mantle tightens once against the collar, then the arms find the next valve.
+
+Ilya looks at the red board, at Nara's steady hands, at Orrin's crew, at Teth's harness flexing without a bridge to spend. She hates every door and all of them are open.
+
+"Worker judgment in the incident log," Lio says. "No forced crawl."
+
+"Temporary language," Ilya says.
+
+"Logged language."
+
+The superintendent records the phrase with a face like broken glass hidden under a clean cloth.
 
 -> return_fold
 

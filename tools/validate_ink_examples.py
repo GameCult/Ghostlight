@@ -49,6 +49,7 @@ NEGATIVE_IMAGE_PROMPT_MARKERS = (
     "instead of",
     "avoid",
     "exclude",
+    " no ",
 )
 
 
@@ -310,6 +311,10 @@ def validate_ink_visual_plan(path: Path, ink_path: Path, annotation_path: Path) 
     for modifier_index, modifier in enumerate(plan["global_branch_image_modifiers"]):
         modifier_path = f"{path}.visual_scene_plan.global_branch_image_modifiers[{modifier_index}]"
         require(isinstance(modifier, dict), f"{modifier_path} must be an object")
+        require_keys(modifier, ["modifier_id", "trigger", "prompt", "apply_to_visual_scene_ids"], modifier_path)
+        require(isinstance(modifier["apply_to_visual_scene_ids"], list) and modifier["apply_to_visual_scene_ids"], f"{modifier_path}.apply_to_visual_scene_ids must be a non-empty array")
+        for scene_id in modifier["apply_to_visual_scene_ids"]:
+            require(scene_id in seen_scene_ids, f"{modifier_path}.apply_to_visual_scene_ids references unknown scene {scene_id}")
         if "prompt" in modifier:
             require_affirmative_image_prompt(modifier["prompt"], f"{modifier_path}.prompt")
 

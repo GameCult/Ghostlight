@@ -13,11 +13,11 @@
       {
         "visual_scene_id": "pallas_yard_wake",
         "ink_anchor": "intro_yard_wake",
-        "base_image_prompt": "Wide establishing shot inside an AU Bloom cavity maintenance yard before shift bell: a curved service lane built into the engineered inner shell of a rotating cavity habitat, with consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed metal supports, scuffed deck plates bolted to the shell curve, overhead amber work lamps, wall-mounted pressure gauges, sleeping maintenance carts, folded harness frames, cable trays, worn yellow-white safety stripes, faint industrial haze, and no crowd yet; the infrastructure looks old, hand-repaired, scuffed, patched, and tired.",
+        "base_image_prompt": "Wide establishing shot inside an AU Bloom cavity maintenance yard before shift bell: a curved service lane built into the engineered inner shell of a rotating cavity habitat, with consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed metal supports, scuffed deck plates bolted to the shell curve, overhead amber work lamps, wall-mounted pressure gauges, sleeping maintenance carts, folded harness frames, cable trays, worn yellow-white safety stripes, faint industrial haze; empty pre-shift work infrastructure fills the vacant service lane; the infrastructure looks old, hand-repaired, scuffed, patched, and tired.",
         "visible_characters": [
           {
             "agent_id": "none_named",
-            "default_stance": "environmental establishing shot; no named characters visible, only empty work infrastructure before shift"
+            "default_stance": "environmental establishing shot with empty work infrastructure before workers arrive"
           }
         ],
         "state_image_modifiers": [],
@@ -361,7 +361,7 @@
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
-          "Visually distinguish this from public escalation: small local board, contained amber light, no outside-feed indicator."
+          "Visually distinguish this from public escalation: small local board, contained amber light, and purely local safety-pause display."
         ]
       },
       {
@@ -540,7 +540,7 @@
       {
         "visual_scene_id": "pallas_nara_marks_path",
         "ink_anchor": "show_nara_memory",
-        "base_image_prompt": "Object-focused shot of Lio's slate held outward in front of the manifold wall, a ribbed pipe-and-cable service spine with bronze-gray trunks, amber route screens, pressure gauges, warning glyphs, and hand-sized touch panels blurred behind the display. The slate shows a crawl diagram with two safe plates, one false seam, and a red-marked cut line; behind it, the real crawl throat is visible as a dark gasket-ringed opening with patch plates and warning lights. Nara-7's hand hovers just above the display after marking it; Ilya and a BioElevate legal window are visible beyond the slate but slightly out of focus.",
+        "base_image_prompt": "Object-focused shot of Lio's slate held outward in front of the manifold wall, a ribbed pipe-and-cable service spine with bronze-gray trunks, amber route screens, pressure gauges, warning glyphs, and hand-sized touch panels blurred behind the display. The slate shows a crawl diagram with two safe plates, one false seam, and a red-marked cut line; behind it, the real crawl throat is visible as a dark gasket-ringed opening with patch plates and warning lights. Nara-7's hand hovers just above the display after marking it; Ilya and a BioElevate legal window are visible beyond the slate but slightly out of focus; Orrin stands at the dry-side rail edge of frame with his old anchor hook lowered, publicly backing the evidence from worker expertise.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -556,6 +556,11 @@
             "agent_id": "ilya_marne",
             "default_stance": "background, watching the evidence",
             "visual_ref": "visual_character_refs.characters.ilya_marne"
+          },
+          {
+            "agent_id": "orrin_dax",
+            "default_stance": "edge of frame by dry-side rail, anchor hook lowered while backing the evidence",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           }
         ],
         "state_image_modifiers": [],
@@ -567,7 +572,7 @@
       {
         "visual_scene_id": "pallas_orrin_solidarity",
         "ink_anchor": "ask_orrin_solidarity",
-        "base_image_prompt": "Dry-side authority frame beside the anchor track: Lio faces Orrin across a foreground of heavy anchor hooks, clipped safety tethers, route bolts, scratched rail plates, and old tool lockers. Orrin looks from Nara at the amber pipe-and-panel manifold to the dark gasket-rimmed crawl throat and then to his own crew; the geometry frames the decision through work expertise: anchors, route bolts, crawl throat, manifold, and crew sightlines..",
+        "base_image_prompt": "Dry-side authority frame beside the anchor track: Lio faces Orrin across a foreground of heavy anchor hooks, clipped safety tethers, route bolts, scratched rail plates, and old tool lockers. Orrin looks from Nara at the amber pipe-and-panel manifold to the dark gasket-rimmed crawl throat and then to his own crew; the geometry frames the decision through work expertise: anchors, route bolts, crawl throat, manifold, and crew sightlines.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -716,7 +721,7 @@
           },
           {
             "trigger": "bypass_ready == false",
-            "prompt": "Show no bypass bridge; Teth has only patched harness cuffs and manual valves, making the safety margin visibly uglier."
+            "prompt": "Emphasize Teth's patched harness cuffs, manual valve cluster, empty mounting brackets, tense oxygenation tubes, and red-lit pressure gauges as visible safety-margin strain."
           },
           {
             "trigger": "security_pressure >= 3",
@@ -804,7 +809,7 @@
       {
         "visual_scene_id": "pallas_seal_evidence_without_bypass",
         "ink_anchor": "seal_evidence_without_bypass",
-        "base_image_prompt": "Evidence-custody frame at the bare gasket-rimmed crawl throat: Lio holds the slate up to a small black inspector camera so the custody seal is visible. Red warning light, patched valve housings, pipe bundles, pressure gauges, bolted seal plates, and the dark crawl opening fill the frame, making the legal protection look physically dangerous.",
+        "base_image_prompt": "Evidence-custody frame at the bare gasket-rimmed crawl throat: Lio holds the slate up to a small black inspector camera so the custody seal is visible. Ilya stands at the supervisor-side edge with one hand near her console cuff, watching the custody seal; Nara stays in the red background near the amber manifold with hands flat on the rail. Red warning light, patched valve housings, pipe bundles, pressure gauges, bolted seal plates, and the dark crawl opening fill the frame, making the legal protection look physically dangerous.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -858,6 +863,57 @@
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_red_alert_worker_judgment",
+        "ink_anchor": "red_alert_worker_judgment",
+        "base_image_prompt": "Red-alert worker-judgment frame inside Service Ring Kappa: Teth works the dry-operation harness under load, multiple arms moving across manual valve clusters, patched cuffs, tense oxygenation tubes, and red pressure gauges while the harness collar bites into the mantle. Orrin and baseline riggers hold the dry-side line with lowered anchor hooks; Nara remains steady by the amber manifold; Lio faces Ilya with the slate raised toward the incident log; Ilya records worker judgment on a red AU board with a tight, controlled posture. The curved engineered Bloom shell, seal hardware, pipe bundles, supervisor glass, and red warning light bind the whole room into one dangerous decision.",
+        "visible_characters": [
+          {
+            "agent_id": "teth_inkwise",
+            "default_stance": "working manual valves under red-alert load",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
+          },
+          {
+            "agent_id": "orrin_dax",
+            "default_stance": "fronting the dry-side line with anchor hook lowered",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
+          },
+          {
+            "agent_id": "nara_7",
+            "default_stance": "steady by the amber manifold with hands flat on rail",
+            "visual_ref": "visual_character_refs.characters.nara_7"
+          },
+          {
+            "agent_id": "lio_vale",
+            "default_stance": "facing Ilya with slate raised toward incident log",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
+          },
+          {
+            "agent_id": "ilya_marne",
+            "default_stance": "recording worker judgment with tight controlled posture",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "life_support_margin <= 1",
+            "prompt": "Intensify red pressure warnings around Teth and add condensation streaks along nearby valve housings."
+          },
+          {
+            "trigger": "evidence_of_sentience < 4",
+            "prompt": "Keep Lio's slate evidence display sparse: refusal log, custody seal, and a small remembered-name field with empty route-map space."
+          },
+          {
+            "trigger": "evidence_of_sentience >= 4",
+            "prompt": "Show Lio's slate evidence display as organized: refusal log, marked route memory, custody seal, and worker-judgment entry grouped together."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
+          "This is the selected Orrin-front path red-alert payoff: worker judgment becomes logged language while Teth absorbs the load through manual skill."
         ]
       },
       {
@@ -965,46 +1021,111 @@
       {
         "modifier_id": "formal_stoppage_visible",
         "trigger": "formal_stoppage == true",
-        "prompt": "Add a cold blue AU incident-log recording marker and workers halted in coordinated stillness."
+        "prompt": "Add a cold blue AU incident-log recording marker and workers halted in coordinated stillness.",
+        "apply_to_visual_scene_ids": [
+          "pallas_formalize_stoppage",
+          "pallas_classification_pressure",
+          "pallas_bioelevate_liability_frame",
+          "pallas_climax_decision_line",
+          "pallas_hold_for_recognition",
+          "pallas_trade_bypass_for_evidence",
+          "pallas_seal_evidence_without_bypass",
+          "pallas_orrin_front_demand",
+          "pallas_red_alert_worker_judgment",
+          "pallas_seal_holds"
+        ]
       },
       {
         "modifier_id": "high_security_pressure",
         "trigger": "security_pressure >= 4",
-        "prompt": "Add sterile blue-lit security drones at the far hatch and make nearby workers tighten posture around vulnerable crew."
+        "prompt": "Add sterile blue-lit security drones at the far hatch and make nearby workers tighten posture around vulnerable crew.",
+        "apply_to_visual_scene_ids": [
+          "pallas_ilya_arrival",
+          "pallas_formalize_stoppage",
+          "pallas_shield_nara",
+          "pallas_classification_pressure",
+          "pallas_bioelevate_liability_frame",
+          "pallas_climax_decision_line",
+          "pallas_hold_for_recognition",
+          "pallas_seal_evidence_without_bypass",
+          "pallas_seal_holds"
+        ]
       },
       {
         "modifier_id": "high_baseline_solidarity",
         "trigger": "baseline_solidarity >= 3",
-        "prompt": "Move Orrin and baseline riggers closer to the engineered workers, anchor tools lowered at waist height as signs of work authority and crew solidarity."
+        "prompt": "Move Orrin and baseline riggers closer to the engineered workers, anchor tools lowered at waist height as signs of work authority and crew solidarity.",
+        "apply_to_visual_scene_ids": [
+          "pallas_orrin_solidarity",
+          "pallas_climax_decision_line",
+          "pallas_orrin_front_demand",
+          "pallas_red_alert_worker_judgment",
+          "pallas_seal_holds"
+        ]
       },
       {
         "modifier_id": "nara_centered_risk",
         "trigger": "nara_centered == true",
-        "prompt": "Make Nara more visually exposed and show Lio or worker copies creating a protective buffer around her."
+        "prompt": "Make Nara more visually exposed and show Lio or worker copies creating a protective buffer around her.",
+        "apply_to_visual_scene_ids": [
+          "pallas_shield_nara",
+          "pallas_classification_pressure",
+          "pallas_bioelevate_liability_frame",
+          "pallas_nara_marks_path",
+          "pallas_climax_decision_line",
+          "pallas_hold_for_recognition",
+          "pallas_seal_evidence_without_bypass",
+          "pallas_orrin_front_demand",
+          "pallas_red_alert_worker_judgment",
+          "pallas_seal_holds"
+        ]
       },
       {
         "modifier_id": "nara_path_evidence",
         "trigger": "nara_path_marked == true",
-        "prompt": "Show Lio's slate with a marked crawl path and false seam highlighted."
+        "prompt": "Show Lio's slate with a marked crawl path and false seam highlighted.",
+        "apply_to_visual_scene_ids": [
+          "pallas_nara_marks_path",
+          "pallas_climax_decision_line",
+          "pallas_hold_for_recognition",
+          "pallas_seal_holds"
+        ]
       },
       {
         "modifier_id": "bypass_ready_visible",
         "trigger": "bypass_ready == true",
-        "prompt": "Show the portable bypass bridge: compact valve block, glowing pressure tubes, manual logic plate, and tamper-evident seals attached between dry-operation support harness and seal assembly."
+        "prompt": "Show the portable bypass bridge: compact valve block, glowing pressure tubes, manual logic plate, and tamper-evident seals attached between dry-operation support harness and seal assembly.",
+        "apply_to_visual_scene_ids": [
+          "pallas_bypass_kit",
+          "pallas_climax_decision_line",
+          "pallas_trade_bypass_for_evidence",
+          "pallas_seal_holds"
+        ]
       },
       {
         "modifier_id": "worker_injury_visible",
         "trigger": "worker_injury > 0",
-        "prompt": "Show a rigger with a pressure-lash injury being helped by coworkers, with emergency sealant and suit damage visible."
+        "prompt": "Show a rigger with a pressure-lash injury being helped by coworkers, with emergency sealant and suit damage visible.",
+        "apply_to_visual_scene_ids": [
+          "pallas_hold_for_recognition",
+          "pallas_red_alert_worker_judgment",
+          "pallas_seal_holds"
+        ]
       },
       {
         "modifier_id": "media_visibility_visible",
         "trigger": "media_visibility >= 2",
-        "prompt": "Add an outside-feed or public mirror indicator reflected on a slate or wall display."
+        "prompt": "Add an outside-feed or public mirror indicator reflected on a slate or wall display.",
+        "apply_to_visual_scene_ids": [
+          "pallas_public_liability",
+          "pallas_bioelevate_liability_frame",
+          "pallas_climax_decision_line",
+          "pallas_seal_holds"
+        ]
       }
     ],
     "global_style_cue": "Style: Media Molecule Dreams-style 3D volumetric brushstroke painting; visible sculpted fleck strokes; painterly VR-made geometry; every detail is made of brush matter that feels partly solid, partly liquid, partly gas. Extremely detailed but soft, handmade, and non-photoreal. Tiny brushstrokes are allowed and encouraged, but the broad composition must remain readable.",
-    "prompt_assembly_rule": "Assemble each image prompt from visual_scene_plan.global_style_cue, visual refs only for characters actually visible in the rendered frame, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers. Use visual_continuity_notes only as tooling/review constraints; assembled image prompts use concrete visible scene, character, and modifier text."
+    "prompt_assembly_rule": "Assemble each image prompt from visual_scene_plan.global_style_cue, visual refs only for characters actually visible in the rendered frame, the scene base_image_prompt, triggered state_image_modifiers, and triggered global_branch_image_modifiers whose apply_to_visual_scene_ids includes the current visual_scene_id. Use visual_continuity_notes only as tooling/review constraints; assembled image prompts use concrete visible scene, character, and modifier text."
   },
   "visual_character_refs": {
     "purpose": "Stable named-character visual identities for prompt assembly. Image prompts include these refs for every named visible character because stable recurring character appearance comes from visual_character_refs.",
@@ -1053,7 +1174,7 @@
         "display_name": "Teth Inkwise",
         "species_or_body": "uplifted cephalopod dry-operation crawl maintenance specialist",
         "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible arms supported in a compact low-gravity dry-operation harness station with a bare-minimum humidity collar and oxygenation loop. The rig uses pressure cuffs, compression anchor loops, limiter socket, tool loops, and a body-support frame as body-support equipment; oxygenation tubes, valve clusters, padded supports, and curved tool rails make the body productive in dry cramped AU maintenance spaces with sparse industrial comfort. One cuff is visibly worn and leaves a pale rub mark, while Teth's controlled posture suggests stoic endurance under visible strain.",
-        "silhouette_notes": "Nonhuman, horizontal or suspended silhouette inside dry-operation support equipment; never standing upright like a human.",
+        "silhouette_notes": "Nonhuman horizontal or suspended silhouette inside dry-operation support equipment, body supported by a low-gravity harness with arms arranged around valves and tool rails.",
         "do_not_change": [
           "mottled blue-gray cephalopod body",
           "dry-operation harness station",
