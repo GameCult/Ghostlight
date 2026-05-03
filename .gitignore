@@ -4,3 +4,4 @@ __pycache__/
 node_modules/
 state/scratch-compaction-*.md
 experiments/images/
+experiments/blender/

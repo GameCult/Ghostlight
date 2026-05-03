@@ -35,7 +35,7 @@ Aetheria lore/source context
   -> mutation receipt
   -> updated scene/world/social state
   -> coordinator continuity and next-beat plan
-  -> branch compiler materializes Ink + sidecar + visual plan + compiler notes
+  -> branch compiler materializes Ink + sidecar + visual plan + optional blockout plan + compiler notes
   -> IF artifact reviewer audits consequence, fold, and visual continuity
   -> visual scene reviewer audits click-through segmentation and imagegen-ready prompts
   -> accepted fixture / future training corpus + optional illustrated replay collateral
@@ -67,6 +67,14 @@ Names are handles, not faces. The visual reviewer judges the playable Ink
 experience and visual plan; clean-run prose receipts are debugging mirrors, not
 the reviewed visual surface.
 
+Multi-angle illustrated replay needs geometry, not hopeful prose continuity.
+When a fixture needs several camera angles in the same space, emit a
+`.blockout.json` plan and generate Blender guide renders. The blockout is a
+spatial maquette for room shape, scale, large object placement, actor blocking,
+and camera angle. It is not a segmentation mask, and flat semantic colors are
+human-readable helper marks rather than a secret language the image model is
+expected to obey.
+
 ## Important Contracts
 
 - Agent state: `schemas/agent-state.schema.json`
@@ -77,6 +85,8 @@ the reviewed visual surface.
 - Responder packets: `schemas/responder-packet.schema.json`
 - Responder outputs: `schemas/responder-output.schema.json`
 - Ink branch contract: `docs/architecture/ink-branching-scenes.md`
+- Visual blockout contract: `docs/architecture/visual-blockout-architecture.md`
+- Visual blockout schema: `schemas/visual-blockout-plan.schema.json`
 - Training stages and corpus gates: `docs/architecture/training-plan.md`
 
 ## Current Live Example

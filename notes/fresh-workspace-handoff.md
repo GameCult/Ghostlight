@@ -61,6 +61,8 @@ path is a source-grounded branching-scene data loop:
 - Narrative quality reviewer prompt: `prompts/narrative-quality-reviewer.md`
 - Visual scene continuity reviewer prompt:
   `prompts/visual-scene-continuity-reviewer.md`
+- Visual blockout architecture: `docs/architecture/visual-blockout-architecture.md`
+- Visual blockout schema: `schemas/visual-blockout-plan.schema.json`
 - Research-enabled Sella packet: `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
 - Research-enabled Sella capture: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
 - Research-enabled Sella mutation: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`
@@ -96,6 +98,8 @@ path is a source-grounded branching-scene data loop:
 - Pallas Species Strikes Ink scaffold: `examples/ink/pallas-species-strikes.branch-and-fold.v0.ink`
 - Pallas Species Strikes Ink sidecar: `examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json`
 - Pallas Species Strikes visual plan: `examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json`
+- Pallas Species Strikes Service Ring Kappa blockout plan:
+  `examples/visual-blockouts/pallas-species-strikes.service-ring-kappa.v0.blockout.json`
 - Pallas Species Strikes readable run: `experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md`
 - Branch compiler and IF reviewer contract: `docs/architecture/ink-branching-scenes.md`
 
@@ -163,13 +167,19 @@ mappings. It now segments the introduction, branch locations, Kappa red alert,
 climax decision, and aftermath into click-through visual sections with
 `visual_scene_id` anchors, stable `visual_character_refs`, a global Media
 Molecule Dreams-style volumetric brushstroke cue, and imagegen-ready prompts
-that explain fictional equipment in visible terms. Its location grounding now
+that explain fictional equipment in visible terms. A new visual blockout seam
+adds a Blender-backed `ghostlight.visual_blockout_plan.v0` maquette for Service
+Ring Kappa: room shape, scale, large object placement, actor blocking, and
+camera angles. The blockout guide is a spatial reference for image generation,
+not a segmentation mask or hidden color contract. Its location grounding now
 uses the Bloom process correctly: engineered rotating shell, consolidated
 asteroid rubble/aggregate, TCS substrate, seals, supports, and service systems,
 with image prompts written as affirmative visible targets. Treat it as
-coordinator/IF scaffold training data, not raw responder gold.
+coordinator/IF scaffold training data plus illustrated replay collateral, not
+raw responder gold.
 
-Next: add the corpus coverage ledger seam or choose the next Aetheria fixture
+Next: promote the blockout seam only as far as needed for the Pallas fixture,
+then add the corpus coverage ledger seam or choose the next Aetheria fixture
 from the 100-150 broad coverage target.
 
 ## Warnings

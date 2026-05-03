@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gamecult.dev/ghostlight/schemas/visual-blockout-plan.schema.json",
+  "title": "Ghostlight Visual Blockout Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "blockout_plan_id",
+    "fixture_id",
+    "visual_plan_ref",
+    "purpose",
+    "layout",
+    "semantic_materials",
+    "geometry_modules",
+    "proxy_actors",
+    "cameras",
+    "guide_renders",
+    "prompt_use_contract"
+  ],
+  "properties": {
+    "schema_version": { "const": "ghostlight.visual_blockout_plan.v0" },
+    "blockout_plan_id": { "type": "string", "minLength": 1 },
+    "fixture_id": { "type": "string", "minLength": 1 },
+    "visual_plan_ref": { "type": "string", "minLength": 1 },
+    "purpose": { "type": "string", "minLength": 1 },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layout_id", "layout_asset", "coordinate_system", "scale_notes", "source_refs"],
+      "properties": {
+        "layout_id": { "type": "string", "minLength": 1 },
+        "layout_asset": { "type": "string", "minLength": 1 },
+        "coordinate_system": { "type": "string", "minLength": 1 },
+        "scale_notes": { "type": "string", "minLength": 1 },
+        "source_refs": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "semantic_materials": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["material_id", "display_name", "base_color", "intended_read", "use_in_prompt"],
+        "properties": {
+          "material_id": { "type": "string", "minLength": 1 },
+          "display_name": { "type": "string", "minLength": 1 },
+          "base_color": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "intended_read": { "type": "string", "minLength": 1 },
+          "use_in_prompt": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "geometry_modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["module_id", "object_class", "script_ref", "geometry_script_tree", "parameters", "material_id", "notes"],
+        "properties": {
+          "module_id": { "type": "string", "minLength": 1 },
+          "object_class": { "type": "string", "minLength": 1 },
+          "script_ref": { "type": "string", "minLength": 1 },
+          "geometry_script_tree": { "type": "string", "minLength": 1 },
+          "parameters": { "type": "object" },
+          "material_id": { "type": "string", "minLength": 1 },
+          "notes": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "proxy_actors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["actor_id", "visual_ref", "proxy_shape", "material_id", "default_position", "default_rotation", "scale", "notes"],
+        "properties": {
+          "actor_id": { "type": "string", "minLength": 1 },
+          "visual_ref": { "type": "string", "minLength": 1 },
+          "proxy_shape": { "type": "string", "minLength": 1 },
+          "material_id": { "type": "string", "minLength": 1 },
+          "default_position": { "$ref": "#/$defs/vector3" },
+          "default_rotation": { "$ref": "#/$defs/vector3" },
+          "scale": { "$ref": "#/$defs/vector3" },
+          "notes": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "cameras": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["camera_id", "visual_scene_ids", "position", "rotation", "lens_mm", "shot_role", "framing_notes"],
+        "properties": {
+          "camera_id": { "type": "string", "minLength": 1 },
+          "visual_scene_ids": { "$ref": "#/$defs/stringArray" },
+          "position": { "$ref": "#/$defs/vector3" },
+          "rotation": { "$ref": "#/$defs/vector3" },
+          "target": { "$ref": "#/$defs/vector3" },
+          "lens_mm": { "type": "number", "exclusiveMinimum": 0 },
+          "shot_role": { "type": "string", "minLength": 1 },
+          "framing_notes": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "guide_renders": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["render_id", "camera_id", "visual_scene_id", "render_modes", "output_refs", "imagegen_reference_use"],
+        "properties": {
+          "render_id": { "type": "string", "minLength": 1 },
+          "camera_id": { "type": "string", "minLength": 1 },
+          "visual_scene_id": { "type": "string", "minLength": 1 },
+          "render_modes": { "$ref": "#/$defs/stringArray" },
+          "output_refs": { "$ref": "#/$defs/stringArray" },
+          "imagegen_reference_use": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "prompt_use_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference_image_role", "must_preserve", "may_reinterpret", "must_not_assume"],
+      "properties": {
+        "reference_image_role": { "type": "string", "minLength": 1 },
+        "must_preserve": { "$ref": "#/$defs/stringArray" },
+        "may_reinterpret": { "$ref": "#/$defs/stringArray" },
+        "must_not_assume": { "$ref": "#/$defs/stringArray" }
+      }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "vector3": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "number" }
+    }
+  }
+}

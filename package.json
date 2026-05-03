@@ -7,7 +7,7 @@
     "state:status": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_state.py status",
     "state:prepare-compaction": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_prepare_compaction.py",
     "agent-state:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_agent_state.py",
-    "schema:validate": "npm run agent-state:validate && npm run projection:validate && npm run projected-context:validate && npm run lore-grounding:validate && npm run coordinator:validate && npm run responder-packets:validate && npm run responder-outputs:validate && npm run qwen-captures:validate && npm run ink:validate",
+    "schema:validate": "npm run agent-state:validate && npm run projection:validate && npm run projected-context:validate && npm run lore-grounding:validate && npm run coordinator:validate && npm run responder-packets:validate && npm run responder-outputs:validate && npm run qwen-captures:validate && npm run ink:validate && npm run blockout:validate",
     "projection:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_projection_examples.py",
     "projected-context:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_projected_contexts.py",
     "lore-grounding:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_lore_grounding.py",
@@ -17,7 +17,9 @@
     "qwen-captures:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_qwen_captures.py",
     "ink:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_ink_examples.py",
     "qwen:check-tools": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\check_qwen_chat_tools.py",
-    "images:bfl": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\generate_bfl_images.py"
+    "images:bfl": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\generate_bfl_images.py",
+    "blockout:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_visual_blockouts.py",
+    "blockout:build": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\run_blender_blockout.py"
   },
   "devDependencies": {
     "inkjs": "^2.4.0"
