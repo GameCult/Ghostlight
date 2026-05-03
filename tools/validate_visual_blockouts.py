@@ -152,6 +152,8 @@ def validate_blockout_plan(document: dict[str, Any], source: Path) -> None:
             require_nonempty_string(render[key], f"{path}.{key}")
         require_string_list(render["render_modes"], f"{path}.render_modes")
         require_string_list(render["output_refs"], f"{path}.output_refs")
+        if "visible_actor_ids" in render:
+            require_string_list(render["visible_actor_ids"], f"{path}.visible_actor_ids")
 
     contract = document["prompt_use_contract"]
     require_keys(contract, ["reference_image_role", "must_preserve", "may_reinterpret", "must_not_assume"], f"{source}.prompt_use_contract")

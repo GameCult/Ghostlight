@@ -125,6 +125,10 @@
           "visual_scene_id": { "type": "string", "minLength": 1 },
           "render_modes": { "$ref": "#/$defs/stringArray" },
           "output_refs": { "$ref": "#/$defs/stringArray" },
+          "visible_actor_ids": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
           "imagegen_reference_use": { "type": "string", "minLength": 1 }
         }
       }

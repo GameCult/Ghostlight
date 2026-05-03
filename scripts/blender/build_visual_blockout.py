@@ -85,6 +85,11 @@ def add_cube(name: str, location: tuple[float, float, float], scale: tuple[float
     return obj
 
 
+def mark_actor_object(obj: bpy.types.Object, actor_id: str) -> bpy.types.Object:
+    obj["ghostlight_actor_id"] = actor_id
+    return obj
+
+
 def add_cylinder(name: str, location: tuple[float, float, float], radius: float, depth: float, material: bpy.types.Material, vertices: int = 48, rotation: tuple[float, float, float] = (0, 0, 0)) -> bpy.types.Object:
     bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=depth, location=location, rotation=rotation)
     obj = bpy.context.object
@@ -213,6 +218,36 @@ def build_cephalopod_work_support_station(module: dict[str, Any], materials: dic
     add_curve_pipe("teth_oxygenation_loop", [(x - 0.8, y - 0.75, z + 0.25), (x, y, z + 1.0), (x + 0.8, y - 0.75, z + 0.25)], material, bevel_depth=0.028)
 
 
+def build_object_callback_props(module: dict[str, Any], materials: dict[str, bpy.types.Material]) -> None:
+    p = module["parameters"]
+    material = materials[module["material_id"]]
+    teth_material = materials.get("teth_blue_gray", material)
+    x, y, z = p.get("position", [1.05, 5.85, 0.72])
+    add_cube("callback_low_parts_tray", (x, y, z), (1.2, 0.55, 0.08), material)
+    add_cylinder("callback_thermal_mug", (x - 0.35, y - 0.12, z + 0.18), 0.11, 0.28, material, vertices=24)
+    add_curve_pipe(
+        "callback_repaired_contact_band",
+        [
+            (x - 0.05, y - 0.20, z + 0.14),
+            (x + 0.18, y - 0.10, z + 0.24),
+            (x + 0.42, y - 0.20, z + 0.14),
+        ],
+        teth_material,
+        bevel_depth=0.018,
+    )
+    add_curve_pipe(
+        "callback_spare_oxygenation_tube",
+        [
+            (x - 0.48, y + 0.10, z + 0.13),
+            (x - 0.08, y + 0.22, z + 0.20),
+            (x + 0.48, y + 0.08, z + 0.13),
+        ],
+        teth_material,
+        bevel_depth=0.026,
+    )
+    add_cube("callback_tagged_limit_interface", (x + 0.22, y + 0.14, z + 0.17), (0.28, 0.16, 0.05), material)
+
+
 MODULE_BUILDERS = {
     "service_ring_shell": build_service_ring_shell,
     "crawl_throat": build_crawl_throat,
@@ -220,27 +255,28 @@ MODULE_BUILDERS = {
     "anchor_rail": build_anchor_rail,
     "supervisor_catwalk": build_supervisor_catwalk,
     "cephalopod_work_support_station": build_cephalopod_work_support_station,
+    "object_callback_props": build_object_callback_props,
 }
 
 
 def add_humanoid_proxy(actor: dict[str, Any], material: bpy.types.Material) -> None:
     x, y, z = actor["default_position"]
     sx, sy, sz = actor["scale"]
-    obj = add_uv_sphere(actor["actor_id"], (x, y, z + sz / 2), (sx, sy, sz / 2), material)
+    obj = mark_actor_object(add_uv_sphere(actor["actor_id"], (x, y, z + sz / 2), (sx, sy, sz / 2), material), actor["actor_id"])
     obj.rotation_euler = tuple(actor["default_rotation"])
     if "slate" in actor["proxy_shape"]:
-        add_cube(f"{actor['actor_id']}_slate", (x + 0.25, y, z + 1.0), (0.35, 0.04, 0.25), material)
+        mark_actor_object(add_cube(f"{actor['actor_id']}_slate", (x + 0.25, y, z + 1.0), (0.35, 0.04, 0.25), material), actor["actor_id"])
     if "hook" in actor["proxy_shape"]:
-        add_curve_pipe(f"{actor['actor_id']}_hook", [(x, y, z + 0.8), (x + 0.45, y, z + 0.65)], material, bevel_depth=0.035)
+        mark_actor_object(add_curve_pipe(f"{actor['actor_id']}_hook", [(x, y, z + 0.8), (x + 0.45, y, z + 0.65)], material, bevel_depth=0.035), actor["actor_id"])
 
 
 def add_cephalopod_proxy(actor: dict[str, Any], material: bpy.types.Material) -> None:
     x, y, z = actor["default_position"]
     sx, sy, sz = actor["scale"]
-    add_uv_sphere(actor["actor_id"], (x, y, z + 0.25), (sx * 0.45, sy * 0.45, sz * 0.45), material)
+    mark_actor_object(add_uv_sphere(actor["actor_id"], (x, y, z + 0.25), (sx * 0.45, sy * 0.45, sz * 0.45), material), actor["actor_id"])
     for index in range(8):
         angle = index * math.tau / 8
-        add_curve_pipe(
+        mark_actor_object(add_curve_pipe(
             f"{actor['actor_id']}_tentacle_{index:02d}",
             [
                 (x, y, z + 0.22),
@@ -249,7 +285,7 @@ def add_cephalopod_proxy(actor: dict[str, Any], material: bpy.types.Material) ->
             ],
             material,
             bevel_depth=0.035,
-        )
+        ), actor["actor_id"])
 
 
 def build_proxy_actors(plan: dict[str, Any], materials: dict[str, bpy.types.Material]) -> None:
@@ -329,11 +365,23 @@ def save_blend(plan: dict[str, Any], output_blend: Path | None) -> None:
 def render_guides(plan: dict[str, Any], output_dir: Path | None) -> None:
     render_root = output_dir or ROOT
     cameras = {obj.name: obj for obj in bpy.data.objects if obj.type == "CAMERA"}
+    actor_objects = [obj for obj in bpy.data.objects if "ghostlight_actor_id" in obj]
     for render in plan["guide_renders"]:
         camera = cameras.get(render["camera_id"])
         if not camera:
             print(f"warning: missing camera {render['camera_id']} for {render['render_id']}")
             continue
+        visible_actor_ids = render.get("visible_actor_ids")
+        if visible_actor_ids is not None:
+            visible = set(visible_actor_ids)
+            for obj in actor_objects:
+                hide = obj["ghostlight_actor_id"] not in visible
+                obj.hide_viewport = hide
+                obj.hide_render = hide
+        else:
+            for obj in actor_objects:
+                obj.hide_viewport = False
+                obj.hide_render = False
         output_ref = resolve_project_path(render["output_refs"][0])
         if output_dir:
             output_ref = output_dir / Path(render["output_refs"][0]).name

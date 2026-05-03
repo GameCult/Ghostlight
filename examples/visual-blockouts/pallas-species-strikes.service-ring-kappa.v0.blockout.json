@@ -88,6 +88,18 @@
       "use_in_prompt": "Preserve nonhuman horizontal body volume and open work-support object class."
     },
     {
+      "material_id": "callback_ivory",
+      "display_name": "Aftermath callback objects",
+      "base_color": [
+        0.88,
+        0.82,
+        0.68,
+        1
+      ],
+      "intended_read": "Small handled objects: mug, parts tray, tagged limiter interface, repaired contact band, and spare oxygenation tube.",
+      "use_in_prompt": "Use only as visible object callback staging, not as social-state training data."
+    },
+    {
       "material_id": "worker_gray",
       "display_name": "Engineered seal technicians",
       "base_color": [
@@ -214,6 +226,21 @@
       },
       "material_id": "teth_blue_gray",
       "notes": "Open work-support frame with contact-band arcs, oxygenation tubes, and radial tool rails."
+    },
+    {
+      "module_id": "object_callback_props",
+      "object_class": "small_prop_cluster",
+      "script_ref": "scripts/blender/build_visual_blockout.py",
+      "geometry_script_tree": "object_callback_props",
+      "parameters": {
+        "position": [
+          1.05,
+          5.85,
+          0.72
+        ]
+      },
+      "material_id": "callback_ivory",
+      "notes": "Small aftermath prop cluster: mug, repaired contact band, oxygenation tube, limiter interface, and parts tray."
     }
   ],
   "proxy_actors": [
@@ -338,8 +365,8 @@
       ],
       "position": [
         0,
-        -7,
-        2.4
+        -8.5,
+        2.9
       ],
       "rotation": [
         1.22,
@@ -348,10 +375,10 @@
       ],
       "target": [
         0,
-        4.2,
+        5.1,
         1.7
       ],
-      "lens_mm": 24,
+      "lens_mm": 20,
       "shot_role": "wide establishing/service lane orientation",
       "framing_notes": "Shows shell curve, manifold wall, anchor rail, work-support bay, catwalk, and crawl throat in one readable room."
     },
@@ -440,9 +467,9 @@
         "pallas_object_callback"
       ],
       "position": [
-        0.1,
-        6.8,
-        1.25
+        2.35,
+        7.25,
+        1.45
       ],
       "rotation": [
         1.38,
@@ -450,11 +477,11 @@
         -2.65
       ],
       "target": [
-        2.4,
-        5.4,
-        0.9
+        1.05,
+        5.85,
+        0.88
       ],
-      "lens_mm": 50,
+      "lens_mm": 45,
       "shot_role": "quiet object callback close shot",
       "framing_notes": "Frames coffee mug, repaired contact band, oxygenation tube, and background manifold touch ritual."
     }
@@ -469,6 +496,7 @@
         "clay",
         "depth_optional"
       ],
+      "visible_actor_ids": [],
       "output_refs": [
         "experiments/blender/pallas-species-strikes/renders/pallas_yard_wake.blockout.png"
       ],
@@ -525,6 +553,7 @@
         "clay",
         "depth_optional"
       ],
+      "visible_actor_ids": [],
       "output_refs": [
         "experiments/blender/pallas-species-strikes/renders/pallas_object_callback.blockout.png"
       ],
