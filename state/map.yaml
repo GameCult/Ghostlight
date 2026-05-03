@@ -124,6 +124,7 @@ current_artifacts:
     - prompts/README.md
     - prompts/sandboxed-responder-packet.md
     - prompts/research-sanity-responder.md
+    - prompts/narrative-quality-reviewer.md
   live_examples:
     - examples/lore-grounding/cold-wake-panic.ganymede-corridor.json
     - examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json

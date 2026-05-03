@@ -14,6 +14,9 @@ should be authored here first and referenced from artifacts or tools.
 - `research-sanity-responder.md`: reusable one-turn prompt for checking whether
   a research-enabled responder actually grounds behavior in allowed
   AetheriaLore scope.
+- `narrative-quality-reviewer.md`: reviewer prompt for reader-facing story and
+  IF coherence, including onboarding, character introduction, branch-fold
+  clarity, pacing, voice, and lore accessibility.
 
 ## Discipline
 
