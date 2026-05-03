@@ -60,19 +60,9 @@ Color helps a human and may help the model, but shape carries the real burden.
 
 ## Geometry Script Direction
 
-The first generator used straightforward Blender Python primitives to prove that
-Ghostlight could emit a Blender scene, cameras, and guide renders from fixture
-data. That proved the seam, not the final method.
-
-Primitive stacking is not expressive enough for production illustrated IF
-blockouts. It creates plausible-looking clutter without readable authored
-silhouettes, and it fails quickly on rooms that need clear construction logic,
-nonhuman work affordances, and camera-safe spatial staging. Do not keep adding
-more cylinders to compensate for weak shape language.
-
-Production blockouts should move to authored Geometry Nodes / Geometry Script
-modules or hand-authored Blender kit pieces driven by plan parameters. The plan
-format is shaped for that replacement:
+The first generator uses straightforward Blender Python primitives so the seam
+can run without a Blender add-on. The plan is shaped for Geometry Script / Geometry
+Nodes replacement:
 
 - every procedural organ has a `geometry_script_tree` handle
 - every organ has parameter JSON
@@ -80,11 +70,9 @@ format is shaped for that replacement:
 - the generator can replace a Python primitive builder with a Geometry Script
   implementation one module at a time
 
-This keeps the early blockout useful as a receipt while making the next real
-step explicit: build reusable Geometry Nodes organs for shells, corridors,
-cutouts, catwalks, manifold walls, service rigs, and crowd blocking. If an organ
-cannot be recognized from silhouette before material detail, the blockout has
-failed its job.
+This keeps the early blockout useful while leaving room for real procedural
+elaboration: repeated ribs, pipe runs, tunnel cutouts, cable trays, bolts,
+route panels, catwalk rails, work-support rigs, and crowd clusters.
 
 ## Prompt Use
 
