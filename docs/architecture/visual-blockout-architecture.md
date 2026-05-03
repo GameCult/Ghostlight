@@ -37,11 +37,6 @@ The blockout plan stores:
 - `guide_renders`: output guide images per camera/visual scene
 - `prompt_use_contract`: what the image model should preserve or reinterpret
 
-Guide renders may carry `visible_actor_ids` when a visual scene needs the same
-space with a different occupant set. An empty establishing shot should not
-inherit every proxy actor just because the shared Blender scene contains them.
-The render is the shot contract, not the whole stage dumped into one frame.
-
 ## Blockout, Not Mask
 
 Do not treat flat colors as a machine-readable segmentation contract. A general
