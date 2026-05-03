@@ -1663,6 +1663,7 @@
         "origin": "BioElevate cephalopod dry-operation engineering lineage with ties to mutual-aid extraction networks.",
         "public_description": "A many-armed dry-operation crawl technician who moves through AU service arteries like the yard forgot to lock the real doors.",
         "private_notes": [
+          "Teth treats chronic harness discomfort as operational weather: real, constant, and not useful to complain about while the room still needs air.",
           "Teth will sabotage a bad order, but not in a way that leaves civilians gasping.",
           "Teth understands that the yard's dependence on cephalopod labor is leverage only while everyone survives."
         ]
@@ -3024,7 +3025,7 @@
           "current_activation": 0.68
         }
       },
-      "summary": "Teth will let Ilya believe she is commanding the cephalopod crawl routes only while that fiction keeps civilians breathing."
+      "summary": "Teth will let Ilya believe she is commanding the cephalopod crawl routes only while that fiction keeps civilians breathing, and will hide personal discomfort until hiding it becomes dangerous."
     },
     {
       "relationship_id": "rel-ilya-lio",

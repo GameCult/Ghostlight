@@ -32,7 +32,7 @@ Pallas Yard Twelve woke without ceremony.
 
 The cavity wall hummed through the deck plates before the shift bell, a low mineral throat-note that everyone pretended not to hear unless it changed. Lio Vale walked Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU called this a routine seal-maintenance cycle. The workers called it breathing for people rich enough to forget what kept the air inside.
 
-Cephalopod crawl crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. Baseline riggers clipped dry anchors along the outer rail and complained with the solemnity of a religious rite. Engineered seal techs waited by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translated three kinds of body clock into one AU shift.
+Cephalopod crawl crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs kept them alive in dry air, which was not the same as letting them be comfortable. Baseline riggers clipped dry anchors along the outer rail and complained with the solemnity of a religious rite. Engineered seal techs waited by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translated three kinds of body clock into one AU shift.
 
 The yard was normal. That was the first horror.
 
@@ -40,17 +40,19 @@ Nara-7 stood at the Kappa manifold with the other engineered seal technicians, e
 
 Orrin Dax's dry-side crew worked the anchor rail with cold-stiff hands and old tools. They were baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complained like a man trying not to notice he was scared.
 
-Teth Inkwise hung in a dry-operation support harness, four arms managing valves while the rest of the body floated inside compression loops and oxygenation tubes. The cephalopod crew kept the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
+Teth Inkwise hung in a dry-operation support harness, four arms managing valves while the rest of the body floated inside compression loops and oxygenation tubes. One cuff had rubbed a pale groove into the mantle where the padding thinned out months ago. Teth never mentioned it. The cephalopod crew kept the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
 
 Ilya Marne watched from the supervisor glass with AU polish and AU hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
 
 Lio knew the day would probably go wrong. The only question was whether it went wrong before everyone had finished pretending this was maintenance.
 
-Teth Inkwise turned in the dry-operation harness, four arms working while the rest of the body hung in careful suspension. The cephalopod zero-g maintenance harness was not a suit so much as a negotiated truce between flesh, dry air, tool, coolant, and vacuum: compression anchor loops, humidity collar, oxygenation tubes, pressure cuffs, limiter socket, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement.
+Teth Inkwise turned in the dry-operation harness, four arms working while the rest of the body hung in careful suspension. The cephalopod zero-g maintenance harness was not a suit so much as a negotiated truce between flesh, dry air, tool, coolant, and vacuum: compression anchor loops, humidity collar, oxygenation tubes, pressure cuffs, limiter socket, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement. Each motion was smooth enough to look effortless, which was how the yard preferred its suffering: technically impressive and quiet.
 
 "Your cuff is patched again," Lio said.
 
 "Everything noble is patched," Teth replied. "Including this yard's conscience."
+
+The joke landed dry. Teth's eyes stayed on the pressure ghost beneath the glass, and one free arm adjusted the oxygenation line before the warning tremor could become visible.
 
 The service lung diagram flickered under one of Teth's arms. If Kappa went hard red, AU would discover exactly how much of its schedule lived in equipment designed for bodies it refused to honor.
 
@@ -148,7 +150,7 @@ Orrin stepped forward before Lio had to spend Nara again.
 
 For one bright second, the old lie broke: baseline and engineered labor were not natural enemies. They were different answers to the same invoice.
 
-Teth's arms moved through the harness in a blur of exact mercy, bleeding surge through hand valves and patched cuffs that procurement would later describe as adequate. Nara did not mark the false seam for the room. She had already said enough to make herself dangerous.
+Teth's arms moved through the harness in a blur of exact mercy, bleeding surge through hand valves and patched cuffs that procurement would later describe as adequate. The ugly part of the load went through Teth first; the mantle tightened once against the collar, then the arms found the next valve. Nara did not mark the false seam for the room. She had already said enough to make herself dangerous.
 
 Ilya looked at the red board, at Nara's steady hands, at Orrin's crew, at Teth's harness flexing without a bridge to spend. She hated every door and all of them were open.
 

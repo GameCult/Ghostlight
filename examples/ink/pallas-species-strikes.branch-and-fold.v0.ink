@@ -27,7 +27,7 @@ Pallas Yard Twelve wakes without ceremony. The cavity wall hums through the deck
 // ghostlight.scene: pallas.intro.service_ring_kappa; visual_scene_id: pallas_service_ring_kappa
 Lio Vale walks Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
 
-Cephalopod crawl crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. Baseline riggers clip dry anchors along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
+Cephalopod crawl crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs keep them alive in dry air, which is not the same as letting them be comfortable. Baseline riggers clip dry anchors along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
 
 The yard is normal. That is the first horror.
 
@@ -47,7 +47,7 @@ Orrin Dax's dry-side crew works the anchor rail with cold-stiff hands and old to
 
 === intro_teth ===
 // ghostlight.scene: pallas.intro.teth_dry_operation; visual_scene_id: pallas_teth_dry_operation
-Teth Inkwise hangs in a dry-operation support harness, four arms managing valves while the rest of the body floats inside compression loops and oxygenation tubes. The cephalopod crew keeps the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
+Teth Inkwise hangs in a dry-operation support harness, four arms managing valves while the rest of the body floats inside compression loops and oxygenation tubes. One cuff has rubbed a pale groove into the mantle where the padding thinned out months ago. Teth never mentions it. The cephalopod crew keeps the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
 
 -> intro_ilya
 
@@ -109,11 +109,13 @@ Orrin snorts. "Then tell the future to remember who taught it where the bolts ar
 
 === check_teth_harness ===
 // ghostlight.scene: pallas.branch.teth_harness_check; visual_scene_id: pallas_teth_harness_check
-Teth Inkwise turns in the dry-operation harness, four arms working while the rest of the body hangs in careful suspension. The cephalopod zero-g maintenance harness is not a suit so much as a negotiated truce between flesh, dry air, tool, coolant, and vacuum: compression anchor loops, humidity collar, oxygenation tubes, pressure cuffs, limiter socket, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement.
+Teth Inkwise turns in the dry-operation harness, four arms working while the rest of the body hangs in careful suspension. The cephalopod zero-g maintenance harness is not a suit so much as a negotiated truce between flesh, dry air, tool, coolant, and vacuum: compression anchor loops, humidity collar, oxygenation tubes, pressure cuffs, limiter socket, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement. Each motion is smooth enough to look effortless, which is how the yard prefers its suffering: technically impressive and quiet.
 
 "Your cuff is patched again," Lio says.
 
 "Everything noble is patched," Teth replies. "Including this yard's conscience."
+
+The joke lands dry. Teth's eyes stay on the pressure ghost beneath the glass, and one free arm adjusts the oxygenation line before the warning tremor can become visible.
 
 The service lung diagram flickers under one of Teth's arms. If Kappa goes hard red, AU will discover exactly how much of its schedule lives in equipment designed for bodies it refuses to honor.
 
@@ -267,7 +269,7 @@ Teth opens a service pouch and produces a bypass bridge wrapped in maintenance c
 
 "This gives Kappa minutes," Teth says. "Not obedience. Minutes."
 
-The dry-operation crew moves like a quiet animal with too many hands and exactly enough discipline, oxygenation tubes flexing as bodies fold through workspaces AU made cheap because they could. Pressure steadies.
+The dry-operation crew moves like a quiet animal with too many hands and exactly enough discipline, oxygenation tubes flexing as bodies fold through workspaces AU made cheap because they could. Teth takes the ugly part of the load without announcing it, mantle tightening once against the collar before the arms find the next valve. Pressure steadies.
 
 -> climax
 

@@ -525,7 +525,7 @@
       {
         "visual_scene_id": "pallas_teth_dry_operation",
         "ink_anchor": "intro_teth",
-        "base_image_prompt": "Medium shot of a cephalopod bare-minimum dry-operation support station in low gravity: a padded dry-operation support frame with humidity collar is bolted to the asteroid wall, surrounded by transparent oxygenation tubes, soft pressure cuffs, rounded valve clusters, flexible many-armed tool rails, small diagnostic screens, and life-support lung diagrams painted on a nearby panel. Teth Inkwise floats in the support rig while several arms manage valves and tools; the station is heavily patched, carefully maintained, and visibly built for productivity rather than comfort.",
+        "base_image_prompt": "Medium shot of a cephalopod bare-minimum dry-operation support station in low gravity: a padded dry-operation support frame with humidity collar is bolted to the asteroid wall, surrounded by transparent oxygenation tubes, soft pressure cuffs, rounded valve clusters, flexible many-armed tool rails, small diagnostic screens, and life-support lung diagrams painted on a nearby panel. Teth Inkwise floats in the support rig while several arms manage valves and tools; one pressure cuff has thin padding and leaves a pale rub mark on the mantle. Teth's posture is controlled and stoic rather than theatrical, and the station is heavily patched, carefully maintained, and visibly built for productivity rather than comfort.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -646,7 +646,7 @@
       {
         "visual_scene_id": "pallas_teth_harness_check",
         "ink_anchor": "check_teth_harness",
-        "base_image_prompt": "Close-up at Teth's cephalopod zero-g maintenance harness: padded body loops, soft pressure cuffs, tiny valve patches, transparent oxygenation tubes, sealed implements, flexible many-armed tool rails, humidity beads, and a wall-mounted dry-operation support frame form a practical productivity rig rather than comfort architecture. Lio's hand checks a worn cuff seam while Teth's arms continue working around the inspection under hard amber work light.",
+        "base_image_prompt": "Close-up at Teth's cephalopod zero-g maintenance harness: padded body loops, worn soft pressure cuffs, tiny valve patches, transparent oxygenation tubes, sealed implements, flexible many-armed tool rails, humidity beads, and a wall-mounted dry-operation support frame form a practical productivity rig rather than comfort architecture. One cuff seam is frayed and has rubbed a pale groove into Teth's mantle; Lio's hand checks the worn seam while Teth's arms continue working with resigned precision around the inspection under hard amber work light.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -935,7 +935,7 @@
       {
         "visual_scene_id": "pallas_bypass_kit",
         "ink_anchor": "bypass_kit",
-        "base_image_prompt": "Dry-operation equipment shot inside the cephalopod work bay: Teth opens a sealed service pouch beside the wall-mounted dry-operation harness station with humidity collar and reveals a compact strike-safe life-support bypass bridge wrapped in maintenance cloth. The device has a squat valve block, glowing pressure-line ports, manual logic plates, tamper-evident evidence seals, flexible tubes, and adapters sized for both cephalopod manipulators and human hands; surrounding oxygenation tubes and many-armed tool rails show where it can connect.",
+        "base_image_prompt": "Dry-operation equipment shot inside the cephalopod work bay: Teth opens a sealed service pouch beside the wall-mounted dry-operation harness station with humidity collar and reveals a compact strike-safe life-support bypass bridge wrapped in maintenance cloth. The device has a squat valve block, glowing pressure-line ports, manual logic plates, tamper-evident evidence seals, flexible tubes, and adapters sized for both cephalopod manipulators and human hands; surrounding oxygenation tubes and many-armed tool rails show where it can connect. Teth holds the tool with practiced calm while the harness collar bites slightly into the mantle, making the cost visible without melodrama.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -1393,7 +1393,7 @@
       "teth_inkwise": {
         "display_name": "Teth Inkwise",
         "species_or_body": "uplifted cephalopod dry-operation crawl maintenance specialist",
-        "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible arms supported in a compact low-gravity dry-operation harness station with a bare-minimum humidity collar and oxygenation loop. The rig uses pressure cuffs, compression anchor loops, limiter socket, tool loops, and a body-support frame rather than human clothing; oxygenation tubes, valve clusters, padded supports, and curved tool rails make the body productive in dry cramped AU maintenance spaces rather than comfortable.",
+        "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible arms supported in a compact low-gravity dry-operation harness station with a bare-minimum humidity collar and oxygenation loop. The rig uses pressure cuffs, compression anchor loops, limiter socket, tool loops, and a body-support frame rather than human clothing; oxygenation tubes, valve clusters, padded supports, and curved tool rails make the body productive in dry cramped AU maintenance spaces rather than comfortable. One cuff is visibly worn and leaves a pale rub mark, while Teth's controlled posture suggests stoic endurance rather than ease.",
         "silhouette_notes": "Nonhuman, horizontal or suspended silhouette inside dry-operation support equipment; never standing upright like a human.",
         "do_not_change": [
           "mottled blue-gray cephalopod body",
