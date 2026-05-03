@@ -19,8 +19,7 @@
     "qwen:check-tools": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\check_qwen_chat_tools.py",
     "images:bfl": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\generate_bfl_images.py",
     "blockout:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_visual_blockouts.py",
-    "blockout:build": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\run_blender_blockout.py",
-    "blockout:build-geonodes": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\run_blender_blockout.py --builder geonodes"
+    "blockout:build": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\run_blender_blockout.py"
   },
   "devDependencies": {
     "inkjs": "^2.4.0"

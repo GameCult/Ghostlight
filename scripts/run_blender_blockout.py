@@ -9,16 +9,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BLENDER = Path(r"C:\Program Files (x86)\Steam\steamapps\common\Blender\blender.exe")
-BUILDERS = {
-    "prototype": ROOT / "scripts" / "blender" / "build_visual_blockout.py",
-    "geonodes": ROOT / "scripts" / "blender" / "build_visual_blockout_geonodes.py",
-}
+BUILDER = ROOT / "scripts" / "blender" / "build_visual_blockout.py"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--blender", type=Path, default=DEFAULT_BLENDER)
-    parser.add_argument("--builder", choices=sorted(BUILDERS), default="prototype")
     args, builder_args = parser.parse_known_args()
 
     blender = args.blender
@@ -29,7 +25,7 @@ def main() -> int:
     if not builder_args:
         raise SystemExit("Pass build args after --, including --plan.")
 
-    command = [str(blender), "--background", "--python", str(BUILDERS[args.builder]), "--", *builder_args]
+    command = [str(blender), "--background", "--python", str(BUILDER), "--", *builder_args]
     print("running:", " ".join(f'\"{part}\"' if " " in part else part for part in command))
     return subprocess.call(command, cwd=ROOT)
 
