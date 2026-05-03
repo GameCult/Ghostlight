@@ -45,7 +45,8 @@
     "strong_branch_visual_continuity"
   ],
   "acceptance_notes": [
-    "Post-revision audit checked 27 visual scenes for common unresolved environment handles and found zero failures.",
+    "Post-revision audit checked 29 visual scenes for common unresolved environment handles and found zero failures.",
+    "Follow-up segmentation pass split major tonal/power-geometry turns into dedicated visual anchors, including Ilya's arrival after Nara's refusal and BioElevate legal's liability reframe after the initial AU/worker classification split.",
     "The global Dreams-style cue remains wired into prompt assembly.",
     "Visual continuity notes remain tooling constraints and are not part of assembled prompt text.",
     "Character refs are limited to characters actually visible in a rendered frame."
@@ -54,6 +55,6 @@
     "schema_validate": "passed",
     "diff_check": "passed",
     "custom_environment_handle_audit": "passed",
-    "visual_scene_count": 27
+    "visual_scene_count": 29
   }
 }

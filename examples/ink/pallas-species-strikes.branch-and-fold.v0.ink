@@ -133,7 +133,13 @@ The board does not understand a ritual unless someone bills it.
 
 Nara's voice is small and clear. "No blind crawl. Kappa remembers cutting Rell. We remember Rell."
 
-The dry-side riggers go quiet. Teth's harness valves click once, then stop. Ilya arrives fast enough to prove she had been watching.
+The dry-side riggers go quiet. Teth's harness valves click once, then stop.
+
+-> ilya_arrival
+
+=== ilya_arrival ===
+// ghostlight.scene: pallas.threshold.ilya_arrival; visual_scene_id: pallas_ilya_arrival
+Ilya arrives fast enough to prove she had been watching. The room changes shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard has stopped being a place where a problem can be fixed quietly.
 
 "Classify that," Ilya says to Lio.
 
@@ -191,7 +197,13 @@ Nara's hands stay flat on the rail. Orrin watches the move, and his expression d
 
 === tests_and_reversals ===
 // ghostlight.scene: pallas.reversal.classification_pressure; visual_scene_id: pallas_classification_pressure
-The official board calls it irregularity. The worker channel calls it refusal. BioElevate legal, summoned by Ilya with two clipped phrases, calls it potential scaffold drift.
+The official board calls it irregularity. The worker channel calls it refusal.
+
+-> bioelevate_liability_frame
+
+=== bioelevate_liability_frame ===
+// ghostlight.scene: pallas.reversal.bioelevate_liability_frame; visual_scene_id: pallas_bioelevate_liability_frame
+BioElevate legal, summoned by Ilya with two clipped phrases, calls it potential scaffold drift.
 
 BioElevate built and leased the engineered seal tech line under language that turned cognition into product behavior and injury into maintenance variance. If Nara remembers Rell, BioElevate has not merely sold AU labor. It has sold AU a worker and called her equipment.
 

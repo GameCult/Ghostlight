@@ -426,7 +426,7 @@
   },
   "visual_scene_plan": {
     "purpose": "Illustrated Ink replay segmentation for website and imagegen use. Each entry maps a click-through Ink section or branch location to an imagegen-ready visual anchor.",
-    "segmentation_rule": "Distinct places, focal areas, object closeups, arrivals, red-alert beats, branch locations, and aftermath states receive visual_scene_id anchors. Pivotal one-sentence beats may stand alone.",
+    "segmentation_rule": "Distinct places, focal areas, object closeups, arrivals, legal/authority reframes, red-alert beats, branch locations, and aftermath states receive visual_scene_id anchors. If a new actor or institution changes the room's power geometry, stage the pre-arrival beat first, then give the arrival/reframe its own click-through and visual transition. Pivotal one-sentence beats may stand alone.",
     "prompting_rule": "Prompts describe visible geometry, bodies, tools, lighting, material state, and stance without requiring the image model to know Aetheria lore terms.",
     "scenes": [
       {
@@ -668,7 +668,7 @@
       {
         "visual_scene_id": "pallas_chokepoint_refusal",
         "ink_anchor": "chokepoint_refusal",
-        "base_image_prompt": "Threshold shot at the lip of the Kappa access throat: a dark oval crawl opening cuts into the curved asteroid wall, ringed by overlapping patch plates, red-edged gasket seals, small amber warning lights, pressure gauges, scratched route arrows, and handholds leading inward. Nara-7 and three engineered seal technicians stop in a coordinated line with hands on the manifold wall of pipes and touch panels; dry-side riggers freeze beside the bolted anchor track; Teth's harness valves hold still in the dry-operation harness station; Ilya enters fast from the raised supervisor-side walkway.",
+        "base_image_prompt": "Threshold shot at the lip of the Kappa access throat before management physically enters the floor: a dark oval crawl opening cuts into the curved asteroid wall, ringed by overlapping patch plates, red-edged gasket seals, small amber warning lights, pressure gauges, scratched route arrows, and handholds leading inward. Nara-7 and three engineered seal technicians stop in a coordinated line with hands on the manifold wall of pipes and touch panels; dry-side riggers freeze beside the bolted anchor track; Teth's harness valves hold still in the dry-operation harness station; Lio stands in the center lane hearing the refusal before the room knows what category it will become.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -677,7 +677,7 @@
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "near the center lane, being asked to classify the refusal",
+            "default_stance": "near the center lane, absorbing the refusal before management arrives",
             "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
@@ -689,11 +689,44 @@
             "agent_id": "teth_inkwise",
             "default_stance": "in harness, valves stilled",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
-          },
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "Ilya must not be visible in this frame; this is the room before authority reclassifies it."
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_ilya_arrival",
+        "ink_anchor": "ilya_arrival",
+        "base_image_prompt": "Authority-arrival transition at the Kappa access throat: Ilya Marne enters fast from the raised supervisor-side walkway, framed by blue-white AU schedule displays and transparent supervisor glass, while the maintenance floor below remains locked around Nara's refusal. Lio turns toward Ilya with the slate half-raised; Nara and the gray-suited engineered technicians hold their line at the pipe-and-panel manifold; Orrin's dry-side riggers stay frozen by the bolted anchor rail; Teth's dry-operation harness station is visible across the lane with valves held still. The same industrial room now feels colder and more official, as if a work hazard has become a disciplinary category.",
+        "visible_characters": [
           {
             "agent_id": "ilya_marne",
-            "default_stance": "arriving from supervisor side, controlled and sharp",
+            "default_stance": "entering from supervisor side, controlled and sharp, taking command of the classification frame",
             "visual_ref": "visual_character_refs.characters.ilya_marne"
+          },
+          {
+            "agent_id": "lio_vale",
+            "default_stance": "center lane, slate half-raised as Ilya demands a category",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
+          },
+          {
+            "agent_id": "nara_7",
+            "default_stance": "front of engineered-worker line, hand still flat on rail",
+            "visual_ref": "visual_character_refs.characters.nara_7"
+          },
+          {
+            "agent_id": "orrin_dax",
+            "default_stance": "at dry-side rail, watching the room become management's problem",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
+          },
+          {
+            "agent_id": "teth_inkwise",
+            "default_stance": "in harness, valves stilled, posture controlled",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [
@@ -708,7 +741,8 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "This is a click-through tonal turn: the refusal has already happened, and Ilya's arrival makes it an authority problem."
         ]
       },
       {
@@ -839,7 +873,7 @@
       {
         "visual_scene_id": "pallas_classification_pressure",
         "ink_anchor": "tests_and_reversals",
-        "base_image_prompt": "Tense administrative pressure frame inside the curved maintenance ring: AU incident-board screens on the supervisor wall label the event irregularity in cold blue-white text; a BioElevate legal window glows sterile white with scaffold drift language; Lio's slate shows an Awakened Labor Front mirror channel outside AU control. Workers wait around the amber pipe-and-panel manifold while the dry anchor track, dry-operation harness station bays, and raised supervisor glass make the same physical refusal look like three competing legal realities.",
+        "base_image_prompt": "Tense administrative pressure frame inside the curved maintenance ring: AU incident-board screens on the supervisor wall label the event irregularity in cold blue-white text while the worker channel on Lio's slate labels it refusal. BioElevate legal has not yet entered the display; this frame is about the first split between management classification and worker language. Workers wait around the amber pipe-and-panel manifold while the dry anchor track, dry-operation harness station bays, and raised supervisor glass make the same physical refusal look like two competing realities.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -875,7 +909,51 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "BioElevate legal must not be visible yet; the next screen introduces that frame."
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_bioelevate_liability_frame",
+        "ink_anchor": "bioelevate_liability_frame",
+        "base_image_prompt": "Legal reframe transition inside the same maintenance ring: a sterile white BioElevate legal window blooms over the AU incident board with scaffold drift and maintenance variance language, colder and cleaner than the grimy pipework behind it. Lio's slate shows an outside Awakened Labor Front mirror channel waiting below the official labels; Ilya stands near the supervisor channel after summoning legal with two clipped commands. Nara remains near the amber manifold, Orrin's crew stays by the dry anchors, and Teth watches from the dry-operation harness station, making the same refusal visibly pass through corporate liability language.",
+        "visible_characters": [
+          {
+            "agent_id": "lio_vale",
+            "default_stance": "holding slate where the ALF mirror and official labels compete",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
+          },
+          {
+            "agent_id": "ilya_marne",
+            "default_stance": "near supervisor channel, expression controlled as legal enters the frame",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
+          },
+          {
+            "agent_id": "nara_7",
+            "default_stance": "near manifold, visibly becoming a liability category",
+            "visual_ref": "visual_character_refs.characters.nara_7"
+          },
+          {
+            "agent_id": "orrin_dax",
+            "default_stance": "with dry-side crew at anchors, watching the language shift",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
+          },
+          {
+            "agent_id": "teth_inkwise",
+            "default_stance": "watching pressure diagrams from dry-operation harness station",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "media_visibility >= 2",
+            "prompt": "Add a small outgoing transmission indicator on Lio's slate showing the packet has reached an outside feed."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation support equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
+          "This is a click-through tonal turn: BioElevate legal enters as a new institutional actor, changing refusal into liability grammar."
         ]
       },
       {

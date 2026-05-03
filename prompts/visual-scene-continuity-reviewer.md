@@ -36,6 +36,15 @@ intent, but they do not excuse missing reader/player-facing structure.
 - Are pivotal one-sentence moments allowed to stand alone when impact matters?
 - Do crisis beats such as alarms, red alerts, injuries, arrivals, reveals, and
   threshold decisions get their own sections instead of being buried in a block?
+- When a beat changes the scene's power geometry, tone, or active frame, does
+  the Ink provide a click-through transition and a new or modified visual
+  anchor? Examples include an authority figure entering, a private refusal
+  becoming a public incident, a legal/administrative frame arriving, a crowd
+  going quiet, a weapon or tool changing hands, or a calm work scene becoming
+  a confrontation.
+- Are major entrances staged after the reader has seen the pre-arrival room,
+  rather than drawing the arriving character into the same visual prompt that
+  establishes the prior beat?
 - Are choices placed after the player has seen the location, characters,
   objects, and stakes needed to understand the decision?
 

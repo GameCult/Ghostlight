@@ -78,7 +78,9 @@ The board did not understand a ritual unless someone billed it.
 
 Nara's voice was small and clear. "No blind crawl. Kappa remembers cutting Rell. We remember Rell."
 
-The dry-side riggers went quiet. Teth's harness valves clicked once, then stopped. Ilya arrived fast enough to prove she had been watching.
+The dry-side riggers went quiet. Teth's harness valves clicked once, then stopped.
+
+Ilya arrived fast enough to prove she had been watching. The room changed shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard had stopped being a place where a problem could be fixed quietly.
 
 "Classify that," Ilya said to Lio.
 
@@ -104,7 +106,9 @@ Lio looked at Nara's hands on the rail, at Orrin's crew around the anchor hooks,
 
 ## Tests
 
-The official board called it irregularity. The worker channel called it refusal. BioElevate legal, summoned by Ilya with two clipped phrases, called it potential scaffold drift.
+The official board called it irregularity. The worker channel called it refusal.
+
+BioElevate legal, summoned by Ilya with two clipped phrases, called it potential scaffold drift.
 
 BioElevate had built and leased the engineered seal tech line under language that turned cognition into product behavior and injury into maintenance variance. If Nara remembered Rell, BioElevate had not merely sold AU labor. It had sold AU a worker and called her equipment.
 
