@@ -37,6 +37,7 @@ Aetheria lore/source context
   -> coordinator continuity and next-beat plan
   -> branch compiler materializes Ink + sidecar + compiler notes
   -> IF artifact reviewer audits consequence, fold, and visual continuity
+  -> visual scene reviewer audits click-through segmentation and imagegen-ready prompts
   -> accepted fixture / future training corpus
 ```
 
@@ -50,6 +51,12 @@ ritual memory, weird bureaucracy, noir suspicion, wonder, horror, poetic dread,
 and procedural systems pressure are all valid when source-grounded and
 character-local. Adams/Pratchett-style wit-with-stakes is a useful default
 touchstone for counterbalancing bleakness without dissolving consequence.
+
+Visual replay is a live seam too. Illustrated IF fixtures need click-through
+sections with stable `visual_scene_id` anchors, imagegen-ready base prompts,
+character visibility and stance controls, and branch/state modifiers. One
+whole-fixture image prompt is not enough when the prose moves through several
+places, focal objects, alarms, standoffs, and aftermath states.
 
 ## Important Contracts
 
@@ -137,6 +144,7 @@ plumbing.
 - Student projector
 - Branch compiler implementation beyond coordinator-authored fixtures
 - IF artifact reviewer implementation beyond manual/frontier review
+- Visual scene continuity reviewer implementation beyond prompted specialist review
 - Full scene/event loop implementation
 - Culture prior engine
 - Automatic promotion of branch outcomes into canonical state
@@ -146,6 +154,7 @@ plumbing.
 Generate high-quality, sandboxed, source-grounded branching-scene samples that
 can later train specialized Ghostlight models while staying usable by a game
 engine: exact inputs, exact outputs, provenance, review labels, state mutation
-receipts, branch compiler artifacts, IF review findings, and clear branch
-consequences. The samples should also train tonal control: a fixture needs an
-intentional prose mode and enough ordinary life for consequence to matter.
+receipts, branch compiler artifacts, IF review findings, visual scene plans,
+and clear branch consequences. The samples should also train tonal control: a
+fixture needs an intentional prose mode and enough ordinary life for consequence
+to matter.

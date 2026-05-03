@@ -52,7 +52,17 @@ not carry live next-action lists.
    - Branch-and-fold correction: do not let every choice create an isolated subtree. Normalize consequences into compact state bands and flags, fold most branches back into shared later scenes, and reserve major route splits for consequences that change the playable world enough that convergence would lie.
    - Branch compiler correction: treat Ink materialization as its own organ. It receives fixture brief, lore digest, scene/world/relationship state, actor-local branch candidates, consequence packets, fold plan, and visual continuity requirements; it emits playable Ink plus a training sidecar and compiler notes. It does not own hidden character truth or social mutation.
    - Website-content correction: each complete scene should include an art-direction block with establishing shot, light/color, bodies/interfaces, material evidence, branch-visible marks, one durable base image prompt, and additive branch/state modification prompts. Visual continuity is part of consequence carryover, not decorative garnish applied after the story escapes containment.
+   - Illustrated-IF correction: a narrative scene can contain multiple visual
+     sections. The branch compiler should segment introductions, focal areas,
+     object closeups, arrivals, alarms, pivotal one-sentence beats, standoffs,
+     and aftermaths into click-through Ink sections with stable visual ids.
+     Each visual section needs an imagegen-ready prompt that describes
+     fictional equipment and body affordances in visible terms.
    - IF review correction: run an independent artifact reviewer after branch/Ink generation and before acceptance. The reviewer audits fake variables, cosmetic choices, missing state reads, fake folds, unearned convergence, state-named-instead-of-checked prose, visual callback gaps, and endings that ignore major state. The first Cold Wake user review is a seed failure taxonomy for this evaluator path.
+   - Visual review correction: run a visual scene continuity reviewer for
+     illustrated fixtures. It audits oversized Ink screens, missing visual
+     scene anchors, lore-password image prompts, missing character visibility,
+     weak stance control, and missing branch/state visual modifiers.
    - The older Cold Wake v0/v1 fragments remain diagnostic seam tests around the clinic climax, not the accepted clean fixture.
 
    - Still emit training artifacts at material turns: projected local context, responder packet, raw output/capture, leakage audit, reviewed mutation receipt, and aftermath state where relevant.

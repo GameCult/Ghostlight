@@ -375,7 +375,14 @@ Ghostlight scenes are also website content. A complete fixture should emit
 vivid visual direction alongside prose and training receipts so story branches
 can be illustrated without a later model guessing what the room looked like.
 
-Each scene should preserve an art-direction block with:
+Interactive fiction replay also needs screen rhythm. A narrative scene may move
+through several visual sections: establishing shot, workstation, break table,
+object closeup, alarm state, crowd line, supervisor arrival, aftermath. These
+should be segmented so an InkJS replay can click through the scene at the pace
+the story needs. A pivotal beat may be a single sentence on its own screen when
+the point is to let the image and silence do the work.
+
+Each distinct visual section should preserve an art-direction block with:
 
 - establishing shot: location, scale, camera distance, and dominant geometry
 - light and color: practical light sources, palette, exposure, haze, glare,
@@ -393,6 +400,27 @@ Each scene should preserve an art-direction block with:
 - branch modification prompts: additive edit prompts for visible consequences,
   changed character positions, opened or sealed routes, damaged objects,
   lighting changes, emotional posture, crowd pressure, or other scene states
+
+Prompts must be imagegen-ready. Do not rely on unexplained Aetheria jargon as
+if the image model knows the lore. If the prompt says "wet-service cradle," it
+should also describe the visible thing: a suspended mist-lined maintenance
+frame with padded body supports, fluid hoses, tool rails, and soft restraints
+for cephalopod workers in low gravity. If a scene uses a biodrone limiter
+interface, cavity seal assembly, or life-support bypass kit, describe the
+shape, scale, materials, lights, cables, seals, or displays that make it
+drawable.
+
+Every visual section should identify:
+
+- `visual_scene_id`: stable handle for the screen or key frame
+- `ink_anchor`: knot, stitch, or comment handle where the visual applies
+- `base_image_prompt`: durable scene prompt for the unmodified frame
+- `visible_characters`: characters allowed in the frame and their default
+  position or stance
+- `state_image_modifiers`: additive prompts tied to explicit variables,
+  thresholds, or route flags
+- `branch_image_modifiers`: additive prompts tied to specific branch ids
+- `visual_continuity_notes`: facts that must remain stable across edits
 
 The coordinator owns this surface for now. The responder should not receive
 omniscient visual art direction unless the character can observe it. Character

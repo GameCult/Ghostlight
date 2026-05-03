@@ -17,6 +17,9 @@ should be authored here first and referenced from artifacts or tools.
 - `narrative-quality-reviewer.md`: reviewer prompt for reader-facing story and
   IF coherence, including onboarding, character introduction, branch-fold
   clarity, pacing, voice, and lore accessibility.
+- `visual-scene-continuity-reviewer.md`: reviewer prompt for illustrated IF
+  replay, click-through segmentation, imagegen-ready scene prompts, character
+  visibility, stance control, and branch/state visual modifiers.
 
 ## Discipline
 
@@ -29,5 +32,9 @@ should be authored here first and referenced from artifacts or tools.
   and branch compiler prompts. Do not let prompt templates imply that every
   character is acting inside a crisis. Routine, wit, warmth, ritual, boredom,
   wonder, and tenderness can be just as state-grounded as fear.
+- Treat visual segmentation as prompt-relevant state for illustrated IF. A
+  fixture can need several click-through screens inside one narrative scene;
+  each distinct place, focal area, pivotal moment, and branch-visible state
+  needs an imagegen-ready prompt or modifier.
 - If a prompt is used for a capture, preserve the exact rendered prompt in the
   capture and include the prompt file path when the capture schema allows it.

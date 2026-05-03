@@ -15,24 +15,52 @@ VAR formal_stoppage = false
 -> start
 
 === start ===
+// ghostlight.scene: pallas.intro.yard_wake; visual_scene_id: pallas_yard_wake
+-> intro_yard_wake
+
+=== intro_yard_wake ===
 Pallas Yard Twelve wakes without ceremony. The cavity wall hums through the deck plates before the shift bell, a low mineral throat-note that everyone pretends not to hear unless it changes.
 
+-> intro_service_ring
+
+=== intro_service_ring ===
+// ghostlight.scene: pallas.intro.service_ring_kappa; visual_scene_id: pallas_service_ring_kappa
 Lio Vale walks Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
 
 Wet-side crew drift in harness cradles shaped for limbs that do not stand. Baseline riggers clip dry anchors along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: warmer mist for cephalopod lungs, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
 
 The yard is normal. That is the first horror.
 
+-> intro_nara
+
+=== intro_nara ===
+// ghostlight.scene: pallas.intro.nara_manifold; visual_scene_id: pallas_nara_manifold
 Nara-7 stands at the Kappa manifold with the other engineered seal technicians, each gray skinsuit numbered for a task stream instead of a family line. She touches the wall twice, pauses, and touches it again with two fingers spread wide. AU calls that retained route behavior. Lio has watched enough shifts to know a warning when it learns manners.
 
+-> intro_orrin
+
+=== intro_orrin ===
+// ghostlight.scene: pallas.intro.orrin_anchor_rail; visual_scene_id: pallas_orrin_anchor_rail
 Orrin Dax's dry-side crew works the anchor rail with cold-stiff hands and old tools. They are baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complains like a man trying not to notice he is scared.
 
+-> intro_teth
+
+=== intro_teth ===
+// ghostlight.scene: pallas.intro.teth_wet_service; visual_scene_id: pallas_teth_wet_service
 Teth Inkwise hangs in a wet-service cradle, four arms managing valves while the rest of the body floats inside the harness rig. The cephalopod crew keeps the service lungs alive in spaces built by companies that still describe their bodies as accommodation costs.
 
+-> intro_ilya
+
+=== intro_ilya ===
+// ghostlight.scene: pallas.intro.ilya_supervisor_glass; visual_scene_id: pallas_ilya_supervisor_glass
 Ilya Marne watches from the supervisor glass with AU polish and AU hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stops showing decimals.
 
 Lio knows the day will probably go wrong. The only question is whether it goes wrong before everyone has finished pretending this is maintenance.
 
+-> ordinary_round_choice
+
+=== ordinary_round_choice ===
+// ghostlight.scene: pallas.ordinary_round.choice; visual_scene_id: pallas_ordinary_round_choice
 // ghostlight.branch: branch-01-walk-with-nara; action: move; intent: Learn the engineered worker's ordinary hazard routine before crisis.
 * [Walk the manifold line with Nara-7.]
     ~ evidence_of_sentience += 1
@@ -48,6 +76,7 @@ Lio knows the day will probably go wrong. The only question is whether it goes w
     -> check_teth_harness
 
 === walk_with_nara ===
+// ghostlight.scene: pallas.branch.nara_manifold_walk; visual_scene_id: pallas_nara_manifold_walk
 Nara-7 touches the Kappa manifold twice, waits, then touches it a third time with two fingers spread apart. Her batch tag says Seal Technician, BioDrone Standard. Her hand says she is listening.
 
 "Kappa sings wrong," she says.
@@ -63,6 +92,7 @@ She does not say memory. She does not say Rell. She gives Lio just enough truth 
 -> chokepoint_refusal
 
 === sit_with_orrin ===
+// ghostlight.scene: pallas.branch.orrin_break_table; visual_scene_id: pallas_orrin_break_table
 Orrin Dax has a mug of recycler coffee in one hand and a dry anchor hook across his knees. The hook is older than the shift board and better maintained.
 
 "Soft-sleeve specialists got a humidity credit again," he says, not looking at Lio. "My crew gets frost rash and a lecture about grit."
@@ -78,6 +108,7 @@ Orrin snorts. "Then tell the future to remember who taught it where the bolts ar
 -> chokepoint_refusal
 
 === check_teth_harness ===
+// ghostlight.scene: pallas.branch.teth_harness_check; visual_scene_id: pallas_teth_harness_check
 Teth Inkwise turns in the wet-service cradle, four arms working while the rest of the body hangs in careful suspension. The cephalopod zero-g maintenance harness is not a suit so much as a negotiated truce between flesh, tool, coolant, and vacuum: soft-anchor loops, pressure cuffs, a rail of sealed implements, tiny valves patched by someone who trusted skill more than procurement.
 
 "Your cuff is patched again," Lio says.
@@ -89,6 +120,7 @@ The service lung diagram flickers under one of Teth's arms. If Kappa goes hard r
 -> chokepoint_refusal
 
 === chokepoint_refusal ===
+// ghostlight.scene: pallas.threshold.chokepoint_refusal; visual_scene_id: pallas_chokepoint_refusal
 The shift bell rings. The board orders a blind crawl through Kappa.
 
 Nara-7 stops at the lip of the access throat. Three other engineered seal techs stop with her. They touch the manifold in the same sequence: twice, wait, third touch spread wide.
@@ -124,6 +156,7 @@ The dry-side riggers go quiet. Teth's harness valves click once, then stop. Ilya
     -> shield_nara
 
 === quiet_safety_pause ===
+// ghostlight.scene: pallas.branch.quiet_safety_pause; visual_scene_id: pallas_quiet_safety_pause
 "Safety pause," Lio says. "Local channel. Kappa amber, worker hazard report, no blind crawl until wet-service confirms load."
 
 Ilya's eyes narrow at the word worker. She hears the legal trap even when Lio buries it in maintenance language.
@@ -133,6 +166,7 @@ The pause buys minutes. It also keeps the first evidence small enough that AU mi
 -> tests_and_reversals
 
 === formalize_stoppage ===
+// ghostlight.scene: pallas.branch.formalize_stoppage; visual_scene_id: pallas_formalize_stoppage
 Lio keys the log before fear can bargain the words down.
 
 "Coordinated labor stoppage at Kappa manifold. Cause: remembered injury, active hazard, refusal of blind crawl."
@@ -144,6 +178,7 @@ The strike exists now. That makes it harder to erase and easier to punish.
 -> tests_and_reversals
 
 === shield_nara ===
+// ghostlight.scene: pallas.branch.shield_nara; visual_scene_id: pallas_shield_nara
 Lio steps into the inspector cam's line, close enough to make the gesture unmistakable and deniable by only the most expensive liar.
 
 "Questions through shift control," Lio says. "No direct probe. She reported a hazard."
@@ -153,6 +188,7 @@ Nara's hands stay flat on the rail. Orrin watches the move, and his expression d
 -> tests_and_reversals
 
 === tests_and_reversals ===
+// ghostlight.scene: pallas.reversal.classification_pressure; visual_scene_id: pallas_classification_pressure
 The official board calls it irregularity. The worker channel calls it refusal. BioElevate legal, summoned by Ilya with two clipped phrases, calls it potential scaffold drift.
 
 BioElevate built and leased the engineered seal tech line under language that turned cognition into product behavior and injury into maintenance variance. If Nara remembers Rell, BioElevate has not merely sold AU labor. It has sold AU a worker and called her equipment.
@@ -196,6 +232,7 @@ The bypass timer is still kind. Not generous, but kind enough to make choices re
     -> public_liability
 
 === show_nara_memory ===
+// ghostlight.scene: pallas.branch.nara_marks_path; visual_scene_id: pallas_nara_marks_path
 Lio turns the slate outward instead of handing it to Ilya.
 
 "Mark the path. Only the path."
@@ -211,6 +248,7 @@ Orrin says, "Trained route residue does not remember the part procurement lied a
 -> climax
 
 === ask_orrin_solidarity ===
+// ghostlight.scene: pallas.branch.orrin_solidarity; visual_scene_id: pallas_orrin_solidarity
 Lio does not ask Orrin to be noble. That would insult everyone present.
 
 "Dry anchors decide whether wet service can carry load. You know the route. Are you signing the crawl order as safe?"
@@ -224,6 +262,7 @@ The laugh that follows is thin, but it is shared.
 -> climax
 
 === bypass_kit ===
+// ghostlight.scene: pallas.branch.bypass_kit; visual_scene_id: pallas_bypass_kit
 Teth opens a service pouch and produces a bypass bridge wrapped in maintenance cloth, the kind of device that officially does not exist because officially nobody needs to survive a strike.
 
 "This gives Kappa minutes," Teth says. "Not obedience. Minutes."
@@ -233,6 +272,7 @@ The wet-service crew moves like a quiet animal with too many hands and exactly e
 -> climax
 
 === public_liability ===
+// ghostlight.scene: pallas.branch.public_liability; visual_scene_id: pallas_public_liability
 Lio sends the packet before Ilya can put a hand over the slate.
 
 The ALF legal mirror blinks receipt. Somewhere outside AU's walls, the words coordinated memory and hazard refusal have escaped into a place procurement cannot wipe with a revised work order.
@@ -244,7 +284,13 @@ Ilya's voice goes soft. "You understand what security will call that."
 -> climax
 
 === climax ===
+// ghostlight.scene: pallas.climax.kappa_red_alert; visual_scene_id: pallas_kappa_red_alert
 Kappa goes red.
+
+-> climax_decision
+
+=== climax_decision ===
+// ghostlight.scene: pallas.climax.decision_line; visual_scene_id: pallas_climax_decision_line
 
 {bypass_ready:
 The bypass bridge catches part of the load, humming in Teth's harness like a held breath.
@@ -298,6 +344,7 @@ Ilya demands a decision: recognition language in the incident log, {bypass_ready
     -> orrin_front_demand
 
 === hold_for_recognition ===
+// ghostlight.scene: pallas.branch.hold_for_recognition; visual_scene_id: pallas_hold_for_recognition
 Lio keeps both hands visible.
 
 "Record it as worker judgment. Not drift. Not sabotage. Judgment."
@@ -319,6 +366,7 @@ Ilya records the phrase with a face like broken glass hidden under a clean cloth
 -> return_fold
 
 === trade_bypass_for_evidence ===
+// ghostlight.scene: pallas.branch.trade_bypass_for_evidence; visual_scene_id: pallas_trade_bypass_for_evidence
 Lio nods to Teth.
 
 "Bypass under shared custody. Sealed packet to ALF mirror, AU incident board, and yard safety. No forced crawl."
@@ -328,6 +376,7 @@ Ilya accepts because the alternative is a casualty report she cannot classify ou
 -> return_fold
 
 === seal_evidence_without_bypass ===
+// ghostlight.scene: pallas.branch.seal_evidence_without_bypass; visual_scene_id: pallas_seal_evidence_without_bypass
 Lio lifts the slate where the inspector cam can see the custody seal.
 
 "Packet to yard safety, AU incident board, and the Awakened Labor Front mirror. No blind crawl while Kappa is red. If you want a body in that throat, you will sign your name above it."
@@ -337,6 +386,7 @@ There is no bypass bridge to soften the bargain. The margin stays ugly. But the 
 -> return_fold
 
 === orrin_front_demand ===
+// ghostlight.scene: pallas.branch.orrin_front_demand; visual_scene_id: pallas_orrin_front_demand
 Orrin steps forward before Lio has to spend Nara again.
 
 "Dry side refuses the crawl," he says. "Our call. Our anchors. You want a body in that throat, superintendent, put the board in first."
@@ -346,6 +396,7 @@ For one bright second, the old lie breaks: baseline and engineered labor are not
 -> return_fold
 
 === return_fold ===
+// ghostlight.scene: pallas.return.seal_holds; visual_scene_id: pallas_seal_holds
 The seal holds.
 
 {worker_injury > 0:
@@ -403,6 +454,11 @@ Ilya settles for disciplinary interviews and a private vow to find whoever taugh
 }
 
 Later histories will not call this the beginning of the Pallas Species Strikes. Histories like clean beginnings because historians do not have to smell the recycler coffee.
+
+-> return_object_callback
+
+=== return_object_callback ===
+// ghostlight.scene: pallas.return.object_callback; visual_scene_id: pallas_object_callback
 
 But one line entered the incident log and could not be fully removed:
 

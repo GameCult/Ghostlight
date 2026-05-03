@@ -142,6 +142,14 @@ When the user says to prepare for imminent compaction:
 - Establish ordinary life before interruption when the fixture calls for it:
   routines, work texture, relationships, private jokes, rituals, small desires,
   and local accommodations are part of worldbuilding, not filler.
+- For illustrated Ink fixtures, segment prose into click-through visual
+  sections. Distinct places, focal areas, object closeups, arrivals, alarms,
+  pivotal one-sentence beats, and aftermath states need stable visual scene ids
+  and imagegen-ready prompts.
+- Write visual prompts for a general image model, not a lore expert. Explain
+  fictional objects and body affordances in visible terms: geometry, materials,
+  lighting, stance, interfaces, tools, supports, cables, fluids, screens, and
+  crowd positions.
 - Ground scene writing in the source's material details: habitat form,
   infrastructure, law, class pressure, money, route access, surveillance,
   communication channels, body affordances, and local failure costs.

@@ -59,6 +59,8 @@ path is a source-grounded branching-scene data loop:
 - Sandboxed responder prompt template: `prompts/sandboxed-responder-packet.md`
 - Research sanity responder prompt template: `prompts/research-sanity-responder.md`
 - Narrative quality reviewer prompt: `prompts/narrative-quality-reviewer.md`
+- Visual scene continuity reviewer prompt:
+  `prompts/visual-scene-continuity-reviewer.md`
 - Research-enabled Sella packet: `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
 - Research-enabled Sella capture: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
 - Research-enabled Sella mutation: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`
@@ -155,8 +157,11 @@ liability framing, cephalopod wet-service leverage, and a folded
 recognition/safety climax. The Ink now gates Nara's marked path and Teth's
 bypass, gives `evidence_of_sentience`, `nara_centered`, and
 `formal_stoppage` later reads, and gives visual sidecar states explicit
-trigger mappings. Treat it as coordinator/IF scaffold training data, not raw
-responder gold.
+trigger mappings. It now segments the introduction, branch locations, Kappa red
+alert, climax decision, and aftermath into click-through visual sections with
+`visual_scene_id` anchors and imagegen-ready prompts that explain fictional
+equipment in visible terms. Treat it as coordinator/IF scaffold training data,
+not raw responder gold.
 
 Next: add the corpus coverage ledger seam or choose the next Aetheria fixture
 from the 100-150 broad coverage target.
