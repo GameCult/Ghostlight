@@ -19,6 +19,13 @@ characters, factions, pressures, memories, masks, and conflict arcs in explicit
 state, then project that state into usable scenes, dialogue beats, outlines,
 and dramatic complications.
 
+That organ must also hold tone. Aetheria should not be flattened into one dry
+technical crisis register. The setting can carry Adams/Pratchett-style
+wit-with-stakes, domestic comedy, noir suspicion, horror, wonder, dour poetry,
+romance, workplace absurdity, and procedural systems prose, often inside the
+same broad canon. The common rule is not "be grim." The common rule is that
+tone must reveal character, setting, and consequence.
+
 ## Why This Helps Dialogue
 
 Ghostlight should not ask one LLM prompt to "write good character drama" from
@@ -32,6 +39,11 @@ The useful split is:
 - The character speaks from who they are, what they have endured, what they
   want, what they are feeling, what they are hiding, and how they perceive the
   person in front of them.
+
+This does not mean every line should sound like emergency procedure. Characters
+also speak from routine, fatigue, affection, boredom, private jokes, little
+status games, cultural rituals, and ordinary work. Those are not filler; they
+are what make later pressure legible.
 
 That means dialogue prompts should be character-local rather than omniscient.
 They should include only the state that character plausibly has access to:
@@ -93,6 +105,8 @@ Ghostlight should help generate and manage:
 - character dossiers
 - faction stances
 - relationship tensions
+- tonal mode and style targets
+- ordinary-life texture before conflict
 - scene premises
 - dialogue scaffolds
 - procedural complications
@@ -113,6 +127,13 @@ does not start juggling knives in the pantry.
 
 Ghostlight should also support story generation across Aetheria's broader
 timeline.
+
+The existing Aetheria stories are tonal evidence. `When We Get Home` makes the
+setting legible through jokes, domestic longing, debt, delays, and the slow
+recognition that home has moved. `Rain` makes the setting legible through
+ritual, memory, sensory repetition, and a patient reversal from wonder to
+horror. Future fixtures should be able to choose similarly varied modes instead
+of filing every event into one stern technical drawer.
 
 That means it should be able to produce:
 

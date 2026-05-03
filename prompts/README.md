@@ -25,5 +25,9 @@ should be authored here first and referenced from artifacts or tools.
 - Do not include parent conversation context in responder prompts.
 - Keep hidden state, future branch plans, raw numeric state vectors, and
   coordinator rationale out of responder-visible prompt text.
+- Treat tonal intent as prompt-relevant state for story, coordinator, reviewer,
+  and branch compiler prompts. Do not let prompt templates imply that every
+  character is acting inside a crisis. Routine, wit, warmth, ritual, boredom,
+  wonder, and tenderness can be just as state-grounded as fear.
 - If a prompt is used for a capture, preserve the exact rendered prompt in the
   capture and include the prompt file path when the capture schema allows it.

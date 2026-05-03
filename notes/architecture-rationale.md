@@ -69,16 +69,22 @@ The better division of labor is:
 - Ghostlight maintains explicit state about characters, relationships,
   memories, pressures, goals, masks, culture, and scene stakes.
 - A narrative or drama pass can arrange conflicts, reversals, escalation, and
-  consequences.
+  consequences, but it should also arrange routine, quiet, humor, rituals,
+  domestic texture, downtime, and slow buildup when those are what make the
+  later consequence legible.
 - Dialogue generation should then happen through character-local context packs:
   what this character knows, feels, wants, remembers, conceals, and believes
   about the person in front of them.
 
 That distinction matters because realistic dialogue usually comes from
-subjective pressure, not from a summary saying "write dramatic banter here."
-Each character needs room to act from their own partial state. The authoring
-agent can build the trap. The character projection should decide how the person
-inside the trap breathes.
+subjective circumstance, not from a summary saying "write dramatic banter
+here." Pressure is one circumstance. So are habit, boredom, love, rivalry,
+ritual, absurd bureaucracy, professional pride, and wanting lunch to be over
+without anyone noticing the reactor invoice. Each character needs room to act
+from their own partial state. The authoring agent can build the trap. It can
+also build the kitchen table, the rain ritual, the bad coffee, and the private
+joke that makes the trap hurt later. The character projection should decide how
+the person inside the moment breathes.
 
 ## Compact-Rehydrate-Reorient
 

@@ -32,6 +32,7 @@ hard_boundaries:
   - Prompt text is projection, not truth storage.
   - Canonical agent state and per-agent perceived state must remain distinct.
   - Characters act from local knowledge, local perception, local pressure, and bounded affordances.
+  - Aetheria prose must support tonal range and ordinary life, not only crisis pressure. Wit, warmth, domesticity, ritual, boredom, wonder, and quiet dread are valid state-grounded modes when they fit the scene.
   - Listener misread is first-class; intent and interpretation are not the same object.
   - Human-facing appraisal is a first-class target; VoidBot must be able to read people, form grounded opinions, and revise those opinions over repeated contact.
   - Generated action is an event proposal; deterministic gates and reviewed mutation decide what becomes state.
@@ -48,10 +49,10 @@ live_architecture:
   state_model:
     - Layer personality through organization, disposition, behavior, presentation, situational activation, relationships, goals, and values.
     - Canonical authored state has no certainty; perceived overlays carry observed activation, attributed disposition, and confidence.
-    - Voice style is a broad communication vector; defensive verbal behavior should emerge from state, pressure, relationship, and presentation.
+    - Voice style is a broad communication vector; defensive, comic, tender, ritual, poetic, dry, or evasive verbal behavior should emerge from state, circumstance, relationship, tonal mode, and presentation.
   projection:
     - Project canonical state into character-local operating context before any responder sees it.
-    - Include scene facts, relevant memory, relationship read, stakes, embodiment/interface affordances, action affordances, projection controls, retrieved lore, and latent pressure handling.
+    - Include scene facts, relevant memory, relationship read, stakes, embodiment/interface affordances, action affordances, projection controls, retrieved lore, tonal intent, ordinary-life texture, and latent pressure handling.
     - Hide raw state internals such as means, plasticity, current_activation, and numeric dimensions from prompt text.
   responder_packets:
     - `packet_only` tests runtime parity from curated source excerpts.
@@ -61,6 +62,7 @@ live_architecture:
   coordinator:
     - The coordinator is a trainable soft organ: it stages scenes, chooses next beats and acting agents, invokes specialist machinery, carries unresolved hooks, emits glue prose, and proposes game-engine-shaped state changes.
     - Glue prose is training signal, not canonical truth.
+    - Coordinator prose should choose an intentional tonal mode for the scene and protect breathing room when the story needs routine, levity, domestic texture, wonder, or slow dread before consequence.
   branch_compiler:
     - The branch compiler turns fixture briefs, lore digests, scene/world state, actor-local branch candidates, reviewed consequence packets, fold plans, and visual continuity requirements into playable Ink plus training sidecars and compiler notes.
     - The branch compiler owns playable structure, conditionals, variables, callbacks, fold materialization, and image prompt handles; it does not own hidden character truth, participant appraisal, or durable social mutation.
@@ -83,6 +85,7 @@ active_subgoals:
   - Keep Ghostlight focused on the architecture and data pipeline for socially persistent agents.
   - Build schema-stable, sandboxed responder, coordinator, branch compiler, and IF review data before chasing larger runtime loops.
   - Preserve Aetheria grounding through source-backed lore, branch labels, and reviewed assumptions.
+  - Preserve Aetheria tonal range: Adams/Pratchett-style wit-with-stakes is a useful default touchstone, while other controlled modes remain valid when grounded in character, setting, and consequence.
   - Shape every soft judgment as future training data, not permanent prompt folklore.
   - Keep item/technology exploration database-shaped for Aetheria-Economy instead of prose-only worldbuilding, including colony-consumed manufactured trade goods, not only gear assemblies.
   - Track corpus coverage across all major factions, minor factions, movements, and flashpoints so no single fixture becomes the training universe by accident.

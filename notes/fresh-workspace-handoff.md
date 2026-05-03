@@ -16,7 +16,8 @@ Do not continue implementation automatically from a rehydrate-only request.
 
 Ghostlight exists to build socially persistent generative agents for Aetheria:
 characters and institutions whose actions emerge from personality, culture,
-memory, perception, incentives, material constraints, and scene pressure.
+memory, perception, incentives, material constraints, ordinary life, tonal mode,
+and scene pressure.
 
 The live product-facing goal is procedural branching scene generation for games:
 speech and non-speech actions, NPC responses, consequences, future hooks, and
@@ -104,6 +105,15 @@ current gold-data route.
 - Cold Wake is a historical pre-Elysium grounding fixture, not the product target.
 - Call of the Void remains a consumer target for content generation and dialogue scaffolding.
 - Elysium futures are branch-local canon indexed by lineage.
+- Aetheria writing should not collapse into constant crisis or unmarked dry
+  technical severity. Adams/Pratchett-style wit-with-stakes is a useful default
+  touchstone: warmth, absurdity, humane observation, and institutional comedy
+  can carry real consequence. Other controlled modes are valid too, including
+  domestic comedy, noir, horror, wonder, romance, dour poetry, procedural
+  investigation, and dry systems prose.
+- Before writing conflict, establish the life being interrupted when the fixture
+  calls for it: routines, work texture, relationships, private jokes, rituals,
+  status games, habits, small desires, and ordinary accommodations.
 - Before generating Aetheria scenes, check lore for factions, movements,
   institutions, species/body affordances, location, time period, infrastructure,
   and material constraints.
@@ -161,6 +171,9 @@ before moving on.
   tracked, they need consequence or an explicit telemetry-only label.
 - Do not let Elysium branch futures overwrite Sol single-history facts.
 - Do not rebuild the older corridor-crisis game slice by accident.
+- Do not let "state-grounded" become "everyone speaks in crisis-procedure
+  clauses." State also explains jokes, quiet, tenderness, ritual, awkwardness,
+  boredom, and comfort.
 - Do not treat parent-visible subagent output as proof of research. If the
   parent cannot see tool calls, require explicit research trace entries or use a
   runner that captures calls. Accepted research-enabled gold data needs

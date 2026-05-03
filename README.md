@@ -3,12 +3,13 @@
 Ghostlight is a research and implementation home for socially persistent
 generative agents.
 
-The project is about characters and simulated people who remain coherent under
-time, pressure, memory, culture, misreading, masks, incentives, and changing
-relationships. The aim is not to make a language model sound charming for one
-scene. The aim is to build machinery that can track who someone is, what they
-believe, what they hide, how they see other people, and how their behavior
-changes when the world leans on them.
+The project is about characters and simulated people who remain coherent across
+time, routine, pressure, memory, culture, misreading, masks, incentives, and
+changing relationships. The aim is not to make a language model sound charming
+for one scene. The aim is to build machinery that can track who someone is,
+what they believe, what they hide, how they see other people, how they live when
+nothing is exploding, and how their behavior changes when the world leans on
+them.
 
 In practical terms, Ghostlight is building the state and projection layer for
 character-driven generation:
@@ -42,12 +43,17 @@ Ghostlight separates three things that are easy to blur together:
 
 The prompt is not the character. The prompt is a rendered slice of state.
 
-That distinction matters because believable dialogue should come from pressure,
-not vibes. Cat being sarcastic should fall out of shame sensitivity, distance
-seeking, suspicion, relationship tension, scene stakes, and dry pointed voice.
+That distinction matters because believable dialogue should come from character
+circumstance, not vibes. Sometimes that circumstance is acute pressure. Often it
+is habit, boredom, affection, work rhythm, class embarrassment, ritual memory,
+professional competence, petty irritation, or ordinary warmth trying to survive
+inside a bleak system. Cat being sarcastic should fall out of shame sensitivity,
+distance seeking, suspicion, relationship tension, scene stakes, and voice.
 Oz withholding information should fall out of mask rigidity, privacy pressure,
-relationship fear, and the need to stay useful. The system should be able to
-show its work.
+relationship fear, and the need to stay useful. A quiet joke, a domestic aside,
+or a moment of tenderness should be just as explainable in state terms as a
+threat. The system should be able to show its work without making every scene
+sound like Greg Egan having a panic attack in a server closet.
 
 ## Current Status
 
@@ -84,11 +90,13 @@ For one speaker in one scene, Ghostlight should gather speaker-local state:
 - what memories are active
 - how they read the listener
 - what the relationship currently feels like
-- what pressures the scene applies
+- what circumstance the scene creates: routine, desire, scarcity, humor,
+  tenderness, danger, institutional friction, or open crisis
 - what voice surface is active
 
-The projection layer turns that into compact pressure prose and prompt sections.
-The dialogue model then writes from that pressure model.
+The projection layer turns that into compact character-local prose and prompt
+sections. The dialogue model then writes from the active circumstance and tonal
+mode, not from a universal crisis register.
 
 Longer term, a frontier model can act as a teacher projector that generates
 reviewed projection artifacts. Those artifacts can train a smaller student

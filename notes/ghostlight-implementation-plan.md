@@ -5,6 +5,10 @@
 Build the first reliable data-generation loop for socially persistent Aetheria
 agents. The immediate target is not a full simulation. It is a clean, reviewed,
 sandboxed training-data pipeline for branching scenes and state consequences.
+The output should also preserve Aetheria's tonal range: wit with stakes,
+ordinary life before interruption, quiet ritual, domestic warmth, weirdness,
+dread, and systems pressure as needed. Do not let the pipeline's interest in
+state and consequence turn every fixture into the same crisis-procedure voice.
 
 Planning belongs in this file and the handoff/map state surfaces. Architecture
 docs should describe durable contracts, boundaries, and data shapes; they should
@@ -16,6 +20,9 @@ not carry live next-action lists.
    - Keep `schemas/agent-state.schema.json` and required vectors coherent.
    - Keep canonical state separate from perceived overlays.
    - Keep voice, presentation, relationship, memory, and situational pressure explainable.
+   - Add or preserve tonal-mode and ordinary-life cues where they affect prose:
+     humor, ritual, domesticity, boredom, tenderness, wonder, professional
+     routine, and slow dread are not decoration when they explain behavior.
    - Do not leak raw numeric state internals into responder prompt text.
 
 2. Stabilize responder packet and output seams.
@@ -64,6 +71,11 @@ not carry live next-action lists.
    - Require cultural collision in coverage stories so training data captures
      inter-faction dynamics, mutual misreads, and movement pressure instead of
      sealed faction portraits.
+   - Vary tonal modes across fixtures so the corpus does not train one
+     flattened Aetheria voice. Use Adams/Pratchett-style wit-with-stakes as a
+     useful default touchstone, but allow controlled noir, horror, romance,
+     domestic comedy, dour poetry, dry technical systems prose, wonder, and
+     other scene-appropriate modes.
    - Emit technology/item manifest deltas when scenes discover or stress gear, assemblies, supply chains, or faction tech bases.
    - Keep artifacts database-shaped enough for future game-engine integration.
 

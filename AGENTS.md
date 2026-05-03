@@ -6,7 +6,7 @@ Ghostlight is a research and implementation home for socially persistent
 generative agents. The core problem is not "make an LLM sound like a person."
 The core problem is building an architecture where personality, culture,
 memory, masks, perception, and incentives can actually survive contact with
-time, relationships, and pressure.
+time, relationships, routine, tonal variation, and pressure.
 
 This repo exists so those organs can live somewhere cleaner than a side chamber
 inside another project.
@@ -132,6 +132,16 @@ When the user says to prepare for imminent compaction:
 - Before writing or generating Aetheria scenes, check AetheriaLore for the
   factions, movements, institutions, species or body types, location, and time
   period involved.
+- Before drafting story prose, choose an intentional tonal mode or blend for the
+  scene. Aetheria should support wit-with-stakes, warmth, absurdity, domestic
+  texture, ritual quiet, wonder, horror, noir, dour poetry, and dry systems
+  prose as needed. Do not default to constant crisis or procedural severity.
+- Use Adams/Pratchett-style comic precision and humane levity as a useful
+  default touchstone when no stronger scene-specific style is called for:
+  jokes and absurdity should reveal stakes, not dissolve them.
+- Establish ordinary life before interruption when the fixture calls for it:
+  routines, work texture, relationships, private jokes, rituals, small desires,
+  and local accommodations are part of worldbuilding, not filler.
 - Ground scene writing in the source's material details: habitat form,
   infrastructure, law, class pressure, money, route access, surveillance,
   communication channels, body affordances, and local failure costs.

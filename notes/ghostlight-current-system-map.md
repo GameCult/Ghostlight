@@ -44,6 +44,13 @@ Responder packets are one seam, not the whole project. The current branching
 scene path also requires coordinator receipts, branch compiler artifacts, and an
 independent IF review pass before a fixture is accepted.
 
+Tone is also a live seam. The system should preserve Aetheria's range instead
+of defaulting to dry technical crisis prose: comic warmth, domestic routine,
+ritual memory, weird bureaucracy, noir suspicion, wonder, horror, poetic dread,
+and procedural systems pressure are all valid when source-grounded and
+character-local. Adams/Pratchett-style wit-with-stakes is a useful default
+touchstone for counterbalancing bleakness without dissolving consequence.
+
 ## Important Contracts
 
 - Agent state: `schemas/agent-state.schema.json`
@@ -140,4 +147,5 @@ Generate high-quality, sandboxed, source-grounded branching-scene samples that
 can later train specialized Ghostlight models while staying usable by a game
 engine: exact inputs, exact outputs, provenance, review labels, state mutation
 receipts, branch compiler artifacts, IF review findings, and clear branch
-consequences.
+consequences. The samples should also train tonal control: a fixture needs an
+intentional prose mode and enough ordinary life for consequence to matter.
