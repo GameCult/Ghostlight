@@ -64,12 +64,6 @@ not carry live next-action lists.
      character refs only for characters actually visible in the rendered frame;
      keep continuity notes as tooling constraints unless rewritten as visible
      prompt text.
-   - Visual blockout correction: for multi-angle illustrated replay, prompt
-     continuity is not enough. Emit a `.blockout.json` plan for any fixture
-     that needs stable room geometry across several cameras, then generate
-     Blender guide renders. Treat the blockout as a spatial/camera maquette
-     for room shape, scale, large objects, actor blocking, and shot angle, not
-     as a segmentation mask or a hidden color contract for imagegen.
    - IF review correction: run an independent artifact reviewer after branch/Ink generation and before acceptance. The reviewer audits fake variables, cosmetic choices, missing state reads, fake folds, unearned convergence, state-named-instead-of-checked prose, visual callback gaps, and endings that ignore major state. The first Cold Wake user review is a seed failure taxonomy for this evaluator path.
    - Visual review correction: run a visual scene continuity reviewer for
      illustrated fixtures. It audits oversized Ink screens, missing visual

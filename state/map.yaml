@@ -119,7 +119,6 @@ current_artifacts:
     - docs/architecture/soft-model-training-artifacts.md
     - docs/architecture/training-plan.md
     - docs/architecture/technology-item-manifest-plan.md
-    - docs/architecture/visual-blockout-architecture.md
   schemas:
     - schemas/agent-state.schema.json
     - schemas/projection-example.schema.json
@@ -128,7 +127,6 @@ current_artifacts:
     - schemas/coordinator-artifact.schema.json
     - schemas/responder-packet.schema.json
     - schemas/responder-output.schema.json
-    - schemas/visual-blockout-plan.schema.json
   prompts:
     - prompts/README.md
     - prompts/sandboxed-responder-packet.md
@@ -174,7 +172,6 @@ current_artifacts:
     - examples/ink/pallas-species-strikes.branch-and-fold.v0.ink
     - examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json
     - examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json
-    - examples/visual-blockouts/pallas-species-strikes.service-ring-kappa.v0.blockout.json
     - experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md
   archived_receipts:
     - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
@@ -189,5 +186,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Pallas Species Strikes now has a reviewer-revised accepted-as-draft branch-and-fold IF fixture grounded in AU Bloom cavity-shell labor, Awakened Labor organizing, BioElevate uplift/biodrone systems, baseline displacement fear, and cephalopod maintenance leverage. Its visual stack now separates visual prompt planning from a Blender-backed blockout plan; the blockout plan is a spatial/camera maquette for multi-angle illustrated replay, not a segmentation mask or hidden color contract. Cold Wake remains an archived historical fixture and local-model receipt surface, not the active gold-data path.
-  next_action: Promote the blockout seam only as far as needed for the Pallas fixture, then add the corpus coverage ledger seam or select the next Aetheria fixture from the 100-150 broad coverage target.
+  summary: Pallas Species Strikes now has a reviewer-revised accepted-as-draft branch-and-fold IF fixture grounded in AU Bloom cavity-shell labor, Awakened Labor organizing, BioElevate uplift/biodrone systems, baseline displacement fear, and cephalopod maintenance leverage. Its lore digest and visual plan treat Bloom yards as engineered rotating habitat shells built from consolidated asteroid rubble/aggregate, TCS, shell plating, supports, seals, manifolds, and service systems. Its training annotation now references a separate visual plan artifact for click-through visual segmentation, stable visual character refs, the global Dreams-style image cue, and affirmative imagegen-ready scene prompts. Cold Wake remains an archived historical fixture and local-model receipt surface, not the active gold-data path.
+  next_action: Add the corpus coverage ledger seam or select the next Aetheria fixture from the 100-150 broad coverage target.

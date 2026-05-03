@@ -1,7 +1,6 @@
 {
   "schema_version": "ghostlight.ink_visual_plan.v0",
   "visual_plan_id": "pallas-species-strikes-branch-and-fold-visual-v0",
-  "blockout_plan_ref": "examples/visual-blockouts/pallas-species-strikes.service-ring-kappa.v0.blockout.json",
   "ink_ref": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
   "source_training_annotation_ref": "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json",
   "scene_id": "pallas-species-strikes-branch-and-fold-v0",
