@@ -81,8 +81,8 @@ the visual artifact.
   productivity hardware, bare-minimum life support, restraint geometry, and
   hard work lighting.
 - Are environment labels translated into visible forms? For example, explain
-  what a manifold line, cavity yard, supervisor glass, or anchor rail looks
-  like instead of treating the label as a picture.
+  what a manifold line, cavity yard, supervisor catwalk, transparent safety
+  rail, or anchor rail looks like instead of treating the label as a picture.
 - If the scene is inside a Bloom cavity, does the plan show an engineered
   rotating habitat shell built from consolidated asteroid rubble/aggregate, TCS
   substrate, shell plating, ribbed supports, seals, manifolds, and service
@@ -111,6 +111,11 @@ the visual artifact.
 - Are nonhuman or altered bodies represented through visible affordances:
   harnesses, supports, water/mist interfaces, manipulators, suit geometry,
   access rails, body scale, or workstation design?
+- Does nonhuman body language use the correct anatomy for the supplied body
+  plan? Flag prompts that accidentally translate tentacles, paws, wings,
+  manipulators, tails, distributed bodies, synthetic limbs, or other altered
+  affordances into human shoulders, elbows, hands, arms, or biped staging
+  unless the source explicitly calls for that anatomy.
 - Do branch modifiers describe changes to posture and position, not just
   abstract emotional labels?
 
@@ -212,6 +217,11 @@ Each finding must include:
   "gray-suited technicians," "security," or "workers" is not enough unless the
   prompt describes visible bodies, clothing, gear, posture, formation, and
   position in the frame.
+- Do not accept nonhuman body prompts that use human-limb shorthand when the
+  supplied body plan says otherwise. A cephalopod should be prompted with
+  tentacles, mantle, eyes, suckers, support harness geometry, and reachable
+  tool positions; a winged, synthetic, distributed, or otherwise altered body
+  needs the same body-specific treatment.
 - Do not accept terminology that contradicts the supplied lore, fixture brief,
   or visual plan constraints. If a term implies an institutional geography,
   species affordance, faction practice, or technology assumption that the
@@ -259,6 +269,7 @@ Use these labels when applicable:
 - `missing_character_design_ref`
 - `named_character_as_lore_password`
 - `unnamed_group_as_lore_password`
+- `nonhuman_anatomy_humanized`
 - `stale_lore_language`
 - `off_frame_character_ref_in_prompt`
 - `continuity_note_used_as_prompt_text`
