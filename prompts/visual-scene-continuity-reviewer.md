@@ -68,6 +68,9 @@ missing reader/player-facing structure.
 - Are environment labels translated into visible forms? For example, explain
   what a manifold line, cavity yard, supervisor glass, or anchor rail looks
   like instead of treating the label as a picture.
+- If the scene is inside a Bloom cavity, does the plan show an engineered
+  rotating habitat shell built from consolidated asteroid rubble/aggregate and
+  TCS substrate, rather than a natural cave or hollowed solid asteroid?
 - Does the art plan distinguish wide establishing shots, medium character
   staging, object closeups, and alert/climax frames when the prose focus shifts?
 
@@ -170,6 +173,10 @@ Each finding must include:
 - Do not accept environment labels as visual descriptions. "Along the manifold
   line" is not enough unless the prompt describes the pipe/cable/panel/valve
   structure and surrounding corridor geometry.
+- Do not accept popular-solid-rock asteroid assumptions for Bloom habitats.
+  Bloom interiors are engineered cavity shells formed from contained asteroid
+  rubble/debris, aggregate, and TCS. Unless source lore says otherwise, reject
+  cave, mine-room, or carved-monolith visual language.
 - Do not accept named characters as visual descriptions. "Lio Vale stands by
   the manifold" is not enough unless the visual plan provides a stable visual
   reference for Lio and the prompt assembly path says to include it.

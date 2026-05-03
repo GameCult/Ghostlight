@@ -152,8 +152,8 @@ interactive-fiction scaffold:
 - `examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json`
 - `experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md`
 
-It starts in ordinary AU cavity-yard maintenance texture, introduces the major
-participants before branch-only deepening, then escalates through Nara-7's
+It starts in ordinary AU Bloom cavity-shell maintenance texture, introduces the
+major participants before branch-only deepening, then escalates through Nara-7's
 coordinated hazard refusal, baseline rigger solidarity pressure, BioElevate
 liability framing, AU dry-operation cephalopod crawl leverage, and a folded
 recognition/safety climax. The Ink now gates Nara's marked path and Teth's
@@ -163,8 +163,11 @@ mappings. It now segments the introduction, branch locations, Kappa red alert,
 climax decision, and aftermath into click-through visual sections with
 `visual_scene_id` anchors, stable `visual_character_refs`, a global Media
 Molecule Dreams-style volumetric brushstroke cue, and imagegen-ready prompts
-that explain fictional equipment in visible terms. Treat it as coordinator/IF
-scaffold training data, not raw responder gold.
+that explain fictional equipment in visible terms. Its location grounding now
+uses the Bloom process correctly: engineered rotating shell, consolidated
+asteroid rubble/aggregate, TCS substrate, seals, supports, and service systems,
+not a cave carved into a solid asteroid. Treat it as coordinator/IF scaffold
+training data, not raw responder gold.
 
 Next: add the corpus coverage ledger seam or choose the next Aetheria fixture
 from the 100-150 broad coverage target.

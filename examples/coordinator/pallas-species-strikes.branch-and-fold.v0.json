@@ -303,7 +303,7 @@
     {
       "item_id": "cavity_habitat_seal_assembly",
       "item_type": "CompoundCommodityData candidate",
-      "gameplay_role": "Large habitat seal assembly for asteroid cavity infrastructure.",
+      "gameplay_role": "Large habitat seal assembly for engineered Bloom cavity-shell infrastructure.",
       "subassembly_hints": [
         "seal membrane stack",
         "load-bearing anchor frame",

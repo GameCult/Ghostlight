@@ -434,6 +434,14 @@ corridor shape, wall/ceiling/floor geometry, pipe runs, cable bundles, panels,
 screens, rails, doors, windows, gauges, warning lights, materials, scale, and
 where bodies stand inside that geometry.
 
+For Aetheria Bloom habitats, do not default to the popular image of an asteroid
+as a solid rock with rooms carved into it. The Bloom process consolidates
+asteroid rubble/debris and TCS into engineered rotating cavity shells. Visual
+and prose artifacts should show constructed shell infrastructure, exposed
+aggregate/substrate where appropriate, seals, supports, hub/spoke interfaces,
+and service systems rather than natural caves or hollowed monoliths unless a
+source explicitly says the location is something else.
+
 Every visual section should identify:
 
 - `visual_scene_id`: stable handle for the screen or key frame

@@ -26,7 +26,15 @@
       "title": "Aeronautics Unlimited",
       "line_start": 1,
       "line_end": 10,
-      "relevance": "Grounds AU as the frontier-industrial hegemon controlling cavity habitats, shipyards, mining webs, salvage rights, and expansion logistics."
+      "relevance": "Grounds AU as the frontier-industrial hegemon controlling Bloom/cavity habitats, shipyards, mining webs, salvage rights, and expansion logistics."
+    },
+    {
+      "source_id": "bloom",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+      "title": "Bloom",
+      "line_start": 1,
+      "line_end": 31,
+      "relevance": "Grounds Orbital Cavity Construction: asteroid rubble and debris are contained, aggregated, processed into TCS, and formed into rotating cylindrical cavity habitats rather than carved out as solid-rock caves."
     },
     {
       "source_id": "bioelevate",
@@ -87,13 +95,19 @@
   ],
   "historical_context": {
     "time_period": "2719-2724, during the Pallas Species Strikes",
-    "location": "AU-controlled Pallas Bloom Cluster cavity-construction yard and associated maintenance lungs",
+    "location": "AU-controlled Pallas Bloom Cluster cavity-construction yard and associated maintenance lungs inside the engineered inner shell of a rotating Bloom habitat.",
     "summary": "The Pallas Species Strikes begin as an ordinary work stoppage around dangerous cavity-construction and maintenance zones. AU expects to rotate around the stoppage with contract humans and biodrone labor. Instead, uplifted crews and engineered workers hold technical chokepoints only they understand, exposing that frontier abundance depends on people the yard still classifies as equipment.",
     "public_facts": [
       {
         "text": "The strikes began among uplifted and heavily modified labor populations assigned to dangerous cavity-construction and maintenance zones.",
         "source_refs": [
           "pallas-species-strikes"
+        ]
+      },
+      {
+        "text": "Bloom cavities are engineered habitat shells made by containing asteroid rubble/debris, aggregating it into a rotating cylindrical shell, processing material into TCS, and hardening/terraforming the interior; they are not natural caves hollowed from solid asteroid rock.",
+        "source_refs": [
+          "bloom"
         ]
       },
       {
@@ -132,6 +146,13 @@
       }
     ],
     "ambient_pressures": [
+      {
+        "text": "Bloom shell maintenance is maintenance of engineered consolidation, seals, TCS substrate, spin-loaded supports, hub/spoke interfaces, and life-support manifolds; visual and narrative artifacts should show constructed habitat infrastructure rather than a mined stone cavern.",
+        "source_refs": [
+          "bloom",
+          "pallas-species-strikes"
+        ]
+      },
       {
         "text": "Cavity yards are not symbolic terrain: if maintenance chokepoints stop, pressure seals, life support, cargo timing, and worker safety start converting ideology into physical risk.",
         "source_refs": [

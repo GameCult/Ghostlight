@@ -19,7 +19,7 @@ VAR formal_stoppage = false
 -> intro_yard_wake
 
 === intro_yard_wake ===
-Pallas Yard Twelve wakes without ceremony. The cavity wall hums through the deck plates before the shift bell, a low mineral throat-note that everyone pretends not to hear unless it changes.
+Pallas Yard Twelve wakes without ceremony. The engineered Bloom shell hums through the deck plates before the shift bell, a low composite throat-note from consolidated asteroid rubble, TCS substrate, pressure seals, and spin-loaded supports doing the ugly miracle of pretending to be ground.
 
 -> intro_service_ring
 
