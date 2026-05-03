@@ -401,6 +401,14 @@ Each distinct visual section should preserve an art-direction block with:
   changed character positions, opened or sealed routes, damaged objects,
   lighting changes, emotional posture, crowd pressure, or other scene states
 
+Named characters need stable visual references. An image model does not know
+what Lio Vale looks like because the prose named Lio Vale. Each illustrated
+fixture should define `visual_character_refs` for recurring named characters:
+body type, apparent age range if relevant, face/hair/skin or equivalent visual
+identity, clothing and equipment, silhouette, posture language, and
+`do_not_change` continuity details. Scene prompts may then reference those
+character refs instead of repeating the whole description every time.
+
 Prompts must be imagegen-ready. Do not rely on unexplained Aetheria jargon as
 if the image model knows the lore. If the prompt says "wet-service cradle," it
 should also describe the visible thing: a suspended mist-lined maintenance
@@ -416,11 +424,25 @@ Every visual section should identify:
 - `ink_anchor`: knot, stitch, or comment handle where the visual applies
 - `base_image_prompt`: durable scene prompt for the unmodified frame
 - `visible_characters`: characters allowed in the frame and their default
-  position or stance
+  position or stance, plus a `visual_ref` when the character is named
 - `state_image_modifiers`: additive prompts tied to explicit variables,
   thresholds, or route flags
 - `branch_image_modifiers`: additive prompts tied to specific branch ids
 - `visual_continuity_notes`: facts that must remain stable across edits
+
+Prompt assembly for illustrated replay should combine:
+
+```text
+global visual continuity
+  + visual_character_refs for visible named characters
+  + visual section base_image_prompt
+  + triggered state or branch image modifiers
+```
+
+The base image prompt is allowed to focus on the room and staging only if the
+assembled prompt includes the relevant character refs. If a tool sends the base
+prompt alone to imagegen, the base prompt must carry enough character detail by
+itself. Names are handles, not faces.
 
 The coordinator owns this surface for now. The responder should not receive
 omniscient visual art direction unless the character can observe it. Character

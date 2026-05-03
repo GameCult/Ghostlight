@@ -150,6 +150,10 @@ When the user says to prepare for imminent compaction:
   fictional objects and body affordances in visible terms: geometry, materials,
   lighting, stance, interfaces, tools, supports, cables, fluids, screens, and
   crowd positions.
+- Do not treat a character name as a visual description. Illustrated fixtures
+  need stable character visual refs for every recurring named character, and
+  scene prompts should either include those refs during prompt assembly or carry
+  enough appearance detail to stand alone.
 - Ground scene writing in the source's material details: habitat form,
   infrastructure, law, class pressure, money, route access, surveillance,
   communication channels, body affordances, and local failure costs.

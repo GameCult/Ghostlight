@@ -36,5 +36,8 @@ should be authored here first and referenced from artifacts or tools.
   fixture can need several click-through screens inside one narrative scene;
   each distinct place, focal area, pivotal moment, and branch-visible state
   needs an imagegen-ready prompt or modifier.
+- Treat named characters as handles, not visual descriptions. Illustrated IF
+  sidecars need stable visual character refs for recurring named characters, and
+  prompt assembly must include those refs when the character is visible.
 - If a prompt is used for a capture, preserve the exact rendered prompt in the
   capture and include the prompt file path when the capture schema allows it.

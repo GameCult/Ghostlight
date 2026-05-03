@@ -413,7 +413,8 @@
       "Character private state is documented in the agent fixture but the Ink only relies on observable behavior and role knowledge.",
       "Visual scene plan added after review noted that illustrated Ink needs click-through segmentation, per-section base prompts, character visibility controls, and imagegen-ready descriptions of fictional equipment.",
       "Visual reviewer pass added missing branch-02 visual scenes and aftermath modifiers for strike spread, BioElevate liability, evidence strength, Nara exposure/protection, and high security pressure.",
-      "Follow-up visual review returned accepted_with_minor_revisions; cleanup removed future-state modifiers from intro anchors and normalized ASCII possessives in visual prompts."
+      "Follow-up visual review returned accepted_with_minor_revisions; cleanup removed future-state modifiers from intro anchors and normalized ASCII possessives in visual prompts.",
+      "Added visual_character_refs so image prompts can assemble stable named-character identities instead of expecting imagegen to know what Lio Vale or other Pallas characters look like."
     ],
     "checks": {
       "uses_standard_branching_format": true,
@@ -441,7 +442,7 @@
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate.",
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "Use this as the broad location anchor for the fixture."
         ]
       },
@@ -452,25 +453,29 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "walking the center lane with slate tucked under one arm, tired but attentive"
+            "default_stance": "walking the center lane with slate tucked under one arm, tired but attentive",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "near the amber manifold with other gray-suited seal technicians"
+            "default_stance": "near the amber manifold with other gray-suited seal technicians",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "at the dry anchor rail with a heavy hook and guarded posture"
+            "default_stance": "at the dry anchor rail with a heavy hook and guarded posture",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "partly visible in a misted suspended harness at wet-side equipment"
+            "default_stance": "partly visible in a misted suspended harness at wet-side equipment",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -480,17 +485,19 @@
         "visible_characters": [
           {
             "agent_id": "nara_7",
-            "default_stance": "focused, fingertips on the manifold, body still"
+            "default_stance": "focused, fingertips on the manifold, body still",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "watching from nearby without interrupting"
+            "default_stance": "watching from nearby without interrupting",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -500,17 +507,19 @@
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
-            "default_stance": "leaning near the anchor rail, skeptical, protective of his crew"
+            "default_stance": "leaning near the anchor rail, skeptical, protective of his crew",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "optional edge-of-frame observer"
+            "default_stance": "optional edge-of-frame observer",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -520,17 +529,19 @@
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "suspended in the cradle, several arms managing valves and tools"
+            "default_stance": "suspended in the cradle, several arms managing valves and tools",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "standing beside the cradle checking the harness cuff"
+            "default_stance": "standing beside the cradle checking the harness cuff",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate.",
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "This prompt must always explain the wet-service cradle in visible terms."
         ]
       },
@@ -541,17 +552,19 @@
         "visible_characters": [
           {
             "agent_id": "ilya_marne",
-            "default_stance": "upright behind glass, hands near a console, controlled and watchful"
+            "default_stance": "upright behind glass, hands near a console, controlled and watchful",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "small figure below on the maintenance floor"
+            "default_stance": "small figure below on the maintenance floor",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -561,25 +574,29 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "center lane, deciding where to go"
+            "default_stance": "center lane, deciding where to go",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "near manifold"
+            "default_stance": "near manifold",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "near anchor rail"
+            "default_stance": "near anchor rail",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "in wet-service cradle"
+            "default_stance": "in wet-service cradle",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -589,17 +606,19 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "walking slowly with slate up"
+            "default_stance": "walking slowly with slate up",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "quiet, angled toward the wall, fingers ready to touch"
+            "default_stance": "quiet, angled toward the wall, fingers ready to touch",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -609,17 +628,19 @@
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
-            "default_stance": "seated, guarded, mug in hand"
+            "default_stance": "seated, guarded, mug in hand",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "seated beside him, listening rather than arguing"
+            "default_stance": "seated beside him, listening rather than arguing",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -629,17 +650,19 @@
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "calmly multitasking inside the harness"
+            "default_stance": "calmly multitasking inside the harness",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "leaning in to inspect a pressure cuff"
+            "default_stance": "leaning in to inspect a pressure cuff",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -649,23 +672,28 @@
         "visible_characters": [
           {
             "agent_id": "nara_7",
-            "default_stance": "front of engineered-worker line, hand flat on rail"
+            "default_stance": "front of engineered-worker line, hand flat on rail",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "near the center lane, being asked to classify the refusal"
+            "default_stance": "near the center lane, being asked to classify the refusal",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "at dry-side rail, watching"
+            "default_stance": "at dry-side rail, watching",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "in harness, valves stilled"
+            "default_stance": "in harness, valves stilled",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "arriving from supervisor side, controlled and sharp"
+            "default_stance": "arriving from supervisor side, controlled and sharp",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           }
         ],
         "state_image_modifiers": [
@@ -680,7 +708,7 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -690,29 +718,34 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "near center lane, slate angled down to keep the channel local"
+            "default_stance": "near center lane, slate angled down to keep the channel local",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "still at manifold, protected by procedure rather than body blocking"
+            "default_stance": "still at manifold, protected by procedure rather than body blocking",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "narrowed focus on Lio, hearing the legal trap"
+            "default_stance": "narrowed focus on Lio, hearing the legal trap",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "watching from dry anchor rail, not yet committed"
+            "default_stance": "watching from dry anchor rail, not yet committed",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "still in wet-service harness, monitoring load"
+            "default_stance": "still in wet-service harness, monitoring load",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate.",
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "Visually distinguish this from public escalation: small local board, contained amber light, no outside-feed indicator."
         ]
       },
@@ -723,23 +756,28 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "thumb on slate, committing the log before fear can soften it"
+            "default_stance": "thumb on slate, committing the log before fear can soften it",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "moving from person to policy, shoulders squared"
+            "default_stance": "moving from person to policy, shoulders squared",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "front of engineered-worker stillness near manifold"
+            "default_stance": "front of engineered-worker stillness near manifold",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "at anchor rail, startled by the formal language"
+            "default_stance": "at anchor rail, startled by the formal language",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "in harness, valves paused"
+            "default_stance": "in harness, valves paused",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [
@@ -754,7 +792,7 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -764,19 +802,23 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "body angled across the inspector camera sightline"
+            "default_stance": "body angled across the inspector camera sightline",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "behind Lio, hands flat on rail, exposed but shielded"
+            "default_stance": "behind Lio, hands flat on rail, exposed but shielded",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "watching from anchor rail, expression conflicted"
+            "default_stance": "watching from anchor rail, expression conflicted",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "facing the blocked sightline from supervisor side"
+            "default_stance": "facing the blocked sightline from supervisor side",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           }
         ],
         "state_image_modifiers": [
@@ -791,7 +833,7 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -801,23 +843,28 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "holding slate between AU board and workers"
+            "default_stance": "holding slate between AU board and workers",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "near supervisor channel, trying to control classification"
+            "default_stance": "near supervisor channel, trying to control classification",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "near manifold, visible but not isolated"
+            "default_stance": "near manifold, visible but not isolated",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "with dry-side crew at anchors"
+            "default_stance": "with dry-side crew at anchors",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "watching pressure diagrams from wet-service cradle"
+            "default_stance": "watching pressure diagrams from wet-service cradle",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [
@@ -828,7 +875,7 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -838,21 +885,24 @@
         "visible_characters": [
           {
             "agent_id": "nara_7",
-            "default_stance": "hand near slate, controlled and exposed"
+            "default_stance": "hand near slate, controlled and exposed",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "holding slate outward to control evidence custody"
+            "default_stance": "holding slate outward to control evidence custody",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "background, watching the evidence"
+            "default_stance": "background, watching the evidence",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -862,21 +912,24 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "standing open-handed, not crowding Orrin"
+            "default_stance": "standing open-handed, not crowding Orrin",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "caught between resentment and responsibility"
+            "default_stance": "caught between resentment and responsibility",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "visible near manifold in background"
+            "default_stance": "visible near manifold in background",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -886,17 +939,19 @@
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "several arms unfolding the bypass bridge with practiced care"
+            "default_stance": "several arms unfolding the bypass bridge with practiced care",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "watching the device rather than touching it yet"
+            "default_stance": "watching the device rather than touching it yet",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -906,17 +961,19 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "thumb on send control"
+            "default_stance": "thumb on send control",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "reaching in too late, controlled anger visible"
+            "default_stance": "reaching in too late, controlled anger visible",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -926,23 +983,28 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "frozen mid-turn toward the alarm"
+            "default_stance": "frozen mid-turn toward the alarm",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "hands on rail, refusing to move"
+            "default_stance": "hands on rail, refusing to move",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "turning from anchor rail toward the throat"
+            "default_stance": "turning from anchor rail toward the throat",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "harness flexing under sudden pressure change"
+            "default_stance": "harness flexing under sudden pressure change",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "caught between command and calculation"
+            "default_stance": "caught between command and calculation",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           }
         ],
         "state_image_modifiers": [
@@ -953,7 +1015,7 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate.",
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "This screen may be only one sentence in replay; let the red alert breathe."
         ]
       },
@@ -964,23 +1026,28 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "center, hands visible, slate ready"
+            "default_stance": "center, hands visible, slate ready",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "demanding a decision from management side"
+            "default_stance": "demanding a decision from management side",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "near manifold, exposed but steady"
+            "default_stance": "near manifold, exposed but steady",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "near dry-side crew at anchor rail"
+            "default_stance": "near dry-side crew at anchor rail",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "in wet-service harness near pressure diagrams"
+            "default_stance": "in wet-service harness near pressure diagrams",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [
@@ -1003,7 +1070,7 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -1013,23 +1080,28 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "hands visible, refusing to move first"
+            "default_stance": "hands visible, refusing to move first",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "tight posture, about to record language she hates"
+            "default_stance": "tight posture, about to record language she hates",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "steady near manifold"
+            "default_stance": "steady near manifold",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "watching from anchor rail"
+            "default_stance": "watching from anchor rail",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "at wet-service station"
+            "default_stance": "at wet-service station",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           }
         ],
         "state_image_modifiers": [
@@ -1040,7 +1112,7 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -1050,21 +1122,24 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "holding slate with custody seal visible"
+            "default_stance": "holding slate with custody seal visible",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "hands on bypass controls"
+            "default_stance": "hands on bypass controls",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "accepting the bargain under duress"
+            "default_stance": "accepting the bargain under duress",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -1074,21 +1149,24 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "lifting slate toward inspector cam"
+            "default_stance": "lifting slate toward inspector cam",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "watching for a way to punish the move"
+            "default_stance": "watching for a way to punish the move",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "near manifold, not centered unless prior branch did so"
+            "default_stance": "near manifold, not centered unless prior branch did so",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -1098,25 +1176,29 @@
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
-            "default_stance": "front of the line, anchor hook down, claiming dry-side authority"
+            "default_stance": "front of the line, anchor hook down, claiming dry-side authority",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "lio_vale",
-            "default_stance": "near Nara, protecting without speaking over Orrin"
+            "default_stance": "near Nara, protecting without speaking over Orrin",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "behind or beside Lio near manifold"
+            "default_stance": "behind or beside Lio near manifold",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "facing Orrin, frustrated by the shifted front"
+            "default_stance": "facing Orrin, frustrated by the shifted front",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -1126,23 +1208,28 @@
         "visible_characters": [
           {
             "agent_id": "lio_vale",
-            "default_stance": "standing with slate lowered, not triumphant"
+            "default_stance": "standing with slate lowered, not triumphant",
+            "visual_ref": "visual_character_refs.characters.lio_vale"
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "near manifold or protected in the worker cluster"
+            "default_stance": "near manifold or protected in the worker cluster",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "with dry-side crew, posture determined if solidarity is high"
+            "default_stance": "with dry-side crew, posture determined if solidarity is high",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "patching or checking wet-service gear"
+            "default_stance": "patching or checking wet-service gear",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
             "agent_id": "ilya_marne",
-            "default_stance": "near supervisor side, contained anger"
+            "default_stance": "near supervisor side, contained anger",
+            "visual_ref": "visual_character_refs.characters.ilya_marne"
           }
         ],
         "state_image_modifiers": [
@@ -1181,7 +1268,7 @@
         ],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate."
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes."
         ]
       },
       {
@@ -1191,21 +1278,24 @@
         "visible_characters": [
           {
             "agent_id": "nara_7",
-            "default_stance": "background, repeating the touch ritual"
+            "default_stance": "background, repeating the touch ritual",
+            "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "teth_inkwise",
-            "default_stance": "partly visible patching harness cuff"
+            "default_stance": "partly visible patching harness cuff",
+            "visual_ref": "visual_character_refs.characters.teth_inkwise"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "absent or off-frame, represented by cracked mug"
+            "default_stance": "absent or off-frame, represented by cracked mug",
+            "visual_ref": "visual_character_refs.characters.orrin_dax"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
-          "Do not change character body affordances between images: Teth is a cephalopod worker supported by a misted low-gravity harness/cradle; Nara-7 is an engineered humanoid seal technician in a numbered gray skinsuit; Orrin is a baseline human rigger with old anchor tools; Ilya is an AU supervisor seen through glass or arriving from the management side; Lio carries a slate.",
+          "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "This is the final visual memory, not a victory poster. Keep it intimate and ordinary."
         ]
       }
@@ -1252,5 +1342,76 @@
         "prompt": "Add an outside-feed or public mirror indicator reflected on a slate or wall display."
       }
     ]
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character visual identities for prompt assembly. Image prompts must include these refs for every named visible character; scene prompts alone are not expected to teach imagegen what Lio, Nara, Orrin, Teth, or Ilya look like.",
+    "prompt_assembly_rule": "For each visual_scene_plan scene, assemble the image prompt from global location continuity, each visible character visual_ref, the scene base_image_prompt, and any triggered state_image_modifiers or global_branch_image_modifiers.",
+    "characters": {
+      "lio_vale": {
+        "display_name": "Lio Vale",
+        "species_or_body": "baseline human adult from Belt labor housing",
+        "stable_visual_description": "Lean, compact adult human with medium-brown skin, short black hair clipped close at the sides, tired dark eyes, and a scheduler's stillness that reads as careful rather than passive. Wears a worn slate-gray AU maintenance jacket over a practical work harness, soft-soled magnetic boots, a utility belt with tags and seals, and carries a rectangular work slate with scuffed edges.",
+        "silhouette_notes": "Usually centered between groups, shoulders slightly forward, one hand near the slate; visually reads as a tired worker-organizer rather than a heroic commander.",
+        "do_not_change": [
+          "medium-brown skin",
+          "short black close-clipped hair",
+          "slate-gray AU maintenance jacket",
+          "rectangular work slate",
+          "compact practical build"
+        ]
+      },
+      "nara_7": {
+        "display_name": "Nara-7",
+        "species_or_body": "engineered humanoid seal technician, BioDrone Standard labor line",
+        "stable_visual_description": "Slender engineered humanoid worker with smooth androgynous features, close-cropped dark hair, pale gray-brown skin with faint subdermal route-interface lines at wrists and neck, and a clean gray numbered seal-technician skinsuit with a small BioDrone Standard batch tag. Movements are precise and economical, hands often flat against rails or wall panels.",
+        "silhouette_notes": "Still, narrow, and controlled; frequently framed by the manifold or other gray-suited engineered technicians.",
+        "do_not_change": [
+          "gray numbered skinsuit",
+          "BioDrone Standard batch tag",
+          "faint wrist and neck interface lines",
+          "precise hand-touch ritual",
+          "slender engineered humanoid silhouette"
+        ]
+      },
+      "orrin_dax": {
+        "display_name": "Orrin Dax",
+        "species_or_body": "baseline human dry-side rigger",
+        "stable_visual_description": "Broad-shouldered baseline human rigger in his late working years, light-brown weathered skin, close-cropped graying hair, rough stubble, and a pale frost scar along one side of his jaw. Wears a patched brown-and-orange dry-side work jacket, heavy gloves, magnetic boots, and usually carries or rests near an old dark metal anchor hook and battered recycler coffee mug.",
+        "silhouette_notes": "Solid, guarded, slightly hunched from years of rail work; visually tied to anchor hooks, coffee, frost scars, and old tools.",
+        "do_not_change": [
+          "frost scar along jaw",
+          "patched brown-and-orange rigger jacket",
+          "old anchor hook",
+          "battered coffee mug",
+          "broad baseline human build"
+        ]
+      },
+      "teth_inkwise": {
+        "display_name": "Teth Inkwise",
+        "species_or_body": "uplifted cephalopod wet-service maintenance specialist",
+        "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible arms supported in a misted low-gravity maintenance cradle. Wears soft pressure cuffs, tool loops, and a body-support harness rather than human clothing; often surrounded by fluid hoses, valve clusters, padded supports, and curved tool rails sized for many arms.",
+        "silhouette_notes": "Nonhuman, horizontal or suspended silhouette inside wet-service equipment; never standing upright like a human.",
+        "do_not_change": [
+          "mottled blue-gray cephalopod body",
+          "misted low-gravity cradle",
+          "soft pressure cuffs",
+          "multiple arms",
+          "not human-shaped or upright"
+        ]
+      },
+      "ilya_marne": {
+        "display_name": "Ilya Marne",
+        "species_or_body": "baseline human AU superintendent",
+        "stable_visual_description": "Tall baseline human woman with cool light skin, severe silver-blonde hair pinned tight, sharp cheekbones, and a controlled corporate expression. Wears a clean dark AU superintendent coat with pale blue trim, polished magnetic boots, and a slim supervisor console cuff; often seen through glass or blue-white interface reflections.",
+        "silhouette_notes": "Vertical, polished, controlled, visually associated with supervisor glass, blue-white UI, and distance from the dirty floor.",
+        "do_not_change": [
+          "silver-blonde pinned hair",
+          "dark AU superintendent coat with pale blue trim",
+          "supervisor console cuff",
+          "polished corporate posture",
+          "seen through glass or UI reflections"
+        ]
+      }
+    }
   }
 }

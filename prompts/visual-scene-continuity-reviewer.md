@@ -52,7 +52,13 @@ intent, but they do not excuse missing reader/player-facing structure.
 
 ### Character Visibility And Stance
 
+- Does the sidecar define stable visual identity references for every named
+  recurring character, including body type, face/hair/skin or equivalent
+  visible identity, clothing/equipment, silhouette, and do-not-change details?
 - Does each visual scene declare who may be visible?
+- Does each named visible character point to a stable visual identity ref, or
+  does the scene prompt itself include enough description to render the person
+  consistently?
 - Are character positions and stances controlled by branch state where needed?
 - Are nonhuman or altered bodies represented through visible affordances:
   harnesses, supports, water/mist interfaces, manipulators, suit geometry,
@@ -134,6 +140,9 @@ Each finding must include:
 - Do not accept one all-purpose base prompt for a multi-location or
   multi-focus scene.
 - Do not accept visual prompts that rely on unexplained setting jargon.
+- Do not accept named characters as visual descriptions. "Lio Vale stands by
+  the manifold" is not enough unless the sidecar provides a stable visual
+  reference for Lio and the prompt assembly path says to include it.
 - Do not require every sentence to have a unique image. Require every distinct
   place, focal area, pivotal visual beat, and branch-visible state to have a
   durable visual anchor or modifier.
@@ -141,6 +150,8 @@ Each finding must include:
   visual scenes on one screen or rush past a key moment.
 - Mark missing character visibility when a later image must know who is in the
   frame but the sidecar does not say.
+- Mark missing character design refs when an image model would have to invent
+  a recurring character's appearance from their name alone.
 - Mark branch modifiers as weak if they describe emotion without visible
   posture, position, object, lighting, damage, interface, or crowd change.
 - Image prompts should be concrete enough for a general image model. Use
@@ -158,6 +169,8 @@ Use these labels when applicable:
 - `weak_geometry_prompt`
 - `weak_character_staging`
 - `missing_character_visibility`
+- `missing_character_design_ref`
+- `named_character_as_lore_password`
 - `missing_branch_visual_modifier`
 - `missing_state_trigger`
 - `branch_delta_not_visual`
