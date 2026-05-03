@@ -127,7 +127,7 @@
     ]
   },
   "visual_art_direction": {
-    "base_scene_prompt": "Inside an asteroid cavity maintenance yard in the Pallas Bloom Cluster, Service Ring Kappa curves along a mineral wall, wet-service cradles and cephalopod harness rails on one side, dry anchor rigs and baseline workers on the other, engineered seal technicians in gray suits near an amber manifold, industrial mist, worn safety paint, hard work light, lived-in future infrastructure.",
+    "base_scene_prompt": "Inside an asteroid cavity maintenance yard in the Pallas Bloom Cluster: Service Ring Kappa is a curved industrial lane built against raw asteroid rock, with ribbed metal wall supports, scuffed deck plates, amber work lights, pipe-and-cable manifold panels, wet-side cephalopod cradle bays with hoses and many-armed tool rails, dry-side anchor tracks with hooks and safety tethers, engineered seal technicians in gray suits, industrial mist, worn yellow-white safety paint, and lived-in future infrastructure.",
     "modification_prompts": [
       {
         "state": "formal_stoppage",
@@ -432,7 +432,7 @@
       {
         "visual_scene_id": "pallas_yard_wake",
         "ink_anchor": "intro_yard_wake",
-        "base_image_prompt": "Wide establishing shot inside an asteroid cavity maintenance yard before shift bell: a huge curved rock wall reinforced with metal ribs, deck plates vibrating under dim amber work lights, sleeping machines, warning stripes worn thin, faint industrial mist, no crowd yet, quiet future infrastructure that looks tired rather than sleek.",
+        "base_image_prompt": "Wide establishing shot inside an asteroid cavity maintenance yard before shift bell: a hollowed asteroid chamber with a huge curved raw-rock wall reinforced by dark metal ribs, scuffed deck plates bolted into the curve, overhead amber work lamps, wall-mounted pressure gauges, sleeping maintenance carts, folded harness frames, cable trays, worn yellow-white safety stripes, faint industrial mist, and no crowd yet; the infrastructure looks old, hand-repaired, and tired rather than sleek.",
         "visible_characters": [
           {
             "agent_id": "none_named",
@@ -449,7 +449,7 @@
       {
         "visual_scene_id": "pallas_service_ring_kappa",
         "ink_anchor": "intro_service_ring",
-        "base_image_prompt": "Wide-to-medium view down Service Ring Kappa: wet-side work area on the left with suspended mist-lined body cradles, fluid hoses, soft restraint loops, and tool rails for cephalopod workers; dry-side anchor rail on the right with baseline human riggers clipping heavy hooks; engineered seal technicians in numbered gray suits wait near a glowing amber manifold panel; Lio Vale walks through the center carrying a slate.",
+        "base_image_prompt": "Wide-to-medium view down Service Ring Kappa, a curved maintenance lane inside the asteroid wall: on the left, wet-side cephalopod work bays hold suspended mist-lined body cradles, fluid hoses, soft restraint loops, rounded valve clusters, and many-armed tool rails; on the right, a dry-side rail of bolted steel track, anchor posts, heavy hooks, route bolts, and clipped safety tethers supports baseline human riggers. Along the rock wall, a glowing amber manifold panel spreads into pipe trunks, cable bundles, gauges, and route-diagram screens; engineered seal technicians in numbered gray suits wait near it while Lio walks through the center carrying a slate.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -481,7 +481,7 @@
       {
         "visual_scene_id": "pallas_nara_manifold",
         "ink_anchor": "intro_nara",
-        "base_image_prompt": "Medium shot at the Kappa manifold: Nara-7, an engineered humanoid seal technician in a clean gray numbered skinsuit, touches a ribbed metal wall panel twice, pauses, then touches it with two fingers spread; three similar technicians stand behind her; the manifold glows amber with route diagrams and fault lights; Lio watches from the edge of frame with a slate.",
+        "base_image_prompt": "Medium shot at the Kappa manifold wall: a waist-high mechanical spine of ribbed pipe trunks, bundled fiber cables, removable patch plates, amber route-diagram screens, pressure gauges, warning glyphs, and small hand-sized diagnostic touch panels bolted into curved asteroid rock. Nara-7 touches one ribbed metal access panel twice, pauses, then touches it with two fingers spread; three similar gray-suited technicians stand behind her in a precise line; Lio watches from the edge of frame with a slate.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -503,7 +503,7 @@
       {
         "visual_scene_id": "pallas_orrin_anchor_rail",
         "ink_anchor": "intro_orrin",
-        "base_image_prompt": "Medium shot of the dry-side anchor rail: Orrin Dax, a baseline human rigger with frost-scarred jaw and worn work jacket, braces a heavy old anchor hook across his knees while his crew clears bolts along a metal rail; cheap recycler coffee mugs and patched gloves sit on a small break ledge; engineered workers are visible across the ring as distant gray figures.",
+        "base_image_prompt": "Medium shot of the dry-side anchor rail: a long bolted steel track runs along the right side of the curved maintenance lane, fitted with anchor posts, route bolts, heavy hooks, clipped safety tethers, scratched warning labels, and old tool lockers. Orrin Dax braces a heavy dark anchor hook across his knees while his crew clears bolts along the rail; cheap recycler coffee mugs and patched gloves sit on a narrow fold-out break ledge; across the lane, engineered workers appear as distant gray figures near amber wall panels.",
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
@@ -525,7 +525,7 @@
       {
         "visual_scene_id": "pallas_teth_wet_service",
         "ink_anchor": "intro_teth",
-        "base_image_prompt": "Medium shot of a cephalopod wet-service station in low gravity: Teth Inkwise floats in a padded mist-lined maintenance cradle with soft body supports, fluid hoses, pressure cuffs, flexible tool rails, and small valve clusters arranged for many arms; the cradle is bolted to the wall near life-support lung diagrams; the equipment looks heavily patched but lovingly maintained.",
+        "base_image_prompt": "Medium shot of a cephalopod wet-service station in low gravity: a padded mist-lined maintenance cradle is bolted to the asteroid wall, surrounded by transparent fluid hoses, soft pressure cuffs, rounded valve clusters, flexible many-armed tool rails, small diagnostic screens, and life-support lung diagrams painted on a nearby panel. Teth Inkwise floats in the cradle while several arms manage valves and tools; the station is heavily patched but carefully maintained.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -548,7 +548,7 @@
       {
         "visual_scene_id": "pallas_ilya_supervisor_glass",
         "ink_anchor": "intro_ilya",
-        "base_image_prompt": "Low angle toward AU supervisor glass above the maintenance ring: Ilya Marne stands behind a clean transparent control wall with blue-white corporate UI reflections across her face, while the dirty ring floor and workers are visible below; the composition emphasizes distance, surveillance, and schedule control.",
+        "base_image_prompt": "Low angle from the dirty maintenance floor toward an AU supervisor booth mounted above the ring: a clean transparent control wall overlooks the workers, framed by white composite beams, blue-white schedule displays, sealed door seams, and polished corporate glass. Ilya Marne stands behind the transparent wall with interface reflections crossing her face while deck grime, mist, tool carts, and worker movement remain visible far below.",
         "visible_characters": [
           {
             "agent_id": "ilya_marne",
@@ -570,7 +570,7 @@
       {
         "visual_scene_id": "pallas_ordinary_round_choice",
         "ink_anchor": "ordinary_round_choice",
-        "base_image_prompt": "Three-way workday choice frame in Service Ring Kappa: Nara at the amber manifold, Orrin at the dry anchor rail with his old hook and coffee mug, Teth in the misted wet-service cradle, and Lio paused between them holding a slate; the yard is still calm enough that choosing where to stand feels like choosing what kind of truth to notice.",
+        "base_image_prompt": "Three-way workday choice frame in the curved Service Ring Kappa lane: Nara stands at the amber manifold wall of pipe trunks, cable bundles, gauges, and touch panels; Orrin waits beside the dry-side bolted anchor track with his old hook and coffee mug; Teth floats in a misted cephalopod cradle surrounded by hoses and many-armed tool rails; Lio pauses between these work zones holding a slate. The yard is still calm enough that choosing where to stand feels like choosing what kind of truth to notice.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -624,7 +624,7 @@
       {
         "visual_scene_id": "pallas_orrin_break_table",
         "ink_anchor": "sit_with_orrin",
-        "base_image_prompt": "Break-table corner beside the dry anchor rail: Orrin sits with a battered recycler coffee mug and an old anchor hook across his knees; Lio sits nearby without crowding him; in the background, engineered seal techs eat in precise silence under harsh cafeteria strip lights; frost rash marks and patched gloves make the labor grievance visible.",
+        "base_image_prompt": "Break-table corner beside the dry-side anchor rail: a narrow fold-out metal ledge is bolted below scratched tool lockers and anchor hooks, with recycler coffee mugs, patched gloves, route bolts, and grease-stained cloths scattered across it. Orrin sits with a battered mug and an old anchor hook across his knees; Lio sits nearby without crowding him; in the background, engineered seal technicians eat in precise silence under harsh cafeteria strip lights beside curved rock and pipework.",
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
@@ -646,7 +646,7 @@
       {
         "visual_scene_id": "pallas_teth_harness_check",
         "ink_anchor": "check_teth_harness",
-        "base_image_prompt": "Close-up at Teth's cephalopod zero-g maintenance harness: padded loops, pressure cuffs, tiny valve patches, sealed implements on a curved tool rail, fluid hoses, and mist beads catching hard work light; Lio's hand checks a patched cuff while Teth's arms continue working around the inspection.",
+        "base_image_prompt": "Close-up at Teth's cephalopod zero-g maintenance harness: padded body loops, soft pressure cuffs, tiny valve patches, transparent fluid hoses, sealed implements, flexible many-armed tool rails, mist beads, and a patched wall cradle form a practical support rig rather than clothing. Lio's hand checks a worn cuff seam while Teth's arms continue working around the inspection under hard amber work light.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -668,7 +668,7 @@
       {
         "visual_scene_id": "pallas_chokepoint_refusal",
         "ink_anchor": "chokepoint_refusal",
-        "base_image_prompt": "Threshold shot at the lip of the Kappa access throat: a dark crawl opening with overlapping patch plates, amber warning lights, Nara-7 and three engineered seal techs stopped in a coordinated line with hands on the manifold, dry-side riggers frozen at the rail, Teth's harness valves still, and Ilya entering fast from the supervisor side.",
+        "base_image_prompt": "Threshold shot at the lip of the Kappa access throat: a dark oval crawl opening cuts into the curved asteroid wall, ringed by overlapping patch plates, red-edged gasket seals, small amber warning lights, pressure gauges, scratched route arrows, and handholds leading inward. Nara-7 and three engineered seal technicians stop in a coordinated line with hands on the manifold wall of pipes and touch panels; dry-side riggers freeze beside the bolted anchor track; Teth's harness valves hold still in the misted cradle; Ilya enters fast from the raised supervisor-side walkway.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -714,7 +714,7 @@
       {
         "visual_scene_id": "pallas_quiet_safety_pause",
         "ink_anchor": "quiet_safety_pause",
-        "base_image_prompt": "Local-channel containment frame at the Kappa throat: Lio holds the slate low with a small amber safety-pause label instead of a public broadcast marker; Nara and the engineered technicians remain stopped at the manifold; Ilya watches Lio closely, realizing the word worker has legal teeth; Teth and Orrin stay visible at their stations but the room has not yet exploded into open strike posture.",
+        "base_image_prompt": "Local-channel containment frame at the Kappa access throat: Lio holds a work slate low with a small amber safety-pause label, standing between the dark gasket-rimmed crawl opening, the manifold wall of pipes and touch panels, and the raised supervisor walkway. Nara and the engineered technicians remain stopped at the pipe-and-panel wall; Ilya watches Lio closely from the management side; Teth's misted cradle and Orrin's anchor track remain visible in the same curved maintenance lane, but the room has not yet exploded into open strike posture.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -752,7 +752,7 @@
       {
         "visual_scene_id": "pallas_formalize_stoppage",
         "ink_anchor": "formalize_stoppage",
-        "base_image_prompt": "Formal stoppage frame: Lio keys the slate with a cold blue incident-log marker reading coordinated labor stoppage; workers across wet-side and dry-side go still in a shared held breath; Ilya's posture hardens into corporate policy mode; the amber manifold, dry anchor hooks, and wet-service cradle all remain visible as parts of one work system refusing at once.",
+        "base_image_prompt": "Formal stoppage frame inside the full work lane: Lio keys the slate with a cold blue incident-log marker reading coordinated labor stoppage; workers across the wet-side cradle bays and dry-side anchor track go still in a shared held breath. Ilya's posture hardens on the raised supervisor walkway; the amber manifold wall, dark anchor hooks, suspended cephalopod cradle, route bolts, pressure gauges, and warning lights all remain visible as parts of one work system refusing at once.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -798,7 +798,7 @@
       {
         "visual_scene_id": "pallas_shield_nara",
         "ink_anchor": "shield_nara",
-        "base_image_prompt": "Protective body-position frame: Lio steps directly between Nara-7 and a small black inspector camera mounted by the crawl throat; Nara's hands stay flat on the rail behind Lio; Orrin watches from the dry anchor side with a visible shift from envy to reluctant respect; Ilya's line of sight is partially blocked, making the protection unmistakable and deniable.",
+        "base_image_prompt": "Protective body-position frame near the crawl throat: Lio steps directly between Nara-7 and a small black inspector camera mounted above the gasket-rimmed crawl opening, blocking the camera's line to Nara without looking like a shove. Nara's hands stay flat on the ribbed manifold rail behind Lio; Orrin watches from the dry-side anchor track with his hook lowered; Ilya's view from the supervisor walkway is partly blocked by Lio's body and the pipework.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -839,7 +839,7 @@
       {
         "visual_scene_id": "pallas_classification_pressure",
         "ink_anchor": "tests_and_reversals",
-        "base_image_prompt": "Tense administrative pressure frame inside the maintenance ring: AU incident board screens label the event irregularity, a BioElevate legal window glows with sterile white text about scaffold drift, and Lio's slate shows an Awakened Labor Front mirror channel outside AU control; workers wait around the manifold while the same physical refusal becomes three competing legal realities.",
+        "base_image_prompt": "Tense administrative pressure frame inside the curved maintenance ring: AU incident-board screens on the supervisor wall label the event irregularity in cold blue-white text; a BioElevate legal window glows sterile white with scaffold drift language; Lio's slate shows an Awakened Labor Front mirror channel outside AU control. Workers wait around the amber pipe-and-panel manifold while the dry anchor track, misted cradle bays, and raised supervisor glass make the same physical refusal look like three competing legal realities.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -881,7 +881,7 @@
       {
         "visual_scene_id": "pallas_nara_marks_path",
         "ink_anchor": "show_nara_memory",
-        "base_image_prompt": "Object-focused shot of Lio's slate held outward: a crawl diagram shows two safe plates, one false seam, and a red-marked cut line; Nara-7's hand hovers just above the display after marking it; Ilya and BioElevate legal text are visible beyond the slate but slightly out of focus.",
+        "base_image_prompt": "Object-focused shot of Lio's slate held outward in front of the manifold wall, a ribbed pipe-and-cable service spine with bronze-gray trunks, amber route screens, pressure gauges, warning glyphs, and hand-sized touch panels blurred behind the display. The slate shows a crawl diagram with two safe plates, one false seam, and a red-marked cut line; behind it, the real crawl throat is visible as a dark gasket-ringed opening with patch plates and warning lights. Nara-7's hand hovers just above the display after marking it; Ilya and a BioElevate legal window are visible beyond the slate but slightly out of focus.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -908,7 +908,7 @@
       {
         "visual_scene_id": "pallas_orrin_solidarity",
         "ink_anchor": "ask_orrin_solidarity",
-        "base_image_prompt": "Dry-side authority frame: Lio faces Orrin at the anchor rail, asking for a safety call rather than a speech; Orrin looks from Nara to the dark crawl throat to his own crew; anchor hooks and route bolts fill the foreground, making the decision visibly about work expertise.",
+        "base_image_prompt": "Dry-side authority frame beside the anchor track: Lio faces Orrin across a foreground of heavy anchor hooks, clipped safety tethers, route bolts, scratched rail plates, and old tool lockers. Orrin looks from Nara at the amber pipe-and-panel manifold to the dark gasket-rimmed crawl throat and then to his own crew; the geometry makes the decision visibly about work expertise, not a speech podium.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -935,7 +935,7 @@
       {
         "visual_scene_id": "pallas_bypass_kit",
         "ink_anchor": "bypass_kit",
-        "base_image_prompt": "Wet-service equipment shot: Teth opens a service pouch and reveals a compact strike-safe life-support bypass bridge wrapped in maintenance cloth, with manual valve plates, glowing pressure-line ports, tamper-evident evidence seals, and adapters sized for both wet-service manipulators and human hands.",
+        "base_image_prompt": "Wet-service equipment shot inside the cephalopod work bay: Teth opens a sealed service pouch beside the misted wall cradle and reveals a compact strike-safe life-support bypass bridge wrapped in maintenance cloth. The device has a squat valve block, glowing pressure-line ports, manual logic plates, tamper-evident evidence seals, flexible tubes, and adapters sized for both cephalopod manipulators and human hands; surrounding hoses and many-armed tool rails show where it can connect.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -957,7 +957,7 @@
       {
         "visual_scene_id": "pallas_public_liability",
         "ink_anchor": "public_liability",
-        "base_image_prompt": "Close shot of Lio's slate sending an incident packet: three visible destinations split across the display, AU incident board, yard safety, and an outside Awakened Labor Front mirror; Ilya's hand reaches too late from one side; the packet text includes coordinated memory and hazard refusal as readable headings.",
+        "base_image_prompt": "Close shot of Lio's slate sending an incident packet: the display splits into three bright destination panels labeled AU incident board, yard safety, and outside Awakened Labor Front mirror. Behind the slate, the curved maintenance ring is visible as blurred amber wall panels, pipe bundles, warning lights, and supervisor glass; Ilya's hand reaches too late from one side; packet headings include coordinated memory and hazard refusal.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -979,7 +979,7 @@
       {
         "visual_scene_id": "pallas_kappa_red_alert",
         "ink_anchor": "climax",
-        "base_image_prompt": "Single-impact red alert frame: the Kappa manifold floods the maintenance ring with hard red light, dust jumps from old bolt heads, the dark crawl throat looks suddenly alive, warning glyphs flare on wall panels, and every worker freezes for one dangerous breath.",
+        "base_image_prompt": "Single-impact red alert frame inside Service Ring Kappa: the amber manifold wall of pipe trunks, cable bundles, route screens, pressure gauges, and diagnostic panels suddenly floods the curved maintenance lane with hard red light. Dust jumps from old bolt heads, warning glyphs flare on wall panels, the dark gasket-rimmed crawl throat looks suddenly alive, wet-side mist glows red around the cephalopod cradle, and every worker freezes for one dangerous breath.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1022,7 +1022,7 @@
       {
         "visual_scene_id": "pallas_climax_decision_line",
         "ink_anchor": "climax_decision",
-        "base_image_prompt": "Crowded decision-line frame under red alert: Lio stands between Ilya, Nara, Orrin's dry-side crew, and Teth's wet-service station; the crawl throat, anchor rail, supervisor glass, and manifold are all visible, making recognition language, evidence custody, and forced crawl authority feel like competing doors in the same room.",
+        "base_image_prompt": "Crowded decision-line frame under red alert in the same curved maintenance lane: Lio stands between Ilya on the raised supervisor side, Nara near the amber pipe-and-panel manifold, Orrin's dry-side crew at the bolted anchor track, and Teth's misted cradle station with hoses and tool rails. The dark crawl throat, anchor hooks, transparent supervisor wall, route screens, valve housings, and red warning lights all occupy one room, making recognition language, evidence custody, and forced crawl authority feel like competing doors in the same physical space.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1076,7 +1076,7 @@
       {
         "visual_scene_id": "pallas_hold_for_recognition",
         "ink_anchor": "hold_for_recognition",
-        "base_image_prompt": "Recognition standoff under red emergency light: Lio keeps both hands visible while demanding the incident log say worker judgment; Ilya faces the red board and the workers; Nara stays near the manifold; Orrin's crew and Teth's station frame the pressure from both sides.",
+        "base_image_prompt": "Recognition standoff under red emergency light: Lio keeps both hands visible while facing Ilya and the red AU incident board; the demand for worker judgment hangs between the supervisor glass, the amber-red manifold wall, and the halted workers. Nara stays beside the ribbed access panels, Orrin's crew holds position by the anchor track, and Teth's misted cradle station frames the other side with hoses and valve clusters.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1118,7 +1118,7 @@
       {
         "visual_scene_id": "pallas_trade_bypass_for_evidence",
         "ink_anchor": "trade_bypass_for_evidence",
-        "base_image_prompt": "Evidence-for-bypass custody frame: Teth's portable bypass bridge is connected under shared custody, glowing pressure lines running from wet-service harness to seal assembly; Lio's slate shows sealed copies routed to the Awakened Labor Front mirror, AU incident board, and yard safety; Ilya accepts with controlled fury.",
+        "base_image_prompt": "Evidence-for-bypass custody frame: Teth's portable bypass bridge is connected under shared custody between the wet-service cradle and a wall-mounted seal assembly made of bolted pressure housings, gasket rings, glowing tube ports, and emergency valve plates. Lio's slate shows sealed copies routed to the Awakened Labor Front mirror, AU incident board, and yard safety; Ilya accepts with controlled fury while red warning light reflects from pipework and glass.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1145,7 +1145,7 @@
       {
         "visual_scene_id": "pallas_seal_evidence_without_bypass",
         "ink_anchor": "seal_evidence_without_bypass",
-        "base_image_prompt": "Evidence-custody frame without safety bridge: Lio holds the slate up to an inspector camera so the custody seal is visible; no bypass device is present, only red warning light, patched valves, and the dark crawl throat; the scene feels legally protected but physically dangerous.",
+        "base_image_prompt": "Evidence-custody frame without safety bridge: Lio holds the slate up to a small black inspector camera mounted by the gasket-rimmed crawl throat so the custody seal is visible. No bypass device is present; only red warning light, patched valve housings, pipe bundles, pressure gauges, bolted seal plates, and the dark crawl opening show how physically dangerous the legal protection is.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1172,7 +1172,7 @@
       {
         "visual_scene_id": "pallas_orrin_front_demand",
         "ink_anchor": "orrin_front_demand",
-        "base_image_prompt": "Solidarity climax frame: Orrin steps in front of the dry-side crew with an anchor hook lowered like a work credential, not a weapon; Nara remains behind Lio near the manifold; Ilya faces a demand coming from baseline workers instead of the engineered worker she expected to isolate.",
+        "base_image_prompt": "Solidarity climax frame at the dry-side anchor track: Orrin steps in front of the riggers with an anchor hook lowered like a work credential, not a weapon; behind him are clipped tethers, route bolts, scratched rail plates, and old tool lockers. Nara remains behind or beside Lio near the amber pipe-and-panel manifold; Ilya faces a demand coming from baseline workers instead of the engineered worker she expected to isolate.",
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
@@ -1204,7 +1204,7 @@
       {
         "visual_scene_id": "pallas_seal_holds",
         "ink_anchor": "return_fold",
-        "base_image_prompt": "Aftermath wide shot: the red alert has faded to bruised amber, the Kappa seal assembly holds, workers remain in small tense clusters around the manifold, anchor rail, and wet-service cradle; the floor shows scuffed boots, mist, tool marks, and the physical exhaustion of people who won only enough to keep breathing.",
+        "base_image_prompt": "Aftermath wide shot inside Service Ring Kappa: the red alert has faded to bruised amber across the curved rock wall, and the Kappa seal assembly holds as bolted pressure housings, gasket rings, glowing tubes, and emergency valve plates settle back into safe readings. Workers remain in small tense clusters around the pipe-and-panel manifold, dry anchor track, and misted cephalopod cradle; scuffed boots, tool marks, faint mist, slack safety tethers, and dirty deck plates show the physical exhaustion of people who won only enough to keep breathing.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -1274,7 +1274,7 @@
       {
         "visual_scene_id": "pallas_object_callback",
         "ink_anchor": "return_object_callback",
-        "base_image_prompt": "Quiet object callback after the crisis: a battered recycler coffee mug with a fresh hairline crack sits in the break rack, Teth's patched harness cuff rests under a small work light, and Nara's hand repeats the twice-pause-third manifold touch in the background while other workers pretend not to watch.",
+        "base_image_prompt": "Quiet object callback after the crisis in a small break-rack alcove: a battered recycler coffee mug with a fresh hairline crack sits on a narrow metal shelf beside patched gloves and route bolts; under a small work light, Teth's repaired pressure cuff rests near transparent fluid hose and soft harness loops; in the background, Nara's hand repeats the twice-pause-third touch against a ribbed wall access panel while other workers pretend not to watch.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -1285,12 +1285,6 @@
             "agent_id": "teth_inkwise",
             "default_stance": "partly visible patching harness cuff",
             "visual_ref": "visual_character_refs.characters.teth_inkwise"
-          },
-          {
-            "agent_id": "orrin_dax",
-            "default_stance": "absent or off-frame, represented by cracked mug",
-            "visual_ref": "visual_character_refs.characters.orrin_dax",
-            "prompt_ref_policy": "omit_visual_ref_unless_rendered_in_frame"
           }
         ],
         "state_image_modifiers": [],
@@ -1298,6 +1292,13 @@
           "Service Ring Kappa remains the same asteroid cavity maintenance yard: curved mineral wall, worn yellow-white safety paint, hard industrial work lights, mist around wet-service equipment, dry anchor rail opposite the manifold, gray engineered-worker suits, and AU supervisor glass above the floor.",
           "Maintain named-character visual identity from visual_character_refs for every visible named character; do not rely on names alone, and do not change body type, clothing language, equipment, or silhouette between scenes.",
           "This is the final visual memory, not a victory poster. Keep it intimate and ordinary."
+        ],
+        "represented_objects": [
+          {
+            "represents_agent_id": "orrin_dax",
+            "object": "battered recycler coffee mug with fresh hairline crack",
+            "prompt_ref_policy": "do_not_include_character_ref"
+          }
         ]
       }
     ],
@@ -1421,7 +1422,8 @@
     "review_notes": [
       "Added a global Media Molecule Dreams-style volumetric brushstroke cue so image prompt assembly carries the intended non-photoreal handmade visual language without repeating it in every scene.",
       "Corrected image prompt assembly: visual_continuity_notes are non-prompt tooling constraints, and assembled prompts include only character refs for characters actually visible in the frame.",
-      "Expanded pallas_nara_manifold_walk so the environment is self-contained; manifold line is described as visible pipe trunks, cable bundles, valve housings, patch plates, screens, gauges, and touch panels rather than assumed lore."
+      "Expanded pallas_nara_manifold_walk so the environment is self-contained; manifold line is described as visible pipe trunks, cable bundles, valve housings, patch plates, screens, gauges, and touch panels rather than assumed lore.",
+      "Visual reviewer full pass expanded all Pallas base image prompts so setting labels such as anchor rail, supervisor glass, crawl throat, seal assembly, wet-service station, and manifold are backed by visible geometry and materials."
     ]
   }
 }

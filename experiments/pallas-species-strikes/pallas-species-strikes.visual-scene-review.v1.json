@@ -1,0 +1,59 @@
+{
+  "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+  "artifact_ref": "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json",
+  "review_prompt_ref": "prompts/visual-scene-continuity-reviewer.md",
+  "overall_status": "accepted",
+  "segmentation_score": 5,
+  "visual_prompt_score": 5,
+  "character_visibility_score": 5,
+  "branch_visual_continuity_score": 4,
+  "website_replay_score": 5,
+  "major_findings": [
+    {
+      "severity": "major",
+      "location": "visual_scene_plan.scenes[*].base_image_prompt",
+      "problem": "Multiple scene prompts used environment handles such as anchor rail, supervisor glass, crawl throat, seal assembly, wet-service station, and manifold without enough standalone visible geometry.",
+      "why_it_matters": "A general image model only sees the assembled prompt; labels that are meaningful to Aetheria readers are not drawable unless translated into materials, shape, scale, lights, panels, pipes, rails, doors, and surrounding space.",
+      "evidence": "Examples included prompts centered on 'dry-side anchor rail', 'AU supervisor glass', 'Kappa access throat', and 'Kappa seal assembly' before visible structures were expanded.",
+      "fix_direction": "Expand every base image prompt so environment handles are backed by visible geometry and materials."
+    }
+  ],
+  "minor_findings": [
+    {
+      "severity": "minor",
+      "location": "visual_scene_plan.scenes[pallas_object_callback].visible_characters",
+      "problem": "Orrin was represented by a cracked mug but still carried a visible character ref policy in the visible_characters list.",
+      "why_it_matters": "Prompt assembly should not include character refs for absent or object-represented characters, or the image model may draw a body that should not be in frame.",
+      "evidence": "Orrin Dax default stance was 'absent or off-frame, represented by cracked mug'.",
+      "fix_direction": "Remove absent character from visible_characters and represent him through a concrete object callback."
+    }
+  ],
+  "required_revisions": [],
+  "suggested_revisions": [
+    "When a real image-generation tool is wired in, preserve a rendered assembled-prompt receipt per visual_scene_id so reviewer audits can inspect the exact text sent to the image model."
+  ],
+  "missing_visual_scenes": [],
+  "weak_image_prompts": [],
+  "missing_branch_modifiers": [],
+  "training_labels": [
+    "environment_lore_password",
+    "weak_environment_geometry",
+    "off_frame_character_ref_in_prompt",
+    "strong_scene_segmentation",
+    "strong_imagegen_ready_prompt",
+    "strong_character_stance_control",
+    "strong_branch_visual_continuity"
+  ],
+  "acceptance_notes": [
+    "Post-revision audit checked 27 visual scenes for common unresolved environment handles and found zero failures.",
+    "The global Dreams-style cue remains wired into prompt assembly.",
+    "Visual continuity notes remain tooling constraints and are not part of assembled prompt text.",
+    "Character refs are limited to characters actually visible in a rendered frame."
+  ],
+  "verification": {
+    "schema_validate": "passed",
+    "diff_check": "passed",
+    "custom_environment_handle_audit": "passed",
+    "visual_scene_count": 27
+  }
+}
