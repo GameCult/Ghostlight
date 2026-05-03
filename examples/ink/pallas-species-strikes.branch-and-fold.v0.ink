@@ -55,7 +55,7 @@ Teth Inkwise hangs in a dry-operation support harness, four arms managing valves
 
 === intro_ilya ===
 // ghostlight.scene: pallas.intro.ilya_supervisor_glass; visual_scene_id: pallas_ilya_supervisor_glass
-Ilya Marne, Kappa's AU shift superintendent, watches from the supervisor glass with corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stops showing decimals.
+Ilya Marne, Kappa's AU shift superintendent, watches from the glassed operations gallery above the ring, its raised supervisor catwalk running back toward the spoke-base control deck. She has corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stops showing decimals.
 
 Lio knows the day will probably go wrong. The only question is whether it goes wrong before everyone has finished pretending this is maintenance.
 
@@ -141,7 +141,7 @@ The baseline anchor riggers go quiet. Teth's harness valves click once, then sto
 
 === ilya_arrival ===
 // ghostlight.scene: pallas.threshold.ilya_arrival; visual_scene_id: pallas_ilya_arrival
-Ilya arrives fast enough to prove she had been watching. The room changes shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard has stopped being a place where a problem can be fixed quietly.
+Ilya leaves the operations glass fast enough to prove she had been watching. She crosses the raised supervisor catwalk from the spoke-side control door and drops into the work ring through a badge-only stair. The room changes shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard has stopped being a place where a problem can be fixed quietly.
 
 "Classify that," Ilya says to Lio.
 

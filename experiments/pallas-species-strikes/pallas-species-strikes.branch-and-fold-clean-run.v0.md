@@ -44,7 +44,7 @@ Orrin Dax's anchor crew worked the anchor rail with cold-stiff hands and old too
 
 Teth Inkwise hung in a dry-operation support harness, four arms managing valves while the rest of the body floated inside compression loops and oxygenation tubes. One cuff had rubbed a pale groove into the mantle where the padding thinned out months ago. Teth never mentioned it. The cephalopod crew kept the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
 
-Ilya Marne, Kappa's AU shift superintendent, watched from the supervisor glass with corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
+Ilya Marne, Kappa's AU shift superintendent, watched from the glassed operations gallery above the ring, its raised supervisor catwalk running back toward the spoke-base control deck. She had corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
 
 Lio knew the day would probably go wrong. The only question was whether it went wrong before everyone had finished pretending this was maintenance.
 
@@ -82,7 +82,7 @@ Nara's voice was small and clear. "No blind crawl. Kappa remembers cutting Rell.
 
 The baseline anchor riggers went quiet. Teth's harness valves clicked once, then stopped.
 
-Ilya arrived fast enough to prove she had been watching. The room changed shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard had stopped being a place where a problem could be fixed quietly.
+Ilya left the operations glass fast enough to prove she had been watching. She crossed the raised supervisor catwalk from the spoke-side control door and dropped into the work ring through a badge-only stair. The room changed shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard had stopped being a place where a problem could be fixed quietly.
 
 "Classify that," Ilya said to Lio.
 
