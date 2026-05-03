@@ -60,33 +60,31 @@ Apply these principles:
 ## Aetheria Tonal Range
 
 Aetheria does not have one house style. Do not accidentally force every fixture
-into the current dry technical default.
+into the current dry technical default, and do not mistake the examples below
+for a closed taxonomy.
 
-Use the story's chosen tonal lane as an explicit review constraint:
+The reviewer should judge tonal fit, range, and control. A scene may be tense
+without being a crisis. A scene may be funny without leaving Aetheria. A scene
+may be poetic without becoming opaque. A scene may be technical without becoming
+inhuman.
 
-- `zany_humanist`: Emily's comic-domestic mode. The prose may be brisk,
-  playful, absurd, and casually puncturing its own grandiosity. The emotional
-  engine can be longing, embarrassment, debt, love, routine, and jokes that
-  reveal fear sideways. `When We Get Home` is the current touchstone: the story
-  makes Elysium legible through a relationship, mugs, drills, ads, housing
-  lotteries, repair shifts, and the repeated phrase "when we get home" slowly
-  changing meaning.
-- `dry_technical`: the current Ghostlight default. The prose may foreground
-  systems, institutions, logistics, legal categories, infrastructure, and
-  material consequences. Use this when the point of the scene is to make a
-  machine, market, faction, or social process legible. Do not let it become
-  procedural chanting or a wiki paragraph with dialogue tags.
-- `dour_poetic`: Joe's darker lyrical mode. The prose may be quiet, mournful,
-  ritualized, sensory, and patient. It can let dread arrive through repetition
-  and image rather than explanation. `Rain` is the current touchstone: it builds
-  from memory and longing, turns a comforting motif into catastrophe, and lets
-  the final crisis matter because the reader has spent time with the ritual
-  before it becomes lethal.
+Default inspiration should lean toward wit-with-stakes in the broad family of
+Douglas Adams and Terry Pratchett: comic precision, institutional absurdity,
+warmth, humane observation, and brief bursts of levity that make bleakness more
+bearable rather than less consequential. This is not a command to imitate their
+surface voice. It is a reminder that absurdity, tension, moral seriousness, and
+worldbuilding can coexist in the same paragraph without the floor collapsing.
 
-The reviewer must judge whether the artifact chose a lane, blended lanes on
-purpose, or drifted into one by accident. A scene may be tense without being a
-crisis. A scene may be funny without leaving Aetheria. A scene may be poetic
-without becoming opaque. A scene may be technical without becoming inhuman.
+Use existing Aetheria stories as open-ended touchstones, not style cages:
+
+- `When We Get Home` shows comic-domestic Aetheria: the setting becomes legible
+  through a relationship, mugs, drills, ads, housing lotteries, repair shifts,
+  debt, and the repeated phrase "when we get home" slowly changing meaning.
+- `Rain` shows darker poetic Aetheria: ritual, memory, sensory repetition, and
+  patient longing build enough emotional charge that the final reversal hurts.
+- Ghostlight's dry technical mode can still be useful when the scene's job is
+  to expose systems, institutions, logistics, law, infrastructure, material
+  risk, and faction pressure. It should not become the unmarked default.
 
 Tone should be a tool for revealing the setting:
 
@@ -96,6 +94,11 @@ Tone should be a tool for revealing the setting:
   slow violence of delayed understanding
 - dry technical prose can expose systems, constraints, incentives, logistics,
   faction pressure, and infrastructure
+
+These examples are not exhaustive. Aetheria can also support noir, romance,
+political satire, workplace comedy, horror, tragic naturalism, procedural
+investigation, wonder, pulp adventure, and stranger hybrids if the tone is
+controlled and the consequences remain real.
 
 Do not reward constant escalation. Aetheria stories often become clearer when
 routine is allowed to breathe before the machine bites.
@@ -165,10 +168,12 @@ Review the artifact against these questions.
 
 ### Tonal Fit
 
-- Which tonal lane is the artifact using: `zany_humanist`, `dry_technical`,
-  `dour_poetic`, or a deliberate blend?
+- What tonal mode or blend is the artifact using? Is that choice deliberate and
+  controlled, or just the machinery sliding into its favorite register?
 - Does the tone help the reader understand the world, or does it obscure basic
   context?
+- Does the writing allow wit, warmth, absurdity, or ordinary human foolishness
+  to counterbalance bleakness without dissolving stakes?
 - If the story is comic, does the comedy reveal character and pressure rather
   than flatten stakes?
 - If the story is poetic, does the imagery clarify emotional logic rather than
@@ -213,7 +218,7 @@ Use this shape:
   "voice_score": 0,
   "tonal_fit_score": 0,
   "if_playability_score": 0,
-  "detected_tonal_lane": "zany_humanist|dry_technical|dour_poetic|deliberate_blend|accidental_blend|unclear",
+  "detected_tonal_mode": "plain-language description of the apparent tonal mode or blend",
   "major_findings": [],
   "minor_findings": [],
   "path_specific_failures": [],
@@ -295,7 +300,9 @@ Use these labels when applicable:
 - `voice_institutional_chant`
 - `tone_unintentional_dry_technical_default`
 - `tone_mismatch`
-- `strong_tonal_lane`
+- `tone_wit_without_stakes`
+- `strong_tonal_control`
+- `strong_wit_with_stakes`
 - `strong_quiet_scene`
 - `strong_domestic_worldbuilding`
 - `strong_poetic_reversal`
