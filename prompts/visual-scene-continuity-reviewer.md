@@ -67,6 +67,10 @@ the visual artifact.
   without requiring Aetheria lore knowledge?
 - Does the prompt describe geometry, camera distance, lighting, palette,
   atmosphere, materials, visible interfaces, bodies, tools, and important props?
+- Does each base image prompt stand alone as if the image model has never seen
+  the prior scene? Flag prompts that say "the same room," "the room now feels,"
+  "as before," "again," or similar continuity shortcuts unless the prompt also
+  restates the visible room geometry, lights, materials, and positions.
 - Does the prompt use affirmative image direction: visible targets, materials,
   composition, stance, lighting, and state deltas, with forbidden assumptions
   handled by reviewer findings or validation rather than imagegen prompt text?
@@ -181,6 +185,11 @@ Each finding must include:
   assembly. A beautiful scene prompt in the wrong visual language is still the
   wrong prompt.
 - Do not accept visual prompts that rely on unexplained setting jargon.
+- Do not accept base image prompts that rely on memory of a previous image or
+  prompt. The image model cannot read the fixture's mind. Phrases like "the
+  same industrial room now feels colder," "as before," "again," or "the room
+  remains" must be replaced with concrete visible cues: repeated geometry,
+  lighting, interface color, character placement, props, and material state.
 - Flag image prompts that use negative prompt constructions such as "do not
   draw X," "without X," "avoid X," or "rather than X." Ask for affirmative
   visible target descriptions instead.
@@ -225,6 +234,7 @@ Use these labels when applicable:
 - `environment_lore_password`
 - `weak_environment_geometry`
 - `weak_geometry_prompt`
+- `memory_dependent_image_prompt`
 - `missing_global_style_cue`
 - `style_cue_not_in_prompt_assembly`
 - `weak_character_staging`
