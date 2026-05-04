@@ -34,7 +34,9 @@ Each fixture entry records:
   care, class, logistics, species/body affordance, trade, memory, personhood,
   technology, legitimacy, or infrastructure.
 - `tonal_modes`: prose modes the fixture contributes to the corpus.
-- `training_targets`: organs this fixture can train or review.
+- `training_targets`: organs or reference surfaces this fixture is relevant to.
+- `training_usability`: explicit per-stage declaration of whether the fixture
+  is `training_ready`, `reference_only`, or `not_training_data`.
 - `artifacts`: paths to fixture files.
 - `review`: status of schema, narrative, lore, spatial, visual, and IF review.
 - `economy_hooks`: item, assembly, trade-good, supply-chain, or tech hooks.
@@ -54,6 +56,13 @@ It must also carry review fields for schema, narrative, lore, spatial, visual,
 and IF artifact review. A fixture may still be accepted-as-draft with review
 caveats, but the caveats should be visible instead of hidden under the nice rug.
 
+Coverage status is not training readiness. A fixture that looks good as a story
+can still be unusable for a model stage if it lacks exact input/output receipts,
+raw outputs, reviewer decisions, hidden-context audits, or mutation records in
+the shape that stage requires. The ledger should be rude about this. If a
+fixture is only a reference for story shape or grounding, mark it
+`reference_only`; do not promote it by implication.
+
 ## Report Shape
 
 `npm run coverage:status` validates the ledger and prints:
@@ -62,6 +71,7 @@ caveats, but the caveats should be visible instead of hidden under the nice rug.
 - progress toward the 100-150 broad target
 - status, timeline lane, story type, collision-axis, tonal-mode, and subject
   counts
+- training-usability counts
 - major-power founding/day-in-life candidates when present
 - basic gap signals, such as missing future-branch coverage or no day-in-life
   stories yet

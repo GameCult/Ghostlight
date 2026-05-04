@@ -38,7 +38,7 @@ not carry live next-action lists.
      `examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json`,
      `examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json`,
      and `experiments/pallas-species-strikes/` receipts.
-   - Treat it as accepted-as-draft coordinator/IF scaffold training data, not raw responder gold.
+   - Treat it as reference-only story-shape and grounding material, not training-ready data for any soft organ.
    - Preserve the lessons it established: ordinary-life onboarding, branch-and-fold discipline, material state variables, source-backed lore elaboration, visual segmentation, scene-set need for illustrated replay, and review before acceptance.
 
 4. Generalize the loop.

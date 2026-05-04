@@ -25,6 +25,7 @@ VALID_STORY_TYPES = {
     "trade_life_story",
 }
 VALID_REVIEW_STATUSES = {"not_run", "accepted", "accepted_as_draft", "needs_revision", "rejected", "blocked"}
+VALID_TRAINING_USABILITY = {"training_ready", "reference_only", "not_training_data"}
 REQUIRED_REVIEW_KEYS = {"schema", "narrative", "lore", "spatial", "visual", "if_artifact"}
 REQUIRED_ARTIFACTS_FOR_ACCEPTED = {"lore_digest", "agent_state", "coordinator", "ink", "training_sidecar"}
 
@@ -94,6 +95,7 @@ def validate_entry(entry: Any, path: str) -> list[str]:
         "collision_axes",
         "tonal_modes",
         "training_targets",
+        "training_usability",
         "artifacts",
         "review",
         "economy_hooks",
@@ -115,6 +117,12 @@ def validate_entry(entry: Any, path: str) -> list[str]:
     require_string_array(entry["collision_axes"], f"{path}.collision_axes", nonempty=True)
     require_string_array(entry["tonal_modes"], f"{path}.tonal_modes", nonempty=True)
     require_string_array(entry["training_targets"], f"{path}.training_targets", nonempty=True)
+    usability = entry["training_usability"]
+    require(isinstance(usability, dict), f"{path}.training_usability must be an object")
+    require_keys(usability, {"overall"}, f"{path}.training_usability")
+    for key, value in usability.items():
+        require_string(key, f"{path}.training_usability key")
+        require(value in VALID_TRAINING_USABILITY, f"{path}.training_usability.{key} is invalid")
     require_string_array(entry["economy_hooks"], f"{path}.economy_hooks")
     require_string_array(entry["open_lore_gaps"], f"{path}.open_lore_gaps")
 
@@ -146,6 +154,8 @@ def validate_entry(entry: Any, path: str) -> list[str]:
             warnings.append(f"{entry['fixture_id']}: accepted fixture has fewer than two represented subjects")
     if entry["story_type"] == "future_branch_story" and entry.get("canon_status") != "branch_local":
         warnings.append(f"{entry['fixture_id']}: future_branch_story should usually be canon_status branch_local")
+    if entry["training_usability"].get("overall") == "training_ready" and entry["status"] not in ACCEPTED_STATUSES:
+        warnings.append(f"{entry['fixture_id']}: training_ready fixture is not accepted or accepted_as_draft")
     return warnings
 
 
@@ -174,6 +184,7 @@ def summarize(document: dict[str, Any], entries: list[dict[str, Any]], warnings:
     story_counts = Counter(entry["story_type"] for entry in entries)
     collision_counts = Counter(axis for entry in entries for axis in entry["collision_axes"])
     tonal_counts = Counter(mode for entry in entries for mode in entry["tonal_modes"])
+    usability_counts = Counter(entry["training_usability"]["overall"] for entry in entries)
     subject_counts = Counter(subject for entry in entries for subject in entry["primary_subjects"] + entry["secondary_subjects"])
     accepted_entries = [entry for entry in entries if entry["status"] in ACCEPTED_STATUSES]
     accepted_count = len(accepted_entries)
@@ -202,6 +213,7 @@ def summarize(document: dict[str, Any], entries: list[dict[str, Any]], warnings:
     append_counter("Story types", story_counts)
     append_counter("Top collision axes", collision_counts)
     append_counter("Tonal modes", tonal_counts)
+    append_counter("Training usability", usability_counts)
     append_counter("Subjects represented", subject_counts)
 
     major_story_types: dict[str, set[str]] = defaultdict(set)

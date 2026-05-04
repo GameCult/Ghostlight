@@ -69,8 +69,8 @@ The active path is a source-grounded branching-scene data loop:
 
 ## Live Fixture
 
-Pallas Species Strikes is the current accepted-as-draft interactive-fiction
-scaffold:
+Pallas Species Strikes is the current reference-only interactive-fiction story
+fixture:
 
 - `examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json`
 - `examples/agent-state.pallas-species-strikes.v0.json`
@@ -85,8 +85,11 @@ It starts in ordinary AU Bloom cavity-shell maintenance texture, introduces the
 major participants before branch-only deepening, then escalates through Nara-7's
 coordinated hazard refusal, baseline rigger solidarity pressure, supplier
 liability framing, AU dry-operation cephalopod shell-artery leverage, and a
-folded recognition/safety climax. Treat it as coordinator/IF scaffold training
-data, not raw responder gold.
+folded recognition/safety climax. Treat it as a reference for well-shaped,
+source-grounded story and illustrated IF presentation. It is not training-ready
+data for the responder, projector, appraiser, mutator, relationship updater,
+coordinator, branch compiler, or reviewer organs because it lacks exact
+stage-shaped input/output receipts.
 
 Kappa geometry to preserve: Service Ring Kappa names this specific standardized
 industrial spoke manifold service ring, a bounded local access loop around a
@@ -139,7 +142,8 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 Use the corpus coverage ledger to choose the next Aetheria fixture from the
 100-150 broad coverage target. Current coverage begins with Pallas Species
-Strikes as the first accepted-as-draft row.
+Strikes as a draft, reference-only row, so accepted training-ready coverage is
+still effectively empty.
 
 ## Warnings
 

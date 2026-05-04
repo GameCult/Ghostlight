@@ -63,6 +63,7 @@
           "collision_axes",
           "tonal_modes",
           "training_targets",
+          "training_usability",
           "artifacts",
           "review",
           "economy_hooks",
@@ -98,6 +99,17 @@
           "collision_axes": { "$ref": "#/$defs/nonemptyStringArray" },
           "tonal_modes": { "$ref": "#/$defs/nonemptyStringArray" },
           "training_targets": { "$ref": "#/$defs/nonemptyStringArray" },
+          "training_usability": {
+            "type": "object",
+            "required": ["overall"],
+            "additionalProperties": {
+              "enum": [
+                "training_ready",
+                "reference_only",
+                "not_training_data"
+              ]
+            }
+          },
           "artifacts": {
             "type": "object",
             "additionalProperties": { "type": "string", "minLength": 1 }

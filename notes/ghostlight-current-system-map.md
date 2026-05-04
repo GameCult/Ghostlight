@@ -84,7 +84,7 @@ the room.
 
 ## Current Live Example
 
-Pallas Species Strikes is the active accepted-as-draft coordinator/IF scaffold:
+Pallas Species Strikes is the active reference-only story fixture:
 
 - `examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json`
 - `examples/agent-state.pallas-species-strikes.v0.json`
@@ -95,9 +95,11 @@ Pallas Species Strikes is the active accepted-as-draft coordinator/IF scaffold:
 - `experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md`
 - `experiments/pallas-species-strikes/pallas-species-strikes.visual-scene-review.v1.json`
 
-The fixture is not raw responder gold. It is scaffold data for coordinator,
-branch compiler, IF review, visual planning, lore grounding, and future corpus
-shape.
+The fixture is not training-ready data for Ghostlight's model stages. It was
+coordinator-authored without the exact projected-context, sandboxed responder,
+appraisal, mutation, relationship-update, and true branch-compiler receipts
+those stages require. Keep it as a reference for story shape, grounding,
+branch-and-fold presentation, visual planning, and future fixture expectations.
 
 ## Pruned Receipts
 

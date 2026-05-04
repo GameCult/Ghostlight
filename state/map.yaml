@@ -24,7 +24,9 @@ mission:
     trust, concern, irritation, respect, boundaries, and expectations from
     evidence rather than generic friendliness.
   active_fixture: >
-    Pallas Species Strikes is the current accepted-as-draft historical fixture.
+    Pallas Species Strikes is the current reference-only historical fixture:
+    useful for story shape, grounding, and presentation expectations, not
+    training-ready machinery output.
     Call of the Void and Elysium-era gameplay remain procedural consumer targets.
 
 hard_boundaries:
@@ -166,5 +168,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Pallas Species Strikes is the current accepted-as-draft branch-and-fold IF fixture. The live workspace has been pruned to remove old prototype fixture receipts, stale runner tools, and model-runner experiment debris after their lessons were distilled into the architecture docs, state, evidence, and git history. The next build step is corpus-scale coverage rather than further archaeology.
+  summary: Pallas Species Strikes is the current reference-only branch-and-fold story fixture. It is useful as a grounded story-shape example, but it was coordinator-authored without exercising Ghostlight's exact projected-context, sandboxed responder, appraisal, mutation, relationship-update, or true branch-compiler machinery. The next build step is training-shaped fixture generation guided by the corpus coverage ledger.
   next_action: Use the corpus coverage ledger to select the next Aetheria fixture from the 100-150 broad coverage target.

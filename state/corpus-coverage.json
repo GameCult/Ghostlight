@@ -1,4 +1,4 @@
-﻿{
+{
   "schema_version": "ghostlight.corpus_coverage.v0",
   "coverage_id": "ghostlight-aetheria-corpus-coverage-v0",
   "coverage_targets": {
@@ -17,7 +17,7 @@
   "entries": [
     {
       "fixture_id": "pallas-species-strikes-awakened-labor-v0",
-      "status": "accepted_as_draft",
+      "status": "draft",
       "timeline_lane": "historical_grounded",
       "canon_status": "single_history",
       "story_type": "flashpoint_story",
@@ -51,14 +51,10 @@
         "ordinary work texture"
       ],
       "training_targets": [
-        "coordinator",
-        "branch_compiler",
-        "if_artifact_reviewer",
-        "narrative_reviewer",
-        "lore_grounding_reviewer",
-        "spatial_geometric_reviewer",
-        "visual_scene_continuity_reviewer",
-        "technology_item_manifest"
+        "story_shape_reference",
+        "lore_grounding_reference",
+        "branch_and_fold_reference",
+        "visual_planning_reference"
       ],
       "artifacts": {
         "lore_digest": "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
@@ -86,7 +82,22 @@
         "industrial_spoke_manifold_service_ring"
       ],
       "open_lore_gaps": [],
-      "notes": "Current accepted-as-draft scaffold. Use as a shape reference for source grounding, branch-and-fold, review, visual planning, and item-hook capture; do not treat as raw responder gold."
+      "notes": "Reference-only fixture. Pallas is useful as an example of a well-shaped, properly grounded story scaffold and visual/IF presentation target. It was coordinator-authored without exercising the projected-context, sandboxed responder, appraisal, mutation, relationship-update, or true branch-compiler machinery, so it must not be counted as training-ready data for those stages.",
+      "training_usability": {
+        "overall": "reference_only",
+        "story_shape_and_grounding": "reference_only",
+        "lore_grounding_compiler": "not_training_data",
+        "coordinator_story_runtime": "not_training_data",
+        "projector": "not_training_data",
+        "character_responder": "not_training_data",
+        "participant_appraiser": "not_training_data",
+        "state_mutator": "not_training_data",
+        "relationship_perception_updater": "not_training_data",
+        "branch_compiler": "not_training_data",
+        "if_artifact_reviewer": "not_training_data",
+        "narrative_lore_spatial_visual_reviewers": "not_training_data",
+        "technology_item_manifest": "not_training_data"
+      }
     }
   ]
 }
