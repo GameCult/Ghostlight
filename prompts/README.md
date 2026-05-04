@@ -52,6 +52,11 @@ should be authored here first and referenced from artifacts or tools.
 - Treat spatial review as its own organ. It should build an implied floor plan,
   check sightlines, routes, reach, body affordances, and branch-persistent
   spatial state, without diluting itself into general prose review.
+- Treat coordinator prompts as a separate trainable organ from meta-coordinator
+  work. Future coordinator captures should preserve exact coordinator-visible
+  input, raw output, parsed artifact, review labels, and interventions. Codex
+  may herd the machinery, but raw coordinator data should come from sandboxed
+  coordinator workers.
 - Treat visual artifacts as entertainment and website collateral for the
   Ghostlight corpus. They can make the corpus more legible and valuable, but
   they are not core training targets for responder, appraiser, mutator, or

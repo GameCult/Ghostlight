@@ -132,11 +132,19 @@ hand-authored rule nests.
 Glues scenes together, maintains world state, chooses which machinery runs, and
 emits the connective prose around character turns.
 
-For now, the coordinator is the authoring agent in the loop. In practice, that
-means Codex or another frontier model reads the current fixture, source
-grounding, prior receipts, and author constraints, then decides what scene beat
-comes next, which character acts, which deterministic tools or soft organs are
-needed, and what prose connects the generated turns.
+In training-shaped loops, the coordinator should be sandboxed as its own
+promptable organ. A coordinator worker receives only the scene state, accepted
+receipts, unresolved hooks, available machinery, branch affordances, tonal
+intent, author constraints, and game-engine-shaped state surfaces it is allowed
+to use. It then proposes the next beat, acting character, machinery calls, glue
+prose, and candidate state changes.
+
+Codex remains the meta-coordinator while the system is being built: it scopes
+the task, prepares the coordinator-visible input, launches the sandboxed
+coordinator, reviews the output, labels interventions, and wires structured
+state between organs. Codex-authored coordinator artifacts are useful draft
+material, but they are not raw coordinator training data unless the coordinator
+input/output seam was actually sandboxed.
 
 This is a trainable artifact too. Do not let coordinator judgment evaporate into
 chat history just because a large model is currently doing the stage management
@@ -145,6 +153,9 @@ with jazz hands and plausible deniability.
 Training artifacts:
 
 - scene setup receipts
+- exact coordinator-visible input packet
+- raw sandboxed coordinator output
+- parsed and reviewed coordinator artifact
 - coordinator plans
 - selected next scene or next beat
 - chosen acting agent

@@ -37,7 +37,8 @@ Aetheria lore/source context
   -> participant-local appraisal receipts
   -> mutation receipt
   -> updated scene/world/social state
-  -> coordinator continuity and next-beat plan
+  -> sandboxed coordinator continuity and next-beat plan
+  -> meta-coordinator review, wiring, and labeled interventions
   -> branch compiler materializes Ink + sidecar + visual plan + compiler notes
   -> IF artifact reviewer audits consequence, fold, and visual continuity
   -> narrative/lore/spatial/visual reviewers audit player-facing quality
@@ -151,6 +152,12 @@ handling categories, posture constraints, route access, clocks, public proof
 objects, and resource pressure are the elastic strings. Actors pull against
 those strings from local state; the coordinator records observed action and
 folds consequences through reviewed mutation.
+
+The coordinator must now be treated as a sandboxable organ in future
+training-shaped loops. Codex remains the meta-coordinator: it prepares visible
+input, launches the coordinator worker, reviews the output, labels repairs, and
+wires structured state between organs. Raw coordinator training data should come
+from sandboxed coordinator prompts, not from omniscient chat steering.
 
 ## Pruned Receipts
 

@@ -37,11 +37,19 @@ The active path is a source-grounded branching-scene data loop:
    leakage audit, and coordinator interventions.
 6. Apply only reviewed mutations into state, memory, relationships, perceived
    overlays, and unresolved hooks.
-7. Let the coordinator carry continuity, unresolved hooks, glue prose, and the
-   next scene/beat plan.
-8. Let the branch compiler materialize playable Ink plus sidecar and compiler
+7. Run the coordinator as its own sandboxed, promptable organ whenever
+   generating training-shaped scene loops. Capture exact coordinator input, raw
+   coordinator output, parsed artifact, review labels, interventions, and
+   rejected alternatives.
+8. Let Codex act as meta-coordinator: scope the organs, launch sandboxed
+   workers, review outputs, repair only with labels, wire structured state, and
+   preserve receipts. Do not silently treat omniscient chat steering as raw
+   coordinator training data.
+9. Let the accepted coordinator artifact carry continuity, unresolved hooks,
+   glue prose, and the next scene/beat plan.
+10. Let the branch compiler materialize playable Ink plus sidecar and compiler
    notes from reviewed state and branch decisions.
-9. Run IF, narrative, lore, spatial, and visual review before accepting a
+11. Run IF, narrative, lore, spatial, and visual review before accepting a
    fixture as training data.
 
 ## Live Seams
@@ -158,6 +166,12 @@ game-ergonomic affordances, visible gates, clocks, evidence objects, posture
 constraints, route access, public categories, and resource pressure; let actors
 choose from local state; then fold the observed action into reviewed state.
 Elastic strings, not rails. Little puppet theater, but with receipts.
+
+Coordinator seam correction: the Lucent character responders were sandboxed
+no-fork agents, but the coordinator was Codex-authored and then captured as
+artifacts. Future training-shaped loops should sandbox coordinator turns too.
+Codex is the meta-coordinator herding Ghostlight pieces into shape, not the raw
+coordinator organ being trained.
 
 Kappa geometry to preserve: Service Ring Kappa names this specific standardized
 industrial spoke manifold service ring, a bounded local access loop around a
