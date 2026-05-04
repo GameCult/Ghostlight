@@ -155,6 +155,7 @@ current_artifacts:
     - prompts/README.md
     - prompts/sandboxed-responder-packet.md
     - prompts/sandboxed-coordinator-turn.md
+    - prompts/interactive-fiction-weaver.md
     - prompts/research-sanity-responder.md
     - prompts/narrative-quality-reviewer.md
     - prompts/lore-grounding-reviewer.md
@@ -171,6 +172,8 @@ current_artifacts:
     - examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json
     - examples/ink/pallas-species-strikes.branch-and-fold.v0.ink
     - examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json
+    - examples/ink/lucent-hostage-feed.branch-and-fold.v0.ink
+    - examples/ink/lucent-hostage-feed.branch-and-fold.v0.training.json
     - examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json
     - experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md
     - experiments/pallas-species-strikes/pallas-species-strikes.visual-scene-review.v1.json
@@ -198,5 +201,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It exercises projector, responder, event, appraisal, mutation, relationship/perception, and Codex-authored coordinator receipts across fifteen post-restart turns, resolving with Juno on the safe line, security held, Sol in non-contact protective handoff, and evidence export unresolved. Pallas remains reference-only; `pallas-training-loop-v0` remains the smaller receipt-chain pilot.
-  next_action: Review the Lucent arc and receipt chain, then either run sandboxed coordinator-turn iteration, compile a branch/IF derivative, run specialist reviewers, or move to the next coverage fixture. Keep overall coverage at draft until branch/IF acceptance exists.
+  summary: `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It now has receipt-chain turns plus a meta-coordinator-authored branch-and-fold Ink scaffold for exploring the state space; coordinator turns and the Ink draft are not yet sandboxed-worker gold. Pallas remains reference-only; `pallas-training-loop-v0` remains the smaller receipt-chain pilot.
+  next_action: Run a sandboxed Interactive Fiction Weaver pass or specialist review on the Lucent Ink scaffold, then decide whether to revise toward branch-compiler training data or move to the next coverage fixture. Keep overall coverage at draft until branch/IF acceptance exists.

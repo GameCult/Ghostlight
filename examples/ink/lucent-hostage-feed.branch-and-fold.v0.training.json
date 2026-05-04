@@ -1,0 +1,313 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "lucent-hostage-feed-branch-and-fold-training-v0",
+  "ink_ref": "examples/ink/lucent-hostage-feed.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+  "scene_id": "lucent-hostage-feed-branch-and-fold-v0",
+  "protagonist_agent_id": "mara_quell",
+  "npc_agent_ids": [
+    "sol_vant",
+    "juno_ark",
+    "feed_ops_chorus",
+    "pippa_lux",
+    "brant_vee"
+  ],
+  "purpose": "Meta-coordinator authored branch-and-fold Ink scaffold for exploring the Lucent hostage-feed state space before delegating future IF materialization to the Interactive Fiction Weaver.",
+  "local_awareness_summary": [
+    {
+      "text": "Mara's playable role is to move the crisis through concrete social and physical affordances: evidence visibility, feed control, influencer access, safe-line geometry, and security restraint.",
+      "source_refs": [
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+        "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md"
+      ]
+    },
+    {
+      "text": "The scene starts from the same Lucent situation: Sol holds Juno in a media-eye transfer atrium while crisis feeds, influencer panels, sponsor-risk overlays, and security apertures all compete to define the event.",
+      "source_refs": [
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json"
+      ]
+    },
+    {
+      "text": "This artifact is branch compiler / IF scaffold draft material. It is not raw responder or sandboxed coordinator gold because the branches were meta-coordinator authored in this pass.",
+      "source_refs": [
+        "notes/fresh-workspace-handoff.md",
+        "docs/architecture/ink-branching-scenes.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Use branch-and-fold discipline: local choices mutate compact state variables and fold into shared later knots unless a consequence would make convergence false.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "Keep the scene darkly comic, readable, and high-pressure without making every line a procedural chant.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.polished-readable.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Ink variables record playthrough-local consequences. Durable relationship, memory, and world-state promotion require reviewed mutation.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "Do not treat this hand-authored branch scaffold as proof that the coordinator organ has been trained or sandboxed.",
+        "source_refs": [
+          "prompts/sandboxed-coordinator-turn.md",
+          "docs/architecture/soft-model-training-artifacts.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The EDIT TRAIL HOLD and external receipt are concrete evidence objects. They alter Sol stability, evidence integrity, feed control, and aftermath options.",
+        "source_refs": [
+          "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md"
+        ]
+      },
+      {
+        "text": "The safe line, bench edge, service collars, influencer panels, and feed overlays are playable scene affordances rather than decorative nouns.",
+        "source_refs": [
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+          "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Choices must include speech and non-speech actions: muting feeds, inviting physical repositioning, letting a panel speak, exporting a receipt, and choosing safety timing.",
+        "source_refs": [
+          "examples/ink/lucent-hostage-feed.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "Every tracked variable must affect later conditionals, options, outcome text, or review notes.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make Sol clean, Lucent honest, Juno symbolic, or influencer attention harmless because one branch produced a tidy beat.",
+        "source_refs": [
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json"
+        ]
+      },
+      {
+        "text": "Do not make characters more metacognitively capable than their state supports. Use narrator/coordinator prose to translate maneuvers for the reader instead.",
+        "source_refs": [
+          "docs/architecture/projected-local-context.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "folding_rule": "Three choice layers mutate compact variables and fold into shared physical geometry, evidence decision, and folded resolution knots.",
+    "variables": [
+      "proof_integrity",
+      "sol_stability",
+      "juno_safety",
+      "security_pressure",
+      "audience_heat",
+      "influencer_noise",
+      "feed_control"
+    ],
+    "flags": [
+      "receipt_exported",
+      "pippa_centered",
+      "brant_escalated",
+      "juno_signaled",
+      "bench_substitution_done",
+      "demand_full_release"
+    ],
+    "true_split_threshold": "Future versions should true-split only for death, breach, public receipt loss, external evidence verification, Sol custody route, or Juno political choice that changes later playable scenes."
+  },
+  "branches": [
+    {
+      "branch_id": "branch-01-center-edit-trail",
+      "ink_path": "center_edit_trail",
+      "action_type": "speak",
+      "actor_intent": "Keep Sol's attention on verifiable evidence instead of audience humiliation.",
+      "state_basis": [
+        "Sol responds to proof objects more safely than moral instruction.",
+        "Mara's role allows format-aware negotiation."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence integrity, feed control, and Sol stability while lowering immediate security pressure."
+      ],
+      "training_hooks": [
+        "Coordinator should expose evidence objects as stabilizing affordances instead of forcing a redemption beat."
+      ]
+    },
+    {
+      "branch_id": "branch-01-hard-mute-influencers",
+      "ink_path": "hard_mute_influencers",
+      "action_type": "use_object",
+      "actor_intent": "Reduce side-panel provocation at the cost of making Lucent's control visible.",
+      "state_basis": [
+        "Influencer panels are pressure objects and can become accidental negotiators.",
+        "Feed control can improve immediate safety while increasing audience heat."
+      ],
+      "reviewed_consequences": [
+        "Lowers influencer noise, raises feed control, audience heat, and security pressure."
+      ],
+      "training_hooks": [
+        "Branch compiler should let safety improvements create different reputational risks."
+      ]
+    },
+    {
+      "branch_id": "branch-01-juno-visible-signal",
+      "ink_path": "juno_visible_signal",
+      "action_type": "gesture",
+      "actor_intent": "Let Juno become visible as a person without forcing her into testimony.",
+      "state_basis": [
+        "Juno's state supports controlled panic, technical compression, and careful survival signaling.",
+        "Visibility can humanize Juno but also remind Sol that his hand is being judged."
+      ],
+      "reviewed_consequences": [
+        "Raises Juno safety and lowers audience heat, but lowers Sol stability."
+      ],
+      "training_hooks": [
+        "Do not make Juno perform symbolic victimhood when a small survival gesture fits better."
+      ]
+    },
+    {
+      "branch_id": "branch-02-bench-substitution",
+      "ink_path": "bench_substitution",
+      "action_type": "move",
+      "actor_intent": "Transfer Sol's grip from Juno's body to a nearby object without making him perform surrender.",
+      "state_basis": [
+        "Prior Lucent loop showed bench substitution as a strong de-escalation affordance.",
+        "Physical geometry can change state without asking for moral transformation."
+      ],
+      "reviewed_consequences": [
+        "Raises Juno safety and Sol stability while lowering security pressure."
+      ],
+      "training_hooks": [
+        "Good Ghostlight branches can be tiny body/object repositioning moves, not just dialogue."
+      ]
+    },
+    {
+      "branch_id": "branch-02-demand-release",
+      "ink_path": "demand_release",
+      "action_type": "speak",
+      "actor_intent": "Push for immediate release and risk making Sol hear humiliation instead of safety.",
+      "state_basis": [
+        "The morally clean request is not necessarily the safest local move.",
+        "Sol's state makes humiliation and forced surrender destabilizing."
+      ],
+      "reviewed_consequences": [
+        "Raises Juno safety slightly but sharply lowers Sol stability and raises security pressure."
+      ],
+      "training_hooks": [
+        "Reviewer should notice that correct values can still be tactically bad under local psychology."
+      ]
+    },
+    {
+      "branch_id": "branch-02-let-pippa-appeal",
+      "ink_path": "pippa_appeal",
+      "action_type": "wait",
+      "actor_intent": "Let an influencer humanize Sol, accepting the risk that she centers herself.",
+      "state_basis": [
+        "Pippa can accidentally humanize Sol or catastrophically center herself.",
+        "Lucent culture turns even useful empathy into content pressure."
+      ],
+      "reviewed_consequences": [
+        "Raises Sol stability while raising influencer noise and audience heat."
+      ],
+      "training_hooks": [
+        "Branch compiler should preserve mixed consequences instead of pure success/fail labels."
+      ]
+    },
+    {
+      "branch_id": "branch-03-export-receipt",
+      "ink_path": "export_receipt",
+      "action_type": "use_object",
+      "actor_intent": "Lock the edit trail to an external receipt before Lucent can repackage it.",
+      "state_basis": [
+        "Evidence integrity is a material object-state pressure, not just a theme.",
+        "Receipt export can preserve truth while increasing audience heat."
+      ],
+      "reviewed_consequences": [
+        "Sets receipt_exported and raises evidence integrity, feed control, and audience heat."
+      ],
+      "training_hooks": [
+        "State variables should alter resolution, not merely decorate prose."
+      ]
+    },
+    {
+      "branch_id": "branch-03-safe-line-first",
+      "ink_path": "safe_line_first",
+      "action_type": "speak",
+      "actor_intent": "Prioritize Juno crossing the safe line before evidence escalation.",
+      "state_basis": [
+        "The safe-line marker is a concrete gate that security, feed ops, and Sol can all see.",
+        "Juno safety can improve before evidence is fully secured."
+      ],
+      "reviewed_consequences": [
+        "Raises Juno safety, Sol stability, and evidence integrity."
+      ],
+      "training_hooks": [
+        "Resolution must distinguish human safety from evidence preservation."
+      ]
+    },
+    {
+      "branch_id": "branch-03-brant-burns-lucent",
+      "ink_path": "brant_burns_lucent",
+      "action_type": "wait",
+      "actor_intent": "Let Brant attack Lucent publicly, raising evidence pressure and human danger.",
+      "state_basis": [
+        "Brant's outrage can attack the correct target while escalating the room.",
+        "Audience heat and security pressure are linked but not identical."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence integrity, audience heat, and security pressure while lowering Sol stability."
+      ],
+      "training_hooks": [
+        "Correct accusations can still harm hostage safety when delivered by the wrong pressure object."
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable updates for local playthrough",
+      "conditional outcome prose",
+      "branch comment handles and sidecar branch mapping"
+    ],
+    "manual_review_required": [
+      "Durable Sol/Juno/Mara relationship or memory mutation",
+      "Lucent institutional lore promotion",
+      "Evidence receipt canon status",
+      "Any claim that a branch represents accepted coordinator or responder training gold"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex meta-coordinator",
+    "review_status": "needs_revision",
+    "review_notes": [
+      "First pass is playable branch-and-fold IF scaffold authored by the meta-coordinator.",
+      "Useful for exploring the Lucent state space and branch compiler expectations.",
+      "Needs sandboxed Interactive Fiction Weaver pass and specialist review before it can be treated as training-ready branch compiler data."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
+
+

@@ -14,6 +14,9 @@ should be authored here first and referenced from artifacts or tools.
 - `sandboxed-coordinator-turn.md`: template for sandboxed coordinator workers
   to choose next beats, preserve unresolved hooks, emit glue prose, and expose
   game-ergonomic affordances without inheriting meta-coordinator omniscience.
+- `interactive-fiction-weaver.md`: sandboxed branch-compiler prompt for the
+  Interactive Fiction Weaver, the organ that turns reviewed scene state and
+  branch/fold plans into playable Ink plus training sidecars.
 - `research-sanity-responder.md`: reusable one-turn prompt for checking whether
   a research-enabled responder actually grounds behavior in allowed
   AetheriaLore scope.
@@ -64,6 +67,10 @@ should be authored here first and referenced from artifacts or tools.
   coordinator can translate opaque maneuvers for the reader, but should not make
   characters infer, manipulate, self-explain, or regulate above their modeled
   state.
+- Treat the Interactive Fiction Weaver as the sandboxed branch compiler for
+  playable Ink. Meta-coordinator-authored Ink can be useful draft scaffolding,
+  but Weaver-authored outputs should be the future training target for branch
+  materialization.
 - Treat visual artifacts as entertainment and website collateral for the
   Ghostlight corpus. They can make the corpus more legible and valuable, but
   they are not core training targets for responder, appraiser, mutator, or

@@ -77,6 +77,7 @@ The active path is a source-grounded branching-scene data loop:
 - Lore grounding reviewer prompt: `prompts/lore-grounding-reviewer.md`
 - Spatial/geometric reviewer prompt: `prompts/spatial-geometric-cohesion-reviewer.md`
 - Visual scene continuity reviewer prompt: `prompts/visual-scene-continuity-reviewer.md`
+- Interactive Fiction Weaver prompt: `prompts/interactive-fiction-weaver.md`
 - Illustrated IF visual pipeline: `docs/architecture/illustrated-if-visual-pipeline.md`
 - Branch compiler and IF reviewer contract: `docs/architecture/ink-branching-scenes.md`
 
@@ -145,6 +146,8 @@ Live Lucent surfaces:
 - `experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md`
 - `scripts/materialize_lucent_loop.py`
 - `scripts/materialize_lucent_loop_continuation.py`
+- `examples/ink/lucent-hostage-feed.branch-and-fold.v0.ink`
+- `examples/ink/lucent-hostage-feed.branch-and-fold.v0.training.json`
 
 The Lucent bundle counts fifteen post-compaction restart turns from
 `turn-06` through `turn-20` as training-clean responder receipts. Earlier
@@ -180,6 +183,12 @@ no-fork agents, but the coordinator was Codex-authored and then captured as
 artifacts. Future training-shaped loops should sandbox coordinator turns too.
 Codex is the meta-coordinator herding Ghostlight pieces into shape, not the raw
 coordinator organ being trained.
+
+Branch compiler seam correction: `lucent-hostage-feed.branch-and-fold.v0.ink`
+is a first meta-coordinator authored branch-and-fold draft for exploring the
+Lucent state space. The future branch compiler organ is the Interactive Fiction
+Weaver, defined in `prompts/interactive-fiction-weaver.md`; Weaver-authored
+outputs should become the target training shape for playable Ink generation.
 
 Kappa geometry to preserve: Service Ring Kappa names this specific standardized
 industrial spoke manifold service ring, a bounded local access loop around a
