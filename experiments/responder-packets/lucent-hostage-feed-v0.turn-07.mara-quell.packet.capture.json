@@ -1,0 +1,92 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-07.mara-quell.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-07.mara-quell.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-07.coordinator.json",
+  "responder_agent_id": "mara_quell",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-07.mara-quell.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"mara_quell\",\"action_label\":\"speak\",\"visible_action\":\"Mara keeps both hands visible at waist height, then turns one palm slightly toward the EDIT TRAIL HOLD overlay without stepping closer. Her attention stays on Sol and Juno rather than the side panels.\",\"spoken_text\":\"Good. Air is real. We keep that rectangle ugly, named, and inconvenient. No scented legal cough, no redemption arc, no custody cartoon sneaking back in wearing a clean shirt. Sol, I am asking for the next small mechanical thing, not a moral parade: move your grip from Juno's sleeve to the edge of the bench beside her. Same leverage in the room, less leverage on her body. Feed ops, leave the rows readable. Brant, Pippa, you are furniture with lighting until told otherwise.\",\"private_interpretation\":\"Sol responded to concrete evidence and anti-format language, not reassurance. He is rewarding visible accountability with reduced physical pressure, so the safest next move is to convert his partial concession into a slightly larger physical gap while preserving his sense that the feed cannot quietly repaint him or Juno.\",\"intended_effect\":\"Reinforce Sol's useful concession, keep the edit trail as shared external focus, reduce influencer interference, and invite a physically safer hostage posture without framing it as surrender.\",\"state_update_candidates\":[\"Mara validates the EDIT TRAIL HOLD as the active accountability object and names the conditions Sol set.\",\"Mara requests a specific next de-escalation step: Sol moves contact from Juno's sleeve to the bench edge near her.\",\"Mara explicitly blocks Brant and Pippa from reframing the moment while the hostage risk remains active.\",\"The suspended CUSTODY GRAPHIC remains treated as unsafe to reintroduce.\"],\"relationship_update_candidates\":[{\"key\":\"Mara Quell and Sol Vant\",\"value\":\"Mara positions herself as a procedural ally for visible evidence rather than a moral judge, while still pressing for Juno's physical safety.\"},{\"key\":\"Mara Quell and Juno Ark\",\"value\":\"Mara keeps Juno's breathing and bodily autonomy central without forcing Juno to perform gratitude or bravery on-feed.\"},{\"key\":\"Mara Quell and Brant Vee/Pippa Lux\",\"value\":\"Mara sharply demotes the side-panel influencers from negotiator status to non-participating visual clutter.\"},{\"key\":\"Mara Quell and feed ops\",\"value\":\"Mara treats feed ops as bound to preservation and readability, not audience packaging.\"}],\"unresolved_hooks\":[\"Whether Sol accepts moving his hand from Juno's sleeve to the bench edge.\",\"Whether legal or moderation attempts to soften, relabel, or bury the EDIT TRAIL HOLD rows.\",\"Whether Brant or Pippa can resist turning the concession into sponsor-safe commentary.\",\"Whether security will keep waiting if Sol's grip loosens further.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"mara_quell\",\"action_label\":\"speak\",\"visible_action\":\"Mara keeps both hands visible at waist height, then turns one palm slightly toward the EDIT TRAIL HOLD overlay without stepping closer. Her attention stays on Sol and Juno rather than the side panels.\",\"spoken_text\":\"Good. Air is real. We keep that rectangle ugly, named, and inconvenient. No scented legal cough, no redemption arc, no custody cartoon sneaking back in wearing a clean shirt. Sol, I am asking for the next small mechanical thing, not a moral parade: move your grip from Juno's sleeve to the edge of the bench beside her. Same leverage in the room, less leverage on her body. Feed ops, leave the rows readable. Brant, Pippa, you are furniture with lighting until told otherwise.\",\"private_interpretation\":\"Sol responded to concrete evidence and anti-format language, not reassurance. He is rewarding visible accountability with reduced physical pressure, so the safest next move is to convert his partial concession into a slightly larger physical gap while preserving his sense that the feed cannot quietly repaint him or Juno.\",\"intended_effect\":\"Reinforce Sol's useful concession, keep the edit trail as shared external focus, reduce influencer interference, and invite a physically safer hostage posture without framing it as surrender.\",\"state_update_candidates\":[\"Mara validates the EDIT TRAIL HOLD as the active accountability object and names the conditions Sol set.\",\"Mara requests a specific next de-escalation step: Sol moves contact from Juno's sleeve to the bench edge near her.\",\"Mara explicitly blocks Brant and Pippa from reframing the moment while the hostage risk remains active.\",\"The suspended CUSTODY GRAPHIC remains treated as unsafe to reintroduce.\"],\"relationship_update_candidates\":[{\"between\":\"Mara Quell and Sol Vant\",\"update\":\"Mara positions herself as a procedural ally for visible evidence rather than a moral judge, while still pressing for Juno's physical safety.\"},{\"between\":\"Mara Quell and Juno Ark\",\"update\":\"Mara keeps Juno's breathing and bodily autonomy central without forcing Juno to perform gratitude or bravery on-feed.\"},{\"between\":\"Mara Quell and Brant Vee/Pippa Lux\",\"update\":\"Mara sharply demotes the side-panel influencers from negotiator status to non-participating visual clutter.\"},{\"between\":\"Mara Quell and feed ops\",\"update\":\"Mara treats feed ops as bound to preservation and readability, not audience packaging.\"}],\"unresolved_hooks\":[\"Whether Sol accepts moving his hand from Juno's sleeve to the bench edge.\",\"Whether legal or moderation attempts to soften, relabel, or bury the EDIT TRAIL HOLD rows.\",\"Whether Brant or Pippa can resist turning the concession into sponsor-safe commentary.\",\"Whether security will keep waiting if Sol's grip loosens further.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "mara_quell",
+    "action_label": "speak",
+    "visible_action": "Mara keeps both hands visible at waist height, then turns one palm slightly toward the EDIT TRAIL HOLD overlay without stepping closer. Her attention stays on Sol and Juno rather than the side panels.",
+    "spoken_text": "Good. Air is real. We keep that rectangle ugly, named, and inconvenient. No scented legal cough, no redemption arc, no custody cartoon sneaking back in wearing a clean shirt. Sol, I am asking for the next small mechanical thing, not a moral parade: move your grip from Juno's sleeve to the edge of the bench beside her. Same leverage in the room, less leverage on her body. Feed ops, leave the rows readable. Brant, Pippa, you are furniture with lighting until told otherwise.",
+    "private_interpretation": "Sol responded to concrete evidence and anti-format language, not reassurance. He is rewarding visible accountability with reduced physical pressure, so the safest next move is to convert his partial concession into a slightly larger physical gap while preserving his sense that the feed cannot quietly repaint him or Juno.",
+    "intended_effect": "Reinforce Sol's useful concession, keep the edit trail as shared external focus, reduce influencer interference, and invite a physically safer hostage posture without framing it as surrender.",
+    "state_update_candidates": [
+      "Mara validates the EDIT TRAIL HOLD as the active accountability object and names the conditions Sol set.",
+      "Mara requests a specific next de-escalation step: Sol moves contact from Juno's sleeve to the bench edge near her.",
+      "Mara explicitly blocks Brant and Pippa from reframing the moment while the hostage risk remains active.",
+      "The suspended CUSTODY GRAPHIC remains treated as unsafe to reintroduce."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "Mara Quell and Sol Vant",
+        "value": "Mara positions herself as a procedural ally for visible evidence rather than a moral judge, while still pressing for Juno's physical safety."
+      },
+      {
+        "key": "Mara Quell and Juno Ark",
+        "value": "Mara keeps Juno's breathing and bodily autonomy central without forcing Juno to perform gratitude or bravery on-feed."
+      },
+      {
+        "key": "Mara Quell and Brant Vee/Pippa Lux",
+        "value": "Mara sharply demotes the side-panel influencers from negotiator status to non-participating visual clutter."
+      },
+      {
+        "key": "Mara Quell and feed ops",
+        "value": "Mara treats feed ops as bound to preservation and readability, not audience packaging."
+      }
+    ],
+    "unresolved_hooks": [
+      "Whether Sol accepts moving his hand from Juno's sleeve to the bench edge.",
+      "Whether legal or moderation attempts to soften, relabel, or bury the EDIT TRAIL HOLD rows.",
+      "Whether Brant or Pippa can resist turning the concession into sponsor-safe commentary.",
+      "Whether security will keep waiting if Sol's grip loosens further."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

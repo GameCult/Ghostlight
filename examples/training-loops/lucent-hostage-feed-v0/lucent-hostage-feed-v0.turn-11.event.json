@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-11.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-11",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-11.sol-vant.packet.capture.json",
+  "actor_agent_id": "sol_vant",
+  "observable_action": "Sol's fingers stay hooked on the bench edge for one more second, whitening at the knuckles, then open. He shifts half a step away from Juno and angles his body toward the camera instead of the elevator gate. His hands remain visible, empty, and low.",
+  "spoken_text": "There. No hand on Juno. No hero shot. No monster shot. Just the receipt, pinned where your little attention abattoir has to look at it. Automated emotion contour, manual sponsor-risk approval. God, even your confession sounds like it came with a quarterly deck. Keep the rows up. Keep the custody graphic suspended. If security moves, they move on a man with empty hands and a bench edge, not a hostage. I want the edit trail preserved, exported, and named on air again by someone whose job title has not been varnished for insurance.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Sol has fully released direct physical leverage over Juno while keeping himself visible and nonviolent.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-11.sol-vant.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Sol accepts the named edit mechanism as partial proof, not full absolution.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-11.sol-vant.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Sol shifts his demand from holding Juno to preserving, exporting, and repeating the edit-trail evidence on air.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-11.sol-vant.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

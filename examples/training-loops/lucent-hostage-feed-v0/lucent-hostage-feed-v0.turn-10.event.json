@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-10.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-10",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet.capture.json",
+  "actor_agent_id": "feed_ops_chorus",
+  "observable_action": "The crisis feed does not cut. EDIT TRAIL HOLD remains pinned above Sol's highlighted arbitration clip, with the laughing sticker and timestamp left intact. A plain white overlay opens beside the atrium view: HOW THIS ROW WAS MADE. Sponsor-risk panels are reduced to small red tabs, still visible but no longer swallowing the frame. Mara Quell's audio is ducked under a synthesized feed-ops voice labeled SOURCE PROCESS NOTE.",
+  "spoken_text": "EDIT TRAIL HOLD remains active. The named rows stay visible. We are not replacing the evidence with a cleaner rectangle, because apparently today the furniture has higher standards than we do. Plain-language explanation follows: this package was assembled by automated emotion-contour optimization, then cleared through manual sponsor-risk approval before publication. That means the system preferred the version most likely to hold audience attention, then humans checked whether it was commercially survivable. This does not require a hidden master plan. It requires a machine trained to find pressure points and people tired enough to call that a workflow. Custody graphic remains suspended while Juno is not directly held. We are preserving the trail.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "EDIT TRAIL HOLD remains visible and intact.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Custody graphic remains suspended while Juno is not directly held.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Feed ops begins a bounded plain-language explanation of the edit mechanism.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

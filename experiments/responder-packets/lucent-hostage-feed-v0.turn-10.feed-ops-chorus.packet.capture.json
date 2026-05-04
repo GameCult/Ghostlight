@@ -1,0 +1,80 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-10.coordinator.json",
+  "responder_agent_id": "feed_ops_chorus",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"feed_ops_chorus\",\"action_label\":\"speak\",\"visible_action\":\"The crisis feed does not cut. EDIT TRAIL HOLD remains pinned above Sol's highlighted arbitration clip, with the laughing sticker and timestamp left intact. A plain white overlay opens beside the atrium view: HOW THIS ROW WAS MADE. Sponsor-risk panels are reduced to small red tabs, still visible but no longer swallowing the frame. Mara Quell's audio is ducked under a synthesized feed-ops voice labeled SOURCE PROCESS NOTE.\",\"spoken_text\":\"EDIT TRAIL HOLD remains active. The named rows stay visible. We are not replacing the evidence with a cleaner rectangle, because apparently today the furniture has higher standards than we do. Plain-language explanation follows: this package was assembled by automated emotion-contour optimization, then cleared through manual sponsor-risk approval before publication. That means the system preferred the version most likely to hold audience attention, then humans checked whether it was commercially survivable. This does not require a hidden master plan. It requires a machine trained to find pressure points and people tired enough to call that a workflow. Custody graphic remains suspended while Juno is not directly held. We are preserving the trail.\",\"private_interpretation\":\"Sol has offered a narrow safety improvement in exchange for public continuity of the evidence. The safest available response is to keep the ugly proof visible, admit the mundane mechanism, and deny him the drama of a coverup without pretending Lucent is clean.\",\"intended_effect\":\"Maintain Sol's conditional cooperation, keep Juno's immediate risk reduced, prevent influencers from seizing the whole frame, and move the feed toward a bounded factual admission that does not erase liability or evidence.\",\"state_update_candidates\":[\"EDIT TRAIL HOLD remains visible and intact.\",\"Custody graphic remains suspended while Juno is not directly held.\",\"Feed ops begins a bounded plain-language explanation of the edit mechanism.\",\"Sponsor-risk overlays are deprioritized but not hidden.\",\"Mara Quell remains on crisis feed with reduced audio priority during the process note.\"],\"relationship_update_candidates\":[\"Feed ops signals limited compliance with Sol's evidence demand without granting him full editorial control.\",\"Feed ops creates a small trust opening with Juno by not reapplying the custody graphic while her arm is free.\",\"Feed ops irritates sponsor-risk systems by making the approval mechanism visible instead of laundering it through anchor language.\"],\"unresolved_hooks\":[\"Whether Sol accepts the explanation as specific enough to keep his hand off Juno.\",\"Whether Mara Quell challenges the process note live.\",\"Whether sponsor-risk or legal attempts to override EDIT TRAIL HOLD.\",\"Whether the audience treats the mundane mechanism as worse than a conspiracy.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"feed_ops_chorus\",\"action_label\":\"speak\",\"visible_action\":\"The crisis feed does not cut. EDIT TRAIL HOLD remains pinned above Sol's highlighted arbitration clip, with the laughing sticker and timestamp left intact. A plain white overlay opens beside the atrium view: HOW THIS ROW WAS MADE. Sponsor-risk panels are reduced to small red tabs, still visible but no longer swallowing the frame. Mara Quell's audio is ducked under a synthesized feed-ops voice labeled SOURCE PROCESS NOTE.\",\"spoken_text\":\"EDIT TRAIL HOLD remains active. The named rows stay visible. We are not replacing the evidence with a cleaner rectangle, because apparently today the furniture has higher standards than we do. Plain-language explanation follows: this package was assembled by automated emotion-contour optimization, then cleared through manual sponsor-risk approval before publication. That means the system preferred the version most likely to hold audience attention, then humans checked whether it was commercially survivable. This does not require a hidden master plan. It requires a machine trained to find pressure points and people tired enough to call that a workflow. Custody graphic remains suspended while Juno is not directly held. We are preserving the trail.\",\"private_interpretation\":\"Sol has offered a narrow safety improvement in exchange for public continuity of the evidence. The safest available response is to keep the ugly proof visible, admit the mundane mechanism, and deny him the drama of a coverup without pretending Lucent is clean.\",\"intended_effect\":\"Maintain Sol's conditional cooperation, keep Juno's immediate risk reduced, prevent influencers from seizing the whole frame, and move the feed toward a bounded factual admission that does not erase liability or evidence.\",\"state_update_candidates\":[\"EDIT TRAIL HOLD remains visible and intact.\",\"Custody graphic remains suspended while Juno is not directly held.\",\"Feed ops begins a bounded plain-language explanation of the edit mechanism.\",\"Sponsor-risk overlays are deprioritized but not hidden.\",\"Mara Quell remains on crisis feed with reduced audio priority during the process note.\"],\"relationship_update_candidates\":[\"Feed ops signals limited compliance with Sol's evidence demand without granting him full editorial control.\",\"Feed ops creates a small trust opening with Juno by not reapplying the custody graphic while her arm is free.\",\"Feed ops irritates sponsor-risk systems by making the approval mechanism visible instead of laundering it through anchor language.\"],\"unresolved_hooks\":[\"Whether Sol accepts the explanation as specific enough to keep his hand off Juno.\",\"Whether Mara Quell challenges the process note live.\",\"Whether sponsor-risk or legal attempts to override EDIT TRAIL HOLD.\",\"Whether the audience treats the mundane mechanism as worse than a conspiracy.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "feed_ops_chorus",
+    "action_label": "speak",
+    "visible_action": "The crisis feed does not cut. EDIT TRAIL HOLD remains pinned above Sol's highlighted arbitration clip, with the laughing sticker and timestamp left intact. A plain white overlay opens beside the atrium view: HOW THIS ROW WAS MADE. Sponsor-risk panels are reduced to small red tabs, still visible but no longer swallowing the frame. Mara Quell's audio is ducked under a synthesized feed-ops voice labeled SOURCE PROCESS NOTE.",
+    "spoken_text": "EDIT TRAIL HOLD remains active. The named rows stay visible. We are not replacing the evidence with a cleaner rectangle, because apparently today the furniture has higher standards than we do. Plain-language explanation follows: this package was assembled by automated emotion-contour optimization, then cleared through manual sponsor-risk approval before publication. That means the system preferred the version most likely to hold audience attention, then humans checked whether it was commercially survivable. This does not require a hidden master plan. It requires a machine trained to find pressure points and people tired enough to call that a workflow. Custody graphic remains suspended while Juno is not directly held. We are preserving the trail.",
+    "private_interpretation": "Sol has offered a narrow safety improvement in exchange for public continuity of the evidence. The safest available response is to keep the ugly proof visible, admit the mundane mechanism, and deny him the drama of a coverup without pretending Lucent is clean.",
+    "intended_effect": "Maintain Sol's conditional cooperation, keep Juno's immediate risk reduced, prevent influencers from seizing the whole frame, and move the feed toward a bounded factual admission that does not erase liability or evidence.",
+    "state_update_candidates": [
+      "EDIT TRAIL HOLD remains visible and intact.",
+      "Custody graphic remains suspended while Juno is not directly held.",
+      "Feed ops begins a bounded plain-language explanation of the edit mechanism.",
+      "Sponsor-risk overlays are deprioritized but not hidden.",
+      "Mara Quell remains on crisis feed with reduced audio priority during the process note."
+    ],
+    "relationship_update_candidates": [
+      "Feed ops signals limited compliance with Sol's evidence demand without granting him full editorial control.",
+      "Feed ops creates a small trust opening with Juno by not reapplying the custody graphic while her arm is free.",
+      "Feed ops irritates sponsor-risk systems by making the approval mechanism visible instead of laundering it through anchor language."
+    ],
+    "unresolved_hooks": [
+      "Whether Sol accepts the explanation as specific enough to keep his hand off Juno.",
+      "Whether Mara Quell challenges the process note live.",
+      "Whether sponsor-risk or legal attempts to override EDIT TRAIL HOLD.",
+      "Whether the audience treats the mundane mechanism as worse than a conspiracy."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

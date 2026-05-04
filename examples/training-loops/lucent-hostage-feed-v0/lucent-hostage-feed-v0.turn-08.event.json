@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-08.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-08",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-08.juno-ark.packet.capture.json",
+  "actor_agent_id": "juno_ark",
+  "observable_action": "Juno shifts one hand into view, palm open, and inches her sleeve toward the bench edge without pulling against Sol. Her shoulders stay low. She looks at the highlighted timecode rows instead of the side panels.",
+  "spoken_text": "I can make that easy. Sleeve goes still, bench does the heroic architecture job. Nobody has to discover character growth on my arm.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Juno makes a slow visible compliance move that helps transfer the grip target from sleeve to bench edge.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-08.juno-ark.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Juno keeps both hands visible and avoids touching feed controls.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-08.juno-ark.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "EDIT TRAIL HOLD remains legible and socially central.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-08.juno-ark.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

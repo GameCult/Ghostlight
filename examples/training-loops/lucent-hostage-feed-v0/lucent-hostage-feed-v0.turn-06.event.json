@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-06.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-06",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-06.sol-vant.packet.capture.json",
+  "actor_agent_id": "sol_vant",
+  "observable_action": "Sol shifts the hand holding Juno from a hard restraint to a loose grip at her sleeve and angles his body half a step away from her throat, keeping himself between her and the elevator gate. His eyes stay on the EDIT TRAIL HOLD rows instead of the side panels.",
+  "spoken_text": "Fine. That is the first useful rectangle anyone in this building has made without putting my face in it like a dead fish. Juno gets more air. Not freedom yet. Air. The lock stays visible, the rows stay named, and nobody replaces operator IDs with a scented legal cough. Mara, you keep talking. Feed ops, you do not decorate this. Brant and Pippa, if either of you says redemption arc, I will become legally tedious in a way your sponsors cannot monetize.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Sol loosens physical control over Juno enough to lower immediate injury risk while maintaining hostage leverage.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-06.sol-vant.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Sol accepts the EDIT TRAIL HOLD as partial externalization of evidence, not as full accountability.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-06.sol-vant.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Sol sets explicit conditions: keep the edit trail visible, preserve named rows, do not replace redacted operator IDs with vague legal language, keep Mara engaged, and prevent influencers from reframing the moment as content.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-06.sol-vant.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

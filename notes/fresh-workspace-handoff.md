@@ -72,7 +72,7 @@ The active path is a source-grounded branching-scene data loop:
 - Illustrated IF visual pipeline: `docs/architecture/illustrated-if-visual-pipeline.md`
 - Branch compiler and IF reviewer contract: `docs/architecture/ink-branching-scenes.md`
 
-## Live Fixture
+## Live Fixtures
 
 Pallas Species Strikes is the current reference-only interactive-fiction story
 fixture:
@@ -120,6 +120,34 @@ reviewed mutation receipts, coordinator continuity receipts, and a coverage row.
 It is training-shaped for projector, responder, event resolver, appraiser,
 mutator, relationship/perception updater, and coordinator/story-runtime seams.
 It is not branch compiler, IF reviewer, or visual training data.
+
+`lucent-hostage-feed-v0` is the current open-ended training-loop draft. It moves
+the pipeline away from Pallas overfitting into a darkly comic Lucent Media
+hostage-feed negotiation set in a tethered counterweight station: a giant
+media-headquarters eye staring down the tether at a metropolis bubble.
+
+Live Lucent surfaces:
+
+- `examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json`
+- `examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json`
+- `examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.branch-surface.json`
+- `examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.bundle.json`
+- `examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.review.json`
+- `experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md`
+- `experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md`
+- `scripts/materialize_lucent_loop.py`
+
+The Lucent bundle counts only the six post-compaction restart turns from
+`turn-06` through `turn-11` as training-clean responder receipts. Earlier
+opening turns established the situation and proof-object but crossed a
+compaction seam, so they are treated as setup/rehearsal context rather than
+gold responder data. The accepted loop starts after feed ops externalizes the
+proof-object into `EDIT TRAIL HOLD` and ends when Sol releases direct physical
+leverage over Juno while keeping the edit-trail evidence live.
+
+Lucent is training-shaped for projector, responder, event resolver, appraiser,
+mutator, relationship/perception updater, and coordinator/story-runtime seams.
+It is not branch compiler, IF reviewer, or visual training data yet.
 
 Kappa geometry to preserve: Service Ring Kappa names this specific standardized
 industrial spoke manifold service ring, a bounded local access loop around a
@@ -170,11 +198,11 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-Review `pallas-training-loop-v0` as the first training-shaped receipt-chain
-pilot, then use the corpus coverage ledger to choose the next Aetheria fixture
-from the 100-150 broad coverage target. Current accepted full-fixture coverage
-is still effectively empty; the new Pallas derivative is a draft scene-loop row
-with per-organ training readiness, not an accepted branch fixture.
+Review the `lucent-hostage-feed-v0` receipt chain and clean run, then decide
+whether to extend it into branch compiler/IF work or move to the next coverage
+fixture. Current accepted full-fixture coverage is still empty; Pallas and
+Lucent derivatives are draft scene-loop rows with per-organ training readiness,
+not accepted branch fixtures.
 
 ## Warnings
 

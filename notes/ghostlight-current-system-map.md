@@ -88,7 +88,7 @@ the room.
 - Training stages and corpus gates: `docs/architecture/training-plan.md`
 - Corpus coverage ledger: `docs/architecture/corpus-coverage-ledger.md`
 
-## Current Live Example
+## Current Live Examples
 
 Pallas Species Strikes is the active reference-only story fixture:
 
@@ -122,6 +122,28 @@ appraiser, mutator, relationship/perception updater, and coordinator/story
 runtime. It is not branch compiler, IF reviewer, visual, or accepted full-fixture
 coverage data.
 
+`lucent-hostage-feed-v0` is the current open-ended training-loop draft. It
+tests the same receipt-chain organs in a less reference-bound scene: a Lucent
+Media hostage-feed negotiation inside the media-eye counterweight of a tethered
+station staring down at a metropolis bubble.
+
+The Lucent bundle includes:
+
+- scene digest, initial state, and branch surface under `examples/training-loops/lucent-hostage-feed-v0/`
+- projected contexts under `examples/projected-contexts/`
+- responder packets under `examples/responder-packets/`
+- raw no-fork subagent captures under `experiments/responder-packets/`
+- event, appraisal, mutation, review, and bundle receipts under `examples/training-loops/lucent-hostage-feed-v0/`
+- clean readable transcript under `experiments/lucent-hostage-feed-v0/`
+- fixture materializer at `scripts/materialize_lucent_loop.py`
+
+Only the six post-restart turns from `turn-06` through `turn-11` are counted as
+training-clean responder receipts. The earlier exploratory opening turns are
+setup/rehearsal context. The loop demonstrates state carryover: feed evidence
+externalization creates breathing room, breathing room creates a bench-edge
+substitution, the substitution enables a process-note admission, and the
+admission enables direct hostage leverage to end.
+
 ## Pruned Receipts
 
 Old prototype fixture receipts and model-runner files have been removed
@@ -143,8 +165,8 @@ paths as active state surfaces.
 - Full scene/event loop implementation
 - Culture prior engine
 - Automatic promotion of branch outcomes into canonical state
-- Corpus coverage ledger expansion beyond the Pallas reference row and first
-  training-loop derivative
+- Corpus coverage ledger expansion beyond the current draft Pallas and Lucent
+  receipt-chain rows
 
 ## Current North Star
 

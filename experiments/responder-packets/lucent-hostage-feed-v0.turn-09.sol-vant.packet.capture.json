@@ -1,0 +1,89 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-09.sol-vant.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-09.sol-vant.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-09.coordinator.json",
+  "responder_agent_id": "sol_vant",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-09.sol-vant.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"sol_vant\",\"action_label\":\"movement\",\"visible_action\":\"Sol's fingers loosen from Juno's sleeve one at a time. His hand shakes badly enough to be visible on the feed, but he shifts the grip down and clamps onto the bench edge beside her instead, keeping his body angled between Juno, the gate, and the watching apertures.\",\"spoken_text\":\"Fine. Bench gets the starring role. Very brave furniture. Nobody clip that like I discovered mercy under commercial lighting. The hold stays up. The rows stay named. If the edit trail blinks, I put my hand back where everyone can understand the cheaper version of me.\",\"private_interpretation\":\"Juno is making the step survivable without making Sol look like he folded. That matters more than he wants it to. The bench gives him something to grip that is not a person, and that feels like a narrow ledge over a very public drop.\",\"intended_effect\":\"Reduce immediate harm to Juno while preserving Sol's evidence leverage and making the change look like controlled compliance rather than surrender.\",\"state_update_candidates\":[\"Sol moved grip from Juno's sleeve to the bench edge beside her.\",\"Juno's arm is no longer being directly held, though Sol remains close and controlling the space.\",\"Security breach pressure can remain delayed because the immediate physical threat has decreased.\",\"EDIT TRAIL HOLD remains a demanded condition for Sol's cooperation.\",\"CUSTODY GRAPHIC remains suspended.\"],\"relationship_update_candidates\":[{\"key\":\"Juno Ark\",\"value\":\"Sol registers Juno's cooperation as non-humiliating and slightly stabilizing, though he continues to use threat language.\"},{\"key\":\"Mara Quell\",\"value\":\"Sol accepts Mara's small mechanical step because it lets him reduce harm without naming it surrender.\"},{\"key\":\"Feed ops\",\"value\":\"Sol explicitly ties continued safer posture to the edit trail hold staying visible and intact.\"}],\"unresolved_hooks\":[\"Will feed ops keep EDIT TRAIL HOLD visible without alteration?\",\"Will security continue delaying intervention after Sol reduces direct contact?\",\"Can Mara or Juno get Sol to increase distance next without triggering humiliation panic?\",\"Will the pinned arbitration clip or side panels be manipulated to provoke him?\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"sol_vant\",\"action_label\":\"movement\",\"visible_action\":\"Sol's fingers loosen from Juno's sleeve one at a time. His hand shakes badly enough to be visible on the feed, but he shifts the grip down and clamps onto the bench edge beside her instead, keeping his body angled between Juno, the gate, and the watching apertures.\",\"spoken_text\":\"Fine. Bench gets the starring role. Very brave furniture. Nobody clip that like I discovered mercy under commercial lighting. The hold stays up. The rows stay named. If the edit trail blinks, I put my hand back where everyone can understand the cheaper version of me.\",\"private_interpretation\":\"Juno is making the step survivable without making Sol look like he folded. That matters more than he wants it to. The bench gives him something to grip that is not a person, and that feels like a narrow ledge over a very public drop.\",\"intended_effect\":\"Reduce immediate harm to Juno while preserving Sol's evidence leverage and making the change look like controlled compliance rather than surrender.\",\"state_update_candidates\":[\"Sol moved grip from Juno's sleeve to the bench edge beside her.\",\"Juno's arm is no longer being directly held, though Sol remains close and controlling the space.\",\"Security breach pressure can remain delayed because the immediate physical threat has decreased.\",\"EDIT TRAIL HOLD remains a demanded condition for Sol's cooperation.\",\"CUSTODY GRAPHIC remains suspended.\"],\"relationship_update_candidates\":[{\"target\":\"Juno Ark\",\"update\":\"Sol registers Juno's cooperation as non-humiliating and slightly stabilizing, though he continues to use threat language.\"},{\"target\":\"Mara Quell\",\"update\":\"Sol accepts Mara's small mechanical step because it lets him reduce harm without naming it surrender.\"},{\"target\":\"Feed ops\",\"update\":\"Sol explicitly ties continued safer posture to the edit trail hold staying visible and intact.\"}],\"unresolved_hooks\":[\"Will feed ops keep EDIT TRAIL HOLD visible without alteration?\",\"Will security continue delaying intervention after Sol reduces direct contact?\",\"Can Mara or Juno get Sol to increase distance next without triggering humiliation panic?\",\"Will the pinned arbitration clip or side panels be manipulated to provoke him?\"]}",
+  "parsed_output": {
+    "responder_agent_id": "sol_vant",
+    "action_label": "movement",
+    "visible_action": "Sol's fingers loosen from Juno's sleeve one at a time. His hand shakes badly enough to be visible on the feed, but he shifts the grip down and clamps onto the bench edge beside her instead, keeping his body angled between Juno, the gate, and the watching apertures.",
+    "spoken_text": "Fine. Bench gets the starring role. Very brave furniture. Nobody clip that like I discovered mercy under commercial lighting. The hold stays up. The rows stay named. If the edit trail blinks, I put my hand back where everyone can understand the cheaper version of me.",
+    "private_interpretation": "Juno is making the step survivable without making Sol look like he folded. That matters more than he wants it to. The bench gives him something to grip that is not a person, and that feels like a narrow ledge over a very public drop.",
+    "intended_effect": "Reduce immediate harm to Juno while preserving Sol's evidence leverage and making the change look like controlled compliance rather than surrender.",
+    "state_update_candidates": [
+      "Sol moved grip from Juno's sleeve to the bench edge beside her.",
+      "Juno's arm is no longer being directly held, though Sol remains close and controlling the space.",
+      "Security breach pressure can remain delayed because the immediate physical threat has decreased.",
+      "EDIT TRAIL HOLD remains a demanded condition for Sol's cooperation.",
+      "CUSTODY GRAPHIC remains suspended."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "Juno Ark",
+        "value": "Sol registers Juno's cooperation as non-humiliating and slightly stabilizing, though he continues to use threat language."
+      },
+      {
+        "key": "Mara Quell",
+        "value": "Sol accepts Mara's small mechanical step because it lets him reduce harm without naming it surrender."
+      },
+      {
+        "key": "Feed ops",
+        "value": "Sol explicitly ties continued safer posture to the edit trail hold staying visible and intact."
+      }
+    ],
+    "unresolved_hooks": [
+      "Will feed ops keep EDIT TRAIL HOLD visible without alteration?",
+      "Will security continue delaying intervention after Sol reduces direct contact?",
+      "Can Mara or Juno get Sol to increase distance next without triggering humiliation panic?",
+      "Will the pinned arbitration clip or side panels be manipulated to provoke him?"
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

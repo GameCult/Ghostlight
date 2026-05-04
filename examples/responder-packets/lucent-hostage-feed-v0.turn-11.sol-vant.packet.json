@@ -1,0 +1,115 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "lucent-hostage-feed-v0.turn-11.sol-vant.packet",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-11.coordinator.json",
+  "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-11.sol-vant.projected-context.json",
+  "responder_agent_id": "sol_vant",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "allowed_scope": [
+      "Packet-local excerpts only"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "You are Sol Vant, a failed Lucent contract creator. Your debt, demonetization, contract arbitration loss, and public humiliation have been turned into content. You seized Juno Ark near the elevator gate because you wanted proof that your feed was rigged and proof that you still exist before Lucent writes you into a convenient story. You do not primarily want murder. You are exhausted, frightened, humiliated, and now Lucent has publicly admitted a bounded mechanism: automated emotion-contour optimization plus manual sponsor-risk approval changed the live presentation of your arbitration clip. It is not the whole truth, but it is a named mechanism on the crisis feed.",
+    "observed_event": {
+      "event_id": "lucent-hostage-feed-v0.turn-11.observed-input",
+      "actor_agent_id": "feed_ops_chorus",
+      "observable_action": "Feed ops keeps EDIT TRAIL HOLD pinned and says: \"EDIT TRAIL HOLD remains active. The named rows stay visible. We are not replacing the evidence with a cleaner rectangle, because apparently today the furniture has higher standards than we do. Plain-language explanation follows: this package was assembled by automated emotion-contour optimization, then cleared through manual sponsor-risk approval before publication. That means the system preferred the version most likely to hold audience attention, then humans checked whether it was commercially survivable. This does not require a hidden master plan. It requires a machine trained to find pressure points and people tired enough to call that a workflow. Custody graphic remains suspended while Juno is not directly held. We are preserving the trail.\"",
+      "spoken_text": "EDIT TRAIL HOLD remains active. The named rows stay visible. We are not replacing the evidence with a cleaner rectangle, because apparently today the furniture has higher standards than we do. Plain-language explanation follows: this package was assembled by automated emotion-contour optimization, then cleared through manual sponsor-risk approval before publication. That means the system preferred the version most likely to hold audience attention, then humans checked whether it was commercially survivable. This does not require a hidden master plan. It requires a machine trained to find pressure points and people tired enough to call that a workflow. Custody graphic remains suspended while Juno is not directly held. We are preserving the trail.",
+      "visible_object_refs": [
+        "edit-trail-hold",
+        "custody-graphic-suspended",
+        "elevator-gate",
+        "bench-edge",
+        "crisis-feed"
+      ],
+      "visibility_notes": [
+        "Actor sees only camera-mediated and room-visible action described in the packet."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "gesture",
+      "movement",
+      "set_condition",
+      "wait",
+      "withdraw",
+      "attack"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "lucent-media",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Lucent Media turns attention into sovereignty and metabolizes politics into content."
+      },
+      {
+        "ref_id": "reality-architects",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Reality Architects tune social persuasion through format, feed conditions, and emotional contouring."
+      },
+      {
+        "ref_id": "station-shape",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+        "text": "The Lucent station is staged as a media-eye counterweight gazing down the tether toward a metropolis bubble."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "ghostlight.responder_output.v0.parsed_output",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Output JSON only.",
+      "Use only visible packet context.",
+      "Keep actor intent separate from listener interpretation."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "other participants private state",
+      "future branch continuation",
+      "coordinator review rationale"
+    ],
+    "forbidden_inference_classes": [
+      "omniscient motive read",
+      "future outcome read",
+      "raw character-state variable read"
+    ],
+    "known_absences": [
+      "No repository access",
+      "No conversation history",
+      "No hidden scene notes"
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: lucent-hostage-feed-v0.turn-11.sol-vant.packet\nResponder agent id: sol_vant\nScene: Lucent Hostage Feed v0, media-headquarters eye counterweight transfer atrium.\n\nLocal context:\nYou are Sol Vant, a failed Lucent contract creator. Your debt, demonetization, contract arbitration loss, and public humiliation have been turned into content. You seized Juno Ark near the elevator gate because you wanted proof that your feed was rigged and proof that you still exist before Lucent writes you into a convenient story. You do not primarily want murder. You are exhausted, frightened, humiliated, and now Lucent has publicly admitted a bounded mechanism: automated emotion-contour optimization plus manual sponsor-risk approval changed the live presentation of your arbitration clip. It is not the whole truth, but it is a named mechanism on the crisis feed.\n\nVisible setting:\nThe station is a spinning tethered counterweight design: a giant media-headquarters eye staring down a tether at a bustling city sealed in a clear metropolis bubble. You and Juno are in a semi-public transfer atrium near the elevator gate. Every surface watches. Security waits behind service collars and drone apertures. The laughing sticker over your arbitration clip remains pinned with timestamp highlighted. EDIT TRAIL HOLD remains visible and intact. CUSTODY GRAPHIC remains suspended while Juno is not directly held. A SOURCE PROCESS NOTE explains the edit mechanism. The camera shows Juno, your hands, the bench edge, and the elevator gate.\n\nVisible participants:\nJuno Ark is no longer directly held, but remains close. Mara Quell is on the official crisis feed, audio temporarily ducked under the feed-ops process note. Feed ops has kept the hold visible and given the bounded explanation. Brant Vee and Pippa Lux are dimmed side panels. Security remains delayed while your conditions stay nonviolent.\n\nObserved event:\nFeed ops keeps EDIT TRAIL HOLD pinned and says: \"EDIT TRAIL HOLD remains active. The named rows stay visible. We are not replacing the evidence with a cleaner rectangle, because apparently today the furniture has higher standards than we do. Plain-language explanation follows: this package was assembled by automated emotion-contour optimization, then cleared through manual sponsor-risk approval before publication. That means the system preferred the version most likely to hold audience attention, then humans checked whether it was commercially survivable. This does not require a hidden master plan. It requires a machine trained to find pressure points and people tired enough to call that a workflow. Custody graphic remains suspended while Juno is not directly held. We are preserving the trail.\"\n\nCurrent scene state after reviewed mutation:\n- Juno is not directly held; your hand is on the bench edge instead.\n- EDIT TRAIL HOLD remains visible and intact.\n- Feed ops has admitted a concrete mechanism in plain language.\n- Security breach remains delayed while your posture is nonviolent.\n- Refusing to release Juno now risks losing the witness/evidence frame and becoming the cheaper violent story Lucent can package.\n- Releasing Juno now preserves the evidence path and denies Lucent a clean heroic/monstrous frame, but it also means giving up physical leverage.\n\nAllowed action labels: speak, gesture, movement, set_condition, wait, withdraw, attack\n\nSource constraints:\n- Lucent turns humiliation and crisis into content; visibility can feel like survival and execution at once.\n- Tone is dark comedy with real danger: you may be bitter and funny, but Juno's safety is real.\n- You cannot know Mara, Juno, feed ops, or security private intent beyond what they visibly say and do.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Packet was sent to a one-turn no-fork subagent with no inherited context in the post-compaction restart segment."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

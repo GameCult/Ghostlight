@@ -1,0 +1,185 @@
+{
+  "schema_version": "ghostlight.projected_local_context.v0",
+  "projection_id": "lucent-hostage-feed-v0.turn-11.sol-vant.projected-context",
+  "input": {
+    "fixture_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+    "annotation_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+    "scene_id": "lucent-hostage-feed-v0.transfer-atrium-release-loop",
+    "local_agent_id": "sol_vant",
+    "listener_ids": [
+      "juno_ark",
+      "mara_quell",
+      "feed_ops_chorus",
+      "brant_vee",
+      "pippa_lux"
+    ],
+    "projection_mode": "manual_training_loop_projection"
+  },
+  "context": {
+    "local_agent_id": "sol_vant",
+    "identity": "Sol Vant",
+    "setting": "Lucent media-eye counterweight transfer atrium during a live hostage-feed negotiation.",
+    "known_facts": [
+      {
+        "text": "Lucent treats visibility as material power; every action in the atrium is also feed behavior.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest",
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      },
+      {
+        "text": "The edit-trail hold is the current external proof-object and replaces Juno's body as the center of leverage.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      }
+    ],
+    "current_stakes": [
+      {
+        "text": "Juno is not directly held; your hand is on the bench edge instead.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      },
+      {
+        "text": "EDIT TRAIL HOLD remains visible and intact.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      }
+    ],
+    "embodiment_and_interface": [
+      {
+        "text": "The actor can act through visible speech, gesture, movement, local feed surfaces, body spacing, and role-appropriate interface controls.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "active_inner_pressures": [
+      {
+        "text": "Stay legible under hostile visibility without handing the feed a cleaner violent or heroic frame.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "relationship_read": [
+      {
+        "text": "Other participants can be read only through observed speech, visible posture, feed position, role, and prior public actions in this loop.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      }
+    ],
+    "tensions": [
+      {
+        "text": "Hostage safety, feed integrity, sponsor risk, humiliation, and public evidence are competing for control of the next beat.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ]
+      }
+    ],
+    "runtime_retrieval_requirements": [
+      {
+        "requirement_id": "turn-11.lucent-lore",
+        "trigger": "scene grounding",
+        "compact_fact": "Lucent governance operates through attention, feed framing, Buzz/Clout, and visibility pressure.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ],
+        "prompt_role": "source_excerpt"
+      }
+    ],
+    "latent_pressure_requirements": [
+      {
+        "pressure_id": "turn-11.speech-review",
+        "text": "Speech should sound like a person acting under pressure inside a live feed, not like prompt-contract compliance.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ],
+        "projection_rule": "Project pressure into concrete action, local jokes, and readable survival logic.",
+        "review_rule": "Review spoken lines for role-local speech, dark-comic pressure, and absence of sludge."
+      }
+    ],
+    "retrieved_lore_prompt_blocks": [
+      {
+        "text": "Lucent turns humiliation and crisis into content; visibility can feel like survival and execution at once.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ]
+      },
+      {
+        "text": "Tone is dark comedy with real danger: you may be bitter and funny, but Juno's safety is real.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ]
+      }
+    ],
+    "latent_pressure_prompt_blocks": [
+      {
+        "text": "The actor should not narrate hidden theory; action and speech should reveal the current pressure and relationship read.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "action_affordances": [
+      {
+        "text": "Allowed moves are limited to the packet action labels and must be feasible from the actor's physical/feed position.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "projection_controls": [
+      {
+        "text": "Only local knowledge, observed events, and role-appropriate inferences are projected. Other participants private state and future continuation are omitted.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "voice_surface": [
+      {
+        "text": "Darkly comic Lucent pressure: precise, readable, and human under danger rather than abstract technical sludge.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "likely_response_moves": [
+      {
+        "text": "Respond to the immediate safety/evidence geometry by either preserving the off-ramp, escalating, or setting a narrower condition.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      }
+    ],
+    "do_not_invent": [
+      {
+        "text": "Do not invent offscreen arrivals, hidden motives, future outcomes, or lore not included in the packet.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ]
+      }
+    ],
+    "observed_event": {
+      "actor_agent_id": "feed_ops_chorus",
+      "summary": "Feed ops keeps EDIT TRAIL HOLD pinned and says: \"EDIT TRAIL HOLD remains active. The named rows stay visible. We are not replacing the evidence with a cleaner rectangle, because apparently today the furniture has higher standards than we do. Plain-language explanation follows: this package was assembled by automated emotion-contour optimization, then cleared through manual sponsor-risk approval before publication. That means the system preferred the version most likely to hold audience attention, then humans checked whether it was commercially survivable. This does not require a hidden master plan. It requires a machine trained to find pressure points and people tired enough to call that a workflow. Custody graphic remains suspended while Juno is not directly held. We are preserving the trail.\""
+    },
+    "prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: lucent-hostage-feed-v0.turn-11.sol-vant.packet\nResponder agent id: sol_vant\nScene: Lucent Hostage Feed v0, media-headquarters eye counterweight transfer atrium.\n\nLocal context:\nYou are Sol Vant, a failed Lucent contract creator. Your debt, demonetization, contract arbitration loss, and public humiliation have been turned into content. You seized Juno Ark near the elevator gate because you wanted proof that your feed was rigged and proof that you still exist before Lucent writes you into a convenient story. You do not primarily want murder. You are exhausted, frightened, humiliated, and now Lucent has publicly admitted a bounded mechanism: automated emotion-contour optimization plus manual sponsor-risk approval changed the live presentation of your arbitration clip. It is not the whole truth, but it is a named mechanism on the crisis feed.\n\nVisible setting:\nThe station is a spinning tethered counterweight design: a giant media-headquarters eye staring down a tether at a bustling city sealed in a clear metropolis bubble. You and Juno are in a semi-public transfer atrium near the elevator gate. Every surface watches. Security waits behind service collars and drone apertures. The laughing sticker over your arbitration clip remains pinned with timestamp highlighted. EDIT TRAIL HOLD remains visible and intact. CUSTODY GRAPHIC remains suspended while Juno is not directly held. A SOURCE PROCESS NOTE explains the edit mechanism. The camera shows Juno, your hands, the bench edge, and the elevator gate.\n\nVisible participants:\nJuno Ark is no longer directly held, but remains close. Mara Quell is on the official crisis feed, audio temporarily ducked under the feed-ops process note. Feed ops has kept the hold visible and given the bounded explanation. Brant Vee and Pippa Lux are dimmed side panels. Security remains delayed while your conditions stay nonviolent.\n\nObserved event:\nFeed ops keeps EDIT TRAIL HOLD pinned and says: \"EDIT TRAIL HOLD remains active. The named rows stay visible. We are not replacing the evidence with a cleaner rectangle, because apparently today the furniture has higher standards than we do. Plain-language explanation follows: this package was assembled by automated emotion-contour optimization, then cleared through manual sponsor-risk approval before publication. That means the system preferred the version most likely to hold audience attention, then humans checked whether it was commercially survivable. This does not require a hidden master plan. It requires a machine trained to find pressure points and people tired enough to call that a workflow. Custody graphic remains suspended while Juno is not directly held. We are preserving the trail.\"\n\nCurrent scene state after reviewed mutation:\n- Juno is not directly held; your hand is on the bench edge instead.\n- EDIT TRAIL HOLD remains visible and intact.\n- Feed ops has admitted a concrete mechanism in plain language.\n- Security breach remains delayed while your posture is nonviolent.\n- Refusing to release Juno now risks losing the witness/evidence frame and becoming the cheaper violent story Lucent can package.\n- Releasing Juno now preserves the evidence path and denies Lucent a clean heroic/monstrous frame, but it also means giving up physical leverage.\n\nAllowed action labels: speak, gesture, movement, set_condition, wait, withdraw, attack\n\nSource constraints:\n- Lucent turns humiliation and crisis into content; visibility can feel like survival and execution at once.\n- Tone is dark comedy with real danger: you may be bitter and funny, but Juno's safety is real.\n- You cannot know Mara, Juno, feed ops, or security private intent beyond what they visibly say and do.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores."
+  },
+  "audit": {
+    "projector": "Codex coordinator",
+    "raw_state_hidden_from_prompt": true,
+    "character_local_context_only": true,
+    "omitted_private_context": [
+      "other participants private state",
+      "future branch plans",
+      "coordinator rationale",
+      "turns 1-5 rehearsal state beyond observable setup"
+    ],
+    "review_status": "accepted"
+  }
+}

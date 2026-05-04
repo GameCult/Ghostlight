@@ -30,6 +30,12 @@ mission:
     projected contexts, packet-only sandboxed responder outputs, event records,
     participant appraisals, reviewed mutations, coordinator receipts, and a
     scene-loop bundle manifest.
+    `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It
+    exercises a six-turn post-restart hostage-release segment in a Lucent
+    media-eye tether station, with exact packet prompts, no-fork responder
+    captures, event/appraisal/mutation receipts, coordinator artifacts, a clean
+    run, and coverage bookkeeping. The opening exploratory turns are treated as
+    setup/rehearsal, not training-clean responder data.
     Call of the Void and Elysium-era gameplay remain procedural consumer targets.
 
 hard_boundaries:
@@ -171,6 +177,12 @@ current_artifacts:
     - examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.scene-digest.json
     - examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json
     - experiments/pallas-training-loop-v0/pallas-training-loop-v0.clean-run.md
+    - examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.bundle.json
+    - examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json
+    - examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json
+    - examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.review.json
+    - experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md
+    - scripts/materialize_lucent_loop.py
   pruned_receipts:
     - Old prototype fixture receipts and local runner files were removed from the live workspace after their lessons were distilled into docs, state, evidence, and git history.
 
@@ -183,5 +195,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Pallas Species Strikes is the current reference-only branch-and-fold story fixture. `pallas-training-loop-v0` is the first separate training-shaped scene-loop derivative and exercises three sequential sandboxed responder turns plus event, appraisal, mutation, relationship/perception, and coordinator receipts. Branch compilation, IF review, and visual artifacts are intentionally not counted as training data for this pilot.
-  next_action: Review `pallas-training-loop-v0` as the first receipt-chain pilot, then use the corpus coverage ledger to choose the next Aetheria fixture from the 100-150 broad coverage target.
+  summary: `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It uses a Lucent hostage-feed negotiation to exercise sequential projector, packet-only responder, event, participant appraisal, reviewed mutation, relationship/perception, and coordinator receipts across six post-restart turns ending with direct hostage leverage released. Pallas remains a reference fixture and `pallas-training-loop-v0` remains the first smaller receipt-chain pilot.
+  next_action: Review the Lucent receipt chain and clean run, then decide whether to extend it into branch compiler/IF work or move to the next coverage fixture. Keep overall coverage at draft until branch/IF acceptance exists.

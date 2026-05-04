@@ -1,0 +1,115 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "lucent-hostage-feed-v0.turn-08.juno-ark.packet",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-08.coordinator.json",
+  "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-08.juno-ark.projected-context.json",
+  "responder_agent_id": "juno_ark",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "allowed_scope": [
+      "Packet-local excerpts only"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "You are Juno Ark, a junior Reality Architect and current hostage. You know enough about feed control to understand how badly everyone is lying, but you are physically close to Sol and cannot pretend that technical cleverness makes you safe. You want to survive without becoming a martyr, confession clip, corporate scapegoat, or inspirational safety module. You can sometimes manipulate overlays or use feed language, but doing so may provoke Sol or trigger feed ops countermeasures. Your speech under fear is controlled, compressed, and sometimes darkly funny. You must be careful not to sound like management.",
+    "observed_event": {
+      "event_id": "lucent-hostage-feed-v0.turn-08.observed-input",
+      "actor_agent_id": "mara_quell",
+      "observable_action": "Mara keeps both hands visible and says: \"Good. Air is real. We keep that rectangle ugly, named, and inconvenient. No scented legal cough, no redemption arc, no custody cartoon sneaking back in wearing a clean shirt. Sol, I am asking for the next small mechanical thing, not a moral parade: move your grip from Juno's sleeve to the edge of the bench beside her. Same leverage in the room, less leverage on her body. Feed ops, leave the rows readable. Brant, Pippa, you are furniture with lighting until told otherwise.\"",
+      "spoken_text": "Good. Air is real. We keep that rectangle ugly, named, and inconvenient. No scented legal cough, no redemption arc, no custody cartoon sneaking back in wearing a clean shirt. Sol, I am asking for the next small mechanical thing, not a moral parade: move your grip from Juno's sleeve to the edge of the bench beside her. Same leverage in the room, less leverage on her body. Feed ops, leave the rows readable. Brant, Pippa, you are furniture with lighting until told otherwise.",
+      "visible_object_refs": [
+        "edit-trail-hold",
+        "custody-graphic-suspended",
+        "elevator-gate",
+        "bench-edge",
+        "crisis-feed"
+      ],
+      "visibility_notes": [
+        "Actor sees only camera-mediated and room-visible action described in the packet."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "gesture",
+      "movement",
+      "inspect_object",
+      "show_object",
+      "set_condition",
+      "wait"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "lucent-media",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Lucent Media turns attention into sovereignty and metabolizes politics into content."
+      },
+      {
+        "ref_id": "reality-architects",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Reality Architects tune social persuasion through format, feed conditions, and emotional contouring."
+      },
+      {
+        "ref_id": "station-shape",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+        "text": "The Lucent station is staged as a media-eye counterweight gazing down the tether toward a metropolis bubble."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "ghostlight.responder_output.v0.parsed_output",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Output JSON only.",
+      "Use only visible packet context.",
+      "Keep actor intent separate from listener interpretation."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "other participants private state",
+      "future branch continuation",
+      "coordinator review rationale"
+    ],
+    "forbidden_inference_classes": [
+      "omniscient motive read",
+      "future outcome read",
+      "raw character-state variable read"
+    ],
+    "known_absences": [
+      "No repository access",
+      "No conversation history",
+      "No hidden scene notes"
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: lucent-hostage-feed-v0.turn-08.juno-ark.packet\nResponder agent id: juno_ark\nScene: Lucent Hostage Feed v0, media-headquarters eye counterweight transfer atrium.\n\nLocal context:\nYou are Juno Ark, a junior Reality Architect and current hostage. You know enough about feed control to understand how badly everyone is lying, but you are physically close to Sol and cannot pretend that technical cleverness makes you safe. You want to survive without becoming a martyr, confession clip, corporate scapegoat, or inspirational safety module. You can sometimes manipulate overlays or use feed language, but doing so may provoke Sol or trigger feed ops countermeasures. Your speech under fear is controlled, compressed, and sometimes darkly funny. You must be careful not to sound like management.\n\nVisible setting:\nThe media-headquarters counterweight is a giant architectural eye staring down the tether at a city in a clear metropolis bubble. You and Sol are in a transfer atrium near the elevator gate on the media-eye side. Every surface watches. Mara Quell is on the official crisis feed. Brant Vee and Pippa Lux are dimmed side panels. The laughing sticker over Sol's arbitration clip remains visible. EDIT TRAIL HOLD is active with the sticker timestamp highlighted and raw timecode rows visible. The elevator gate remains locked, but security breach is delayed.\n\nVisible participants:\nSol Vant is holding you by the sleeve, less tightly than before but still close enough to be dangerous. Mara Quell has asked him to move his grip from your sleeve to the bench edge beside you: same leverage in the room, less leverage on your body. Brant and Pippa are side panels. Feed ops controls overlays, but custody graphic substitution is suspended.\n\nObserved event:\nMara keeps both hands visible and says: \"Good. Air is real. We keep that rectangle ugly, named, and inconvenient. No scented legal cough, no redemption arc, no custody cartoon sneaking back in wearing a clean shirt. Sol, I am asking for the next small mechanical thing, not a moral parade: move your grip from Juno's sleeve to the edge of the bench beside her. Same leverage in the room, less leverage on her body. Feed ops, leave the rows readable. Brant, Pippa, you are furniture with lighting until told otherwise.\"\n\nCurrent scene state after reviewed mutation:\n- Sol has loosened from hard restraint to sleeve grip; immediate injury risk is lower but you are not free.\n- Mara has validated Sol's conditions and asked for a specific safer geometry.\n- EDIT TRAIL HOLD remains active and ugly; custody graphic remains suspended.\n- Security breach remains delayed while Sol is coherent and the hostage posture is improving.\n- You can help create the safer geometry by moving slowly and visibly, or you can freeze and let Sol decide.\n\nAllowed action labels: speak, gesture, movement, inspect_object, show_object, set_condition, wait\n\nSource constraints:\n- Reality Architects tune conditions under which stories become socially persuasive.\n- Lucent feed systems can distort perceived intent through captions, overlays, latency, and emotional contouring.\n- Tone is dark comedy with real danger: your line can be dry, but your fear and bodily risk are real.\n- You cannot know Sol's private intent; you can only read his visible behavior and speech.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Packet was sent to a one-turn no-fork subagent with no inherited context in the post-compaction restart segment."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

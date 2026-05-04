@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-07.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-07",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-07.mara-quell.packet.capture.json",
+  "actor_agent_id": "mara_quell",
+  "observable_action": "Mara keeps both hands visible at waist height, then turns one palm slightly toward the EDIT TRAIL HOLD overlay without stepping closer. Her attention stays on Sol and Juno rather than the side panels.",
+  "spoken_text": "Good. Air is real. We keep that rectangle ugly, named, and inconvenient. No scented legal cough, no redemption arc, no custody cartoon sneaking back in wearing a clean shirt. Sol, I am asking for the next small mechanical thing, not a moral parade: move your grip from Juno's sleeve to the edge of the bench beside her. Same leverage in the room, less leverage on her body. Feed ops, leave the rows readable. Brant, Pippa, you are furniture with lighting until told otherwise.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Mara validates the EDIT TRAIL HOLD as the active accountability object and names the conditions Sol set.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-07.mara-quell.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Mara requests a specific next de-escalation step: Sol moves contact from Juno's sleeve to the bench edge near her.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-07.mara-quell.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Mara explicitly blocks Brant and Pippa from reframing the moment while the hostage risk remains active.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-07.mara-quell.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

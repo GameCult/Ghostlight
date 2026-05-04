@@ -1,0 +1,154 @@
+{
+  "schema_version": "ghostlight.scene_loop_bundle.v0",
+  "bundle_id": "lucent-hostage-feed-v0",
+  "review_status": "accepted_as_draft",
+  "training_usability": {
+    "overall": "not_training_data",
+    "projector": "training_ready",
+    "character_responder": "training_ready",
+    "event_resolver": "training_ready",
+    "participant_appraiser": "training_ready",
+    "state_mutator": "training_ready",
+    "relationship_perception_updater": "training_ready",
+    "coordinator_story_runtime": "training_ready",
+    "branch_compiler": "not_training_data",
+    "if_artifact_reviewer": "not_training_data",
+    "visual_artifacts": "not_training_data"
+  },
+  "reference_fixture_refs": [
+    "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+    "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+    "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.branch-surface.json",
+    "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md"
+  ],
+  "scene_source": {
+    "source_fixture_id": "lucent-hostage-feed-v0",
+    "source_scene_ids": [
+      "transfer_atrium_edit_trail_release"
+    ],
+    "immutability_note": "Open Lucent seed files were used as source surfaces; this bundle adds a separate receipt-chain segment without treating the seed as polished IF."
+  },
+  "initial_state_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+  "turns": [
+    {
+      "turn_id": "turn-06",
+      "acting_agent_id": "sol_vant",
+      "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-06.coordinator.json",
+      "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-06.sol-vant.projected-context.json",
+      "responder_packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-06.sol-vant.packet.json",
+      "raw_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-06.sol-vant.packet.capture.json",
+      "event_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-06.event.json",
+      "appraisal_refs": [
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-06.appraisal.juno_ark.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-06.appraisal.mara_quell.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-06.appraisal.feed_ops_chorus.json"
+      ],
+      "mutation_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-06.mutation.json",
+      "training_usability": "training_ready"
+    },
+    {
+      "turn_id": "turn-07",
+      "acting_agent_id": "mara_quell",
+      "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-07.coordinator.json",
+      "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-07.mara-quell.projected-context.json",
+      "responder_packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-07.mara-quell.packet.json",
+      "raw_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-07.mara-quell.packet.capture.json",
+      "event_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-07.event.json",
+      "appraisal_refs": [
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-07.appraisal.sol_vant.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-07.appraisal.juno_ark.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-07.appraisal.feed_ops_chorus.json"
+      ],
+      "mutation_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-07.mutation.json",
+      "training_usability": "training_ready"
+    },
+    {
+      "turn_id": "turn-08",
+      "acting_agent_id": "juno_ark",
+      "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-08.coordinator.json",
+      "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-08.juno-ark.projected-context.json",
+      "responder_packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-08.juno-ark.packet.json",
+      "raw_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-08.juno-ark.packet.capture.json",
+      "event_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-08.event.json",
+      "appraisal_refs": [
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-08.appraisal.sol_vant.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-08.appraisal.mara_quell.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-08.appraisal.feed_ops_chorus.json"
+      ],
+      "mutation_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-08.mutation.json",
+      "training_usability": "training_ready"
+    },
+    {
+      "turn_id": "turn-09",
+      "acting_agent_id": "sol_vant",
+      "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-09.coordinator.json",
+      "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-09.sol-vant.projected-context.json",
+      "responder_packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-09.sol-vant.packet.json",
+      "raw_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-09.sol-vant.packet.capture.json",
+      "event_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-09.event.json",
+      "appraisal_refs": [
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-09.appraisal.juno_ark.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-09.appraisal.mara_quell.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-09.appraisal.feed_ops_chorus.json"
+      ],
+      "mutation_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-09.mutation.json",
+      "training_usability": "training_ready"
+    },
+    {
+      "turn_id": "turn-10",
+      "acting_agent_id": "feed_ops_chorus",
+      "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-10.coordinator.json",
+      "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-10.feed-ops-chorus.projected-context.json",
+      "responder_packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet.json",
+      "raw_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet.capture.json",
+      "event_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-10.event.json",
+      "appraisal_refs": [
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-10.appraisal.sol_vant.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-10.appraisal.juno_ark.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-10.appraisal.mara_quell.json"
+      ],
+      "mutation_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-10.mutation.json",
+      "training_usability": "training_ready"
+    },
+    {
+      "turn_id": "turn-11",
+      "acting_agent_id": "sol_vant",
+      "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-11.coordinator.json",
+      "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-11.sol-vant.projected-context.json",
+      "responder_packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-11.sol-vant.packet.json",
+      "raw_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-11.sol-vant.packet.capture.json",
+      "event_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-11.event.json",
+      "appraisal_refs": [
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-11.appraisal.juno_ark.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-11.appraisal.mara_quell.json",
+        "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-11.appraisal.feed_ops_chorus.json"
+      ],
+      "mutation_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-11.mutation.json",
+      "training_usability": "training_ready"
+    }
+  ],
+  "review_summary": {
+    "quality_bar_ref": "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md",
+    "training_ready_organs": [
+      "projector",
+      "character_responder",
+      "event_resolver",
+      "participant_appraiser",
+      "state_mutator",
+      "relationship_perception_updater",
+      "coordinator_story_runtime"
+    ],
+    "not_training_data_organs": [
+      "branch_compiler",
+      "if_artifact_reviewer",
+      "visual_artifacts"
+    ],
+    "failure_labels": [],
+    "review_notes": [
+      "Six accepted no-fork responder turns were captured in the post-compaction restart segment with exact packet prompts preserved in packet artifacts.",
+      "The first five exploratory turns are summarized as setup/rehearsal context and are not counted as training-clean responder receipts in this bundle.",
+      "State carryover is visible: proof-object externalization enables air, air enables bench-edge substitution, bench-edge substitution enables process explanation, and process explanation enables release.",
+      "Bundle remains overall not_training_data because it is a linear scene-loop receipt chain, not a full branch compiler or IF artifact."
+    ]
+  }
+}

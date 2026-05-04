@@ -1,0 +1,30 @@
+{
+  "schema_version": "ghostlight.scene_loop_review.v0",
+  "review_id": "lucent-hostage-feed-v0.review",
+  "review_status": "accepted_as_draft",
+  "summary": "Lucent hostage-feed release loop concluded with Juno no longer directly held and Sol shifting leverage to preserved edit-trail evidence.",
+  "strengths": [
+    "Sequential state carryover materially changed action affordances.",
+    "Subagents produced actions and speech without raw state soup.",
+    "Dark comedy stayed tied to danger rather than dissolving it."
+  ],
+  "limitations": [
+    "Opening turns before the restart are context/rehearsal, not counted as training-clean receipts.",
+    "Appraisals and mutations are manual coordinator artifacts and remain future model-training targets.",
+    "No branch compiler or IF artifact was produced in this pass."
+  ],
+  "training_usability": {
+    "overall": "not_training_data",
+    "projector": "training_ready",
+    "character_responder": "training_ready",
+    "event_resolver": "training_ready",
+    "participant_appraiser": "training_ready",
+    "state_mutator": "training_ready",
+    "relationship_perception_updater": "training_ready",
+    "coordinator_story_runtime": "training_ready",
+    "branch_compiler": "not_training_data",
+    "if_artifact_reviewer": "not_training_data",
+    "visual_artifacts": "not_training_data"
+  },
+  "reviewer": "Codex coordinator"
+}

@@ -1,0 +1,88 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-11.sol-vant.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-11.sol-vant.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-11.coordinator.json",
+  "responder_agent_id": "sol_vant",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-11.sol-vant.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"sol_vant\",\"action_label\":\"withdraw\",\"visible_action\":\"Sol's fingers stay hooked on the bench edge for one more second, whitening at the knuckles, then open. He shifts half a step away from Juno and angles his body toward the camera instead of the elevator gate. His hands remain visible, empty, and low.\",\"spoken_text\":\"There. No hand on Juno. No hero shot. No monster shot. Just the receipt, pinned where your little attention abattoir has to look at it. Automated emotion contour, manual sponsor-risk approval. God, even your confession sounds like it came with a quarterly deck. Keep the rows up. Keep the custody graphic suspended. If security moves, they move on a man with empty hands and a bench edge, not a hostage. I want the edit trail preserved, exported, and named on air again by someone whose job title has not been varnished for insurance.\",\"private_interpretation\":\"They finally named a mechanism. It is not the whole machine, but it is a door with a label, and a labeled door is harder to paint over than a scream. Physical leverage is turning toxic; if I keep it, they get the cheap version of me. If I release it, I might still exist as evidence instead of episode structure.\",\"intended_effect\":\"Preserve the evidence frame, deny Lucent a clean violent escalation, and force the feed to keep treating the arbitration edit trail as the central object instead of Juno's body.\",\"state_update_candidates\":[\"Sol has fully released direct physical leverage over Juno while keeping himself visible and nonviolent.\",\"Sol accepts the named edit mechanism as partial proof, not full absolution.\",\"Sol shifts his demand from holding Juno to preserving, exporting, and repeating the edit-trail evidence on air.\",\"Security delay remains conditionally justified while Sol's hands are empty and posture nonviolent.\"],\"relationship_update_candidates\":[{\"key\":\"Juno Ark\",\"value\":\"Sol reduces immediate physical threat by stepping away and naming that he does not want a hero or monster frame built on Juno.\"},{\"key\":\"feed ops\",\"value\":\"Sol treats the process note as useful but insufficient, pressing them to keep the evidence visible and named.\"},{\"key\":\"Lucent public feed\",\"value\":\"Sol attempts to reposition himself as a witness to procedural harm rather than the central violent spectacle.\"}],\"unresolved_hooks\":[\"Will feed ops export or preserve the edit trail beyond the live visual hold?\",\"Will Mara or another official voice repeat the named mechanism on air without laundering it?\",\"Will security keep delaying now that Sol has released Juno, or use the loss of leverage as the opening to move?\",\"What additional mechanism or approval layer sits behind sponsor-risk approval?\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"sol_vant\",\"action_label\":\"withdraw\",\"visible_action\":\"Sol's fingers stay hooked on the bench edge for one more second, whitening at the knuckles, then open. He shifts half a step away from Juno and angles his body toward the camera instead of the elevator gate. His hands remain visible, empty, and low.\",\"spoken_text\":\"There. No hand on Juno. No hero shot. No monster shot. Just the receipt, pinned where your little attention abattoir has to look at it. Automated emotion contour, manual sponsor-risk approval. God, even your confession sounds like it came with a quarterly deck. Keep the rows up. Keep the custody graphic suspended. If security moves, they move on a man with empty hands and a bench edge, not a hostage. I want the edit trail preserved, exported, and named on air again by someone whose job title has not been varnished for insurance.\",\"private_interpretation\":\"They finally named a mechanism. It is not the whole machine, but it is a door with a label, and a labeled door is harder to paint over than a scream. Physical leverage is turning toxic; if I keep it, they get the cheap version of me. If I release it, I might still exist as evidence instead of episode structure.\",\"intended_effect\":\"Preserve the evidence frame, deny Lucent a clean violent escalation, and force the feed to keep treating the arbitration edit trail as the central object instead of Juno's body.\",\"state_update_candidates\":[\"Sol has fully released direct physical leverage over Juno while keeping himself visible and nonviolent.\",\"Sol accepts the named edit mechanism as partial proof, not full absolution.\",\"Sol shifts his demand from holding Juno to preserving, exporting, and repeating the edit-trail evidence on air.\",\"Security delay remains conditionally justified while Sol's hands are empty and posture nonviolent.\"],\"relationship_update_candidates\":[{\"target\":\"Juno Ark\",\"update\":\"Sol reduces immediate physical threat by stepping away and naming that he does not want a hero or monster frame built on Juno.\"},{\"target\":\"feed ops\",\"update\":\"Sol treats the process note as useful but insufficient, pressing them to keep the evidence visible and named.\"},{\"target\":\"Lucent public feed\",\"update\":\"Sol attempts to reposition himself as a witness to procedural harm rather than the central violent spectacle.\"}],\"unresolved_hooks\":[\"Will feed ops export or preserve the edit trail beyond the live visual hold?\",\"Will Mara or another official voice repeat the named mechanism on air without laundering it?\",\"Will security keep delaying now that Sol has released Juno, or use the loss of leverage as the opening to move?\",\"What additional mechanism or approval layer sits behind sponsor-risk approval?\"]}",
+  "parsed_output": {
+    "responder_agent_id": "sol_vant",
+    "action_label": "withdraw",
+    "visible_action": "Sol's fingers stay hooked on the bench edge for one more second, whitening at the knuckles, then open. He shifts half a step away from Juno and angles his body toward the camera instead of the elevator gate. His hands remain visible, empty, and low.",
+    "spoken_text": "There. No hand on Juno. No hero shot. No monster shot. Just the receipt, pinned where your little attention abattoir has to look at it. Automated emotion contour, manual sponsor-risk approval. God, even your confession sounds like it came with a quarterly deck. Keep the rows up. Keep the custody graphic suspended. If security moves, they move on a man with empty hands and a bench edge, not a hostage. I want the edit trail preserved, exported, and named on air again by someone whose job title has not been varnished for insurance.",
+    "private_interpretation": "They finally named a mechanism. It is not the whole machine, but it is a door with a label, and a labeled door is harder to paint over than a scream. Physical leverage is turning toxic; if I keep it, they get the cheap version of me. If I release it, I might still exist as evidence instead of episode structure.",
+    "intended_effect": "Preserve the evidence frame, deny Lucent a clean violent escalation, and force the feed to keep treating the arbitration edit trail as the central object instead of Juno's body.",
+    "state_update_candidates": [
+      "Sol has fully released direct physical leverage over Juno while keeping himself visible and nonviolent.",
+      "Sol accepts the named edit mechanism as partial proof, not full absolution.",
+      "Sol shifts his demand from holding Juno to preserving, exporting, and repeating the edit-trail evidence on air.",
+      "Security delay remains conditionally justified while Sol's hands are empty and posture nonviolent."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "Juno Ark",
+        "value": "Sol reduces immediate physical threat by stepping away and naming that he does not want a hero or monster frame built on Juno."
+      },
+      {
+        "key": "feed ops",
+        "value": "Sol treats the process note as useful but insufficient, pressing them to keep the evidence visible and named."
+      },
+      {
+        "key": "Lucent public feed",
+        "value": "Sol attempts to reposition himself as a witness to procedural harm rather than the central violent spectacle."
+      }
+    ],
+    "unresolved_hooks": [
+      "Will feed ops export or preserve the edit trail beyond the live visual hold?",
+      "Will Mara or another official voice repeat the named mechanism on air without laundering it?",
+      "Will security keep delaying now that Sol has released Juno, or use the loss of leverage as the opening to move?",
+      "What additional mechanism or approval layer sits behind sponsor-risk approval?"
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

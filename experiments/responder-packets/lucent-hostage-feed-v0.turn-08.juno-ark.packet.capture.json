@@ -1,0 +1,88 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-08.juno-ark.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-08.juno-ark.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-08.coordinator.json",
+  "responder_agent_id": "juno_ark",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-08.juno-ark.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"juno_ark\",\"action_label\":\"movement\",\"visible_action\":\"Juno shifts one hand into view, palm open, and inches her sleeve toward the bench edge without pulling against Sol. Her shoulders stay low. She looks at the highlighted timecode rows instead of the side panels.\",\"spoken_text\":\"I can make that easy. Sleeve goes still, bench does the heroic architecture job. Nobody has to discover character growth on my arm.\",\"private_interpretation\":\"Mara is giving Sol a way to reduce harm without surrendering status. If I move too fast, he may clamp down. If I do nothing, he has to choose alone while everyone watches. I need to become less useful as a handle without looking like I am escaping.\",\"intended_effect\":\"Support Mara's safer geometry, reduce direct leverage on Juno's body, and keep Sol's attention on a concrete mechanical adjustment rather than humiliation or narrative victory.\",\"state_update_candidates\":[\"Juno makes a slow visible compliance move that helps transfer the grip target from sleeve to bench edge.\",\"Juno keeps both hands visible and avoids touching feed controls.\",\"EDIT TRAIL HOLD remains legible and socially central.\",\"Immediate restraint risk may decrease if Sol accepts the bench-edge substitution.\"],\"relationship_update_candidates\":[{\"key\":\"Sol Vant\",\"value\":\"Juno signals cooperation with the mechanical request without endorsing him or challenging his control.\"},{\"key\":\"Mara Quell\",\"value\":\"Juno tacitly aligns with Mara's de-escalation frame by making the safer move easy to take.\"},{\"key\":\"Feed ops\",\"value\":\"Juno does not provoke overlay countermeasures and keeps the ugly edit trail as shared evidence.\"}],\"unresolved_hooks\":[\"Whether Sol actually moves his grip to the bench edge.\",\"Whether feed ops keeps the rows readable without inserting a softer custody frame.\",\"Whether Brant or Pippa stay silent after being reduced to lit furniture.\",\"Whether the delayed security breach remains delayed if Sol's posture improves.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"juno_ark\",\"action_label\":\"movement\",\"visible_action\":\"Juno shifts one hand into view, palm open, and inches her sleeve toward the bench edge without pulling against Sol. Her shoulders stay low. She looks at the highlighted timecode rows instead of the side panels.\",\"spoken_text\":\"I can make that easy. Sleeve goes still, bench does the heroic architecture job. Nobody has to discover character growth on my arm.\",\"private_interpretation\":\"Mara is giving Sol a way to reduce harm without surrendering status. If I move too fast, he may clamp down. If I do nothing, he has to choose alone while everyone watches. I need to become less useful as a handle without looking like I am escaping.\",\"intended_effect\":\"Support Mara's safer geometry, reduce direct leverage on Juno's body, and keep Sol's attention on a concrete mechanical adjustment rather than humiliation or narrative victory.\",\"state_update_candidates\":[\"Juno makes a slow visible compliance move that helps transfer the grip target from sleeve to bench edge.\",\"Juno keeps both hands visible and avoids touching feed controls.\",\"EDIT TRAIL HOLD remains legible and socially central.\",\"Immediate restraint risk may decrease if Sol accepts the bench-edge substitution.\"],\"relationship_update_candidates\":[{\"with\":\"Sol Vant\",\"update\":\"Juno signals cooperation with the mechanical request without endorsing him or challenging his control.\"},{\"with\":\"Mara Quell\",\"update\":\"Juno tacitly aligns with Mara's de-escalation frame by making the safer move easy to take.\"},{\"with\":\"Feed ops\",\"update\":\"Juno does not provoke overlay countermeasures and keeps the ugly edit trail as shared evidence.\"}],\"unresolved_hooks\":[\"Whether Sol actually moves his grip to the bench edge.\",\"Whether feed ops keeps the rows readable without inserting a softer custody frame.\",\"Whether Brant or Pippa stay silent after being reduced to lit furniture.\",\"Whether the delayed security breach remains delayed if Sol's posture improves.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "juno_ark",
+    "action_label": "movement",
+    "visible_action": "Juno shifts one hand into view, palm open, and inches her sleeve toward the bench edge without pulling against Sol. Her shoulders stay low. She looks at the highlighted timecode rows instead of the side panels.",
+    "spoken_text": "I can make that easy. Sleeve goes still, bench does the heroic architecture job. Nobody has to discover character growth on my arm.",
+    "private_interpretation": "Mara is giving Sol a way to reduce harm without surrendering status. If I move too fast, he may clamp down. If I do nothing, he has to choose alone while everyone watches. I need to become less useful as a handle without looking like I am escaping.",
+    "intended_effect": "Support Mara's safer geometry, reduce direct leverage on Juno's body, and keep Sol's attention on a concrete mechanical adjustment rather than humiliation or narrative victory.",
+    "state_update_candidates": [
+      "Juno makes a slow visible compliance move that helps transfer the grip target from sleeve to bench edge.",
+      "Juno keeps both hands visible and avoids touching feed controls.",
+      "EDIT TRAIL HOLD remains legible and socially central.",
+      "Immediate restraint risk may decrease if Sol accepts the bench-edge substitution."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "Sol Vant",
+        "value": "Juno signals cooperation with the mechanical request without endorsing him or challenging his control."
+      },
+      {
+        "key": "Mara Quell",
+        "value": "Juno tacitly aligns with Mara's de-escalation frame by making the safer move easy to take."
+      },
+      {
+        "key": "Feed ops",
+        "value": "Juno does not provoke overlay countermeasures and keeps the ugly edit trail as shared evidence."
+      }
+    ],
+    "unresolved_hooks": [
+      "Whether Sol actually moves his grip to the bench edge.",
+      "Whether feed ops keeps the rows readable without inserting a softer custody frame.",
+      "Whether Brant or Pippa stay silent after being reduced to lit furniture.",
+      "Whether the delayed security breach remains delayed if Sol's posture improves."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

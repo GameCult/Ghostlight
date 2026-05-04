@@ -1,0 +1,92 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-06.sol-vant.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-06.sol-vant.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-06.coordinator.json",
+  "responder_agent_id": "sol_vant",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-06.sol-vant.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"sol_vant\",\"action_label\":\"set_condition\",\"visible_action\":\"Sol shifts the hand holding Juno from a hard restraint to a loose grip at her sleeve and angles his body half a step away from her throat, keeping himself between her and the elevator gate. His eyes stay on the EDIT TRAIL HOLD rows instead of the side panels.\",\"spoken_text\":\"Fine. That is the first useful rectangle anyone in this building has made without putting my face in it like a dead fish. Juno gets more air. Not freedom yet. Air. The lock stays visible, the rows stay named, and nobody replaces operator IDs with a scented legal cough. Mara, you keep talking. Feed ops, you do not decorate this. Brant and Pippa, if either of you says redemption arc, I will become legally tedious in a way your sponsors cannot monetize.\",\"private_interpretation\":\"The proof is not safe, but it is no longer only inside my panic or pressed against Juno's pulse. That makes the room less hungry. It also means Lucent has started building the next box around me, and I can feel myself wanting to kick it until it looks like truth. I need conditions before fear does the talking for me.\",\"intended_effect\":\"Convert the hostage pressure into visible nonviolent demands, reduce immediate danger to Juno, and force the feed to keep the preserved edit trail in public view without treating it as confession or spectacle.\",\"state_update_candidates\":[\"Sol loosens physical control over Juno enough to lower immediate injury risk while maintaining hostage leverage.\",\"Sol accepts the EDIT TRAIL HOLD as partial externalization of evidence, not as full accountability.\",\"Sol sets explicit conditions: keep the edit trail visible, preserve named rows, do not replace redacted operator IDs with vague legal language, keep Mara engaged, and prevent influencers from reframing the moment as content.\",\"Security breach remains delayed while Sol stays coherent and Juno has more space.\"],\"relationship_update_candidates\":[{\"key\":\"Juno Ark\",\"value\":\"Sol begins separating Juno from the evidence in his own speech and gives her more physical space, though he does not release her.\"},{\"key\":\"Mara Quell\",\"value\":\"Sol treats Mara as the active channel for continued de-escalation because she validated that Juno is not the evidence bag.\"},{\"key\":\"Feed ops\",\"value\":\"Sol distrusts the partial disclosure but recognizes the visible lock as useful leverage.\"},{\"key\":\"Brant Vee and Pippa Lux\",\"value\":\"Sol openly rejects influencer reframing and warns them against converting the crisis into a redemption narrative.\"}],\"unresolved_hooks\":[\"Operator IDs remain redacted and may hide the people who touched the edit trail.\",\"Legal may still alter, bury, or reinterpret the preservation lock later.\",\"Juno is still not free, and any sudden security move could collapse Sol's fragile control.\",\"The feed may try to turn Sol's restraint into a cleaner Lucent narrative.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"sol_vant\",\"action_label\":\"set_condition\",\"visible_action\":\"Sol shifts the hand holding Juno from a hard restraint to a loose grip at her sleeve and angles his body half a step away from her throat, keeping himself between her and the elevator gate. His eyes stay on the EDIT TRAIL HOLD rows instead of the side panels.\",\"spoken_text\":\"Fine. That is the first useful rectangle anyone in this building has made without putting my face in it like a dead fish. Juno gets more air. Not freedom yet. Air. The lock stays visible, the rows stay named, and nobody replaces operator IDs with a scented legal cough. Mara, you keep talking. Feed ops, you do not decorate this. Brant and Pippa, if either of you says redemption arc, I will become legally tedious in a way your sponsors cannot monetize.\",\"private_interpretation\":\"The proof is not safe, but it is no longer only inside my panic or pressed against Juno's pulse. That makes the room less hungry. It also means Lucent has started building the next box around me, and I can feel myself wanting to kick it until it looks like truth. I need conditions before fear does the talking for me.\",\"intended_effect\":\"Convert the hostage pressure into visible nonviolent demands, reduce immediate danger to Juno, and force the feed to keep the preserved edit trail in public view without treating it as confession or spectacle.\",\"state_update_candidates\":[\"Sol loosens physical control over Juno enough to lower immediate injury risk while maintaining hostage leverage.\",\"Sol accepts the EDIT TRAIL HOLD as partial externalization of evidence, not as full accountability.\",\"Sol sets explicit conditions: keep the edit trail visible, preserve named rows, do not replace redacted operator IDs with vague legal language, keep Mara engaged, and prevent influencers from reframing the moment as content.\",\"Security breach remains delayed while Sol stays coherent and Juno has more space.\"],\"relationship_update_candidates\":[{\"target\":\"Juno Ark\",\"update\":\"Sol begins separating Juno from the evidence in his own speech and gives her more physical space, though he does not release her.\"},{\"target\":\"Mara Quell\",\"update\":\"Sol treats Mara as the active channel for continued de-escalation because she validated that Juno is not the evidence bag.\"},{\"target\":\"Feed ops\",\"update\":\"Sol distrusts the partial disclosure but recognizes the visible lock as useful leverage.\"},{\"target\":\"Brant Vee and Pippa Lux\",\"update\":\"Sol openly rejects influencer reframing and warns them against converting the crisis into a redemption narrative.\"}],\"unresolved_hooks\":[\"Operator IDs remain redacted and may hide the people who touched the edit trail.\",\"Legal may still alter, bury, or reinterpret the preservation lock later.\",\"Juno is still not free, and any sudden security move could collapse Sol's fragile control.\",\"The feed may try to turn Sol's restraint into a cleaner Lucent narrative.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "sol_vant",
+    "action_label": "set_condition",
+    "visible_action": "Sol shifts the hand holding Juno from a hard restraint to a loose grip at her sleeve and angles his body half a step away from her throat, keeping himself between her and the elevator gate. His eyes stay on the EDIT TRAIL HOLD rows instead of the side panels.",
+    "spoken_text": "Fine. That is the first useful rectangle anyone in this building has made without putting my face in it like a dead fish. Juno gets more air. Not freedom yet. Air. The lock stays visible, the rows stay named, and nobody replaces operator IDs with a scented legal cough. Mara, you keep talking. Feed ops, you do not decorate this. Brant and Pippa, if either of you says redemption arc, I will become legally tedious in a way your sponsors cannot monetize.",
+    "private_interpretation": "The proof is not safe, but it is no longer only inside my panic or pressed against Juno's pulse. That makes the room less hungry. It also means Lucent has started building the next box around me, and I can feel myself wanting to kick it until it looks like truth. I need conditions before fear does the talking for me.",
+    "intended_effect": "Convert the hostage pressure into visible nonviolent demands, reduce immediate danger to Juno, and force the feed to keep the preserved edit trail in public view without treating it as confession or spectacle.",
+    "state_update_candidates": [
+      "Sol loosens physical control over Juno enough to lower immediate injury risk while maintaining hostage leverage.",
+      "Sol accepts the EDIT TRAIL HOLD as partial externalization of evidence, not as full accountability.",
+      "Sol sets explicit conditions: keep the edit trail visible, preserve named rows, do not replace redacted operator IDs with vague legal language, keep Mara engaged, and prevent influencers from reframing the moment as content.",
+      "Security breach remains delayed while Sol stays coherent and Juno has more space."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "Juno Ark",
+        "value": "Sol begins separating Juno from the evidence in his own speech and gives her more physical space, though he does not release her."
+      },
+      {
+        "key": "Mara Quell",
+        "value": "Sol treats Mara as the active channel for continued de-escalation because she validated that Juno is not the evidence bag."
+      },
+      {
+        "key": "Feed ops",
+        "value": "Sol distrusts the partial disclosure but recognizes the visible lock as useful leverage."
+      },
+      {
+        "key": "Brant Vee and Pippa Lux",
+        "value": "Sol openly rejects influencer reframing and warns them against converting the crisis into a redemption narrative."
+      }
+    ],
+    "unresolved_hooks": [
+      "Operator IDs remain redacted and may hide the people who touched the edit trail.",
+      "Legal may still alter, bury, or reinterpret the preservation lock later.",
+      "Juno is still not free, and any sudden security move could collapse Sol's fragile control.",
+      "The feed may try to turn Sol's restraint into a cleaner Lucent narrative."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

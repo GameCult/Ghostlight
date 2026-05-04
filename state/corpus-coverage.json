@@ -180,7 +180,7 @@
     },
     {
       "fixture_id": "lucent-hostage-feed-v0",
-      "status": "planned",
+      "status": "draft",
       "timeline_lane": "historical_grounded",
       "canon_status": "single_history",
       "story_type": "day_in_the_life_story",
@@ -225,16 +225,19 @@
         "scene_digest": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
         "initial_state": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
         "branch_surface": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.branch-surface.json",
-        "staging_sketch": "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md"
+        "staging_sketch": "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md",
+        "bundle": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.bundle.json",
+        "review": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.review.json",
+        "clean_run": "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md"
       },
       "review": {
-        "schema": "not_run",
-        "narrative": "not_run",
-        "lore": "not_run",
-        "spatial": "not_run",
+        "schema": "accepted",
+        "narrative": "accepted_as_draft",
+        "lore": "accepted_as_draft",
+        "spatial": "accepted_as_draft",
         "visual": "not_run",
         "if_artifact": "not_run",
-        "receipt_chain": "not_run"
+        "receipt_chain": "accepted_as_draft"
       },
       "economy_hooks": [
         "buzz_attention_scrip",
@@ -248,17 +251,17 @@
         "Lucent crisis negotiation/feed-law protocols need source canon.",
         "Buzz/Clout emergency privilege and legal shielding mechanics need economy/legal elaboration."
       ],
-      "notes": "Open-ended Lucent scene seed intended to move the pipeline away from Pallas overfitting. The station reads physically as a giant media eye gazing down the tether at a bustling city bubble. No responder turns or receipt chain yet; use as staging surface for the next sandboxed loop.",
+      "notes": "Open-ended Lucent hostage-feed scene-loop draft. The training-clean receipt chain starts after feed ops externalizes the proof-object into EDIT TRAIL HOLD; earlier exploratory opening turns are context/rehearsal and not counted as responder gold. Proven organs have exact post-restart packet prompts, no-fork raw responder outputs, event records, appraisals, reviewed mutations, coordinator receipts, and a bundle manifest. Overall fixture remains not-training-data until branch/IF acceptance exists.",
       "training_usability": {
         "overall": "not_training_data",
         "story_shape_and_grounding": "reference_only",
-        "projector": "not_training_data",
-        "character_responder": "not_training_data",
-        "event_resolver": "not_training_data",
-        "participant_appraiser": "not_training_data",
-        "state_mutator": "not_training_data",
-        "relationship_perception_updater": "not_training_data",
-        "coordinator_story_runtime": "not_training_data",
+        "projector": "training_ready",
+        "character_responder": "training_ready",
+        "event_resolver": "training_ready",
+        "participant_appraiser": "training_ready",
+        "state_mutator": "training_ready",
+        "relationship_perception_updater": "training_ready",
+        "coordinator_story_runtime": "training_ready",
         "branch_compiler": "not_training_data",
         "if_artifact_reviewer": "not_training_data",
         "visual_artifacts": "not_training_data"

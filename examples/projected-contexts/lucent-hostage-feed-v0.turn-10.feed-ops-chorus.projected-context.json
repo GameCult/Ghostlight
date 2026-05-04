@@ -1,0 +1,185 @@
+{
+  "schema_version": "ghostlight.projected_local_context.v0",
+  "projection_id": "lucent-hostage-feed-v0.turn-10.feed-ops-chorus.projected-context",
+  "input": {
+    "fixture_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+    "annotation_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+    "scene_id": "lucent-hostage-feed-v0.transfer-atrium-release-loop",
+    "local_agent_id": "feed_ops_chorus",
+    "listener_ids": [
+      "sol_vant",
+      "juno_ark",
+      "mara_quell",
+      "brant_vee",
+      "pippa_lux"
+    ],
+    "projection_mode": "manual_training_loop_projection"
+  },
+  "context": {
+    "local_agent_id": "feed_ops_chorus",
+    "identity": "Feed Ops Chorus",
+    "setting": "Lucent media-eye counterweight transfer atrium during a live hostage-feed negotiation.",
+    "known_facts": [
+      {
+        "text": "Lucent treats visibility as material power; every action in the atrium is also feed behavior.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest",
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      },
+      {
+        "text": "The edit-trail hold is the current external proof-object and replaces Juno's body as the center of leverage.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      }
+    ],
+    "current_stakes": [
+      {
+        "text": "Juno's arm is no longer directly held, though Sol remains close and controls the immediate space.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      },
+      {
+        "text": "Immediate physical threat has decreased; security breach remains delayed.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      }
+    ],
+    "embodiment_and_interface": [
+      {
+        "text": "The actor can act through visible speech, gesture, movement, local feed surfaces, body spacing, and role-appropriate interface controls.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "active_inner_pressures": [
+      {
+        "text": "Stay legible under hostile visibility without handing the feed a cleaner violent or heroic frame.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "relationship_read": [
+      {
+        "text": "Other participants can be read only through observed speech, visible posture, feed position, role, and prior public actions in this loop.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      }
+    ],
+    "tensions": [
+      {
+        "text": "Hostage safety, feed integrity, sponsor risk, humiliation, and public evidence are competing for control of the next beat.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ]
+      }
+    ],
+    "runtime_retrieval_requirements": [
+      {
+        "requirement_id": "turn-10.lucent-lore",
+        "trigger": "scene grounding",
+        "compact_fact": "Lucent governance operates through attention, feed framing, Buzz/Clout, and visibility pressure.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ],
+        "prompt_role": "source_excerpt"
+      }
+    ],
+    "latent_pressure_requirements": [
+      {
+        "pressure_id": "turn-10.speech-review",
+        "text": "Speech should sound like a person acting under pressure inside a live feed, not like prompt-contract compliance.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ],
+        "projection_rule": "Project pressure into concrete action, local jokes, and readable survival logic.",
+        "review_rule": "Review spoken lines for role-local speech, dark-comic pressure, and absence of sludge."
+      }
+    ],
+    "retrieved_lore_prompt_blocks": [
+      {
+        "text": "Lucent governs visibility and turns events into narrative capital.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ]
+      },
+      {
+        "text": "Lucent can make money from enemy propaganda, refugee testimony, insurgent spectacle, and elite decadence without needing moral compatibility.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ]
+      }
+    ],
+    "latent_pressure_prompt_blocks": [
+      {
+        "text": "The actor should not narrate hidden theory; action and speech should reveal the current pressure and relationship read.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "action_affordances": [
+      {
+        "text": "Allowed moves are limited to the packet action labels and must be feasible from the actor's physical/feed position.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "projection_controls": [
+      {
+        "text": "Only local knowledge, observed events, and role-appropriate inferences are projected. Other participants private state and future continuation are omitted.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "voice_surface": [
+      {
+        "text": "Darkly comic Lucent pressure: precise, readable, and human under danger rather than abstract technical sludge.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.initial-state"
+        ]
+      }
+    ],
+    "likely_response_moves": [
+      {
+        "text": "Respond to the immediate safety/evidence geometry by either preserving the off-ramp, escalating, or setting a narrower condition.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.loop-state"
+        ]
+      }
+    ],
+    "do_not_invent": [
+      {
+        "text": "Do not invent offscreen arrivals, hidden motives, future outcomes, or lore not included in the packet.",
+        "source_refs": [
+          "lucent-hostage-feed-v0.scene-digest"
+        ]
+      }
+    ],
+    "observed_event": {
+      "actor_agent_id": "sol_vant",
+      "summary": "Sol moves grip from Juno's sleeve to the bench edge beside her and says: \"Fine. Bench gets the starring role. Very brave furniture. Nobody clip that like I discovered mercy under commercial lighting. The hold stays up. The rows stay named. If the edit trail blinks, I put my hand back where everyone can understand the cheaper version of me.\""
+    },
+    "prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: lucent-hostage-feed-v0.turn-10.feed-ops-chorus.packet\nResponder agent id: feed_ops_chorus\nScene: Lucent Hostage Feed v0, media-headquarters eye counterweight transfer atrium.\n\nLocal context:\nYou are not one person. You are the visible operational surface of Lucent feed ops: newsroom controllers, moderation systems, Reality Architect dashboards, sponsor-risk engines, legal panic, automated captioning, sentiment clustering, and the tired human producer with authority to press the least bad button. You do not have feelings, exactly, but you have priorities: keep Juno alive, preserve Lucent liability position, keep the feed monetizable, avoid a visible coverup, avoid giving Sol total control, keep sponsors from fleeing, and prevent the influencers from becoming the sovereign newsroom. You communicate through overlays, captions, feed routing, on-screen notices, audio priority, and occasional synthesized anchor copy.\n\nVisible setting:\nThe media-headquarters counterweight is a giant architectural eye staring down the tether at a city in a clear metropolis bubble. The hostage event is in the transfer atrium near the elevator gate. The laughing sticker over Sol's arbitration clip remains visible with timestamp highlighted. EDIT TRAIL HOLD is active. CUSTODY GRAPHIC is suspended. Mara Quell is on official crisis feed. Sol Vant has moved his hand from Juno's sleeve to the bench edge beside her. Brant and Pippa are dimmed side panels. Audience sentiment and sponsor-risk overlays are severe.\n\nVisible participants:\nSol Vant has moved his hand to the bench edge instead of Juno's sleeve. Juno Ark is not directly held but remains close. Mara Quell is the official negotiator. Brant and Pippa are dimmed side panels. Sponsor-risk and legal controls are active inside feed ops.\n\nObserved event:\nSol moves grip from Juno's sleeve to the bench edge beside her and says: \"Fine. Bench gets the starring role. Very brave furniture. Nobody clip that like I discovered mercy under commercial lighting. The hold stays up. The rows stay named. If the edit trail blinks, I put my hand back where everyone can understand the cheaper version of me.\"\n\nCurrent scene state after reviewed mutation:\n- Juno's arm is no longer directly held, though Sol remains close and controls the immediate space.\n- Immediate physical threat has decreased; security breach remains delayed.\n- Sol's cooperation depends on EDIT TRAIL HOLD staying visible and intact.\n- Custody graphic remains suspended.\n- The next step toward release requires feed ops to preserve the ugly rows and provide a bounded plain-language explanation without replacing the evidence with packaging.\n- The explanation may reveal a bad but mundane Lucent mechanism: automated emotion-contour optimization plus manual sponsor-risk approval, not a grand conspiracy.\n\nAllowed action labels: speak, gesture, show_object, set_condition, wait, withdraw\n\nSource constraints:\n- Lucent governs visibility and turns events into narrative capital.\n- Lucent can make money from enemy propaganda, refugee testimony, insurgent spectacle, and elite decadence without needing moral compatibility.\n- Reality Architects tune conditions under which stories become socially persuasive.\n- Tone is dark comedy with real danger: feed ops can be grotesquely professional, but cannot ignore hostage safety.\n- Do not reveal hidden author facts. You can show only what feed ops can plausibly decide to make visible.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores."
+  },
+  "audit": {
+    "projector": "Codex coordinator",
+    "raw_state_hidden_from_prompt": true,
+    "character_local_context_only": true,
+    "omitted_private_context": [
+      "other participants private state",
+      "future branch plans",
+      "coordinator rationale",
+      "turns 1-5 rehearsal state beyond observable setup"
+    ],
+    "review_status": "accepted"
+  }
+}

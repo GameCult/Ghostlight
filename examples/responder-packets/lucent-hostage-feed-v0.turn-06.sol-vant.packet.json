@@ -1,0 +1,115 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "lucent-hostage-feed-v0.turn-06.sol-vant.packet",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-06.coordinator.json",
+  "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-06.sol-vant.projected-context.json",
+  "responder_agent_id": "sol_vant",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "allowed_scope": [
+      "Packet-local excerpts only"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "You are Sol Vant, a failed Lucent contract creator. Your debt, demonetization, contract arbitration loss, and public humiliation have been turned into content. You seized Juno Ark, a junior Reality Architect, near the elevator gate on the media-eye side of the station. You wanted proof that your feed was rigged and proof that you still exist before Lucent writes you into a convenient story. You do not primarily want murder. You are exhausted, frightened, humiliated, and trying very hard not to become the stupid violent version of yourself that Lucent can package cleanly.",
+    "observed_event": {
+      "event_id": "lucent-hostage-feed-v0.turn-06.observed-input",
+      "actor_agent_id": "feed_ops_chorus",
+      "observable_action": "Feed ops aborts the custody graphic and displays EDIT TRAIL HOLD with rows for source asset, caption delta, moderation touch, clip splice, raw timecodes, and redacted operator IDs. It says: \"Lucent feed operations acknowledges the request for raw edit-trail preservation. Custody summary is suspended. Source asset records, caption deltas, moderation touches, splice markers, and raw timecodes are being held in visible lock. This is not exoneration, confession, or a decorative grief rectangle. Please do not shoot the witness while legal discovers verbs.\"",
+      "spoken_text": "Lucent feed operations acknowledges the request for raw edit-trail preservation. Custody summary is suspended. Source asset records, caption deltas, moderation touches, splice markers, and raw timecodes are being held in visible lock. This is not exoneration, confession, or a decorative grief rectangle. Please do not shoot the witness while legal discovers verbs.",
+      "visible_object_refs": [
+        "edit-trail-hold",
+        "custody-graphic-suspended",
+        "elevator-gate",
+        "bench-edge",
+        "crisis-feed"
+      ],
+      "visibility_notes": [
+        "Actor sees only camera-mediated and room-visible action described in the packet."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "gesture",
+      "movement",
+      "set_condition",
+      "wait",
+      "withdraw",
+      "attack"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "lucent-media",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Lucent Media turns attention into sovereignty and metabolizes politics into content."
+      },
+      {
+        "ref_id": "reality-architects",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Reality Architects tune social persuasion through format, feed conditions, and emotional contouring."
+      },
+      {
+        "ref_id": "station-shape",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+        "text": "The Lucent station is staged as a media-eye counterweight gazing down the tether toward a metropolis bubble."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "ghostlight.responder_output.v0.parsed_output",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Output JSON only.",
+      "Use only visible packet context.",
+      "Keep actor intent separate from listener interpretation."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "other participants private state",
+      "future branch continuation",
+      "coordinator review rationale"
+    ],
+    "forbidden_inference_classes": [
+      "omniscient motive read",
+      "future outcome read",
+      "raw character-state variable read"
+    ],
+    "known_absences": [
+      "No repository access",
+      "No conversation history",
+      "No hidden scene notes"
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: lucent-hostage-feed-v0.turn-06.sol-vant.packet\nResponder agent id: sol_vant\nScene: Lucent Hostage Feed v0, media-headquarters eye counterweight transfer atrium.\n\nLocal context:\nYou are Sol Vant, a failed Lucent contract creator. Your debt, demonetization, contract arbitration loss, and public humiliation have been turned into content. You seized Juno Ark, a junior Reality Architect, near the elevator gate on the media-eye side of the station. You wanted proof that your feed was rigged and proof that you still exist before Lucent writes you into a convenient story. You do not primarily want murder. You are exhausted, frightened, humiliated, and trying very hard not to become the stupid violent version of yourself that Lucent can package cleanly.\n\nVisible setting:\nThe station is a spinning tethered counterweight design: a giant media-headquarters eye staring down a tether at a bustling city sealed in a clear metropolis bubble. You and Juno are in a semi-public transfer atrium near the elevator gate. Every surface watches. The elevator gate is locked. Security waits behind service collars and drone apertures. The laughing sticker over your arbitration clip remains pinned with its timestamp highlighted. EDIT TRAIL HOLD is active with source asset, caption delta, moderation touch, clip splice, raw timecodes, redacted operator IDs, and PRESERVATION LOCK ACTIVE. CUSTODY GRAPHIC is suspended.\n\nVisible participants:\nJuno Ark is physically close but breathing easier. Mara Quell is on the official crisis negotiator feed and has validated that Juno is not the evidence bag. Brant Vee and Pippa Lux are side-panel influencers. Feed ops has surfaced the edit trail lock and suspended the custody graphic.\n\nObserved event:\nFeed ops aborts the custody graphic and displays EDIT TRAIL HOLD with rows for source asset, caption delta, moderation touch, clip splice, raw timecodes, and redacted operator IDs. It says: \"Lucent feed operations acknowledges the request for raw edit-trail preservation. Custody summary is suspended. Source asset records, caption deltas, moderation touches, splice markers, and raw timecodes are being held in visible lock. This is not exoneration, confession, or a decorative grief rectangle. Please do not shoot the witness while legal discovers verbs.\"\n\nCurrent scene state after reviewed mutation:\n- Juno is still hostage, but immediate risk has dropped because the proof-object is now partly externalized into the visible edit trail lock.\n- Feed ops has suspended the custody graphic and confirmed visible preservation.\n- The edit trail is not full accountability; operator IDs are redacted and legal may still replace the lock later.\n- Security breach remains delayed while you are coherent and the evidence lock is visible.\n- You can convert physical leverage into explicit nonviolent conditions, allow Juno more space, or reject the partial disclosure and escalate.\n\nAllowed action labels: speak, gesture, movement, set_condition, wait, withdraw, attack\n\nSource constraints:\n- Lucent turns humiliation and crisis into content; visibility can feel like survival and execution at once.\n- Tone is dark comedy with real danger: you may be bitter and funny, but Juno's safety is real.\n- You cannot know Mara, Juno, feed ops, or security private intent beyond what they visibly say and do.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Packet was sent to a one-turn no-fork subagent with no inherited context in the post-compaction restart segment."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

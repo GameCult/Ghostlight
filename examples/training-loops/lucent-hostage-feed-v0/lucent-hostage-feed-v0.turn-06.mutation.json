@@ -1,0 +1,85 @@
+{
+  "schema_version": "ghostlight.reviewed_mutation.v0",
+  "mutation_id": "lucent-hostage-feed-v0.turn-06.mutation",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-06",
+  "prior_state_refs": [
+    "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json"
+  ],
+  "event_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-06.event.json",
+  "responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-06.sol-vant.packet.capture.json",
+  "appraisal_refs": [
+    "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-06.appraisal.juno_ark.json",
+    "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-06.appraisal.mara_quell.json",
+    "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-06.appraisal.feed_ops_chorus.json"
+  ],
+  "accepted_deltas": [
+    {
+      "delta_id": "turn-06.accepted.1",
+      "target_ref": "scene.lucent-hostage-feed-v0.1",
+      "delta_type": "world_fact_update",
+      "summary": "Sol loosens physical control over Juno enough to lower immediate injury risk while maintaining hostage leverage.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    },
+    {
+      "delta_id": "turn-06.accepted.2",
+      "target_ref": "scene.lucent-hostage-feed-v0.2",
+      "delta_type": "world_fact_update",
+      "summary": "Sol accepts the EDIT TRAIL HOLD as partial externalization of evidence, not as full accountability.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    },
+    {
+      "delta_id": "turn-06.accepted.3",
+      "target_ref": "scene.lucent-hostage-feed-v0.3",
+      "delta_type": "world_fact_update",
+      "summary": "Sol sets explicit conditions: keep the edit trail visible, preserve named rows, do not replace redacted operator IDs with vague legal language, keep Mara engaged, and prevent influencers from reframing the moment as content.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    },
+    {
+      "delta_id": "turn-06.accepted.4",
+      "target_ref": "scene.lucent-hostage-feed-v0.4",
+      "delta_type": "world_fact_update",
+      "summary": "Security breach remains delayed while Sol stays coherent and Juno has more space.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    }
+  ],
+  "rejected_deltas": [
+    {
+      "delta_id": "turn-06.rejected.private-intent",
+      "target_ref": "participant.private_state",
+      "delta_type": "blocked_hidden_state_write",
+      "summary": "Do not write actor private_interpretation into other participants as known fact.",
+      "authority": "blocked",
+      "status": "rejected",
+      "rationale": "Listener appraisals must infer from observable action only."
+    }
+  ],
+  "deferred_deltas": [
+    {
+      "delta_id": "turn-06.deferred.branch-compile",
+      "target_ref": "branch.compiler",
+      "delta_type": "branch_compile",
+      "summary": "Do not compile branches from this linear release loop yet.",
+      "authority": "coordinator_review",
+      "status": "deferred",
+      "rationale": "Current gate is stateful receipt-chain validation, not IF compilation."
+    }
+  ],
+  "authority_notes": "Manual coordinator review applies deltas from event and appraisal receipts. Future trained organs should learn this state-mutation shape.",
+  "post_state_summary": "Sol loosens physical control over Juno enough to lower immediate injury risk while maintaining hostage leverage.; Sol accepts the EDIT TRAIL HOLD as partial externalization of evidence, not as full accountability.; Sol sets explicit conditions: keep the edit trail visible, preserve named rows, do not replace redacted operator IDs with vague legal language, keep Mara engaged, and prevent influencers from reframing the moment as content.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Mutation receipt records prior refs, accepted/rejected/deferred deltas, authority, and rationale.",
+    "failure_labels": []
+  }
+}

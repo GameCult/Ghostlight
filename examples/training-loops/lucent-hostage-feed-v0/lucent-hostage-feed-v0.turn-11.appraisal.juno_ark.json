@@ -1,0 +1,50 @@
+{
+  "schema_version": "ghostlight.participant_appraisal.v0",
+  "appraisal_id": "lucent-hostage-feed-v0.turn-11.appraisal.juno_ark",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-11",
+  "participant_agent_id": "juno_ark",
+  "event_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-11.event.json",
+  "current_character_state_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-10.mutation.json",
+  "participant_local_context": [
+    "Participant receives the camera-mediated event, live feed overlays, and room-visible motion described by the event record."
+  ],
+  "observable_event_summary": "Sol Vant action: Sol's fingers stay hooked on the bench edge for one more second, whitening at the knuckles, then open. He shifts half a step away from Juno and angles his body toward the camera instead of the elevator gate. His hands remain visible, empty, and low.",
+  "known_facts": [
+    "EDIT TRAIL HOLD and the custody graphic state are visible on the crisis feed.",
+    "Juno's bodily safety and Sol's evidence demand are the active negotiation axis."
+  ],
+  "active_pressures": [
+    "Avoid triggering a violent breach or renewed physical restraint.",
+    "Keep feed framing from replacing the observable event with brand-safe narrative."
+  ],
+  "perceived_relationships": [
+    "Trust is conditional and mediated by visible compliance, not private intent.",
+    "Each participant may misread the action through role pressure and feed position."
+  ],
+  "interpretation": "juno_ark can reasonably read the event as a change in the safety/evidence geometry, while remaining unsure how much of the actor's private intent is sincere or strategic.",
+  "emotional_appraisal": "Pressure decreases slightly around immediate bodily harm while institutional distrust remains high.",
+  "interpretation_label": "ambiguous",
+  "confidence_notes": "Moderate confidence: action is visible, but motive and future compliance remain inferred from public behavior.",
+  "candidate_implications": {
+    "memory": [
+      "Remember turn-11 as a visible shift in hostage/evidence leverage."
+    ],
+    "relationship": [
+      "Update perceived reliability of sol_vant from this visible action only."
+    ],
+    "state": [
+      "Carry forward changed physical leverage and feed condition state."
+    ],
+    "world": [
+      "Crisis feed state remains part of the public record."
+    ]
+  },
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Appraisal uses participant-local visibility, current state refs, and explicit uncertainty instead of actor private intent.",
+    "failure_labels": []
+  }
+}
