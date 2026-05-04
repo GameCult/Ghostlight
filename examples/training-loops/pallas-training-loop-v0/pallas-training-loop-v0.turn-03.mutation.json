@@ -5,7 +5,8 @@
   "scene_loop_id": "pallas-training-loop-v0",
   "turn_id": "turn-03",
   "prior_state_refs": [
-    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json"
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json",
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.mutation.json"
   ],
   "event_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-03.event.json",
   "responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-03.lio-vale.packet.capture.json",
@@ -65,7 +66,7 @@
       "rationale": "Pilot gate is receipt-chain validation, not IF compilation."
     }
   ],
-  "authority_notes": "Manual coordinator review applies deltas from event and appraisal receipts. Future model stages should learn this organ from the receipt shape.",
+  "authority_notes": "Manual coordinator review applies deltas from event and appraisal receipts. Prior mutation refs are chained explicitly so each turn can be reconstructed from the reviewed state available at projection time.",
   "post_state_summary": "False-Seam pattern is directed into the formal maintenance log.; Nara has reason to trust Lio slightly more with substance of refusal.; Refusal becomes more repeatable because it enters shared record without immediate collapse.",
   "review": {
     "reviewer": "Codex coordinator",

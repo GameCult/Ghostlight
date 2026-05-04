@@ -5,7 +5,8 @@
   "scene_loop_id": "pallas-training-loop-v0",
   "turn_id": "turn-02",
   "prior_state_refs": [
-    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json"
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json",
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.mutation.json"
   ],
   "event_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.event.json",
   "responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.capture.json",
@@ -65,7 +66,7 @@
       "rationale": "Pilot gate is receipt-chain validation, not IF compilation."
     }
   ],
-  "authority_notes": "Manual coordinator review applies deltas from event and appraisal receipts. Future model stages should learn this organ from the receipt shape.",
+  "authority_notes": "Manual coordinator review applies deltas from event and appraisal receipts. Prior mutation refs are chained explicitly so each turn can be reconstructed from the reviewed state available at projection time.",
   "post_state_summary": "Immediate injury risk reduced by procedural hold, though delay remains costly.; Baseline anchor crew receives a legitimate verification role.; Ilya frames Nara as useful technical input while avoiding recognition language.",
   "review": {
     "reviewer": "Codex coordinator",

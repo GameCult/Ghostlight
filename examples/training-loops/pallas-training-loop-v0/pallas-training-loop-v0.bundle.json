@@ -3,7 +3,7 @@
   "bundle_id": "pallas-training-loop-v0",
   "review_status": "accepted_as_draft",
   "training_usability": {
-    "overall": "training_ready",
+    "overall": "not_training_data",
     "projector": "training_ready",
     "character_responder": "training_ready",
     "event_resolver": "training_ready",
@@ -100,7 +100,8 @@
     "review_notes": [
       "Three accepted no-fork responder turns were captured with exact packet prompts and raw outputs.",
       "State carryover is visible: Nara refusal creates Ilya procedural hold, which creates Lio record-language response.",
-      "Pilot is a scene-loop receipt chain, not a full IF artifact or branch compiler example."
+      "Pilot is a scene-loop receipt chain, not a full IF artifact or branch compiler example.",
+      "Bundle overall is not full-fixture training data; only listed organs are training-ready in this linear scene-loop pilot."
     ]
   }
 }
