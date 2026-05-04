@@ -19,7 +19,7 @@ VAR formal_stoppage = false
 -> intro_yard_wake
 
 === intro_yard_wake ===
-Pallas Yard Twelve wakes without ceremony. The engineered Bloom shell hums through the deck plates before the shift bell, a low composite note from consolidated asteroid aggregate, TCS substrate, pressure seals, and spin-loaded supports holding a city under air.
+Pallas Yard Twelve wakes without ceremony. The engineered Bloom shell hums through the deck plates before the shift bell, a pressure-deep vibration from sealed shellwork and spin-loaded supports holding a city under air.
 
 It is not a mine and not a factory floor, though Aeronautics Unlimited prices it like both when that helps. It is a built world turned slowly enough to fake down, and Kappa's seals are one of the reasons the air stays on the inside.
 
@@ -27,9 +27,9 @@ It is not a mine and not a factory floor, though Aeronautics Unlimited prices it
 
 === intro_service_ring ===
 // ghostlight.scene: pallas.intro.service_ring_kappa; visual_scene_id: pallas_service_ring_kappa
-Lio Vale walks the primary segment of Service Ring Kappa with a shift-control slate under one arm and yesterday's sleep still folded behind the eyes. Kappa is a bounded local loop around a dense seal-air-thermal equipment cluster: manifold faces on the loop-inner side, anchor hardpoints and staging on the loop-outer side, far-loop lockers and break ledges where the supervisor glass sees less than it pretends. Lio's official job is maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous circuit without killing each other before lunch. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
+Lio Vale walks the primary segment of Service Ring Kappa with a shift-control slate under one arm and yesterday's sleep still folded behind the eyes. Kappa is a local service loop wrapped around the machines that keep seal, air, and heat honest. Lio's official job is maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous circuit without killing each other before lunch. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
 
-Cephalopod shell-artery crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs keep them alive in dry air, which is not the same as letting them be comfortable. Baseline riggers check sliding anchor blocks along the loop-outer rail and test cross-lane lockout lines against floor sockets and inner hardpoints. Engineered seal techs wait at the loop-inner manifold faces in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, far-loop break charts that translate three kinds of body clock into one AU shift.
+Cephalopod shell-artery crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs keep them alive in dry air, which is not the same as letting them be comfortable. Baseline riggers check sliding anchor blocks along the outer work rail. Engineered seal techs wait at the inner manifold faces in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, far-loop break charts that translate three kinds of body clock into one AU shift.
 
 The yard is normal. That is the first horror.
 
@@ -57,6 +57,8 @@ Teth Inkwise hangs in a dry-operation support harness, four arms managing valves
 // ghostlight.scene: pallas.intro.ilya_supervisor_glass; visual_scene_id: pallas_ilya_supervisor_glass
 Ilya Marne, Kappa's AU shift superintendent, watches from the glassed operations gallery above the primary manifold segment, its short raised catwalk running back toward the spoke-base control deck. The central equipment cluster blocks direct sightlines to the far loop, so AU fills the gap with cameras, badge logs, and telemetry. She has corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stops showing decimals.
 
+A tiny green Awakened Labor Front mirror icon sleeps in the corner of Lio's slate, one of the few things in the yard not owned by AU.
+
 Lio knows the day will probably go wrong. The only question is whether it goes wrong before everyone has finished pretending this is maintenance.
 
 -> ordinary_round_choice
@@ -79,7 +81,7 @@ Lio knows the day will probably go wrong. The only question is whether it goes w
 
 === walk_with_nara ===
 // ghostlight.scene: pallas.branch.nara_manifold_walk; visual_scene_id: pallas_nara_manifold_walk
-Nara-7 touches the loop-inner Kappa manifold face twice, waits, then touches it a third time with two fingers spread apart beside the Kappa-7 port. Her batch tag says Seal Technician, BioDrone Standard. Her hand says she is listening.
+Nara-7 touches the loop-inner Kappa manifold face twice, waits, then touches it a third time with two fingers spread apart beside the Kappa-7 port. Her batch tag says Seal Technician, BioDrone Standard, the product class AU uses when it wants a worker to sound like inventory. Her hand says she is listening.
 
 "Kappa sings wrong," she says.
 
@@ -205,11 +207,13 @@ The official board calls it irregularity. The worker channel calls it refusal.
 
 === bioelevate_liability_frame ===
 // ghostlight.scene: pallas.reversal.bioelevate_liability_frame; visual_scene_id: pallas_bioelevate_liability_frame
-BioElevate legal, summoned by Ilya with two clipped phrases, calls it potential scaffold drift.
+BioElevate legal, summoned by Ilya with two clipped phrases, calls it potential scaffold drift. BioElevate is the vendor-law arm that leases engineered workers to AU as product behavior, which is a tidy phrase until one of the products refuses a death route.
 
-BioElevate built and leased the engineered seal tech line under language that turned cognition into product behavior and injury into maintenance variance. If Nara remembers Rell, BioElevate has not merely sold AU labor. It has sold AU a worker and called her equipment.
+The incident board opens a BioElevate form pane and offers Lio three clean boxes: product behavior variance, trained route residue, maintenance-class injury.
 
-The Awakened Labor Front mirror sits outside AU's incident board: a recognition channel for created and altered workers, slow, underfunded, and inconveniently hard to edit once a packet lands there. Its little green receipt light means a copy has left the yard for volunteers who cannot stop retaliation, but can make erasure expensive.
+Nara's fingers stay flat on the manifold face. Teth's nearest eye turns toward the form. Orrin reads the choices and spits one quiet word into his coffee.
+
+The green ALF mirror icon on Lio's slate wakes when the packet touches it. The Awakened Labor Front cannot stop retaliation from outside AU's board, but once its receipt light comes on, erasure gets more expensive.
 
 {formal_stoppage:
 The formal log has already narrowed everyone's exits. Ilya can punish a stoppage, but she cannot pretend no one named it.
@@ -330,10 +334,14 @@ Security drones appear at the far hatch, polite little coffins with blue lights.
 The cavity breath turns shallow. No one has the luxury of a pure victory.
 }
 
-Ilya demands a decision: recognition language in the incident log, {bypass_ready:immediate bypass control under AU authority, |sealed evidence custody, }or emergency clearance to force Kappa-7 entry.
+The red board gives the room less time than anyone wants.
+
+Ilya points to the bargain she can still sell upward: recognition language in the incident log, {bypass_ready:immediate bypass control under AU authority, |sealed evidence custody, }or emergency clearance to force Kappa-7 entry.
+
+Every extra breath spent bargaining is a breath the red board can turn into someone else's blood.
 
 // ghostlight.branch: branch-04-hold-for-recognition; action: speak; intent: Hold safety work behind formal recognition of the refusal as worker judgment.
-* [Hold the line until Ilya records worker judgment.]
+* [Hold the line under red margin until Ilya records worker judgment.]
     ~ strike_cohesion += 2
     ~ security_pressure += 1
     {life_support_margin <= 1:
@@ -438,37 +446,37 @@ It holds without a body spent for punctuation, which makes the victory smaller a
 }
 
 {strike_cohesion >= 4:
-By second shift, the refusal pattern has crossed two service rings. Workers do not say strike on the open channel. They do not need to.
+By second shift, the touch sequence has crossed two service rings: twice, wait, third touch. Workers do not say strike on the open channel. They do not need to.
 - else:
-The stoppage folds back into work, but not cleanly. Something has learned its own shape under AU's floor plates.
+The stoppage folds back into work, but not cleanly. At the far-loop lockers, people leave fingers resting on metal a second longer than the job requires.
 }
 
 {baseline_solidarity >= 3:
-Orrin's crew starts correcting anyone who says the engineered techs panicked. They use safety language first. Politics arrives wearing work gloves.
+Orrin's cracked mug becomes the place his crew starts correcting anyone who says the engineered techs panicked. They use safety language first. Politics arrives wearing work gloves.
 - else:
-Baseline resentment survives the day, bruised but not beaten. The Baseline League will find ears here later if no one keeps doing the harder work.
+Baseline resentment survives the day, bruised but not beaten. The Baseline League will find ears near the break rack later if no one keeps doing the harder work.
 }
 
 {bioelevate_liability >= 3:
-BioElevate's liability memo leaks with enough redactions to make the missing words famous.
+BioElevate's liability memo leaks with enough redactions to make the missing words famous; someone prints it and tapes it beside the cuff Teth keeps patching.
 - else:
-BioElevate keeps the cleanest language for itself and leaves the yard with the dirty work of remembering.
+BioElevate keeps the cleanest language for itself. The yard keeps the dirty work of remembering in cuffs, mugs, and copied reports.
 }
 
 {evidence_of_sentience >= 4:
-The incident packet carries enough observable pattern, route memory, and refusal language that even hostile reviewers have to argue against the evidence instead of around it.
+The incident packet carries enough observable pattern, route memory, and refusal language that even hostile reviewers have to argue against the evidence instead of around it. Lio stores three copies before the next shift bell.
 - else:
-The evidence remains real but fragile: a worker's refusal, a remembered name, and a pattern AU will spend money teaching outsiders not to see.
+The evidence remains real but fragile: a worker's refusal, a remembered name, and a pattern AU will spend money teaching outsiders not to see. Lio keeps the receipt light open anyway.
 }
 
 {nara_centered:
-Nara-7 becomes the story's easiest face and therefore its easiest target. Lio writes her name into protective copies before the next shift can turn witness into culprit.
+Nara-7 becomes the story's easiest face and therefore its easiest target; Lio writes her name into protective copies before the next shift can turn witness into culprit.
 - else:
-Nara-7 stays one worker among many in the first reports. It protects her body for a little while and blurs the shape of what she risked.
+Nara-7 stays one worker among many in the first reports, protected for a little while by the blur that also hides what she risked.
 }
 
 {formal_stoppage:
-Because Lio named the stoppage early, the later committees inherit a hard word instead of a rumor. Security inherits it too.
+Because Lio named the stoppage early, the later committees inherit a hard word instead of a rumor, and security inherits it too.
 - else:
 Because Lio kept the language softer, the yard buys a quieter day and loses the cleanest early claim.
 }

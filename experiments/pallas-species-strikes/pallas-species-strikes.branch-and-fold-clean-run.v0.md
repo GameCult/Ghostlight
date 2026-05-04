@@ -30,11 +30,11 @@ Final variable shape:
 
 Pallas Yard Twelve woke without ceremony.
 
-The engineered Bloom shell hummed through the deck plates before the shift bell, a low composite note from consolidated asteroid aggregate, TCS substrate, pressure seals, and spin-loaded supports holding a city under air. Lio Vale walked the primary segment of Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU called this a routine seal-maintenance cycle. The workers called it breathing for people rich enough to forget what kept the air inside.
+The engineered Bloom shell hummed through the deck plates before the shift bell, a pressure-deep vibration from sealed shellwork and spin-loaded supports holding a city under air. Lio Vale walked the primary segment of Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU called this a routine seal-maintenance cycle. The workers called it breathing for people rich enough to forget what kept the air inside.
 
-It was not a mine and not a factory floor, though Aeronautics Unlimited priced it like both when that helped. It was a built world turned slowly enough to fake down, and Kappa's seals were one of the reasons the air stayed on the inside. Kappa itself was a bounded local loop around a dense seal-air-thermal equipment cluster: manifold faces on the loop-inner side, anchor hardpoints and staging on the loop-outer side, far-loop lockers and break ledges where the supervisor glass saw less than it claimed. Lio's official job was maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous circuit without killing each other before lunch. The unofficial job had worse hours and better people.
+It was not a mine and not a factory floor, though Aeronautics Unlimited priced it like both when that helped. It was a built world turned slowly enough to fake down, and Kappa's seals were one of the reasons the air stayed on the inside. Kappa itself was a local service loop wrapped around the machines that kept seal, air, and heat honest. Lio's official job was maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous circuit without killing each other before lunch. The unofficial job had worse hours and better people.
 
-Cephalopod shell-artery crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs kept them alive in dry air, which was not the same as letting them be comfortable. Baseline riggers checked sliding anchor blocks along the loop-outer rail and tested cross-lane lockout lines against floor sockets and inner hardpoints. Engineered seal techs waited at the loop-inner manifold faces in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, far-loop break charts that translated three kinds of body clock into one AU shift.
+Cephalopod shell-artery crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs kept them alive in dry air, which was not the same as letting them be comfortable. Baseline riggers checked sliding anchor blocks along the outer work rail. Engineered seal techs waited at the inner manifold faces in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, far-loop break charts that translated three kinds of body clock into one AU shift.
 
 The yard was normal. That was the first horror.
 
@@ -45,6 +45,8 @@ Orrin Dax's anchor crew worked the loop-outer anchor rail with cold-stiff hands 
 Teth Inkwise hung in a dry-operation support harness, four arms managing valves while the rest of the body floated inside compression loops and oxygenation tubes. One cuff had rubbed a pale groove into the mantle where the padding thinned out months ago. Teth never mentioned it. The cephalopod crew kept the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
 
 Ilya Marne, Kappa's AU shift superintendent, watched from the glassed operations gallery above the primary manifold segment, its short raised supervisor catwalk running back toward the spoke-base control deck. The central equipment cluster blocked direct sightlines to the far loop, so AU filled the gap with cameras, badge logs, and telemetry. She had corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
+
+A tiny green Awakened Labor Front mirror icon slept in the corner of Lio's slate, one of the few things in the yard not owned by AU.
 
 Lio knew the day would probably go wrong. The only question was whether it went wrong before everyone had finished pretending this was maintenance.
 
@@ -110,11 +112,13 @@ Lio looked at Nara's hands on the rail, at Orrin's crew around the anchor hooks,
 
 The official board called it irregularity. The worker channel called it refusal.
 
-BioElevate legal, summoned by Ilya with two clipped phrases, called it potential scaffold drift.
+BioElevate legal, summoned by Ilya with two clipped phrases, called it potential scaffold drift. BioElevate was the vendor-law arm that leased engineered workers to AU as product behavior, which was a tidy phrase until one of the products refused a death route.
 
-BioElevate had built and leased the engineered seal tech line under language that turned cognition into product behavior and injury into maintenance variance. If Nara remembered Rell, BioElevate had not merely sold AU labor. It had sold AU a worker and called her equipment.
+The incident board opened a BioElevate form pane and offered Lio three clean boxes: product behavior variance, trained route residue, maintenance-class injury.
 
-The Awakened Labor Front mirror sat outside AU's incident board: a recognition channel for created and altered workers, slow, underfunded, and inconveniently hard to edit once a packet landed there. Its little green receipt light meant a copy had left the yard for volunteers who could not stop retaliation, but could make erasure expensive.
+Nara's fingers stayed flat on the manifold face. Teth's nearest eye turned toward the form. Orrin read the choices and spat one quiet word into his coffee.
+
+The green ALF mirror icon on Lio's slate woke when the packet touched it. The Awakened Labor Front could not stop retaliation from outside AU's board, but once its receipt light came on, erasure got more expensive.
 
 The formal log had already narrowed everyone's exits. Ilya could punish a stoppage, but she could not pretend no one named it.
 
@@ -160,6 +164,12 @@ Teth's arms moved through the harness in a blur of exact mercy, bleeding surge t
 
 Ilya looked at the red board, at Nara's steady hands, at Orrin's crew, at Teth's harness flexing without a bridge to spend. She hated every door and all of them were open.
 
+The red board gave the room less time than anyone wanted.
+
+Ilya pointed to the bargain she could still sell upward: recognition language in the incident log, sealed evidence custody, or emergency clearance to force Kappa-7 entry.
+
+Every extra breath spent bargaining was a breath the red board could turn into someone else's blood.
+
 The evidence was thinner than Lio wanted. The phrase would survive, but it would have to survive lawyers with clean sleeves and excellent lighting.
 
 "Worker judgment in the incident log," Lio said. "No forced Kappa-7 entry."
@@ -176,17 +186,17 @@ The seal held.
 
 It held without a body spent for punctuation, which made the victory smaller and more dangerous to management.
 
-By second shift, the refusal pattern had crossed two service rings. Workers did not say strike on the open channel. They did not need to.
+By second shift, the touch sequence had crossed two service rings: twice, wait, third touch. Workers did not say strike on the open channel. They did not need to.
 
-Orrin's crew started correcting anyone who said the engineered techs panicked. They used safety language first. Politics arrived wearing work gloves.
+Orrin's cracked mug became the place his crew started correcting anyone who said the engineered techs panicked. They used safety language first. Politics arrived wearing work gloves.
 
-BioElevate kept the cleanest language for itself and left the yard with the dirty work of remembering.
+BioElevate kept the cleanest language for itself. The yard kept the dirty work of remembering in cuffs, mugs, and copied reports.
 
-The evidence remained real but fragile: a worker's refusal, a remembered name, and a pattern AU would spend money teaching outsiders not to see.
+The evidence remained real but fragile: a worker's refusal, a remembered name, and a pattern AU would spend money teaching outsiders not to see. Lio kept the receipt light open anyway.
 
-Nara-7 stayed one worker among many in the first reports. It protected her body for a little while and blurred the shape of what she risked.
+Nara-7 stayed one worker among many in the first reports, protected for a little while by the blur that also hid what she risked.
 
-Because Lio named the stoppage early, the later committees inherited a hard word instead of a rumor. Security inherited it too.
+Because Lio named the stoppage early, the later committees inherited a hard word instead of a rumor, and security inherited it too.
 
 The event remained local for now: a story passed through dry-operation harness checks, far-loop lockers, cross-lane anchor lines, and the soft clicks of workers touching a manifold face twice, waiting, then touching it again.
 
