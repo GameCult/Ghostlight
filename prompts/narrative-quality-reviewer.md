@@ -56,6 +56,16 @@ Apply these principles:
 - Clarity under invented terms: invented factions, institutions, technologies,
   and social movements need enough in-text context for a new reader to infer
   what they represent in the current scene.
+- Legible social maneuvering: if characters are operating with advanced
+  strategy, metacognition, or cultural tactics, the reader needs enough
+  narrator/coordinator framing to understand what changed and why it matters.
+  Do not require every reader to be as socially fluent as the smartest
+  character in the scene.
+- Character cognitive fit: smart prose is not the same as smart characters.
+  Check whether each character's inference speed, manipulation skill,
+  self-awareness, education, and strategic patience fit the state implied by
+  the artifact. High-IQ social chess can be correct for some cultures or roles,
+  but should not leak into every character by default.
 
 ## Aetheria Tonal Range
 
@@ -113,6 +123,8 @@ Review the artifact against these questions.
 - Are invented terms explained by context before they matter?
 - Does the story rely on knowing what a faction represents before the prose
   gives the reader usable cues?
+- Are socially complex moves translated for the reader when needed, without
+  forcing characters to explain tactics they would not consciously articulate?
 - Does the opening establish place, time, body affordances, work hierarchy, and
   local stakes without drowning the reader?
 
@@ -165,6 +177,8 @@ Review the artifact against these questions.
 - Is the chosen tone appropriate to the character, scene, and Aetheria source
   material, or is the artifact defaulting to dry technical severity because the
   machinery is more comfortable there?
+- Are any characters performing above their modeled intelligence, social
+  training, emotional regulation, or stress capacity?
 
 ### Tonal Fit
 

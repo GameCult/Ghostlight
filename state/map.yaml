@@ -38,6 +38,7 @@ hard_boundaries:
   - Canonical agent state and per-agent perceived state must remain distinct.
   - Characters act from local knowledge, local perception, local pressure, and bounded affordances.
   - Aetheria prose must support tonal range and ordinary life, not only crisis pressure. Wit, warmth, domesticity, ritual, boredom, wonder, and quiet dread are valid state-grounded modes when they fit the scene.
+  - Character intelligence is modeled state, not a default model capability. Make the Ghostlight machinery as smart as possible, but project each character's cognition, metacognition, manipulation skill, inference speed, education, and blind spots only to the level supported by their stat sheet, culture, experience, stress, and current state.
   - Listener misread is first-class; intent and interpretation are not the same object.
   - Human-facing appraisal is a first-class target; VoidBot must be able to read people, form grounded opinions, and revise those opinions over repeated contact.
   - Generated action is an event proposal; deterministic gates and reviewed mutation decide what becomes state.
@@ -77,6 +78,7 @@ live_architecture:
     - Future coordinator turns should be sandboxed as their own promptable worker outputs, with exact visible input, raw output, parsed coordinator artifact, review labels, and interventions preserved. Codex acts as meta-coordinator: it scopes, launches, reviews, repairs, and wires Ghostlight organs, but should not silently collapse the trainable coordinator organ back into omniscient chat.
     - Glue prose is training signal, not canonical truth.
     - Coordinator prose should choose an intentional tonal mode for the scene and protect breathing room when the story needs routine, levity, domestic texture, wonder, or slow dread before consequence.
+    - The coordinator/narrator may be smarter than the characters for reader service: explain opaque maneuvers, stakes, institutional games, and social tactics in accessible prose without retroactively making the acting characters more self-aware than their state allows.
     - The coordinator nudges by affordance, not decree. Prefer concrete game-ergonomic levers such as safe lines, export locks, security holds, handling categories, visible posture scripts, route access, resource scarcity, clocks, and public proof objects over authorial pressure toward a desired ending.
   branch_compiler:
     - The branch compiler turns fixture briefs, lore digests, scene/world state, actor-local branch candidates, reviewed consequence packets, fold plans, and optional visual replay requirements into playable Ink plus training sidecars, separate visual plan artifacts when illustrated replay is in scope, and compiler notes.

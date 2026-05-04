@@ -190,6 +190,15 @@ Glue prose is part of the artifact. It is not canonical state, but it is useful
 training signal for how scenes are bridged, how pressure is restated without
 exposition sludge, and how a procedural branch becomes readable narrative.
 
+Coordinator and narrator intelligence are allowed to exceed character
+intelligence. This is how opaque high-context scenes become legible without
+flattening the characters. If a Lucent negotiator, influencer, or feed operator
+is performing layered reputation warfare, the coordinator may explain the
+maneuver in reader-facing prose, but the explanation is not automatically
+available to the character who performed or witnessed it. Character cognition
+still comes from projected state: intelligence, social acuity, training,
+cultural scripts, stress, and blind spots.
+
 The coordinator may propose state changes, scene transitions, and tool calls. It
 does not bypass deterministic gates. It does not silently decide hidden facts. It
 does not mutate another organ's private output after review. It conducts the

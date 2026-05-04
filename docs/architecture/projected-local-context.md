@@ -101,6 +101,35 @@ The sequential runtime still owns:
 The projector owns the translation from Ghostlight's internal state language to
 character-local operating prose.
 
+## Character Cognitive Ceiling
+
+The response model may be very capable. The character should not inherit that
+capability by default.
+
+Projection must carry a character-local cognitive ceiling: how quickly the
+character infers, how much social indirection they notice, how well they
+manipulate attention, how abstractly they reason under stress, what education or
+culture has trained them to see, and where their blind spots live. A Lucent
+crisis professional may operate with alarming metacognitive precision because
+that is part of the institution's ecology. A tired dock worker, sheltered child,
+panic-struck survivor, credulous fan, or blunt military specialist should not
+suddenly perform the same level of social chess just because the underlying
+model can.
+
+The projector should therefore render:
+
+- strategic acuity and social-reading ability
+- education, professional training, and cultural scripts
+- stress effects on reasoning
+- blind spots, taboos, and habitual misreads
+- whether the character can explain their own tactic, only feel toward it, or
+  act it out without understanding it
+
+This is separate from narrator intelligence. A coordinator or narrator can help
+the reader understand a maneuver after it happens. That explanatory prose must
+not be smuggled into the character's private state or future action capacity
+unless reviewed mutation says the character actually learned it.
+
 ## Current Limit
 
 The first projector is deterministic and deliberately simple. It uses threshold

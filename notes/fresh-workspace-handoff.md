@@ -167,6 +167,14 @@ constraints, route access, public categories, and resource pressure; let actors
 choose from local state; then fold the observed action into reviewed state.
 Elastic strings, not rails. Little puppet theater, but with receipts.
 
+Character-intelligence lesson: keep the machinery as smart as possible, but do
+not make every character inherit frontier-model metacognition. Characters should
+reason, manipulate, misread, explain themselves, and regulate stress only to
+the level supported by their stat sheet, culture, role, experience, and current
+state. The coordinator/narrator may translate high-context maneuvers for the
+reader, especially in Lucent-style reputation warfare, but that explanation is
+not automatically character knowledge.
+
 Coordinator seam correction: the Lucent character responders were sandboxed
 no-fork agents, but the coordinator was Codex-authored and then captured as
 artifacts. Future training-shaped loops should sandbox coordinator turns too.
