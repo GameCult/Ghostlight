@@ -133,7 +133,7 @@
       "action_type": "move",
       "actor_intent": "Learn Nara's ordinary hazard routine before crisis.",
       "state_basis": [
-        "Lio's role lets them walk the manifold line without making it look like interrogation.",
+        "Lio's role lets them walk the loop-inner manifold face without making it look like interrogation.",
         "Nara's observable touch sequence can raise evidence_of_sentience without exposing private narration."
       ],
       "reviewed_consequences": [
@@ -149,7 +149,7 @@
       "action_type": "wait",
       "actor_intent": "Let baseline resentment appear as lived class pressure before the strike asks for solidarity.",
       "state_basis": [
-        "Orrin's displacement fear is role-visible through complaints and break-table behavior."
+        "Orrin's displacement fear is role-visible through complaints and far-loop break behavior."
       ],
       "reviewed_consequences": [
         "Raises baseline_solidarity because Lio treats Orrin as a worker with material concerns rather than an obstacle."
@@ -297,7 +297,7 @@
       "branch_id": "branch-04-trade-bypass-for-evidence",
       "ink_path": "trade_bypass_for_evidence",
       "action_type": "transfer_object",
-      "actor_intent": "Trade temporary bypass control for preserved evidence and no forced crawl.",
+      "actor_intent": "Trade temporary bypass control for preserved evidence and no forced Kappa-7 entry.",
       "state_basis": [
         "The scene has generated both safety pressure and evidence custody pressure."
       ],
@@ -312,7 +312,7 @@
       "branch_id": "branch-04-seal-evidence-without-bypass",
       "ink_path": "seal_evidence_without_bypass",
       "action_type": "transfer_object",
-      "actor_intent": "Preserve evidence and forbid a forced crawl when no bypass leverage exists.",
+      "actor_intent": "Preserve evidence and forbid forced Kappa-7 entry when no bypass leverage exists.",
       "state_basis": [
         "The scene has generated evidence custody pressure, but bypass_ready is false, so Lio cannot trade a nonexistent safety bridge."
       ],

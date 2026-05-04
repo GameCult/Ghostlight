@@ -155,7 +155,7 @@ interactive-fiction scaffold:
 It starts in ordinary AU Bloom cavity-shell maintenance texture, introduces the
 major participants before branch-only deepening, then escalates through Nara-7's
 coordinated hazard refusal, baseline rigger solidarity pressure, BioElevate
-liability framing, AU dry-operation cephalopod crawl leverage, and a folded
+liability framing, AU dry-operation cephalopod shell-artery leverage, and a folded
 recognition/safety climax. The Ink now gates Nara's marked path and Teth's
 bypass, gives `evidence_of_sentience`, `nara_centered`, and
 `formal_stoppage` later reads, and gives visual plan states explicit trigger
@@ -165,9 +165,26 @@ climax decision, and aftermath into click-through visual sections with
 Molecule Dreams-style volumetric brushstroke cue, and imagegen-ready prompts
 that explain fictional equipment in visible terms. Its location grounding now
 uses the Bloom process correctly: engineered rotating shell, consolidated
-asteroid rubble/aggregate, TCS substrate, seals, supports, and service systems,
+asteroid aggregate, TCS substrate, seals, supports, and service systems,
 with image prompts written as affirmative visible targets. Treat it as
 coordinator/IF scaffold training data, not raw responder gold.
+
+Kappa geometry correction to preserve across compaction: Service Ring Kappa names a bounded local access loop around a dense seal-air-thermal equipment cluster. The
+loop-inner side exposes manifold faces on the machinery cluster. The loop-outer
+side holds worker staging, the baseline anchor rail, lockers, carts, break
+ledge, and access back toward yard systems. Kappa-3, Kappa-5, and Kappa-7 are
+access ports in the loop-inner manifold face; Kappa-7 False-Seam Artery is the
+specific dangerous passage, with worker slang `Rell's Cut`. A worker enters
+Kappa-7 by moving locally inward into the equipment cluster; the passage then
+routes Bloom-outward into shell arteries, seal-lung pockets, coolant bypass
+cuffs, and pressure-shell inspection spaces. The Kappa operations gallery sees
+the primary manifold/access-port segment, not the whole loop; the far loop
+contains lower-observation break/access areas, hatches, lockers, and informal
+worker coordination space. The baseline anchor rail is a loop-outer hardpoint
+system that supports carts, rescue lines, and cross-lane lockout rigging to
+floor sockets or inner service hardpoints; Orrin's crew can refuse to rig the
+safe Kappa-7 access geometry, but the rail itself does not magically block the
+inner access port.
 
 Next: add the corpus coverage ledger seam or choose the next Aetheria fixture
 from the 100-150 broad coverage target.

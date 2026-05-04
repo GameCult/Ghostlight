@@ -13,7 +13,7 @@
       {
         "visual_scene_id": "pallas_yard_wake",
         "ink_anchor": "intro_yard_wake",
-        "base_image_prompt": "Wide establishing shot inside an AU Bloom cavity maintenance yard before shift bell: a curved service lane built into the engineered inner shell of a rotating cavity habitat, with consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed metal supports, scuffed deck plates bolted to the shell curve, overhead amber work lamps, wall-mounted pressure gauges, sleeping maintenance carts, folded work-support frames, cable trays, worn yellow-white safety stripes, faint industrial haze; empty pre-shift work infrastructure fills the vacant service lane; the infrastructure looks old, hand-repaired, scuffed, patched, and tired.",
+        "base_image_prompt": "Wide establishing shot inside an AU Bloom shell maintenance yard before shift bell: a curved service lane built into the engineered inner shell of a rotating Bloom habitat, with consolidated asteroid aggregate and dark TCS substrate visible behind ribbed metal supports, scuffed deck plates bolted to the shell curve, overhead amber work lamps, wall-mounted pressure gauges, sleeping maintenance carts, folded work-support frames, cable trays, worn yellow-white safety stripes, faint industrial haze; empty pre-shift work infrastructure fills the vacant service lane; the infrastructure looks old, hand-repaired, scuffed, patched, and tired.",
         "visible_characters": [
           {
             "agent_id": "none_named",
@@ -22,7 +22,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "Use this as the broad location anchor for the fixture."
         ]
@@ -30,7 +30,7 @@
       {
         "visual_scene_id": "pallas_service_ring_kappa",
         "ink_anchor": "intro_service_ring",
-        "base_image_prompt": "Wide-to-medium view down Service Ring Kappa, a curved maintenance lane built into the engineered inner shell of a rotating Bloom habitat: on the left, dry-operation cephalopod work bays hold suspended dry-operation work-support frames with humidity rings, oxygenation tubes, flexible support loops, rounded valve clusters, and radial tool rails; on the right, a baseline anchor rail of bolted steel track, anchor posts, heavy hooks, route bolts, and clipped safety tethers supports baseline human anchor riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts. Along the consolidated asteroid rubble/aggregate and TCS substrate wall, a glowing amber manifold panel spreads into pipe trunks, cable bundles, gauges, and route-diagram screens; engineered seal technicians in clean numbered gray skinsuits with small BioDrone batch tags, close-cropped hair, and precise identical work posture wait near it while Lio walks through the center carrying a slate.",
+        "base_image_prompt": "Wide-to-medium view down Service Ring Kappa, a curved local service-loop segment built into the engineered inner shell of a rotating Bloom habitat: on the left, dry-operation cephalopod work bays hold suspended dry-operation work-support frames with humidity rings, oxygenation tubes, flexible support loops, rounded valve clusters, and radial tool rails; on the right, a loop-outer baseline anchor rail of bolted steel track, anchor posts, heavy hooks, route bolts, and clipped safety tethers supports baseline human anchor riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts. Along the consolidated asteroid aggregate and TCS substrate wall, a glowing amber loop-inner manifold face panel spreads into pipe trunks, cable bundles, gauges, and route-diagram screens; engineered seal technicians in clean numbered gray skinsuits with small BioDrone batch tags, close-cropped hair, and precise identical work posture wait near it while Lio walks through the center carrying a slate.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -39,12 +39,12 @@
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "near the amber manifold with other numbered gray-skinsuit seal technicians",
+            "default_stance": "near the amber loop-inner manifold face with other numbered gray-skinsuit seal technicians",
             "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "at the anchor rail with a heavy hook and guarded posture",
+            "default_stance": "at the loop-outer anchor rail with a heavy hook and guarded posture",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -55,14 +55,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_nara_manifold",
         "ink_anchor": "intro_nara",
-        "base_image_prompt": "Medium shot at the Kappa manifold wall: a waist-high mechanical spine of ribbed pipe trunks, bundled fiber cables, removable patch plates, amber route-diagram screens, pressure gauges, warning glyphs, and small hand-sized diagnostic touch panels bolted into curved Bloom shell plating over consolidated asteroid rubble/aggregate and dark TCS substrate. Nara-7 touches one ribbed metal access panel twice, pauses, then touches it with two fingers spread; three engineered seal technicians stand behind her in a precise line, wearing clean numbered gray skinsuits with small BioDrone batch tags, close-cropped practical hair, pale gray-brown engineered-worker skin tones, and identical still work posture; Lio watches from the edge of frame with a slate.",
+        "base_image_prompt": "Medium shot at the loop-inner Kappa manifold face: a waist-high mechanical spine of ribbed pipe trunks, bundled fiber cables, removable patch plates, amber route-diagram screens, pressure gauges, warning glyphs, and small hand-sized diagnostic touch panels bolted into curved Bloom shell plating over consolidated asteroid aggregate and dark TCS substrate. Nara-7 touches one ribbed metal access panel twice, pauses, then touches it with two fingers spread; three engineered seal technicians stand behind her in a precise line, wearing clean numbered gray skinsuits with small BioDrone batch tags, close-cropped practical hair, pale gray-brown engineered-worker skin tones, and identical still work posture; Lio watches from the edge of frame with a slate.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -77,18 +77,18 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_orrin_anchor_rail",
         "ink_anchor": "intro_orrin",
-        "base_image_prompt": "Medium shot of the baseline anchor rail: a long bolted steel track runs along the right side of the curved maintenance lane, fitted with anchor posts, route bolts, heavy hooks, clipped safety tethers, scratched warning labels, and old tool lockers. Orrin Dax braces a heavy dark anchor hook across his knees while his baseline anchor crew clears bolts along the rail; the crew wears patched brown-orange work jackets, heavy gloves, magnetic boots, frost-worn sleeves, tool belts, and tired human faces lit by amber work lamps. Cheap recycler coffee mugs and patched gloves sit on a narrow fold-out break ledge; across the lane, engineered workers appear as distant clean gray figures near amber wall panels.",
+        "base_image_prompt": "Medium shot of the loop-outer baseline anchor rail: a long bolted steel track runs along the right side of the curved local service-loop segment, fitted with anchor posts, route bolts, heavy hooks, clipped safety tethers, scratched warning labels, and old tool lockers. Orrin Dax braces a heavy dark anchor hook across his knees while his baseline anchor crew clears bolts along the rail; the crew wears patched brown-orange work jackets, heavy gloves, magnetic boots, frost-worn sleeves, tool belts, and tired human faces lit by amber work lamps. Cheap recycler coffee mugs and patched gloves sit on a narrow fold-out break ledge; across the lane, engineered workers appear as distant clean gray figures near amber loop-inner manifold panels.",
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
-            "default_stance": "leaning near the anchor rail, skeptical, protective of his crew",
+            "default_stance": "leaning near the loop-outer anchor rail, skeptical, protective of his crew",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -99,7 +99,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
@@ -121,7 +121,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This prompt must always explain the dry-operation work-support station in visible terms."
         ]
@@ -144,14 +144,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_ordinary_round_choice",
         "ink_anchor": "ordinary_round_choice",
-        "base_image_prompt": "Three-way workday choice frame in the curved Service Ring Kappa lane: Nara stands at the amber manifold wall of pipe trunks, cable bundles, gauges, and touch panels; Orrin waits beside the baseline bolted anchor track with his old hook and coffee mug; Teth floats in a dry-operation cephalopod work-support station surrounded by oxygenation tubes and radial tool rails; Lio pauses between these work zones holding a slate. Warm amber work lights, idle green status panels, open walk lanes, uncluttered crew spacing, and routine tool-handling postures make the yard visibly calm.",
+        "base_image_prompt": "Three-way workday choice frame in the curved primary segment of Service Ring Kappa: Nara stands at the amber loop-inner Kappa manifold face of pipe trunks, cable bundles, gauges, and touch panels; Orrin waits beside the baseline bolted loop-outer anchor track with his old hook and coffee mug; Teth floats in a dry-operation cephalopod work-support station surrounded by oxygenation tubes and radial tool rails; Lio pauses between these work zones holding a slate. Warm amber work lights, idle green status panels, open walk lanes, uncluttered crew spacing, and routine tool-handling postures make the yard visibly calm.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -165,7 +165,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "near anchor rail",
+            "default_stance": "near loop-outer anchor rail",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -176,14 +176,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_nara_manifold_walk",
         "ink_anchor": "walk_with_nara",
-        "base_image_prompt": "Close medium shot inside Service Ring Kappa, a narrow industrial maintenance corridor built against a curved engineered Bloom inner shell: the manifold line is a waist-high run of ribbed bronze-gray pipe trunks, bundled fiber cables, bolted valve housings, removable patch plates, small amber route-diagram screens, pressure gauges, warning glyphs, and hand-sized diagnostic touch panels mounted over consolidated asteroid rubble/aggregate and dark TCS substrate like a long mechanical spine. Scuffed deck plates with yellow-white safety stripes curve underfoot; overhead work lights cast hard amber reflections through faint industrial haze. Lio walks beside Nara-7 along this pipe-and-panel service wall; amber fault diagrams glow on Lio's slate, Nara's numbered batch tag is small on the suit, and her fingers hover millimeters above a ribbed access plate in a careful tactile-listening pose.",
+        "base_image_prompt": "Close medium shot inside Service Ring Kappa, a narrow industrial maintenance corridor built against a curved engineered Bloom inner shell: the loop-inner Kappa manifold face is a waist-high run of ribbed bronze-gray pipe trunks, bundled fiber cables, bolted valve housings, removable patch plates, small amber route-diagram screens, pressure gauges, warning glyphs, and hand-sized diagnostic touch panels mounted over consolidated asteroid aggregate and dark TCS substrate like a long mechanical spine. Scuffed deck plates with yellow-white safety stripes curve underfoot; overhead work lights cast hard amber reflections through faint industrial haze. Lio walks beside Nara-7 along this pipe-and-panel service wall; amber fault diagrams glow on Lio's slate, Nara's numbered batch tag is small on the suit, and her fingers hover millimeters above a ribbed access plate in a careful tactile-listening pose.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -198,14 +198,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_orrin_break_table",
         "ink_anchor": "sit_with_orrin",
-        "base_image_prompt": "Break-table corner beside the baseline anchor rail: a narrow fold-out metal ledge is bolted below scratched tool lockers and anchor hooks, with recycler coffee mugs, patched gloves, route bolts, and grease-stained cloths scattered across it. Orrin sits with a battered mug and an old anchor hook across his knees; Lio sits nearby at a respectful distance; in the background, engineered seal technicians in clean numbered gray skinsuits eat in precise silence under harsh cafeteria strip lights beside curved Bloom shell plating, exposed consolidated aggregate, and pipework.",
+        "base_image_prompt": "Far-loop break ledge beside the loop-outer baseline anchor rail: a narrow fold-out metal ledge is bolted below scratched tool lockers and anchor hooks, with recycler coffee mugs, patched gloves, route bolts, and grease-stained cloths scattered across it. Orrin sits with a battered mug and an old anchor hook across his knees; Lio sits nearby at a respectful distance; in the background, engineered seal technicians in clean numbered gray skinsuits eat in precise silence under harsh cafeteria strip lights beside curved Bloom shell plating, exposed consolidated asteroid aggregate, and pipework.",
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
@@ -220,7 +220,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
@@ -242,14 +242,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_chokepoint_refusal",
         "ink_anchor": "chokepoint_refusal",
-        "base_image_prompt": "Threshold shot at the lip of the Kappa access throat: a dark oval crawl opening cuts into the curved engineered Bloom shell, ringed by overlapping patch plates, red-edged gasket seals, small amber warning lights, pressure gauges, scratched route arrows, and handholds leading inward. Nara-7 and three engineered seal technicians in clean numbered gray skinsuits with small BioDrone batch tags stop in a coordinated line with hands on the manifold wall of pipes and touch panels; baseline anchor riggers in patched brown-orange jackets, heavy gloves, magnetic boots, and tool belts freeze beside the bolted anchor track; Teth's work-support valves are held mid-operation in the dry-operation work-support station; Lio stands in the center lane facing the halted gray-skinsuit seal technicians, brown-orange anchor riggers, and the uncategorized crawl opening.",
+        "base_image_prompt": "Threshold shot at the lip of the Kappa-7 access port: a dark oval Kappa-7 access port opens in the loop-inner manifold face of the central equipment cluster, ringed by overlapping patch plates, red-edged gasket seals, small amber warning lights, pressure gauges, scratched route arrows, and handholds leading locally inward into the equipment cluster before the route bends Bloom-outward. Nara-7 and three engineered seal technicians in clean numbered gray skinsuits with small BioDrone batch tags stop in a coordinated line with hands on the loop-inner Kappa manifold face of pipes and touch panels; baseline anchor riggers in patched brown-orange jackets, heavy gloves, magnetic boots, and tool belts freeze beside the bolted loop-outer anchor track; Teth's work-support valves are held mid-operation in the dry-operation work-support station; Lio stands in the center lane facing the halted gray-skinsuit seal technicians, brown-orange anchor riggers, and the uncategorized Kappa-7 access port.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -263,7 +263,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "at baseline anchor rail, watching",
+            "default_stance": "at loop-outer baseline anchor rail, watching",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -274,15 +274,15 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
-          "This frame shows the room before authority reclassifies it: Nara, Lio, Orrin, Teth, riggers, engineered technicians, the manifold, and the crawl throat hold the composition."
+          "This frame shows the room before authority reclassifies it: Nara, Lio, Orrin, Teth, riggers, engineered technicians, the manifold, and the Kappa-7 access port hold the composition."
         ]
       },
       {
         "visual_scene_id": "pallas_ilya_arrival",
         "ink_anchor": "ilya_arrival",
-        "base_image_prompt": "Authority-arrival transition at the Kappa access throat: Ilya Marne enters fast from the raised supervisor catwalk connected to the glassed Kappa operations gallery and spoke-base control deck, framed by blue-white AU schedule displays, waist-high transparent supervisor safety rail, and sharp rectangular management light. The maintenance floor below is a curved industrial lane with a dark gasket-rimmed crawl opening, amber pipe-and-panel manifold, bolted baseline anchor rail, open cephalopod work-support station, scuffed deck plates, ribbed Bloom-shell supports, and hard overhead work lamps. Lio turns toward Ilya with the slate half-raised; Nara and the engineered seal technicians hold their line at the manifold, all in clean numbered gray skinsuits with small BioDrone batch tags and identical still posture; Orrin's baseline anchor riggers stand frozen by the anchor rail in patched brown-orange jackets, heavy gloves, magnetic boots, and lowered tool belts; Teth's work-support valves are paused in place. Cold blue-white UI reflections and transparent safety-rail glare cut across the amber work lighting, making management authority visible in the frame.",
+        "base_image_prompt": "Authority-arrival transition at the Kappa-7 access port: Ilya Marne enters fast from the raised supervisor catwalk connected to the glassed Kappa operations gallery and spoke-base control deck, framed by blue-white AU schedule displays, waist-high transparent supervisor safety rail, and sharp rectangular management light. The maintenance floor below is a curved local service-loop segment with a dark gasket-rimmed Kappa-7 access port, amber loop-inner pipe-and-panel manifold face, bolted loop-outer baseline anchor rail, open cephalopod work-support station, scuffed deck plates, ribbed Bloom-shell supports, and hard overhead work lamps. Lio turns toward Ilya with the slate half-raised; Nara and the engineered seal technicians hold their line at the manifold, all in clean numbered gray skinsuits with small BioDrone batch tags and identical still posture; Orrin's baseline anchor riggers stand frozen by the loop-outer anchor rail in patched brown-orange jackets, heavy gloves, magnetic boots, and lowered tool belts; Teth's work-support valves are paused in place. Cold blue-white UI reflections and transparent safety-rail glare cut across the amber work lighting, making management authority visible in the frame.",
         "visible_characters": [
           {
             "agent_id": "ilya_marne",
@@ -301,7 +301,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "at baseline anchor rail, watching the room become management's problem",
+            "default_stance": "at loop-outer baseline anchor rail, watching the room become management's problem",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -321,7 +321,7 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This is a click-through tonal turn: the refusal has already happened, and Ilya's arrival makes it an authority problem."
         ]
@@ -329,7 +329,7 @@
       {
         "visual_scene_id": "pallas_quiet_safety_pause",
         "ink_anchor": "quiet_safety_pause",
-        "base_image_prompt": "Local-channel containment frame at the Kappa access throat: Lio holds a work slate low with a small amber safety-pause label, standing between the dark gasket-rimmed crawl opening, the manifold wall of pipes and touch panels, the bolted baseline anchor rail, the open cephalopod work-support station, and the raised supervisor catwalk. Nara and the engineered seal technicians in clean numbered gray skinsuits with small BioDrone batch tags are stopped at the pipe-and-panel wall; Ilya watches Lio closely from the management side; Teth's dry-operation work-support station and Orrin's anchor track are visible across the curved maintenance lane. Amber safety-pause markers, low handheld slate light, and controlled worker spacing create a contained procedural posture.",
+        "base_image_prompt": "Local-channel containment frame at the Kappa-7 access port: Lio holds a work slate low with a small amber safety-pause label, standing between the dark gasket-rimmed Kappa-7 access port, the loop-inner Kappa manifold face of pipes and touch panels, the bolted loop-outer baseline anchor rail, the open cephalopod work-support station, and the raised supervisor catwalk. Nara and the engineered seal technicians in clean numbered gray skinsuits with small BioDrone batch tags are stopped at the pipe-and-panel wall; Ilya watches Lio closely from the management side; Teth's dry-operation work-support station and Orrin's loop-outer anchor track are visible across the curved local service-loop segment. Amber safety-pause markers, low handheld slate light, and controlled worker spacing create a contained procedural posture.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -348,7 +348,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "watching from the anchor rail with undecided posture",
+            "default_stance": "watching from the loop-outer anchor rail with undecided posture",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -359,7 +359,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "Visually distinguish this from public escalation: small local board, contained amber light, and purely local safety-pause display."
         ]
@@ -367,7 +367,7 @@
       {
         "visual_scene_id": "pallas_formalize_stoppage",
         "ink_anchor": "formalize_stoppage",
-        "base_image_prompt": "Formal stoppage frame inside the full work lane: Lio keys the slate with a cold blue incident-log marker reading coordinated labor stoppage; workers across the dry-operation work-support bays and baseline anchor track go still in a shared held breath. Ilya's posture hardens on the raised supervisor catwalk; the amber manifold wall, dark anchor hooks, suspended cephalopod work-support rig, route bolts, pressure gauges, warning lights, clean gray engineered-worker skinsuits, and patched brown-orange baseline rigger jackets all remain visible as parts of one work system refusing at once.",
+        "base_image_prompt": "Formal stoppage frame inside the primary work segment of the local loop: Lio keys the slate with a cold blue incident-log marker reading coordinated labor stoppage; workers across the dry-operation work-support bays and loop-outer baseline anchor track go still in a shared held breath. Ilya's posture hardens on the raised supervisor catwalk; the amber loop-inner Kappa manifold face, dark anchor hooks, suspended cephalopod work-support rig, route bolts, pressure gauges, warning lights, clean gray engineered-worker skinsuits, and patched brown-orange baseline rigger jackets all remain visible as parts of one work system refusing at once.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -386,7 +386,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "at anchor rail, startled by the formal language",
+            "default_stance": "at loop-outer anchor rail, startled by the formal language",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -406,14 +406,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_shield_nara",
         "ink_anchor": "shield_nara",
-        "base_image_prompt": "Protective body-position frame near the crawl throat: Lio stands directly in the sightline between Nara-7 and a small black inspector camera mounted above the gasket-rimmed crawl opening, using calm worker posture and body placement as a procedural shield. Nara's hands stay flat on the ribbed manifold rail behind Lio; Orrin watches from the baseline anchor track with his hook lowered; Ilya's view from the supervisor walkway is partly blocked by Lio's body and the pipework.",
+        "base_image_prompt": "Protective body-position frame near the Kappa-7 access port: Lio stands directly in the sightline between Nara-7 and a small black inspector camera mounted above the gasket-rimmed Kappa-7 access port, using calm worker posture and body placement as a procedural shield. Nara's hands stay flat on the ribbed manifold-face rail behind Lio; Orrin watches from the loop-outer baseline anchor track with his hook lowered; Ilya's view from the supervisor walkway is partly blocked by Lio's body and the pipework.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -427,7 +427,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "watching from anchor rail, expression conflicted",
+            "default_stance": "watching from loop-outer anchor rail, expression conflicted",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -447,14 +447,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_classification_pressure",
         "ink_anchor": "tests_and_reversals",
-        "base_image_prompt": "Tense administrative pressure frame inside the curved maintenance ring: AU incident-board screens on the supervisor-side display rack label the event irregularity in cold blue-white text while the worker channel on Lio's slate labels it refusal. The amber pipe-and-panel manifold, bolted anchor track, dry-operation work-support station bays, and raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery occupy one frame. Clean numbered gray-skinsuit engineered seal technicians stand halted near the manifold with hands flat on pipe rails; baseline anchor riggers in patched brown-orange jackets, heavy gloves, magnetic boots, and tool belts hold lowered anchor hooks at the anchor track; cephalopod workers are suspended in dry-operation work-support rigs with oxygenation tubes and valve levers paused. Blue-white management screens face amber worker-channel light, splitting the composition into two visible classification systems around the stopped labor groups.",
+        "base_image_prompt": "Tense administrative pressure frame inside the curved local Service Ring Kappa loop: AU incident-board screens on the supervisor-side display rack label the event irregularity in cold blue-white text while the worker channel on Lio's slate labels it refusal. The amber loop-inner pipe-and-panel manifold face, bolted loop-outer anchor track, dry-operation work-support station bays, and raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery occupy one frame. Clean numbered gray-skinsuit engineered seal technicians stand halted near the manifold with hands flat on pipe rails; baseline anchor riggers in patched brown-orange jackets, heavy gloves, magnetic boots, and tool belts hold lowered anchor hooks at the loop-outer anchor track; cephalopod workers are suspended in dry-operation work-support rigs with oxygenation tubes and valve levers paused. Blue-white management screens face amber worker-channel light, splitting the composition into two visible classification systems around the stopped labor groups.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -489,7 +489,7 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This frame centers AU management classification and worker language; BioElevate legal enters as the next visual reframe."
         ]
@@ -497,7 +497,7 @@
       {
         "visual_scene_id": "pallas_bioelevate_liability_frame",
         "ink_anchor": "bioelevate_liability_frame",
-        "base_image_prompt": "Legal reframe transition inside the curved maintenance ring: a sterile white BioElevate legal window blooms over the AU incident board with scaffold drift and maintenance variance language, its clean rectangular interface floating above grimy pipework, amber manifold panels, scuffed deck plates, and dark Bloom-shell supports. Lio's slate shows an outside Awakened Labor Front mirror channel waiting below the official labels; Ilya stands near the supervisor channel with clipped command posture. Nara stands near the amber manifold, Orrin's baseline anchor crew holds by the anchor hardware in patched brown-orange work jackets, heavy gloves, and magnetic boots, and Teth watches from the dry-operation work-support station while corporate liability language visibly overlays the workers' refusal.",
+        "base_image_prompt": "Legal reframe transition inside the curved local Service Ring Kappa loop: a sterile white BioElevate legal window blooms over the AU incident board with scaffold drift and maintenance variance language, its clean rectangular interface floating above grimy pipework, amber loop-inner manifold face panels, scuffed deck plates, and dark Bloom-shell supports. Lio's slate shows an outside Awakened Labor Front mirror channel waiting below the official labels; Ilya stands near the supervisor channel with clipped command posture. Nara stands near the amber loop-inner manifold face, Orrin's baseline anchor crew holds by the anchor hardware in patched brown-orange work jackets, heavy gloves, and magnetic boots, and Teth watches from the dry-operation work-support station while corporate liability language visibly overlays the workers' refusal.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -532,7 +532,7 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This is a click-through tonal turn: BioElevate legal enters as a new institutional actor, changing refusal into liability grammar."
         ]
@@ -540,7 +540,7 @@
       {
         "visual_scene_id": "pallas_nara_marks_path",
         "ink_anchor": "show_nara_memory",
-        "base_image_prompt": "Object-focused shot of Lio's slate held outward in front of the manifold wall, a ribbed pipe-and-cable service spine with bronze-gray trunks, amber route screens, pressure gauges, warning glyphs, and hand-sized touch panels blurred behind the display. The slate shows a crawl diagram with two safe plates, one false seam, and a red-marked cut line; behind it, the real crawl throat is visible as a dark gasket-ringed opening with patch plates and warning lights. Nara-7's hand hovers just above the display after marking it; Ilya and a BioElevate legal window are visible beyond the slate but slightly out of focus; Orrin stands at the baseline anchor rail edge of frame with his old anchor hook lowered, publicly backing the evidence from worker expertise.",
+        "base_image_prompt": "Object-focused shot of Lio's slate held outward in front of the loop-inner Kappa manifold face, a ribbed pipe-and-cable service spine with bronze-gray trunks, amber route screens, pressure gauges, warning glyphs, and hand-sized touch panels blurred behind the display. The slate shows a Kappa-7 diagram with two safe plates, one false seam, and a red-marked cut line; behind it, the real Kappa-7 access port is visible as a dark gasket-ringed Kappa-7 access port with patch plates and warning lights. Nara-7's hand hovers just above the display after marking it; Ilya and a BioElevate legal window are visible beyond the slate but slightly out of focus; Orrin stands at the loop-outer baseline anchor rail edge of frame with his old anchor hook lowered, publicly backing the evidence from worker expertise.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -559,20 +559,20 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "edge of frame by baseline anchor rail, anchor hook lowered while backing the evidence",
+            "default_stance": "edge of frame by loop-outer baseline anchor rail, anchor hook lowered while backing the evidence",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           }
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_orrin_solidarity",
         "ink_anchor": "ask_orrin_solidarity",
-        "base_image_prompt": "Anchor-rail authority frame beside the anchor track: Lio faces Orrin across a foreground of heavy anchor hooks, clipped safety tethers, route bolts, scratched rail plates, and old tool lockers. Orrin looks from Nara at the amber pipe-and-panel manifold to the dark gasket-rimmed crawl throat and then to his own crew; the geometry frames the decision through work expertise: anchors, route bolts, crawl throat, manifold, and crew sightlines.",
+        "base_image_prompt": "Anchor-rail authority frame beside the loop-outer anchor track: Lio faces Orrin across a foreground of heavy anchor hooks, clipped safety tethers, route bolts, scratched rail plates, and old tool lockers. Orrin looks from Nara at the amber loop-inner pipe-and-panel manifold face to the dark gasket-rimmed Kappa-7 access port and then to his own crew; the geometry frames the decision through work expertise: anchors, route bolts, Kappa-7 access port, manifold, and crew sightlines.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -592,7 +592,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
@@ -614,14 +614,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_public_liability",
         "ink_anchor": "public_liability",
-        "base_image_prompt": "Close shot of Lio's slate sending an incident packet: the display splits into three bright destination panels labeled AU incident board, yard safety, and outside Awakened Labor Front mirror. Behind the slate, the curved maintenance ring is visible as blurred amber wall panels, pipe bundles, warning lights, and raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery; Ilya's hand reaches too late from one side; packet headings include coordinated memory and hazard refusal.",
+        "base_image_prompt": "Close shot of Lio's slate sending an incident packet: the display splits into three bright destination panels labeled AU incident board, yard safety, and outside Awakened Labor Front mirror. Behind the slate, the curved local Service Ring Kappa loop is visible as blurred amber loop-inner manifold panels, pipe bundles, warning lights, and raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery; Ilya's hand reaches too late from one side; packet headings include coordinated memory and hazard refusal.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -636,14 +636,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_kappa_red_alert",
         "ink_anchor": "climax",
-        "base_image_prompt": "Single-impact red alert frame inside Service Ring Kappa: the amber manifold wall of pipe trunks, cable bundles, route screens, pressure gauges, and diagnostic panels suddenly floods the curved maintenance lane with hard red light. Dust jumps from old bolt heads, warning glyphs flare on wall panels, the dark gasket-rimmed crawl throat looks suddenly alive, humidity vapor glows red around the cephalopod work-support rig, and every worker freezes for one dangerous breath.",
+        "base_image_prompt": "Single-impact red alert frame inside Service Ring Kappa: the amber loop-inner Kappa manifold face of pipe trunks, cable bundles, route screens, pressure gauges, and diagnostic panels suddenly floods the curved local service-loop segment with hard red light. Dust jumps from old bolt heads, warning glyphs flare on wall panels, the dark gasket-rimmed Kappa-7 False-Seam access port glows under red status light, humidity vapor glows red around the cephalopod work-support rig, and every worker freezes for one dangerous breath.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -657,7 +657,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "turning from anchor rail toward the throat",
+            "default_stance": "turning from loop-outer anchor rail toward the Kappa-7 access port",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -678,7 +678,7 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This screen may be only one sentence in replay; let the red alert breathe."
         ]
@@ -686,7 +686,7 @@
       {
         "visual_scene_id": "pallas_climax_decision_line",
         "ink_anchor": "climax_decision",
-        "base_image_prompt": "Crowded decision-line frame under red alert inside the curved Service Ring Kappa maintenance lane: Lio stands between Ilya on the raised supervisor catwalk, Nara near the amber pipe-and-panel manifold, Orrin's baseline anchor crew at the bolted anchor track in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts, and Teth's dry-operation work-support station with oxygenation tubes and tool rails. The dark crawl throat, anchor hooks, raised supervisor catwalk with open habitat air above a waist-high transparent safety rail, route screens, valve housings, red warning lights, clean gray engineered-worker skinsuits, and lowered anchor tools all occupy one room. Red hazard lighting, blue-white authority screens, amber evidence displays, and bodies facing different control points make recognition language, evidence custody, and forced crawl authority read as competing visible pressures.",
+        "base_image_prompt": "Crowded decision-line frame under red alert inside the curved Service Ring Kappa maintenance lane: Lio stands between Ilya on the raised supervisor catwalk, Nara near the amber loop-inner pipe-and-panel manifold face, Orrin's baseline anchor crew at the bolted loop-outer anchor track in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts, and Teth's dry-operation work-support station with oxygenation tubes and tool rails. The dark Kappa-7 access port, anchor hooks, raised supervisor catwalk with open habitat air above a waist-high transparent safety rail, route screens, valve housings, red warning lights, clean gray engineered-worker skinsuits, and lowered anchor tools all occupy one room. Red hazard lighting, blue-white authority screens, amber evidence displays, and bodies facing different control points make recognition language, evidence custody, and forced Kappa-7 entry authority read as competing visible pressures.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -705,7 +705,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "near anchor crew at anchor rail",
+            "default_stance": "near anchor crew at loop-outer anchor rail",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -733,14 +733,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_hold_for_recognition",
         "ink_anchor": "hold_for_recognition",
-        "base_image_prompt": "Recognition standoff under red emergency light: Lio keeps both hands visible while facing Ilya and the red AU incident board; the demand for worker judgment hangs between the raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery, the amber-red manifold wall, and the halted workers. Nara stays beside the ribbed access panels, Orrin's baseline anchor crew holds position by the anchor track in patched brown-orange work jackets, heavy gloves, magnetic boots, and lowered tool belts, and Teth's dry-operation work-support station frames the other side with oxygenation tubes and valve clusters.",
+        "base_image_prompt": "Recognition standoff under red emergency light: Lio keeps both hands visible while facing Ilya and the red AU incident board; the demand for worker judgment hangs between the raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery, the amber-red loop-inner Kappa manifold face, and the halted workers. Nara stays beside the ribbed access panels, Orrin's baseline anchor crew holds position by the loop-outer anchor track in patched brown-orange work jackets, heavy gloves, magnetic boots, and lowered tool belts, and Teth's dry-operation work-support station frames the other side with oxygenation tubes and valve clusters.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -759,7 +759,7 @@
           },
           {
             "agent_id": "orrin_dax",
-            "default_stance": "watching from anchor rail",
+            "default_stance": "watching from loop-outer anchor rail",
             "visual_ref": "visual_character_refs.characters.orrin_dax"
           },
           {
@@ -771,11 +771,11 @@
         "state_image_modifiers": [
           {
             "trigger": "worker_injury > 0",
-            "prompt": "Add a baseline rigger struck by a pressure lash near the anchor rail, held up by coworkers while emergency sealant foam spreads across the suit shoulder."
+            "prompt": "Add a baseline rigger struck by a pressure lash near the loop-outer anchor rail, held up by coworkers while emergency sealant foam spreads across the suit shoulder."
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
@@ -802,14 +802,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_seal_evidence_without_bypass",
         "ink_anchor": "seal_evidence_without_bypass",
-        "base_image_prompt": "Evidence-custody frame at the bare gasket-rimmed crawl throat: Lio holds the slate up to a small black inspector camera so the custody seal is visible. Ilya stands at the supervisor-side edge with one hand near her console cuff, watching the custody seal; Nara stays in the red background near the amber manifold with hands flat on the rail. Red warning light, patched valve housings, pipe bundles, pressure gauges, bolted seal plates, and the dark crawl opening fill the frame, making the legal protection look physically dangerous.",
+        "base_image_prompt": "Evidence-custody frame at the bare gasket-rimmed Kappa-7 access port: Lio holds the slate up to a small black inspector camera so the custody seal is visible. Ilya stands at the supervisor-side edge with one hand near her console cuff, watching the custody seal; Nara stays in the red background near the amber loop-inner manifold face with hands flat on the rail. Red warning light, patched valve housings, pipe bundles, pressure gauges, bolted seal plates, and the dark Kappa-7 access port fill the frame, making the legal protection look physically dangerous.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -829,14 +829,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_orrin_front_demand",
         "ink_anchor": "orrin_front_demand",
-        "base_image_prompt": "Solidarity climax frame at the baseline anchor track: Orrin steps in front of the baseline anchor riggers, who wear patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts; Orrin holds an anchor hook lowered like a work credential, gripped low and away from bodies; behind him are clipped tethers, route bolts, scratched rail plates, and old tool lockers. Nara stands behind or beside Lio near the amber pipe-and-panel manifold; Ilya faces a demand coming from baseline workers while Nara is sheltered inside the worker group near the manifold.",
+        "base_image_prompt": "Solidarity climax frame at the loop-outer baseline anchor track: Orrin steps in front of the baseline anchor riggers, who wear patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts; Orrin holds an anchor hook lowered like a work credential, gripped low and away from bodies; behind him are clipped tethers, route bolts, scratched rail plates, and old tool lockers. Nara stands behind or beside Lio near the amber loop-inner pipe-and-panel manifold face; Ilya faces a demand coming from baseline workers while Nara is sheltered inside the worker group near the manifold.",
         "visible_characters": [
           {
             "agent_id": "orrin_dax",
@@ -861,14 +861,14 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_red_alert_worker_judgment",
         "ink_anchor": "red_alert_worker_judgment",
-        "base_image_prompt": "Red-alert worker-judgment frame inside Service Ring Kappa: Teth works the dry-operation work-support rig under load, multiple flexible tentacles curling across manual valve clusters, patched contact bands, tense oxygenation tubes, and red pressure gauges while the support ring presses too tightly against the mantle. Orrin and baseline anchor riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts hold the anchor-rail line with lowered anchor hooks; Nara stands steady by the amber manifold with clean gray engineered-worker skinsuits behind her; Lio faces Ilya with the slate raised toward the incident log; Ilya records worker judgment on a red AU board with a tight, controlled posture. The curved engineered Bloom shell, seal hardware, pipe bundles, raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery, and red warning light surround the whole group in one dangerous decision.",
+        "base_image_prompt": "Red-alert worker-judgment frame inside Service Ring Kappa: Teth works the dry-operation work-support rig under load, multiple flexible tentacles curling across manual valve clusters, patched contact bands, tense oxygenation tubes, and red pressure gauges while the support ring presses too tightly against the mantle. Orrin and baseline anchor riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts hold the anchor-rail line with lowered anchor hooks; Nara stands steady by the amber loop-inner manifold face with clean gray engineered-worker skinsuits behind her; Lio faces Ilya with the slate raised toward the incident log; Ilya records worker judgment on a red AU board with a tight, controlled posture. The curved engineered Bloom shell, seal hardware, pipe bundles, raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery, and red warning light surround the whole group in one dangerous decision.",
         "visible_characters": [
           {
             "agent_id": "teth_inkwise",
@@ -882,7 +882,7 @@
           },
           {
             "agent_id": "nara_7",
-            "default_stance": "steady by the amber manifold with hands flat on rail",
+            "default_stance": "steady by the amber loop-inner manifold face with hands flat on rail",
             "visual_ref": "visual_character_refs.characters.nara_7"
           },
           {
@@ -911,7 +911,7 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This is the selected Orrin-front path red-alert payoff: worker judgment becomes logged language while Teth absorbs the load through manual skill."
         ]
@@ -919,7 +919,7 @@
       {
         "visual_scene_id": "pallas_seal_holds",
         "ink_anchor": "return_fold",
-        "base_image_prompt": "Aftermath wide shot inside Service Ring Kappa: bruised amber recovery lights wash across the curved engineered Bloom shell, and the Kappa seal assembly shows safe readings on bolted pressure housings, gasket rings, glowing tubes, and emergency valve plates. Clean numbered gray-skinsuit engineered seal technicians cluster near the pipe-and-panel manifold with hands off the controls; baseline anchor riggers in brown-orange patched jackets, heavy gloves, and magnetic boots gather near the anchor track with lowered hooks; cephalopod workers rest in dry-operation work-support rigs near oxygenation tubes and valve clusters. Scuffed boots, tool marks, faint industrial humidity haze, slack safety tethers, and dirty deck plates show the physical exhaustion of people who won only enough to keep breathing.",
+        "base_image_prompt": "Aftermath wide shot inside Service Ring Kappa: bruised amber recovery lights wash across the curved engineered Bloom shell, and the Kappa seal assembly shows safe readings on bolted pressure housings, gasket rings, glowing tubes, and emergency valve plates. Clean numbered gray-skinsuit engineered seal technicians cluster near the loop-inner pipe-and-panel manifold face with hands off the controls; baseline anchor riggers in brown-orange patched jackets, heavy gloves, and magnetic boots gather near the loop-outer anchor track with lowered hooks; cephalopod workers rest in dry-operation work-support rigs near oxygenation tubes and valve clusters. Scuffed boots, tool marks, faint industrial humidity haze, slack safety tethers, and dirty deck plates show the physical exhaustion of people who won only enough to keep breathing.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -954,7 +954,7 @@
           },
           {
             "trigger": "media_visibility >= 2",
-            "prompt": "Add a reflected outside-feed headline on a slate or wall display naming the Kappa Refusal."
+            "prompt": "Add a reflected outside-feed headline on a slate or wall display naming the Kappa-7 Refusal."
           },
           {
             "trigger": "formal_stoppage == true",
@@ -982,14 +982,14 @@
           }
         ],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes."
         ]
       },
       {
         "visual_scene_id": "pallas_object_callback",
         "ink_anchor": "return_object_callback",
-        "base_image_prompt": "Quiet object callback in a small break-rack alcove inside Service Ring Kappa: the alcove is built into curved engineered Bloom shell plating, with consolidated asteroid aggregate and dark TCS substrate glimpsed behind ribbed supports, amber industrial work light, scuffed deck plates, cable trays, route bolts, and nearby pipe-and-panel manifold hardware. A battered recycler coffee mug with a fresh hairline crack sits on a narrow metal shelf beside patched gloves; Teth's repaired padded contact band rests near a transparent oxygenation tube and soft support loops; in the background, Nara's hand performs a twice-pause-third touch against a ribbed wall access panel while watchers at the alcove edge show clean gray numbered sleeves, brown-orange patched work jackets, magnetic boots, and hands resting near tool belts.",
+        "base_image_prompt": "Quiet object callback in a small far-loop break-rack alcove inside Service Ring Kappa: the alcove is built into curved engineered Bloom shell plating, with consolidated asteroid aggregate and dark TCS substrate glimpsed behind ribbed supports, amber industrial work light, scuffed deck plates, cable trays, route bolts, and nearby loop-inner pipe-and-panel manifold face hardware. A battered recycler coffee mug with a fresh hairline crack sits on a narrow metal shelf beside patched gloves; Teth's repaired padded contact band rests near a transparent oxygenation tube and soft support loops; in the background, Nara's hand performs a twice-pause-third touch against a ribbed wall access panel while watchers at the alcove edge show clean gray numbered sleeves, brown-orange patched work jackets, magnetic boots, and hands resting near tool belts.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -1004,7 +1004,7 @@
         ],
         "state_image_modifiers": [],
         "visual_continuity_notes": [
-          "Service Ring Kappa remains the same AU Bloom cavity service lane: curved engineered inner shell, consolidated asteroid rubble/aggregate and dark TCS substrate visible behind ribbed supports, worn yellow-white safety paint, hard industrial work lights, thin industrial humidity haze around dry-operation work-support equipment, anchor rail opposite the manifold, gray engineered-worker suits, and an open AU supervisor catwalk above the floor with a waist-high transparent safety rail and blue-white management screens. The frame favors constructed habitat infrastructure: shell plating, ribbed supports, seal hardware, pipework, manifolds, deck plates, and service systems.",
+          "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
           "This is the final visual memory: intimate, ordinary, small, and work-worn."
         ],
@@ -1054,7 +1054,7 @@
       {
         "modifier_id": "high_baseline_solidarity",
         "trigger": "baseline_solidarity >= 3",
-        "prompt": "Place Orrin and two baseline riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts shoulder-to-shoulder beside or slightly in front of the clean numbered gray-skinsuit engineered seal technicians near the amber manifold, with anchor tools lowered horizontally at waist height and the dark crawl throat kept visible behind the formation.",
+        "prompt": "Place Orrin and two baseline riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts shoulder-to-shoulder beside or slightly in front of the clean numbered gray-skinsuit engineered seal technicians near the amber loop-inner manifold face, with anchor tools lowered horizontally at waist height and the dark Kappa-7 access port kept visible behind the formation.",
         "apply_to_visual_scene_ids": [
           "pallas_orrin_solidarity",
           "pallas_climax_decision_line",
@@ -1066,7 +1066,7 @@
       {
         "modifier_id": "nara_centered_risk",
         "trigger": "nara_centered == true",
-        "prompt": "Place Nara in a clear sightline near the amber manifold and an inspector camera; add Lio one step between Nara and the camera, with duplicated custody-copy slates or worker-held records forming a visible protective buffer around her.",
+        "prompt": "Place Nara in a clear sightline near the amber loop-inner manifold face and an inspector camera; add Lio one step between Nara and the camera, with duplicated custody-copy slates or worker-held records forming a visible protective buffer around her.",
         "apply_to_visual_scene_ids": [
           "pallas_shield_nara",
           "pallas_classification_pressure",
@@ -1083,7 +1083,7 @@
       {
         "modifier_id": "nara_path_evidence",
         "trigger": "nara_path_marked == true",
-        "prompt": "Show Lio's slate with a marked crawl path and false seam highlighted.",
+        "prompt": "Show Lio's slate with a marked Kappa-7 path and false seam highlighted.",
         "apply_to_visual_scene_ids": [
           "pallas_nara_marks_path",
           "pallas_climax_decision_line",
@@ -1175,7 +1175,7 @@
       },
       "teth_inkwise": {
         "display_name": "Teth Inkwise",
-        "species_or_body": "uplifted cephalopod dry-operation crawl maintenance specialist",
+        "species_or_body": "uplifted cephalopod dry-operation shell-artery maintenance specialist",
         "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible cephalopod tentacles supported in a compact low-gravity dry-operation work-support station with a bare-minimum humidity ring and oxygenation loop. The rig uses padded contact bands, adjustable body-support loops, utility interlock socket, tool loops, and an open body-support frame as work-support equipment; oxygenation tubes, valve clusters, padded supports, and curved tool rails make the body positioned for work in dry cramped AU maintenance spaces with sparse industrial comfort. One padded contact band is visibly worn and leaves a pale rub mark, while Teth's controlled posture suggests stoic endurance under visible strain.",
         "silhouette_notes": "Nonhuman horizontal or suspended silhouette inside dry-operation work-support equipment, body supported by a low-gravity work-support rig with tentacles arranged around valves and tool rails.",
         "do_not_change": [
@@ -1204,8 +1204,8 @@
   "visual_review_notes": [
     "Added a global Media Molecule Dreams-style volumetric brushstroke cue so image prompt assembly carries the intended non-photoreal handmade visual language through global prompt assembly.",
     "Corrected image prompt assembly: visual_continuity_notes are non-prompt tooling constraints, and assembled prompts include only character refs for characters actually visible in the frame.",
-    "Expanded pallas_nara_manifold_walk so the environment is self-contained; manifold line is described as visible pipe trunks, cable bundles, valve housings, patch plates, screens, gauges, and touch panels as concrete visible infrastructure.",
-    "Visual reviewer full pass expanded all Pallas base image prompts so setting labels such as anchor rail, raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery, crawl throat, seal assembly, dry-operation work-support station, and manifold are backed by visible geometry and materials.",
+    "Expanded pallas_nara_manifold_walk so the environment is self-contained; loop-inner Kappa manifold face is described as visible pipe trunks, cable bundles, valve housings, patch plates, screens, gauges, and touch panels as concrete visible infrastructure.",
+    "Visual reviewer full pass expanded all Pallas base image prompts so setting labels such as loop-outer anchor rail, raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery, Kappa-7 access port, seal assembly, dry-operation work-support station, and manifold are backed by visible geometry and materials.",
     "Revised cephalopod visual and story assumptions: AU dry-operation work-support rigs are bare-minimum productivity equipment, AU industrial productivity hardware with sparse comfort and bare-minimum life support.",
     "Visual scene plan added after review noted that illustrated Ink needs click-through segmentation, per-section base prompts, character visibility controls, and imagegen-ready descriptions of fictional equipment.",
     "Visual reviewer pass added missing branch-02 visual scenes and aftermath modifiers for strike spread, BioElevate liability, evidence strength, Nara exposure/protection, and high security pressure.",

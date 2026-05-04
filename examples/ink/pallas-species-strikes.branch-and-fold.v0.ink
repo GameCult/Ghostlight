@@ -19,7 +19,7 @@ VAR formal_stoppage = false
 -> intro_yard_wake
 
 === intro_yard_wake ===
-Pallas Yard Twelve wakes without ceremony. The engineered Bloom shell hums through the deck plates before the shift bell, a low composite throat-note from consolidated asteroid rubble, TCS substrate, pressure seals, and spin-loaded supports doing the ugly miracle of pretending to be ground.
+Pallas Yard Twelve wakes without ceremony. The engineered Bloom shell hums through the deck plates before the shift bell, a low composite note from consolidated asteroid aggregate, TCS substrate, pressure seals, and spin-loaded supports holding a city under air.
 
 It is not a mine and not a factory floor, though Aeronautics Unlimited prices it like both when that helps. It is a built world turned slowly enough to fake down, and Kappa's seals are one of the reasons the air stays on the inside.
 
@@ -27,9 +27,9 @@ It is not a mine and not a factory floor, though Aeronautics Unlimited prices it
 
 === intro_service_ring ===
 // ghostlight.scene: pallas.intro.service_ring_kappa; visual_scene_id: pallas_service_ring_kappa
-Lio Vale walks Service Ring Kappa with a shift-control slate under one arm and yesterday's sleep still folded behind the eyes. Lio's official job is maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous ring without killing each other before lunch. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
+Lio Vale walks the primary segment of Service Ring Kappa with a shift-control slate under one arm and yesterday's sleep still folded behind the eyes. Kappa is a bounded local loop around a dense seal-air-thermal equipment cluster: manifold faces on the loop-inner side, anchor hardpoints and staging on the loop-outer side, far-loop lockers and break ledges where the supervisor glass sees less than it pretends. Lio's official job is maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous circuit without killing each other before lunch. AU calls this a routine seal-maintenance cycle. The workers call it breathing for people rich enough to forget what keeps the air inside.
 
-Cephalopod crawl crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs keep them alive in dry air, which is not the same as letting them be comfortable. Baseline riggers clip anchor hardware along the outer rail and complain with the solemnity of a religious rite. Engineered seal techs wait by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translate three kinds of body clock into one AU shift.
+Cephalopod shell-artery crews drift in compact dry-operation harnesses shaped for limbs that do not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs keep them alive in dry air, which is not the same as letting them be comfortable. Baseline riggers check sliding anchor blocks along the loop-outer rail and test cross-lane lockout lines against floor sockets and inner hardpoints. Engineered seal techs wait at the loop-inner manifold faces in clean gray skinsuits, each one tagged by function, not by family. Small accommodations make the system look civilized: a humidity credit that keeps gill tissue from cracking, softer tool grips for grafted hands, far-loop break charts that translate three kinds of body clock into one AU shift.
 
 The yard is normal. That is the first horror.
 
@@ -37,13 +37,13 @@ The yard is normal. That is the first horror.
 
 === intro_nara ===
 // ghostlight.scene: pallas.intro.nara_manifold; visual_scene_id: pallas_nara_manifold
-Nara-7 stands at the Kappa manifold with the other engineered seal technicians, each gray skinsuit numbered for a task stream instead of a family line. She touches the wall twice, pauses, and touches it again with two fingers spread wide. AU calls that retained route behavior. Lio has watched enough shifts to know a warning when it learns manners.
+Nara-7 stands at the Kappa manifold face with the other engineered seal technicians, each gray skinsuit numbered for a task stream instead of a family line. She touches the ribbed service bank twice, pauses, and touches it again with two fingers spread wide beside the Kappa-7 access port. AU calls that retained route behavior. Lio has watched enough shifts to know a warning when it learns manners.
 
 -> intro_orrin
 
 === intro_orrin ===
 // ghostlight.scene: pallas.intro.orrin_anchor_rail; visual_scene_id: pallas_orrin_anchor_rail
-Orrin Dax's anchor crew works the anchor rail with cold-stiff hands and old tools. They are baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complains like a man trying not to notice he is scared.
+Orrin Dax's anchor crew works the loop-outer anchor rail with cold-stiff hands and old tools. They are baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Their rail does not own the manifold, but no one enters Kappa-7 safely without their cross-lane retrieval geometry: guide lines, haulback tethers, lockout webbing, cart locks, and rescue hooks. Orrin complains like a man trying not to notice he is scared.
 
 -> intro_teth
 
@@ -55,7 +55,7 @@ Teth Inkwise hangs in a dry-operation support harness, four arms managing valves
 
 === intro_ilya ===
 // ghostlight.scene: pallas.intro.ilya_supervisor_glass; visual_scene_id: pallas_ilya_supervisor_glass
-Ilya Marne, Kappa's AU shift superintendent, watches from the glassed operations gallery above the ring, its raised supervisor catwalk running back toward the spoke-base control deck. She has corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stops showing decimals.
+Ilya Marne, Kappa's AU shift superintendent, watches from the glassed operations gallery above the primary manifold segment, its short raised catwalk running back toward the spoke-base control deck. The central equipment cluster blocks direct sightlines to the far loop, so AU fills the gap with cameras, badge logs, and telemetry. She has corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stops showing decimals.
 
 Lio knows the day will probably go wrong. The only question is whether it goes wrong before everyone has finished pretending this is maintenance.
 
@@ -64,22 +64,22 @@ Lio knows the day will probably go wrong. The only question is whether it goes w
 === ordinary_round_choice ===
 // ghostlight.scene: pallas.ordinary_round.choice; visual_scene_id: pallas_ordinary_round_choice
 // ghostlight.branch: branch-01-walk-with-nara; action: move; intent: Learn the engineered worker's ordinary hazard routine before crisis.
-* [Walk the manifold line with Nara-7.]
+* [Walk the loop-inner manifold face with Nara-7.]
     ~ evidence_of_sentience += 1
     ~ nara_centered = true
     -> walk_with_nara
 // ghostlight.branch: branch-01-sit-with-orrin; action: wait; intent: Sit inside baseline resentment instead of treating it as villain fog.
-* [Take the break-table bench beside Orrin Dax.]
+* [Take the far-loop break ledge beside Orrin Dax.]
     ~ baseline_solidarity += 1
     -> sit_with_orrin
 // ghostlight.branch: branch-01-check-teth-harness; action: touch_object; intent: Ground cephalopod body affordances and technical leverage in equipment.
-* [Check Teth's dry-operation harness before the crawl.]
+* [Check Teth's dry-operation harness before Kappa-7 entry.]
     ~ cephalopod_leverage += 1
     -> check_teth_harness
 
 === walk_with_nara ===
 // ghostlight.scene: pallas.branch.nara_manifold_walk; visual_scene_id: pallas_nara_manifold_walk
-Nara-7 touches the Kappa manifold twice, waits, then touches it a third time with two fingers spread apart. Her batch tag says Seal Technician, BioDrone Standard. Her hand says she is listening.
+Nara-7 touches the loop-inner Kappa manifold face twice, waits, then touches it a third time with two fingers spread apart beside the Kappa-7 port. Her batch tag says Seal Technician, BioDrone Standard. Her hand says she is listening.
 
 "Kappa sings wrong," she says.
 
@@ -87,7 +87,7 @@ Lio checks the board. The board shows amber pending review, which means nothing 
 
 "Wrong how?"
 
-Nara looks down the crawl throat where the patch plates overlap like old scars. "From before reset."
+Nara looks at the Kappa-7 False-Seam Artery access port where the patch plates overlap like old scars. "From before reset."
 
 She does not say memory. She does not say Rell. She gives Lio just enough truth to carry and no more, because truth in this yard is heavy and management keeps scales.
 
@@ -95,7 +95,7 @@ She does not say memory. She does not say Rell. She gives Lio just enough truth 
 
 === sit_with_orrin ===
 // ghostlight.scene: pallas.branch.orrin_break_table; visual_scene_id: pallas_orrin_break_table
-Orrin Dax has a mug of recycler coffee in one hand and a dry anchor hook across his knees. The hook is older than the shift board and better maintained.
+Orrin Dax has a mug of recycler coffee in one hand and a dry anchor hook across his knees. The far-loop break ledge sits beyond the clean reach of the operations glass, close to lockers, cart locks, and the hatches workers use when they want a sentence to stay human for ten seconds. The hook is older than the shift board and better maintained.
 
 "Soft-sleeve specialists got a humidity credit again," he says, not looking at Lio. "My crew gets frost rash and a lecture about grit."
 
@@ -103,7 +103,7 @@ Across the galley, two engineered techs eat in precise silence. Orrin watches th
 
 "Funny how the future always needs fewer of us," he says.
 
-Lio lets the complaint breathe before answering. "Future still needs anchor hardware cleared before crawl-access support can carry load."
+Lio lets the complaint breathe before answering. "Future still needs anchor geometry signed before Kappa-7 support can carry load."
 
 Orrin snorts. "Then tell the future to remember who taught it where the bolts are."
 
@@ -119,21 +119,21 @@ Teth Inkwise turns in the dry-operation harness, four arms working while the res
 
 The joke lands dry. Teth's eyes stay on the pressure ghost beneath the glass, and one free arm adjusts the oxygenation line before the warning tremor can become visible.
 
-The service lung diagram flickers under one of Teth's arms. If Kappa goes hard red, AU will discover exactly how much of its schedule lives in equipment designed for bodies it refuses to honor.
+The service lung diagram flickers under one of Teth's arms. Kappa-7 runs through the equipment cluster and then bends Bloom-outward into seal-lung pockets and coolant bypass cuffs. If Kappa goes hard red, AU will discover exactly how much of its schedule lives in equipment designed for bodies it refuses to honor.
 
 -> chokepoint_refusal
 
 === chokepoint_refusal ===
 // ghostlight.scene: pallas.threshold.chokepoint_refusal; visual_scene_id: pallas_chokepoint_refusal
-The shift bell rings. The board orders a blind crawl through Kappa.
+The shift bell rings. The board orders entry into Kappa-7 False-Seam Artery.
 
-Nara-7 stops at the lip of the access throat. Three other engineered seal techs stop with her. They touch the manifold in the same sequence: twice, wait, third touch spread wide.
+Nara-7 stops at the Kappa-7 access port. Three other engineered seal techs stop with her. They touch the loop-inner manifold face in the same sequence: twice, wait, third touch spread wide.
 
 The board does not understand a ritual unless someone bills it.
 
 "Proceed," Ilya Marne says over the supervisor channel.
 
-Nara's voice is small and clear. "No blind crawl. Kappa remembers cutting Rell. We remember Rell."
+Nara's voice is small and clear. "No entry into Kappa-7. Rell's Cut remembers. We remember Rell."
 
 The baseline anchor riggers go quiet. Teth's harness valves click once, then stop.
 
@@ -141,7 +141,7 @@ The baseline anchor riggers go quiet. Teth's harness valves click once, then sto
 
 === ilya_arrival ===
 // ghostlight.scene: pallas.threshold.ilya_arrival; visual_scene_id: pallas_ilya_arrival
-Ilya leaves the operations glass fast enough to prove she had been watching. She crosses the raised supervisor catwalk from the spoke-side control door and drops into the work ring through a badge-only stair. The room changes shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard has stopped being a place where a problem can be fixed quietly.
+Ilya leaves the operations glass fast enough to prove she had been watching the primary segment. She crosses the raised supervisor catwalk from the spoke-side control door and drops into the work ring through a badge-only stair. The far loop is still partly hidden behind machinery, but the Kappa-7 face is under glass, camera, and board. The room changes shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard has stopped being a place where a problem can be fixed quietly.
 
 "Classify that," Ilya says to Lio.
 
@@ -167,7 +167,7 @@ Ilya leaves the operations glass fast enough to prove she had been watching. She
 
 === quiet_safety_pause ===
 // ghostlight.scene: pallas.branch.quiet_safety_pause; visual_scene_id: pallas_quiet_safety_pause
-"Safety pause," Lio says. "Local channel. Kappa amber, worker hazard report, no blind crawl until Teth confirms load."
+"Safety pause," Lio says. "Local channel. Kappa amber, worker hazard report, no Kappa-7 entry until Teth confirms load and Orrin's crew signs the rigging geometry."
 
 Ilya's eyes narrow at the word worker. She hears the legal trap even when Lio buries it in maintenance language.
 
@@ -179,9 +179,9 @@ The pause buys minutes. It also keeps the first evidence small enough that AU mi
 // ghostlight.scene: pallas.branch.formalize_stoppage; visual_scene_id: pallas_formalize_stoppage
 Lio keys the log before fear can bargain the words down.
 
-"Coordinated labor stoppage at Kappa manifold. Cause: remembered injury, active hazard, refusal of blind crawl."
+"Coordinated labor stoppage at Kappa-7 access. Cause: remembered injury, active hazard, refusal of unverified False-Seam entry."
 
-The channel goes cold. Someone in the outer ring whistles once. Ilya stops moving like a person and starts moving like a policy document with legs.
+The channel goes cold. Someone in the far loop whistles once. Ilya stops moving like a person and starts moving like a policy document with legs.
 
 The strike exists now. That makes it harder to erase and easier to punish.
 
@@ -255,7 +255,7 @@ Lio turns the slate outward instead of handing it to Ilya.
 
 ~ nara_path_marked = true
 
-Nara taps the crawl diagram with frightening precision: two safe plates, one false seam, the cut line where Rell's suit opened, the manual valve AU replaced in the report but not in the wall.
+Nara taps the Kappa-7 diagram with frightening precision: two safe plates, one false seam, the cut line where Rell's suit opened, the manual valve AU replaced in the report but not in the wall.
 
 BioElevate legal asks whether the marks might be trained route residue.
 
@@ -267,9 +267,9 @@ Orrin says, "Trained route residue does not remember the part procurement lied a
 // ghostlight.scene: pallas.branch.orrin_solidarity; visual_scene_id: pallas_orrin_solidarity
 Lio does not ask Orrin to be noble. That would insult everyone present.
 
-"Dry anchors decide whether crawl-access support can carry load. You know the route. Are you signing the crawl order as safe?"
+"Anchor rigging decides whether Kappa-7 access can carry a living body. You know the route. Are you signing the cross-lane lockout and haulback as safe?"
 
-Orrin looks at Nara, then at the crawl throat, then at the faces of his own crew.
+Orrin looks at Nara, then at the Kappa-7 port, then at the faces of his own crew.
 
 "No," he says. "And if anyone writes that I did, I will personally introduce them to the anchor hook."
 
@@ -316,7 +316,7 @@ The seal assembly shudders hard enough to make dust jump from old bolt heads. Th
 }
 
 {baseline_solidarity >= 2:
-Orrin's anchor crew clears the anchor rail without waiting for an AU order.
+Orrin's anchor crew starts throwing the cross-lane lockout web without waiting for an AU order: sliding blocks on the loop-outer rail, bright tethers to floor sockets, haulback lines clipped to inner hardpoints around Kappa-7.
 - else:
 The baseline riggers hesitate, trapped between fear of replacement and fear of being blamed for whatever dies next.
 ~ life_support_margin -= 1
@@ -330,7 +330,7 @@ Security drones appear at the far hatch, polite little coffins with blue lights.
 The cavity breath turns shallow. No one has the luxury of a pure victory.
 }
 
-Ilya demands a decision: recognition language in the incident log, {bypass_ready:immediate bypass control under AU authority, |sealed evidence custody, }or emergency clearance to force the crawl.
+Ilya demands a decision: recognition language in the incident log, {bypass_ready:immediate bypass control under AU authority, |sealed evidence custody, }or emergency clearance to force Kappa-7 entry.
 
 // ghostlight.branch: branch-04-hold-for-recognition; action: speak; intent: Hold safety work behind formal recognition of the refusal as worker judgment.
 * [Hold the line until Ilya records worker judgment.]
@@ -340,14 +340,14 @@ Ilya demands a decision: recognition language in the incident log, {bypass_ready
       ~ worker_injury += 1
     }
     -> hold_for_recognition
-// ghostlight.branch: branch-04-trade-bypass-for-evidence; action: transfer_object; intent: Trade temporary bypass control for preserved evidence and no forced crawl.
-* {bypass_ready} [Trade bypass control for sealed evidence and no forced crawl.]
+// ghostlight.branch: branch-04-trade-bypass-for-evidence; action: transfer_object; intent: Trade temporary bypass control for preserved evidence and no forced Kappa-7 entry.
+* {bypass_ready} [Trade bypass control for sealed evidence and no forced Kappa-7 entry.]
     ~ life_support_margin += 1
     ~ evidence_of_sentience += 1
     ~ bioelevate_liability += 1
     -> trade_bypass_for_evidence
-// ghostlight.branch: branch-04-seal-evidence-without-bypass; action: transfer_object; intent: Preserve evidence and forbid forced crawl when there is no bypass leverage to trade.
-* {not bypass_ready} [Seal the evidence packet and forbid a forced crawl.]
+// ghostlight.branch: branch-04-seal-evidence-without-bypass; action: transfer_object; intent: Preserve evidence and forbid forced Kappa-7 entry when there is no bypass leverage to trade.
+* {not bypass_ready} [Seal the evidence packet and forbid forced Kappa-7 entry.]
     ~ evidence_of_sentience += 1
     ~ bioelevate_liability += 1
     ~ security_pressure += 1
@@ -385,7 +385,7 @@ Ilya records the phrase with a face like broken glass hidden under a clean cloth
 // ghostlight.scene: pallas.branch.trade_bypass_for_evidence; visual_scene_id: pallas_trade_bypass_for_evidence
 Lio nods to Teth.
 
-"Bypass under shared custody. Sealed packet to ALF mirror, AU incident board, and yard safety. No forced crawl."
+"Bypass under shared custody. Sealed packet to ALF mirror, AU incident board, and yard safety. No forced Kappa-7 entry."
 
 Ilya accepts because the alternative is a casualty report she cannot classify out of existence. BioElevate legal immediately begins sanding the word memory into residue, but the packet has already left the room.
 
@@ -395,7 +395,7 @@ Ilya accepts because the alternative is a casualty report she cannot classify ou
 // ghostlight.scene: pallas.branch.seal_evidence_without_bypass; visual_scene_id: pallas_seal_evidence_without_bypass
 Lio lifts the slate where the inspector cam can see the custody seal.
 
-"Packet to yard safety, AU incident board, and the Awakened Labor Front mirror. No blind crawl while Kappa is red. If you want a body in that throat, you will sign your name above it."
+"Packet to yard safety, AU incident board, and the Awakened Labor Front mirror. No Kappa-7 entry while Kappa is red. If you want a body in Rell's Cut, you will sign your name above it."
 
 There is no bypass bridge to soften the bargain. The margin stays ugly. But the evidence now has three homes, and none of them are inside Ilya's pocket.
 
@@ -405,7 +405,7 @@ There is no bypass bridge to soften the bargain. The margin stays ugly. But the 
 // ghostlight.scene: pallas.branch.orrin_front_demand; visual_scene_id: pallas_orrin_front_demand
 Orrin steps forward before Lio has to spend Nara again.
 
-"Anchor rail refuses the crawl," he says. "Our call. Our anchors. You want a body in that throat, superintendent, put the board in first."
+"Anchor crew refuses the Kappa-7 rig," he says. "Our call. Our anchors. You want a body in Rell's Cut, superintendent, put the board in first."
 
 For one bright second, the old lie breaks: baseline and engineered labor are not natural enemies. They are different answers to the same invoice.
 
@@ -417,7 +417,7 @@ Teth's arms move through the harness in a blur of exact mercy, bleeding surge th
 
 Ilya looks at the red board, at Nara's steady hands, at Orrin's crew, at Teth's harness flexing without a bridge to spend. She hates every door and all of them are open.
 
-"Worker judgment in the incident log," Lio says. "No forced crawl."
+"Worker judgment in the incident log," Lio says. "No forced Kappa-7 entry."
 
 "Temporary language," Ilya says.
 
@@ -476,7 +476,7 @@ Because Lio kept the language softer, the yard buys a quieter day and loses the 
 {media_visibility >= 2:
 The outside feed calls it the Kappa Refusal before AU can rename it.
 - else:
-The event remains local for now: a story passed through harness checks, anchor lockers, and the soft clicks of workers touching a manifold twice, waiting, then touching it again.
+The event remains local for now: a story passed through harness checks, far-loop lockers, cross-lane anchor lines, and the soft clicks of workers touching a manifold face twice, waiting, then touching it again.
 }
 
 {security_pressure >= 4:
@@ -496,7 +496,7 @@ But one line entered the incident log and could not be fully removed:
 
 Worker judgment.
 
-Orrin's old mug goes back into the break rack with a new hairline crack. Teth patches the harness cuff again. Nara touches the manifold twice, waits, and touches it a third time while everyone pretends not to watch.
+Orrin's old mug goes back into the far-loop break rack with a new hairline crack. Teth patches the harness cuff again. Nara touches the Kappa-7 manifold face twice, waits, and touches it a third time while everyone pretends not to watch.
 
 That is not freedom. It is the first tool small enough to smuggle through a shift bell.
 

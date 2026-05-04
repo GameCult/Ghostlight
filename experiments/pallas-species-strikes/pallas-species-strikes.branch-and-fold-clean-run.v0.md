@@ -30,21 +30,21 @@ Final variable shape:
 
 Pallas Yard Twelve woke without ceremony.
 
-The engineered Bloom shell hummed through the deck plates before the shift bell, a low composite throat-note from consolidated asteroid rubble, TCS substrate, pressure seals, and spin-loaded supports doing the ugly miracle of pretending to be ground. Lio Vale walked Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU called this a routine seal-maintenance cycle. The workers called it breathing for people rich enough to forget what kept the air inside.
+The engineered Bloom shell hummed through the deck plates before the shift bell, a low composite note from consolidated asteroid aggregate, TCS substrate, pressure seals, and spin-loaded supports holding a city under air. Lio Vale walked the primary segment of Service Ring Kappa with a slate under one arm and yesterday's sleep still folded behind the eyes. AU called this a routine seal-maintenance cycle. The workers called it breathing for people rich enough to forget what kept the air inside.
 
-It was not a mine and not a factory floor, though Aeronautics Unlimited priced it like both when that helped. It was a built world turned slowly enough to fake down, and Kappa's seals were one of the reasons the air stayed on the inside. Lio's official job was maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous ring without killing each other before lunch. The unofficial job had worse hours and better people.
+It was not a mine and not a factory floor, though Aeronautics Unlimited priced it like both when that helped. It was a built world turned slowly enough to fake down, and Kappa's seals were one of the reasons the air stayed on the inside. Kappa itself was a bounded local loop around a dense seal-air-thermal equipment cluster: manifold faces on the loop-inner side, anchor hardpoints and staging on the loop-outer side, far-loop lockers and break ledges where the supervisor glass saw less than it claimed. Lio's official job was maintenance coordination: making incompatible bodies, tools, schedules, and liability codes share one dangerous circuit without killing each other before lunch. The unofficial job had worse hours and better people.
 
-Cephalopod crawl crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs kept them alive in dry air, which was not the same as letting them be comfortable. Baseline riggers clipped anchor hardware along the outer rail and complained with the solemnity of a religious rite. Engineered seal techs waited by the manifold in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, break-table charts that translated three kinds of body clock into one AU shift.
+Cephalopod shell-artery crews drifted in compact dry-operation harnesses shaped for limbs that did not stand: humidity collars, oxygenation loops, pressure cuffs, and neural limiter plugs, all labeled support equipment with AU's usual tenderness for invoices. The rigs kept them alive in dry air, which was not the same as letting them be comfortable. Baseline riggers checked sliding anchor blocks along the loop-outer rail and tested cross-lane lockout lines against floor sockets and inner hardpoints. Engineered seal techs waited at the loop-inner manifold faces in clean gray skinsuits, each one tagged by function, not by family. Small accommodations made the system look civilized: a humidity credit that kept gill tissue from cracking, softer tool grips for grafted hands, far-loop break charts that translated three kinds of body clock into one AU shift.
 
 The yard was normal. That was the first horror.
 
-Nara-7 stood at the Kappa manifold with the other engineered seal technicians, each gray skinsuit numbered for a task stream instead of a family line. She touched the wall twice, paused, and touched it again with two fingers spread wide. AU called that retained route behavior. Lio had watched enough shifts to know a warning when it learned manners.
+Nara-7 stood at the Kappa manifold face with the other engineered seal technicians, each gray skinsuit numbered for a task stream instead of a family line. She touched the ribbed service bank twice, paused, and touched it again with two fingers spread wide beside the Kappa-7 access port. AU called that retained route behavior. Lio had watched enough shifts to know a warning when it learned manners.
 
-Orrin Dax's anchor crew worked the anchor rail with cold-stiff hands and old tools. They were baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Orrin complained like a man trying not to notice he was scared.
+Orrin Dax's anchor crew worked the loop-outer anchor rail with cold-stiff hands and old tools. They were baseline riggers: born human-standard, paid as if that should be its own reward, and courted after hours by Baseline League mutters about jobs stolen by built workers and uplifted bodies. Their rail did not own the manifold, but no one entered Kappa-7 safely without their cross-lane retrieval geometry: guide lines, haulback tethers, lockout webbing, cart locks, and rescue hooks. Orrin complained like a man trying not to notice he was scared.
 
 Teth Inkwise hung in a dry-operation support harness, four arms managing valves while the rest of the body floated inside compression loops and oxygenation tubes. One cuff had rubbed a pale groove into the mantle where the padding thinned out months ago. Teth never mentioned it. The cephalopod crew kept the service lungs alive in spaces built by companies that modified their bodies to survive dry air, tight corners, and procurement's moral imagination.
 
-Ilya Marne, Kappa's AU shift superintendent, watched from the glassed operations gallery above the ring, its raised supervisor catwalk running back toward the spoke-base control deck. She had corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
+Ilya Marne, Kappa's AU shift superintendent, watched from the glassed operations gallery above the primary manifold segment, its short raised supervisor catwalk running back toward the spoke-base control deck. The central equipment cluster blocked direct sightlines to the far loop, so AU filled the gap with cameras, badge logs, and telemetry. She had corporate polish and corporate hunger: schedule first, liability second, people somewhere below the line where the spreadsheet stopped showing decimals.
 
 Lio knew the day would probably go wrong. The only question was whether it went wrong before everyone had finished pretending this was maintenance.
 
@@ -56,9 +56,9 @@ Teth Inkwise turned in the dry-operation harness, four arms working while the re
 
 The joke landed dry. Teth's eyes stayed on the pressure ghost beneath the glass, and one free arm adjusted the oxygenation line before the warning tremor could become visible.
 
-The service lung diagram flickered under one of Teth's arms. If Kappa went hard red, AU would discover exactly how much of its schedule lived in equipment designed for bodies it refused to honor.
+The service lung diagram flickered under one of Teth's arms. Kappa-7 ran through the equipment cluster and then bent Bloom-outward into seal-lung pockets and coolant bypass cuffs. If Kappa went hard red, AU would discover exactly how much of its schedule lived in equipment designed for bodies it refused to honor.
 
-Across the ring, Orrin Dax checked anchor hardware with the sour devotion of a man who expected the future to arrive carrying someone else's invoice. He had a rigger's shoulders, a frost scar along the jaw, and the kind of coffee mug that had survived more restructurings than some families.
+In the far loop, Orrin Dax checked anchor hardware with the sour devotion of a man who expected the future to arrive carrying someone else's invoice. He had a rigger's shoulders, a frost scar along the jaw, and the kind of coffee mug that had survived more restructurings than some families.
 
 "Soft-sleeves get a humidity credit again?" he asked without looking up.
 
@@ -70,19 +70,19 @@ Lio let that sit. The wrong answer would turn it into a debate. The right answer
 
 ## Call To Adventure
 
-The board ordered a blind crawl through Kappa.
+The board ordered entry into Kappa-7 False-Seam Artery.
 
-Nara-7 stopped at the lip of the access throat. Three other engineered seal techs stopped with her. They touched the manifold in the same sequence: twice, wait, third touch spread wide.
+Nara-7 stopped at the Kappa-7 access port. Three other engineered seal techs stopped with her. They touched the loop-inner manifold face in the same sequence: twice, wait, third touch spread wide.
 
 The board did not understand a ritual unless someone billed it.
 
 "Proceed," Ilya Marne said over the supervisor channel.
 
-Nara's voice was small and clear. "No blind crawl. Kappa remembers cutting Rell. We remember Rell."
+Nara's voice was small and clear. "No entry into Kappa-7. Rell's Cut remembers. We remember Rell."
 
 The baseline anchor riggers went quiet. Teth's harness valves clicked once, then stopped.
 
-Ilya left the operations glass fast enough to prove she had been watching. She crossed the raised supervisor catwalk from the spoke-side control door and dropped into the work ring through a badge-only stair. The room changed shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard had stopped being a place where a problem could be fixed quietly.
+Ilya left the operations glass fast enough to prove she had been watching the primary segment. She crossed the raised supervisor catwalk from the spoke-side control door and dropped into the work ring through a badge-only stair. The far loop was still partly hidden behind machinery, but the Kappa-7 face was under glass, camera, and board. The room changed shape around her: not physically, not enough for a safety board, but enough for every worker to know the yard had stopped being a place where a problem could be fixed quietly.
 
 "Classify that," Ilya said to Lio.
 
@@ -90,9 +90,9 @@ Ilya left the operations glass fast enough to prove she had been watching. She c
 
 Lio keyed the log before fear could bargain the words down.
 
-"Coordinated labor stoppage at Kappa manifold. Cause: remembered injury, active hazard, refusal of blind crawl."
+"Coordinated labor stoppage at Kappa-7 access. Cause: remembered injury, active hazard, refusal of unverified False-Seam entry."
 
-The channel went cold. Someone in the outer ring whistled once. Ilya stopped moving like a person and started moving like a policy document with legs.
+The channel went cold. Someone in the far loop whistled once. Ilya stopped moving like a person and started moving like a policy document with legs.
 
 The strike existed now. That made it harder to erase and easier to punish.
 
@@ -124,9 +124,9 @@ The Kappa pressure-margin clock was still kind. Not generous, but kind enough to
 
 Lio did not ask Orrin to be noble. That would insult everyone present.
 
-"Dry anchors decide whether crawl-access support can carry load," Lio said. "You know the route. Are you signing the crawl order as safe?"
+"Anchor rigging decides whether Kappa-7 access can carry a living body," Lio said. "You know the route. Are you signing the cross-lane lockout and haulback as safe?"
 
-Orrin looked at Nara, then at the crawl throat, then at the faces of his own crew.
+Orrin looked at Nara, then at the Kappa-7 port, then at the faces of his own crew.
 
 "No," he said. "And if anyone writes that I did, I will personally introduce them to the anchor hook."
 
@@ -146,13 +146,13 @@ Kappa went red.
 
 The seal assembly shuddered hard enough to make dust jump from old bolt heads. There was no bypass bridge waiting in Teth's harness, only skill, bad margin, and the hideous corporate optimism that calls a known weakness pending review. Nara's hands stayed on the rail, flat and deliberate. No one had the luxury of a pure victory.
 
-Orrin's anchor crew cleared the anchor rail without waiting for an AU order.
+Orrin's anchor crew started throwing the cross-lane lockout web without waiting for an AU order: sliding blocks on the loop-outer rail, bright tethers to floor sockets, haulback lines clipped to inner hardpoints around Kappa-7.
 
 "Stop," Ilya snapped.
 
 Orrin stepped forward before Lio had to spend Nara again.
 
-"Anchor rail refuses the crawl," he said. "Our call. Our anchors. You want a body in that throat, superintendent, put the board in first."
+"Anchor crew refuses the Kappa-7 rig," he said. "Our call. Our anchors. You want a body in Rell's Cut, superintendent, put the board in first."
 
 For one bright second, the old lie broke: baseline and engineered labor were not natural enemies. They were different answers to the same invoice.
 
@@ -162,7 +162,7 @@ Ilya looked at the red board, at Nara's steady hands, at Orrin's crew, at Teth's
 
 The evidence was thinner than Lio wanted. The phrase would survive, but it would have to survive lawyers with clean sleeves and excellent lighting.
 
-"Worker judgment in the incident log," Lio said. "No forced crawl."
+"Worker judgment in the incident log," Lio said. "No forced Kappa-7 entry."
 
 "Temporary language," Ilya said.
 
@@ -188,7 +188,7 @@ Nara-7 stayed one worker among many in the first reports. It protected her body 
 
 Because Lio named the stoppage early, the later committees inherited a hard word instead of a rumor. Security inherited it too.
 
-The event remained local for now: a story passed through dry-operation harness checks, anchor lockers, and the soft clicks of workers touching a manifold twice, waiting, then touching it again.
+The event remained local for now: a story passed through dry-operation harness checks, far-loop lockers, cross-lane anchor lines, and the soft clicks of workers touching a manifold face twice, waiting, then touching it again.
 
 Ilya settled for disciplinary interviews and a private vow to find whoever taught the yard to speak through maintenance.
 
@@ -198,13 +198,13 @@ But one line entered the incident log and could not be fully removed:
 
 Worker judgment.
 
-Orrin's old mug went back into the break rack with a new hairline crack. Teth patched the harness cuff again. Nara touched the manifold twice, waited, and touched it a third time while everyone pretended not to watch.
+Orrin's old mug went back into the far-loop break rack with a new hairline crack. Teth patched the harness cuff again. Nara touched the Kappa-7 manifold face twice, waited, and touched it a third time while everyone pretended not to watch.
 
 That was not freedom. It was the first tool small enough to smuggle through a shift bell.
 
 ## Receipt Notes
 
-- The scene starts in ordinary yard texture before the refusal: body-specific work, maintenance rituals, break-table resentment, and AU schedule discipline.
+- The scene starts in ordinary yard texture before the refusal: body-specific work, maintenance rituals, far-loop break resentment, and AU schedule discipline.
 - The selected path uses a non-speech object interaction first, then formal speech, then social coalition work, then a mixed action climax.
 - Branch variables visibly matter: cephalopod leverage grounds Teth's harness competence but does not create a bypass without the bypass branch; baseline solidarity changes the climax; formal stoppage changes the return; strike cohesion changes the return; security pressure remains a future consequence; media visibility stays limited because this path did not leak the packet publicly.
 - Character visibility is local: Lio reads what people do and say, not omniscient private state.
