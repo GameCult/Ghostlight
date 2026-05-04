@@ -11,6 +11,9 @@ should be authored here first and referenced from artifacts or tools.
 
 - `sandboxed-responder-packet.md`: template for future packet renderers and
   sandboxed responder workers to render responder-visible packet prompts.
+- `sandboxed-coordinator-turn.md`: template for sandboxed coordinator workers
+  to choose next beats, preserve unresolved hooks, emit glue prose, and expose
+  game-ergonomic affordances without inheriting meta-coordinator omniscience.
 - `research-sanity-responder.md`: reusable one-turn prompt for checking whether
   a research-enabled responder actually grounds behavior in allowed
   AetheriaLore scope.
@@ -57,6 +60,10 @@ should be authored here first and referenced from artifacts or tools.
   input, raw output, parsed artifact, review labels, and interventions. Codex
   may herd the machinery, but raw coordinator data should come from sandboxed
   coordinator workers.
+- Coordinator prompts must enforce character cognitive ceilings. The
+  coordinator can translate opaque maneuvers for the reader, but should not make
+  characters infer, manipulate, self-explain, or regulate above their modeled
+  state.
 - Treat visual artifacts as entertainment and website collateral for the
   Ghostlight corpus. They can make the corpus more legible and valuable, but
   they are not core training targets for responder, appraiser, mutator, or

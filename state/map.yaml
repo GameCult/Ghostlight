@@ -154,6 +154,7 @@ current_artifacts:
   prompts:
     - prompts/README.md
     - prompts/sandboxed-responder-packet.md
+    - prompts/sandboxed-coordinator-turn.md
     - prompts/research-sanity-responder.md
     - prompts/narrative-quality-reviewer.md
     - prompts/lore-grounding-reviewer.md
