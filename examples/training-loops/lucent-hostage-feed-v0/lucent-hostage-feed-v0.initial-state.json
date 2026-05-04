@@ -1,0 +1,135 @@
+{
+  "schema_version": "ghostlight.open_scene_initial_state.v0",
+  "state_id": "lucent-hostage-feed-v0.initial-state",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "state_kind": "open_ended_training_loop_seed",
+  "world_state": {
+    "location": "Lucent tether station, media-headquarters eye counterweight / metropolis bubble elevator interface, with the city dome visible down-tether through curated exterior feeds.",
+    "incident_start": "Sol Vant has seized Juno Ark in a glass-walled feed atrium after a contract arbitration stream collapsed into public humiliation and debt enforcement.",
+    "physical_layout": [
+      "The media-headquarters end is an eyeball-like counterweight: lens aperture, iris shutters, sensor rings, newsroom stacks, and crisis-format studios aimed down the tether at the city bubble.",
+      "The metropolis end is a bustling city encased in a transparent pressure bubble, with visible plazas, transit threads, platform housing, emergency shutters, and camera-aware civic interiors.",
+      "Hostage-taker and hostage are in a semi-public transfer lounge near the elevator gate, inside the media-eye end where every surface is built to look back.",
+      "Negotiator is remote at first through official crisis feed, with possible physical arrival delayed by elevator permissions along the optic-nerve tether.",
+      "Influencers are patched into side panels by audience demand and Lucent format engines, not because anyone sensible invited them.",
+      "Security can breach from a service collar, elevator gate, or drone aperture if feed conditions make violence reputationally tolerable."
+    ],
+    "feed_layout": [
+      "Negotiator official feed",
+      "Hostage-taker personal live feed",
+      "Hostage panic-filtered personal feed",
+      "Newsroom master feed",
+      "Two influencer reaction feeds",
+      "Audience sentiment and sponsor-risk overlays"
+    ],
+    "hard_constraints": [
+      "The hostage-taker can harm Juno faster than security can cross the space.",
+      "Every participant knows they are visible and may perform for survival.",
+      "Moderation delay can distort timing and perceived intent.",
+      "Lucent does not want a dead hostage, but it does want an owned narrative."
+    ]
+  },
+  "participants": {
+    "mara_quell": {
+      "public_identity": "Mara Quell, Lucent crisis negotiator and former intimacy-format host whose old audience still recognizes her voice.",
+      "private_pressures": [
+        "Knows the feed rewards emotional shape more reliably than truth.",
+        "Wants a nonviolent outcome without gifting Lucent another heroic negotiator product line.",
+        "Can use format against itself but risks sounding manipulative because she is."
+      ],
+      "goals": [
+        "Keep Juno alive.",
+        "Give Sol a face-saving exit that does not reward hostage-taking too much.",
+        "Prevent influencer side feeds from becoming the actual negotiators."
+      ],
+      "voice_surface": [
+        "warm with scalpel edges",
+        "precise showbiz empathy",
+        "wry when it lowers temperature",
+        "never lets brand language fully own the room"
+      ]
+    },
+    "sol_vant": {
+      "public_identity": "Sol Vant, contract creator whose debt, demonetization, and arbitration losses have been made public content.",
+      "private_pressures": [
+        "Feels socially dead already and is trying to force an audience to witness the obituary before Lucent writes it.",
+        "Does not think of himself as violent until contradicted by his own hands.",
+        "Can be pulled by dignity, spite, humiliation, audience heat, or someone offering a future tense."
+      ],
+      "goals": [
+        "Force contract review live.",
+        "Stop Juno from leaving until someone admits the feed was rigged.",
+        "Avoid being edited into a disposable villain, while doing villain-shaped things."
+      ],
+      "voice_surface": [
+        "funny in brittle flashes",
+        "aggrieved",
+        "overexplains when scared",
+        "performs intelligence for hostile viewers"
+      ]
+    },
+    "juno_ark": {
+      "public_identity": "Juno Ark, junior Reality Architect and current hostage, known to some viewers as a minor format designer.",
+      "private_pressures": [
+        "Knows which feeds are lying but not which truth will keep her alive.",
+        "Wants to survive without becoming a martyr, confession clip, or corporate scapegoat.",
+        "May manipulate overlays if she gets a gap, but doing so could escalate Sol."
+      ],
+      "goals": [
+        "Stay alive.",
+        "Keep Sol talking.",
+        "Signal feed manipulation without triggering him or newsroom countermeasures."
+      ],
+      "voice_surface": [
+        "controlled panic",
+        "technical compression under fear",
+        "dark little jokes when cornered",
+        "careful not to sound like management"
+      ]
+    },
+    "pippa_lux": {
+      "public_identity": "Pippa Lux, empathy influencer with a monetized vulnerability brand and terrifying camera instincts.",
+      "private_pressures": [
+        "Needs to be seen helping.",
+        "Confuses emotional access with consent.",
+        "Can accidentally humanize Sol or catastrophically center herself."
+      ],
+      "goals": [
+        "Become the bridge figure.",
+        "Protect her brand from seeming opportunistic while being exactly that.",
+        "Get a clip usable after either outcome."
+      ],
+      "voice_surface": [
+        "soft-focus urgency",
+        "intimate second-person address",
+        "therapeutic theft",
+        "brand-safe tears"
+      ]
+    },
+    "brant_vee": {
+      "public_identity": "Brant Vee, outrage streamer and professional moral airhorn.",
+      "private_pressures": [
+        "Needs escalation without owning harm.",
+        "Treats every pause as cowardice and every complexity as corruption.",
+        "Can provoke Sol by making humiliation trend faster."
+      ],
+      "goals": [
+        "Force a clean hero/villain frame.",
+        "Humiliate Lucent while profiting from Lucent distribution.",
+        "Avoid being blamed if someone dies."
+      ],
+      "voice_surface": [
+        "loud clarity",
+        "weaponized incredulity",
+        "mocking slogans",
+        "jokes that sharpen the knife"
+      ]
+    }
+  },
+  "author_or_coordinator_only": [
+    "The goal is to exercise open-ended Ghostlight loops, not produce polished IF yet.",
+    "No single intended outcome is canonical.",
+    "The hostage-taker is dangerous but not predetermined to kill.",
+    "The influencers are pressure objects as much as agents."
+  ]
+}

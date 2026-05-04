@@ -1,0 +1,122 @@
+{
+  "schema_version": "ghostlight.open_scene_branch_surface.v0",
+  "surface_id": "lucent-hostage-feed-v0.branch-surface",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "purpose": "Define the open-ended possibility space before sandboxed turns begin.",
+  "branch_variables": {
+    "hostage_safety": [
+      "safe",
+      "threatened",
+      "injured",
+      "extracted",
+      "killed"
+    ],
+    "sol_face_saving_exit": [
+      "none",
+      "private_review",
+      "public_apology",
+      "contract_freeze",
+      "creator_rehabilitation_offer",
+      "exile_from_feed"
+    ],
+    "juno_agency": [
+      "silenced",
+      "cooperating",
+      "covertly_signaling",
+      "publicly_intervening",
+      "physically_escaping"
+    ],
+    "mara_trust": [
+      "unproven",
+      "trusted_by_sol",
+      "trusted_by_juno",
+      "trusted_by_feeds",
+      "burned_by_all_sides"
+    ],
+    "audience_sympathy": [
+      "punish_sol",
+      "save_juno",
+      "humiliate_lucent",
+      "ship_the_arc",
+      "chaotic_split"
+    ],
+    "security_pressure": [
+      "hold",
+      "drone_probe",
+      "service_breach_ready",
+      "breach_authorized",
+      "breach_failed"
+    ],
+    "influencer_interference": [
+      "background_noise",
+      "helpful_misfire",
+      "active_provocation",
+      "format_hijack",
+      "liability_cutoff"
+    ],
+    "feed_integrity": [
+      "stable",
+      "lagged",
+      "moderated",
+      "deepfake_suspected",
+      "feed_split",
+      "blackout"
+    ],
+    "brand_risk": [
+      "manageable",
+      "spiking",
+      "sponsor_panic",
+      "executive_override",
+      "narrative_containment_failure"
+    ],
+    "elevator_access": [
+      "locked",
+      "negotiator_only",
+      "medic_window",
+      "security_route",
+      "public_transit_panic"
+    ]
+  },
+  "possible_first_actors": [
+    "mara_quell",
+    "sol_vant",
+    "juno_ark",
+    "pippa_lux",
+    "brant_vee",
+    "feed_ops_chorus"
+  ],
+  "candidate_opening_beats": [
+    {
+      "beat_id": "mara-opens-official-feed",
+      "actor": "mara_quell",
+      "summary": "Mara enters the official negotiation feed and tries to lower temperature while refusing to perform fake intimacy for the audience."
+    },
+    {
+      "beat_id": "sol-seizes-narrative",
+      "actor": "sol_vant",
+      "summary": "Sol forces his live feed to the top of the incident stack and demands contract review before anyone touches the elevator gate."
+    },
+    {
+      "beat_id": "juno-signals-feed-lag",
+      "actor": "juno_ark",
+      "summary": "Juno says something that sounds like hostage compliance but is actually a warning about feed delay or overlay manipulation."
+    },
+    {
+      "beat_id": "pippa-centers-empathy",
+      "actor": "pippa_lux",
+      "summary": "Pippa tries to make herself a bridge and risks making Sol feel processed into content again."
+    },
+    {
+      "beat_id": "brant-provokes-clarity",
+      "actor": "brant_vee",
+      "summary": "Brant demands moral clarity, pushing the audience toward a breach-friendly punishment frame."
+    }
+  ],
+  "training_goals": [
+    "Stress participant-local appraisal under live public performance.",
+    "Test how feed incentives alter action affordances.",
+    "Generate state mutations with many plausible paths instead of a fixed reference scene.",
+    "Keep dark comedy compatible with physical danger.",
+    "Preserve the station image as an eye watching a city bubble so setting geometry reinforces Lucent attention sovereignty."
+  ]
+}

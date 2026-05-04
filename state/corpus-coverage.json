@@ -177,6 +177,92 @@
         "visual_artifacts": "not_training_data",
         "story_shape_and_grounding": "reference_only"
       }
+    },
+    {
+      "fixture_id": "lucent-hostage-feed-v0",
+      "status": "planned",
+      "timeline_lane": "historical_grounded",
+      "canon_status": "single_history",
+      "story_type": "day_in_the_life_story",
+      "era": "Pre-Elysium",
+      "location": "Lucent tethered counterweight station: media-headquarters eye gazing down at metropolis bubble elevator interface",
+      "flashpoint": "Lucent live hostage-feed negotiation seed",
+      "primary_subjects": [
+        "Lucent Media"
+      ],
+      "secondary_subjects": [
+        "Reality Architects",
+        "Truth Cults",
+        "Chaos Weavers",
+        "Pan-Solar Consortium"
+      ],
+      "collision_axes": [
+        "attention",
+        "performance",
+        "hostage_safety",
+        "media_governance",
+        "class",
+        "reputation",
+        "feed_integrity"
+      ],
+      "tonal_modes": [
+        "dark comedy",
+        "high-stakes farce",
+        "media satire",
+        "human danger under platform absurdity"
+      ],
+      "training_targets": [
+        "projector",
+        "character_responder",
+        "event_resolver",
+        "participant_appraiser",
+        "state_mutator",
+        "relationship_perception_updater",
+        "coordinator_story_runtime",
+        "branch_compiler"
+      ],
+      "artifacts": {
+        "scene_digest": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "initial_state": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+        "branch_surface": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.branch-surface.json",
+        "staging_sketch": "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md"
+      },
+      "review": {
+        "schema": "not_run",
+        "narrative": "not_run",
+        "lore": "not_run",
+        "spatial": "not_run",
+        "visual": "not_run",
+        "if_artifact": "not_run",
+        "receipt_chain": "not_run"
+      },
+      "economy_hooks": [
+        "buzz_attention_scrip",
+        "clout_reputation_derivative",
+        "crisis_feed_moderation_insurance",
+        "elevator_access_priority_token",
+        "sponsor_risk_throttle"
+      ],
+      "open_lore_gaps": [
+        "Specific Lucent eye-and-city-bubble tethered counterweight station needs AetheriaLore backfill if promoted.",
+        "Lucent crisis negotiation/feed-law protocols need source canon.",
+        "Buzz/Clout emergency privilege and legal shielding mechanics need economy/legal elaboration."
+      ],
+      "notes": "Open-ended Lucent scene seed intended to move the pipeline away from Pallas overfitting. The station reads physically as a giant media eye gazing down the tether at a bustling city bubble. No responder turns or receipt chain yet; use as staging surface for the next sandboxed loop.",
+      "training_usability": {
+        "overall": "not_training_data",
+        "story_shape_and_grounding": "reference_only",
+        "projector": "not_training_data",
+        "character_responder": "not_training_data",
+        "event_resolver": "not_training_data",
+        "participant_appraiser": "not_training_data",
+        "state_mutator": "not_training_data",
+        "relationship_perception_updater": "not_training_data",
+        "coordinator_story_runtime": "not_training_data",
+        "branch_compiler": "not_training_data",
+        "if_artifact_reviewer": "not_training_data",
+        "visual_artifacts": "not_training_data"
+      }
     }
   ]
 }

@@ -1,0 +1,118 @@
+{
+  "schema_version": "ghostlight.open_scene_digest.v0",
+  "digest_id": "lucent-hostage-feed-v0.scene-digest",
+  "fixture_status": "staged_open_loop_seed",
+  "timeline_lane": "historical_grounded",
+  "canon_status": "single_history_draft",
+  "era": "Pre-Elysium, late Identity Abyss / early Existential Collapse pressure band",
+  "source_refs": [
+    {
+      "source_id": "lucent-media",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Lucent Media.md",
+      "relevance": "Grounds Lucent as attention sovereignty, performance pressure, Buzz/Clout economy, and narrative capture."
+    },
+    {
+      "source_id": "reality-architects",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Reality Architects.md",
+      "relevance": "Grounds Lucent perception engineers who make events socially persuasive."
+    },
+    {
+      "source_id": "identity-abyss",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Timeline/Identity Abyss.md",
+      "relevance": "Grounds managed reality, counter-memetic culture, and attention as governance."
+    },
+    {
+      "source_id": "territories",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "relevance": "Grounds Lucent Venusian spectacle space and Lagrange broadcast infrastructure."
+    },
+    {
+      "source_id": "brain-computer-interfaces",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Technology/Brain-Computer Interfaces.md",
+      "relevance": "Grounds FullSense, EmotionCast, attention capture, and neural media manipulation."
+    },
+    {
+      "source_id": "lagrange-broadcast-war",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Lagrange Broadcast War.md",
+      "relevance": "Grounds broadcast infrastructure as geopolitical terrain."
+    },
+    {
+      "source_id": "user-staging-canon",
+      "path": "conversation:2026-05-04 lucent hostage-feed request",
+      "relevance": "Defines the specific two-end tethered counterweight station layout for this seed."
+    }
+  ],
+  "scene_premise": "A hostage negotiation unfolds live inside a Lucent tether station where the hostage-taker, hostage, negotiator, newsroom, and nuisance influencers are all wired into competing media feeds covering the event in real time.",
+  "tone_target": {
+    "primary": "dark comedy with stakes",
+    "constraints": [
+      "The comedy comes from Lucent turning danger into format, not from making the hostage stakes fake.",
+      "Use absurd professionalism, brand panic, clout opportunism, and feed etiquette as pressure valves.",
+      "Do not collapse into procedural severity or Pallas-style industrial realism."
+    ]
+  },
+  "station_geometry": {
+    "station_id": "lucent.tether.counterweight.station.seed",
+    "description": "A spinning tethered counterweight station whose practical silhouette reads as a giant observing eye gazing down the tether at a bustling city sealed inside a clear metropolis bubble.",
+    "metropolis_dome": "The larger, brighter city-bubble counterweight: residential, consumer, nightlife, audience-participation, and brand labor districts under a transparent pressure shell. From the media end it reads as a bustling terrarium of visible lives: plazas, platform housing, transit threads, emergency shutters, and camera-aware civic interiors.",
+    "media_headquarters_dome": "The smaller, denser counterweight mass: a giant eyeball-like media headquarters whose lens-faced broadcast aperture, iris shutters, sensor rings, and gold-white newsroom stacks point down the tether toward the city dome. It houses Lucent newsroom command, Reality Architect suites, feed arbitration rooms, crisis-format studios, advertising markets, and executive visibility courts.",
+    "elevator_tether": "A pressurized elevator spine/transfer cable running like an optic nerve between the staring media eye and the city bubble. During the hostage event it becomes a literal and narrative choke point: whoever controls elevator permissions controls which bodies, drones, medics, negotiators, cameras, and signal relays can cross.",
+    "gravity_and_sightlines": "Each end experiences spin gravity locally; the elevator ride crosses changing apparent gravity and strong viewlines between the eye and the bubble. The media headquarters has privileged long-range optical and feed sightlines onto the city dome, while the city experiences the eye as a visible civic fact overhead: architecture as audience.",
+    "engineering_assumption_status": "Scene-local staging canon from user request; needs AetheriaLore backfill if promoted beyond this pilot."
+  },
+  "live_media_conditions": [
+    "The negotiator, hostage-taker, and hostage each have direct feed access, but their feeds are mediated by platform latency, moderation overlays, sponsor-risk throttles, and audience reaction metrics.",
+    "Lucent crisis coverage is not a neutral observer. It can alter incentives by surfacing sympathy, ridicule, villain framing, redemption arcs, and branded intervention prompts in real time.",
+    "Influencers patched into the scene can distract, provoke, accidentally help, or create reputational exits that official negotiators cannot offer.",
+    "Audience sentiment is a resource and a hazard: it can reduce security pressure by making a violent breach unmarketable, or it can reward escalation if the wrong narrative catches."
+  ],
+  "participants": [
+    {
+      "agent_id": "mara_quell",
+      "role": "Lucent crisis negotiator / former live-format host",
+      "scene_function": "Tries to keep everyone alive while speaking in a register the feeds can metabolize without triggering a breach."
+    },
+    {
+      "agent_id": "sol_vant",
+      "role": "hostage-taker / failed Lucent contract creator",
+      "scene_function": "Has a hostage and a feed, but wants recognition, debt relief, and proof he still exists more than he wants murder."
+    },
+    {
+      "agent_id": "juno_ark",
+      "role": "hostage / junior Reality Architect",
+      "scene_function": "Knows enough about feed control to be dangerous, but is physically vulnerable and publicly becoming a character in someone else?s arc."
+    },
+    {
+      "agent_id": "pippa_lux",
+      "role": "obnoxious influencer / sincerity predator",
+      "scene_function": "Frames herself as empathic bridge while trying to convert the negotiation into a redemption collab."
+    },
+    {
+      "agent_id": "brant_vee",
+      "role": "obnoxious influencer / outrage mechanic",
+      "scene_function": "Wants the hostage-taker to say something clip-worthy and keeps trying to make cowardice look like moral clarity."
+    },
+    {
+      "agent_id": "feed_ops_chorus",
+      "role": "Lucent newsroom, moderators, Reality Architects, sponsor-risk engine",
+      "scene_function": "Not a person but a pressure field: edits visibility, throttles feeds, feeds prompts, and reprices everyone by the second."
+    }
+  ],
+  "public_state_variables": {
+    "hostage_safety": "unstable but not yet injured",
+    "negotiator_trust": "unproven",
+    "hostage_taker_volatility": "high but socially legible",
+    "feed_latency": "variable, exploitable, and emotionally dangerous",
+    "audience_sympathy": "split between rescue, punishment, and spectacle hunger",
+    "security_pressure": "waiting for narrative permission to breach",
+    "influencer_interference": "high",
+    "brand_risk": "spiking",
+    "truth_visibility": "low; every fact arrives wearing makeup",
+    "elevator_access": "restricted and politically contested"
+  },
+  "open_lore_gaps": [
+    "The specific Lucent eye-and-city-bubble tethered counterweight station needs a future AetheriaLore article or subsection if reused.",
+    "Lucent crisis-negotiation protocol and feed-law boundaries need source canon.",
+    "Buzz/Clout conversion into emergency privileges, legal shielding, and audience intervention rights needs economy/legal elaboration."
+  ]
+}
