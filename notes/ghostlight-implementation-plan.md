@@ -70,6 +70,14 @@ not carry live next-action lists.
      scene anchors, lore-password image prompts, missing character visibility,
      weak stance control, and missing branch/state visual modifiers. It judges
      the playable IF plus `.visual.json` plan, not clean-run prose receipts.
+   - Geometry correction: generated concept art can guide mood, materials, and
+     environment language, but it is not a durable layout contract. Fixtures
+     that need the same environment across several beats, branches, or camera
+     angles should use a `scene_set` source such as a hand-built 3D blockout,
+     procedural scene file, or explicit layout asset with named camera angles,
+     staging slots, routes, occluders, and branch-visible state anchors.
+     Imagegen should paint over a camera-specific blockout, not invent the
+     room shape from text or a prior generated image.
    - The older Cold Wake v0/v1 fragments remain diagnostic seam tests around the clinic climax, not the accepted clean fixture.
 
    - Still emit training artifacts at material turns: projected local context, responder packet, raw output/capture, leakage audit, reviewed mutation receipt, and aftermath state where relevant.

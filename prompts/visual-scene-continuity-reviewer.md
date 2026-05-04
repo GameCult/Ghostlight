@@ -12,9 +12,10 @@ This reviewer does not judge clean-run prose receipts. Clean runs can be useful
 debugging mirrors, but they are not the player experience and they are not the
 artifact this prompt reviews.
 
-Be strict. A visual plan that says "cephalopod work-support rig," "anchor crew,"
-"engineered technicians," or "dry-operation work-support rig" without explaining what
-the viewer should see is not an image prompt. It is a lore password.
+Be strict. A visual plan that says "cephalopod dry-operation harness,"
+"anchor crew," "engineered technicians," or any specialized equipment label
+without explaining what the viewer should see is not an image prompt. It is a
+lore password.
 
 ## Inputs
 
@@ -33,6 +34,12 @@ missing reader/player-facing structure.
 Ignore clean-run renderings if they are supplied. At most, use them to locate
 which Ink path someone manually walked; do not review the clean-run prose as
 the visual artifact.
+
+If a fixture includes or implies a durable visual set, inspect the declared
+`scene_set`, blockout, layout diagram, camera list, or equivalent geometry
+artifact when supplied. If none is supplied, decide whether the fixture can
+reasonably work from standalone prompts or whether it needs a durable scene-set
+source before it can be replay-ready.
 
 ## Required Checks
 
@@ -59,6 +66,14 @@ the visual artifact.
 ### Visual Scene Anchors
 
 - Does each major section or location have a stable visual scene id?
+- If the same environment appears across multiple angles, branches, or later
+  callbacks, does the fixture define a durable geometry authority such as a
+  `scene_set`, 3D blockout, layout asset, or camera map?
+- If a `scene_set` exists, does the visual plan connect scene ids to named
+  camera angles, staging slots, routes, occluders, props, and branch-visible
+  state anchors?
+- If no `scene_set` exists, is the fixture limited enough that standalone image
+  prompts can carry it without pretending generated art is a floor plan?
 - Does the visual plan define a global style cue when the fixture depends on a
   specific image language?
 - Does prompt assembly include the global style cue in every generated image
@@ -75,11 +90,11 @@ the visual artifact.
   composition, stance, lighting, and state deltas, with forbidden assumptions
   handled by reviewer findings or validation rather than imagegen prompt text?
 - Are specialized terms translated into visible forms? For example, explain
-  what a cephalopod dry-operation work-support rig, baseline anchor rail, or engineered
-  seal-technician group looks like according to the faction, location, and
-  labor regime. An AU industrial yard prompt should positively describe sparse
-  productivity hardware, bare-minimum life support, work-support geometry, and
-  hard work lighting.
+  what a cephalopod dry-operation mobility harness, baseline anchor rail, or
+  engineered seal-technician group looks like according to the faction,
+  location, and labor regime. An industrial yard prompt should positively
+  describe sparse productivity hardware, bare-minimum life support, body
+  affordances, and hard work lighting.
 - Are environment labels translated into visible forms? For example, explain
   what a manifold line, cavity yard, supervisor catwalk, transparent safety
   rail, or anchor rail looks like instead of treating the label as a picture.
@@ -118,7 +133,7 @@ the visual artifact.
   unless the source explicitly calls for that anatomy.
 - When a nonhuman character uses assistive or workplace equipment, does the
   prompt make the equipment read as the intended object class? If the fixture
-  calls for a work-support rig, mobility aid, cockpit, medical cradle, tool
+  calls for a mobility harness, work-support rig, cockpit, medical cradle, tool
   frame, or habitat interface, flag language that visually drifts into a
   cage, torture chair, prison tank, trophy display, aquarium, or containment
   device unless containment is explicitly the story beat.
@@ -139,6 +154,9 @@ the visual artifact.
 
 - Would this support an illustrated website replay without the image changing
   the location every branch?
+- For multi-angle replay, would a camera-specific blockout or scene-set render
+  be available for each imagegen pass, or is the prompt asking the image model
+  to preserve geometry from memory?
 - Would a player understand where they are after clicking through?
 - Would an artist or image model know what to draw without asking the lore
   vault to sit beside it and whisper?
@@ -166,6 +184,7 @@ Use this shape:
   "suggested_revisions": [],
   "missing_visual_scenes": [],
   "weak_image_prompts": [],
+  "missing_scene_set_needs": [],
   "missing_branch_modifiers": [],
   "review_labels": [],
   "acceptance_notes": []
@@ -198,6 +217,12 @@ Each finding must include:
 - Judge replay experience, not only prose quality.
 - Do not accept one all-purpose base prompt for a multi-location or
   multi-focus scene.
+- Do not treat generated environment art as geometry authority. It can be mood,
+  material, or concept reference. It is not a reliable floor plan, occlusion
+  model, route map, or camera-continuity source.
+- For fixtures that reuse the same environment across multiple angles, branches,
+  or staged callbacks, require a durable `scene_set`, blockout, layout diagram,
+  or equivalent geometry source before calling the visual plan replay-ready.
 - Do not accept style-critical fixtures that omit the style cue from prompt
   assembly. A beautiful scene prompt in the wrong visual language is still the
   wrong prompt.
@@ -225,7 +250,7 @@ Each finding must include:
   position in the frame.
 - Do not accept nonhuman body prompts that use human-limb shorthand when the
   supplied body plan says otherwise. A cephalopod should be prompted with
-  tentacles, mantle, eyes, suckers, work-support geometry, and reachable
+  tentacles, mantle, eyes, suckers, mobility support geometry, and reachable
   tool positions; a winged, synthetic, distributed, or otherwise altered body
   needs the same body-specific treatment.
 - Do not accept assistive or workplace equipment prompts that accidentally
@@ -258,6 +283,9 @@ Each finding must include:
   posture, position, object, lighting, damage, interface, or crowd change.
 - Image prompts should be concrete enough for a general image model. Use
   plain visible descriptions for fictional objects and body affordances.
+- When a blockout or `scene_set` is required, imagegen should be treated as a
+  painter/render pass over that camera-specific visual input, not as the system
+  that decides the room shape.
 
 ## Review Labels
 
@@ -271,6 +299,10 @@ Use these labels when applicable:
 - `environment_lore_password`
 - `weak_environment_geometry`
 - `weak_geometry_prompt`
+- `missing_scene_set`
+- `generated_art_used_as_geometry_authority`
+- `missing_camera_slot`
+- `missing_staging_slot`
 - `memory_dependent_image_prompt`
 - `missing_global_style_cue`
 - `style_cue_not_in_prompt_assembly`

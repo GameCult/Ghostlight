@@ -61,6 +61,8 @@ path is a source-grounded branching-scene data loop:
 - Narrative quality reviewer prompt: `prompts/narrative-quality-reviewer.md`
 - Visual scene continuity reviewer prompt:
   `prompts/visual-scene-continuity-reviewer.md`
+- Illustrated IF visual pipeline:
+  `docs/architecture/illustrated-if-visual-pipeline.md`
 - Research-enabled Sella packet: `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
 - Research-enabled Sella capture: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
 - Research-enabled Sella mutation: `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`
@@ -122,6 +124,12 @@ current gold-data route.
   and material constraints.
 - If a blocking lore gap appears, patch AetheriaLore narrowly before treating the
   detail as available to Ghostlight.
+- Generated environment images are mood and material references, not spatial
+  authority. For multi-angle or branch-consistent illustrated IF, use a durable
+  scene-set source such as a hand-built 3D blockout, procedural scene file,
+  layout asset, or camera map with named cameras, staging slots, routes, and
+  occluders. Imagegen should paint over camera-specific visual input instead
+  of preserving room topology from prior generated art.
 - Technology exploration should emit database-shaped item/assembly/component/
   supply-chain candidates mapped toward Aetheria-Economy's CultCache item model.
   `CompoundCommodityData` includes colony-consumed manufactured trade goods, not
@@ -168,6 +176,12 @@ uses the Bloom process correctly: engineered rotating shell, consolidated
 asteroid aggregate, TCS substrate, seals, supports, and service systems,
 with image prompts written as affirmative visible targets. Treat it as
 coordinator/IF scaffold training data, not raw responder gold.
+
+Latest visual pipeline lesson: the Pallas Kappa environment overview concept
+image is useful as a vibe/material reference, but a follow-up scene prompt did
+not preserve the room layout. Do not ask imagegen to act as a CAD intern. For
+durable illustrated replay, build or reference a camera-specific blockout and
+let imagegen handle the painterly pass.
 
 Kappa geometry correction to preserve across compaction: Service Ring Kappa names this specific standardized industrial spoke manifold service ring: a bounded local access loop around a dense seal-air-thermal equipment cluster. The
 loop-inner side exposes manifold faces on the machinery cluster. The loop-outer

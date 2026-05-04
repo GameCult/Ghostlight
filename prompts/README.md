@@ -19,7 +19,8 @@ should be authored here first and referenced from artifacts or tools.
   clarity, pacing, voice, and lore accessibility.
 - `visual-scene-continuity-reviewer.md`: reviewer prompt for illustrated IF
   replay, click-through segmentation, imagegen-ready scene prompts, character
-  visibility, stance control, and branch/state visual modifiers.
+  visibility, stance control, branch/state visual modifiers, and scene-set
+  needs for multi-angle replay.
 - `lore-grounding-reviewer.md`: research-enabled reviewer prompt for checking
   source fit against AetheriaLore, detecting canon drift, and identifying
   durable story elaborations worth backfilling into the lore vault.
@@ -68,5 +69,9 @@ should be authored here first and referenced from artifacts or tools.
 - Treat environment labels as handles, not images. A prompt that names a
   location or fixture must also describe its visible geometry, materials,
   lights, interfaces, and scale.
+- Treat generated concept art as mood and material reference, not geometry
+  authority. Multi-angle or branch-consistent illustrated IF needs a durable
+  `scene_set`, blockout, layout asset, or camera map. Imagegen should paint
+  over camera-specific visual input when spatial continuity matters.
 - If a prompt is used for a capture, preserve the exact rendered prompt in the
   capture and include the prompt file path when the capture schema allows it.

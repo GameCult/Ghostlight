@@ -170,6 +170,12 @@ When the user says to prepare for imminent compaction:
 - Treat visual continuity notes as tool/reviewer constraints, not prompt text.
   If imagegen needs the fact, rewrite it as concrete visible description in the
   base prompt, character ref, or branch/state modifier.
+- Treat generated environment images as concept and material reference, not
+  spatial truth. Multi-angle or branch-consistent illustrated IF needs a durable
+  scene-set source such as a hand-built blockout, procedural scene file, layout
+  asset, or camera map. Imagegen can paint over camera-specific visual input;
+  it should not be asked to preserve room topology from a prior generated
+  image or text memory.
 - Ground scene writing in the source's material details: habitat form,
   infrastructure, law, class pressure, money, route access, surveillance,
   communication channels, body affordances, and local failure costs.

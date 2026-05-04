@@ -32,6 +32,8 @@ backlog, and state ledgers do not slowly melt into one cursed binder.
   judgments into training artifacts.
 - `docs/architecture/ink-branching-scenes.md`: branch-and-fold, branch
   compiler, visual prompt, and IF reviewer contract.
+- `docs/architecture/illustrated-if-visual-pipeline.md`: visual replay
+  contract, geometry authority, scene-set/blockout role, and imagegen boundary.
 - `docs/architecture/lore-grounding-digest-format.md`: source-grounding digest
   format.
 - `docs/architecture/aetheria-lore-grounding-architecture.md`: Aetheria

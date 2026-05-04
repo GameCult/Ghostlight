@@ -67,6 +67,13 @@ Names are handles, not faces. The visual reviewer judges the playable Ink
 experience and visual plan; clean-run prose receipts are debugging mirrors, not
 the reviewed visual surface.
 
+Generated images are not geometry authority. They can establish visual mood,
+materials, and concept direction, but multi-angle illustrated IF needs a durable
+`scene_set` source such as a hand-built 3D blockout, procedural scene file, or
+layout asset with named cameras and staging slots. For those scenes, imagegen is
+the painter/render pass over a camera-specific blockout, not the architect of
+the room.
+
 ## Important Contracts
 
 - Agent state: `schemas/agent-state.schema.json`
@@ -77,6 +84,8 @@ the reviewed visual surface.
 - Responder packets: `schemas/responder-packet.schema.json`
 - Responder outputs: `schemas/responder-output.schema.json`
 - Ink branch contract: `docs/architecture/ink-branching-scenes.md`
+- Illustrated IF visual pipeline:
+  `docs/architecture/illustrated-if-visual-pipeline.md`
 - Training stages and corpus gates: `docs/architecture/training-plan.md`
 
 ## Current Live Example
