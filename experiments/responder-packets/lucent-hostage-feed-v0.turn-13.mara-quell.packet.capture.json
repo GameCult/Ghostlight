@@ -1,0 +1,92 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-13.mara-quell.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-13.mara-quell.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-13.coordinator.json",
+  "responder_agent_id": "mara_quell",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-13.mara-quell.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"mara_quell\",\"action_label\":\"speak\",\"visible_action\":\"Mara keeps both hands low and open, angling her body toward the camera rather than toward Sol or Juno. She lifts one finger toward the suspended CUSTODY GRAPHIC, then points to the visible EDIT TRAIL HOLD without stepping closer.\",\"spoken_text\":\"Juno Ark is walking to the safe line. That is not a breach cue, not a victory graphic, and not a brand recovery beat wearing emergency lighting. Security holds until both her feet cross. Sol Vant keeps empty hands visible, turns one shoulder to the bench, and stays exactly where the camera can hate him honestly. Feed ops, keep EDIT TRAIL HOLD and the source process note live. If anyone needs a cleaner ending, they can go ruin a weather segment.\",\"private_interpretation\":\"Juno is creating her own de-escalation frame and needs it protected before security or feed ops metabolize it into spectacle. Sol needs a physical script that is nonviolent, visible, and not humiliating enough to trigger another spike. The evidence overlays are still the anchor; if they vanish, the room will be rewritten before Juno reaches safety.\",\"intended_effect\":\"Prevent security from treating Juno's movement as authorization to breach, give Sol a safe visible posture after release, and keep the evidence conflict centered instead of letting Lucent convert the walkout into corporate redemption.\",\"state_update_candidates\":[\"Juno's walkout is verbally framed as civilian exit rather than breach cue or corporate success.\",\"Mara instructs security to hold until Juno fully crosses the safe line.\",\"Mara gives Sol a nonviolent next posture: hands visible, shoulder to bench, remain in camera view.\",\"Mara explicitly preserves EDIT TRAIL HOLD and SOURCE PROCESS NOTE as live feed objects.\"],\"relationship_update_candidates\":[{\"key\":\"Mara Quell and Juno Ark\",\"value\":\"Mara reinforces Juno's self-framing and treats her as a person exiting danger, not a usable symbol.\"},{\"key\":\"Mara Quell and Sol Vant\",\"value\":\"Mara gives Sol a controlled path that preserves his evidence demand without granting him escalation.\"},{\"key\":\"Mara Quell and feed ops\",\"value\":\"Mara challenges feed ops' ability to reshape the release into sponsor-safe narrative closure.\"},{\"key\":\"Mara Quell and security\",\"value\":\"Mara places a clear visible condition on any security movement: wait until Juno fully crosses the safe line.\"}],\"unresolved_hooks\":[\"Whether security obeys the hold condition or breaches once Juno is clear enough to reduce hostage risk.\",\"Whether feed ops keep EDIT TRAIL HOLD and SOURCE PROCESS NOTE visible under sponsor pressure.\",\"Whether Sol accepts the nonviolent posture after Juno crosses the safe line.\",\"Whether Lucent attempts to reframe the release as heroic containment despite Mara's live correction.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"mara_quell\",\"action_label\":\"speak\",\"visible_action\":\"Mara keeps both hands low and open, angling her body toward the camera rather than toward Sol or Juno. She lifts one finger toward the suspended CUSTODY GRAPHIC, then points to the visible EDIT TRAIL HOLD without stepping closer.\",\"spoken_text\":\"Juno Ark is walking to the safe line. That is not a breach cue, not a victory graphic, and not a brand recovery beat wearing emergency lighting. Security holds until both her feet cross. Sol Vant keeps empty hands visible, turns one shoulder to the bench, and stays exactly where the camera can hate him honestly. Feed ops, keep EDIT TRAIL HOLD and the source process note live. If anyone needs a cleaner ending, they can go ruin a weather segment.\",\"private_interpretation\":\"Juno is creating her own de-escalation frame and needs it protected before security or feed ops metabolize it into spectacle. Sol needs a physical script that is nonviolent, visible, and not humiliating enough to trigger another spike. The evidence overlays are still the anchor; if they vanish, the room will be rewritten before Juno reaches safety.\",\"intended_effect\":\"Prevent security from treating Juno's movement as authorization to breach, give Sol a safe visible posture after release, and keep the evidence conflict centered instead of letting Lucent convert the walkout into corporate redemption.\",\"state_update_candidates\":[\"Juno's walkout is verbally framed as civilian exit rather than breach cue or corporate success.\",\"Mara instructs security to hold until Juno fully crosses the safe line.\",\"Mara gives Sol a nonviolent next posture: hands visible, shoulder to bench, remain in camera view.\",\"Mara explicitly preserves EDIT TRAIL HOLD and SOURCE PROCESS NOTE as live feed objects.\"],\"relationship_update_candidates\":[{\"between\":\"Mara Quell and Juno Ark\",\"update\":\"Mara reinforces Juno's self-framing and treats her as a person exiting danger, not a usable symbol.\"},{\"between\":\"Mara Quell and Sol Vant\",\"update\":\"Mara gives Sol a controlled path that preserves his evidence demand without granting him escalation.\"},{\"between\":\"Mara Quell and feed ops\",\"update\":\"Mara challenges feed ops' ability to reshape the release into sponsor-safe narrative closure.\"},{\"between\":\"Mara Quell and security\",\"update\":\"Mara places a clear visible condition on any security movement: wait until Juno fully crosses the safe line.\"}],\"unresolved_hooks\":[\"Whether security obeys the hold condition or breaches once Juno is clear enough to reduce hostage risk.\",\"Whether feed ops keep EDIT TRAIL HOLD and SOURCE PROCESS NOTE visible under sponsor pressure.\",\"Whether Sol accepts the nonviolent posture after Juno crosses the safe line.\",\"Whether Lucent attempts to reframe the release as heroic containment despite Mara's live correction.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "mara_quell",
+    "action_label": "speak",
+    "visible_action": "Mara keeps both hands low and open, angling her body toward the camera rather than toward Sol or Juno. She lifts one finger toward the suspended CUSTODY GRAPHIC, then points to the visible EDIT TRAIL HOLD without stepping closer.",
+    "spoken_text": "Juno Ark is walking to the safe line. That is not a breach cue, not a victory graphic, and not a brand recovery beat wearing emergency lighting. Security holds until both her feet cross. Sol Vant keeps empty hands visible, turns one shoulder to the bench, and stays exactly where the camera can hate him honestly. Feed ops, keep EDIT TRAIL HOLD and the source process note live. If anyone needs a cleaner ending, they can go ruin a weather segment.",
+    "private_interpretation": "Juno is creating her own de-escalation frame and needs it protected before security or feed ops metabolize it into spectacle. Sol needs a physical script that is nonviolent, visible, and not humiliating enough to trigger another spike. The evidence overlays are still the anchor; if they vanish, the room will be rewritten before Juno reaches safety.",
+    "intended_effect": "Prevent security from treating Juno's movement as authorization to breach, give Sol a safe visible posture after release, and keep the evidence conflict centered instead of letting Lucent convert the walkout into corporate redemption.",
+    "state_update_candidates": [
+      "Juno's walkout is verbally framed as civilian exit rather than breach cue or corporate success.",
+      "Mara instructs security to hold until Juno fully crosses the safe line.",
+      "Mara gives Sol a nonviolent next posture: hands visible, shoulder to bench, remain in camera view.",
+      "Mara explicitly preserves EDIT TRAIL HOLD and SOURCE PROCESS NOTE as live feed objects."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "Mara Quell and Juno Ark",
+        "value": "Mara reinforces Juno's self-framing and treats her as a person exiting danger, not a usable symbol."
+      },
+      {
+        "key": "Mara Quell and Sol Vant",
+        "value": "Mara gives Sol a controlled path that preserves his evidence demand without granting him escalation."
+      },
+      {
+        "key": "Mara Quell and feed ops",
+        "value": "Mara challenges feed ops' ability to reshape the release into sponsor-safe narrative closure."
+      },
+      {
+        "key": "Mara Quell and security",
+        "value": "Mara places a clear visible condition on any security movement: wait until Juno fully crosses the safe line."
+      }
+    ],
+    "unresolved_hooks": [
+      "Whether security obeys the hold condition or breaches once Juno is clear enough to reduce hostage risk.",
+      "Whether feed ops keep EDIT TRAIL HOLD and SOURCE PROCESS NOTE visible under sponsor pressure.",
+      "Whether Sol accepts the nonviolent posture after Juno crosses the safe line.",
+      "Whether Lucent attempts to reframe the release as heroic containment despite Mara's live correction."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

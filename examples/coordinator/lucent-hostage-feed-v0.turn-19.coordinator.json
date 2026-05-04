@@ -1,0 +1,258 @@
+{
+  "schema_version": "ghostlight.coordinator_artifact.v0",
+  "artifact_id": "lucent-hostage-feed-v0.turn-19.coordinator",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "source_refs": [
+    {
+      "ref_id": "lucent-scene-digest",
+      "path": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+      "purpose": "Grounding facts for Lucent hostage-feed scene."
+    },
+    {
+      "ref_id": "lucent-initial-state",
+      "path": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+      "purpose": "Scene-local state seed and participant briefs."
+    }
+  ],
+  "input_refs": {
+    "agent_state_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+    "lore_grounding_refs": [
+      "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json"
+    ],
+    "prior_artifact_refs": [
+      "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-18.mutation.json"
+    ],
+    "projected_context_refs": [
+      "examples/projected-contexts/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.projected-context.json"
+    ]
+  },
+  "scene_context": {
+    "scene_id": "lucent-hostage-feed-v0.transfer-atrium-release-loop",
+    "sequence_marker": "turn-19",
+    "location_id": "lucent.media-eye.transfer-atrium",
+    "participant_ids": [
+      "sol_vant",
+      "juno_ark",
+      "mara_quell",
+      "feed_ops_chorus",
+      "brant_vee",
+      "pippa_lux"
+    ],
+    "active_object_ids": [
+      "edit-trail-hold",
+      "custody-graphic-suspended",
+      "elevator-gate",
+      "bench-edge",
+      "crisis-feed"
+    ],
+    "active_resource_ids": [
+      "hostage-safety",
+      "feed-integrity",
+      "sponsor-risk",
+      "security-pressure"
+    ],
+    "public_facts": [
+      {
+        "text": "The live feed and room are mutually shaping the negotiation.",
+        "refs": [
+          "lucent-scene-digest"
+        ]
+      },
+      {
+        "text": "The edit-trail hold is the active evidence object.",
+        "refs": [
+          "lucent-loop-state"
+        ]
+      }
+    ],
+    "scene_pressure": [
+      {
+        "text": "Each turn must preserve safety while resisting brand-safe replacement of the event.",
+        "refs": [
+          "lucent-initial-state"
+        ]
+      }
+    ]
+  },
+  "coordinator_decision": {
+    "decision_id": "lucent-hostage-feed-v0.turn-19.coordinator.decision",
+    "selected_next_beat": "Feed Ops Chorus responds to the updated safety/evidence geometry.",
+    "selected_acting_agent_id": "feed_ops_chorus",
+    "candidate_next_beats": [
+      {
+        "choice_id": "turn-19.selected",
+        "summary": "Project Feed Ops Chorus from current state and run one packet-only responder turn.",
+        "status": "selected"
+      }
+    ],
+    "rationale": "Selected to test sequential state carryover, local knowledge, physical affordances, feed affordances, and de-escalation without omniscient control.",
+    "glue_prose": "The feed holds its ugly shape long enough for Feed Ops Chorus to decide whether the next inch belongs to safety, spectacle, or panic.",
+    "glue_prose_status": "accepted_as_narration"
+  },
+  "machinery_plan": {
+    "invocations": [
+      {
+        "invocation_id": "turn-19.projector",
+        "organ": "projector",
+        "purpose": "Build local projected context for acting character.",
+        "input_refs": [
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-18.mutation.json"
+        ],
+        "output_refs": [
+          "examples/projected-contexts/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.projected-context.json"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "turn-19.responder",
+        "organ": "sandboxed_responder",
+        "purpose": "Generate one character-local action from exact packet only.",
+        "input_refs": [
+          "examples/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.json"
+        ],
+        "output_refs": [
+          "experiments/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.capture.json"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "turn-19.event",
+        "organ": "event_resolver",
+        "purpose": "Convert accepted responder action into observable event.",
+        "input_refs": [
+          "experiments/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.capture.json"
+        ],
+        "output_refs": [
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.event.json"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "turn-19.appraisal",
+        "organ": "participant_appraiser",
+        "purpose": "Create affected participant-local appraisals from current state.",
+        "input_refs": [
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.event.json"
+        ],
+        "output_refs": [
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.appraisal.sol_vant.json",
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.appraisal.juno_ark.json",
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.appraisal.mara_quell.json"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "turn-19.mutation",
+        "organ": "state_mutator",
+        "purpose": "Apply only reviewed state deltas.",
+        "input_refs": [
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.event.json"
+        ],
+        "output_refs": [
+          "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.mutation.json"
+        ],
+        "status": "accepted_as_draft"
+      }
+    ]
+  },
+  "sandboxed_responder_handoffs": [
+    {
+      "handoff_id": "turn-19.handoff",
+      "responder_agent_id": "feed_ops_chorus",
+      "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.projected-context.json",
+      "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.json",
+      "hidden_context_refs": [
+        "other participants private state",
+        "coordinator future plans",
+        "conversation history"
+      ],
+      "isolation_method": "subagent_no_fork",
+      "raw_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.capture.json",
+      "reviewed_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.capture.json",
+      "coordinator_interventions": [
+        {
+          "intervention_type": "none",
+          "description": "Raw subagent output parsed as JSON without repair."
+        }
+      ],
+      "leakage_audit": {
+        "private_state_leak": false,
+        "author_only_leak": false,
+        "future_branch_leak": false,
+        "raw_state_soup": false,
+        "prompt_parroting": false,
+        "body_or_object_omniscience": false,
+        "notes": [
+          "No hidden context markers or raw state variables appeared in the accepted output."
+        ]
+      }
+    }
+  ],
+  "world_state_refs": {
+    "read_refs": [
+      {
+        "ref_id": "prior-state",
+        "ref_type": "world_fact",
+        "path": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-18.mutation.json",
+        "visibility": "coordinator_only"
+      },
+      {
+        "ref_id": "projected-context",
+        "ref_type": "agent",
+        "path": "examples/projected-contexts/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.projected-context.json",
+        "visibility": "character_local"
+      }
+    ],
+    "write_candidate_refs": [
+      {
+        "ref_id": "event",
+        "ref_type": "event",
+        "path": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.event.json",
+        "visibility": "public"
+      },
+      {
+        "ref_id": "mutation",
+        "ref_type": "world_fact",
+        "path": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.mutation.json",
+        "visibility": "coordinator_only"
+      }
+    ]
+  },
+  "proposed_deltas": [
+    {
+      "delta_id": "turn-19.delta.receipt-chain",
+      "delta_type": "world_fact_update",
+      "target_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.turn-19.mutation.json",
+      "summary": "Use reviewed mutation receipt as source for next turn state.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "This is the explicit carryover tested by the loop."
+    }
+  ],
+  "branching": {
+    "branch_action": "none",
+    "active_branch_flags": [
+      "training-loop-linear-release"
+    ],
+    "event_constraints": []
+  },
+  "unresolved_hooks": [
+    {
+      "hook_id": "turn-19.hook.aftercare",
+      "hook_type": "story",
+      "summary": "Carry unresolved legal/feed/security aftermath without extending the hostage loop indefinitely.",
+      "owner": "Ghostlight",
+      "status": "carried"
+    }
+  ],
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Coordinator artifact is training-shaped and paired with exact packet/responder receipts."
+    ],
+    "accepted_for_training": true,
+    "failure_labels": []
+  }
+}

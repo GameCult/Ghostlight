@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-15.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-15",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-15.feed-ops-chorus.packet.capture.json",
+  "actor_agent_id": "feed_ops_chorus",
+  "observable_action": "The official crisis feed does not cut. The applause bed dies before it can bloom. EDIT TRAIL HOLD remains pinned in the upper left, SOURCE PROCESS NOTE enlarges by one readable notch, and the CUSTODY GRAPHIC stays suspended in its ugly institutional blue. A lower-third notice replaces the breach-ready banner: RELEASE CROSSING IN PROGRESS / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. Mara remains primary audio. Brant and Pippa stay dimmed side panels with their mics visibly hard-muted.",
+  "spoken_text": "Feed continuity notice: the hold remains live through crossing and post-crossing security confirmation. No celebration package is authorized. No breach package is authorized. Source process and custody graphics remain visible pending evidence export. Security units will hold position unless a new visible threat condition emerges. Please continue toward the marked safe line.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "hold_stays_live_after_juno_crosses",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-15.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "no_applause_or_redemptive_package_authorized",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-15.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "no_breach_package_authorized_without_new_visible_threat",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-15.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

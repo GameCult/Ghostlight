@@ -1,0 +1,88 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-18.juno-ark.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-18.juno-ark.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-18.coordinator.json",
+  "responder_agent_id": "juno_ark",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-18.juno-ark.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"juno_ark\",\"action_label\":\"movement\",\"visible_action\":\"Juno takes the final step onto the marked safe-line marker with both hands open and visible, then stops without turning her back on the atrium.\",\"spoken_text\":\"I am on the line. Nobody improve this moment. It is load-bearing and stupid enough already.\",\"private_interpretation\":\"The feed is behaving like evidence instead of appetite for once, which is almost more frightening because I can feel how much machinery wants a cleaner ending. Sol is not moving. Security is still waiting. The next danger is someone deciding resolution needs theater.\",\"intended_effect\":\"Confirm the crossing in plain visible terms, discourage hero framing or security escalation, and keep the feed locked to observable facts until safe-line confirmation completes.\",\"state_update_candidates\":[\"Juno visibly reaches the marked safe line with hands visible.\",\"Safe-line confirmation can now proceed if no interruption occurs.\",\"Security hold remains active with no new visible threat gesture.\",\"Evidence export remains locked and preserved through the crossing.\"],\"relationship_update_candidates\":[{\"key\":\"feed ops\",\"value\":\"Juno tacitly cooperates with the evidence-focused framing while warning against dramatization.\"},{\"key\":\"Sol\",\"value\":\"Juno continues treating Sol only by visible behavior: empty-handed, not approaching, not trusted beyond that.\"},{\"key\":\"security\",\"value\":\"Juno maintains nonthreatening posture to reduce pretext for intervention.\"}],\"unresolved_hooks\":[\"Whether safe-line confirmation is granted without additional delay.\",\"Whether Lucent attempts to repackage the crossing after evidence export unlocks.\",\"Whether Sol speaks or moves once Juno is across.\",\"Whether security stand-down follows confirmation or remains staged around the atrium.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"juno_ark\",\"action_label\":\"movement\",\"visible_action\":\"Juno takes the final step onto the marked safe-line marker with both hands open and visible, then stops without turning her back on the atrium.\",\"spoken_text\":\"I am on the line. Nobody improve this moment. It is load-bearing and stupid enough already.\",\"private_interpretation\":\"The feed is behaving like evidence instead of appetite for once, which is almost more frightening because I can feel how much machinery wants a cleaner ending. Sol is not moving. Security is still waiting. The next danger is someone deciding resolution needs theater.\",\"intended_effect\":\"Confirm the crossing in plain visible terms, discourage hero framing or security escalation, and keep the feed locked to observable facts until safe-line confirmation completes.\",\"state_update_candidates\":[\"Juno visibly reaches the marked safe line with hands visible.\",\"Safe-line confirmation can now proceed if no interruption occurs.\",\"Security hold remains active with no new visible threat gesture.\",\"Evidence export remains locked and preserved through the crossing.\"],\"relationship_update_candidates\":[{\"target\":\"feed ops\",\"update\":\"Juno tacitly cooperates with the evidence-focused framing while warning against dramatization.\"},{\"target\":\"Sol\",\"update\":\"Juno continues treating Sol only by visible behavior: empty-handed, not approaching, not trusted beyond that.\"},{\"target\":\"security\",\"update\":\"Juno maintains nonthreatening posture to reduce pretext for intervention.\"}],\"unresolved_hooks\":[\"Whether safe-line confirmation is granted without additional delay.\",\"Whether Lucent attempts to repackage the crossing after evidence export unlocks.\",\"Whether Sol speaks or moves once Juno is across.\",\"Whether security stand-down follows confirmation or remains staged around the atrium.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "juno_ark",
+    "action_label": "movement",
+    "visible_action": "Juno takes the final step onto the marked safe-line marker with both hands open and visible, then stops without turning her back on the atrium.",
+    "spoken_text": "I am on the line. Nobody improve this moment. It is load-bearing and stupid enough already.",
+    "private_interpretation": "The feed is behaving like evidence instead of appetite for once, which is almost more frightening because I can feel how much machinery wants a cleaner ending. Sol is not moving. Security is still waiting. The next danger is someone deciding resolution needs theater.",
+    "intended_effect": "Confirm the crossing in plain visible terms, discourage hero framing or security escalation, and keep the feed locked to observable facts until safe-line confirmation completes.",
+    "state_update_candidates": [
+      "Juno visibly reaches the marked safe line with hands visible.",
+      "Safe-line confirmation can now proceed if no interruption occurs.",
+      "Security hold remains active with no new visible threat gesture.",
+      "Evidence export remains locked and preserved through the crossing."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "feed ops",
+        "value": "Juno tacitly cooperates with the evidence-focused framing while warning against dramatization."
+      },
+      {
+        "key": "Sol",
+        "value": "Juno continues treating Sol only by visible behavior: empty-handed, not approaching, not trusted beyond that."
+      },
+      {
+        "key": "security",
+        "value": "Juno maintains nonthreatening posture to reduce pretext for intervention."
+      }
+    ],
+    "unresolved_hooks": [
+      "Whether safe-line confirmation is granted without additional delay.",
+      "Whether Lucent attempts to repackage the crossing after evidence export unlocks.",
+      "Whether Sol speaks or moves once Juno is across.",
+      "Whether security stand-down follows confirmation or remains staged around the atrium."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

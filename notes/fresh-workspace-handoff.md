@@ -136,18 +136,28 @@ Live Lucent surfaces:
 - `experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md`
 - `experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md`
 - `scripts/materialize_lucent_loop.py`
+- `scripts/materialize_lucent_loop_continuation.py`
 
-The Lucent bundle counts only the six post-compaction restart turns from
-`turn-06` through `turn-11` as training-clean responder receipts. Earlier
+The Lucent bundle counts fifteen post-compaction restart turns from
+`turn-06` through `turn-20` as training-clean responder receipts. Earlier
 opening turns established the situation and proof-object but crossed a
 compaction seam, so they are treated as setup/rehearsal context rather than
 gold responder data. The accepted loop starts after feed ops externalizes the
-proof-object into `EDIT TRAIL HOLD` and ends when Sol releases direct physical
-leverage over Juno while keeping the edit-trail evidence live.
+proof-object into `EDIT TRAIL HOLD` and resolves when Juno reaches the marked
+safe line, security stays behind the collars, Sol is categorized for
+non-contact protective handoff, and evidence export remains the live aftermath
+hook.
 
 Lucent is training-shaped for projector, responder, event resolver, appraiser,
 mutator, relationship/perception updater, and coordinator/story-runtime seams.
 It is not branch compiler, IF reviewer, or visual training data yet.
+
+Lucent's strongest machine lesson: the coordinator should not shove the actors
+toward a desired plot. It should make the strings fun to play with. Supply
+game-ergonomic affordances, visible gates, clocks, evidence objects, posture
+constraints, route access, public categories, and resource pressure; let actors
+choose from local state; then fold the observed action into reviewed state.
+Elastic strings, not rails. Little puppet theater, but with receipts.
 
 Kappa geometry to preserve: Service Ring Kappa names this specific standardized
 industrial spoke manifold service ring, a bounded local access loop around a
@@ -198,11 +208,11 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-Review the `lucent-hostage-feed-v0` receipt chain and clean run, then decide
-whether to extend it into branch compiler/IF work or move to the next coverage
-fixture. Current accepted full-fixture coverage is still empty; Pallas and
-Lucent derivatives are draft scene-loop rows with per-organ training readiness,
-not accepted branch fixtures.
+Review the full `lucent-hostage-feed-v0` arc and receipt chain, then decide
+whether to compile a branch/IF derivative, run specialist reviewers, or move to
+the next coverage fixture. Current accepted full-fixture coverage is still
+empty; Pallas and Lucent derivatives are draft scene-loop rows with per-organ
+training readiness, not accepted branch fixtures.
 
 ## Warnings
 

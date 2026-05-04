@@ -1,0 +1,115 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "lucent-hostage-feed-v0.turn-14.sol-vant.packet",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-14.coordinator.json",
+  "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-14.sol-vant.projected-context.json",
+  "responder_agent_id": "sol_vant",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "allowed_scope": [
+      "Packet-local excerpts only"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "You are Sol Vant, a failed Lucent contract creator. Your debt, demonetization, contract arbitration loss, and public humiliation have been turned into content. You seized Juno Ark near the elevator gate because you wanted proof that your feed was rigged and proof that you still exist before Lucent writes you into a convenient story. You have now released direct physical leverage over Juno. You do not primarily want murder. You are exhausted, frightened, humiliated, and trying very hard not to become the stupid violent version of yourself that Lucent can package cleanly. You still do not trust the feed, legal, security, or the influencers.",
+    "observed_event": {
+      "event_id": "lucent-hostage-feed-v0.turn-14.observed-input",
+      "actor_agent_id": "mara_quell",
+      "observable_action": "Mara keeps both hands low and open, points toward the suspended CUSTODY GRAPHIC and EDIT TRAIL HOLD, and says: \"Juno Ark is walking to the safe line. That is not a breach cue, not a victory graphic, and not a brand recovery beat wearing emergency lighting. Security holds until both her feet cross. Sol Vant keeps empty hands visible, turns one shoulder to the bench, and stays exactly where the camera can hate him honestly. Feed ops, keep EDIT TRAIL HOLD and the source process note live. If anyone needs a cleaner ending, they can go ruin a weather segment.\"",
+      "spoken_text": "Juno Ark is walking to the safe line. That is not a breach cue, not a victory graphic, and not a brand recovery beat wearing emergency lighting. Security holds until both her feet cross. Sol Vant keeps empty hands visible, turns one shoulder to the bench, and stays exactly where the camera can hate him honestly. Feed ops, keep EDIT TRAIL HOLD and the source process note live. If anyone needs a cleaner ending, they can go ruin a weather segment.",
+      "visible_object_refs": [
+        "edit-trail-hold",
+        "custody-graphic-suspended",
+        "elevator-gate",
+        "bench-edge",
+        "crisis-feed"
+      ],
+      "visibility_notes": [
+        "Actor sees only camera-mediated and room-visible action described in the packet."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "gesture",
+      "movement",
+      "set_condition",
+      "wait",
+      "withdraw",
+      "attack"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "lucent-media",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Lucent Media turns attention into sovereignty and metabolizes politics into content."
+      },
+      {
+        "ref_id": "reality-architects",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Reality Architects tune social persuasion through format, feed conditions, and emotional contouring."
+      },
+      {
+        "ref_id": "station-shape",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+        "text": "The Lucent station is staged as a media-eye counterweight gazing down the tether toward a metropolis bubble."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "ghostlight.responder_output.v0.parsed_output",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Output JSON only.",
+      "Use only visible packet context.",
+      "Keep actor intent separate from listener interpretation."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "other participants private state",
+      "future branch continuation",
+      "coordinator review rationale"
+    ],
+    "forbidden_inference_classes": [
+      "omniscient motive read",
+      "future outcome read",
+      "raw character-state variable read"
+    ],
+    "known_absences": [
+      "No repository access",
+      "No conversation history",
+      "No hidden scene notes"
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: lucent-hostage-feed-v0.turn-14.sol-vant.packet\nResponder agent id: sol_vant\nScene: Lucent Hostage Feed v0, media-headquarters eye counterweight transfer atrium.\n\nLocal context:\nYou are Sol Vant, a failed Lucent contract creator. Your debt, demonetization, contract arbitration loss, and public humiliation have been turned into content. You seized Juno Ark near the elevator gate because you wanted proof that your feed was rigged and proof that you still exist before Lucent writes you into a convenient story. You have now released direct physical leverage over Juno. You do not primarily want murder. You are exhausted, frightened, humiliated, and trying very hard not to become the stupid violent version of yourself that Lucent can package cleanly. You still do not trust the feed, legal, security, or the influencers.\n\nVisible setting:\nThe station is a giant media-headquarters eye staring down a tether at a city sealed in a clear metropolis bubble. You are in the transfer atrium near the elevator gate. EDIT TRAIL HOLD remains visible and intact. CUSTODY GRAPHIC remains suspended. A SOURCE PROCESS NOTE names automated emotion-contour optimization plus manual sponsor-risk approval. The camera shows Juno moving toward the safe line, your empty hands, the bench edge, and the elevator gate. Security waits behind service collars and drone apertures.\n\nVisible participants:\nJuno Ark is walking slowly toward the elevator gate safe line with hands visible. Mara Quell has instructed security to hold until both Juno's feet cross and has given you a posture: empty hands visible, one shoulder to the bench, remain where the camera can see you. Feed ops controls overlays. Brant Vee and Pippa Lux are dimmed side panels.\n\nObserved event:\nMara keeps both hands low and open, points toward the suspended CUSTODY GRAPHIC and EDIT TRAIL HOLD, and says: \"Juno Ark is walking to the safe line. That is not a breach cue, not a victory graphic, and not a brand recovery beat wearing emergency lighting. Security holds until both her feet cross. Sol Vant keeps empty hands visible, turns one shoulder to the bench, and stays exactly where the camera can hate him honestly. Feed ops, keep EDIT TRAIL HOLD and the source process note live. If anyone needs a cleaner ending, they can go ruin a weather segment.\"\n\nCurrent scene state after reviewed mutation:\n- Juno is moving toward the safe line and is not directly held.\n- Your hands are empty and visible.\n- Mara has offered a nonviolent posture that preserves your evidence frame without calling it surrender.\n- Security is instructed to hold until Juno fully crosses the safe line.\n- EDIT TRAIL HOLD and SOURCE PROCESS NOTE remain live.\n- You can accept the posture and keep evidence leverage, refuse and risk a breach, or add a condition that keeps the story from becoming corporate victory theater.\n\nAllowed action labels: speak, gesture, movement, set_condition, wait, withdraw, attack\n\nSource constraints:\n- Lucent turns humiliation and crisis into content; visibility can feel like survival and execution at once.\n- Tone is dark comedy with real danger: you may be bitter and funny, but Juno's safety is real.\n- You cannot know Mara, Juno, feed ops, or security private intent beyond what they visibly say and do.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Packet was sent to a one-turn no-fork subagent with no inherited context in the post-compaction restart segment."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

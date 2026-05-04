@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-17.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-17",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-17.feed-ops-chorus.packet.capture.json",
+  "actor_agent_id": "feed_ops_chorus",
+  "observable_action": "The lower-third tightens to a plain safety crawl: RELEASE CROSSING IN PROGRESS / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. The SOURCE PROCESS NOTE enlarges by one step and the audio bed drops to untreated atrium sound only. Brant and Pippa remain dimmed with hard-mute icons. A small caption flashes over the gate marker: SAFE LINE CONFIRMATION PENDING.",
+  "spoken_text": "Feed ops confirms no music package, no victory sting, no breach framing. Subject Juno is moving to the marked line with hands visible. Security remains on hold unless a new visible threat appears. Procurement has been spared one haunting for now.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Feed ops suppresses all music, reaction, and hero-package automation during the crossing.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-17.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Security hold remains active because no new visible threat gesture has emerged.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-17.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Safe-line confirmation remains pending until Juno visibly reaches the marker without interruption.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-17.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

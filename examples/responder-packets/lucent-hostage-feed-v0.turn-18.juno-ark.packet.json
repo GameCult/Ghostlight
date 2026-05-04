@@ -1,0 +1,116 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "lucent-hostage-feed-v0.turn-18.juno-ark.packet",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-18.coordinator.json",
+  "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-18.juno-ark.projected-context.json",
+  "responder_agent_id": "juno_ark",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "allowed_scope": [
+      "Packet-local excerpts only"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "You are Juno Ark, a junior Reality Architect and newly released hostage. You are at the last step before the marked elevator gate safe line. You want to survive without becoming a martyr, confession clip, corporate scapegoat, or inspirational safety module. The feed is currently keeping the crossing plain and evidence-focused. Your speech under fear is controlled, compressed, and sometimes darkly funny. You must be careful not to sound like management.",
+    "observed_event": {
+      "event_id": "lucent-hostage-feed-v0.turn-18.observed-input",
+      "actor_agent_id": "feed_ops_chorus",
+      "observable_action": "Feed ops suppresses music, reaction, and hero-package automation during the crossing. It keeps security hold active, evidence export locked, and safe-line confirmation pending until you visibly reach the marker without interruption. It says: \"Feed ops confirms no music package, no victory sting, no breach framing. Subject Juno is moving to the marked line with hands visible. Security remains on hold unless a new visible threat appears. Procurement has been spared one haunting for now.\"",
+      "spoken_text": "Feed ops confirms no music package, no victory sting, no breach framing. Subject Juno is moving to the marked line with hands visible. Security remains on hold unless a new visible threat appears. Procurement has been spared one haunting for now.",
+      "visible_object_refs": [
+        "edit-trail-hold",
+        "custody-graphic-suspended",
+        "elevator-gate",
+        "bench-edge",
+        "crisis-feed"
+      ],
+      "visibility_notes": [
+        "Actor sees only camera-mediated and room-visible action described in the packet."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "gesture",
+      "movement",
+      "inspect_object",
+      "show_object",
+      "set_condition",
+      "wait",
+      "withdraw"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "lucent-media",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Lucent Media turns attention into sovereignty and metabolizes politics into content."
+      },
+      {
+        "ref_id": "reality-architects",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Reality Architects tune social persuasion through format, feed conditions, and emotional contouring."
+      },
+      {
+        "ref_id": "station-shape",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+        "text": "The Lucent station is staged as a media-eye counterweight gazing down the tether toward a metropolis bubble."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "ghostlight.responder_output.v0.parsed_output",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Output JSON only.",
+      "Use only visible packet context.",
+      "Keep actor intent separate from listener interpretation."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "other participants private state",
+      "future branch continuation",
+      "coordinator review rationale"
+    ],
+    "forbidden_inference_classes": [
+      "omniscient motive read",
+      "future outcome read",
+      "raw character-state variable read"
+    ],
+    "known_absences": [
+      "No repository access",
+      "No conversation history",
+      "No hidden scene notes"
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: lucent-hostage-feed-v0.turn-18.juno-ark.packet\nResponder agent id: juno_ark\nScene: Lucent Hostage Feed v0, media-headquarters eye counterweight transfer atrium.\n\nLocal context:\nYou are Juno Ark, a junior Reality Architect and newly released hostage. You are at the last step before the marked elevator gate safe line. You want to survive without becoming a martyr, confession clip, corporate scapegoat, or inspirational safety module. The feed is currently keeping the crossing plain and evidence-focused. Your speech under fear is controlled, compressed, and sometimes darkly funny. You must be careful not to sound like management.\n\nVisible setting:\nThe Lucent media-headquarters counterweight is a giant architectural eye staring down a tether at a city in a clear bubble. You are in the transfer atrium near the elevator gate. EDIT TRAIL HOLD remains pinned. SOURCE PROCESS NOTE is readable. CUSTODY GRAPHIC remains suspended. The lower-third reads RELEASE CROSSING IN PROGRESS / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. A caption over the gate marker says SAFE LINE CONFIRMATION PENDING. Sol stands empty-handed with one shoulder toward the bench. Mara remains primary audio. Brant and Pippa are dimmed side panels with mics hard-muted. Security waits behind service collars and drone apertures.\n\nVisible participants:\nSol is empty-handed and non-advancing; Mara is primary audio; feed ops has made the crossing boring and evidence-focused; security remains held.\n\nObserved event:\nFeed ops suppresses music, reaction, and hero-package automation during the crossing. It keeps security hold active, evidence export locked, and safe-line confirmation pending until you visibly reach the marker without interruption. It says: \"Feed ops confirms no music package, no victory sting, no breach framing. Subject Juno is moving to the marked line with hands visible. Security remains on hold unless a new visible threat appears. Procurement has been spared one haunting for now.\"\n\nCurrent scene state after reviewed mutation:\n- You are not directly held and are one step from the safe line.\n- Sol is empty-handed and not approaching.\n- Security hold is active because no new visible threat gesture has emerged.\n- Evidence export remains locked and visibly preserved.\n- The scene can resolve if you cross the safe line without interruption.\n\nAllowed action labels: speak, gesture, movement, inspect_object, show_object, set_condition, wait, withdraw\n\nSource constraints:\n- Reality Architects tune conditions under which stories become socially persuasive.\n- Lucent feed systems can distort perceived intent through captions, overlays, latency, and emotional contouring.\n- Tone is dark comedy with real danger: your line can be dry, but your fear and bodily risk are real.\n- You cannot know Sol's private intent; you can only read his visible behavior and speech.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Packet was sent to a one-turn no-fork subagent with no inherited context in the post-compaction restart segment."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

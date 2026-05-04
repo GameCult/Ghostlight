@@ -31,11 +31,14 @@ mission:
     participant appraisals, reviewed mutations, coordinator receipts, and a
     scene-loop bundle manifest.
     `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It
-    exercises a six-turn post-restart hostage-release segment in a Lucent
+    exercises a fifteen-turn post-restart hostage-release arc in a Lucent
     media-eye tether station, with exact packet prompts, no-fork responder
     captures, event/appraisal/mutation receipts, coordinator artifacts, a clean
     run, and coverage bookkeeping. The opening exploratory turns are treated as
-    setup/rehearsal, not training-clean responder data.
+    setup/rehearsal, not training-clean responder data. The arc resolves with
+    Juno on the safe line, security held behind collars, Sol categorized for
+    non-contact protective handoff, and evidence export left as the live
+    aftermath hook.
     Call of the Void and Elysium-era gameplay remain procedural consumer targets.
 
 hard_boundaries:
@@ -53,6 +56,7 @@ hard_boundaries:
   - Technology exploration must emit game-usable item, component, assembly, supply-chain, compatibility, and provenance data mapped toward Aetheria-Economy.
   - Interactive-fiction fixtures should branch and fold: normalize most consequences into compact state variables and shared-scene conditionals, reserving isolated route splits for major world-changing divergence.
   - Interactive-fiction fixtures require independent artifact review before acceptance; tracked variables must materially affect later affordances, risk, appraisal, callbacks, visual state, or outcomes, unless explicitly marked telemetry-only.
+  - Ghostlight scenes should feel like puppets on elastic strings, not puppets on rails. The coordinator supplies playable affordances, gates, resources, clocks, posture constraints, route options, evidence objects, and risk pressure; actors choose locally within those constraints; state folds from observed action rather than from the coordinator forcing a plot outcome.
     - Complete illustrated interactive-fiction fixtures should emit visual art direction for website imagery and replay value, with click-through visual scene segmentation, stable visual character refs for recurring named characters, a global style cue when the visual language matters, one durable base image prompt per distinct section, character visibility and stance controls, and additive modification prompts for branch-visible consequences and scene-state changes; assembled prompts include only actually visible character refs, while continuity notes stay in tooling unless rewritten as concrete visible description.
     - Image prompts must be affirmative target descriptions. Describe visible geometry, materials, composition, lighting, bodies, tools, and state deltas; keep forbidden assumptions in reviewer findings or validation errors instead of feeding negative constructions to imagegen.
     - Generated environment images are concept and material reference, not geometry authority. Multi-angle or branch-consistent illustrated IF needs a durable scene-set source such as a hand-built 3D blockout, procedural scene file, layout asset, or camera map with staging slots and occluders; imagegen paints over camera-specific visual input instead of preserving topology from memory.
@@ -80,6 +84,7 @@ live_architecture:
     - The coordinator is a trainable soft organ: it stages scenes, chooses next beats and acting agents, invokes specialist machinery, carries unresolved hooks, emits glue prose, and proposes game-engine-shaped state changes.
     - Glue prose is training signal, not canonical truth.
     - Coordinator prose should choose an intentional tonal mode for the scene and protect breathing room when the story needs routine, levity, domestic texture, wonder, or slow dread before consequence.
+    - The coordinator nudges by affordance, not decree. Prefer concrete game-ergonomic levers such as safe lines, export locks, security holds, handling categories, visible posture scripts, route access, resource scarcity, clocks, and public proof objects over authorial pressure toward a desired ending.
   branch_compiler:
     - The branch compiler turns fixture briefs, lore digests, scene/world state, actor-local branch candidates, reviewed consequence packets, fold plans, and optional visual replay requirements into playable Ink plus training sidecars, separate visual plan artifacts when illustrated replay is in scope, and compiler notes.
     - The branch compiler owns playable structure, click-through segmentation, conditionals, variables, callbacks, fold materialization, visual scene ids, and image prompt handles; it stores visual prompt data in `.visual.json` artifacts rather than bloating training annotations; it does not own hidden character truth, participant appraisal, or durable social mutation.
@@ -183,6 +188,7 @@ current_artifacts:
     - examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.review.json
     - experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md
     - scripts/materialize_lucent_loop.py
+    - scripts/materialize_lucent_loop_continuation.py
   pruned_receipts:
     - Old prototype fixture receipts and local runner files were removed from the live workspace after their lessons were distilled into docs, state, evidence, and git history.
 
@@ -195,5 +201,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It uses a Lucent hostage-feed negotiation to exercise sequential projector, packet-only responder, event, participant appraisal, reviewed mutation, relationship/perception, and coordinator receipts across six post-restart turns ending with direct hostage leverage released. Pallas remains a reference fixture and `pallas-training-loop-v0` remains the first smaller receipt-chain pilot.
-  next_action: Review the Lucent receipt chain and clean run, then decide whether to extend it into branch compiler/IF work or move to the next coverage fixture. Keep overall coverage at draft until branch/IF acceptance exists.
+  summary: `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It uses a Lucent hostage-feed negotiation to exercise sequential projector, packet-only responder, event, participant appraisal, reviewed mutation, relationship/perception, and coordinator receipts across fifteen post-restart turns. The arc resolves with Juno on the safe line, security held, Sol assigned non-contact protective handoff, and evidence export unresolved as aftermath pressure. Pallas remains a reference fixture and `pallas-training-loop-v0` remains the first smaller receipt-chain pilot.
+  next_action: Review the full Lucent arc and receipt chain, then decide whether to compile a branch/IF derivative, run specialist reviewers, or move to the next coverage fixture. Keep overall coverage at draft until branch/IF acceptance exists.

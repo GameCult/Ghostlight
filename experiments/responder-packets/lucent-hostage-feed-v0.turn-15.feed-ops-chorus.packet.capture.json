@@ -1,0 +1,95 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-15.feed-ops-chorus.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-15.feed-ops-chorus.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-15.coordinator.json",
+  "responder_agent_id": "feed_ops_chorus",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-15.feed-ops-chorus.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"feed_ops_chorus\",\"action_label\":\"set_condition\",\"visible_action\":\"The official crisis feed does not cut. The applause bed dies before it can bloom. EDIT TRAIL HOLD remains pinned in the upper left, SOURCE PROCESS NOTE enlarges by one readable notch, and the CUSTODY GRAPHIC stays suspended in its ugly institutional blue. A lower-third notice replaces the breach-ready banner: RELEASE CROSSING IN PROGRESS / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. Mara remains primary audio. Brant and Pippa stay dimmed side panels with their mics visibly hard-muted.\",\"spoken_text\":\"Feed continuity notice: the hold remains live through crossing and post-crossing security confirmation. No celebration package is authorized. No breach package is authorized. Source process and custody graphics remain visible pending evidence export. Security units will hold position unless a new visible threat condition emerges. Please continue toward the marked safe line.\",\"private_interpretation\":\"Sol has offered the least disgusting bargain available: Juno moves, the feed keeps the machine visible, and Lucent avoids creating a heroic edit that makes everyone look even guiltier. Legal hates it. Sponsor-risk is chewing glass. The producer chooses the button that keeps Juno alive and makes the coverup look more expensive than the truth.\",\"intended_effect\":\"Lock the release conditions into visible feed state, deny Sol total authorship without provoking him, preserve evidence before post-event narrative laundering, and keep security from mistaking a de-escalated posture for permission to manufacture a breach spectacle.\",\"state_update_candidates\":[\"hold_stays_live_after_juno_crosses\",\"no_applause_or_redemptive_package_authorized\",\"no_breach_package_authorized_without_new_visible_threat\",\"source_process_note_remains_readable\",\"custody_graphic_remains_suspended\",\"security_hold_active_until_crossing_confirmed\",\"evidence_export_locked_as_visible_feed_state\"],\"relationship_update_candidates\":[{\"key\":\"feed_ops_chorus and Sol\",\"value\":\"Feed ops partially accepts Sol's stated conditions while reframing them as operational continuity rather than surrender.\"},{\"key\":\"feed_ops_chorus and Juno\",\"value\":\"Feed ops prioritizes Juno's safe crossing over cleaner liability optics.\"},{\"key\":\"feed_ops_chorus and Mara\",\"value\":\"Mara's crisis feed remains privileged as the stabilizing channel.\"},{\"key\":\"feed_ops_chorus and sponsors_legal\",\"value\":\"Sponsor-risk and legal preferences are overridden because visible cleanup now carries higher crisis risk.\"}],\"unresolved_hooks\":[\"Will Lucent honor the live hold after Juno fully crosses the safe line?\",\"Will security remain restrained once Juno is no longer directly exposed?\",\"Who receives the evidence export, and can it be altered after lock?\",\"Will Brant or Pippa attempt to regain narrative control through side channels?\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"feed_ops_chorus\",\"action_label\":\"set_condition\",\"visible_action\":\"The official crisis feed does not cut. The applause bed dies before it can bloom. EDIT TRAIL HOLD remains pinned in the upper left, SOURCE PROCESS NOTE enlarges by one readable notch, and the CUSTODY GRAPHIC stays suspended in its ugly institutional blue. A lower-third notice replaces the breach-ready banner: RELEASE CROSSING IN PROGRESS / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. Mara remains primary audio. Brant and Pippa stay dimmed side panels with their mics visibly hard-muted.\",\"spoken_text\":\"Feed continuity notice: the hold remains live through crossing and post-crossing security confirmation. No celebration package is authorized. No breach package is authorized. Source process and custody graphics remain visible pending evidence export. Security units will hold position unless a new visible threat condition emerges. Please continue toward the marked safe line.\",\"private_interpretation\":\"Sol has offered the least disgusting bargain available: Juno moves, the feed keeps the machine visible, and Lucent avoids creating a heroic edit that makes everyone look even guiltier. Legal hates it. Sponsor-risk is chewing glass. The producer chooses the button that keeps Juno alive and makes the coverup look more expensive than the truth.\",\"intended_effect\":\"Lock the release conditions into visible feed state, deny Sol total authorship without provoking him, preserve evidence before post-event narrative laundering, and keep security from mistaking a de-escalated posture for permission to manufacture a breach spectacle.\",\"state_update_candidates\":[\"hold_stays_live_after_juno_crosses\",\"no_applause_or_redemptive_package_authorized\",\"no_breach_package_authorized_without_new_visible_threat\",\"source_process_note_remains_readable\",\"custody_graphic_remains_suspended\",\"security_hold_active_until_crossing_confirmed\",\"evidence_export_locked_as_visible_feed_state\"],\"relationship_update_candidates\":[{\"between\":\"feed_ops_chorus and Sol\",\"update\":\"Feed ops partially accepts Sol's stated conditions while reframing them as operational continuity rather than surrender.\"},{\"between\":\"feed_ops_chorus and Juno\",\"update\":\"Feed ops prioritizes Juno's safe crossing over cleaner liability optics.\"},{\"between\":\"feed_ops_chorus and Mara\",\"update\":\"Mara's crisis feed remains privileged as the stabilizing channel.\"},{\"between\":\"feed_ops_chorus and sponsors_legal\",\"update\":\"Sponsor-risk and legal preferences are overridden because visible cleanup now carries higher crisis risk.\"}],\"unresolved_hooks\":[\"Will Lucent honor the live hold after Juno fully crosses the safe line?\",\"Will security remain restrained once Juno is no longer directly exposed?\",\"Who receives the evidence export, and can it be altered after lock?\",\"Will Brant or Pippa attempt to regain narrative control through side channels?\"]}",
+  "parsed_output": {
+    "responder_agent_id": "feed_ops_chorus",
+    "action_label": "set_condition",
+    "visible_action": "The official crisis feed does not cut. The applause bed dies before it can bloom. EDIT TRAIL HOLD remains pinned in the upper left, SOURCE PROCESS NOTE enlarges by one readable notch, and the CUSTODY GRAPHIC stays suspended in its ugly institutional blue. A lower-third notice replaces the breach-ready banner: RELEASE CROSSING IN PROGRESS / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. Mara remains primary audio. Brant and Pippa stay dimmed side panels with their mics visibly hard-muted.",
+    "spoken_text": "Feed continuity notice: the hold remains live through crossing and post-crossing security confirmation. No celebration package is authorized. No breach package is authorized. Source process and custody graphics remain visible pending evidence export. Security units will hold position unless a new visible threat condition emerges. Please continue toward the marked safe line.",
+    "private_interpretation": "Sol has offered the least disgusting bargain available: Juno moves, the feed keeps the machine visible, and Lucent avoids creating a heroic edit that makes everyone look even guiltier. Legal hates it. Sponsor-risk is chewing glass. The producer chooses the button that keeps Juno alive and makes the coverup look more expensive than the truth.",
+    "intended_effect": "Lock the release conditions into visible feed state, deny Sol total authorship without provoking him, preserve evidence before post-event narrative laundering, and keep security from mistaking a de-escalated posture for permission to manufacture a breach spectacle.",
+    "state_update_candidates": [
+      "hold_stays_live_after_juno_crosses",
+      "no_applause_or_redemptive_package_authorized",
+      "no_breach_package_authorized_without_new_visible_threat",
+      "source_process_note_remains_readable",
+      "custody_graphic_remains_suspended",
+      "security_hold_active_until_crossing_confirmed",
+      "evidence_export_locked_as_visible_feed_state"
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "feed_ops_chorus and Sol",
+        "value": "Feed ops partially accepts Sol's stated conditions while reframing them as operational continuity rather than surrender."
+      },
+      {
+        "key": "feed_ops_chorus and Juno",
+        "value": "Feed ops prioritizes Juno's safe crossing over cleaner liability optics."
+      },
+      {
+        "key": "feed_ops_chorus and Mara",
+        "value": "Mara's crisis feed remains privileged as the stabilizing channel."
+      },
+      {
+        "key": "feed_ops_chorus and sponsors_legal",
+        "value": "Sponsor-risk and legal preferences are overridden because visible cleanup now carries higher crisis risk."
+      }
+    ],
+    "unresolved_hooks": [
+      "Will Lucent honor the live hold after Juno fully crosses the safe line?",
+      "Will security remain restrained once Juno is no longer directly exposed?",
+      "Who receives the evidence export, and can it be altered after lock?",
+      "Will Brant or Pippa attempt to regain narrative control through side channels?"
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

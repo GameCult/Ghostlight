@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-19.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-19",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.capture.json",
+  "actor_agent_id": "feed_ops_chorus",
+  "observable_action": "The lower-third tightens instead of blooms: RELEASE CROSSING CONFIRMED / HOSTAGE ON SAFE LINE / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. The custody graphic shifts Juno from ACTIVE HOSTAGE to RELEASED SUBJECT: HOLDING POSITION, while Sol remains boxed as NON-ADVANCING PARTY: SECURITY HANDOFF PENDING. EDIT TRAIL HOLD and SOURCE PROCESS NOTE stay pinned, ugly and unmarketable.",
+  "spoken_text": "Safe-line crossing confirmed. No one advances. No one celebrates. Security remains behind the collars. Evidence export stays locked until external receipt is verified. Sol remains visible, empty-handed, and not cleared for contact. We are not improving the moment. We are letting it survive documentation.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Juno safe-line crossing confirmed on visible feed.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Juno no longer treated as active hostage while holding position on marked line with hands visible.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Security hold remains active; no advance authorized from service collars or drone apertures.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

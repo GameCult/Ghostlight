@@ -1,0 +1,88 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-16.juno-ark.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-16.juno-ark.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-16.coordinator.json",
+  "responder_agent_id": "juno_ark",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-16.juno-ark.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"juno_ark\",\"action_label\":\"movement\",\"visible_action\":\"Juno keeps both hands visible at waist height and walks the remaining distance toward the marked safe line without looking back at Sol. Her eyes flick once to the enlarged SOURCE PROCESS NOTE, then to the elevator gate marker.\",\"spoken_text\":\"Continuing to the line. No speech package required. If anyone adds music, I am haunting procurement first.\",\"private_interpretation\":\"The feed is finally behaving like evidence instead of theater, which means the safest move is to give it nothing new to chew on. Keep the body small, the hands visible, the joke harmless, and the crossing boring enough to survive.\",\"intended_effect\":\"Complete the release crossing while reducing the chance that security, Sol, or feed ops can frame her movement as escalation, confession, or celebration.\",\"state_update_candidates\":[\"Juno continues toward the safe line with no visible threat gesture.\",\"Juno keeps hands visible and does not approach Sol or security.\",\"Crossing remains eligible to resolve if she reaches the marked safe line without interruption.\",\"Feed state remains evidence-focused rather than celebration or breach spectacle.\"],\"relationship_update_candidates\":[{\"key\":\"Mara Quell\",\"value\":\"Juno tacitly follows Mara's hold instruction by keeping the crossing controlled and non-escalatory.\"},{\"key\":\"Sol Vant\",\"value\":\"Juno does not engage Sol directly, preserving distance while acknowledging only visible safety conditions.\"},{\"key\":\"feed ops\",\"value\":\"Juno accepts the continuity notice as the safest available frame but does not trust it beyond its visible behavior.\"}],\"unresolved_hooks\":[\"Whether the safe line confirmation will actually end the immediate custody risk.\",\"Whether evidence export remains locked after crossing confirmation.\",\"Whether Sol maintains nonviolent posture once Juno crosses.\",\"Whether security treats Juno as released, witness, liability, or asset after the feed hold ends.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"juno_ark\",\"action_label\":\"movement\",\"visible_action\":\"Juno keeps both hands visible at waist height and walks the remaining distance toward the marked safe line without looking back at Sol. Her eyes flick once to the enlarged SOURCE PROCESS NOTE, then to the elevator gate marker.\",\"spoken_text\":\"Continuing to the line. No speech package required. If anyone adds music, I am haunting procurement first.\",\"private_interpretation\":\"The feed is finally behaving like evidence instead of theater, which means the safest move is to give it nothing new to chew on. Keep the body small, the hands visible, the joke harmless, and the crossing boring enough to survive.\",\"intended_effect\":\"Complete the release crossing while reducing the chance that security, Sol, or feed ops can frame her movement as escalation, confession, or celebration.\",\"state_update_candidates\":[\"Juno continues toward the safe line with no visible threat gesture.\",\"Juno keeps hands visible and does not approach Sol or security.\",\"Crossing remains eligible to resolve if she reaches the marked safe line without interruption.\",\"Feed state remains evidence-focused rather than celebration or breach spectacle.\"],\"relationship_update_candidates\":[{\"target\":\"Mara Quell\",\"update\":\"Juno tacitly follows Mara's hold instruction by keeping the crossing controlled and non-escalatory.\"},{\"target\":\"Sol Vant\",\"update\":\"Juno does not engage Sol directly, preserving distance while acknowledging only visible safety conditions.\"},{\"target\":\"feed ops\",\"update\":\"Juno accepts the continuity notice as the safest available frame but does not trust it beyond its visible behavior.\"}],\"unresolved_hooks\":[\"Whether the safe line confirmation will actually end the immediate custody risk.\",\"Whether evidence export remains locked after crossing confirmation.\",\"Whether Sol maintains nonviolent posture once Juno crosses.\",\"Whether security treats Juno as released, witness, liability, or asset after the feed hold ends.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "juno_ark",
+    "action_label": "movement",
+    "visible_action": "Juno keeps both hands visible at waist height and walks the remaining distance toward the marked safe line without looking back at Sol. Her eyes flick once to the enlarged SOURCE PROCESS NOTE, then to the elevator gate marker.",
+    "spoken_text": "Continuing to the line. No speech package required. If anyone adds music, I am haunting procurement first.",
+    "private_interpretation": "The feed is finally behaving like evidence instead of theater, which means the safest move is to give it nothing new to chew on. Keep the body small, the hands visible, the joke harmless, and the crossing boring enough to survive.",
+    "intended_effect": "Complete the release crossing while reducing the chance that security, Sol, or feed ops can frame her movement as escalation, confession, or celebration.",
+    "state_update_candidates": [
+      "Juno continues toward the safe line with no visible threat gesture.",
+      "Juno keeps hands visible and does not approach Sol or security.",
+      "Crossing remains eligible to resolve if she reaches the marked safe line without interruption.",
+      "Feed state remains evidence-focused rather than celebration or breach spectacle."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "Mara Quell",
+        "value": "Juno tacitly follows Mara's hold instruction by keeping the crossing controlled and non-escalatory."
+      },
+      {
+        "key": "Sol Vant",
+        "value": "Juno does not engage Sol directly, preserving distance while acknowledging only visible safety conditions."
+      },
+      {
+        "key": "feed ops",
+        "value": "Juno accepts the continuity notice as the safest available frame but does not trust it beyond its visible behavior."
+      }
+    ],
+    "unresolved_hooks": [
+      "Whether the safe line confirmation will actually end the immediate custody risk.",
+      "Whether evidence export remains locked after crossing confirmation.",
+      "Whether Sol maintains nonviolent posture once Juno crosses.",
+      "Whether security treats Juno as released, witness, liability, or asset after the feed hold ends."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

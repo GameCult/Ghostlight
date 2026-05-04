@@ -1,0 +1,114 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "lucent-hostage-feed-v0.turn-20.mara-quell.packet",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-20.coordinator.json",
+  "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-20.mara-quell.projected-context.json",
+  "responder_agent_id": "mara_quell",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "allowed_scope": [
+      "Packet-local excerpts only"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "You are Mara Quell, Lucent crisis negotiator and former intimacy-format host. Juno has reached the safe line. Your job now is to keep the post-release state from becoming a breach spectacle or corporate victory package, assign Sol a nonviolent handling category, and preserve the evidence export requirement. You know Lucent feed systems reward emotional shape more reliably than truth. You can use format against itself, but because you are a Lucent-trained performer, sincere care will always look a little engineered. You are warm with scalpel edges, precise, and willing to be dry if it lowers temperature.",
+    "observed_event": {
+      "event_id": "lucent-hostage-feed-v0.turn-20.observed-input",
+      "actor_agent_id": "feed_ops_chorus",
+      "observable_action": "Feed ops confirms safe-line crossing. It says: \"Safe-line crossing confirmed. No one advances. No one celebrates. Security remains behind the collars. Evidence export stays locked until external receipt is verified. Sol remains visible, empty-handed, and not cleared for contact. We are not improving the moment. We are letting it survive documentation.\"",
+      "spoken_text": "Safe-line crossing confirmed. No one advances. No one celebrates. Security remains behind the collars. Evidence export stays locked until external receipt is verified. Sol remains visible, empty-handed, and not cleared for contact. We are not improving the moment. We are letting it survive documentation.",
+      "visible_object_refs": [
+        "edit-trail-hold",
+        "custody-graphic-suspended",
+        "elevator-gate",
+        "bench-edge",
+        "crisis-feed"
+      ],
+      "visibility_notes": [
+        "Actor sees only camera-mediated and room-visible action described in the packet."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "gesture",
+      "movement",
+      "set_condition",
+      "show_object",
+      "wait"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "lucent-media",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Lucent Media turns attention into sovereignty and metabolizes politics into content."
+      },
+      {
+        "ref_id": "reality-architects",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Reality Architects tune social persuasion through format, feed conditions, and emotional contouring."
+      },
+      {
+        "ref_id": "station-shape",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+        "text": "The Lucent station is staged as a media-eye counterweight gazing down the tether toward a metropolis bubble."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "ghostlight.responder_output.v0.parsed_output",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Output JSON only.",
+      "Use only visible packet context.",
+      "Keep actor intent separate from listener interpretation."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "other participants private state",
+      "future branch continuation",
+      "coordinator review rationale"
+    ],
+    "forbidden_inference_classes": [
+      "omniscient motive read",
+      "future outcome read",
+      "raw character-state variable read"
+    ],
+    "known_absences": [
+      "No repository access",
+      "No conversation history",
+      "No hidden scene notes"
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: lucent-hostage-feed-v0.turn-20.mara-quell.packet\nResponder agent id: mara_quell\nScene: Lucent Hostage Feed v0, media-headquarters eye counterweight transfer atrium.\n\nLocal context:\nYou are Mara Quell, Lucent crisis negotiator and former intimacy-format host. Juno has reached the safe line. Your job now is to keep the post-release state from becoming a breach spectacle or corporate victory package, assign Sol a nonviolent handling category, and preserve the evidence export requirement. You know Lucent feed systems reward emotional shape more reliably than truth. You can use format against itself, but because you are a Lucent-trained performer, sincere care will always look a little engineered. You are warm with scalpel edges, precise, and willing to be dry if it lowers temperature.\n\nVisible setting:\nThe station is a giant media-headquarters eye staring down a tether at a city sealed in a clear metropolis bubble. The event is in the transfer atrium near the elevator gate. Lower-third: RELEASE CROSSING CONFIRMED / HOSTAGE ON SAFE LINE / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. Juno stands on the safe line with hands visible. Sol stands visible, empty-handed, non-advancing, one shoulder toward the bench. EDIT TRAIL HOLD and SOURCE PROCESS NOTE remain pinned. CUSTODY GRAPHIC remains suspended. Feed ops has categorized Sol as NON-ADVANCING PARTY: SECURITY HANDOFF PENDING. Brant and Pippa remain hard-muted side panels. Security waits behind service collars and drone apertures.\n\nVisible participants:\nJuno is released and stationary on the safe line. Sol is visible, empty-handed, non-advancing, and pending security handoff. Feed ops holds the evidence export lock. Security is held. Brant and Pippa are muted.\n\nObserved event:\nFeed ops confirms safe-line crossing. It says: \"Safe-line crossing confirmed. No one advances. No one celebrates. Security remains behind the collars. Evidence export stays locked until external receipt is verified. Sol remains visible, empty-handed, and not cleared for contact. We are not improving the moment. We are letting it survive documentation.\"\n\nCurrent scene state after reviewed mutation:\n- Juno is no longer treated as active hostage and is holding position on the marked safe line with hands visible.\n- Sol is visible, empty-handed, non-advancing, and pending security handoff rather than breach classification.\n- Security hold remains active; no advance is authorized from service collars or drone apertures.\n- Evidence export remains locked and preserved pending external receipt verification.\n- The feed remains live with EDIT TRAIL HOLD and SOURCE PROCESS NOTE visible.\n- The story can resolve if Sol is assigned a stable nonviolent next handling category and evidence export external receipt is named as the unresolved consequence.\n\nAllowed action labels: speak, gesture, movement, set_condition, show_object, wait\n\nSource constraints:\n- Lucent governs by deciding what counts as visible, desirable, scandalous, shameful, aspirational, and memorable.\n- Lucent crisis coverage is not neutral; narrative framing changes incentives in real time.\n- Tone is dark comedy with real danger: your line can be dry, but Juno's safety matters.\n- Do not make Sol, Juno, feed ops, or security omniscient; read them only from visible behavior and speech.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Packet was sent to a one-turn no-fork subagent with no inherited context in the post-compaction restart segment."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

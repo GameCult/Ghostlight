@@ -137,12 +137,20 @@ The Lucent bundle includes:
 - clean readable transcript under `experiments/lucent-hostage-feed-v0/`
 - fixture materializer at `scripts/materialize_lucent_loop.py`
 
-Only the six post-restart turns from `turn-06` through `turn-11` are counted as
-training-clean responder receipts. The earlier exploratory opening turns are
+Only the fifteen post-restart turns from `turn-06` through `turn-20` are counted
+as training-clean responder receipts. The earlier exploratory opening turns are
 setup/rehearsal context. The loop demonstrates state carryover: feed evidence
 externalization creates breathing room, breathing room creates a bench-edge
-substitution, the substitution enables a process-note admission, and the
-admission enables direct hostage leverage to end.
+substitution, the substitution enables a process-note admission, the admission
+enables direct hostage leverage to end, and release folds into safe-line
+confirmation plus non-contact protective handoff.
+
+The current coordinator lesson is explicit: nudge through game-ergonomic state
+levers rather than forcing plot. Safe lines, evidence locks, security holds,
+handling categories, posture constraints, route access, clocks, public proof
+objects, and resource pressure are the elastic strings. Actors pull against
+those strings from local state; the coordinator records observed action and
+folds consequences through reviewed mutation.
 
 ## Pruned Receipts
 

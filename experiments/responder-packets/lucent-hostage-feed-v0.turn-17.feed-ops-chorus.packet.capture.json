@@ -1,0 +1,79 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-17.feed-ops-chorus.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-17.feed-ops-chorus.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-17.coordinator.json",
+  "responder_agent_id": "feed_ops_chorus",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-17.feed-ops-chorus.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"feed_ops_chorus\",\"action_label\":\"set_condition\",\"visible_action\":\"The lower-third tightens to a plain safety crawl: RELEASE CROSSING IN PROGRESS / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. The SOURCE PROCESS NOTE enlarges by one step and the audio bed drops to untreated atrium sound only. Brant and Pippa remain dimmed with hard-mute icons. A small caption flashes over the gate marker: SAFE LINE CONFIRMATION PENDING.\",\"spoken_text\":\"Feed ops confirms no music package, no victory sting, no breach framing. Subject Juno is moving to the marked line with hands visible. Security remains on hold unless a new visible threat appears. Procurement has been spared one haunting for now.\",\"private_interpretation\":\"Juno is cooperating with the safest possible resolution path and explicitly rejecting narrative garnish. The best operational move is to make the crossing legible, boring, and legally durable before anyone with a dashboard tries to improve it into evidence contamination.\",\"intended_effect\":\"Keep the feed live and evidence-focused, prevent security from treating movement as escalation, confirm Juno's safe-line crossing as the only story beat that matters, and deny celebratory or manipulative production cues.\",\"state_update_candidates\":[\"Feed ops suppresses all music, reaction, and hero-package automation during the crossing.\",\"Security hold remains active because no new visible threat gesture has emerged.\",\"Safe-line confirmation remains pending until Juno visibly reaches the marker without interruption.\",\"Evidence export remains locked and visibly preserved.\",\"Brant and Pippa remain hard-muted side panels while Mara retains primary audio.\"],\"relationship_update_candidates\":[\"Feed ops publicly treats Juno as compliant with safe-release procedure rather than as spectacle material.\",\"Feed ops signals to security that restraint is the authorized operational posture.\",\"Feed ops lightly accepts Juno's procurement warning without converting it into celebration.\"],\"unresolved_hooks\":[\"Whether Juno reaches the marked safe line without interruption.\",\"Whether security obeys the hold once crossing confirmation is available.\",\"Whether sponsor-risk or legal panic attempts to reframe the moment after the crossing resolves.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"feed_ops_chorus\",\"action_label\":\"set_condition\",\"visible_action\":\"The lower-third tightens to a plain safety crawl: RELEASE CROSSING IN PROGRESS / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. The SOURCE PROCESS NOTE enlarges by one step and the audio bed drops to untreated atrium sound only. Brant and Pippa remain dimmed with hard-mute icons. A small caption flashes over the gate marker: SAFE LINE CONFIRMATION PENDING.\",\"spoken_text\":\"Feed ops confirms no music package, no victory sting, no breach framing. Subject Juno is moving to the marked line with hands visible. Security remains on hold unless a new visible threat appears. Procurement has been spared one haunting for now.\",\"private_interpretation\":\"Juno is cooperating with the safest possible resolution path and explicitly rejecting narrative garnish. The best operational move is to make the crossing legible, boring, and legally durable before anyone with a dashboard tries to improve it into evidence contamination.\",\"intended_effect\":\"Keep the feed live and evidence-focused, prevent security from treating movement as escalation, confirm Juno's safe-line crossing as the only story beat that matters, and deny celebratory or manipulative production cues.\",\"state_update_candidates\":[\"Feed ops suppresses all music, reaction, and hero-package automation during the crossing.\",\"Security hold remains active because no new visible threat gesture has emerged.\",\"Safe-line confirmation remains pending until Juno visibly reaches the marker without interruption.\",\"Evidence export remains locked and visibly preserved.\",\"Brant and Pippa remain hard-muted side panels while Mara retains primary audio.\"],\"relationship_update_candidates\":[\"Feed ops publicly treats Juno as compliant with safe-release procedure rather than as spectacle material.\",\"Feed ops signals to security that restraint is the authorized operational posture.\",\"Feed ops lightly accepts Juno's procurement warning without converting it into celebration.\"],\"unresolved_hooks\":[\"Whether Juno reaches the marked safe line without interruption.\",\"Whether security obeys the hold once crossing confirmation is available.\",\"Whether sponsor-risk or legal panic attempts to reframe the moment after the crossing resolves.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "feed_ops_chorus",
+    "action_label": "set_condition",
+    "visible_action": "The lower-third tightens to a plain safety crawl: RELEASE CROSSING IN PROGRESS / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. The SOURCE PROCESS NOTE enlarges by one step and the audio bed drops to untreated atrium sound only. Brant and Pippa remain dimmed with hard-mute icons. A small caption flashes over the gate marker: SAFE LINE CONFIRMATION PENDING.",
+    "spoken_text": "Feed ops confirms no music package, no victory sting, no breach framing. Subject Juno is moving to the marked line with hands visible. Security remains on hold unless a new visible threat appears. Procurement has been spared one haunting for now.",
+    "private_interpretation": "Juno is cooperating with the safest possible resolution path and explicitly rejecting narrative garnish. The best operational move is to make the crossing legible, boring, and legally durable before anyone with a dashboard tries to improve it into evidence contamination.",
+    "intended_effect": "Keep the feed live and evidence-focused, prevent security from treating movement as escalation, confirm Juno's safe-line crossing as the only story beat that matters, and deny celebratory or manipulative production cues.",
+    "state_update_candidates": [
+      "Feed ops suppresses all music, reaction, and hero-package automation during the crossing.",
+      "Security hold remains active because no new visible threat gesture has emerged.",
+      "Safe-line confirmation remains pending until Juno visibly reaches the marker without interruption.",
+      "Evidence export remains locked and visibly preserved.",
+      "Brant and Pippa remain hard-muted side panels while Mara retains primary audio."
+    ],
+    "relationship_update_candidates": [
+      "Feed ops publicly treats Juno as compliant with safe-release procedure rather than as spectacle material.",
+      "Feed ops signals to security that restraint is the authorized operational posture.",
+      "Feed ops lightly accepts Juno's procurement warning without converting it into celebration."
+    ],
+    "unresolved_hooks": [
+      "Whether Juno reaches the marked safe line without interruption.",
+      "Whether security obeys the hold once crossing confirmation is available.",
+      "Whether sponsor-risk or legal panic attempts to reframe the moment after the crossing resolves."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

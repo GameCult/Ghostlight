@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-12.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-12",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-12.juno-ark.packet.capture.json",
+  "actor_agent_id": "juno_ark",
+  "observable_action": "Juno keeps both hands open at chest height, turns her body sideways so the camera can see the gap between her and Sol, and takes one slow step toward the elevator gate safe line without looking away from the feed lens.",
+  "spoken_text": "I am walking to the safe line. Slowly. Nobody harvests this as a breach cue. Nobody upgrades me into a symbol. I am a person leaving a bad room, which I realize is terrible television.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Juno begins a slow, visible move toward the elevator gate safe line.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-12.juno-ark.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Juno remains not directly held; Sol's empty hands and the gap between them stay visible.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-12.juno-ark.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Hostage-release phase can progress if security continues to delay breach.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-12.juno-ark.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

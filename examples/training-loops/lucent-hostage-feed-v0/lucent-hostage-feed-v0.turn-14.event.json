@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-14.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-14",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-14.sol-vant.packet.capture.json",
+  "actor_agent_id": "sol_vant",
+  "observable_action": "Sol turns one shoulder toward the bench without sitting, keeps both empty hands lifted where the camera can see them, and takes a half-step no closer to Juno. His eyes flick from the safe line to the suspended custody graphic and back to Mara.",
+  "spoken_text": "Fine. I can stand here and let the camera hate me in full resolution. But the hold stays live after she crosses. No applause sting, no breach package, no redemptive sponsor bath. The process note stays readable, the custody graphic stays ugly, and nobody cuts to Brant making a grief face like he found it in a gift bag. Juno crosses, security holds, and Lucent keeps showing the machine that made this little public toilet fire.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Sol accepts Mara's empty-hands bench-shoulder posture without approaching Juno.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-14.sol-vant.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Sol adds a condition that EDIT TRAIL HOLD, CUSTODY GRAPHIC, and SOURCE PROCESS NOTE remain visible after Juno crosses the safe line.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-14.sol-vant.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Sol verbally rejects any celebratory, breach, or brand-recovery framing of Juno's movement to safety.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-14.sol-vant.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

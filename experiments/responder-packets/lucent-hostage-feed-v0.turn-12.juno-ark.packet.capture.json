@@ -1,0 +1,78 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-12.juno-ark.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-12.juno-ark.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-12.coordinator.json",
+  "responder_agent_id": "juno_ark",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-12.juno-ark.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"juno_ark\",\"action_label\":\"movement\",\"visible_action\":\"Juno keeps both hands open at chest height, turns her body sideways so the camera can see the gap between her and Sol, and takes one slow step toward the elevator gate safe line without looking away from the feed lens.\",\"spoken_text\":\"I am walking to the safe line. Slowly. Nobody harvests this as a breach cue. Nobody upgrades me into a symbol. I am a person leaving a bad room, which I realize is terrible television.\",\"private_interpretation\":\"Sol has made the release visible, but the geometry is still hungry. Security could read my movement as permission to rush him, and feed ops could turn my clearance into proof that the system worked. I need to make the walk boring, legible, and hard to edit into courage or compliance.\",\"intended_effect\":\"Complete the practical hostage-release step while keeping the edit trail and custody distinction visible, denying security an immediate breach pretext, and refusing a heroic or corporate-safe framing.\",\"state_update_candidates\":[\"Juno begins a slow, visible move toward the elevator gate safe line.\",\"Juno remains not directly held; Sol's empty hands and the gap between them stay visible.\",\"Hostage-release phase can progress if security continues to delay breach.\",\"Juno verbally frames her movement as nonviolent clearance, not authorization for intervention.\"],\"relationship_update_candidates\":[\"Juno treats Sol's visible release as tactically useful without endorsing him.\",\"Juno signals distrust of feed ops and security framing while avoiding direct escalation.\",\"Juno separates her survival needs from Sol's evidence demand in public speech.\"],\"unresolved_hooks\":[\"Whether security respects Juno's slow movement or uses it as a breach opening.\",\"Whether feed ops preserves the edit trail export and names the approval chain again on air.\",\"Whether Mara Quell reframes Juno's walkout as institutional success, victim testimony, or contamination risk.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"juno_ark\",\"action_label\":\"movement\",\"visible_action\":\"Juno keeps both hands open at chest height, turns her body sideways so the camera can see the gap between her and Sol, and takes one slow step toward the elevator gate safe line without looking away from the feed lens.\",\"spoken_text\":\"I am walking to the safe line. Slowly. Nobody harvests this as a breach cue. Nobody upgrades me into a symbol. I am a person leaving a bad room, which I realize is terrible television.\",\"private_interpretation\":\"Sol has made the release visible, but the geometry is still hungry. Security could read my movement as permission to rush him, and feed ops could turn my clearance into proof that the system worked. I need to make the walk boring, legible, and hard to edit into courage or compliance.\",\"intended_effect\":\"Complete the practical hostage-release step while keeping the edit trail and custody distinction visible, denying security an immediate breach pretext, and refusing a heroic or corporate-safe framing.\",\"state_update_candidates\":[\"Juno begins a slow, visible move toward the elevator gate safe line.\",\"Juno remains not directly held; Sol's empty hands and the gap between them stay visible.\",\"Hostage-release phase can progress if security continues to delay breach.\",\"Juno verbally frames her movement as nonviolent clearance, not authorization for intervention.\"],\"relationship_update_candidates\":[\"Juno treats Sol's visible release as tactically useful without endorsing him.\",\"Juno signals distrust of feed ops and security framing while avoiding direct escalation.\",\"Juno separates her survival needs from Sol's evidence demand in public speech.\"],\"unresolved_hooks\":[\"Whether security respects Juno's slow movement or uses it as a breach opening.\",\"Whether feed ops preserves the edit trail export and names the approval chain again on air.\",\"Whether Mara Quell reframes Juno's walkout as institutional success, victim testimony, or contamination risk.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "juno_ark",
+    "action_label": "movement",
+    "visible_action": "Juno keeps both hands open at chest height, turns her body sideways so the camera can see the gap between her and Sol, and takes one slow step toward the elevator gate safe line without looking away from the feed lens.",
+    "spoken_text": "I am walking to the safe line. Slowly. Nobody harvests this as a breach cue. Nobody upgrades me into a symbol. I am a person leaving a bad room, which I realize is terrible television.",
+    "private_interpretation": "Sol has made the release visible, but the geometry is still hungry. Security could read my movement as permission to rush him, and feed ops could turn my clearance into proof that the system worked. I need to make the walk boring, legible, and hard to edit into courage or compliance.",
+    "intended_effect": "Complete the practical hostage-release step while keeping the edit trail and custody distinction visible, denying security an immediate breach pretext, and refusing a heroic or corporate-safe framing.",
+    "state_update_candidates": [
+      "Juno begins a slow, visible move toward the elevator gate safe line.",
+      "Juno remains not directly held; Sol's empty hands and the gap between them stay visible.",
+      "Hostage-release phase can progress if security continues to delay breach.",
+      "Juno verbally frames her movement as nonviolent clearance, not authorization for intervention."
+    ],
+    "relationship_update_candidates": [
+      "Juno treats Sol's visible release as tactically useful without endorsing him.",
+      "Juno signals distrust of feed ops and security framing while avoiding direct escalation.",
+      "Juno separates her survival needs from Sol's evidence demand in public speech."
+    ],
+    "unresolved_hooks": [
+      "Whether security respects Juno's slow movement or uses it as a breach opening.",
+      "Whether feed ops preserves the edit trail export and names the approval chain again on air.",
+      "Whether Mara Quell reframes Juno's walkout as institutional success, victim testimony, or contamination risk."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

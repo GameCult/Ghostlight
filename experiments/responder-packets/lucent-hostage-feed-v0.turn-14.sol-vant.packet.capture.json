@@ -1,0 +1,88 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-14.sol-vant.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-14.sol-vant.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-14.coordinator.json",
+  "responder_agent_id": "sol_vant",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-14.sol-vant.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"sol_vant\",\"action_label\":\"set_condition\",\"visible_action\":\"Sol turns one shoulder toward the bench without sitting, keeps both empty hands lifted where the camera can see them, and takes a half-step no closer to Juno. His eyes flick from the safe line to the suspended custody graphic and back to Mara.\",\"spoken_text\":\"Fine. I can stand here and let the camera hate me in full resolution. But the hold stays live after she crosses. No applause sting, no breach package, no redemptive sponsor bath. The process note stays readable, the custody graphic stays ugly, and nobody cuts to Brant making a grief face like he found it in a gift bag. Juno crosses, security holds, and Lucent keeps showing the machine that made this little public toilet fire.\",\"private_interpretation\":\"Mara's posture offer gives him a way to stop escalating without being flattened into surrender, but every second still feels like Lucent is waiting to fold him into a cleaner ending. He is terrified that once Juno is safe, the evidence will disappear and his whole existence will become a cautionary clip with lighting notes.\",\"intended_effect\":\"Accept the nonviolent posture while preserving evidence leverage and forcing the feed to keep displaying the edit trail, custody framing, and source process note after Juno reaches safety.\",\"state_update_candidates\":[\"Sol accepts Mara's empty-hands bench-shoulder posture without approaching Juno.\",\"Sol adds a condition that EDIT TRAIL HOLD, CUSTODY GRAPHIC, and SOURCE PROCESS NOTE remain visible after Juno crosses the safe line.\",\"Sol verbally rejects any celebratory, breach, or brand-recovery framing of Juno's movement to safety.\",\"Security still has no visible breach cue from Sol if Juno continues crossing safely.\"],\"relationship_update_candidates\":[{\"key\":\"Mara Quell\",\"value\":\"Sol treats Mara's instruction as the only currently usable path that does not erase his evidence frame, while still distrusting the surrounding institution.\"},{\"key\":\"Juno Ark\",\"value\":\"Sol maintains distance and visible empty hands, signaling that he is not trying to reclaim physical leverage over her.\"},{\"key\":\"Lucent feed ops\",\"value\":\"Sol directly pressures feed ops to keep the ugly procedural evidence visible rather than converting the moment into clean crisis content.\"}],\"unresolved_hooks\":[\"Whether feed ops will keep the overlays and source process note live after Juno fully crosses the safe line.\",\"Whether security will honor Mara's hold once Juno is safe.\",\"Whether Lucent will reframe Sol's compliance as surrender, confession, or a monetizable breakdown.\",\"Whether Sol can keep his posture once his only physical leverage is fully gone.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"sol_vant\",\"action_label\":\"set_condition\",\"visible_action\":\"Sol turns one shoulder toward the bench without sitting, keeps both empty hands lifted where the camera can see them, and takes a half-step no closer to Juno. His eyes flick from the safe line to the suspended custody graphic and back to Mara.\",\"spoken_text\":\"Fine. I can stand here and let the camera hate me in full resolution. But the hold stays live after she crosses. No applause sting, no breach package, no redemptive sponsor bath. The process note stays readable, the custody graphic stays ugly, and nobody cuts to Brant making a grief face like he found it in a gift bag. Juno crosses, security holds, and Lucent keeps showing the machine that made this little public toilet fire.\",\"private_interpretation\":\"Mara's posture offer gives him a way to stop escalating without being flattened into surrender, but every second still feels like Lucent is waiting to fold him into a cleaner ending. He is terrified that once Juno is safe, the evidence will disappear and his whole existence will become a cautionary clip with lighting notes.\",\"intended_effect\":\"Accept the nonviolent posture while preserving evidence leverage and forcing the feed to keep displaying the edit trail, custody framing, and source process note after Juno reaches safety.\",\"state_update_candidates\":[\"Sol accepts Mara's empty-hands bench-shoulder posture without approaching Juno.\",\"Sol adds a condition that EDIT TRAIL HOLD, CUSTODY GRAPHIC, and SOURCE PROCESS NOTE remain visible after Juno crosses the safe line.\",\"Sol verbally rejects any celebratory, breach, or brand-recovery framing of Juno's movement to safety.\",\"Security still has no visible breach cue from Sol if Juno continues crossing safely.\"],\"relationship_update_candidates\":[{\"target\":\"Mara Quell\",\"update\":\"Sol treats Mara's instruction as the only currently usable path that does not erase his evidence frame, while still distrusting the surrounding institution.\"},{\"target\":\"Juno Ark\",\"update\":\"Sol maintains distance and visible empty hands, signaling that he is not trying to reclaim physical leverage over her.\"},{\"target\":\"Lucent feed ops\",\"update\":\"Sol directly pressures feed ops to keep the ugly procedural evidence visible rather than converting the moment into clean crisis content.\"}],\"unresolved_hooks\":[\"Whether feed ops will keep the overlays and source process note live after Juno fully crosses the safe line.\",\"Whether security will honor Mara's hold once Juno is safe.\",\"Whether Lucent will reframe Sol's compliance as surrender, confession, or a monetizable breakdown.\",\"Whether Sol can keep his posture once his only physical leverage is fully gone.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "sol_vant",
+    "action_label": "set_condition",
+    "visible_action": "Sol turns one shoulder toward the bench without sitting, keeps both empty hands lifted where the camera can see them, and takes a half-step no closer to Juno. His eyes flick from the safe line to the suspended custody graphic and back to Mara.",
+    "spoken_text": "Fine. I can stand here and let the camera hate me in full resolution. But the hold stays live after she crosses. No applause sting, no breach package, no redemptive sponsor bath. The process note stays readable, the custody graphic stays ugly, and nobody cuts to Brant making a grief face like he found it in a gift bag. Juno crosses, security holds, and Lucent keeps showing the machine that made this little public toilet fire.",
+    "private_interpretation": "Mara's posture offer gives him a way to stop escalating without being flattened into surrender, but every second still feels like Lucent is waiting to fold him into a cleaner ending. He is terrified that once Juno is safe, the evidence will disappear and his whole existence will become a cautionary clip with lighting notes.",
+    "intended_effect": "Accept the nonviolent posture while preserving evidence leverage and forcing the feed to keep displaying the edit trail, custody framing, and source process note after Juno reaches safety.",
+    "state_update_candidates": [
+      "Sol accepts Mara's empty-hands bench-shoulder posture without approaching Juno.",
+      "Sol adds a condition that EDIT TRAIL HOLD, CUSTODY GRAPHIC, and SOURCE PROCESS NOTE remain visible after Juno crosses the safe line.",
+      "Sol verbally rejects any celebratory, breach, or brand-recovery framing of Juno's movement to safety.",
+      "Security still has no visible breach cue from Sol if Juno continues crossing safely."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "Mara Quell",
+        "value": "Sol treats Mara's instruction as the only currently usable path that does not erase his evidence frame, while still distrusting the surrounding institution."
+      },
+      {
+        "key": "Juno Ark",
+        "value": "Sol maintains distance and visible empty hands, signaling that he is not trying to reclaim physical leverage over her."
+      },
+      {
+        "key": "Lucent feed ops",
+        "value": "Sol directly pressures feed ops to keep the ugly procedural evidence visible rather than converting the moment into clean crisis content."
+      }
+    ],
+    "unresolved_hooks": [
+      "Whether feed ops will keep the overlays and source process note live after Juno fully crosses the safe line.",
+      "Whether security will honor Mara's hold once Juno is safe.",
+      "Whether Lucent will reframe Sol's compliance as surrender, confession, or a monetizable breakdown.",
+      "Whether Sol can keep his posture once his only physical leverage is fully gone."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

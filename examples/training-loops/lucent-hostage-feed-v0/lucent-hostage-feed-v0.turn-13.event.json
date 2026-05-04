@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-13.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-13",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-13.mara-quell.packet.capture.json",
+  "actor_agent_id": "mara_quell",
+  "observable_action": "Mara keeps both hands low and open, angling her body toward the camera rather than toward Sol or Juno. She lifts one finger toward the suspended CUSTODY GRAPHIC, then points to the visible EDIT TRAIL HOLD without stepping closer.",
+  "spoken_text": "Juno Ark is walking to the safe line. That is not a breach cue, not a victory graphic, and not a brand recovery beat wearing emergency lighting. Security holds until both her feet cross. Sol Vant keeps empty hands visible, turns one shoulder to the bench, and stays exactly where the camera can hate him honestly. Feed ops, keep EDIT TRAIL HOLD and the source process note live. If anyone needs a cleaner ending, they can go ruin a weather segment.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Juno's walkout is verbally framed as civilian exit rather than breach cue or corporate success.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-13.mara-quell.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Mara instructs security to hold until Juno fully crosses the safe line.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-13.mara-quell.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Mara gives Sol a nonviolent next posture: hands visible, shoulder to bench, remain in camera view.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-13.mara-quell.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

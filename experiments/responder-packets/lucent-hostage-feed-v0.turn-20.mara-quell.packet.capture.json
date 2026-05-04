@@ -1,0 +1,88 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-20.mara-quell.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-20.mara-quell.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-20.coordinator.json",
+  "responder_agent_id": "mara_quell",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-20.mara-quell.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"mara_quell\",\"action_label\":\"speak\",\"visible_action\":\"Mara keeps both hands low and open, standing angled away from the gate so neither Juno nor Sol has to read her as an advance. Her eyes flick once to the lower-third, then back to the space between them.\",\"spoken_text\":\"Confirmed. Juno stays on the safe line. Security stays behind the collars. Sol remains visible, empty-handed, and is now categorized for non-contact protective handoff. Not breach pursuit. Not reunion footage. Not a little redemption parade with better lighting. Evidence export remains locked until external receipt is verified and named on-feed.\",\"private_interpretation\":\"The room wants a shape it can sell: triumph, punishment, confession, embrace. None of those are safe. Sol needs a handling category boring enough that security can obey it without improvising violence, and Juno needs the feed to stop trying to metabolize release into spectacle.\",\"intended_effect\":\"Stabilize the post-release state by making non-contact protective handoff the visible next step, blocking celebratory or punitive escalation, and keeping external evidence receipt as the unresolved consequence the feed must carry.\",\"state_update_candidates\":[\"Sol assigned stable nonviolent handling category: non-contact protective handoff pending external evidence receipt.\",\"Juno remains released and stationary on the marked safe line with hands visible.\",\"Security hold remains active; no collar or drone advance authorized.\",\"Evidence export remains locked until external receipt is verified and identified on-feed.\",\"Feed must continue displaying EDIT TRAIL HOLD and SOURCE PROCESS NOTE through handoff.\"],\"relationship_update_candidates\":[{\"key\":\"Mara Quell and Juno\",\"value\":\"Mara reinforces Juno's release without demanding gratitude, contact, or performance.\"},{\"key\":\"Mara Quell and Sol\",\"value\":\"Mara frames Sol as contained and non-advancing rather than cleared, forgiven, or hunted.\"},{\"key\":\"Mara Quell and feed ops\",\"value\":\"Mara uses feed language to force a dull procedural category over spectacle framing.\"}],\"unresolved_hooks\":[\"External evidence receipt has not yet been verified or named on-feed.\",\"Sol still requires non-contact protective handoff without security advance toward Juno.\",\"Lucent may still attempt to reframe the surviving documentation into a corporate victory package.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"mara_quell\",\"action_label\":\"speak\",\"visible_action\":\"Mara keeps both hands low and open, standing angled away from the gate so neither Juno nor Sol has to read her as an advance. Her eyes flick once to the lower-third, then back to the space between them.\",\"spoken_text\":\"Confirmed. Juno stays on the safe line. Security stays behind the collars. Sol remains visible, empty-handed, and is now categorized for non-contact protective handoff. Not breach pursuit. Not reunion footage. Not a little redemption parade with better lighting. Evidence export remains locked until external receipt is verified and named on-feed.\",\"private_interpretation\":\"The room wants a shape it can sell: triumph, punishment, confession, embrace. None of those are safe. Sol needs a handling category boring enough that security can obey it without improvising violence, and Juno needs the feed to stop trying to metabolize release into spectacle.\",\"intended_effect\":\"Stabilize the post-release state by making non-contact protective handoff the visible next step, blocking celebratory or punitive escalation, and keeping external evidence receipt as the unresolved consequence the feed must carry.\",\"state_update_candidates\":[\"Sol assigned stable nonviolent handling category: non-contact protective handoff pending external evidence receipt.\",\"Juno remains released and stationary on the marked safe line with hands visible.\",\"Security hold remains active; no collar or drone advance authorized.\",\"Evidence export remains locked until external receipt is verified and identified on-feed.\",\"Feed must continue displaying EDIT TRAIL HOLD and SOURCE PROCESS NOTE through handoff.\"],\"relationship_update_candidates\":[{\"between\":\"Mara Quell and Juno\",\"update\":\"Mara reinforces Juno's release without demanding gratitude, contact, or performance.\"},{\"between\":\"Mara Quell and Sol\",\"update\":\"Mara frames Sol as contained and non-advancing rather than cleared, forgiven, or hunted.\"},{\"between\":\"Mara Quell and feed ops\",\"update\":\"Mara uses feed language to force a dull procedural category over spectacle framing.\"}],\"unresolved_hooks\":[\"External evidence receipt has not yet been verified or named on-feed.\",\"Sol still requires non-contact protective handoff without security advance toward Juno.\",\"Lucent may still attempt to reframe the surviving documentation into a corporate victory package.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "mara_quell",
+    "action_label": "speak",
+    "visible_action": "Mara keeps both hands low and open, standing angled away from the gate so neither Juno nor Sol has to read her as an advance. Her eyes flick once to the lower-third, then back to the space between them.",
+    "spoken_text": "Confirmed. Juno stays on the safe line. Security stays behind the collars. Sol remains visible, empty-handed, and is now categorized for non-contact protective handoff. Not breach pursuit. Not reunion footage. Not a little redemption parade with better lighting. Evidence export remains locked until external receipt is verified and named on-feed.",
+    "private_interpretation": "The room wants a shape it can sell: triumph, punishment, confession, embrace. None of those are safe. Sol needs a handling category boring enough that security can obey it without improvising violence, and Juno needs the feed to stop trying to metabolize release into spectacle.",
+    "intended_effect": "Stabilize the post-release state by making non-contact protective handoff the visible next step, blocking celebratory or punitive escalation, and keeping external evidence receipt as the unresolved consequence the feed must carry.",
+    "state_update_candidates": [
+      "Sol assigned stable nonviolent handling category: non-contact protective handoff pending external evidence receipt.",
+      "Juno remains released and stationary on the marked safe line with hands visible.",
+      "Security hold remains active; no collar or drone advance authorized.",
+      "Evidence export remains locked until external receipt is verified and identified on-feed.",
+      "Feed must continue displaying EDIT TRAIL HOLD and SOURCE PROCESS NOTE through handoff."
+    ],
+    "relationship_update_candidates": [
+      {
+        "key": "Mara Quell and Juno",
+        "value": "Mara reinforces Juno's release without demanding gratitude, contact, or performance."
+      },
+      {
+        "key": "Mara Quell and Sol",
+        "value": "Mara frames Sol as contained and non-advancing rather than cleared, forgiven, or hunted."
+      },
+      {
+        "key": "Mara Quell and feed ops",
+        "value": "Mara uses feed language to force a dull procedural category over spectacle framing."
+      }
+    ],
+    "unresolved_hooks": [
+      "External evidence receipt has not yet been verified or named on-feed.",
+      "Sol still requires non-contact protective handoff without security advance toward Juno.",
+      "Lucent may still attempt to reframe the surviving documentation into a corporate victory package."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

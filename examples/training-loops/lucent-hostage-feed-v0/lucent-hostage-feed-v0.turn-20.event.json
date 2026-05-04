@@ -1,0 +1,55 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "lucent-hostage-feed-v0.turn-20.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "lucent-hostage-feed-v0",
+  "turn_id": "turn-20",
+  "source_responder_output_ref": "experiments/responder-packets/lucent-hostage-feed-v0.turn-20.mara-quell.packet.capture.json",
+  "actor_agent_id": "mara_quell",
+  "observable_action": "Mara keeps both hands low and open, standing angled away from the gate so neither Juno nor Sol has to read her as an advance. Her eyes flick once to the lower-third, then back to the space between them.",
+  "spoken_text": "Confirmed. Juno stays on the safe line. Security stays behind the collars. Sol remains visible, empty-handed, and is now categorized for non-contact protective handoff. Not breach pursuit. Not reunion footage. Not a little redemption parade with better lighting. Evidence export remains locked until external receipt is verified and named on-feed.",
+  "visible_object_refs": [
+    "edit-trail-hold",
+    "custody-graphic-suspended",
+    "elevator-gate",
+    "bench-edge",
+    "crisis-feed"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "sol_vant",
+    "juno_ark",
+    "mara_quell",
+    "feed_ops_chorus"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Sol assigned stable nonviolent handling category: non-contact protective handoff pending external evidence receipt.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-20.mara-quell.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Juno remains released and stationary on the marked safe line with hands visible.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-20.mara-quell.packet.capture.json",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Security hold remains active; no collar or drone advance authorized.",
+      "refs": [
+        "experiments/responder-packets/lucent-hostage-feed-v0.turn-20.mara-quell.packet.capture.json",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records camera-mediated visibility for appraisals.",
+    "failure_labels": []
+  }
+}

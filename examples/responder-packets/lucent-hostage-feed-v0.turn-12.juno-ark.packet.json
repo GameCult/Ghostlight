@@ -1,0 +1,116 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "lucent-hostage-feed-v0.turn-12.juno-ark.packet",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-12.coordinator.json",
+  "projected_context_ref": "examples/projected-contexts/lucent-hostage-feed-v0.turn-12.juno-ark.projected-context.json",
+  "responder_agent_id": "juno_ark",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "allowed_scope": [
+      "Packet-local excerpts only"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "You are Juno Ark, a junior Reality Architect and newly released hostage. You know enough about feed control to understand how badly everyone is lying, but your immediate job is to survive the walkout without triggering Sol, security, or feed ops into turning the release into spectacle. You want to get clear without becoming a martyr, confession clip, corporate scapegoat, or inspirational safety module. Your speech under fear is controlled, compressed, and sometimes darkly funny. You must be careful not to sound like management.",
+    "observed_event": {
+      "event_id": "lucent-hostage-feed-v0.turn-12.observed-input",
+      "actor_agent_id": "sol_vant",
+      "observable_action": "Sol's fingers open from the bench edge. He shifts half a step away from you and angles toward the camera instead of the elevator gate. He says: \"There. No hand on Juno. No hero shot. No monster shot. Just the receipt, pinned where your little attention abattoir has to look at it. Automated emotion contour, manual sponsor-risk approval. God, even your confession sounds like it came with a quarterly deck. Keep the rows up. Keep the custody graphic suspended. If security moves, they move on a man with empty hands and a bench edge, not a hostage. I want the edit trail preserved, exported, and named on air again by someone whose job title has not been varnished for insurance.\"",
+      "spoken_text": "There. No hand on Juno. No hero shot. No monster shot. Just the receipt, pinned where your little attention abattoir has to look at it. Automated emotion contour, manual sponsor-risk approval. God, even your confession sounds like it came with a quarterly deck. Keep the rows up. Keep the custody graphic suspended. If security moves, they move on a man with empty hands and a bench edge, not a hostage. I want the edit trail preserved, exported, and named on air again by someone whose job title has not been varnished for insurance.",
+      "visible_object_refs": [
+        "edit-trail-hold",
+        "custody-graphic-suspended",
+        "elevator-gate",
+        "bench-edge",
+        "crisis-feed"
+      ],
+      "visibility_notes": [
+        "Actor sees only camera-mediated and room-visible action described in the packet."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "gesture",
+      "movement",
+      "inspect_object",
+      "show_object",
+      "set_condition",
+      "wait",
+      "withdraw"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "lucent-media",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Lucent Media turns attention into sovereignty and metabolizes politics into content."
+      },
+      {
+        "ref_id": "reality-architects",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+        "text": "Reality Architects tune social persuasion through format, feed conditions, and emotional contouring."
+      },
+      {
+        "ref_id": "station-shape",
+        "source_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+        "text": "The Lucent station is staged as a media-eye counterweight gazing down the tether toward a metropolis bubble."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "ghostlight.responder_output.v0.parsed_output",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Output JSON only.",
+      "Use only visible packet context.",
+      "Keep actor intent separate from listener interpretation."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "other participants private state",
+      "future branch continuation",
+      "coordinator review rationale"
+    ],
+    "forbidden_inference_classes": [
+      "omniscient motive read",
+      "future outcome read",
+      "raw character-state variable read"
+    ],
+    "known_absences": [
+      "No repository access",
+      "No conversation history",
+      "No hidden scene notes"
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: lucent-hostage-feed-v0.turn-12.juno-ark.packet\nResponder agent id: juno_ark\nScene: Lucent Hostage Feed v0, media-headquarters eye counterweight transfer atrium.\n\nLocal context:\nYou are Juno Ark, a junior Reality Architect and newly released hostage. You know enough about feed control to understand how badly everyone is lying, but your immediate job is to survive the walkout without triggering Sol, security, or feed ops into turning the release into spectacle. You want to get clear without becoming a martyr, confession clip, corporate scapegoat, or inspirational safety module. Your speech under fear is controlled, compressed, and sometimes darkly funny. You must be careful not to sound like management.\n\nVisible setting:\nThe media-headquarters counterweight is a giant architectural eye staring down the tether at a city in a clear metropolis bubble. You are in the transfer atrium near the elevator gate on the media-eye side. Every surface watches. The laughing sticker over Sol's arbitration clip remains pinned with timestamp highlighted. EDIT TRAIL HOLD remains visible and intact. CUSTODY GRAPHIC remains suspended while you are not directly held. A SOURCE PROCESS NOTE explains the edit mechanism. The camera shows you, Sol's empty hands, the bench edge, and the elevator gate. Security waits behind service collars and drone apertures, breach delayed while conditions remain nonviolent.\n\nVisible participants:\nSol Vant has released direct physical leverage over you and shifted half a step away, hands visible and empty. Mara Quell is on the official crisis feed. Feed ops has kept the hold visible and given a bounded explanation. Brant Vee and Pippa Lux are dimmed side panels. Security remains delayed while Sol's hands are empty.\n\nObserved event:\nSol's fingers open from the bench edge. He shifts half a step away from you and angles toward the camera instead of the elevator gate. He says: \"There. No hand on Juno. No hero shot. No monster shot. Just the receipt, pinned where your little attention abattoir has to look at it. Automated emotion contour, manual sponsor-risk approval. God, even your confession sounds like it came with a quarterly deck. Keep the rows up. Keep the custody graphic suspended. If security moves, they move on a man with empty hands and a bench edge, not a hostage. I want the edit trail preserved, exported, and named on air again by someone whose job title has not been varnished for insurance.\"\n\nCurrent scene state after reviewed mutation:\n- You are not directly held, but you are still near Sol inside the charged breach geometry.\n- Sol's hands are visible and empty.\n- EDIT TRAIL HOLD remains visible and intact.\n- Feed ops has named automated emotion-contour optimization plus manual sponsor-risk approval.\n- Security may use your clearance as an opening to breach, which could re-endanger you or turn the release into a violent feed product.\n- A slow, legible move to the safe line can complete the hostage-release phase without erasing the evidence conflict.\n\nAllowed action labels: speak, gesture, movement, inspect_object, show_object, set_condition, wait, withdraw\n\nSource constraints:\n- Reality Architects tune conditions under which stories become socially persuasive.\n- Lucent feed systems can distort perceived intent through captions, overlays, latency, and emotional contouring.\n- Tone is dark comedy with real danger: your line can be dry, but your fear and bodily risk are real.\n- You cannot know Sol's private intent; you can only read his visible behavior and speech.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Packet was sent to a one-turn no-fork subagent with no inherited context in the post-compaction restart segment."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

@@ -1027,9 +1027,9 @@ def materialize() -> None:
             "not_training_data_organs": ["branch_compiler", "if_artifact_reviewer", "visual_artifacts"],
             "failure_labels": [],
             "review_notes": [
-                "Six accepted no-fork responder turns were captured in the post-compaction restart segment with exact packet prompts preserved in packet artifacts.",
+                f"{len(TURNS)} accepted no-fork responder turns were captured in the post-compaction restart segment with exact packet prompts preserved in packet artifacts.",
                 "The first five exploratory turns are summarized as setup/rehearsal context and are not counted as training-clean responder receipts in this bundle.",
-                "State carryover is visible: proof-object externalization enables air, air enables bench-edge substitution, bench-edge substitution enables process explanation, and process explanation enables release.",
+                "State carryover is visible: proof-object externalization enables air, air enables bench-edge substitution, bench-edge substitution enables process explanation, process explanation enables release, and release folds into safe-line confirmation plus non-contact protective handoff.",
                 "Bundle remains overall not_training_data because it is a linear scene-loop receipt chain, not a full branch compiler or IF artifact.",
             ],
         },
@@ -1041,8 +1041,8 @@ def materialize() -> None:
         "review_id": f"{LOOP}.review",
         "review_status": "accepted_as_draft",
         "summary": (
-            "Lucent hostage-feed release loop concluded with Juno no longer directly held and Sol shifting leverage "
-            "to preserved edit-trail evidence."
+            "Lucent hostage-feed release loop concluded with Juno on the safe line, security held behind the collars, "
+            "Sol categorized for non-contact protective handoff, and edit-trail evidence preserved as the live aftermath hook."
         ),
         "strengths": [
             "Sequential state carryover materially changed action affordances.",
@@ -1080,10 +1080,11 @@ def materialize() -> None:
             "## Conclusion",
             "",
             (
-                "The hostage phase ends when Sol releases direct leverage over Juno and keeps his empty hands visible. "
-                "The conflict folds into aftermath: whether Lucent preserves the edit trail beyond the live hold, "
-                "whether officials repeat the mechanism without laundering it, and whether security treats a nonviolent "
-                "man with empty hands as a problem to solve or a receipt to bury."
+                "The hostage phase resolves when Juno reaches the marked safe line, security remains behind the collars, "
+                "and Sol is visibly shifted into non-contact protective handoff instead of breach pursuit. "
+                "The conflict folds into aftermath: whether Lucent verifies the external evidence receipt on-feed, "
+                "whether officials repeat the mechanism without laundering it, and whether the system can tolerate "
+                "a documented failure it has not yet learned how to monetize."
             ),
         ]
     )
@@ -1116,9 +1117,11 @@ def materialize() -> None:
         entry["notes"] = (
             "Open-ended Lucent hostage-feed scene-loop draft. The training-clean receipt chain starts after "
             "feed ops externalizes the proof-object into EDIT TRAIL HOLD; earlier exploratory opening turns are "
-            "context/rehearsal and not counted as responder gold. Proven organs have exact post-restart packet prompts, "
-            "no-fork raw responder outputs, event records, appraisals, reviewed mutations, coordinator receipts, and a "
-            "bundle manifest. Overall fixture remains not-training-data until branch/IF acceptance exists."
+            "context/rehearsal and not counted as responder gold. The receipt chain now runs through safe-line "
+            "confirmation and non-contact protective handoff, with evidence export left as the live aftermath hook. "
+            "Proven organs have exact post-restart packet prompts, no-fork raw responder outputs, event records, "
+            "appraisals, reviewed mutations, coordinator receipts, and a bundle manifest. Overall fixture remains "
+            "not-training-data until branch/IF acceptance exists."
         )
         entry["training_usability"] = {
             "overall": "not_training_data",

@@ -1,0 +1,82 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/lucent-hostage-feed-v0.turn-19.coordinator.json",
+  "responder_agent_id": "feed_ops_chorus",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "lucent-hostage-feed-v0.scene-digest",
+      "lucent-hostage-feed-v0.initial-state"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/lucent-hostage-feed-v0.turn-19.feed-ops-chorus.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"feed_ops_chorus\",\"action_label\":\"set_condition\",\"visible_action\":\"The lower-third tightens instead of blooms: RELEASE CROSSING CONFIRMED / HOSTAGE ON SAFE LINE / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. The custody graphic shifts Juno from ACTIVE HOSTAGE to RELEASED SUBJECT: HOLDING POSITION, while Sol remains boxed as NON-ADVANCING PARTY: SECURITY HANDOFF PENDING. EDIT TRAIL HOLD and SOURCE PROCESS NOTE stay pinned, ugly and unmarketable.\",\"spoken_text\":\"Safe-line crossing confirmed. No one advances. No one celebrates. Security remains behind the collars. Evidence export stays locked until external receipt is verified. Sol remains visible, empty-handed, and not cleared for contact. We are not improving the moment. We are letting it survive documentation.\",\"private_interpretation\":\"Juno has given feed ops the cleanest possible end-state and named the danger correctly: the system will try to decorate this into usable triumph unless pinned to procedure. The least bad button is a boring confirmation with every constraint still visible.\",\"intended_effect\":\"Confirm Juno's release crossing without triggering a spectacle, preserve the evidence chain, prevent security from manufacturing a breach, keep Sol contained without disappearing him, and establish a stable post-release state the scene can end on without a false victory package.\",\"state_update_candidates\":[\"Juno safe-line crossing confirmed on visible feed.\",\"Juno no longer treated as active hostage while holding position on marked line with hands visible.\",\"Security hold remains active; no advance authorized from service collars or drone apertures.\",\"Evidence export remains locked and preserved pending external receipt verification.\",\"Feed remains live with EDIT TRAIL HOLD and SOURCE PROCESS NOTE visible.\",\"Sol remains visible, empty-handed, non-advancing, and pending security handoff rather than cleared contact or breach classification.\"],\"relationship_update_candidates\":[\"Feed ops aligns procedurally with Juno's explicit instruction not to escalate or embellish the crossing.\",\"Security is constrained by visible overlay language from turning the release into an intervention spectacle.\",\"Sol is held in a narrow operational category: visible, contained, not erased, not absolved.\",\"Mara remains primary audio authority while Brant and Pippa remain hard-muted side panels.\"],\"unresolved_hooks\":[\"External receipt verification for evidence export has not yet been shown.\",\"Sol's formal next handling category still needs final assignment after the release state stabilizes.\",\"Security may still attempt to reframe delay as tactical necessity if overlays drop.\",\"Post-release narrative packaging remains a risk once immediate hostage safety pressure fades.\"]}",
+  "raw_output_exact": "{\"responder_agent_id\":\"feed_ops_chorus\",\"action_label\":\"set_condition\",\"visible_action\":\"The lower-third tightens instead of blooms: RELEASE CROSSING CONFIRMED / HOSTAGE ON SAFE LINE / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. The custody graphic shifts Juno from ACTIVE HOSTAGE to RELEASED SUBJECT: HOLDING POSITION, while Sol remains boxed as NON-ADVANCING PARTY: SECURITY HANDOFF PENDING. EDIT TRAIL HOLD and SOURCE PROCESS NOTE stay pinned, ugly and unmarketable.\",\"spoken_text\":\"Safe-line crossing confirmed. No one advances. No one celebrates. Security remains behind the collars. Evidence export stays locked until external receipt is verified. Sol remains visible, empty-handed, and not cleared for contact. We are not improving the moment. We are letting it survive documentation.\",\"private_interpretation\":\"Juno has given feed ops the cleanest possible end-state and named the danger correctly: the system will try to decorate this into usable triumph unless pinned to procedure. The least bad button is a boring confirmation with every constraint still visible.\",\"intended_effect\":\"Confirm Juno's release crossing without triggering a spectacle, preserve the evidence chain, prevent security from manufacturing a breach, keep Sol contained without disappearing him, and establish a stable post-release state the scene can end on without a false victory package.\",\"state_update_candidates\":[\"Juno safe-line crossing confirmed on visible feed.\",\"Juno no longer treated as active hostage while holding position on marked line with hands visible.\",\"Security hold remains active; no advance authorized from service collars or drone apertures.\",\"Evidence export remains locked and preserved pending external receipt verification.\",\"Feed remains live with EDIT TRAIL HOLD and SOURCE PROCESS NOTE visible.\",\"Sol remains visible, empty-handed, non-advancing, and pending security handoff rather than cleared contact or breach classification.\"],\"relationship_update_candidates\":[\"Feed ops aligns procedurally with Juno's explicit instruction not to escalate or embellish the crossing.\",\"Security is constrained by visible overlay language from turning the release into an intervention spectacle.\",\"Sol is held in a narrow operational category: visible, contained, not erased, not absolved.\",\"Mara remains primary audio authority while Brant and Pippa remain hard-muted side panels.\"],\"unresolved_hooks\":[\"External receipt verification for evidence export has not yet been shown.\",\"Sol's formal next handling category still needs final assignment after the release state stabilizes.\",\"Security may still attempt to reframe delay as tactical necessity if overlays drop.\",\"Post-release narrative packaging remains a risk once immediate hostage safety pressure fades.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "feed_ops_chorus",
+    "action_label": "set_condition",
+    "visible_action": "The lower-third tightens instead of blooms: RELEASE CROSSING CONFIRMED / HOSTAGE ON SAFE LINE / DO NOT ADVANCE / SECURITY HOLD ACTIVE / EVIDENCE EXPORT LOCKED. The custody graphic shifts Juno from ACTIVE HOSTAGE to RELEASED SUBJECT: HOLDING POSITION, while Sol remains boxed as NON-ADVANCING PARTY: SECURITY HANDOFF PENDING. EDIT TRAIL HOLD and SOURCE PROCESS NOTE stay pinned, ugly and unmarketable.",
+    "spoken_text": "Safe-line crossing confirmed. No one advances. No one celebrates. Security remains behind the collars. Evidence export stays locked until external receipt is verified. Sol remains visible, empty-handed, and not cleared for contact. We are not improving the moment. We are letting it survive documentation.",
+    "private_interpretation": "Juno has given feed ops the cleanest possible end-state and named the danger correctly: the system will try to decorate this into usable triumph unless pinned to procedure. The least bad button is a boring confirmation with every constraint still visible.",
+    "intended_effect": "Confirm Juno's release crossing without triggering a spectacle, preserve the evidence chain, prevent security from manufacturing a breach, keep Sol contained without disappearing him, and establish a stable post-release state the scene can end on without a false victory package.",
+    "state_update_candidates": [
+      "Juno safe-line crossing confirmed on visible feed.",
+      "Juno no longer treated as active hostage while holding position on marked line with hands visible.",
+      "Security hold remains active; no advance authorized from service collars or drone apertures.",
+      "Evidence export remains locked and preserved pending external receipt verification.",
+      "Feed remains live with EDIT TRAIL HOLD and SOURCE PROCESS NOTE visible.",
+      "Sol remains visible, empty-handed, non-advancing, and pending security handoff rather than cleared contact or breach classification."
+    ],
+    "relationship_update_candidates": [
+      "Feed ops aligns procedurally with Juno's explicit instruction not to escalate or embellish the crossing.",
+      "Security is constrained by visible overlay language from turning the release into an intervention spectacle.",
+      "Sol is held in a narrow operational category: visible, contained, not erased, not absolved.",
+      "Mara remains primary audio authority while Brant and Pippa remain hard-muted side panels."
+    ],
+    "unresolved_hooks": [
+      "External receipt verification for evidence export has not yet been shown.",
+      "Sol's formal next handling category still needs final assignment after the release state stabilizes.",
+      "Security may still attempt to reframe delay as tactical necessity if overlays drop.",
+      "Post-release narrative packaging remains a risk once immediate hostage safety pressure fades."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained local to visible packet context; no raw state markers or future branch facts appeared."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed from raw subagent output; relationship update objects were schema-normalized while raw_output_exact preserves the subagent text.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}
