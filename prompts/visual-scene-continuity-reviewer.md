@@ -83,9 +83,9 @@ the visual artifact.
 - Are environment labels translated into visible forms? For example, explain
   what a manifold line, cavity yard, supervisor catwalk, transparent safety
   rail, or anchor rail looks like instead of treating the label as a picture.
-- If the scene is inside a Bloom cavity, does the plan show an engineered
-  rotating habitat shell built from consolidated asteroid rubble/aggregate, TCS
-  substrate, shell plating, ribbed supports, seals, manifolds, and service
+- If the scene is inside a Bloom shell maintenance zone, does the plan show an
+  engineered rotating habitat shell built from consolidated asteroid aggregate,
+  TCS substrate, shell plating, ribbed supports, seals, manifolds, and service
   systems?
 - Does the art plan distinguish wide establishing shots, medium character
   staging, object closeups, and alert/climax frames when the prose focus shifts?
@@ -213,8 +213,8 @@ Each finding must include:
 - Do not accept environment labels as visual descriptions. "Along the manifold
   line" is not enough unless the prompt describes the pipe/cable/panel/valve
   structure and surrounding corridor geometry.
-- For Bloom habitats, require positive engineered-shell description: contained
-  asteroid rubble/debris, aggregate, TCS, shell plating, support ribs, seals,
+- For Bloom habitats, require positive engineered-shell description:
+  consolidated asteroid aggregate, TCS, shell plating, support ribs, seals,
   manifolds, and service systems.
 - Do not accept named characters as visual descriptions. "Lio Vale stands by
   the manifold" is not enough unless the visual plan provides a stable visual

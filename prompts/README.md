@@ -20,6 +20,12 @@ should be authored here first and referenced from artifacts or tools.
 - `visual-scene-continuity-reviewer.md`: reviewer prompt for illustrated IF
   replay, click-through segmentation, imagegen-ready scene prompts, character
   visibility, stance control, and branch/state visual modifiers.
+- `lore-grounding-reviewer.md`: research-enabled reviewer prompt for checking
+  source fit against AetheriaLore, detecting canon drift, and identifying
+  durable story elaborations worth backfilling into the lore vault.
+- `spatial-geometric-cohesion-reviewer.md`: reviewer prompt focused on layout,
+  sightlines, routes, body affordances, object placement, and branch-persistent
+  spatial state.
 
 ## Discipline
 
@@ -39,6 +45,12 @@ should be authored here first and referenced from artifacts or tools.
 - Treat visual review as IF replay review, not clean-run review. Clean-run
   renderings are receipts and debugging mirrors; the visual reviewer judges
   playable Ink plus the visual plan artifact.
+- Treat lore grounding review as source-backed research, not vibe validation.
+  The reviewer should inspect relevant AetheriaLore sources, flag drift, and
+  separate story fixes from narrow lore-vault backfill candidates.
+- Treat spatial review as its own organ. It should build an implied floor plan,
+  check sightlines, routes, reach, body affordances, and branch-persistent
+  spatial state, without diluting itself into general prose review.
 - Treat visual artifacts as entertainment and website collateral for the
   Ghostlight corpus. They can make the corpus more legible and valuable, but
   they are not core training targets for responder, appraiser, mutator, or
