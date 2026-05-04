@@ -1,0 +1,14 @@
+﻿{
+  "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+  "artifact_ref": "E:\\Projects\\Ghostlight\\examples\\ink\\lucent-hostage-feed.negotiator-branch.v1.ink + E:\\Projects\\Ghostlight\\examples\\ink\\lucent-hostage-feed.negotiator-branch.v1.training.json",
+  "overall_status": "accepted_with_minor_revisions",
+  "layout_cohesion_score": 4,
+  "sightline_score": 4,
+  "body_affordance_score": 4,
+  "movement_access_score": 4,
+  "object_system_geometry_score": 4,
+  "branch_spatial_state_score": 4,
+  "required_revisions": [],
+  "post_review_patch": "Meta-coordinator applied the suggested face-saving handoff cleanup: successful handoff now sets safe_line and juno_distance_from_glass and stages Juno crossing the white arc.",
+  "acceptance_notes": ["B-level accepted: every relevant score is at least 4 and there are no major required revisions.", "The safe-line fix works and branch spatial state is strong overall."]
+}

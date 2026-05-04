@@ -148,6 +148,14 @@ Live Lucent surfaces:
 - `scripts/materialize_lucent_loop_continuation.py`
 - `examples/ink/lucent-hostage-feed.branch-and-fold.v0.ink`
 - `examples/ink/lucent-hostage-feed.branch-and-fold.v0.training.json`
+- `examples/ink/lucent-hostage-feed.negotiator-branch.v1.ink`
+- `examples/ink/lucent-hostage-feed.negotiator-branch.v1.training.json`
+- `experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.coordinator-packet.md`
+- `experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json`
+- `experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.weaver-packet.md`
+- `experiments/lucent-hostage-feed-v0/reviews/lucent-hostage-feed.negotiator-branch.v1.narrative-review.final.json`
+- `experiments/lucent-hostage-feed-v0/reviews/lucent-hostage-feed.negotiator-branch.v1.lore-review.final.json`
+- `experiments/lucent-hostage-feed-v0/reviews/lucent-hostage-feed.negotiator-branch.v1.spatial-review.final.json`
 
 The Lucent bundle counts fifteen post-compaction restart turns from
 `turn-06` through `turn-20` as training-clean responder receipts. Earlier
@@ -185,10 +193,20 @@ Codex is the meta-coordinator herding Ghostlight pieces into shape, not the raw
 coordinator organ being trained.
 
 Branch compiler seam correction: `lucent-hostage-feed.branch-and-fold.v0.ink`
-is a first meta-coordinator authored branch-and-fold draft for exploring the
-Lucent state space. The future branch compiler organ is the Interactive Fiction
-Weaver, defined in `prompts/interactive-fiction-weaver.md`; Weaver-authored
-outputs should become the target training shape for playable Ink generation.
+is the first meta-coordinator authored branch-and-fold draft for exploring the
+Lucent state space. The newer `lucent-hostage-feed.negotiator-branch.v1.ink`
+was produced through a sandboxed coordinator packet and a no-fork sandboxed
+Interactive Fiction Weaver. Codex then acted as meta-coordinator and applied
+labeled repairs: Ink syntax, validator-supported action labels, sidecar shape,
+and post-review spatial cleanup. Treat this as draft branch-compiler training
+shape with labeled repairs, not pure Weaver gold.
+
+Lucent v1 reviewer result: narrative, lore, and spatial sandboxed reviewers all
+returned B-level or better after iteration. Visual review was intentionally not
+run because this pass has no visual plan. The lore reviewer identified reusable
+backfill candidates: Lucent crisis feed protocols, junior Reality Architect
+operational roles, Lucent creator debt/arbitration machinery, and media-eye
+tether stations if that station type recurs.
 
 Kappa geometry to preserve: Service Ring Kappa names this specific standardized
 industrial spoke manifold service ring, a bounded local access loop around a
@@ -239,11 +257,11 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-Review the full `lucent-hostage-feed-v0` arc and receipt chain, then decide
-whether to compile a branch/IF derivative, run specialist reviewers, or move to
-the next coverage fixture. Current accepted full-fixture coverage is still
-empty; Pallas and Lucent derivatives are draft scene-loop rows with per-organ
-training readiness, not accepted branch fixtures.
+Choose the next bounded move: backfill the useful Lucent lore gaps into
+AetheriaLore, build a visual/scene-set pass for the Lucent IF, or move to the
+next coverage fixture. Current accepted full-fixture coverage is still empty;
+Pallas and Lucent derivatives are draft rows with per-organ training readiness,
+not accepted broad corpus fixtures.
 
 ## Warnings
 

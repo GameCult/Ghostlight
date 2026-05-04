@@ -1,0 +1,128 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "lucent-hostage-feed-negotiator-branch-v1-training",
+  "ink_ref": "examples/ink/lucent-hostage-feed.negotiator-branch.v1.ink",
+  "source_fixture_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+  "scene_id": "lucent-hostage-feed-negotiator-branch-v1",
+  "protagonist_agent_id": "mara_quell",
+  "npc_agent_ids": ["sol_vant", "juno_ark", "feed_ops_chorus", "pippa_lux", "brant_vee"],
+  "purpose": "Sandboxed coordinator plus sandboxed Interactive Fiction Weaver draft for a negotiator-perspective Lucent hostage-feed branch-and-fold IF artifact. Codex meta-coordinator repaired Ink syntax and sidecar validator shape while preserving the worker branch plan.",
+  "local_awareness_summary": [
+    {
+      "text": "Mara can see and act through official crisis feed controls, moderation rails, routing permissions, and visible camera geometry, but she is not omniscient about private intent.",
+      "source_refs": ["experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.weaver-packet.md", "experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json"]
+    },
+    {
+      "text": "Sol holds Juno in the glass transfer lounge near the elevator gate inside the Lucent media-eye tether station.",
+      "source_refs": ["examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json", "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json"]
+    },
+    {
+      "text": "Lucent feed systems, influencers, audience heat, moderation delay, security pressure, and sponsor-risk framing are active hazards that can distort perceived intent and escalate violence.",
+      "source_refs": ["examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json", "experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json"]
+    },
+    {
+      "text": "The city bubble, media-eye station, elevator spine, and glass lounge geometry orient the reader and apply pressure, but this pass does not include visual plan artifacts.",
+      "source_refs": ["examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json", "experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.weaver-packet.md"]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Mara Quell's negotiator feed position; choices are limited to speech, official feed controls, routing permissions, visible authority signals, and negotiation requests she can plausibly make from there.",
+        "source_refs": ["prompts/interactive-fiction-weaver.md", "experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.weaver-packet.md"]
+      },
+      {
+        "text": "Feed Ops appears as prompts, cuts, delays, overlays, permission changes, and risk labels rather than a single clean villain.",
+        "source_refs": ["examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json", "experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json"]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Mara can influence security visibility and feed routing, but Sol can harm Juno faster than security can cross the lounge; breach is a risk gate, not a guaranteed solution.",
+        "source_refs": ["examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json", "experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json"]
+      },
+      {
+        "text": "Lucent does not want a dead hostage, but it does want an owned narrative; Mara's authority is operationally useful and institutionally constrained.",
+        "source_refs": ["examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json", "experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json"]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The collapsed arbitration proof can be frozen, checksum-supported, compromised by Lucent reframing, or left vulnerable depending on Mara's choices.",
+        "source_refs": ["experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.weaver-packet.md"]
+      },
+      {
+        "text": "Juno's body position relative to Sol, the elevator glass, and the safe line is treated as material custody and safety state.",
+        "source_refs": ["examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json", "experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.weaver-packet.md"]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Choices test feed control, evidence custody, public face-saving, influencer pressure, physical movement, and breach pressure while folding through compact state.",
+        "source_refs": ["experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json", "prompts/interactive-fiction-weaver.md"]
+      },
+      {
+        "text": "Dark comedy arises from Lucent format pressure, brand panic, clout opportunism, and feed etiquette while preserving real hostage stakes.",
+        "source_refs": ["examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json", "prompts/narrative-quality-reviewer.md"]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not solve the scene with a perfect magic sentence, omniscient motive diagnosis, or immediate safe breach.",
+        "source_refs": ["experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json", "prompts/sandboxed-coordinator-turn.md"]
+      },
+      {
+        "text": "Do not let Juno calmly run a full counter-operation while held hostage; any technical action requires a narrow gap and carries risk.",
+        "source_refs": ["experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json", "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json"]
+      },
+      {
+        "text": "Do not let Pippa be reliably therapeutic or Brant's correct outrage become safe.",
+        "source_refs": ["experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json"]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through shared knots. Variables affect later prose, conditional branch results, resolution callbacks, and ending gates.",
+    "choice_layers": ["first_contact", "proof_or_face", "influencer_pressure", "movement_gate", "contained_resolution"],
+    "variables": ["mara_trust", "audience_heat", "evidence_integrity", "sol_stability", "feed_control", "influencer_noise", "hostage_safety", "security_pressure", "recognition_given", "optics_mistrust", "lucent_reframe", "juno_gap", "pippa_spoke", "brant_spoke", "panels_muted", "safe_line", "security_receded", "handoff_attempted", "juno_distance_from_glass"],
+    "ending_gates": ["ending_safe_evidence", "ending_safe_compromised", "ending_breach", "ending_devoured", "ending_truce"]
+  },
+  "branches": [
+    {"branch_id":"branch-01-open-as-witness","ink_path":"first_contact","action_type":"speak","actor_intent":"Recognize Sol as a person and witness before bargaining.","state_basis":["Mara's showbiz empathy and negotiation training are visible in the packet.","Sol wants recognition and proof he exists."],"reviewed_consequences":["Raises mara_trust and recognition_given.","Raises audience_heat because sincerity becomes engagement."],"training_hooks":["recognition_as_deescalation","visibility_as_hazard","trust_heat_tradeoff"]},
+    {"branch_id":"branch-01-custody-demand","ink_path":"first_contact","action_type":"speak","actor_intent":"Assert evidence custody before Lucent can reframe the arbitration proof.","state_basis":["Collapsed arbitration proof is central.","Lucent wants narrative ownership."],"reviewed_consequences":["Raises evidence_integrity and security_pressure.","Lowers sol_stability because custody can sound like another institutional seizure."],"training_hooks":["evidence_custody","institutional_language_risk","security_pressure_escalation"]},
+    {"branch_id":"branch-01-route-side-panels","ink_path":"first_contact","action_type":"use_object","actor_intent":"Reduce influencer interference before first contact.","state_basis":["Pippa and Brant can distort the negotiation.","Mara has official feed controls but not omniscience."],"reviewed_consequences":["Raises feed_control.","Lowers influencer_noise and sol_stability, and sets optics_mistrust."],"training_hooks":["feed_control","suppression_optics","non_speech_negotiation_action"]},
+    {"branch_id":"branch-02-freeze-edit-trail","ink_path":"proof_or_face","action_type":"use_object","actor_intent":"Lock the arbitration proof in official custody.","state_basis":["Evidence can be preserved or reframed.","Feed Ops can distort visibility."],"reviewed_consequences":["Raises evidence_integrity, security_pressure, and feed_control."],"training_hooks":["object_custody","proof_preservation","legal_visibility_pressure"]},
+    {"branch_id":"branch-02-create-gap-for-juno","ink_path":"proof_or_face","action_type":"use_object","actor_intent":"Create a narrow overlay gap for Juno to signal or touch controls.","state_basis":["Juno knows feed controls but is physically vulnerable.","Technical action requires a timing gap and risk."],"reviewed_consequences":["Raises feed_control.","May raise evidence_integrity and mara_trust, or lower hostage_safety and sol_stability if Sol notices."],"training_hooks":["hostage_technical_gap","conditional_risk","character_cognition_guardrail"]},
+    {"branch_id":"branch-02-debt-review-for-movement","ink_path":"proof_or_face","action_type":"speak","actor_intent":"Offer public debt review in exchange for moving Juno away from immediate harm.","state_basis":["Sol wants recognition and debt review.","Mara wants a face-saving exit without rewarding hostage-taking too much."],"reviewed_consequences":["Raises hostage_safety, mara_trust, recognition_given, and juno_distance_from_glass.","Lowers evidence_integrity and sets lucent_reframe."],"training_hooks":["face_saving_bargain","safety_truth_tradeoff","lucent_reframing","spatial_state_carryover"]},
+    {"branch_id":"branch-03-pippa-tight-routing","ink_path":"influencer_pressure","action_type":"wait","actor_intent":"Use Pippa under strict routing to potentially soften audience heat and help Sol feel seen.","state_basis":["Pippa can accidentally humanize Sol or center herself.","feed_control determines routing quality."],"reviewed_consequences":["With sufficient feed_control, lowers audience_heat and raises mara_trust.","Otherwise raises influencer_noise and audience_heat."],"training_hooks":["influencer_ambivalence","routing_quality","empathy_as_unreliable_tool"]},
+    {"branch_id":"branch-03-brant-targets-lucent","ink_path":"influencer_pressure","action_type":"wait","actor_intent":"Redirect Brant's outrage toward Lucent rather than Sol.","state_basis":["Brant can name real injustice while increasing violence risk.","recognition_given changes how Sol receives the attack."],"reviewed_consequences":["Raises audience_heat.","If recognition_given, raises mara_trust; otherwise lowers sol_stability."],"training_hooks":["outrage_redirect","correct_target_unsafe_method","recognition_dependency"]},
+    {"branch_id":"branch-03-hard-mute-panels","ink_path":"influencer_pressure","action_type":"use_object","actor_intent":"Remove influencer volatility and accept suppression optics.","state_basis":["Side feeds are active hazards.","Silence can read as institutional concealment."],"reviewed_consequences":["Raises feed_control and audience_heat.","Lowers influencer_noise and sets panels_muted."],"training_hooks":["suppression_heat_tradeoff","panel_custody","feed_as_public_stage"]},
+    {"branch_id":"branch-04-safe-line-step","ink_path":"movement_gate","action_type":"move","actor_intent":"Convert trust or recognition into measurable physical distance for Juno.","state_basis":["Sol can harm Juno faster than security can cross.","Safe-line geometry matters.","juno_distance_from_glass tracks whether one or two steps are needed from the folded path."],"reviewed_consequences":["If mara_trust or recognition is sufficient, raises hostage_safety, lowers security_pressure, and sets juno_distance_from_glass to the safe-line distance.","Otherwise lowers sol_stability."],"training_hooks":["bodies_not_feelings","movement_gate","trust_to_physical_safety","branch_spatial_state"]},
+    {"branch_id":"branch-04-face-saving-handoff","ink_path":"movement_gate","action_type":"speak","actor_intent":"Offer Sol a public exit ritual that preserves recognition without granting victory.","state_basis":["Face-saving can stabilize Sol if prior recognition exists.","Audience/noise conditions can turn ritual into humiliation.","Successful handoff must physically move Juno to the marked safe line."],"reviewed_consequences":["Under good conditions raises trust, stability, safety, safe_line, and juno_distance_from_glass.","Under high heat/noise lowers stability and raises heat."],"training_hooks":["face_saving_exit","humiliation_risk","conditional_handoff","spatial_release_state"]},
+    {"branch_id":"branch-04-security-recedes","ink_path":"movement_gate","action_type":"use_object","actor_intent":"Lower breach pressure by visibly moving security back.","state_basis":["Security pressure is visible and threatening.","Feed Ops may frame mercy as loss of control."],"reviewed_consequences":["Lowers security_pressure.","Raises sol_stability and mara_trust, and sets lucent_reframe."],"training_hooks":["authority_signal","breach_pressure","institutional_reframe"]}
+  ],
+  "mutation_policy": {
+    "automated": ["Ink variable updates for local playthrough state", "Conditional prose callbacks", "Ending gate selection"],
+    "manual_review_required": ["Durable memory or relationship changes", "Canon promotion of Lucent crisis protocol", "Training-ready promotion for branch compiler or IF reviewer", "Any visual replay plan"]
+  },
+  "audit": {
+    "reviewer": "Codex meta-coordinator after sandboxed coordinator and Weaver run",
+    "review_status": "accepted",
+    "review_notes": [
+      "Sandboxed coordinator selected branch_compiler and supplied the branch plan.",
+      "Sandboxed Weaver emitted the playable structure, prose, variables, and sidecar draft.",
+      "Meta-coordinator repair converted worker action labels to validator-supported action types, moved Ghostlight metadata comments out of choice markers, expanded sidecar list fields, and used triple-equals Ink knots.",
+      "Reviewer iteration added juno_distance_from_glass so the safe-line movement works from every folded path, clarified public versus private feed overlays, added functional handles for Pippa/Brant and Reality Architecture, and added direct callbacks for safe_line, security_receded, and handoff_attempted.",
+      "Post-review cleanup made successful face-saving handoff physically move Juno to the safe line and update matching spatial variables.",
+      "Narrative, lore, and spatial specialist reviewers all returned B-level or better after iteration; visual review is not applicable because no visual plan was requested for this pass."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

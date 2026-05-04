@@ -1,0 +1,19 @@
+﻿{
+  "schema_version": "ghostlight.sandbox_capture_summary.v0",
+  "artifact_id": "lucent-hostage-feed.negotiator-branch.v1.weaver.capture-summary",
+  "source_packet": "experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.weaver-packet.md",
+  "capture_status": "subagent_notification_only_not_exact_file_capture",
+  "training_implication": "not_training_ready_exact_raw_output_missing",
+  "summary": "The sandboxed Interactive Fiction Weaver produced a substantial Ink and sidecar draft, but the exact raw subagent output was not persisted as a dedicated capture file before materialization. The meta-coordinator repaired Ink syntax, validator action labels, and JSON sidecar shape, then later applied reviewer-driven spatial cleanup. The resulting artifacts are useful draft branch-compiler training shape with labeled repairs, not pure Weaver gold.",
+  "materialized_artifacts": [
+    "examples/ink/lucent-hostage-feed.negotiator-branch.v1.ink",
+    "examples/ink/lucent-hostage-feed.negotiator-branch.v1.training.json"
+  ],
+  "labeled_repairs": [
+    "Converted invalid Ink choice-comment syntax into valid ghostlight metadata comments.",
+    "Normalized Ink knot markers and branch flow so the artifact compiles.",
+    "Mapped unsupported action labels to validator-supported action types.",
+    "Converted sidecar fields that were prose strings into schema-compatible arrays or objects.",
+    "Added reviewer-driven spatial staging for the elevator glass rail, safe-line distance, and handoff movement."
+  ]
+}

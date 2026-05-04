@@ -1,273 +1,366 @@
-{
-  "schema_version": "ghostlight.corpus_coverage.v0",
-  "coverage_id": "ghostlight-aetheria-corpus-coverage-v0",
-  "coverage_targets": {
-    "major_powers": 12,
-    "minor_powers": 21,
-    "movements": 23,
-    "pre_elysium_flashpoints": 24,
-    "defunct_absorbed_powers": 5,
-    "practical_first_broad_target": {
-      "minimum": 100,
-      "maximum": 150
-    },
-    "major_power_requirement": "Each major power needs at least one founding-era story and one day-in-the-life story.",
-    "collision_requirement": "Every accepted coverage fixture should involve multiple cultures, factions, movements, institutions, body assumptions, or infrastructure assumptions colliding."
-  },
-  "entries": [
-    {
-      "fixture_id": "pallas-species-strikes-awakened-labor-v0",
-      "status": "draft",
-      "timeline_lane": "historical_grounded",
-      "canon_status": "single_history",
-      "story_type": "flashpoint_story",
-      "era": "Pre-Elysium",
-      "location": "Pallas, AU-controlled Bloom industrial spoke manifold service ring",
-      "flashpoint": "Pallas Species Strikes",
-      "primary_subjects": [
-        "Awakened Labor Front",
-        "Aeronautics Unlimited"
-      ],
-      "secondary_subjects": [
-        "Baseline League",
-        "Cephalopod Syndicate",
-        "BioElevate",
-        "VitaForge",
-        "BioDrone Standard"
-      ],
-      "collision_axes": [
-        "labor",
-        "species_body",
-        "liability",
-        "infrastructure",
-        "personhood",
-        "class",
-        "safety"
-      ],
-      "tonal_modes": [
-        "industrial realism",
-        "humane institutional pressure",
-        "restrained dry wit",
-        "ordinary work texture"
-      ],
-      "training_targets": [
-        "story_shape_reference",
-        "lore_grounding_reference",
-        "branch_and_fold_reference",
-        "visual_planning_reference"
-      ],
-      "artifacts": {
-        "lore_digest": "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
-        "agent_state": "examples/agent-state.pallas-species-strikes.v0.json",
-        "coordinator": "examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json",
-        "ink": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
-        "training_sidecar": "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json",
-        "visual_plan": "examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json",
-        "clean_run": "experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md",
-        "visual_review_receipt": "experiments/pallas-species-strikes/pallas-species-strikes.visual-scene-review.v1.json"
-      },
-      "review": {
-        "schema": "accepted",
-        "narrative": "accepted_as_draft",
-        "lore": "accepted_as_draft",
-        "spatial": "accepted_as_draft",
-        "visual": "accepted_as_draft",
-        "if_artifact": "accepted_as_draft"
-      },
-      "economy_hooks": [
-        "cephalopod_zero_g_maintenance_harness",
-        "biodrone_limiter_interface",
-        "cavity_habitat_seal_assembly",
-        "strike_safe_life_support_bypass_kit",
-        "industrial_spoke_manifold_service_ring"
-      ],
-      "open_lore_gaps": [],
-      "notes": "Reference-only fixture. Pallas is useful as an example of a well-shaped, properly grounded story scaffold and visual/IF presentation target. It was coordinator-authored without exercising the projected-context, sandboxed responder, appraisal, mutation, relationship-update, or true branch-compiler machinery, so it must not be counted as training-ready data for those stages.",
-      "training_usability": {
-        "overall": "reference_only",
-        "story_shape_and_grounding": "reference_only",
-        "lore_grounding_compiler": "not_training_data",
-        "coordinator_story_runtime": "not_training_data",
-        "projector": "not_training_data",
-        "character_responder": "not_training_data",
-        "participant_appraiser": "not_training_data",
-        "state_mutator": "not_training_data",
-        "relationship_perception_updater": "not_training_data",
-        "branch_compiler": "not_training_data",
-        "if_artifact_reviewer": "not_training_data",
-        "narrative_lore_spatial_visual_reviewers": "not_training_data",
-        "technology_item_manifest": "not_training_data"
-      }
-    },
-    {
-      "fixture_id": "pallas-training-loop-v0",
-      "status": "draft",
-      "timeline_lane": "historical_grounded",
-      "canon_status": "single_history",
-      "story_type": "flashpoint_story",
-      "era": "Pre-Elysium",
-      "location": "Pallas, AU-controlled Bloom industrial spoke manifold service ring",
-      "flashpoint": "Pallas Species Strikes",
-      "primary_subjects": [
-        "Awakened Labor Front",
-        "Aeronautics Unlimited"
-      ],
-      "secondary_subjects": [
-        "Baseline League",
-        "Cephalopod Syndicate",
-        "VitaForge BioDrone Standard"
-      ],
-      "collision_axes": [
-        "labor",
-        "species_body",
-        "liability",
-        "infrastructure",
-        "personhood",
-        "class",
-        "safety"
-      ],
-      "tonal_modes": [
-        "industrial realism",
-        "shop-floor pressure",
-        "restrained wit"
-      ],
-      "training_targets": [
-        "projector",
-        "character_responder",
-        "event_resolver",
-        "participant_appraiser",
-        "state_mutator",
-        "relationship_perception_updater",
-        "coordinator_story_runtime"
-      ],
-      "artifacts": {
-        "scene_digest": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.scene-digest.json",
-        "initial_state": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json",
-        "bundle": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.bundle.json",
-        "review": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.review.json",
-        "clean_run": "experiments/pallas-training-loop-v0/pallas-training-loop-v0.clean-run.md"
-      },
-      "review": {
-        "schema": "accepted",
-        "narrative": "accepted_as_draft",
-        "lore": "accepted_as_draft",
-        "spatial": "accepted_as_draft",
-        "visual": "not_run",
-        "if_artifact": "not_run",
-        "receipt_chain": "accepted_as_draft"
-      },
-      "economy_hooks": [
-        "biodrone_limiter_interface",
-        "industrial_spoke_manifold_service_ring",
-        "strike_safe_life_support_bypass_kit"
-      ],
-      "open_lore_gaps": [],
-      "notes": "First training-shaped Pallas derivative. Separate from immutable Pallas reference. Draft scene-loop row, not a full accepted fixture. Proven organs have exact packets, no-fork raw responder outputs, events, appraisals, reviewed mutations, and bundle receipts; overall fixture coverage remains not-training-data until branch/IF acceptance exists.",
-      "training_usability": {
-        "overall": "not_training_data",
-        "projector": "training_ready",
-        "character_responder": "training_ready",
-        "event_resolver": "training_ready",
-        "participant_appraiser": "training_ready",
-        "state_mutator": "training_ready",
-        "relationship_perception_updater": "training_ready",
-        "coordinator_story_runtime": "training_ready",
-        "branch_compiler": "not_training_data",
-        "if_artifact_reviewer": "not_training_data",
-        "visual_artifacts": "not_training_data",
-        "story_shape_and_grounding": "reference_only"
-      }
-    },
-    {
-      "fixture_id": "lucent-hostage-feed-v0",
-      "status": "draft",
-      "timeline_lane": "historical_grounded",
-      "canon_status": "single_history",
-      "story_type": "day_in_the_life_story",
-      "era": "Pre-Elysium",
-      "location": "Lucent tethered counterweight station: media-headquarters eye gazing down at metropolis bubble elevator interface",
-      "flashpoint": "Lucent live hostage-feed negotiation seed",
-      "primary_subjects": [
-        "Lucent Media"
-      ],
-      "secondary_subjects": [
-        "Reality Architects",
-        "Truth Cults",
-        "Chaos Weavers",
-        "Pan-Solar Consortium"
-      ],
-      "collision_axes": [
-        "attention",
-        "performance",
-        "hostage_safety",
-        "media_governance",
-        "class",
-        "reputation",
-        "feed_integrity"
-      ],
-      "tonal_modes": [
-        "dark comedy",
-        "high-stakes farce",
-        "media satire",
-        "human danger under platform absurdity"
-      ],
-      "training_targets": [
-        "projector",
-        "character_responder",
-        "event_resolver",
-        "participant_appraiser",
-        "state_mutator",
-        "relationship_perception_updater",
-        "coordinator_story_runtime",
-        "branch_compiler"
-      ],
-      "artifacts": {
-        "scene_digest": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
-        "initial_state": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
-        "branch_surface": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.branch-surface.json",
-        "staging_sketch": "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md",
-        "bundle": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.bundle.json",
-        "review": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.review.json",
-        "clean_run": "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md",
-        "ink_draft": "examples/ink/lucent-hostage-feed.branch-and-fold.v0.ink",
-        "ink_training_draft": "examples/ink/lucent-hostage-feed.branch-and-fold.v0.training.json"
-      },
-      "review": {
-        "schema": "accepted",
-        "narrative": "accepted_as_draft",
-        "lore": "accepted_as_draft",
-        "spatial": "accepted_as_draft",
-        "visual": "not_run",
-        "if_artifact": "needs_revision",
-        "receipt_chain": "accepted_as_draft"
-      },
-      "economy_hooks": [
-        "buzz_attention_scrip",
-        "clout_reputation_derivative",
-        "crisis_feed_moderation_insurance",
-        "elevator_access_priority_token",
-        "sponsor_risk_throttle"
-      ],
-      "open_lore_gaps": [
-        "Specific Lucent eye-and-city-bubble tethered counterweight station needs AetheriaLore backfill if promoted.",
-        "Lucent crisis negotiation/feed-law protocols need source canon.",
-        "Buzz/Clout emergency privilege and legal shielding mechanics need economy/legal elaboration."
-      ],
-      "notes": "Open-ended Lucent hostage-feed scene-loop draft. The training-clean receipt chain starts after feed ops externalizes the proof-object into EDIT TRAIL HOLD; earlier exploratory opening turns are context/rehearsal and not counted as responder gold. The receipt chain now runs through safe-line confirmation and non-contact protective handoff, with evidence export left as the live aftermath hook. Proven organs have exact post-restart packet prompts, no-fork raw responder outputs, event records, appraisals, reviewed mutations, coordinator receipts, and a bundle manifest. Overall fixture remains not-training-data until branch/IF acceptance exists. A first meta-coordinator-authored branch-and-fold Ink draft now exists for state-space exploration, but it is not Weaver-authored and remains needs_revision branch compiler data.",
-      "training_usability": {
-        "overall": "not_training_data",
-        "story_shape_and_grounding": "reference_only",
-        "projector": "training_ready",
-        "character_responder": "training_ready",
-        "event_resolver": "training_ready",
-        "participant_appraiser": "training_ready",
-        "state_mutator": "training_ready",
-        "relationship_perception_updater": "training_ready",
-        "coordinator_story_runtime": "training_ready",
-        "branch_compiler": "not_training_data",
-        "if_artifact_reviewer": "not_training_data",
-        "visual_artifacts": "not_training_data"
-      }
-    }
-  ]
+﻿{
+    "schema_version":  "ghostlight.corpus_coverage.v0",
+    "coverage_id":  "ghostlight-aetheria-corpus-coverage-v0",
+    "coverage_targets":  {
+                             "major_powers":  12,
+                             "minor_powers":  21,
+                             "movements":  23,
+                             "pre_elysium_flashpoints":  24,
+                             "defunct_absorbed_powers":  5,
+                             "practical_first_broad_target":  {
+                                                                  "minimum":  100,
+                                                                  "maximum":  150
+                                                              },
+                             "major_power_requirement":  "Each major power needs at least one founding-era story and one day-in-the-life story.",
+                             "collision_requirement":  "Every accepted coverage fixture should involve multiple cultures, factions, movements, institutions, body assumptions, or infrastructure assumptions colliding."
+                         },
+    "entries":  [
+                    {
+                        "fixture_id":  "pallas-species-strikes-awakened-labor-v0",
+                        "status":  "draft",
+                        "timeline_lane":  "historical_grounded",
+                        "canon_status":  "single_history",
+                        "story_type":  "flashpoint_story",
+                        "era":  "Pre-Elysium",
+                        "location":  "Pallas, AU-controlled Bloom industrial spoke manifold service ring",
+                        "flashpoint":  "Pallas Species Strikes",
+                        "primary_subjects":  [
+                                                 "Awakened Labor Front",
+                                                 "Aeronautics Unlimited"
+                                             ],
+                        "secondary_subjects":  [
+                                                   "Baseline League",
+                                                   "Cephalopod Syndicate",
+                                                   "BioElevate",
+                                                   "VitaForge",
+                                                   "BioDrone Standard"
+                                               ],
+                        "collision_axes":  [
+                                               "labor",
+                                               "species_body",
+                                               "liability",
+                                               "infrastructure",
+                                               "personhood",
+                                               "class",
+                                               "safety"
+                                           ],
+                        "tonal_modes":  [
+                                            "industrial realism",
+                                            "humane institutional pressure",
+                                            "restrained dry wit",
+                                            "ordinary work texture"
+                                        ],
+                        "training_targets":  [
+                                                 "story_shape_reference",
+                                                 "lore_grounding_reference",
+                                                 "branch_and_fold_reference",
+                                                 "visual_planning_reference"
+                                             ],
+                        "artifacts":  {
+                                          "lore_digest":  "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
+                                          "agent_state":  "examples/agent-state.pallas-species-strikes.v0.json",
+                                          "coordinator":  "examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json",
+                                          "ink":  "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+                                          "training_sidecar":  "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json",
+                                          "visual_plan":  "examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json",
+                                          "clean_run":  "experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md",
+                                          "visual_review_receipt":  "experiments/pallas-species-strikes/pallas-species-strikes.visual-scene-review.v1.json"
+                                      },
+                        "review":  {
+                                       "schema":  "accepted",
+                                       "narrative":  "accepted_as_draft",
+                                       "lore":  "accepted_as_draft",
+                                       "spatial":  "accepted_as_draft",
+                                       "visual":  "accepted_as_draft",
+                                       "if_artifact":  "accepted_as_draft"
+                                   },
+                        "economy_hooks":  [
+                                              "cephalopod_zero_g_maintenance_harness",
+                                              "biodrone_limiter_interface",
+                                              "cavity_habitat_seal_assembly",
+                                              "strike_safe_life_support_bypass_kit",
+                                              "industrial_spoke_manifold_service_ring"
+                                          ],
+                        "open_lore_gaps":  [
+
+                                           ],
+                        "notes":  "Reference-only fixture. Pallas is useful as an example of a well-shaped, properly grounded story scaffold and visual/IF presentation target. It was coordinator-authored without exercising the projected-context, sandboxed responder, appraisal, mutation, relationship-update, or true branch-compiler machinery, so it must not be counted as training-ready data for those stages.",
+                        "training_usability":  {
+                                                   "overall":  "reference_only",
+                                                   "story_shape_and_grounding":  "reference_only",
+                                                   "lore_grounding_compiler":  "not_training_data",
+                                                   "coordinator_story_runtime":  "not_training_data",
+                                                   "projector":  "not_training_data",
+                                                   "character_responder":  "not_training_data",
+                                                   "participant_appraiser":  "not_training_data",
+                                                   "state_mutator":  "not_training_data",
+                                                   "relationship_perception_updater":  "not_training_data",
+                                                   "branch_compiler":  "not_training_data",
+                                                   "if_artifact_reviewer":  "not_training_data",
+                                                   "narrative_lore_spatial_visual_reviewers":  "not_training_data",
+                                                   "technology_item_manifest":  "not_training_data"
+                                               }
+                    },
+                    {
+                        "fixture_id":  "pallas-training-loop-v0",
+                        "status":  "draft",
+                        "timeline_lane":  "historical_grounded",
+                        "canon_status":  "single_history",
+                        "story_type":  "flashpoint_story",
+                        "era":  "Pre-Elysium",
+                        "location":  "Pallas, AU-controlled Bloom industrial spoke manifold service ring",
+                        "flashpoint":  "Pallas Species Strikes",
+                        "primary_subjects":  [
+                                                 "Awakened Labor Front",
+                                                 "Aeronautics Unlimited"
+                                             ],
+                        "secondary_subjects":  [
+                                                   "Baseline League",
+                                                   "Cephalopod Syndicate",
+                                                   "VitaForge BioDrone Standard"
+                                               ],
+                        "collision_axes":  [
+                                               "labor",
+                                               "species_body",
+                                               "liability",
+                                               "infrastructure",
+                                               "personhood",
+                                               "class",
+                                               "safety"
+                                           ],
+                        "tonal_modes":  [
+                                            "industrial realism",
+                                            "shop-floor pressure",
+                                            "restrained wit"
+                                        ],
+                        "training_targets":  [
+                                                 "projector",
+                                                 "character_responder",
+                                                 "event_resolver",
+                                                 "participant_appraiser",
+                                                 "state_mutator",
+                                                 "relationship_perception_updater",
+                                                 "coordinator_story_runtime"
+                                             ],
+                        "artifacts":  {
+                                          "scene_digest":  "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.scene-digest.json",
+                                          "initial_state":  "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json",
+                                          "bundle":  "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.bundle.json",
+                                          "review":  "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.review.json",
+                                          "clean_run":  "experiments/pallas-training-loop-v0/pallas-training-loop-v0.clean-run.md"
+                                      },
+                        "review":  {
+                                       "schema":  "accepted",
+                                       "narrative":  "accepted_as_draft",
+                                       "lore":  "accepted_as_draft",
+                                       "spatial":  "accepted_as_draft",
+                                       "visual":  "not_run",
+                                       "if_artifact":  "not_run",
+                                       "receipt_chain":  "accepted_as_draft"
+                                   },
+                        "economy_hooks":  [
+                                              "biodrone_limiter_interface",
+                                              "industrial_spoke_manifold_service_ring",
+                                              "strike_safe_life_support_bypass_kit"
+                                          ],
+                        "open_lore_gaps":  [
+
+                                           ],
+                        "notes":  "First training-shaped Pallas derivative. Separate from immutable Pallas reference. Draft scene-loop row, not a full accepted fixture. Proven organs have exact packets, no-fork raw responder outputs, events, appraisals, reviewed mutations, and bundle receipts; overall fixture coverage remains not-training-data until branch/IF acceptance exists.",
+                        "training_usability":  {
+                                                   "overall":  "not_training_data",
+                                                   "projector":  "training_ready",
+                                                   "character_responder":  "training_ready",
+                                                   "event_resolver":  "training_ready",
+                                                   "participant_appraiser":  "training_ready",
+                                                   "state_mutator":  "training_ready",
+                                                   "relationship_perception_updater":  "training_ready",
+                                                   "coordinator_story_runtime":  "training_ready",
+                                                   "branch_compiler":  "not_training_data",
+                                                   "if_artifact_reviewer":  "not_training_data",
+                                                   "visual_artifacts":  "not_training_data",
+                                                   "story_shape_and_grounding":  "reference_only"
+                                               }
+                    },
+                    {
+                        "fixture_id":  "lucent-hostage-feed-v0",
+                        "status":  "draft",
+                        "timeline_lane":  "historical_grounded",
+                        "canon_status":  "single_history",
+                        "story_type":  "day_in_the_life_story",
+                        "era":  "Pre-Elysium",
+                        "location":  "Lucent tethered counterweight station: media-headquarters eye gazing down at metropolis bubble elevator interface",
+                        "flashpoint":  "Lucent live hostage-feed negotiation seed",
+                        "primary_subjects":  [
+                                                 "Lucent Media"
+                                             ],
+                        "secondary_subjects":  [
+                                                   "Reality Architects",
+                                                   "Truth Cults",
+                                                   "Chaos Weavers",
+                                                   "Pan-Solar Consortium"
+                                               ],
+                        "collision_axes":  [
+                                               "attention",
+                                               "performance",
+                                               "hostage_safety",
+                                               "media_governance",
+                                               "class",
+                                               "reputation",
+                                               "feed_integrity"
+                                           ],
+                        "tonal_modes":  [
+                                            "dark comedy",
+                                            "high-stakes farce",
+                                            "media satire",
+                                            "human danger under platform absurdity"
+                                        ],
+                        "training_targets":  [
+                                                 "projector",
+                                                 "character_responder",
+                                                 "event_resolver",
+                                                 "participant_appraiser",
+                                                 "state_mutator",
+                                                 "relationship_perception_updater",
+                                                 "coordinator_story_runtime",
+                                                 "branch_compiler"
+                                             ],
+                        "artifacts":  {
+                                          "scene_digest":  "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json",
+                                          "initial_state":  "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json",
+                                          "branch_surface":  "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.branch-surface.json",
+                                          "staging_sketch":  "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md",
+                                          "bundle":  "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.bundle.json",
+                                          "review":  "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.review.json",
+                                          "clean_run":  "experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md",
+                                          "ink_draft":  "examples/ink/lucent-hostage-feed.branch-and-fold.v0.ink",
+                                          "ink_training_draft":  "examples/ink/lucent-hostage-feed.branch-and-fold.v0.training.json"
+                                      },
+                        "review":  {
+                                       "schema":  "accepted",
+                                       "narrative":  "accepted_as_draft",
+                                       "lore":  "accepted_as_draft",
+                                       "spatial":  "accepted_as_draft",
+                                       "visual":  "not_run",
+                                       "if_artifact":  "needs_revision",
+                                       "receipt_chain":  "accepted_as_draft"
+                                   },
+                        "economy_hooks":  [
+                                              "buzz_attention_scrip",
+                                              "clout_reputation_derivative",
+                                              "crisis_feed_moderation_insurance",
+                                              "elevator_access_priority_token",
+                                              "sponsor_risk_throttle"
+                                          ],
+                        "open_lore_gaps":  [
+                                               "Specific Lucent eye-and-city-bubble tethered counterweight station needs AetheriaLore backfill if promoted.",
+                                               "Lucent crisis negotiation/feed-law protocols need source canon.",
+                                               "Buzz/Clout emergency privilege and legal shielding mechanics need economy/legal elaboration."
+                                           ],
+                        "notes":  "Open-ended Lucent hostage-feed scene-loop draft. The training-clean receipt chain starts after feed ops externalizes the proof-object into EDIT TRAIL HOLD; earlier exploratory opening turns are context/rehearsal and not counted as responder gold. The receipt chain now runs through safe-line confirmation and non-contact protective handoff, with evidence export left as the live aftermath hook. Proven organs have exact post-restart packet prompts, no-fork raw responder outputs, event records, appraisals, reviewed mutations, coordinator receipts, and a bundle manifest. Overall fixture remains not-training-data until branch/IF acceptance exists. A first meta-coordinator-authored branch-and-fold Ink draft now exists for state-space exploration, but it is not Weaver-authored and remains needs_revision branch compiler data.",
+                        "training_usability":  {
+                                                   "overall":  "not_training_data",
+                                                   "story_shape_and_grounding":  "reference_only",
+                                                   "projector":  "training_ready",
+                                                   "character_responder":  "training_ready",
+                                                   "event_resolver":  "training_ready",
+                                                   "participant_appraiser":  "training_ready",
+                                                   "state_mutator":  "training_ready",
+                                                   "relationship_perception_updater":  "training_ready",
+                                                   "coordinator_story_runtime":  "training_ready",
+                                                   "branch_compiler":  "not_training_data",
+                                                   "if_artifact_reviewer":  "not_training_data",
+                                                   "visual_artifacts":  "not_training_data"
+                                               }
+                    },
+                    {
+                        "fixture_id":  "lucent-hostage-feed-negotiator-branch-v1",
+                        "status":  "draft",
+                        "timeline_lane":  "historical_grounded",
+                        "canon_status":  "draft",
+                        "story_type":  "day_in_the_life_story",
+                        "era":  "Pre-Elysium, early Existential Collapse preferred if promoted",
+                        "location":  "Lucent media-eye tether station transfer lounge near metropolis-bubble elevator interface",
+                        "flashpoint":  "Lucent live hostage-feed negotiation branch pilot",
+                        "primary_subjects":  [
+                                                 "Lucent Media"
+                                             ],
+                        "secondary_subjects":  [
+                                                   "Reality Architects"
+                                               ],
+                        "collision_axes":  [
+                                               "attention",
+                                               "hostage_safety",
+                                               "media_governance",
+                                               "class",
+                                               "reputation",
+                                               "feed_integrity",
+                                               "security_pressure",
+                                               "influencer_interference"
+                                           ],
+                        "tonal_modes":  [
+                                            "dark comedy",
+                                            "crisis-procedural satire",
+                                            "wit with stakes",
+                                            "platform horror"
+                                        ],
+                        "training_targets":  [
+                                                 "sandboxed_coordinator",
+                                                 "branch_compiler",
+                                                 "if_artifact_reviewer",
+                                                 "narrative_reviewer",
+                                                 "lore_grounding_reviewer",
+                                                 "spatial_reviewer"
+                                             ],
+                        "artifacts":  {
+                                          "coordinator_packet":  "experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.coordinator-packet.md",
+                                          "coordinator_capture":  "experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json",
+                                          "weaver_packet":  "experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.weaver-packet.md",
+                                          "ink":  "examples/ink/lucent-hostage-feed.negotiator-branch.v1.ink",
+                                          "training_sidecar":  "examples/ink/lucent-hostage-feed.negotiator-branch.v1.training.json",
+                                          "narrative_review":  "experiments/lucent-hostage-feed-v0/reviews/lucent-hostage-feed.negotiator-branch.v1.narrative-review.final.json",
+                                          "lore_review":  "experiments/lucent-hostage-feed-v0/reviews/lucent-hostage-feed.negotiator-branch.v1.lore-review.final.json",
+                                          "spatial_review":  "experiments/lucent-hostage-feed-v0/reviews/lucent-hostage-feed.negotiator-branch.v1.spatial-review.final.json",
+                                          "weaver_capture_summary":  "experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.weaver.capture-summary.json"
+                                      },
+                        "review":  {
+                                       "schema":  "accepted",
+                                       "narrative":  "accepted_as_draft",
+                                       "lore":  "accepted_as_draft",
+                                       "spatial":  "accepted_as_draft",
+                                       "visual":  "not_run",
+                                       "if_artifact":  "accepted_as_draft",
+                                       "sandboxed_coordinator":  "accepted_as_draft",
+                                       "sandboxed_weaver":  "accepted_as_draft"
+                                   },
+                        "economy_hooks":  [
+                                              "creator_debt_arbitration_packet",
+                                              "crisis_feed_moderation_insurance",
+                                              "evidence_custody_seal",
+                                              "influencer_side_panel_routing",
+                                              "security_visibility_permission"
+                                          ],
+                        "open_lore_gaps":  [
+                                               "Lucent crisis feed protocols need AetheriaLore backfill if reused.",
+                                               "Junior Reality Architect operational roles need source backfill if reused.",
+                                               "Lucent creator debt arbitration and evidence custody need economy/legal elaboration.",
+                                               "Lucent media-eye tether station should be canonized only if future fixtures reuse the design."
+                                           ],
+                        "notes":  "First sandboxed coordinator plus sandboxed Interactive Fiction Weaver branch pilot. Meta-coordinator repaired Ink syntax, validator action labels, sidecar shape, and post-review spatial cleanup; repairs are labeled. Narrative, lore, and spatial reviewers returned B-level or better. Visual review is not applicable because no visual plan was requested.",
+                        "training_usability":  {
+                                                   "overall":  "not_training_data",
+                                                   "sandboxed_coordinator":  "not_training_data",
+                                                   "branch_compiler":  "not_training_data",
+                                                   "if_artifact_reviewer":  "not_training_data",
+                                                   "narrative_reviewer":  "not_training_data",
+                                                   "lore_grounding_reviewer":  "not_training_data",
+                                                   "spatial_reviewer":  "not_training_data",
+                                                   "visual_artifacts":  "not_training_data",
+                                                   "projector":  "not_training_data",
+                                                   "character_responder":  "not_training_data",
+                                                   "participant_appraiser":  "not_training_data",
+                                                   "state_mutator":  "not_training_data"
+                                               }
+                    }
+                ]
 }

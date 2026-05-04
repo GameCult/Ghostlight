@@ -1,0 +1,16 @@
+﻿{
+  "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+  "artifact_ref": "E:\\Projects\\Ghostlight\\examples\\ink\\lucent-hostage-feed.negotiator-branch.v1.ink and E:\\Projects\\Ghostlight\\examples\\ink\\lucent-hostage-feed.negotiator-branch.v1.training.json",
+  "overall_status": "needs_revision",
+  "layout_cohesion_score": 4,
+  "sightline_score": 4,
+  "body_affordance_score": 4,
+  "movement_access_score": 3,
+  "object_system_geometry_score": 4,
+  "branch_spatial_state_score": 3,
+  "major_findings": [
+    {"severity":"major","location":"movement_gate / branch-04-safe-line-step","problem":"The safe-line branch asks for one visible step while the line is two steps from the elevator glass, causing impossible folded movement on paths without prior movement.","fix_direction":"Track prior movement or revise the safe-line branch to request enough movement from the current position."}
+  ],
+  "required_revisions": ["Fix the safe-line distance/state inconsistency so branch-04-safe-line-step works from every folded path."],
+  "review_labels": ["strong_layout_cohesion", "strong_sightline_control", "strong_body_affordance_staging", "branch_spatial_state_lost", "visual_plan_geometry_gap", "diagram_needed"]
+}

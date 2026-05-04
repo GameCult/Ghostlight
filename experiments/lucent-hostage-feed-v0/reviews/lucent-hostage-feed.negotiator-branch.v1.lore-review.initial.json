@@ -1,0 +1,15 @@
+﻿{
+  "reviewer_id": "ghostlight_lore_grounding_reviewer",
+  "artifact_ref": "E:\\Projects\\Ghostlight\\examples\\ink\\lucent-hostage-feed.negotiator-branch.v1.ink plus E:\\Projects\\Ghostlight\\examples\\ink\\lucent-hostage-feed.negotiator-branch.v1.training.json",
+  "overall_status": "accepted_with_minor_revisions",
+  "source_coverage_score": 4,
+  "canon_fit_score": 4,
+  "grounding_quality_score": 5,
+  "vault_backfill_value_score": 4,
+  "source_gaps": ["Specific eye-and-city-bubble tethered counterweight station is scene-local staging canon, not yet an AetheriaLore infrastructure type.", "Evidence freeze/arbitration packet custody and Lucent crisis negotiation protocol are plausible but not directly sourced as legal or operational canon.", "Fixture should be pinned to early Existential Collapse if mature Lagrange/orbital broadcast power is essential."],
+  "canon_drift_findings": [],
+  "unsupported_claims": ["Exact creator debt/arbitration machinery is more specific than checked Lucent source currently supports."],
+  "vault_backfill_candidates": ["Lucent orbital set-piece habitats and tethered broadcast stations", "Lucent creator contracts and arbitration visibility as extraction", "Junior Reality Architects as format/feed technicians", "Lucent crisis coverage tools as governance"],
+  "training_labels": ["source_grounded", "strong_material_lore", "strong_faction_pressure", "strong_infrastructure_grounding", "vault_backfill_candidate", "lore_gap_discovered", "economy_schema_candidate", "visual_design_backfill_candidate"],
+  "acceptance_notes": ["B-level lore acceptance: every relevant score is >= 4 and no major canon drift was found."]
+}

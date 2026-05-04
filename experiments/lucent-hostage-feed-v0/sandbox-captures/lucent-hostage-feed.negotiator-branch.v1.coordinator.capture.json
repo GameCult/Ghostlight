@@ -1,0 +1,105 @@
+﻿{
+  "coordinator_worker_id": "stage_manager",
+  "decision_id": "lucent-hostage-feed.negotiator-branch.v1.turn-001.coordinator",
+  "selected_next_beat": "Hand the fixture to the branch compiler / Interactive Fiction Weaver to build a branch-and-fold negotiator-perspective Ink draft centered on Mara's concrete feed, evidence, influencer, movement, and breach-pressure levers.",
+  "selected_acting_agent_id": "branch_compiler",
+  "beat_type": "machinery_call",
+  "reader_translation": "The playable pressure is not whether Mara says the perfect magic sentence. It is whether she can keep Sol from converting humiliation into violence while Lucent, influencers, security, and the audience all try to make the hostage scene legible, profitable, or punishable. Branches should test feed control, evidence custody, public face-saving, and physical movement, then fold those choices into later options and endings.",
+  "glue_prose": "The next artifact should open with the station as an eye: the glass transfer lounge, the city sealed below, the optic-nerve elevator, the hostage in arm's reach, and every visible person performing because the room is also a broadcast format. Mara enters through the official feed with no clean lane. If she talks, Lucent trims the silence. If she routes the feeds, the audience notices. If she exposes proof, the proof becomes content. The Weaver should make those levers playable before the scene starts pretending it has a conscience.",
+  "affordance_nudge": {
+    "type": "gate",
+    "description": "Expose Mara's next playable gates as feed routing, influencer containment, evidence custody, security permission, and moving Juno across a safe line before Sol's humiliation clock turns into snap escalation."
+  },
+  "character_cognition_checks": [
+    {
+      "agent_id": "mara_quell",
+      "allowed_cognitive_band": "Smart, format-literate crisis negotiator with showbiz empathy and tactical feed awareness, but not omniscient about Sol's private intent or Lucent's hidden automation.",
+      "risk_of_overclocking": "medium",
+      "constraint": "Let Mara infer from visible behavior, public state, feed artifacts, and negotiation training. Do not let her perfectly diagnose every motive or predict every engine move."
+    },
+    {
+      "agent_id": "sol_vant",
+      "allowed_cognitive_band": "Brittle, dangerous, socially aware failed creator performing intelligence under humiliation and fear. He can spot obvious manipulation and feed disrespect, but he is unstable and not a master strategist.",
+      "risk_of_overclocking": "high",
+      "constraint": "Do not make Sol read the whole system like a philosopher-king. His sharpness should come in aggrieved flashes, especially around humiliation, debt, recognition, and being edited."
+    },
+    {
+      "agent_id": "juno_ark",
+      "allowed_cognitive_band": "Technically competent junior Reality Architect under physical threat. She can compress useful signals and exploit overlays if Mara creates a gap, but fear and proximity to Sol constrain her.",
+      "risk_of_overclocking": "medium",
+      "constraint": "Do not let Juno calmly run a full counter-operation while held hostage. Any technical action needs a timing gap and should risk Sol noticing."
+    },
+    {
+      "agent_id": "pippa_lux",
+      "allowed_cognitive_band": "Empathy influencer fluent in brand-safe intimacy and public soothing, not a trained negotiator.",
+      "risk_of_overclocking": "low",
+      "constraint": "She may accidentally humanize Sol or steal focus. Do not make her reliably therapeutic in a clinical or tactical sense."
+    },
+    {
+      "agent_id": "brant_vee",
+      "allowed_cognitive_band": "Outrage streamer with fast public-target instincts and a gift for slogans, not crisis discipline.",
+      "risk_of_overclocking": "low",
+      "constraint": "He can name a real injustice while increasing violence risk. Do not let his clarity become safe."
+    },
+    {
+      "agent_id": "feed_ops_chorus",
+      "allowed_cognitive_band": "Distributed media-pressure machinery optimizing visibility, sponsor risk, moderation, and narrative ownership.",
+      "risk_of_overclocking": "medium",
+      "constraint": "Represent it as prompts, cuts, delays, overlays, and permission changes rather than a single scheming villain with clean intent."
+    }
+  ],
+  "machinery_plan": [
+    {
+      "machine": "branch_compiler",
+      "purpose": "Create a B-level playable Ink draft and training sidecar using a branch-and-fold structure from the seed state, with meaningful variables affecting later options, text, and endings.",
+      "input_refs": [
+        "fixture_id: lucent-hostage-feed.negotiator-branch.v1",
+        "scene_seed",
+        "public_playable_state_variables",
+        "participant_summaries",
+        "hard_constraints",
+        "desired_arc_shape",
+        "reader_and_tone_target"
+      ],
+      "output_expected": "Interactive Fiction Weaver should emit an Ink draft plus sidecar notes defining variables, choice consequences, fold points, ending gates, and reviewer warnings."
+    }
+  ],
+  "state_reads": [
+    {
+      "ref": "fixture_lane",
+      "value": "draft fixture, negotiator perspective, branch-and-fold Ink with training sidecar"
+    },
+    {
+      "ref": "scene_seed",
+      "value": "Lucent tether station hostage negotiation in glass transfer lounge near elevator gate"
+    },
+    {
+      "ref": "hard_constraints",
+      "value": "Sol can harm Juno faster than security can cross; all participants know they are visible; moderation delay distorts timing; Lucent wants an owned narrative"
+    },
+    {
+      "ref": "desired_arc_shape",
+      "value": "Open with context, provide meaningful Mara branch points, end in contained resolution or failed resolution based on state"
+    }
+  ],
+  "proposed_deltas": [
+    {"delta_type":"branch_plan","id":"opening_context","description":"Begin in Mara's negotiator interface with the media-eye station, glass lounge, city bubble below, Sol holding Juno, influencer side-panels, Feed Ops prompts, and security waiting for narrative permission.","variables_touched":["hostage_safety","sol_stability","security_pressure","feed_control","audience_heat","influencer_noise","mara_trust"],"fold_target":"first_contact"},
+    {"delta_type":"branch_point","id":"first_contact","description":"Mara chooses her opening lane: speak to Sol as a witness, assert procedural evidence custody, or first route/mute the side-panels before addressing him.","options":[{"label":"Open as witness","effect":"Increase mara_trust if Sol hears recognition; risk audience_heat rising if it reads as indulgence."},{"label":"Open with custody demand","effect":"Protect evidence_integrity and signal seriousness; risk sol_stability dropping if Sol hears brand containment."},{"label":"Route the side-panels first","effect":"Improve feed_control and reduce influencer_noise; risk Sol interpreting the delay as Mara managing optics before seeing him."}],"variables_touched":["mara_trust","evidence_integrity","feed_control","influencer_noise","audience_heat","sol_stability"],"fold_target":"proof_or_face"},
+    {"delta_type":"branch_point","id":"proof_or_face","description":"Mara chooses how to handle the collapsed arbitration proof: freeze the edit trail through official custody, ask Juno for a risky technical signal, or offer Sol a public debt-review lane in exchange for moving Juno away from immediate harm.","options":[{"label":"Freeze the edit trail","effect":"Raise evidence_integrity; may increase security_pressure because Lucent treats the proof as contaminated live evidence."},{"label":"Create a gap for Juno","effect":"Can raise evidence_integrity or feed_control if Juno succeeds; lowers hostage_safety and sol_stability if Sol notices."},{"label":"Offer public debt review for movement","effect":"Can raise hostage_safety and mara_trust; may lower evidence_integrity if Lucent reframes the offer as a content-friendly concession."}],"variables_touched":["evidence_integrity","hostage_safety","sol_stability","security_pressure","feed_control","mara_trust"],"fold_target":"influencer_pressure"},
+    {"delta_type":"branch_point","id":"influencer_pressure","description":"The format engines push Pippa and Brant harder as audience heat climbs. Mara must contain, redirect, or weaponize them.","options":[{"label":"Let Pippa speak under tight routing","effect":"May soften audience_heat and help Sol feel seen; increases influencer_noise if Pippa centers herself."},{"label":"Let Brant attack Lucent, not Sol","effect":"May redirect audience_heat toward the corporation and improve mara_trust; risks sol_stability if Brant mocks Sol by accident or design."},{"label":"Hard-mute both panels","effect":"Improves feed_control and reduces influencer_noise; may increase audience_heat and Feed Ops pressure because silence looks like suppression."}],"variables_touched":["influencer_noise","audience_heat","feed_control","mara_trust","sol_stability"],"fold_target":"movement_gate"},
+    {"delta_type":"branch_point","id":"movement_gate","description":"Mara tries to move bodies, not just feelings: get Sol to shift Juno across a marked safe line, put a barrier between them, or move toward the elevator threshold under a face-saving pretext.","options":[{"label":"Ask for a visible safe-line step","effect":"Raises hostage_safety if Sol complies; gives security less excuse to breach if security_pressure is moderate."},{"label":"Offer a face-saving handoff ritual","effect":"Raises mara_trust and sol_stability if prior recognition exists; can become humiliating if audience_heat or influencer_noise is high."},{"label":"Let security visibly recede","effect":"Can raise sol_stability and mara_trust; risks security_pressure later if Feed Ops frames Mara as losing control."}],"variables_touched":["hostage_safety","sol_stability","security_pressure","mara_trust","audience_heat","influencer_noise"],"fold_target":"breach_or_release_clock"},
+    {"delta_type":"fold_point","id":"breach_or_release_clock","description":"Resolve accumulated pressure through a late clock check: if Sol is stable enough and hostage_safety is high enough, release routes open; if security_pressure is high and hostage_safety is low, breach becomes available or forced; if evidence_integrity is low, Lucent-owned narrative endings dominate.","ending_gates":[{"ending":"Juno released safely with evidence preserved","conditions":"hostage_safety high, sol_stability release-leaning, evidence_integrity high, feed_control moderate or high"},{"ending":"Juno released but evidence compromised","conditions":"hostage_safety high, evidence_integrity low or Lucent custody dominates, audience_heat manageable"},{"ending":"Security breach","conditions":"security_pressure high and either hostage_safety low or sol_stability snap-leaning"},{"ending":"Sol contained but narratively devoured","conditions":"hostage_safety medium or high, Sol physically contained, audience_heat punitive, evidence_integrity low or influencer_noise high"},{"ending":"Ambiguous live-feed truce","conditions":"hostage_safety medium, sol_stability performance-leaning but not snapped, evidence_integrity contested, feed_control partial"}],"variables_touched":["hostage_safety","sol_stability","security_pressure","evidence_integrity","feed_control","audience_heat","influencer_noise","mara_trust"],"fold_target":"contained_resolution"},
+    {"delta_type":"sidecar_requirement","id":"training_notes","description":"The sidecar should explain each variable, each branch consequence, why the branch folds, which endings are reachable, and where character cognition must stay constrained.","variables_touched":["hostage_safety","sol_stability","security_pressure","evidence_integrity","feed_control","audience_heat","influencer_noise","mara_trust"],"fold_target":"reviewer"}
+  ],
+  "branching": {
+    "branch_mode": "branch_and_fold",
+    "reason": "The scene needs consequence without a sprawling tree. Mara's choices should alter shared pressure variables, unlock or close later options, and change ending gates, while the main negotiation sequence remains readable and playable."
+  },
+  "unresolved_hooks_carried": [
+    {"hook":"Exact arbitration proof contents","handling":"Do not invent detailed hidden facts. Treat it as an edit trail / debt-enforcement proof object unless the Weaver receives more source."},
+    {"hook":"Lucent moderation mechanics","handling":"Represent through visible delay, prompts, throttles, captions, and custody pressure rather than unexplained omnipotence."},
+    {"hook":"Security breach protocol","handling":"Keep it as a pressure gate controlled by security_pressure and hostage_safety; do not let security cross faster than Sol can harm Juno."},
+    {"hook":"Juno's technical capacity under fear","handling":"Permit small signals or overlay exploitation only when Mara creates a gap, and attach escalation risk."}
+  ],
+  "review_flags": ["character_overclock_risk", "reader_opacity_risk", "state_explosion_risk"]
+}
