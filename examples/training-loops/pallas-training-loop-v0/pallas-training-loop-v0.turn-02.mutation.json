@@ -1,0 +1,76 @@
+{
+  "schema_version": "ghostlight.reviewed_mutation.v0",
+  "mutation_id": "pallas-training-loop-v0.turn-02.mutation",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "pallas-training-loop-v0",
+  "turn_id": "turn-02",
+  "prior_state_refs": [
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json"
+  ],
+  "event_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.event.json",
+  "responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.capture.json",
+  "appraisal_refs": [
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.appraisal.nara_7.json",
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.appraisal.lio_vale.json",
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.appraisal.orrin_dax.json"
+  ],
+  "accepted_deltas": [
+    {
+      "delta_id": "turn-02.accepted.1",
+      "target_ref": "scene.life_support_margin",
+      "delta_type": "resource_delta",
+      "summary": "Immediate injury risk reduced by procedural hold, though delay remains costly.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    },
+    {
+      "delta_id": "turn-02.accepted.2",
+      "target_ref": "scene.baseline_solidarity",
+      "delta_type": "world_fact_update",
+      "summary": "Baseline anchor crew receives a legitimate verification role.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    },
+    {
+      "delta_id": "turn-02.accepted.3",
+      "target_ref": "relationship.ilya_to_nara",
+      "delta_type": "perceived_overlay_update",
+      "summary": "Ilya frames Nara as useful technical input while avoiding recognition language.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    }
+  ],
+  "rejected_deltas": [
+    {
+      "delta_id": "turn-02.rejected.omniscient-intent",
+      "target_ref": "participant.private_state",
+      "delta_type": "blocked_hidden_state_write",
+      "summary": "Do not write actor private_interpretation into other participants as known fact.",
+      "authority": "blocked",
+      "status": "rejected",
+      "rationale": "Listener appraisals must infer from observable action only."
+    }
+  ],
+  "deferred_deltas": [
+    {
+      "delta_id": "turn-02.deferred.branch-compile",
+      "target_ref": "branch.compiler",
+      "delta_type": "branch_compile",
+      "summary": "Do not compile branches until more accepted turns exist.",
+      "authority": "coordinator_review",
+      "status": "deferred",
+      "rationale": "Pilot gate is receipt-chain validation, not IF compilation."
+    }
+  ],
+  "authority_notes": "Manual coordinator review applies deltas from event and appraisal receipts. Future model stages should learn this organ from the receipt shape.",
+  "post_state_summary": "Immediate injury risk reduced by procedural hold, though delay remains costly.; Baseline anchor crew receives a legitimate verification role.; Ilya frames Nara as useful technical input while avoiding recognition language.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Mutation receipt records prior refs, accepted/rejected/deferred deltas, authority, and rationale.",
+    "failure_labels": []
+  }
+}

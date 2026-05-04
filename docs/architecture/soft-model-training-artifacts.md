@@ -90,6 +90,38 @@ responder output. Mark it as coordinator repair or frontier-curated final. Do
 not smuggle repaired prose into the responder corpus as if the sandbox produced
 it. That is how a dataset learns to cheat with a straight face.
 
+## Training-Ready Scene Loop Bundle
+
+A scene loop is the smallest useful sequential training unit before branch
+compilation. It is not enough to have a nice transcript. The bundle needs the
+machine trail that made the transcript possible.
+
+A training-ready scene-loop bundle contains:
+
+- scene-local digest or lore slice
+- initial scene/world state
+- current character state refs for every participant
+- projected local context per acting turn
+- responder packet per acting turn
+- raw responder output capture per acting turn
+- observable event record per accepted action
+- participant appraisal receipt for every affected participant
+- reviewed mutation receipt for character state, memory, relationship,
+  perceived overlays, object state, scene/world state, and unresolved hooks
+- coordinator turn receipt carrying next-beat selection, world-state reads,
+  proposed deltas, glue prose, and review labels
+- review summary naming which organs are training-ready, reference-only, or not
+  training data
+
+Training readiness is per organ. A bundle can be useful for responder,
+appraiser, mutator, relationship/perception updater, and coordinator training
+while still being useless for branch compiler, IF artifact reviewer, or visual
+replay training. Count only the receipts that actually exist.
+
+`pallas-training-loop-v0` is the first pilot of this convention. It rebuilds one
+Pallas threshold beat as a separate derivative and leaves the Pallas reference
+fixture immutable.
+
 ## Soft Organs
 
 These organs should be treated as model-training targets, not permanent

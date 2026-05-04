@@ -1,0 +1,270 @@
+{
+  "schema_version": "ghostlight.coordinator_artifact.v0",
+  "artifact_id": "pallas-training-loop-v0.turn-02.coordinator",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "source_refs": [
+    {
+      "ref_id": "pallas-reference-ink",
+      "path": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+      "purpose": "Immutable quality target and scene source."
+    },
+    {
+      "ref_id": "pallas-lore-digest",
+      "path": "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
+      "purpose": "Grounding facts for the scene-local digest."
+    }
+  ],
+  "input_refs": {
+    "agent_state_ref": "examples/agent-state.pallas-species-strikes.v0.json",
+    "lore_grounding_refs": [
+      "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
+    ],
+    "prior_artifact_refs": [
+      "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json"
+    ],
+    "projected_context_refs": [
+      "examples/projected-contexts/pallas-training-loop-v0.turn-02.ilya-marne.projected-context.json"
+    ]
+  },
+  "scene_context": {
+    "scene_id": "pallas-training-loop-v0.kappa-threshold",
+    "sequence_marker": "turn-02",
+    "location_id": "pallas.service-ring-kappa.primary-segment",
+    "participant_ids": [
+      "lio_vale",
+      "nara_7",
+      "orrin_dax",
+      "teth_inkwise",
+      "ilya_marne"
+    ],
+    "active_object_ids": [
+      "kappa-7-access-port",
+      "seal-air-thermal-board",
+      "operations-glass",
+      "anchor-rail",
+      "lio-scheduler-slate"
+    ],
+    "active_resource_ids": [
+      "life-support-margin",
+      "shift-time",
+      "incident-language"
+    ],
+    "public_facts": [
+      {
+        "text": "Service Ring Kappa is a loop around a central manifold serving seal, air, heat, condensate, and coolant flows.",
+        "refs": [
+          "pallas-training-loop-v0.scene-digest"
+        ]
+      },
+      {
+        "text": "Kappa-7 False-Seam Artery is an access route into dangerous service systems, not a generic hallway.",
+        "refs": [
+          "pallas-training-loop-v0.scene-digest"
+        ]
+      },
+      {
+        "text": "Workers in the primary segment can witness action at the Kappa-7 face; Ilya has camera-mediated visibility from operations glass.",
+        "refs": [
+          "pallas-training-loop-v0.scene-digest"
+        ]
+      }
+    ],
+    "scene_pressure": [
+      {
+        "text": "The board order demands entry while the route carries a remembered hazard.",
+        "refs": [
+          "pallas-training-loop-v0.scene-digest"
+        ]
+      },
+      {
+        "text": "Safety language, labor recognition, and liability language are competing for control of the same incident.",
+        "refs": [
+          "pallas-training-loop-v0.scene-digest"
+        ]
+      }
+    ]
+  },
+  "coordinator_decision": {
+    "decision_id": "pallas-training-loop-v0.turn-02.coordinator.decision",
+    "selected_next_beat": "Ilya reacts to a witnessed engineered-worker refusal before it spreads beyond procedure.",
+    "selected_acting_agent_id": "ilya_marne",
+    "candidate_next_beats": [
+      {
+        "choice_id": "turn-02.selected",
+        "summary": "Ilya reacts to a witnessed engineered-worker refusal before it spreads beyond procedure.",
+        "status": "selected"
+      },
+      {
+        "choice_id": "turn-02.defer-branch-compile",
+        "summary": "Do not compile branches during this first receipt-chain pilot.",
+        "status": "deferred"
+      }
+    ],
+    "rationale": "Selected to exercise state carryover through character-local projection, sandboxed response, event resolution, participant appraisal, and reviewed mutation.",
+    "glue_prose": "The refusal is clean enough to be dangerous. Ilya still owns the supervisor board, but the room now owns the fact that Kappa-7 was challenged in public.",
+    "glue_prose_status": "accepted_as_narration"
+  },
+  "machinery_plan": {
+    "invocations": [
+      {
+        "invocation_id": "turn-02.projector",
+        "organ": "projector",
+        "purpose": "Build local projected context for acting character.",
+        "input_refs": [
+          "examples/agent-state.pallas-species-strikes.v0.json",
+          "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
+        ],
+        "output_refs": [
+          "examples/projected-contexts/pallas-training-loop-v0.turn-02.ilya-marne.projected-context.json"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "turn-02.responder",
+        "organ": "sandboxed_responder",
+        "purpose": "Generate one character-local action from exact packet only.",
+        "input_refs": [
+          "examples/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.json"
+        ],
+        "output_refs": [
+          "experiments/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.capture.json"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "turn-02.event",
+        "organ": "event_resolver",
+        "purpose": "Convert accepted responder action into observable event.",
+        "input_refs": [
+          "experiments/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.capture.json"
+        ],
+        "output_refs": [
+          "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.event.json"
+        ],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "turn-02.appraisal",
+        "organ": "participant_appraiser",
+        "purpose": "Create affected participant-local appraisals from current state.",
+        "input_refs": [
+          "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.event.json"
+        ],
+        "output_refs": [],
+        "status": "accepted_as_draft"
+      },
+      {
+        "invocation_id": "turn-02.mutation",
+        "organ": "state_mutator",
+        "purpose": "Apply only reviewed state deltas.",
+        "input_refs": [
+          "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.event.json"
+        ],
+        "output_refs": [
+          "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.mutation.json"
+        ],
+        "status": "accepted_as_draft"
+      }
+    ]
+  },
+  "sandboxed_responder_handoffs": [
+    {
+      "handoff_id": "turn-02.handoff",
+      "responder_agent_id": "ilya_marne",
+      "projected_context_ref": "examples/projected-contexts/pallas-training-loop-v0.turn-02.ilya-marne.projected-context.json",
+      "visible_input_ref": "examples/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.json",
+      "hidden_context_refs": [
+        "other participants private state",
+        "coordinator future plans",
+        "immutable Pallas reference continuation beyond local scene"
+      ],
+      "isolation_method": "subagent_no_fork",
+      "raw_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.capture.json",
+      "reviewed_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.capture.json",
+      "coordinator_interventions": [
+        {
+          "intervention_type": "none",
+          "description": "Raw subagent output parsed as JSON without repair."
+        }
+      ],
+      "leakage_audit": {
+        "private_state_leak": false,
+        "author_only_leak": false,
+        "future_branch_leak": false,
+        "raw_state_soup": false,
+        "prompt_parroting": false,
+        "body_or_object_omniscience": false,
+        "notes": [
+          "No hidden context markers or raw state variables appeared in the accepted output."
+        ]
+      }
+    }
+  ],
+  "world_state_refs": {
+    "read_refs": [
+      {
+        "ref_id": "initial-scene-state",
+        "ref_type": "world_fact",
+        "path": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json",
+        "visibility": "coordinator_only"
+      },
+      {
+        "ref_id": "turn-02.projected-context",
+        "ref_type": "agent",
+        "path": "examples/projected-contexts/pallas-training-loop-v0.turn-02.ilya-marne.projected-context.json",
+        "visibility": "character_local"
+      }
+    ],
+    "write_candidate_refs": [
+      {
+        "ref_id": "turn-02.event",
+        "ref_type": "event",
+        "path": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.event.json",
+        "visibility": "public"
+      },
+      {
+        "ref_id": "turn-02.mutation",
+        "ref_type": "world_fact",
+        "path": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.mutation.json",
+        "visibility": "coordinator_only"
+      }
+    ]
+  },
+  "proposed_deltas": [
+    {
+      "delta_id": "turn-02.delta.receipt-chain",
+      "delta_type": "world_fact_update",
+      "target_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.mutation.json",
+      "summary": "Use reviewed mutation receipt as source for next turn state.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "This is the explicit carryover tested by the pilot."
+    }
+  ],
+  "branching": {
+    "branch_action": "none",
+    "active_branch_flags": [
+      "training-loop-linear-pilot"
+    ],
+    "event_constraints": []
+  },
+  "unresolved_hooks": [
+    {
+      "hook_id": "turn-02.hook.branch-compiler-deferred",
+      "hook_type": "branch",
+      "summary": "Branch compilation intentionally deferred until receipt chain is proven on a small linear beat.",
+      "owner": "Ghostlight",
+      "status": "deferred"
+    }
+  ],
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Coordinator artifact is training-shaped and paired with exact packet/responder receipts."
+    ],
+    "accepted_for_training": true,
+    "failure_labels": []
+  }
+}

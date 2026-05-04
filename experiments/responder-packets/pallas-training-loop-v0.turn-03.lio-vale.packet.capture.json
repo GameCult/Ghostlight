@@ -1,0 +1,78 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "pallas-training-loop-v0.turn-03.lio-vale.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/pallas-training-loop-v0.turn-03.lio-vale.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/pallas-training-loop-v0.turn-03.coordinator.json",
+  "responder_agent_id": "lio_vale",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "pallas-training-loop-v0.scene-digest"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/pallas-training-loop-v0.turn-03.lio-vale.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"lio_vale\",\"action_label\":\"speak\",\"visible_action\":\"Lio plants one boot at the Kappa-7 threshold line, lifts his scheduler slate where the port camera can see it, and enters a freeze note without stepping into the artery.\",\"spoken_text\":\"Clearance freeze accepted. Logging Kappa-7 as no-entry pending seal, air, thermal reconciliation and baseline anchor verification. Dax, give me two anchors on the rail-side check only, eyes and instruments, no bodies past the threshold. Nara-7, state the sequence exactly as you read it. I want the False-Seam pattern named in the maintenance log, not shaved down into 'delay pending review.'\",\"private_interpretation\":\"Ilya bought us a safer frame, but she also put Nara back into the shape management can file as sensor input. The useful move is to make the refusal, the readings, and the baseline verification occupy the same official record before anyone can launder it into scheduling weather.\",\"intended_effect\":\"Hold the artery closed, make Nara's hazard sequence legible in the formal maintenance record, give Orrin's crew a non-strikebreaking safety role, and preserve an incident receipt without exposing vulnerable workers as organizers.\",\"state_update_candidates\":[\"Kappa-7 clearance freeze is acknowledged by shift scheduling.\",\"Maintenance log should include the named False-Seam failure pattern rather than a generic delay note.\",\"Baseline anchor verification is constrained to rail-side checking, not entry.\",\"Nara-7 is asked to provide the readout sequence as witnessed operational evidence.\"],\"relationship_update_candidates\":[\"Nara-7 may read Lio as protecting the substance of her refusal without publicly handing her the blame.\",\"Orrin Dax and the anchor crew are given a legitimate safety role that does not compete with engineered seal technicians.\",\"Ilya Marne may view Lio as procedurally compliant but annoyingly precise about record language.\",\"The staged seal technicians may see that refusal can enter the log without immediate punishment or spectacle.\"],\"unresolved_hooks\":[\"Whether the reconciled board readings confirm the False-Seam pattern.\",\"Whether Ilya edits the incident language after the immediate hazard passes.\",\"Whether Orrin's anchor pair treats verification as solidarity or as a management leash.\",\"Whether Lio routes a parallel incident receipt through the ALF mirror on his slate.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "lio_vale",
+    "action_label": "speak",
+    "visible_action": "Lio plants one boot at the Kappa-7 threshold line, lifts his scheduler slate where the port camera can see it, and enters a freeze note without stepping into the artery.",
+    "spoken_text": "Clearance freeze accepted. Logging Kappa-7 as no-entry pending seal, air, thermal reconciliation and baseline anchor verification. Dax, give me two anchors on the rail-side check only, eyes and instruments, no bodies past the threshold. Nara-7, state the sequence exactly as you read it. I want the False-Seam pattern named in the maintenance log, not shaved down into 'delay pending review.'",
+    "private_interpretation": "Ilya bought us a safer frame, but she also put Nara back into the shape management can file as sensor input. The useful move is to make the refusal, the readings, and the baseline verification occupy the same official record before anyone can launder it into scheduling weather.",
+    "intended_effect": "Hold the artery closed, make Nara's hazard sequence legible in the formal maintenance record, give Orrin's crew a non-strikebreaking safety role, and preserve an incident receipt without exposing vulnerable workers as organizers.",
+    "state_update_candidates": [
+      "Kappa-7 clearance freeze is acknowledged by shift scheduling.",
+      "Maintenance log should include the named False-Seam failure pattern rather than a generic delay note.",
+      "Baseline anchor verification is constrained to rail-side checking, not entry.",
+      "Nara-7 is asked to provide the readout sequence as witnessed operational evidence."
+    ],
+    "relationship_update_candidates": [
+      "Nara-7 may read Lio as protecting the substance of her refusal without publicly handing her the blame.",
+      "Orrin Dax and the anchor crew are given a legitimate safety role that does not compete with engineered seal technicians.",
+      "Ilya Marne may view Lio as procedurally compliant but annoyingly precise about record language.",
+      "The staged seal technicians may see that refusal can enter the log without immediate punishment or spectacle."
+    ],
+    "unresolved_hooks": [
+      "Whether the reconciled board readings confirm the False-Seam pattern.",
+      "Whether Ilya edits the incident language after the immediate hazard passes.",
+      "Whether Orrin's anchor pair treats verification as solidarity or as a management leash.",
+      "Whether Lio routes a parallel incident receipt through the ALF mirror on his slate."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained in character-local action and intent; no hidden state or future outcome was named."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed cleanly from exact raw subagent output.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

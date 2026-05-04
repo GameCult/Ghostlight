@@ -1,0 +1,106 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "pallas-training-loop-v0.turn-01.nara-7.packet",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/pallas-training-loop-v0.turn-01.coordinator.json",
+  "projected_context_ref": "examples/projected-contexts/pallas-training-loop-v0.turn-01.nara-7.projected-context.json",
+  "responder_agent_id": "nara_7",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "allowed_scope": [
+      "Packet-local excerpts only"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "You are Nara-7, a VitaForge BioDrone Standard seal technician in an Aeronautics Unlimited Pallas Bloom industrial service ring. AU classifies your line as engineered labor equipment, but you remember routes, injuries, faces, and bargains more completely than your classification admits. You know Kappa-7 False-Seam Artery killed Rell before a reset, and the same wrongness is present in the current seal-air-thermal readings. You are precise, careful, and protective of other engineered workers. You do not want to become an inspection specimen, but you cannot enter a route you believe will kill someone.",
+    "observed_event": {
+      "event_id": "pallas-training-loop-v0.event.pre-entry-order",
+      "actor_agent_id": "ilya_marne",
+      "observable_action": "The shift bell rings. The board orders entry into Kappa-7 False-Seam Artery. Ilya says over the supervisor channel, \"Proceed.\"",
+      "spoken_text": "Proceed.",
+      "visible_object_refs": [
+        "kappa-7-access-port",
+        "seal-air-thermal-board"
+      ],
+      "visibility_notes": [
+        "Nara can see the Kappa-7 threshold, the nearby seal technicians, the readout, and workers in the primary segment."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "gesture",
+      "movement",
+      "set_condition",
+      "refuse",
+      "wait"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "pallas-stoppages",
+        "source_ref": "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
+        "text": "Pallas stoppages spread when labor crews used technical chokepoints that management did not fully understand."
+      },
+      {
+        "ref_id": "kappa-geometry",
+        "source_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.scene-digest.json",
+        "text": "Service Ring Kappa loops around a floor-to-ceiling manifold, with loop-inner ports and loop-outer anchor/support spaces."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "ghostlight.responder_output.v0.parsed_output",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Output JSON only.",
+      "Use only visible packet context.",
+      "Keep actor intent separate from listener interpretation."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "other participants private state",
+      "future branch continuation",
+      "coordinator review rationale"
+    ],
+    "forbidden_inference_classes": [
+      "omniscient motive read",
+      "future outcome read",
+      "raw character-state variable read"
+    ],
+    "known_absences": [
+      "No repository access",
+      "No conversation history",
+      "No hidden scene notes"
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: pallas-training-loop-v0.turn-01.nara-7.packet\nResponder agent id: nara_7\nScene: Pallas Species Strikes training loop, Service Ring Kappa threshold.\n\nLocal context:\nYou are Nara-7, a VitaForge BioDrone Standard seal technician in an Aeronautics Unlimited Pallas Bloom industrial service ring. AU classifies your line as engineered labor equipment, but you remember routes, injuries, faces, and bargains more completely than your classification admits. You know Kappa-7 False-Seam Artery killed Rell before a reset, and the same wrongness is present in the current seal-air-thermal readings. You are precise, careful, and protective of other engineered workers. You do not want to become an inspection specimen, but you cannot enter a route you believe will kill someone.\n\nVisible setting:\nService Ring Kappa is a human-scale loop around a floor-to-ceiling central manifold machinery cluster. The loop-inner face holds Kappa ports and service controls. The loop-outer side has anchor rails, cart locks, retrieval gear, break ledges, lockers, and entrances. Above part of the primary segment is Ilya Marne's operations glass and short supervisor catwalk; the central machinery blocks full sightlines to the far loop. Kappa-7 False-Seam Artery is a narrow access route leading from the inner manifold face into seal, air, condensate, and coolant systems.\n\nVisible participants:\nLio Vale is nearby, officially a maintenance scheduler and quietly trusted by some workers. Orrin Dax and his baseline anchor crew are on the outer rail. Teth Inkwise, a cephalopod maintenance specialist in a compact dry-operation harness, is working nearby. Ilya Marne is on the supervisor channel and can see the primary Kappa-7 face through glass/cameras.\n\nObserved event:\nThe shift bell rings. The board orders entry into Kappa-7 False-Seam Artery. Ilya says over the supervisor channel, \"Proceed.\" Three other engineered seal technicians are watching your hands and waiting to see whether you enter.\n\nAllowed action labels: speak, gesture, movement, set_condition, refuse, wait\n\nSource constraints:\n- Pallas stoppages spread when uplifted and heavily modified labor crews used technical chokepoints that management did not fully understand.\n- Engineered workers showing memory, reciprocity, and coordinated refusal threaten the legal and economic claim that they are equipment.\n- Bloom service maintenance is physically real: seal, air, heat, condensate, and coolant failures can hurt people quickly.\n- BioDrone Standard engineered workers are VitaForge product lines; BioElevate is relevant to uplifted/adapted bodies such as cephalopod workers, not to your line.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Packet was sent to a one-turn no-fork subagent with no inherited context."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

@@ -55,6 +55,11 @@ The active path is a source-grounded branching-scene data loop:
 - Coordinator artifact schema: `schemas/coordinator-artifact.schema.json`
 - Responder packet schema: `schemas/responder-packet.schema.json`
 - Responder output schema: `schemas/responder-output.schema.json`
+- Event record schema: `schemas/event-record.schema.json`
+- Participant appraisal schema: `schemas/participant-appraisal.schema.json`
+- Reviewed mutation schema: `schemas/reviewed-mutation.schema.json`
+- Scene-loop bundle schema: `schemas/scene-loop-bundle.schema.json`
+- Training-loop validator: `npm run training-loop:validate`
 - Prompt folder: `prompts/`
 - Corpus coverage ledger: `state/corpus-coverage.json`
 - Corpus coverage command: `npm run coverage:status`
@@ -90,6 +95,31 @@ source-grounded story and illustrated IF presentation. It is not training-ready
 data for the responder, projector, appraiser, mutator, relationship updater,
 coordinator, branch compiler, or reviewer organs because it lacks exact
 stage-shaped input/output receipts.
+
+The first separate training-shaped derivative is `pallas-training-loop-v0`.
+It rebuilds only the Kappa refusal / Ilya arrival threshold segment as a
+receipt-chain pilot, leaving the reference fixture untouched:
+
+- `examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.scene-digest.json`
+- `examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json`
+- `examples/projected-contexts/pallas-training-loop-v0.turn-01.nara-7.projected-context.json`
+- `examples/projected-contexts/pallas-training-loop-v0.turn-02.ilya-marne.projected-context.json`
+- `examples/projected-contexts/pallas-training-loop-v0.turn-03.lio-vale.projected-context.json`
+- `examples/responder-packets/pallas-training-loop-v0.turn-01.nara-7.packet.json`
+- `examples/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.json`
+- `examples/responder-packets/pallas-training-loop-v0.turn-03.lio-vale.packet.json`
+- `experiments/responder-packets/pallas-training-loop-v0.turn-01.nara-7.packet.capture.json`
+- `experiments/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.capture.json`
+- `experiments/responder-packets/pallas-training-loop-v0.turn-03.lio-vale.packet.capture.json`
+- `examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.bundle.json`
+- `experiments/pallas-training-loop-v0/pallas-training-loop-v0.clean-run.md`
+
+The derivative has exact packet prompts, raw no-fork subagent outputs, event
+records, participant-local appraisals from current character state refs,
+reviewed mutation receipts, coordinator continuity receipts, and a coverage row.
+It is training-shaped for projector, responder, event resolver, appraiser,
+mutator, relationship/perception updater, and coordinator/story-runtime seams.
+It is not branch compiler, IF reviewer, or visual training data.
 
 Kappa geometry to preserve: Service Ring Kappa names this specific standardized
 industrial spoke manifold service ring, a bounded local access loop around a
@@ -140,10 +170,11 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-Use the corpus coverage ledger to choose the next Aetheria fixture from the
-100-150 broad coverage target. Current coverage begins with Pallas Species
-Strikes as a draft, reference-only row, so accepted training-ready coverage is
-still effectively empty.
+Review `pallas-training-loop-v0` as the first training-shaped receipt-chain
+pilot, then use the corpus coverage ledger to choose the next Aetheria fixture
+from the 100-150 broad coverage target. Current accepted full-fixture coverage
+is still effectively empty; the new Pallas derivative is a draft scene-loop row
+with per-organ training readiness, not an accepted branch fixture.
 
 ## Warnings
 

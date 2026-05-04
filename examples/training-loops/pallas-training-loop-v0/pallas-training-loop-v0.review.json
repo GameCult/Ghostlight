@@ -1,0 +1,18 @@
+{
+  "schema_version": "ghostlight.scene_loop_review.v0",
+  "review_id": "pallas-training-loop-v0.review",
+  "status": "accepted_as_draft",
+  "summary": "The pilot exercises the actual Ghostlight organs for a three-turn Pallas threshold scene: projection, packet, isolated responder, event, participant appraisal, reviewed mutation, coordinator continuity, and bundle manifest.",
+  "manual_review_gates": {
+    "hidden_state_leakage": "accepted",
+    "character_state_used_in_appraisal": "accepted",
+    "mutated_state_drives_next_turn": "accepted",
+    "dialogue_readability": "accepted_as_draft",
+    "branch_compilation": "not_run",
+    "visual_review": "not_run"
+  },
+  "notes": [
+    "This is the first small training-shaped derivative, not a replacement for the Pallas reference fixture.",
+    "The prose is functional and readable, but still a receipt-chain pilot rather than polished IF."
+  ]
+}

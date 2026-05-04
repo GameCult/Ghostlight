@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/GameCult/Ghostlight/schemas/scene-loop-bundle.schema.json",
+  "title": "Ghostlight Scene Loop Bundle",
+  "description": "Manifest tying one stateful training-loop scene to its projection, packet, raw responder, event, appraisal, mutation, and coordinator receipts.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "bundle_id",
+    "review_status",
+    "training_usability",
+    "reference_fixture_refs",
+    "scene_source",
+    "initial_state_ref",
+    "turns",
+    "review_summary"
+  ],
+  "properties": {
+    "schema_version": { "const": "ghostlight.scene_loop_bundle.v0" },
+    "bundle_id": { "type": "string", "minLength": 1 },
+    "review_status": { "type": "string" },
+    "training_usability": { "type": "object" },
+    "reference_fixture_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "scene_source": { "type": "object" },
+    "initial_state_ref": { "type": "string", "minLength": 1 },
+    "turns": { "type": "array", "minItems": 3 },
+    "review_summary": { "type": "object" }
+  }
+}

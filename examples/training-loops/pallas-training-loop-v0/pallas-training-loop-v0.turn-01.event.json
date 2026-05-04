@@ -1,0 +1,53 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "pallas-training-loop-v0.turn-01.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "pallas-training-loop-v0",
+  "turn_id": "turn-01",
+  "source_responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-01.nara-7.packet.capture.json",
+  "actor_agent_id": "nara_7",
+  "observable_action": "Nara-7 stops at the Kappa-7 threshold, keeps both hands open and visible, and places one palm flat against the route placard instead of entering. Their other hand points to the seal-air-thermal readout, then to the three waiting technicians behind them.",
+  "spoken_text": "I will not enter Kappa-7 on this board state. Seal, air, and thermal are repeating the False-Seam failure pattern. If you need a route cleared, clear the readings first, pull a baseline anchor check, and keep the other seal techs out of the artery until it is verified safe.",
+  "visible_object_refs": [
+    "kappa-7-access-port",
+    "seal-air-thermal-board"
+  ],
+  "visibility_scope": "public_room",
+  "affected_participant_ids": [
+    "lio_vale",
+    "orrin_dax",
+    "teth_inkwise",
+    "ilya_marne",
+    "nara_7"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Kappa-7 entry is visibly refused before bodies move.",
+      "refs": [
+        "responder-output",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "False-Seam hazard is named in worker-facing safety language.",
+      "refs": [
+        "responder-output",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Other seal technicians receive a public cue to hold.",
+      "refs": [
+        "responder-output",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records visibility scope for appraisals.",
+    "failure_labels": []
+  }
+}

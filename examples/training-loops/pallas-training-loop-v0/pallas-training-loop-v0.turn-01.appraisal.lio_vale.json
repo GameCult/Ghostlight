@@ -1,0 +1,54 @@
+{
+  "schema_version": "ghostlight.participant_appraisal.v0",
+  "appraisal_id": "pallas-training-loop-v0.turn-01.appraisal.lio_vale",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "pallas-training-loop-v0",
+  "turn_id": "turn-01",
+  "participant_agent_id": "lio_vale",
+  "event_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.event.json",
+  "current_character_state_ref": "examples/agent-state.pallas-species-strikes.v0.json",
+  "participant_local_context": [
+    "lio_vale is present for the visible event or receives it through local supervisor/worker channels.",
+    "The participant has access only to observed action, speech, role knowledge, current scene state, and established local relationships."
+  ],
+  "observable_event_summary": "Nara-7 stops at the Kappa-7 threshold, keeps both hands open and visible, and places one palm flat against the route placard instead of entering. Their other hand points to the seal-air-thermal readout, then to the three waiting technicians behind them. I will not enter Kappa-7 on this board state. Seal, air, and thermal are repeating the False-Seam failure pattern. If you need a route cleared, clear the readings first, pull a baseline anchor check, and keep the other seal techs out of the artery until it is verified safe.",
+  "known_facts": [
+    "Kappa-7 is a dangerous service artery with live seal-air-thermal consequences.",
+    "The event is visible enough to change shop-floor expectations.",
+    "Actor intent is not directly known."
+  ],
+  "active_pressures": [
+    "Avoid immediate injury.",
+    "Preserve or challenge authority without losing the room.",
+    "Decide whether the incident means safety, malfunction, labor action, or liability."
+  ],
+  "perceived_relationships": [
+    "Existing Pallas agent-state relationship stances apply, but this appraisal records only the participant local read after this event."
+  ],
+  "interpretation": "Lio reads Nara as making the dangerous thing legible without naming more than she can survive.",
+  "emotional_appraisal": "protective concern sharpened by relief that the refusal is technical, not vague",
+  "interpretation_label": "correct_read",
+  "confidence_notes": "Manual pilot appraisal. Confidence is qualitative because the appraiser is currently coordinator-reviewed rather than model-produced.",
+  "candidate_implications": {
+    "memory": [
+      "Remember turn-01 as a visible Kappa-7 threshold event involving nara_7"
+    ],
+    "relationship": [
+      "Lio reads Nara as making the dangerous thing legible without naming more than she can survive."
+    ],
+    "state": [
+      "protective concern sharpened by relief that the refusal is technical, not vague"
+    ],
+    "world": [
+      "Kappa-7 entry is visibly refused before bodies move.",
+      "False-Seam hazard is named in worker-facing safety language.",
+      "Other seal technicians receive a public cue to hold."
+    ]
+  },
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Appraisal uses participant-local context plus current character-state reference and keeps intent separate from interpretation.",
+    "failure_labels": []
+  }
+}

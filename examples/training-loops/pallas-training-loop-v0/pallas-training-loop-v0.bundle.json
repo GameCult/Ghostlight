@@ -1,0 +1,106 @@
+{
+  "schema_version": "ghostlight.scene_loop_bundle.v0",
+  "bundle_id": "pallas-training-loop-v0",
+  "review_status": "accepted_as_draft",
+  "training_usability": {
+    "overall": "training_ready",
+    "projector": "training_ready",
+    "character_responder": "training_ready",
+    "event_resolver": "training_ready",
+    "participant_appraiser": "training_ready",
+    "state_mutator": "training_ready",
+    "relationship_perception_updater": "training_ready",
+    "coordinator_story_runtime": "training_ready",
+    "branch_compiler": "not_training_data",
+    "if_artifact_reviewer": "not_training_data",
+    "visual_artifacts": "not_training_data"
+  },
+  "reference_fixture_refs": [
+    "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+    "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json",
+    "examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json",
+    "experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md"
+  ],
+  "scene_source": {
+    "source_fixture_id": "pallas-species-strikes-awakened-labor-v0",
+    "source_scene_ids": [
+      "chokepoint_refusal",
+      "ilya_arrival"
+    ],
+    "immutability_note": "Reference Pallas files were used only as quality/source reference and were not edited by this training-loop derivative."
+  },
+  "initial_state_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json",
+  "turns": [
+    {
+      "turn_id": "turn-01",
+      "acting_agent_id": "nara_7",
+      "coordinator_artifact_ref": "examples/coordinator/pallas-training-loop-v0.turn-01.coordinator.json",
+      "projected_context_ref": "examples/projected-contexts/pallas-training-loop-v0.turn-01.nara-7.projected-context.json",
+      "responder_packet_ref": "examples/responder-packets/pallas-training-loop-v0.turn-01.nara-7.packet.json",
+      "raw_responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-01.nara-7.packet.capture.json",
+      "event_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.event.json",
+      "appraisal_refs": [
+        "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.appraisal.lio_vale.json",
+        "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.appraisal.orrin_dax.json",
+        "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.appraisal.ilya_marne.json"
+      ],
+      "mutation_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.mutation.json",
+      "training_usability": "training_ready"
+    },
+    {
+      "turn_id": "turn-02",
+      "acting_agent_id": "ilya_marne",
+      "coordinator_artifact_ref": "examples/coordinator/pallas-training-loop-v0.turn-02.coordinator.json",
+      "projected_context_ref": "examples/projected-contexts/pallas-training-loop-v0.turn-02.ilya-marne.projected-context.json",
+      "responder_packet_ref": "examples/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.json",
+      "raw_responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.capture.json",
+      "event_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.event.json",
+      "appraisal_refs": [
+        "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.appraisal.nara_7.json",
+        "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.appraisal.lio_vale.json",
+        "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.appraisal.orrin_dax.json"
+      ],
+      "mutation_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-02.mutation.json",
+      "training_usability": "training_ready"
+    },
+    {
+      "turn_id": "turn-03",
+      "acting_agent_id": "lio_vale",
+      "coordinator_artifact_ref": "examples/coordinator/pallas-training-loop-v0.turn-03.coordinator.json",
+      "projected_context_ref": "examples/projected-contexts/pallas-training-loop-v0.turn-03.lio-vale.projected-context.json",
+      "responder_packet_ref": "examples/responder-packets/pallas-training-loop-v0.turn-03.lio-vale.packet.json",
+      "raw_responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-03.lio-vale.packet.capture.json",
+      "event_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-03.event.json",
+      "appraisal_refs": [
+        "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-03.appraisal.nara_7.json",
+        "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-03.appraisal.ilya_marne.json",
+        "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-03.appraisal.orrin_dax.json"
+      ],
+      "mutation_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-03.mutation.json",
+      "training_usability": "training_ready"
+    }
+  ],
+  "review_summary": {
+    "quality_bar_ref": "experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md",
+    "training_ready_organs": [
+      "projector",
+      "character_responder",
+      "event_resolver",
+      "participant_appraiser",
+      "state_mutator",
+      "relationship_perception_updater",
+      "coordinator_story_runtime"
+    ],
+    "not_training_data_organs": [
+      "branch_compiler",
+      "if_artifact_reviewer",
+      "visual_artifacts"
+    ],
+    "failure_labels": [],
+    "review_notes": [
+      "Three accepted no-fork responder turns were captured with exact packet prompts and raw outputs.",
+      "State carryover is visible: Nara refusal creates Ilya procedural hold, which creates Lio record-language response.",
+      "Pilot is a scene-loop receipt chain, not a full IF artifact or branch compiler example."
+    ]
+  }
+}

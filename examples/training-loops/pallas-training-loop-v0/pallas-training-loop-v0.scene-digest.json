@@ -1,0 +1,50 @@
+{
+  "schema_version": "ghostlight.scene_local_digest.v0",
+  "digest_id": "pallas-training-loop-v0.scene-digest",
+  "source_refs": [
+    "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
+    "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+    "examples/agent-state.pallas-species-strikes.v0.json"
+  ],
+  "reference_only_fixture_refs": [
+    "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+    "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json",
+    "examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json",
+    "experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md"
+  ],
+  "scene_segment": [
+    "chokepoint_refusal",
+    "ilya_arrival"
+  ],
+  "facts": {
+    "location": "Service Ring Kappa, an AU-controlled Pallas Bloom industrial spoke manifold service ring.",
+    "geometry": [
+      "Human-scale loop around central floor-to-ceiling manifold machinery.",
+      "Loop-inner face contains Kappa ports and service controls.",
+      "Loop-outer side contains anchor rails, cart locks, retrieval gear, lockers, break ledges, and entrances.",
+      "Operations glass and a short supervisor catwalk overlook part of the primary segment; central machinery blocks full sightlines to the far loop.",
+      "Kappa-7 False-Seam Artery branches from the loop-inner manifold into seal, air, condensate, and coolant systems."
+    ],
+    "participants": [
+      "lio_vale",
+      "nara_7",
+      "orrin_dax",
+      "teth_inkwise",
+      "ilya_marne"
+    ],
+    "public_objects": [
+      "kappa-7-access-port",
+      "seal-air-thermal-board",
+      "operations-glass",
+      "supervisor-board",
+      "anchor-rail",
+      "lio-scheduler-slate"
+    ],
+    "coordinator_only": [
+      "The immutable reference fixture is a quality bar, not a source to mutate.",
+      "Actor intent is not visible to other participants unless expressed through action or speech."
+    ]
+  },
+  "lore_gaps": [],
+  "notes": "Training-loop slice extracted from the Pallas reference fixture. It is a derivative receipt chain, not an edit to the reference Ink."
+}

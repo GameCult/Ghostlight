@@ -33,6 +33,8 @@ Aetheria lore/source context
   -> responder packet
   -> sandboxed responder output
   -> review and leakage audit
+  -> observable event record
+  -> participant-local appraisal receipts
   -> mutation receipt
   -> updated scene/world/social state
   -> coordinator continuity and next-beat plan
@@ -77,6 +79,10 @@ the room.
 - Coordinator artifacts: `schemas/coordinator-artifact.schema.json`
 - Responder packets: `schemas/responder-packet.schema.json`
 - Responder outputs: `schemas/responder-output.schema.json`
+- Event records: `schemas/event-record.schema.json`
+- Participant appraisals: `schemas/participant-appraisal.schema.json`
+- Reviewed mutations: `schemas/reviewed-mutation.schema.json`
+- Scene-loop bundles: `schemas/scene-loop-bundle.schema.json`
 - Ink branch contract: `docs/architecture/ink-branching-scenes.md`
 - Illustrated IF visual pipeline: `docs/architecture/illustrated-if-visual-pipeline.md`
 - Training stages and corpus gates: `docs/architecture/training-plan.md`
@@ -101,6 +107,21 @@ appraisal, mutation, relationship-update, and true branch-compiler receipts
 those stages require. Keep it as a reference for story shape, grounding,
 branch-and-fold presentation, visual planning, and future fixture expectations.
 
+`pallas-training-loop-v0` is the first separate training-shaped derivative. It
+rebuilds only the Kappa threshold beat through actual receipts:
+
+- scene digest and initial state under `examples/training-loops/pallas-training-loop-v0/`
+- projected contexts under `examples/projected-contexts/`
+- responder packets under `examples/responder-packets/`
+- raw no-fork subagent captures under `experiments/responder-packets/`
+- event, appraisal, mutation, review, and bundle receipts under `examples/training-loops/pallas-training-loop-v0/`
+- clean readable transcript under `experiments/pallas-training-loop-v0/`
+
+It is training-shaped for projector, responder, event resolver, participant
+appraiser, mutator, relationship/perception updater, and coordinator/story
+runtime. It is not branch compiler, IF reviewer, visual, or accepted full-fixture
+coverage data.
+
 ## Pruned Receipts
 
 Old prototype fixture receipts and model-runner files have been removed
@@ -122,7 +143,8 @@ paths as active state surfaces.
 - Full scene/event loop implementation
 - Culture prior engine
 - Automatic promotion of branch outcomes into canonical state
-- Corpus coverage ledger expansion beyond the initial Pallas row
+- Corpus coverage ledger expansion beyond the Pallas reference row and first
+  training-loop derivative
 
 ## Current North Star
 

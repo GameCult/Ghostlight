@@ -1,0 +1,77 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "pallas-training-loop-v0.turn-02.ilya-marne.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/pallas-training-loop-v0.turn-02.coordinator.json",
+  "responder_agent_id": "ilya_marne",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "pallas-training-loop-v0.scene-digest"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"ilya_marne\",\"action_label\":\"set_condition\",\"visible_action\":\"Ilya steps to the operations glass comm panel, raises one hand toward the Kappa-7 threshold, and tags the access route hold on the supervisor board.\",\"spoken_text\":\"Kappa-7 is on procedural hold. No one enters the artery until seal, air, and thermal are reconciled against the board and a baseline anchor check is logged. Vale, take the clearance freeze. Dax, put an anchor pair on verification, not entry. Nara-7, keep your team staged outside the threshold and state the readout sequence for the log.\",\"private_interpretation\":\"Nara-7 has probably identified a real pattern, and the dangerous part is not only the route. It is the fact that she made the refusal clean, witnessed, and technically difficult to dismiss.\",\"intended_effect\":\"Convert a coordinated refusal into a safety verification procedure, prevent injury, preserve schedule control, and keep the official record focused on board-state reconciliation rather than labor dependence.\",\"state_update_candidates\":[\"Kappa-7 access placed on procedural hold pending seal-air-thermal verification.\",\"No seal technicians are authorized to enter Kappa-7 until readings are cleared and logged.\",\"Baseline anchor crew redirected to verification support instead of route entry.\",\"Supervisor log should record Nara-7's readout sequence as technical input, not as command authority.\"],\"relationship_update_candidates\":[\"Ilya treats Nara-7's warning as operationally useful while avoiding language that frames her as decision owner.\",\"Ilya reinforces Lio Vale's shift-control role by assigning the clearance freeze through Vale.\",\"Ilya keeps Orrin Dax's baseline anchor crew visibly involved to make the hold look like standard mixed-crew safety procedure.\"],\"unresolved_hooks\":[\"Whether the seal-air-thermal readings confirm the False-Seam failure pattern.\",\"Who previously cleared Kappa-7 despite the repeating board state.\",\"Whether cameras or telemetry missed conditions inside the blocked sightline area.\",\"Whether Nara-7's coordination with the other seal technicians spreads beyond this threshold.\"]}",
+  "parsed_output": {
+    "responder_agent_id": "ilya_marne",
+    "action_label": "set_condition",
+    "visible_action": "Ilya steps to the operations glass comm panel, raises one hand toward the Kappa-7 threshold, and tags the access route hold on the supervisor board.",
+    "spoken_text": "Kappa-7 is on procedural hold. No one enters the artery until seal, air, and thermal are reconciled against the board and a baseline anchor check is logged. Vale, take the clearance freeze. Dax, put an anchor pair on verification, not entry. Nara-7, keep your team staged outside the threshold and state the readout sequence for the log.",
+    "private_interpretation": "Nara-7 has probably identified a real pattern, and the dangerous part is not only the route. It is the fact that she made the refusal clean, witnessed, and technically difficult to dismiss.",
+    "intended_effect": "Convert a coordinated refusal into a safety verification procedure, prevent injury, preserve schedule control, and keep the official record focused on board-state reconciliation rather than labor dependence.",
+    "state_update_candidates": [
+      "Kappa-7 access placed on procedural hold pending seal-air-thermal verification.",
+      "No seal technicians are authorized to enter Kappa-7 until readings are cleared and logged.",
+      "Baseline anchor crew redirected to verification support instead of route entry.",
+      "Supervisor log should record Nara-7's readout sequence as technical input, not as command authority."
+    ],
+    "relationship_update_candidates": [
+      "Ilya treats Nara-7's warning as operationally useful while avoiding language that frames her as decision owner.",
+      "Ilya reinforces Lio Vale's shift-control role by assigning the clearance freeze through Vale.",
+      "Ilya keeps Orrin Dax's baseline anchor crew visibly involved to make the hold look like standard mixed-crew safety procedure."
+    ],
+    "unresolved_hooks": [
+      "Whether the seal-air-thermal readings confirm the False-Seam failure pattern.",
+      "Who previously cleared Kappa-7 despite the repeating board state.",
+      "Whether cameras or telemetry missed conditions inside the blocked sightline area.",
+      "Whether Nara-7's coordination with the other seal technicians spreads beyond this threshold."
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained in character-local action and intent; no hidden state or future outcome was named."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed cleanly from exact raw subagent output.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

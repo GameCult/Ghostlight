@@ -24,9 +24,12 @@ mission:
     trust, concern, irritation, respect, boundaries, and expectations from
     evidence rather than generic friendliness.
   active_fixture: >
-    Pallas Species Strikes is the current reference-only historical fixture:
-    useful for story shape, grounding, and presentation expectations, not
-    training-ready machinery output.
+    Pallas Species Strikes remains the current reference-only historical
+    fixture. `pallas-training-loop-v0` is the first separate training-shaped
+    scene-loop derivative built from one Pallas threshold segment with exact
+    projected contexts, packet-only sandboxed responder outputs, event records,
+    participant appraisals, reviewed mutations, coordinator receipts, and a
+    scene-loop bundle manifest.
     Call of the Void and Elysium-era gameplay remain procedural consumer targets.
 
 hard_boundaries:
@@ -63,6 +66,10 @@ live_architecture:
     - `retrieval_augmented` bakes setting texture into reviewed outputs through scoped retrieval.
     - `responder_scoped_repository_search` allows the responder to inspect declared seed scope, follow bounded relevant AetheriaLore links, and requires consulted refs, followed refs, research trace, plus research summary.
     - Gold responder data must preserve exact visible input, raw output, parsed/reviewed output, hidden-context refs, leakage audit, isolation method, and coordinator interventions.
+  training_loop_bundles:
+    - Scene-loop bundles are the receipt-chain unit for training-shaped sequential character scenes before branch compilation.
+    - A bundle must tie scene-local digest, initial state, coordinator turn artifacts, projected contexts, responder packets, raw responder captures, event records, participant appraisals, reviewed mutations, review summary, and coverage status.
+    - Training readiness is per organ. A valid responder turn does not automatically make branch compiler, IF reviewer, visual artifact, or whole-fixture coverage training-ready.
   coordinator:
     - The coordinator is a trainable soft organ: it stages scenes, chooses next beats and acting agents, invokes specialist machinery, carries unresolved hooks, emits glue prose, and proposes game-engine-shaped state changes.
     - Glue prose is training signal, not canonical truth.
@@ -134,6 +141,10 @@ current_artifacts:
     - schemas/coordinator-artifact.schema.json
     - schemas/responder-packet.schema.json
     - schemas/responder-output.schema.json
+    - schemas/event-record.schema.json
+    - schemas/participant-appraisal.schema.json
+    - schemas/reviewed-mutation.schema.json
+    - schemas/scene-loop-bundle.schema.json
   prompts:
     - prompts/README.md
     - prompts/sandboxed-responder-packet.md
@@ -156,6 +167,10 @@ current_artifacts:
     - examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json
     - experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md
     - experiments/pallas-species-strikes/pallas-species-strikes.visual-scene-review.v1.json
+    - examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.bundle.json
+    - examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.scene-digest.json
+    - examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json
+    - experiments/pallas-training-loop-v0/pallas-training-loop-v0.clean-run.md
   pruned_receipts:
     - Old prototype fixture receipts and local runner files were removed from the live workspace after their lessons were distilled into docs, state, evidence, and git history.
 
@@ -168,5 +183,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Pallas Species Strikes is the current reference-only branch-and-fold story fixture. It is useful as a grounded story-shape example, but it was coordinator-authored without exercising Ghostlight's exact projected-context, sandboxed responder, appraisal, mutation, relationship-update, or true branch-compiler machinery. The next build step is training-shaped fixture generation guided by the corpus coverage ledger.
-  next_action: Use the corpus coverage ledger to select the next Aetheria fixture from the 100-150 broad coverage target.
+  summary: Pallas Species Strikes is the current reference-only branch-and-fold story fixture. `pallas-training-loop-v0` is the first separate training-shaped scene-loop derivative and exercises three sequential sandboxed responder turns plus event, appraisal, mutation, relationship/perception, and coordinator receipts. Branch compilation, IF review, and visual artifacts are intentionally not counted as training data for this pilot.
+  next_action: Review `pallas-training-loop-v0` as the first receipt-chain pilot, then use the corpus coverage ledger to choose the next Aetheria fixture from the 100-150 broad coverage target.

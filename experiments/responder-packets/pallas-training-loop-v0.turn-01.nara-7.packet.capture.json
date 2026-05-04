@@ -1,0 +1,78 @@
+{
+  "schema_version": "ghostlight.responder_output.v0",
+  "capture_id": "pallas-training-loop-v0.turn-01.nara-7.packet.capture",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "packet_ref": "examples/responder-packets/pallas-training-loop-v0.turn-01.nara-7.packet.json",
+  "coordinator_artifact_ref": "examples/coordinator/pallas-training-loop-v0.turn-01.coordinator.json",
+  "responder_agent_id": "nara_7",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "consulted_refs": [
+      "packet_prompt_text",
+      "pallas-training-loop-v0.scene-digest"
+    ]
+  },
+  "isolation": {
+    "isolation_method": "subagent_no_fork",
+    "fork_context": false,
+    "visible_input_ref": "examples/responder-packets/pallas-training-loop-v0.turn-01.nara-7.packet.json",
+    "hidden_context_refs": [
+      "conversation history",
+      "repo state",
+      "other participants private state",
+      "future branch plans"
+    ],
+    "worker_model_family": "Codex subagent"
+  },
+  "raw_output": "{\"responder_agent_id\":\"nara_7\",\"action_label\":\"refuse\",\"visible_action\":\"Nara-7 stops at the Kappa-7 threshold, keeps both hands open and visible, and places one palm flat against the route placard instead of entering. Their other hand points to the seal-air-thermal readout, then to the three waiting technicians behind them.\",\"spoken_text\":\"I will not enter Kappa-7 on this board state. Seal, air, and thermal are repeating the False-Seam failure pattern. If you need a route cleared, clear the readings first, pull a baseline anchor check, and keep the other seal techs out of the artery until it is verified safe.\",\"private_interpretation\":\"The order is treating a lethal pattern as routine noise. If I step in, the others may follow, and someone may die where Rell died before. Refusal is dangerous, but entering is worse.\",\"intended_effect\":\"Stop immediate entry into Kappa-7, make the hazard specific enough that nearby workers can coordinate around it, and force the supervisor channel to address the readings instead of relying on obedience.\",\"state_update_candidates\":[\"Kappa-7 entry paused by Nara-7 refusal\",\"False-Seam seal-air-thermal anomaly publicly named\",\"Other engineered seal technicians warned not to enter until verification\",\"Supervisor order challenged on technical safety grounds\"],\"relationship_update_candidates\":[\"Lio Vale may now know Nara-7 is willing to refuse a lethal route openly\",\"Orrin Dax and anchor crew have a specific safety reason to hold position\",\"Teth Inkwise has been given a concrete technical anomaly to inspect or corroborate\",\"Ilya Marne has witnessed memory-linked refusal framed as maintenance safety\"],\"unresolved_hooks\":[\"Whether Ilya escalates discipline, orders another worker in, or authorizes verification\",\"Whether the three seal technicians follow Nara-7's refusal or hesitate under pressure\",\"Whether Lio, Orrin, or Teth corroborate the anomaly before management reframes it as malfunction\",\"Whether Kappa-7 readings worsen while the route remains sealed\"]}",
+  "parsed_output": {
+    "responder_agent_id": "nara_7",
+    "action_label": "refuse",
+    "visible_action": "Nara-7 stops at the Kappa-7 threshold, keeps both hands open and visible, and places one palm flat against the route placard instead of entering. Their other hand points to the seal-air-thermal readout, then to the three waiting technicians behind them.",
+    "spoken_text": "I will not enter Kappa-7 on this board state. Seal, air, and thermal are repeating the False-Seam failure pattern. If you need a route cleared, clear the readings first, pull a baseline anchor check, and keep the other seal techs out of the artery until it is verified safe.",
+    "private_interpretation": "The order is treating a lethal pattern as routine noise. If I step in, the others may follow, and someone may die where Rell died before. Refusal is dangerous, but entering is worse.",
+    "intended_effect": "Stop immediate entry into Kappa-7, make the hazard specific enough that nearby workers can coordinate around it, and force the supervisor channel to address the readings instead of relying on obedience.",
+    "state_update_candidates": [
+      "Kappa-7 entry paused by Nara-7 refusal",
+      "False-Seam seal-air-thermal anomaly publicly named",
+      "Other engineered seal technicians warned not to enter until verification",
+      "Supervisor order challenged on technical safety grounds"
+    ],
+    "relationship_update_candidates": [
+      "Lio Vale may now know Nara-7 is willing to refuse a lethal route openly",
+      "Orrin Dax and anchor crew have a specific safety reason to hold position",
+      "Teth Inkwise has been given a concrete technical anomaly to inspect or corroborate",
+      "Ilya Marne has witnessed memory-linked refusal framed as maintenance safety"
+    ],
+    "unresolved_hooks": [
+      "Whether Ilya escalates discipline, orders another worker in, or authorizes verification",
+      "Whether the three seal technicians follow Nara-7's refusal or hesitate under pressure",
+      "Whether Lio, Orrin, or Teth corroborate the anomaly before management reframes it as malfunction",
+      "Whether Kappa-7 readings worsen while the route remains sealed"
+    ]
+  },
+  "leakage_audit": {
+    "private_state_leak": false,
+    "author_only_leak": false,
+    "future_branch_leak": false,
+    "raw_state_soup": false,
+    "prompt_parroting": false,
+    "body_or_object_omniscience": false,
+    "notes": [
+      "Output remained in character-local action and intent; no hidden state or future outcome was named."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "review_notes": [
+      "Parsed cleanly from exact raw subagent output.",
+      "No coordinator prose was inserted into the accepted responder output."
+    ],
+    "coordinator_interventions": [],
+    "failure_labels": []
+  }
+}

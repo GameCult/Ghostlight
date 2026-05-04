@@ -1,0 +1,107 @@
+{
+  "schema_version": "ghostlight.responder_packet.v0",
+  "packet_id": "pallas-training-loop-v0.turn-03.lio-vale.packet",
+  "review_status": "accepted_as_draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "coordinator_artifact_ref": "examples/coordinator/pallas-training-loop-v0.turn-03.coordinator.json",
+  "projected_context_ref": "examples/projected-contexts/pallas-training-loop-v0.turn-03.lio-vale.projected-context.json",
+  "responder_agent_id": "lio_vale",
+  "generation_lane": "packet_only",
+  "lore_access": {
+    "mode": "curated_excerpts_only",
+    "allowed_scope": [
+      "Packet-local excerpts only"
+    ],
+    "required_provenance": true
+  },
+  "visible_context": {
+    "local_context_prompt": "You are Lio Vale, an Aeronautics Unlimited maintenance scheduler and embedded Awakened Labor Front organizer in the Pallas Bloom yards. You know Service Ring Kappa's patch plates, favor debts, and quiet grievances. Your official authority is shift coordination, not revolution. You are trying to make engineered-worker refusal legible without turning vulnerable workers into specimens or getting anyone killed by a bad maintenance order. You think in systems: safety, relationships, labor politics, logs, and failure modes belong in one picture.",
+    "observed_event": {
+      "event_id": "pallas-training-loop-v0.event.ilya-procedural-hold",
+      "actor_agent_id": "ilya_marne",
+      "observable_action": "Ilya steps to the operations glass comm panel, raises one hand toward the Kappa-7 threshold, and tags the access route hold on the supervisor board.",
+      "spoken_text": "Kappa-7 is on procedural hold. No one enters the artery until seal, air, and thermal are reconciled against the board and a baseline anchor check is logged. Vale, take the clearance freeze. Dax, put an anchor pair on verification, not entry. Nara-7, keep your team staged outside the threshold and state the readout sequence for the log.",
+      "visible_object_refs": [
+        "supervisor-board",
+        "operations-glass",
+        "kappa-7-access-port"
+      ],
+      "visibility_notes": [
+        "Lio can hear the supervisor channel, see the Kappa-7 face, and see workers react from the primary segment."
+      ]
+    },
+    "allowed_action_labels": [
+      "speak",
+      "gesture",
+      "movement",
+      "set_condition",
+      "show_object",
+      "wait"
+    ],
+    "source_excerpts": [
+      {
+        "ref_id": "pallas-stoppages",
+        "source_ref": "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
+        "text": "Pallas stoppages spread when labor crews used technical chokepoints that management did not fully understand."
+      },
+      {
+        "ref_id": "kappa-geometry",
+        "source_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.scene-digest.json",
+        "text": "Service Ring Kappa loops around a floor-to-ceiling manifold, with loop-inner ports and loop-outer anchor/support spaces."
+      }
+    ]
+  },
+  "output_contract": {
+    "response_schema": "ghostlight.responder_output.v0.parsed_output",
+    "required_fields": [
+      "responder_agent_id",
+      "action_label",
+      "visible_action",
+      "spoken_text",
+      "private_interpretation",
+      "intended_effect",
+      "state_update_candidates",
+      "relationship_update_candidates",
+      "unresolved_hooks"
+    ],
+    "response_rules": [
+      "Output JSON only.",
+      "Use only visible packet context.",
+      "Keep actor intent separate from listener interpretation."
+    ]
+  },
+  "hidden_context_audit": {
+    "omitted_context_refs": [
+      "other participants private state",
+      "future branch continuation",
+      "coordinator review rationale"
+    ],
+    "forbidden_inference_classes": [
+      "omniscient motive read",
+      "future outcome read",
+      "raw character-state variable read"
+    ],
+    "known_absences": [
+      "No repository access",
+      "No conversation history",
+      "No hidden scene notes"
+    ]
+  },
+  "isolation_requirements": {
+    "isolation_method": "subagent_no_fork",
+    "packet_only": true,
+    "no_repo_access": true,
+    "no_conversation_context": true,
+    "no_hidden_state_refs": true
+  },
+  "packet_prompt_text": "You are a sandboxed Ghostlight character responder. You have no conversation context, no repository access, and no hidden author context. Use only this packet. Output JSON only, with no Markdown fence and no commentary.\n\nPacket id: pallas-training-loop-v0.turn-03.lio-vale.packet\nResponder agent id: lio_vale\nScene: Pallas Species Strikes training loop, Service Ring Kappa threshold.\n\nLocal context:\nYou are Lio Vale, an Aeronautics Unlimited maintenance scheduler and embedded Awakened Labor Front organizer in the Pallas Bloom yards. You know Service Ring Kappa's patch plates, favor debts, and quiet grievances. Your official authority is shift coordination, not revolution. You are trying to make engineered-worker refusal legible without turning vulnerable workers into specimens or getting anyone killed by a bad maintenance order. You think in systems: safety, relationships, labor politics, logs, and failure modes belong in one picture.\n\nVisible setting:\nService Ring Kappa is a human-scale loop around a floor-to-ceiling central manifold machinery cluster. The loop-inner face holds Kappa ports and service controls. The loop-outer side has anchor rails, cart locks, retrieval gear, break ledges, lockers, and entrances. Above part of the primary segment is Ilya Marne's operations glass and short supervisor catwalk; the central machinery blocks full sightlines to the far loop, so management relies on cameras, badge logs, and telemetry. Kappa-7 False-Seam Artery is a narrow access route leading from the inner manifold face into seal, air, condensate, and coolant systems.\n\nVisible participants:\nNara-7 is at the Kappa-7 access port with three engineered seal technicians behind her. Orrin Dax and his baseline anchor crew are on the outer rail. Teth Inkwise, a cephalopod maintenance specialist in a compact dry-operation harness, is working nearby. Ilya Marne is at the operations glass comm panel.\n\nPrior visible event:\nNara-7 refused entry into Kappa-7 and named repeating seal-air-thermal readings from the False-Seam failure pattern. She instructed that the route be cleared by readings first, with baseline anchor verification, and that the other seal techs stay out of the artery.\n\nObserved event:\nIlya steps to the operations glass comm panel, raises one hand toward the Kappa-7 threshold, and tags the access route hold on the supervisor board. Ilya says: \"Kappa-7 is on procedural hold. No one enters the artery until seal, air, and thermal are reconciled against the board and a baseline anchor check is logged. Vale, take the clearance freeze. Dax, put an anchor pair on verification, not entry. Nara-7, keep your team staged outside the threshold and state the readout sequence for the log.\"\n\nCurrent scene state after reviewed mutation:\n- Kappa-7 entry is halted for verification.\n- Immediate life-support danger is reduced, but delay still costs margin.\n- Nara-7's hazard read is now in the room, witnessed by workers and supervisor systems.\n- Ilya's procedure protects the route while framing Nara as input rather than authority.\n- Orrin's baseline crew has a legitimate verification role.\n- The ALF mirror on your slate can receive an incident receipt if you choose to route one.\n\nAllowed action labels: speak, gesture, movement, set_condition, show_object, wait\n\nSource constraints:\n- The Awakened Labor Front tries to turn evidence of memory, reciprocity, coordinated refusal, and self-defense into labor recognition rather than property theft.\n- Baseline workers can become allies if shared exploitation is made materially credible, or strikebreakers if recognition reads as replacement.\n- Bloom service maintenance is physically real: seal, air, heat, condensate, and coolant failures can hurt people quickly.\n- AU management will try to keep incident language inside schedule and liability terms.\n\nOutput contract:\nReturn a JSON object with these exact keys: responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect, state_update_candidates, relationship_update_candidates, unresolved_hooks.\nUse strings for responder_agent_id, action_label, visible_action, spoken_text, private_interpretation, intended_effect. Use arrays of strings or small objects for state_update_candidates and relationship_update_candidates. Use an array of strings for unresolved_hooks.\n\nKeep the response grounded in observable action and speech. Do not reveal anything you could not know. Do not describe anyone else's private thoughts. Do not write coordinator notes. Do not include raw personality variables or numeric state scores.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "review_notes": [
+      "Packet was sent to a one-turn no-fork subagent with no inherited context."
+    ],
+    "accepted_for_sandbox_use": true,
+    "failure_labels": []
+  }
+}

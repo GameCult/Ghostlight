@@ -98,6 +98,85 @@
         "narrative_lore_spatial_visual_reviewers": "not_training_data",
         "technology_item_manifest": "not_training_data"
       }
+    },
+    {
+      "fixture_id": "pallas-training-loop-v0",
+      "status": "draft",
+      "timeline_lane": "historical_grounded",
+      "canon_status": "single_history",
+      "story_type": "flashpoint_story",
+      "era": "Pre-Elysium",
+      "location": "Pallas, AU-controlled Bloom industrial spoke manifold service ring",
+      "flashpoint": "Pallas Species Strikes",
+      "primary_subjects": [
+        "Awakened Labor Front",
+        "Aeronautics Unlimited"
+      ],
+      "secondary_subjects": [
+        "Baseline League",
+        "Cephalopod Syndicate",
+        "VitaForge BioDrone Standard"
+      ],
+      "collision_axes": [
+        "labor",
+        "species_body",
+        "liability",
+        "infrastructure",
+        "personhood",
+        "class",
+        "safety"
+      ],
+      "tonal_modes": [
+        "industrial realism",
+        "shop-floor pressure",
+        "restrained wit"
+      ],
+      "training_targets": [
+        "projector",
+        "character_responder",
+        "event_resolver",
+        "participant_appraiser",
+        "state_mutator",
+        "relationship_perception_updater",
+        "coordinator_story_runtime"
+      ],
+      "artifacts": {
+        "scene_digest": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.scene-digest.json",
+        "initial_state": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json",
+        "bundle": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.bundle.json",
+        "review": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.review.json",
+        "clean_run": "experiments/pallas-training-loop-v0/pallas-training-loop-v0.clean-run.md"
+      },
+      "review": {
+        "schema": "accepted",
+        "narrative": "accepted_as_draft",
+        "lore": "accepted_as_draft",
+        "spatial": "accepted_as_draft",
+        "visual": "not_run",
+        "if_artifact": "not_run",
+        "receipt_chain": "accepted_as_draft"
+      },
+      "economy_hooks": [
+        "biodrone_limiter_interface",
+        "industrial_spoke_manifold_service_ring",
+        "strike_safe_life_support_bypass_kit"
+      ],
+      "open_lore_gaps": [],
+      "notes": "First training-shaped Pallas derivative. Separate from immutable Pallas reference. Draft scene-loop row, not a full accepted fixture. Proven organs have exact packets, no-fork raw responder outputs, events, appraisals, reviewed mutations, and bundle receipts; overall fixture coverage remains not-training-data until branch/IF acceptance exists.",
+      "training_usability": {
+        "overall": "not_training_data",
+        "projector": "training_ready",
+        "character_responder": "training_ready",
+        "event_resolver": "training_ready",
+        "participant_appraiser": "training_ready",
+        "state_mutator": "training_ready",
+        "relationship_perception_updater": "training_ready",
+        "coordinator_story_runtime": "training_ready",
+        "branch_compiler": "not_training_data",
+        "if_artifact_reviewer": "not_training_data",
+        "visual_artifacts": "not_training_data",
+        "story_shape_and_grounding": "reference_only"
+      }
     }
   ]
 }

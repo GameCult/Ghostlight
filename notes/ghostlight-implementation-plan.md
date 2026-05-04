@@ -29,7 +29,22 @@ not carry live next-action lists.
    - Preserve raw output, parsed output, review labels, consulted refs, research summary, leakage audit, and coordinator interventions.
    - Require `runner_captured` research trace status for accepted research-enabled gold data; coordinator-reconstructed trace is useful draft audit, not proof of the responder's actual research path.
 
-3. Keep the Pallas fixture as the current scaffold reference.
+3. Stabilize scene-loop receipt bundles.
+   - Use `schemas/event-record.schema.json`,
+     `schemas/participant-appraisal.schema.json`,
+     `schemas/reviewed-mutation.schema.json`, and
+     `schemas/scene-loop-bundle.schema.json`.
+   - Validate with `npm run training-loop:validate`, included in
+     `npm run schema:validate`.
+   - A training-ready scene loop preserves scene-local digest, initial state,
+     coordinator artifacts, projected contexts, responder packets, raw responder
+     outputs, event records, participant-local appraisals, reviewed mutations,
+     and bundle-level training-usability labels.
+   - Training readiness is per organ. A receipt-complete scene loop does not
+     automatically count as branch compiler, IF reviewer, visual artifact, or
+     accepted full-fixture coverage.
+
+4. Keep the Pallas fixture as the current scaffold reference.
    - Current fixture set:
      `examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json`,
      `examples/agent-state.pallas-species-strikes.v0.json`,
@@ -40,8 +55,12 @@ not carry live next-action lists.
      and `experiments/pallas-species-strikes/` receipts.
    - Treat it as reference-only story-shape and grounding material, not training-ready data for any soft organ.
    - Preserve the lessons it established: ordinary-life onboarding, branch-and-fold discipline, material state variables, source-backed lore elaboration, visual segmentation, scene-set need for illustrated replay, and review before acceptance.
+   - `pallas-training-loop-v0` is the first separate training-shaped derivative:
+     it rebuilds the Kappa refusal / Ilya arrival threshold beat through three
+     exact no-fork responder turns plus event, appraisal, mutation, and bundle
+     receipts. Keep it separate from the immutable reference fixture.
 
-4. Generalize the loop.
+5. Generalize the loop.
    - Use the corpus coverage ledger so future fixtures can be tracked by faction, movement, flashpoint, tonal mode, training target, review status, and cultural collisions.
    - Select the next Aetheria fixture from the 100-150 broad coverage target.
    - Add more historical grounded fixtures from AetheriaLore.

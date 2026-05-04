@@ -1,0 +1,54 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "pallas-training-loop-v0.turn-03.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "pallas-training-loop-v0",
+  "turn_id": "turn-03",
+  "source_responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-03.lio-vale.packet.capture.json",
+  "actor_agent_id": "lio_vale",
+  "observable_action": "Lio plants one boot at the Kappa-7 threshold line, lifts his scheduler slate where the port camera can see it, and enters a freeze note without stepping into the artery.",
+  "spoken_text": "Clearance freeze accepted. Logging Kappa-7 as no-entry pending seal, air, thermal reconciliation and baseline anchor verification. Dax, give me two anchors on the rail-side check only, eyes and instruments, no bodies past the threshold. Nara-7, state the sequence exactly as you read it. I want the False-Seam pattern named in the maintenance log, not shaved down into 'delay pending review.'",
+  "visible_object_refs": [
+    "supervisor-board",
+    "operations-glass",
+    "kappa-7-access-port"
+  ],
+  "visibility_scope": "public_room",
+  "affected_participant_ids": [
+    "nara_7",
+    "orrin_dax",
+    "teth_inkwise",
+    "ilya_marne",
+    "lio_vale"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Shift scheduling accepts the clearance freeze.",
+      "refs": [
+        "responder-output",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "The maintenance log is directed to name the False-Seam pattern.",
+      "refs": [
+        "responder-output",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Baseline anchor verification is constrained to rail-side checking.",
+      "refs": [
+        "responder-output",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records visibility scope for appraisals.",
+    "failure_labels": []
+  }
+}

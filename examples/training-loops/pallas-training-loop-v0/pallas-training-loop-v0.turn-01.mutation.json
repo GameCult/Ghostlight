@@ -1,0 +1,76 @@
+{
+  "schema_version": "ghostlight.reviewed_mutation.v0",
+  "mutation_id": "pallas-training-loop-v0.turn-01.mutation",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "pallas-training-loop-v0",
+  "turn_id": "turn-01",
+  "prior_state_refs": [
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.initial-state.json"
+  ],
+  "event_ref": "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.event.json",
+  "responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-01.nara-7.packet.capture.json",
+  "appraisal_refs": [
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.appraisal.lio_vale.json",
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.appraisal.orrin_dax.json",
+    "examples/training-loops/pallas-training-loop-v0/pallas-training-loop-v0.turn-01.appraisal.ilya_marne.json"
+  ],
+  "accepted_deltas": [
+    {
+      "delta_id": "turn-01.accepted.1",
+      "target_ref": "scene.kappa7.entry_status",
+      "delta_type": "object_state_update",
+      "summary": "Kappa-7 entry paused by public refusal.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    },
+    {
+      "delta_id": "turn-01.accepted.2",
+      "target_ref": "scene.evidence_of_sentience",
+      "delta_type": "world_fact_update",
+      "summary": "Memory-linked refusal becomes observable as coordinated safety behavior.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    },
+    {
+      "delta_id": "turn-01.accepted.3",
+      "target_ref": "relationship.lio_to_nara",
+      "delta_type": "relationship_update",
+      "summary": "Lio has stronger reason to treat Nara as trusting him with a risky visible truth.",
+      "authority": "manual_review",
+      "status": "accepted",
+      "rationale": "Accepted because it follows directly from observable event plus participant appraisal."
+    }
+  ],
+  "rejected_deltas": [
+    {
+      "delta_id": "turn-01.rejected.omniscient-intent",
+      "target_ref": "participant.private_state",
+      "delta_type": "blocked_hidden_state_write",
+      "summary": "Do not write actor private_interpretation into other participants as known fact.",
+      "authority": "blocked",
+      "status": "rejected",
+      "rationale": "Listener appraisals must infer from observable action only."
+    }
+  ],
+  "deferred_deltas": [
+    {
+      "delta_id": "turn-01.deferred.branch-compile",
+      "target_ref": "branch.compiler",
+      "delta_type": "branch_compile",
+      "summary": "Do not compile branches until more accepted turns exist.",
+      "authority": "coordinator_review",
+      "status": "deferred",
+      "rationale": "Pilot gate is receipt-chain validation, not IF compilation."
+    }
+  ],
+  "authority_notes": "Manual coordinator review applies deltas from event and appraisal receipts. Future model stages should learn this organ from the receipt shape.",
+  "post_state_summary": "Kappa-7 entry paused by public refusal.; Memory-linked refusal becomes observable as coordinated safety behavior.; Lio has stronger reason to treat Nara as trusting him with a risky visible truth.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Mutation receipt records prior refs, accepted/rejected/deferred deltas, authority, and rationale.",
+    "failure_labels": []
+  }
+}

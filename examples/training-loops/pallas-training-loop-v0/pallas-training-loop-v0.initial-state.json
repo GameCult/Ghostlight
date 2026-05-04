@@ -1,0 +1,29 @@
+{
+  "schema_version": "ghostlight.scene_loop_initial_state.v0",
+  "state_id": "pallas-training-loop-v0.initial-state",
+  "scene_loop_id": "pallas-training-loop-v0",
+  "reference_agent_state_ref": "examples/agent-state.pallas-species-strikes.v0.json",
+  "scene_variables": {
+    "strike_cohesion": "low but rising if refusal is witnessed as shared safety",
+    "baseline_solidarity": "fragile; Orrin needs a material safety role before recognition stops sounding like replacement",
+    "security_pressure": "present through cameras and supervisor authority, not yet security deployment",
+    "life_support_margin": "amber-safe but perishable",
+    "evidence_of_sentience": "latent in memory-linked route refusal",
+    "cephalopod_leverage": "nearby through Teth and service-lung expertise, not yet exercised",
+    "bioelevate_liability": "relevant to uplifted/adapted workers, not to Nara-7 BioDrone Standard line",
+    "worker_injury": "historic Rell death, no current injury yet",
+    "media_visibility": "none; only shop-floor and supervisor systems currently see the event"
+  },
+  "participant_state_refs": {
+    "lio_vale": "examples/agent-state.pallas-species-strikes.v0.json#agents/lio_vale",
+    "nara_7": "examples/agent-state.pallas-species-strikes.v0.json#agents/nara_7",
+    "orrin_dax": "examples/agent-state.pallas-species-strikes.v0.json#agents/orrin_dax",
+    "teth_inkwise": "examples/agent-state.pallas-species-strikes.v0.json#agents/teth_inkwise",
+    "ilya_marne": "examples/agent-state.pallas-species-strikes.v0.json#agents/ilya_marne"
+  },
+  "author_or_coordinator_only": [
+    "Existing Pallas fixture remains immutable reference material.",
+    "Future branch outcomes are not visible to responders.",
+    "Other participants private appraisals are not visible to responders."
+  ]
+}

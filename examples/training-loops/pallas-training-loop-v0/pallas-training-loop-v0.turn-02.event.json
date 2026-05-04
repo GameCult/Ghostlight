@@ -1,0 +1,54 @@
+{
+  "schema_version": "ghostlight.event_record.v0",
+  "event_id": "pallas-training-loop-v0.turn-02.event",
+  "review_status": "accepted_as_draft",
+  "scene_loop_id": "pallas-training-loop-v0",
+  "turn_id": "turn-02",
+  "source_responder_output_ref": "experiments/responder-packets/pallas-training-loop-v0.turn-02.ilya-marne.packet.capture.json",
+  "actor_agent_id": "ilya_marne",
+  "observable_action": "Ilya steps to the operations glass comm panel, raises one hand toward the Kappa-7 threshold, and tags the access route hold on the supervisor board.",
+  "spoken_text": "Kappa-7 is on procedural hold. No one enters the artery until seal, air, and thermal are reconciled against the board and a baseline anchor check is logged. Vale, take the clearance freeze. Dax, put an anchor pair on verification, not entry. Nara-7, keep your team staged outside the threshold and state the readout sequence for the log.",
+  "visible_object_refs": [
+    "kappa-7-access-port",
+    "seal-air-thermal-readout",
+    "route-placard"
+  ],
+  "visibility_scope": "camera_mediated",
+  "affected_participant_ids": [
+    "lio_vale",
+    "nara_7",
+    "orrin_dax",
+    "teth_inkwise",
+    "ilya_marne"
+  ],
+  "public_state_changes": [
+    {
+      "text": "Kappa-7 is placed on procedural hold.",
+      "refs": [
+        "responder-output",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Baseline anchor verification becomes part of the visible safety frame.",
+      "refs": [
+        "responder-output",
+        "coordinator-review"
+      ]
+    },
+    {
+      "text": "Nara-7 is asked for readout sequence as technical input rather than route authority.",
+      "refs": [
+        "responder-output",
+        "coordinator-review"
+      ]
+    }
+  ],
+  "hidden_intent_handling": "Responder private_interpretation and intended_effect are preserved in the capture but are not treated as visible to other participants.",
+  "review": {
+    "reviewer": "Codex coordinator",
+    "accepted_for_training": true,
+    "rationale": "Event keeps observable action separate from actor intent and records visibility scope for appraisals.",
+    "failure_labels": []
+  }
+}
