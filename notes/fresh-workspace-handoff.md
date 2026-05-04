@@ -37,19 +37,21 @@ The active path is a source-grounded branching-scene data loop:
    leakage audit, and coordinator interventions.
 6. Apply only reviewed mutations into state, memory, relationships, perceived
    overlays, and unresolved hooks.
-7. Run the coordinator as its own sandboxed, promptable organ whenever
+7. Update initiative scheduling from reviewed state: readiness, recovery,
+   current load, status, reaction windows, and next actor eligibility.
+8. Run the coordinator as its own sandboxed, promptable organ whenever
    generating training-shaped scene loops. Capture exact coordinator input, raw
    coordinator output, parsed artifact, review labels, interventions, and
    rejected alternatives.
-8. Let Codex act as meta-coordinator: scope the organs, launch sandboxed
+9. Let Codex act as meta-coordinator: scope the organs, launch sandboxed
    workers, review outputs, repair only with labels, wire structured state, and
    preserve receipts. Do not silently treat omniscient chat steering as raw
    coordinator training data.
-9. Let the accepted coordinator artifact carry continuity, unresolved hooks,
+10. Let the accepted coordinator artifact carry continuity, unresolved hooks,
    glue prose, and the next scene/beat plan.
-10. Let the branch compiler materialize playable Ink plus sidecar and compiler
+11. Let the branch compiler materialize playable Ink plus sidecar and compiler
    notes from reviewed state and branch decisions.
-11. Run IF, narrative, lore, spatial, and visual review before accepting a
+12. Run IF, narrative, lore, spatial, and visual review before accepting a
    fixture as training data.
 
 ## Live Seams
@@ -67,7 +69,9 @@ The active path is a source-grounded branching-scene data loop:
 - Participant appraisal schema: `schemas/participant-appraisal.schema.json`
 - Reviewed mutation schema: `schemas/reviewed-mutation.schema.json`
 - Scene-loop bundle schema: `schemas/scene-loop-bundle.schema.json`
+- Initiative schedule schema: `schemas/initiative-schedule.schema.json`
 - Training-loop validator: `npm run training-loop:validate`
+- Initiative schedule validator: `npm run initiative:validate`
 - Prompt folder: `prompts/`
 - Corpus coverage ledger: `state/corpus-coverage.json`
 - Corpus coverage command: `npm run coverage:status`
@@ -142,6 +146,7 @@ Live Lucent surfaces:
 - `examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.branch-surface.json`
 - `examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.bundle.json`
 - `examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.review.json`
+- `examples/initiative/lucent-hostage-feed-v0.turn-20.initiative.json`
 - `experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md`
 - `experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.staging-sketch.md`
 - `scripts/materialize_lucent_loop.py`
@@ -191,6 +196,12 @@ no-fork agents, but the coordinator was Codex-authored and then captured as
 artifacts. Future training-shaped loops should sandbox coordinator turns too.
 Codex is the meta-coordinator herding Ghostlight pieces into shape, not the raw
 coordinator organ being trained.
+
+Initiative seam: Ghostlight now has a documented and validated initiative
+schedule artifact. The scheduler is mechanical: it selects eligible actors from
+initiative speed, next-ready time, load, status, action recovery, and reaction
+windows. It does not replace participant appraisal. Everyone affected by an
+event still updates before the scheduler chooses the next projected actor.
 
 Branch compiler seam correction: `lucent-hostage-feed.branch-and-fold.v0.ink`
 is the first meta-coordinator authored branch-and-fold draft for exploring the

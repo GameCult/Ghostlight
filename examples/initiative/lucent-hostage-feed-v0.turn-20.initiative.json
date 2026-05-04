@@ -1,0 +1,199 @@
+﻿{
+  "schema_version": "ghostlight.initiative_schedule.v0",
+  "schedule_id": "lucent-hostage-feed-v0.turn-20.initiative",
+  "source_scene_ref": "examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.bundle.json",
+  "scene_clock": 42.0,
+  "participants": [
+    {
+      "agent_id": "mara-quell",
+      "display_name": "Mara Quell",
+      "initiative_speed": 0.72,
+      "next_ready_at": 50.3,
+      "reaction_bias": 0.65,
+      "interrupt_threshold": 0.55,
+      "current_load": 0.38,
+      "status": "active",
+      "constraints": [
+        "Must preserve hostage safety before reputation advantage.",
+        "Can use negotiation speech, visible posture, proof objects, and feed categories."
+      ]
+    },
+    {
+      "agent_id": "sol-vant",
+      "display_name": "Sol Vant",
+      "initiative_speed": 0.68,
+      "next_ready_at": 43.0,
+      "reaction_bias": 0.9,
+      "interrupt_threshold": 0.5,
+      "current_load": 0.72,
+      "status": "active",
+      "constraints": [
+        "Can threaten, stall, bargain, release, or comply through feed-visible gestures.",
+        "Stress load makes clean interrupt action unlikely unless a trigger is immediate."
+      ]
+    },
+    {
+      "agent_id": "juno-ark",
+      "display_name": "Juno Ark",
+      "initiative_speed": 0.54,
+      "next_ready_at": 47.5,
+      "reaction_bias": 0.78,
+      "interrupt_threshold": 0.62,
+      "current_load": 0.81,
+      "status": "active",
+      "constraints": [
+        "Can move only within the marked safe-line corridor unless Sol releases physical control.",
+        "Fear and feed awareness limit speech to short, survival-oriented action."
+      ]
+    },
+    {
+      "agent_id": "feed-ops-chorus",
+      "display_name": "Feed Ops Chorus",
+      "initiative_speed": 0.92,
+      "next_ready_at": 42.4,
+      "reaction_bias": 0.52,
+      "interrupt_threshold": 0.6,
+      "current_load": 0.3,
+      "status": "active",
+      "constraints": [
+        "Can adjust public feed overlays, delay packages, evidence locks, and safety captions.",
+        "Cannot physically move anyone in the room."
+      ]
+    },
+    {
+      "agent_id": "security-team",
+      "display_name": "Lucent Security Team",
+      "initiative_speed": 0.61,
+      "next_ready_at": 44.0,
+      "reaction_bias": 0.7,
+      "interrupt_threshold": 0.58,
+      "current_load": 0.45,
+      "status": "active",
+      "constraints": [
+        "Can reposition behind the collar line, hold, breach, or refuse an unsafe command.",
+        "Public feed scrutiny raises the cost of premature force."
+      ]
+    }
+  ],
+  "action_catalog": [
+    {
+      "action_id": "turn-20.feed-ops.public-delay-caption",
+      "actor_id": "feed-ops-chorus",
+      "action_type": "use_object",
+      "action_scale": "short",
+      "base_recovery": 4.0,
+      "initiative_cost": 2.0,
+      "interruptibility": 0.6,
+      "commitment": 0.25,
+      "local_affordance_basis": [
+        "Feed Ops has direct control of public overlays and delay packages.",
+        "The proof-object is already externalized into EDIT TRAIL HOLD."
+      ]
+    },
+    {
+      "action_id": "turn-20.feed-ops.convert-to-crisis-package",
+      "actor_id": "feed-ops-chorus",
+      "action_type": "use_object",
+      "action_scale": "major",
+      "base_recovery": 12.0,
+      "initiative_cost": 7.0,
+      "interruptibility": 0.25,
+      "commitment": 0.85,
+      "local_affordance_basis": [
+        "The live feed can be reframed as a packaged crisis segment.",
+        "The move risks contaminating evidence export and hostage safety optics."
+      ]
+    },
+    {
+      "action_id": "turn-20.sol-release-or-rebrand",
+      "actor_id": "sol-vant",
+      "action_type": "mixed",
+      "action_scale": "standard",
+      "base_recovery": 7.0,
+      "initiative_cost": 4.0,
+      "interruptibility": 0.45,
+      "commitment": 0.6,
+      "local_affordance_basis": [
+        "Sol can still alter release posture before security closes distance.",
+        "Sol is overloaded by public evidence control and protective-handoff language."
+      ]
+    }
+  ],
+  "reaction_windows": [
+    {
+      "window_id": "turn-20.sol-evidence-export-flinch",
+      "trigger_event_ref": "examples/training-loops/lucent-hostage-feed-v0/events/turn-20.event.json",
+      "urgency": 0.55,
+      "eligible_actor_ids": [
+        "sol-vant",
+        "juno-ark",
+        "security-team"
+      ],
+      "allowed_action_scales": [
+        "micro",
+        "short"
+      ],
+      "expires_at": 43.2,
+      "notes": "Evidence export creates an immediate flinch window, but current load keeps every eligible actor below threshold."
+    }
+  ],
+  "selection_policy": {
+    "mode": "readiness_queue",
+    "reaction_precedence": true,
+    "minimum_speed": 0.2,
+    "tie_breakers": [
+      "reaction_readiness_desc",
+      "next_ready_at_asc",
+      "initiative_speed_desc",
+      "stable_actor_id_asc"
+    ]
+  },
+  "next_actor_selection": {
+    "selection_kind": "scheduled_turn",
+    "selected_actor_id": "feed-ops-chorus",
+    "selected_action_ids": [
+      "turn-20.feed-ops.public-delay-caption",
+      "turn-20.feed-ops.convert-to-crisis-package"
+    ],
+    "scene_clock_after_selection": 42.4,
+    "selection_reason": "No reaction window clears threshold after the prior event, so the earliest active participant is selected. Feed Ops acts before Sol because its interface action is faster than Sol's overloaded hostage posture reset.",
+    "override_reason": null,
+    "readiness_snapshot": [
+      {
+        "agent_id": "mara-quell",
+        "next_ready_at": 50.3,
+        "reaction_readiness": null,
+        "eligible_for_reaction": false
+      },
+      {
+        "agent_id": "sol-vant",
+        "next_ready_at": 43.0,
+        "reaction_readiness": -0.225,
+        "eligible_for_reaction": true
+      },
+      {
+        "agent_id": "juno-ark",
+        "next_ready_at": 47.5,
+        "reaction_readiness": -0.381,
+        "eligible_for_reaction": true
+      },
+      {
+        "agent_id": "feed-ops-chorus",
+        "next_ready_at": 42.4,
+        "reaction_readiness": null,
+        "eligible_for_reaction": false
+      },
+      {
+        "agent_id": "security-team",
+        "next_ready_at": 44.0,
+        "reaction_readiness": -0.065,
+        "eligible_for_reaction": true
+      }
+    ]
+  },
+  "review_notes": [
+    "This schedule is a mechanical receipt, not a social interpretation receipt.",
+    "All affected participants still need appraisal and mutation before their next projection.",
+    "The selected actor receives only its projected local context; this artifact is coordinator/runtime state."
+  ]
+}

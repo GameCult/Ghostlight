@@ -1,0 +1,379 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gamecult.ai/ghostlight/schemas/initiative-schedule.schema.json",
+  "title": "Ghostlight Initiative Schedule",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "schedule_id",
+    "source_scene_ref",
+    "scene_clock",
+    "participants",
+    "action_catalog",
+    "reaction_windows",
+    "selection_policy",
+    "next_actor_selection",
+    "review_notes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ghostlight.initiative_schedule.v0"
+    },
+    "schedule_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_scene_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scene_clock": {
+      "type": "number",
+      "minimum": 0
+    },
+    "participants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/participant"
+      }
+    },
+    "action_catalog": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/action"
+      }
+    },
+    "reaction_windows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reaction_window"
+      }
+    },
+    "selection_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "reaction_precedence",
+        "minimum_speed",
+        "tie_breakers"
+      ],
+      "properties": {
+        "mode": {
+          "const": "readiness_queue"
+        },
+        "reaction_precedence": {
+          "type": "boolean"
+        },
+        "minimum_speed": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "tie_breakers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "reaction_readiness_desc",
+              "next_ready_at_asc",
+              "initiative_speed_desc",
+              "stable_actor_id_asc"
+            ]
+          }
+        }
+      }
+    },
+    "next_actor_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selection_kind",
+        "selected_actor_id",
+        "selected_action_ids",
+        "scene_clock_after_selection",
+        "selection_reason",
+        "readiness_snapshot"
+      ],
+      "properties": {
+        "selection_kind": {
+          "enum": [
+            "scheduled_turn",
+            "reaction_interrupt",
+            "coordinator_override"
+          ]
+        },
+        "selected_actor_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_action_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "scene_clock_after_selection": {
+          "type": "number",
+          "minimum": 0
+        },
+        "selection_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "override_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "readiness_snapshot": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/readiness_snapshot"
+          }
+        }
+      }
+    },
+    "review_notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent_id",
+        "display_name",
+        "initiative_speed",
+        "next_ready_at",
+        "reaction_bias",
+        "interrupt_threshold",
+        "current_load",
+        "status",
+        "constraints"
+      ],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "initiative_speed": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "next_ready_at": {
+          "type": "number",
+          "minimum": 0
+        },
+        "reaction_bias": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "interrupt_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "current_load": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "status": {
+          "enum": [
+            "active",
+            "blocked",
+            "withdrawn",
+            "incapacitated",
+            "offscreen"
+          ]
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_id",
+        "actor_id",
+        "action_type",
+        "action_scale",
+        "base_recovery",
+        "initiative_cost",
+        "interruptibility",
+        "commitment",
+        "local_affordance_basis"
+      ],
+      "properties": {
+        "action_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action_type": {
+          "enum": [
+            "speak",
+            "silence",
+            "move",
+            "gesture",
+            "touch_object",
+            "block_object",
+            "use_object",
+            "show_object",
+            "withhold_object",
+            "transfer_object",
+            "spend_resource",
+            "attack",
+            "wait",
+            "mixed"
+          ]
+        },
+        "action_scale": {
+          "enum": [
+            "micro",
+            "short",
+            "standard",
+            "major",
+            "committed"
+          ]
+        },
+        "base_recovery": {
+          "type": "number",
+          "minimum": 0
+        },
+        "initiative_cost": {
+          "type": "number",
+          "minimum": 0
+        },
+        "interruptibility": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "commitment": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "local_affordance_basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "reaction_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window_id",
+        "trigger_event_ref",
+        "urgency",
+        "eligible_actor_ids",
+        "allowed_action_scales",
+        "expires_at",
+        "notes"
+      ],
+      "properties": {
+        "window_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trigger_event_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "urgency": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "eligible_actor_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allowed_action_scales": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "micro",
+              "short",
+              "standard",
+              "major",
+              "committed"
+            ]
+          }
+        },
+        "expires_at": {
+          "type": "number",
+          "minimum": 0
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "readiness_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent_id",
+        "next_ready_at",
+        "reaction_readiness",
+        "eligible_for_reaction"
+      ],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "next_ready_at": {
+          "type": "number",
+          "minimum": 0
+        },
+        "reaction_readiness": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "eligible_for_reaction": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

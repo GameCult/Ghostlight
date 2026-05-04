@@ -34,7 +34,7 @@ Single-turn projection remains useful, but it is a microscope, not the animal.
 
 One runtime tick should look like this:
 
-1. Select an acting agent.
+1. Select an acting agent from the initiative schedule.
 2. Build that agent's local awareness.
 3. Derive available actions and constraints.
 4. Let the agent choose a response.
@@ -42,7 +42,8 @@ One runtime tick should look like this:
 6. Apply every affected participant's appraisal and state mutation for that
    event.
 7. Append the event record with participant-local interpretations.
-8. Select the next acting agent from the updated scene state, or end the scene.
+8. Update initiative timing, reaction windows, and action recovery.
+9. Select the next acting agent from the updated schedule, or end the scene.
 
 The author sets the initial scene, player role if any, and high-level branch
 constraints. The author should not need to decide every line, interruption,
@@ -63,9 +64,9 @@ are separate generation steps:
    hurt, threat, reassurance, obligation, resentment, trust movement, overload,
    misread, world/object/resource changes, and scene-ending choices when they
    occur.
-6. Select the next acting agent from the updated state. The next agent may
-   answer, walk away, escalate, comply, refuse, call for help, attack, or end
-   the interaction.
+6. Update initiative timing and select the next acting agent from the updated
+   schedule. The next agent may answer, walk away, escalate, comply, refuse,
+   call for help, attack, or end the interaction.
 7. Generate that next action from the newly consolidated local state.
 8. Store actor intent, listener appraisal, and durable interpretation
    separately.
@@ -81,6 +82,94 @@ One-shot paired generation, where a model writes both the player's move and the
 NPC response from a shared omniscient packet, is acceptable only as bootstrap
 scaffolding. It should be reviewed and labeled as such. Do not treat it as the
 target runtime behavior.
+
+## Initiative Scheduler
+
+Not every character gets a turn every round. There is no round.
+
+Ghostlight needs a scene-local initiative scheduler: a mechanical organ that
+tracks who is ready to act, who is still recovering from a previous move, and
+who has a valid interrupt window. It sits after event appraisal/mutation and
+before the next local-awareness projection.
+
+The scheduler does not decide what a character wants. It decides when a
+character is eligible to act.
+
+Core rule:
+
+```text
+observable event
+  -> participant appraisals and reviewed mutation
+  -> initiative/reaction update
+  -> next actor selection
+  -> next actor projection
+```
+
+Every affected participant still appraises every event before the next action
+is generated. Initiative controls action opportunity, not perception. A hostage
+can be terrified by a negotiator's move immediately; that does not mean the
+hostage gets a full action before the hostage-taker, unless the schedule or a
+reaction window gives them one.
+
+Each participant carries initiative state:
+
+- `initiative_speed`: how quickly the participant recovers action opportunity
+  in this scene.
+- `next_ready_at`: the scene-clock time when they can take a normal action.
+- `reaction_bias`: how likely they are to seize urgent interrupt windows.
+- `interrupt_threshold`: how strong a trigger must be before they interrupt.
+- `current_load`: stress, injury, cognitive burden, physical constraint, or
+  interface lag that makes action harder.
+- `status`: whether they are active, blocked, withdrawn, incapacitated, or
+  offscreen.
+
+Actions carry recovery shape:
+
+- `action_scale`: micro, short, standard, major, or committed.
+- `base_recovery`: how much scene time the move normally costs.
+- `initiative_cost`: how much local opportunity the actor spends.
+- `interruptibility`: whether others can break in while the action unfolds.
+- `commitment`: how much the actor is locked into the move once begun.
+
+The scheduler first checks reaction windows created by the last event. A
+reaction window is an interruptible opportunity, not a free omniscient response.
+It must name the triggering event, eligible actors, urgency, allowed action
+scales, expiry, and local basis. If no reaction clears threshold, the scheduler
+selects the active participant with the lowest `next_ready_at`.
+
+Recommended reaction readiness:
+
+```text
+reaction_readiness = (reaction_bias * urgency) - current_load
+```
+
+An interrupt can fire when `reaction_readiness >= interrupt_threshold`, the
+actor is eligible for the window, and the actor is not blocked. Ties are broken
+by earlier `next_ready_at`, higher `initiative_speed`, then stable actor id.
+
+After an accepted action, update the actor:
+
+```text
+recovery = base_recovery / max(initiative_speed, minimum_speed)
+next_ready_at = max(scene_clock, current next_ready_at) + recovery
+```
+
+Major or committed actions should usually create larger recovery, stronger
+counterplay windows, clearer visible cues, or more durable consequences. Short
+actions let a character stay nimble but should not accomplish everything. A
+one-word refusal, a glance to a camera, or stepping behind a marked line can be
+fast. A public confession, tackle, system override, or hostage release costs
+more initiative because it changes the scene.
+
+The coordinator may override the scheduler only by recording the override
+reason. Useful overrides include player-facing pacing, hard scene boundaries,
+or a game-engine rule that is not yet represented in the schedule. An
+unrecorded override is not training-ready coordinator data.
+
+For Ink, the scheduler can be collapsed into branch structure for readability,
+but the sidecar should preserve the initiative receipt when the fixture claims
+training value. Player choices may be presented together even if, inside the
+runtime, they represent alternative actions available at one scheduled moment.
 
 For game use, the loop should be able to emit:
 
@@ -354,6 +443,7 @@ agent state + scene state
   -> agent response/action
   -> event resolution
   -> participant appraisals and state mutation
+  -> initiative/reaction scheduling
   -> next actor selection
   -> next agent action from updated local state
 ```

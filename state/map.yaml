@@ -42,6 +42,7 @@ hard_boundaries:
   - Listener misread is first-class; intent and interpretation are not the same object.
   - Human-facing appraisal is a first-class target; VoidBot must be able to read people, form grounded opinions, and revise those opinions over repeated contact.
   - Generated action is an event proposal; deterministic gates and reviewed mutation decide what becomes state.
+  - Initiative controls action opportunity, not perception. Every affected participant appraises and mutates from an event before the next actor is projected; the scheduler selects eligible actors from readiness, recovery, load, status, and reaction windows rather than handing everyone a round-robin turn.
   - Fuzzy judgments become reviewed training artifacts before they become trained models.
   - Aetheria generation is source-first; check lore for factions, bodies, locations, institutions, and constraints before projection.
   - Do not import species-comfort assumptions across institutions. AU dry-operation cephalopod labor is bare-minimum productivity support, not Navigator-style or cephalopod-native comfort habitat, unless source lore says otherwise.
@@ -73,6 +74,12 @@ live_architecture:
     - Scene-loop bundles are the receipt-chain unit for training-shaped sequential character scenes before branch compilation.
     - A bundle must tie scene-local digest, initial state, coordinator turn artifacts, projected contexts, responder packets, raw responder captures, event records, participant appraisals, reviewed mutations, review summary, and coverage status.
     - Training readiness is per organ. A valid responder turn does not automatically make branch compiler, IF reviewer, visual artifact, or whole-fixture coverage training-ready.
+  initiative_scheduler:
+    - Initiative scheduling is a deterministic runtime seam between reviewed mutation and the next actor projection.
+    - Participants carry initiative speed, next-ready time, reaction bias, interrupt threshold, current load, status, and constraints.
+    - Actions carry scale, recovery, initiative cost, interruptibility, commitment, and local affordance basis.
+    - Reaction windows are event-triggered opportunities with eligible actors, urgency, expiry, and allowed action scales; they are not automatic responses or hidden-state access.
+    - Coordinator overrides must record a reason before the artifact can claim training value.
   coordinator:
     - The coordinator is a trainable soft organ: it stages scenes, chooses next beats and acting agents, invokes specialist machinery, carries unresolved hooks, emits glue prose, and proposes game-engine-shaped state changes.
     - Future coordinator turns should be sandboxed as their own promptable worker outputs, with exact visible input, raw output, parsed coordinator artifact, review labels, and interventions preserved. Codex acts as meta-coordinator: it scopes, launches, reviews, repairs, and wires Ghostlight organs, but should not silently collapse the trainable coordinator organ back into omniscient chat.
@@ -151,6 +158,7 @@ current_artifacts:
     - schemas/participant-appraisal.schema.json
     - schemas/reviewed-mutation.schema.json
     - schemas/scene-loop-bundle.schema.json
+    - schemas/initiative-schedule.schema.json
   prompts:
     - prompts/README.md
     - prompts/sandboxed-responder-packet.md
@@ -193,6 +201,7 @@ current_artifacts:
     - examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.scene-digest.json
     - examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.initial-state.json
     - examples/training-loops/lucent-hostage-feed-v0/lucent-hostage-feed-v0.review.json
+    - examples/initiative/lucent-hostage-feed-v0.turn-20.initiative.json
     - experiments/lucent-hostage-feed-v0/lucent-hostage-feed-v0.clean-run.md
     - scripts/materialize_lucent_loop.py
     - scripts/materialize_lucent_loop_continuation.py
@@ -209,5 +218,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: `lucent-hostage-feed-v0` now has the original receipt-chain loop, the older meta-coordinator-authored branch scaffold, and a newer sandboxed coordinator plus sandboxed Interactive Fiction Weaver negotiator-perspective branch pilot at `lucent-hostage-feed.negotiator-branch.v1`. The v1 branch pilot compiles, carries labeled meta-coordinator repairs, and received B-level-or-better narrative, lore, and spatial reviewer passes; visual review was not applicable because no visual plan was requested. Pallas remains reference-only; `pallas-training-loop-v0` remains the smaller receipt-chain pilot.
+  summary: `lucent-hostage-feed-v0` now has the original receipt-chain loop, the older meta-coordinator-authored branch scaffold, a newer sandboxed coordinator plus sandboxed Interactive Fiction Weaver negotiator-perspective branch pilot at `lucent-hostage-feed.negotiator-branch.v1`, and the first validated initiative schedule artifact. The v1 branch pilot compiles, carries labeled meta-coordinator repairs, and received B-level-or-better narrative, lore, and spatial reviewer passes; visual review was not applicable because no visual plan was requested. Pallas remains reference-only; `pallas-training-loop-v0` remains the smaller receipt-chain pilot.
   next_action: Decide whether to backfill the useful Lucent lore gaps into AetheriaLore, build a visual/scene-set pass for the Lucent IF, or move to the next coverage fixture. Keep broad corpus coverage at draft until artifacts have exact receipts for the organs they claim, and keep meta-coordinator repairs labeled.

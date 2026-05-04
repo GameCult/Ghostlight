@@ -37,6 +37,7 @@ Aetheria lore/source context
   -> participant-local appraisal receipts
   -> mutation receipt
   -> updated scene/world/social state
+  -> initiative schedule updates readiness, reaction windows, and next actor
   -> sandboxed coordinator continuity and next-beat plan
   -> meta-coordinator review, wiring, and labeled interventions
   -> branch compiler materializes Ink + sidecar + visual plan + compiler notes
@@ -84,6 +85,7 @@ the room.
 - Participant appraisals: `schemas/participant-appraisal.schema.json`
 - Reviewed mutations: `schemas/reviewed-mutation.schema.json`
 - Scene-loop bundles: `schemas/scene-loop-bundle.schema.json`
+- Initiative schedules: `schemas/initiative-schedule.schema.json`
 - Ink branch contract: `docs/architecture/ink-branching-scenes.md`
 - Illustrated IF visual pipeline: `docs/architecture/illustrated-if-visual-pipeline.md`
 - Training stages and corpus gates: `docs/architecture/training-plan.md`
@@ -137,6 +139,8 @@ The Lucent bundle includes:
 - event, appraisal, mutation, review, and bundle receipts under `examples/training-loops/lucent-hostage-feed-v0/`
 - clean readable transcript under `experiments/lucent-hostage-feed-v0/`
 - fixture materializer at `scripts/materialize_lucent_loop.py`
+- initiative schedule example at
+  `examples/initiative/lucent-hostage-feed-v0.turn-20.initiative.json`
 
 Only the fifteen post-restart turns from `turn-06` through `turn-20` are counted
 as training-clean responder receipts. The earlier exploratory opening turns are
@@ -159,6 +163,12 @@ input, launches the coordinator worker, reviews the output, labels repairs, and
 wires structured state between organs. Raw coordinator training data should come
 from sandboxed coordinator prompts, not from omniscient chat steering.
 
+The initiative scheduler is now an explicit mechanical seam. It decides when an
+actor is eligible to act from initiative speed, recovery, load, status, and
+reaction windows; it does not decide what the actor wants or how other
+participants appraise the event. Every affected participant still appraises and
+mutates before the scheduler selects the next projected actor.
+
 ## Pruned Receipts
 
 Old prototype fixture receipts and model-runner files have been removed
@@ -174,6 +184,7 @@ paths as active state surfaces.
 - Relationship/perception updater
 - State mutator model
 - Student projector
+- Runtime integration for initiative scheduling beyond validated artifacts
 - Branch compiler implementation beyond coordinator-authored fixtures
 - IF artifact reviewer implementation beyond manual/frontier review
 - Visual scene continuity reviewer implementation beyond prompted specialist review
