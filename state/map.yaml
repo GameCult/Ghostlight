@@ -16,7 +16,8 @@ mission:
   near_term: >
     Produce sandboxed, source-grounded branching-scene training data through
     projected local context, responder packets, reviewed outputs, mutation
-    receipts, coordinator continuity, branch compiler artifacts, and IF review.
+    receipts, sandboxed coordinator continuity, branch compiler artifacts, and
+    IF review.
   voidbot_goal: >
     Keep the appraiser, relationship/perception updater, and memory machinery
     useful for VoidBot's core companion mission: reading specific humans over
@@ -24,22 +25,13 @@ mission:
     trust, concern, irritation, respect, boundaries, and expectations from
     evidence rather than generic friendliness.
   active_fixture: >
-    Pallas Species Strikes remains the current reference-only historical
-    fixture. `pallas-training-loop-v0` is the first separate training-shaped
-    scene-loop derivative built from one Pallas threshold segment with exact
-    projected contexts, packet-only sandboxed responder outputs, event records,
-    participant appraisals, reviewed mutations, coordinator receipts, and a
-    scene-loop bundle manifest.
-    `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It
-    exercises a fifteen-turn post-restart hostage-release arc in a Lucent
-    media-eye tether station, with exact packet prompts, no-fork responder
-    captures, event/appraisal/mutation receipts, coordinator artifacts, a clean
-    run, and coverage bookkeeping. The opening exploratory turns are treated as
-    setup/rehearsal, not training-clean responder data. The arc resolves with
-    Juno on the safe line, security held behind collars, Sol categorized for
-    non-contact protective handoff, and evidence export left as the live
-    aftermath hook.
-    Call of the Void and Elysium-era gameplay remain procedural consumer targets.
+    Pallas Species Strikes is reference-only story quality material.
+    `pallas-training-loop-v0` is the first small receipt-chain pilot.
+    `lucent-hostage-feed-v0` is the current open-ended training-loop draft:
+    fifteen post-restart turns through safe-line resolution, with responder
+    receipts but coordinator turns still Codex-authored rather than sandboxed.
+    Call of the Void and Elysium-era gameplay remain procedural consumer
+    targets.
 
 hard_boundaries:
   - Prompt text is projection, not truth storage.
@@ -198,9 +190,10 @@ data_flow:
   - Work one bounded organ.
   - Verify the seam that matters.
   - Add distilled evidence only when future belief changes.
+  - Steward memory: keep the smallest correct persistent surface current and cut stale steering when it slows re-entry.
   - Commit and push completed work.
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It uses a Lucent hostage-feed negotiation to exercise sequential projector, packet-only responder, event, participant appraisal, reviewed mutation, relationship/perception, and coordinator receipts across fifteen post-restart turns. The arc resolves with Juno on the safe line, security held, Sol assigned non-contact protective handoff, and evidence export unresolved as aftermath pressure. Pallas remains a reference fixture and `pallas-training-loop-v0` remains the first smaller receipt-chain pilot.
-  next_action: Review the full Lucent arc and receipt chain, then decide whether to compile a branch/IF derivative, run specialist reviewers, or move to the next coverage fixture. Keep overall coverage at draft until branch/IF acceptance exists.
+  summary: `lucent-hostage-feed-v0` is the current open-ended training-loop draft. It exercises projector, responder, event, appraisal, mutation, relationship/perception, and Codex-authored coordinator receipts across fifteen post-restart turns, resolving with Juno on the safe line, security held, Sol in non-contact protective handoff, and evidence export unresolved. Pallas remains reference-only; `pallas-training-loop-v0` remains the smaller receipt-chain pilot.
+  next_action: Review the Lucent arc and receipt chain, then either run sandboxed coordinator-turn iteration, compile a branch/IF derivative, run specialist reviewers, or move to the next coverage fixture. Keep overall coverage at draft until branch/IF acceptance exists.

@@ -104,6 +104,10 @@ When the user says to prepare for imminent compaction:
 
 ## Operating Discipline
 
+- Steward persistent state as part of the work. If a lesson changes future
+  behavior, update the smallest correct memory surface before moving on; if a
+  memory surface is stale, duplicated, or making re-entry slower, cut or
+  consolidate it.
 - Before substantial edits, restate the current mechanism and intended change.
 - Prefer one clear hypothesis per iteration.
 - Verify with checks that reflect the real goal, not just proxy success.
@@ -119,6 +123,9 @@ When the user says to prepare for imminent compaction:
 - Before handoff, compaction, or phase boundaries, sync `state/map.yaml`, add
   distilled evidence when the lesson changes future belief, refresh
   `notes/fresh-workspace-handoff.md`, and make the next action explicit.
+- Treat `state/map.yaml` as a working memory map, not an archive. Preserve
+  current mission, live seams, boundaries, and next action; let git history,
+  evidence, and artifact files carry chronology.
 - In documentation, describe the live system and current rule directly. Do not
   write victory laps, scar tours, clever autopsies, or contrastive little
   boasts about what the project no longer does. If a sentence congratulates the
