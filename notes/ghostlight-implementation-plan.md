@@ -42,7 +42,7 @@ not carry live next-action lists.
    - Preserve the lessons it established: ordinary-life onboarding, branch-and-fold discipline, material state variables, source-backed lore elaboration, visual segmentation, scene-set need for illustrated replay, and review before acceptance.
 
 4. Generalize the loop.
-   - Add the corpus coverage ledger seam so future fixtures can be tracked by faction, movement, flashpoint, tonal mode, training target, review status, and cultural collisions.
+   - Use the corpus coverage ledger so future fixtures can be tracked by faction, movement, flashpoint, tonal mode, training target, review status, and cultural collisions.
    - Select the next Aetheria fixture from the 100-150 broad coverage target.
    - Add more historical grounded fixtures from AetheriaLore.
    - Add future-branch Elysium fixtures with branch lineage and constraint labels.

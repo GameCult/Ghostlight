@@ -7,7 +7,7 @@
     "state:status": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_state.py status",
     "state:prepare-compaction": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_prepare_compaction.py",
     "agent-state:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_agent_state.py",
-    "schema:validate": "npm run agent-state:validate && npm run projection:validate && npm run projected-context:validate && npm run lore-grounding:validate && npm run coordinator:validate && npm run responder-packets:validate && npm run responder-outputs:validate && npm run ink:validate",
+    "schema:validate": "npm run agent-state:validate && npm run projection:validate && npm run projected-context:validate && npm run lore-grounding:validate && npm run coordinator:validate && npm run responder-packets:validate && npm run responder-outputs:validate && npm run ink:validate && npm run coverage:status",
     "projection:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_projection_examples.py",
     "projected-context:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_projected_contexts.py",
     "lore-grounding:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_lore_grounding.py",
@@ -15,7 +15,8 @@
     "responder-packets:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_responder_packets.py",
     "responder-outputs:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_responder_outputs.py",
     "ink:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_ink_examples.py",
-    "images:count": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\count_visual_images.py"
+    "images:count": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\count_visual_images.py",
+    "coverage:status": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_corpus_coverage.py"
   },
   "devDependencies": {
     "inkjs": "^2.4.0"

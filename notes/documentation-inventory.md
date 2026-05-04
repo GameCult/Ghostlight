@@ -38,6 +38,8 @@ not slowly melt into one cursed binder.
   format.
 - `docs/architecture/aetheria-lore-grounding-architecture.md`: Aetheria
   historical, future-branch, and procedural grounding boundaries.
+- `docs/architecture/corpus-coverage-ledger.md`: corpus coverage ledger
+  contract and status-report shape.
 - `docs/architecture/technology-item-manifest-plan.md`: item, assembly,
   supply-chain, trade-good, and blueprint data target.
 - `docs/architecture/training-plan.md`: trainable organs, datasets, gates, and
@@ -76,6 +78,8 @@ not slowly melt into one cursed binder.
 - `state/evidence.jsonl`: distilled current evidence ledger.
 - `state/evidence.archive.jsonl`: archival evidence ledger.
 - `state/branches.json`: branch ledger.
+- `state/corpus-coverage.json`: machine-readable coverage ledger for accepted,
+  draft, planned, rejected, and superseded Aetheria fixtures.
 - `state/scratch.md`: disposable one-subgoal scratch surface.
 
 ## Maintenance Rule

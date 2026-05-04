@@ -56,6 +56,8 @@ The active path is a source-grounded branching-scene data loop:
 - Responder packet schema: `schemas/responder-packet.schema.json`
 - Responder output schema: `schemas/responder-output.schema.json`
 - Prompt folder: `prompts/`
+- Corpus coverage ledger: `state/corpus-coverage.json`
+- Corpus coverage command: `npm run coverage:status`
 - Sandboxed responder prompt template: `prompts/sandboxed-responder-packet.md`
 - Research sanity responder prompt template: `prompts/research-sanity-responder.md`
 - Narrative quality reviewer prompt: `prompts/narrative-quality-reviewer.md`
@@ -135,8 +137,9 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-Add the corpus coverage ledger seam or choose the next Aetheria fixture from the
-100-150 broad coverage target.
+Use the corpus coverage ledger to choose the next Aetheria fixture from the
+100-150 broad coverage target. Current coverage begins with Pallas Species
+Strikes as the first accepted-as-draft row.
 
 ## Warnings
 

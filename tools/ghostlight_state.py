@@ -12,10 +12,11 @@ STATE_DIR = ROOT / "state"
 MAP_PATH = STATE_DIR / "map.yaml"
 BRANCHES_PATH = STATE_DIR / "branches.json"
 EVIDENCE_PATH = STATE_DIR / "evidence.jsonl"
+COVERAGE_PATH = STATE_DIR / "corpus-coverage.json"
 
 
 def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    return path.read_text(encoding="utf-8-sig")
 
 
 def write_text(path: Path, content: str) -> None:
@@ -64,6 +65,24 @@ def extract_active_subgoals() -> list[str]:
     return results
 
 
+def load_coverage_summary() -> str | None:
+    if not COVERAGE_PATH.exists():
+        return None
+    data = json.loads(read_text(COVERAGE_PATH))
+    entries = data.get("entries", [])
+    accepted = [
+        entry
+        for entry in entries
+        if entry.get("status") in {"accepted", "accepted_as_draft"}
+    ]
+    target = data.get("coverage_targets", {}).get("practical_first_broad_target", {})
+    minimum = target.get("minimum")
+    maximum = target.get("maximum")
+    if isinstance(minimum, int) and isinstance(maximum, int):
+        return f"{len(accepted)} / {minimum}-{maximum} accepted fixtures"
+    return f"{len(accepted)} accepted fixtures"
+
+
 def cmd_status(_: argparse.Namespace) -> int:
     branches = load_branches().get("branches", [])
     active = [branch for branch in branches if branch.get("status") == "active"]
@@ -75,6 +94,9 @@ def cmd_status(_: argparse.Namespace) -> int:
     print(f"Summary: {summary}")
     print(f"Next action: {next_action}")
     print(f"Active branches: {len(active)} / {len(branches)}")
+    coverage = load_coverage_summary()
+    if coverage:
+        print(f"Coverage: {coverage}")
     if subgoals:
         print("Active subgoals:")
         for item in subgoals:
@@ -177,4 +199,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

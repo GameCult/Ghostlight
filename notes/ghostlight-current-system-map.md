@@ -18,6 +18,7 @@ validated artifact seams for producing reviewed training data.
 - `state/map.yaml`: canonical mission, boundaries, live architecture, next action.
 - `state/evidence.jsonl`: distilled belief-changing evidence only.
 - `state/evidence.archive.jsonl`: older evidence preserved for archaeology.
+- `state/corpus-coverage.json`: accepted/planned fixture coverage ledger.
 - `notes/fresh-workspace-handoff.md`: compact re-entry packet.
 - `notes/ghostlight-implementation-plan.md`: near-term implementation sequence.
 - `docs/architecture/`: detailed contracts and rationale.
@@ -79,6 +80,7 @@ the room.
 - Ink branch contract: `docs/architecture/ink-branching-scenes.md`
 - Illustrated IF visual pipeline: `docs/architecture/illustrated-if-visual-pipeline.md`
 - Training stages and corpus gates: `docs/architecture/training-plan.md`
+- Corpus coverage ledger: `docs/architecture/corpus-coverage-ledger.md`
 
 ## Current Live Example
 
@@ -118,7 +120,7 @@ paths as active state surfaces.
 - Full scene/event loop implementation
 - Culture prior engine
 - Automatic promotion of branch outcomes into canonical state
-- Corpus coverage ledger
+- Corpus coverage ledger expansion beyond the initial Pallas row
 
 ## Current North Star
 
@@ -129,3 +131,6 @@ receipts, branch compiler artifacts, IF review findings, visual scene plans, and
 clear branch consequences. The samples should also train tonal control: a
 fixture needs an intentional prose mode and enough ordinary life for consequence
 to matter.
+
+Use `npm run coverage:status` before choosing new fixtures so the corpus grows
+by coverage need instead of proximity to the nearest interesting disaster.

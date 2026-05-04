@@ -68,6 +68,9 @@ live_architecture:
   branch_compiler:
     - The branch compiler turns fixture briefs, lore digests, scene/world state, actor-local branch candidates, reviewed consequence packets, fold plans, and optional visual replay requirements into playable Ink plus training sidecars, separate visual plan artifacts when illustrated replay is in scope, and compiler notes.
     - The branch compiler owns playable structure, click-through segmentation, conditionals, variables, callbacks, fold materialization, visual scene ids, and image prompt handles; it stores visual prompt data in `.visual.json` artifacts rather than bloating training annotations; it does not own hidden character truth, participant appraisal, or durable social mutation.
+  coverage_ledger:
+    - `state/corpus-coverage.json` tracks accepted, draft, planned, rejected, and superseded fixtures by faction, movement, flashpoint, timeline lane, tonal mode, collision axis, training target, artifact refs, review status, and economy hooks.
+    - `npm run coverage:status` validates the ledger and reports coarse corpus gaps before choosing the next fixture.
   training_targets:
     - Coordinator/story runtime
     - Memory and lore retrieval
@@ -109,6 +112,7 @@ coverage_targets:
 current_artifacts:
   canonical_docs:
     - notes/documentation-inventory.md
+    - docs/architecture/corpus-coverage-ledger.md
     - docs/architecture/prompt-projection-contract.md
     - docs/architecture/projected-local-context.md
     - docs/architecture/sequential-agent-runtime.md
@@ -123,6 +127,7 @@ current_artifacts:
     - schemas/agent-state.schema.json
     - schemas/projection-example.schema.json
     - schemas/lore-grounding-digest.schema.json
+    - schemas/corpus-coverage.schema.json
     - schemas/projected-local-context.schema.json
     - schemas/coordinator-artifact.schema.json
     - schemas/responder-packet.schema.json
@@ -136,6 +141,7 @@ current_artifacts:
     - prompts/spatial-geometric-cohesion-reviewer.md
     - prompts/visual-scene-continuity-reviewer.md
   live_examples:
+    - state/corpus-coverage.json
     - examples/agent-state.call-of-the-void.json
     - examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl
     - examples/projections/call-of-the-void.scene-broken-taxi-oz.pretty.json
@@ -161,4 +167,4 @@ data_flow:
 
 current_status:
   summary: Pallas Species Strikes is the current accepted-as-draft branch-and-fold IF fixture. The live workspace has been pruned to remove old prototype fixture receipts, stale runner tools, and model-runner experiment debris after their lessons were distilled into the architecture docs, state, evidence, and git history. The next build step is corpus-scale coverage rather than further archaeology.
-  next_action: Add the corpus coverage ledger seam or select the next Aetheria fixture from the 100-150 broad coverage target.
+  next_action: Use the corpus coverage ledger to select the next Aetheria fixture from the 100-150 broad coverage target.

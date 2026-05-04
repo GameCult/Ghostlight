@@ -1,0 +1,92 @@
+﻿{
+  "schema_version": "ghostlight.corpus_coverage.v0",
+  "coverage_id": "ghostlight-aetheria-corpus-coverage-v0",
+  "coverage_targets": {
+    "major_powers": 12,
+    "minor_powers": 21,
+    "movements": 23,
+    "pre_elysium_flashpoints": 24,
+    "defunct_absorbed_powers": 5,
+    "practical_first_broad_target": {
+      "minimum": 100,
+      "maximum": 150
+    },
+    "major_power_requirement": "Each major power needs at least one founding-era story and one day-in-the-life story.",
+    "collision_requirement": "Every accepted coverage fixture should involve multiple cultures, factions, movements, institutions, body assumptions, or infrastructure assumptions colliding."
+  },
+  "entries": [
+    {
+      "fixture_id": "pallas-species-strikes-awakened-labor-v0",
+      "status": "accepted_as_draft",
+      "timeline_lane": "historical_grounded",
+      "canon_status": "single_history",
+      "story_type": "flashpoint_story",
+      "era": "Pre-Elysium",
+      "location": "Pallas, AU-controlled Bloom industrial spoke manifold service ring",
+      "flashpoint": "Pallas Species Strikes",
+      "primary_subjects": [
+        "Awakened Labor Front",
+        "Aeronautics Unlimited"
+      ],
+      "secondary_subjects": [
+        "Baseline League",
+        "Cephalopod Syndicate",
+        "BioElevate",
+        "VitaForge",
+        "BioDrone Standard"
+      ],
+      "collision_axes": [
+        "labor",
+        "species_body",
+        "liability",
+        "infrastructure",
+        "personhood",
+        "class",
+        "safety"
+      ],
+      "tonal_modes": [
+        "industrial realism",
+        "humane institutional pressure",
+        "restrained dry wit",
+        "ordinary work texture"
+      ],
+      "training_targets": [
+        "coordinator",
+        "branch_compiler",
+        "if_artifact_reviewer",
+        "narrative_reviewer",
+        "lore_grounding_reviewer",
+        "spatial_geometric_reviewer",
+        "visual_scene_continuity_reviewer",
+        "technology_item_manifest"
+      ],
+      "artifacts": {
+        "lore_digest": "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json",
+        "agent_state": "examples/agent-state.pallas-species-strikes.v0.json",
+        "coordinator": "examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json",
+        "ink": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+        "training_sidecar": "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json",
+        "visual_plan": "examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json",
+        "clean_run": "experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md",
+        "visual_review_receipt": "experiments/pallas-species-strikes/pallas-species-strikes.visual-scene-review.v1.json"
+      },
+      "review": {
+        "schema": "accepted",
+        "narrative": "accepted_as_draft",
+        "lore": "accepted_as_draft",
+        "spatial": "accepted_as_draft",
+        "visual": "accepted_as_draft",
+        "if_artifact": "accepted_as_draft"
+      },
+      "economy_hooks": [
+        "cephalopod_zero_g_maintenance_harness",
+        "biodrone_limiter_interface",
+        "cavity_habitat_seal_assembly",
+        "strike_safe_life_support_bypass_kit",
+        "industrial_spoke_manifold_service_ring"
+      ],
+      "open_lore_gaps": [],
+      "notes": "Current accepted-as-draft scaffold. Use as a shape reference for source grounding, branch-and-fold, review, visual planning, and item-hook capture; do not treat as raw responder gold."
+    }
+  ]
+}
