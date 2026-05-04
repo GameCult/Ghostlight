@@ -19,7 +19,7 @@ Final variable shape:
 - `life_support_margin`: tight but survivable
 - `evidence_of_sentience`: initial observable evidence only
 - `cephalopod_leverage`: high enough to matter
-- `bioelevate_liability`: low, because this path does not foreground BioElevate evidence
+- `supplier_liability`: low, because this path does not foreground supplier-liability evidence
 - `worker_injury`: none
 - `media_visibility`: limited
 - `nara_path_marked`: false
@@ -112,9 +112,9 @@ Lio looked at Nara's hands on the rail, at Orrin's crew around the anchor hooks,
 
 The official board called it irregularity. The worker channel called it refusal.
 
-BioElevate legal, summoned by Ilya with two clipped phrases, called it potential scaffold drift. BioElevate was the vendor-law arm that leased engineered workers to AU as product behavior, which was a tidy phrase until one of the products refused a death route.
+AU vendor legal, summoned by Ilya with two clipped phrases, called it potential scaffold drift. The board pulled from two supplier vocabularies at once: VitaForge product behavior for Nara's BioDrone Standard line, and BioElevate scaffold language for uplifted bodies and dry-operation support systems. It was a tidy arrangement until the categories started refusing a death route together.
 
-The incident board opened a BioElevate form pane and offered Lio three clean boxes: product behavior variance, trained route residue, maintenance-class injury.
+The incident board opened a supplier-liability pane and offered Lio three clean boxes: product behavior variance, trained route residue, maintenance-class injury.
 
 Nara's fingers stayed flat on the manifold face. Teth's nearest eye turned toward the form. Orrin read the choices and spat one quiet word into his coffee.
 
@@ -142,7 +142,7 @@ Ilya's expression did not change. That was how Lio knew it had landed.
 
 Teth rotated one eye toward the service lung display. "No. It is a pressure system. Those are less forgiving."
 
-BioElevate legal began sanding the word memory into residue. Training artifact. Scaffold drift. Inherited route imprint. Anything but what everyone in the ring had seen: workers refusing a danger because they remembered another worker being hurt.
+AU vendor legal began sanding the word memory into residue. Training artifact. Scaffold drift. Inherited route imprint. Anything but what everyone in the ring had seen: workers refusing a danger because they remembered another worker being hurt.
 
 ## Ordeal
 
@@ -190,7 +190,7 @@ By second shift, the touch sequence had crossed two service rings: twice, wait, 
 
 Orrin's cracked mug became the place his crew started correcting anyone who said the engineered techs panicked. They used safety language first. Politics arrived wearing work gloves.
 
-BioElevate kept the cleanest language for itself. The yard kept the dirty work of remembering in cuffs, mugs, and copied reports.
+The suppliers kept the cleanest language for themselves. The yard kept the dirty work of remembering in cuffs, mugs, and copied reports.
 
 The evidence remained real but fragile: a worker's refusal, a remembered name, and a pattern AU would spend money teaching outsiders not to see. Lio kept the receipt light open anyway.
 
@@ -208,7 +208,7 @@ But one line entered the incident log and could not be fully removed:
 
 Worker judgment.
 
-Orrin's old mug went back into the far-loop break rack with a new hairline crack. Teth patched the harness cuff again. Nara touched the Kappa-7 manifold face twice, waited, and touched it a third time while everyone pretended not to watch.
+Orrin's old mug went back into the far-loop break rack with a new hairline crack. Near the primary work segment, Teth patched the harness cuff again. At the Kappa-7 manifold face, Nara touched the panel twice, waited, and touched it a third time while everyone pretended not to watch.
 
 That was not freedom. It was the first tool small enough to smuggle through a shift bell.
 

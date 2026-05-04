@@ -4,7 +4,7 @@ VAR security_pressure = 0
 VAR life_support_margin = 3
 VAR evidence_of_sentience = 1
 VAR cephalopod_leverage = 1
-VAR bioelevate_liability = 0
+VAR supplier_liability = 0
 VAR worker_injury = 0
 VAR media_visibility = 0
 VAR nara_centered = false
@@ -81,7 +81,7 @@ Lio knows the day will probably go wrong. The only question is whether it goes w
 
 === walk_with_nara ===
 // ghostlight.scene: pallas.branch.nara_manifold_walk; visual_scene_id: pallas_nara_manifold_walk
-Nara-7 touches the loop-inner Kappa manifold face twice, waits, then touches it a third time with two fingers spread apart beside the Kappa-7 port. Her batch tag says Seal Technician, BioDrone Standard, the product class AU uses when it wants a worker to sound like inventory. Her hand says she is listening.
+Nara-7 touches the loop-inner Kappa manifold face twice, waits, then touches it a third time with two fingers spread apart beside the Kappa-7 port. Her batch tag says Seal Technician, VitaForge BioDrone Standard, the kind of subcontracted worker category AU uses when it wants a person to sound like inventory. Her hand says she is listening.
 
 "Kappa sings wrong," she says.
 
@@ -203,13 +203,13 @@ Nara's hands stay flat on the rail. Orrin watches the move, and his expression d
 // ghostlight.scene: pallas.reversal.classification_pressure; visual_scene_id: pallas_classification_pressure
 The official board calls it irregularity. The worker channel calls it refusal.
 
--> bioelevate_liability_frame
+-> supplier_liability_frame
 
-=== bioelevate_liability_frame ===
-// ghostlight.scene: pallas.reversal.bioelevate_liability_frame; visual_scene_id: pallas_bioelevate_liability_frame
-BioElevate legal, summoned by Ilya with two clipped phrases, calls it potential scaffold drift. BioElevate is the vendor-law arm that leases engineered workers to AU as product behavior, which is a tidy phrase until one of the products refuses a death route.
+=== supplier_liability_frame ===
+// ghostlight.scene: pallas.reversal.supplier_liability_frame; visual_scene_id: pallas_supplier_liability_frame
+AU vendor legal, summoned by Ilya with two clipped phrases, calls it potential scaffold drift. The board pulls from two supplier vocabularies at once: VitaForge product behavior for Nara's BioDrone Standard line, and BioElevate scaffold language for uplifted bodies and dry-operation support systems. It is a tidy arrangement until the categories start refusing a death route together.
 
-The incident board opens a BioElevate form pane and offers Lio three clean boxes: product behavior variance, trained route residue, maintenance-class injury.
+The incident board opens a supplier-liability pane and offers Lio three clean boxes: product behavior variance, trained route residue, maintenance-class injury.
 
 Nara's fingers stay flat on the manifold face. Teth's nearest eye turns toward the form. Orrin reads the choices and spits one quiet word into his coffee.
 
@@ -230,7 +230,7 @@ The Kappa pressure-margin clock is still kind. Not generous, but kind enough to 
 // ghostlight.branch: branch-03-show-nara-memory; action: show_object; intent: Use observable route memory as evidence without forcing private confession.
 * [Ask Nara to mark the remembered cutting path on Lio's slate.]
     ~ evidence_of_sentience += 2
-    ~ bioelevate_liability += 1
+    ~ supplier_liability += 1
     ~ nara_centered = true
     -> show_nara_memory
 // ghostlight.branch: branch-03-ask-orrin-solidarity; action: speak; intent: Ask baseline riggers to defend safety through their own expertise.
@@ -244,10 +244,10 @@ The Kappa pressure-margin clock is still kind. Not generous, but kind enough to 
     ~ life_support_margin += 2
     ~ cephalopod_leverage += 1
     -> bypass_kit
-// ghostlight.branch: branch-03-public-liability; action: transfer_object; intent: Make BioElevate's liability language visible outside the yard.
+// ghostlight.branch: branch-03-public-liability; action: transfer_object; intent: Make supplier-liability language visible outside the yard.
 * [Push the incident packet to an outside ALF legal mirror.]
     ~ media_visibility += 2
-    ~ bioelevate_liability += 2
+    ~ supplier_liability += 2
     ~ security_pressure += 1
     -> public_liability
 
@@ -261,7 +261,7 @@ Lio turns the slate outward instead of handing it to Ilya.
 
 Nara taps the Kappa-7 diagram with frightening precision: two safe plates, one false seam, the cut line where Rell's suit opened, the manual valve AU replaced in the report but not in the wall.
 
-BioElevate legal asks whether the marks might be trained route residue.
+AU vendor legal asks whether the marks might be trained route residue.
 
 Orrin says, "Trained route residue does not remember the part procurement lied about."
 
@@ -352,12 +352,12 @@ Every extra breath spent bargaining is a breath the red board can turn into some
 * {bypass_ready} [Trade bypass control for sealed evidence and no forced Kappa-7 entry.]
     ~ life_support_margin += 1
     ~ evidence_of_sentience += 1
-    ~ bioelevate_liability += 1
+    ~ supplier_liability += 1
     -> trade_bypass_for_evidence
 // ghostlight.branch: branch-04-seal-evidence-without-bypass; action: transfer_object; intent: Preserve evidence and forbid forced Kappa-7 entry when there is no bypass leverage to trade.
 * {not bypass_ready} [Seal the evidence packet and forbid forced Kappa-7 entry.]
     ~ evidence_of_sentience += 1
-    ~ bioelevate_liability += 1
+    ~ supplier_liability += 1
     ~ security_pressure += 1
     -> seal_evidence_without_bypass
 // ghostlight.branch: branch-04-orrin-front-demand; action: mixed; intent: Let baseline workers front the safety demand so solidarity becomes material.
@@ -395,7 +395,7 @@ Lio nods to Teth.
 
 "Bypass under shared custody. Sealed packet to ALF mirror, AU incident board, and yard safety. No forced Kappa-7 entry."
 
-Ilya accepts because the alternative is a casualty report she cannot classify out of existence. BioElevate legal immediately begins sanding the word memory into residue, but the packet has already left the room.
+Ilya accepts because the alternative is a casualty report she cannot classify out of existence. AU vendor legal immediately begins sanding the word memory into residue, but the packet has already left the room.
 
 -> return_fold
 
@@ -457,10 +457,10 @@ Orrin's cracked mug becomes the place his crew starts correcting anyone who says
 Baseline resentment survives the day, bruised but not beaten. The Baseline League will find ears near the break rack later if no one keeps doing the harder work.
 }
 
-{bioelevate_liability >= 3:
-BioElevate's liability memo leaks with enough redactions to make the missing words famous; someone prints it and tapes it beside the cuff Teth keeps patching.
+{supplier_liability >= 3:
+The supplier-liability memo leaks with enough redactions to make the missing words famous; someone prints it and tapes it beside the cuff Teth keeps patching.
 - else:
-BioElevate keeps the cleanest language for itself. The yard keeps the dirty work of remembering in cuffs, mugs, and copied reports.
+The suppliers keep the cleanest language for themselves. The yard keeps the dirty work of remembering in cuffs, mugs, and copied reports.
 }
 
 {evidence_of_sentience >= 4:

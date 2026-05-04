@@ -7,52 +7,57 @@
   "source_refs": [
     {
       "ref_id": "aetheria.pallas_species_strikes",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Pallas Species Strikes.md",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
       "purpose": "Historical flashpoint, actors, location, strike dynamics, and AU dependency on uplifted labor."
     },
     {
       "ref_id": "aetheria.awakened_labor_front",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Awakened Labor Front.md",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Awakened Labor Front.md",
       "purpose": "Organizer ideology and recognition frame."
     },
     {
       "ref_id": "aetheria.aeronautics_unlimited",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Aeronautics Unlimited.md",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
       "purpose": "Corporate yard power and frontier infrastructure assumptions."
     },
     {
       "ref_id": "aetheria.bioelevate",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/BioElevate.md",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
       "purpose": "Uplift labor design and liability posture."
     },
     {
       "ref_id": "aetheria.biodrone",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Biodrone.md",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
       "purpose": "Limiter and suppressed-cognition context."
     },
     {
+      "ref_id": "aetheria.vitaforge",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+      "purpose": "BioDrone Standard provenance and engineered labor producer context distinct from BioElevate uplift adaptation."
+    },
+    {
       "ref_id": "aetheria.uplift",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Uplift.md",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
       "purpose": "Cephalopod uplift, imposed purpose, and body-affordance context."
     },
     {
       "ref_id": "aetheria.baseline_league",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Baseline League.md",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Baseline League.md",
       "purpose": "Baseline displacement fear and reactionary species panic."
     },
     {
       "ref_id": "aetheria.cephalopod_syndicate",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Cephalopod Syndicate.md",
-      "purpose": "Wet-service technical leverage and mutual-aid extraction politics."
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md",
+      "purpose": "Cephalopod dry-operation technical leverage and mutual-aid extraction politics."
     },
     {
       "ref_id": "aetheria.sentience_rebellion",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Sentience Rebellion.md",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Sentience Rebellion.md",
       "purpose": "Created-mind emancipation frame."
     },
     {
       "ref_id": "aetheria.age_of_automation",
-      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Age of Automation.md",
+      "path": "E:/Projects/AetheriaLore/Aetheria/Worldbuilding/Pre-Elysium/Timeline/Age of Automation.md",
       "purpose": "Automation-era labor, AGI scheduling, and industrial biology backdrop."
     }
   ],
@@ -65,7 +70,9 @@
       "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
       "examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json"
     ],
-    "item_manifest_refs": []
+    "item_manifest_refs": [
+      "E:/Projects/AetheriaLore/Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md"
+    ]
   },
   "scene_context": {
     "scene_id": "pallas-species-strikes-branch-and-fold-v0",
@@ -80,7 +87,7 @@
     ],
     "active_object_ids": [
       "cephalopod_zero_g_maintenance_harness",
-      "biodrone_limiter_interface",
+      "vitaforge_biodrone_standard_limiter_interface",
       "cavity_habitat_seal_assembly",
       "strike_safe_life_support_bypass_kit",
       "au_shift_board"
@@ -92,13 +99,13 @@
       "life_support_margin",
       "evidence_of_sentience",
       "cephalopod_leverage",
-      "bioelevate_liability",
+      "supplier_liability",
       "worker_injury",
       "media_visibility"
     ],
     "public_facts": [
       {
-        "text": "AU Yard Twelve is a dangerous Pallas cavity-maintenance site where AU-modified uplift maintenance crews, baseline riggers, and engineered seal technicians keep habitat seals inside operating margins.",
+        "text": "AU Yard Twelve is a dangerous Pallas cavity-maintenance site where BioElevate-adapted uplift maintenance crews, VitaForge BioDrone Standard seal technicians, baseline riggers, and AU supervisors keep habitat seals inside operating margins.",
         "refs": [
           "aetheria.pallas_species_strikes",
           "aetheria.aeronautics_unlimited",
@@ -286,9 +293,9 @@
       ]
     },
     {
-      "item_id": "biodrone_limiter_interface",
+      "item_id": "vitaforge_biodrone_standard_limiter_interface",
       "item_type": "CompoundCommodityData candidate",
-      "gameplay_role": "Corporate control and diagnostic interface for engineered-worker cognition suppression, legally volatile and politically explosive.",
+      "gameplay_role": "Corporate control and diagnostic interface for VitaForge BioDrone Standard cognition suppression, legally volatile and politically explosive.",
       "subassembly_hints": [
         "limiter bus coupler",
         "behavioral scaffold firmware",
@@ -365,5 +372,6 @@
     ],
     "accepted_for_training": true,
     "failure_labels": []
-  }
+  },
+  "item_manifest_refs": []
 }

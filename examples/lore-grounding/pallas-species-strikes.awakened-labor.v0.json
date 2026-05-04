@@ -53,6 +53,14 @@
       "relevance": "Grounds engineered labor organisms, limiters, market categories, corporate denial of sentience, jailbreaks, and resistance movements."
     },
     {
+      "source_id": "vitaforge",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+      "title": "VitaForge",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds BioDrone Standard as VitaForge engineered labor product, distinct from BioElevate uplift and habitat-adaptation lines."
+    },
+    {
       "source_id": "uplift",
       "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
       "title": "Uplift",
@@ -117,7 +125,7 @@
         ]
       },
       {
-        "text": "BioElevate sells engineered utility at industrial scale through species-specific uplift design, behavioral scaffolding, and habitat adaptation.",
+        "text": "BioElevate sells engineered uplift utility through species-specific design, behavioral scaffolding, and habitat adaptation; VitaForge remains the canonical source for BioDrone Standard engineered labor lines.",
         "source_refs": [
           "bioelevate"
         ]
@@ -142,6 +150,16 @@
         "text": "Baseline workers have real material grievances about posthuman systems displacing them and pricing dignity behind expensive enhancement, but that grievance can collapse into species panic.",
         "source_refs": [
           "baseline-league"
+        ]
+      },
+      {
+        "text": "AU Pallas yards may mix supplier categories in one work ecology: VitaForge BioDrone Standard seal technicians, BioElevate-adapted uplift workers, baseline riggers, and AU management all meet in the same maintenance chain.",
+        "source_refs": [
+          "pallas-species-strikes",
+          "biodrone",
+          "vitaforge",
+          "bioelevate",
+          "aeronautics-unlimited"
         ]
       }
     ],
@@ -228,7 +246,8 @@
       "source_refs": [
         "awakened-labor-front",
         "sentience-rebellion",
-        "biodrone"
+        "biodrone",
+        "vitaforge"
       ]
     },
     {
@@ -281,13 +300,13 @@
     },
     {
       "group_id": "bioelevate-design",
-      "label": "BioElevate design and liability staff",
+      "label": "BioElevate uplift design and liability staff",
       "group_type": "institution",
       "institutional_logic": [
-        "Frame uplifted and engineered labor behavior as design envelope, scaffolding drift, or misuse rather than autonomous labor politics."
+        "Frame uplifted-body behavior and adaptation failures as scaffold drift, design envelope, or misuse rather than autonomous labor politics."
       ],
       "material_incentives": [
-        "Avoid product liability",
+        "Avoid product liability for uplift/adaptation systems",
         "Keep species-specific labor lines saleable",
         "Protect habitat-adaptation contracts"
       ],
@@ -324,7 +343,8 @@
       "source_refs": [
         "bioelevate",
         "uplift",
-        "biodrone"
+        "biodrone",
+        "vitaforge"
       ]
     },
     {
@@ -454,12 +474,13 @@
         "bioelevate-design"
       ],
       "pressure_type": "threat_model",
-      "summary": "Autonomous worker behavior threatens the claim that uplift scaffolding and biodrone limiters are managed design rather than domination.",
-      "projection_use": "BioElevate speakers should reframe personhood evidence as drift, misconfiguration, or misuse.",
+      "summary": "Autonomous uplifted-body behavior threatens the claim that behavioral scaffolding and habitat adaptation are managed design rather than domination; biodrone categories may involve other suppliers such as VitaForge.",
+      "projection_use": "BioElevate speakers should reframe uplift and adaptation evidence as scaffold drift, misconfiguration, or misuse, while VitaForge-linked biodrone claims should keep their own provenance visible.",
       "source_refs": [
         "bioelevate",
+        "uplift",
         "biodrone",
-        "uplift"
+        "vitaforge"
       ]
     },
     {
@@ -551,7 +572,7 @@
       "likely_insults": [
         "clever limbs",
         "warranty rebels",
-        "dryside taxonomy clerks"
+        "supplier taxonomy clerks"
       ],
       "projection_use": "Use when service-lung control becomes political leverage.",
       "source_refs": [

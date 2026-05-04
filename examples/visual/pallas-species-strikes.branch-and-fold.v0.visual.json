@@ -30,7 +30,7 @@
       {
         "visual_scene_id": "pallas_service_ring_kappa",
         "ink_anchor": "intro_service_ring",
-        "base_image_prompt": "Wide-to-medium view down Service Ring Kappa, a curved local service-loop segment built into the engineered inner shell of a rotating Bloom habitat: on the left, dry-operation cephalopod work bays hold suspended dry-operation work-support frames with humidity rings, oxygenation tubes, flexible support loops, rounded valve clusters, and radial tool rails; on the right, a loop-outer baseline anchor rail of bolted steel track, anchor posts, heavy hooks, route bolts, and clipped safety tethers supports baseline human anchor riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts. Along the consolidated asteroid aggregate and TCS substrate wall, a glowing amber loop-inner manifold face panel spreads into pipe trunks, cable bundles, gauges, and route-diagram screens; engineered seal technicians in clean numbered gray skinsuits with small BioDrone batch tags, close-cropped hair, and precise identical work posture wait near it while Lio walks through the center carrying a slate.",
+        "base_image_prompt": "Wide-to-medium view down Service Ring Kappa, a curved local service-loop segment built into the engineered inner shell of a rotating Bloom habitat: on the left, dry-operation cephalopod work bays hold suspended dry-operation work-support frames with humidity rings, oxygenation tubes, flexible support loops, rounded valve clusters, and radial tool rails; on the right, a loop-outer baseline anchor rail of bolted steel track, anchor posts, heavy hooks, route bolts, and clipped safety tethers supports baseline human anchor riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts. Along the consolidated asteroid aggregate and TCS substrate wall, a glowing amber loop-inner manifold face panel spreads into pipe trunks, cable bundles, gauges, and route-diagram screens; engineered seal technicians in clean numbered gray skinsuits with small VitaForge BioDrone Standard batch tags, close-cropped hair, and precise identical work posture wait near it while Lio walks through the center carrying a slate.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -62,7 +62,7 @@
       {
         "visual_scene_id": "pallas_nara_manifold",
         "ink_anchor": "intro_nara",
-        "base_image_prompt": "Medium shot at the loop-inner Kappa manifold face: a waist-high mechanical spine of ribbed pipe trunks, bundled fiber cables, removable patch plates, amber route-diagram screens, pressure gauges, warning glyphs, and small hand-sized diagnostic touch panels bolted into curved Bloom shell plating over consolidated asteroid aggregate and dark TCS substrate. Nara-7 touches one ribbed metal access panel twice, pauses, then touches it with two fingers spread; three engineered seal technicians stand behind her in a precise line, wearing clean numbered gray skinsuits with small BioDrone batch tags, close-cropped practical hair, pale gray-brown engineered-worker skin tones, and identical still work posture; Lio watches from the edge of frame with a slate.",
+        "base_image_prompt": "Medium shot at the loop-inner Kappa manifold face: a waist-high mechanical spine of ribbed pipe trunks, bundled fiber cables, removable patch plates, amber route-diagram screens, pressure gauges, warning glyphs, and small hand-sized diagnostic touch panels bolted into curved Bloom shell plating over consolidated asteroid aggregate and dark TCS substrate. Nara-7 touches one ribbed metal access panel twice, pauses, then touches it with two fingers spread; three engineered seal technicians stand behind her in a precise line, wearing clean numbered gray skinsuits with small VitaForge BioDrone Standard batch tags, close-cropped practical hair, pale gray-brown engineered-worker skin tones, and identical still work posture; Lio watches from the edge of frame with a slate.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -249,7 +249,7 @@
       {
         "visual_scene_id": "pallas_chokepoint_refusal",
         "ink_anchor": "chokepoint_refusal",
-        "base_image_prompt": "Threshold shot at the lip of the Kappa-7 access port: a dark oval Kappa-7 access port opens in the loop-inner manifold face of the central equipment cluster, ringed by overlapping patch plates, red-edged gasket seals, small amber warning lights, pressure gauges, scratched route arrows, and handholds leading locally inward into the equipment cluster before the route bends Bloom-outward. Nara-7 and three engineered seal technicians in clean numbered gray skinsuits with small BioDrone batch tags stop in a coordinated line with hands on the loop-inner Kappa manifold face of pipes and touch panels; baseline anchor riggers in patched brown-orange jackets, heavy gloves, magnetic boots, and tool belts freeze beside the bolted loop-outer anchor track; Teth's work-support valves are held mid-operation in the dry-operation work-support station; Lio stands in the center lane facing the halted gray-skinsuit seal technicians, brown-orange anchor riggers, and the uncategorized Kappa-7 access port.",
+        "base_image_prompt": "Threshold shot at the lip of the Kappa-7 access port: a dark oval Kappa-7 access port opens in the loop-inner manifold face of the central equipment cluster, ringed by overlapping patch plates, red-edged gasket seals, small amber warning lights, pressure gauges, scratched route arrows, and handholds leading locally inward into the equipment cluster before the route bends Bloom-outward. Nara-7 and three engineered seal technicians in clean numbered gray skinsuits with small VitaForge BioDrone Standard batch tags stop in a coordinated line with hands on the loop-inner Kappa manifold face of pipes and touch panels; baseline anchor riggers in patched brown-orange jackets, heavy gloves, magnetic boots, and tool belts freeze beside the bolted loop-outer anchor track; Teth's work-support valves are held mid-operation in the dry-operation work-support station; Lio stands in the center lane facing the halted gray-skinsuit seal technicians, brown-orange anchor riggers, and the uncategorized Kappa-7 access port.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -282,7 +282,7 @@
       {
         "visual_scene_id": "pallas_ilya_arrival",
         "ink_anchor": "ilya_arrival",
-        "base_image_prompt": "Authority-arrival transition at the Kappa-7 access port: Ilya Marne enters fast from the raised supervisor catwalk connected to the glassed Kappa operations gallery and spoke-base control deck, framed by blue-white AU schedule displays, waist-high transparent supervisor safety rail, and sharp rectangular management light. The maintenance floor below is a curved local service-loop segment with a dark gasket-rimmed Kappa-7 access port, amber loop-inner pipe-and-panel manifold face, bolted loop-outer baseline anchor rail, open cephalopod work-support station, scuffed deck plates, ribbed Bloom-shell supports, and hard overhead work lamps. Lio turns toward Ilya with the slate half-raised; Nara and the engineered seal technicians hold their line at the manifold, all in clean numbered gray skinsuits with small BioDrone batch tags and identical still posture; Orrin's baseline anchor riggers stand frozen by the loop-outer anchor rail in patched brown-orange jackets, heavy gloves, magnetic boots, and lowered tool belts; Teth's work-support valves are paused in place. Cold blue-white UI reflections and transparent safety-rail glare cut across the amber work lighting, making management authority visible in the frame.",
+        "base_image_prompt": "Authority-arrival transition at the Kappa-7 access port: Ilya Marne enters fast from the raised supervisor catwalk connected to the glassed Kappa operations gallery and spoke-base control deck, framed by blue-white AU schedule displays, waist-high transparent supervisor safety rail, and sharp rectangular management light. The maintenance floor below is a curved local service-loop segment with a dark gasket-rimmed Kappa-7 access port, amber loop-inner pipe-and-panel manifold face, bolted loop-outer baseline anchor rail, open cephalopod work-support station, scuffed deck plates, ribbed Bloom-shell supports, and hard overhead work lamps. Lio turns toward Ilya with the slate half-raised; Nara and the engineered seal technicians hold their line at the manifold, all in clean numbered gray skinsuits with small VitaForge BioDrone Standard batch tags and identical still posture; Orrin's baseline anchor riggers stand frozen by the loop-outer anchor rail in patched brown-orange jackets, heavy gloves, magnetic boots, and lowered tool belts; Teth's work-support valves are paused in place. Cold blue-white UI reflections and transparent safety-rail glare cut across the amber work lighting, making management authority visible in the frame. A visible badge-only stair drops from the catwalk to a lower landing at the primary Kappa-7 work segment, making her route from gallery to floor explicit.",
         "visible_characters": [
           {
             "agent_id": "ilya_marne",
@@ -329,7 +329,7 @@
       {
         "visual_scene_id": "pallas_quiet_safety_pause",
         "ink_anchor": "quiet_safety_pause",
-        "base_image_prompt": "Local-channel containment frame at the Kappa-7 access port: Lio holds a work slate low with a small amber safety-pause label, standing between the dark gasket-rimmed Kappa-7 access port, the loop-inner Kappa manifold face of pipes and touch panels, the bolted loop-outer baseline anchor rail, the open cephalopod work-support station, and the raised supervisor catwalk. Nara and the engineered seal technicians in clean numbered gray skinsuits with small BioDrone batch tags are stopped at the pipe-and-panel wall; Ilya watches Lio closely from the management side; Teth's dry-operation work-support station and Orrin's loop-outer anchor track are visible across the curved local service-loop segment. Amber safety-pause markers, low handheld slate light, and controlled worker spacing create a contained procedural posture.",
+        "base_image_prompt": "Local-channel containment frame at the Kappa-7 access port: Lio holds a work slate low with a small amber safety-pause label, standing between the dark gasket-rimmed Kappa-7 access port, the loop-inner Kappa manifold face of pipes and touch panels, the bolted loop-outer baseline anchor rail, the open cephalopod work-support station, and the raised supervisor catwalk. Nara and the engineered seal technicians in clean numbered gray skinsuits with small VitaForge BioDrone Standard batch tags are stopped at the pipe-and-panel wall; Ilya watches Lio closely from the management side; Teth's dry-operation work-support station and Orrin's loop-outer anchor track are visible across the curved local service-loop segment. Amber safety-pause markers, low handheld slate light, and controlled worker spacing create a contained procedural posture.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -491,13 +491,13 @@
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
-          "This frame centers AU management classification and worker language; BioElevate legal enters as the next visual reframe."
+          "This frame centers AU management classification and worker language; supplier-liability language enters as the next visual reframe."
         ]
       },
       {
-        "visual_scene_id": "pallas_bioelevate_liability_frame",
-        "ink_anchor": "bioelevate_liability_frame",
-        "base_image_prompt": "Legal reframe transition inside the curved local Service Ring Kappa loop: a sterile white BioElevate legal window blooms over the AU incident board with scaffold drift and maintenance variance language, its clean rectangular interface floating above grimy pipework, amber loop-inner manifold face panels, scuffed deck plates, and dark Bloom-shell supports. Lio's slate shows an outside Awakened Labor Front mirror channel waiting below the official labels; Ilya stands near the supervisor channel with clipped command posture. Nara stands near the amber loop-inner manifold face, Orrin's baseline anchor crew holds by the anchor hardware in patched brown-orange work jackets, heavy gloves, and magnetic boots, and Teth watches from the dry-operation work-support station while corporate liability language visibly overlays the workers' refusal.",
+        "visual_scene_id": "pallas_supplier_liability_frame",
+        "ink_anchor": "supplier_liability_frame",
+        "base_image_prompt": "Legal reframe transition inside the curved local Service Ring Kappa loop: a sterile white supplier-liability window blooms over the AU incident board with scaffold drift and maintenance variance language, its clean rectangular interface floating above grimy pipework, amber loop-inner manifold face panels, scuffed deck plates, and dark Bloom-shell supports. Lio's slate shows an outside Awakened Labor Front mirror channel waiting below the official labels; Ilya stands near the supervisor channel with clipped command posture. Nara stands near the amber loop-inner manifold face, Orrin's baseline anchor crew holds by the anchor hardware in patched brown-orange work jackets, heavy gloves, and magnetic boots, and Teth watches from the dry-operation work-support station while corporate liability language visibly overlays the workers' refusal.",
         "visible_characters": [
           {
             "agent_id": "lio_vale",
@@ -534,13 +534,13 @@
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
-          "This is a click-through tonal turn: BioElevate legal enters as a new institutional actor, changing refusal into liability grammar."
+          "This is a click-through tonal turn: supplier-liability language enters as a new institutional pressure, changing refusal into liability grammar."
         ]
       },
       {
         "visual_scene_id": "pallas_nara_marks_path",
         "ink_anchor": "show_nara_memory",
-        "base_image_prompt": "Object-focused shot of Lio's slate held outward in front of the loop-inner Kappa manifold face, a ribbed pipe-and-cable service spine with bronze-gray trunks, amber route screens, pressure gauges, warning glyphs, and hand-sized touch panels blurred behind the display. The slate shows a Kappa-7 diagram with two safe plates, one false seam, and a red-marked cut line; behind it, the real Kappa-7 access port is visible as a dark gasket-ringed Kappa-7 access port with patch plates and warning lights. Nara-7's hand hovers just above the display after marking it; Ilya and a BioElevate legal window are visible beyond the slate but slightly out of focus; Orrin stands at the loop-outer baseline anchor rail edge of frame with his old anchor hook lowered, publicly backing the evidence from worker expertise.",
+        "base_image_prompt": "Object-focused shot of Lio's slate held outward in front of the loop-inner Kappa manifold face, a ribbed pipe-and-cable service spine with bronze-gray trunks, amber route screens, pressure gauges, warning glyphs, and hand-sized touch panels blurred behind the display. The slate shows a Kappa-7 diagram with two safe plates, one false seam, and a red-marked cut line; behind it, the real Kappa-7 access port is visible as a dark gasket-ringed Kappa-7 access port with patch plates and warning lights. Nara-7's hand hovers just above the display after marking it; Ilya and a supplier-liability window are visible beyond the slate but slightly out of focus; Orrin stands at the loop-outer baseline anchor rail edge of frame with his old anchor hook lowered, publicly backing the evidence from worker expertise.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -965,8 +965,8 @@
             "prompt": "Show the refusal spreading: distant workers in another service-ring corridor copy the twice-pause-third touch pattern on a wall panel or rail."
           },
           {
-            "trigger": "bioelevate_liability >= 3",
-            "prompt": "Add a redacted BioElevate liability memo visible on a slate or wall display, with thick black bars and highlighted missing words."
+            "trigger": "supplier_liability >= 3",
+            "prompt": "Add a redacted supplier-liability memo visible on a slate or wall display, with thick black bars and highlighted missing words."
           },
           {
             "trigger": "evidence_of_sentience >= 4",
@@ -989,7 +989,7 @@
       {
         "visual_scene_id": "pallas_object_callback",
         "ink_anchor": "return_object_callback",
-        "base_image_prompt": "Quiet object callback in a small far-loop break-rack alcove inside Service Ring Kappa: the alcove is built into curved engineered Bloom shell plating, with consolidated asteroid aggregate and dark TCS substrate glimpsed behind ribbed supports, amber industrial work light, scuffed deck plates, cable trays, route bolts, and nearby loop-inner pipe-and-panel manifold face hardware. A battered recycler coffee mug with a fresh hairline crack sits on a narrow metal shelf beside patched gloves; Teth's repaired padded contact band rests near a transparent oxygenation tube and soft support loops; in the background, Nara's hand performs a twice-pause-third touch against a ribbed wall access panel while watchers at the alcove edge show clean gray numbered sleeves, brown-orange patched work jackets, magnetic boots, and hands resting near tool belts.",
+        "base_image_prompt": "Triptych-style final callback image with three clearly separated panels inside Service Ring Kappa, not one continuous physical alcove. Left panel: far-loop break-rack alcove with curved engineered Bloom shell plating, amber industrial work light, scuffed deck plates, cable trays, route bolts, and Orrin's battered recycler coffee mug with a fresh hairline crack sitting on a narrow metal shelf beside patched gloves. Center panel: Teth's dry-operation work-support station near the primary work segment, showing a repaired padded contact band beside transparent oxygenation tubes, open support loops, humidity ring, and compact tool rails. Right panel: primary Kappa-7 loop-inner manifold face with ribbed pipe trunks, patch plates, amber route screen, pressure gauges, and Nara's hand performing the twice-pause-third touch against the access panel while workers watch from a respectful distance. Thin blueprint divider lines and matching amber work lights connect the panels as memory and aftermath, while preserving that the far-loop break rack and Kappa-7 manifold are separate locations around the same service loop.",
         "visible_characters": [
           {
             "agent_id": "nara_7",
@@ -1006,7 +1006,8 @@
         "visual_continuity_notes": [
           "Service Ring Kappa remains the same bounded local service loop around a dense Kappa seal-air-thermal equipment cluster: loop-inner manifold faces and access ports, loop-outer worker staging with loop-outer anchor rail hardpoints, cross-lane lockout rigging, far-loop lockers and break ledges, curved engineered Bloom shell, consolidated asteroid aggregate and dark TCS substrate, ribbed supports, worn yellow-white safety paint, hard industrial work lights, gray engineered-worker suits, and a partial AU supervisor catwalk/glassed operations gallery overlooking the primary manifold segment but not the whole loop. The frame favors constructed habitat infrastructure: shell plating, equipment-cluster machinery, seal hardware, pipework, manifold faces, deck plates, and service systems.",
           "Use named-character visual refs for every visible named character. Preserve body type, clothing language, equipment, silhouette, and stable visual identity between scenes.",
-          "This is the final visual memory: intimate, ordinary, small, and work-worn."
+          "This is the final visual memory: intimate, ordinary, small, and work-worn.",
+          "This final callback is a deliberate triptych/montage across separated Kappa locations. Do not stage Orrin's mug, Teth's cuff repair, and Nara's Kappa-7 touch as co-located in one alcove."
         ],
         "represented_objects": [
           {
@@ -1025,7 +1026,7 @@
         "apply_to_visual_scene_ids": [
           "pallas_formalize_stoppage",
           "pallas_classification_pressure",
-          "pallas_bioelevate_liability_frame",
+          "pallas_supplier_liability_frame",
           "pallas_climax_decision_line",
           "pallas_hold_for_recognition",
           "pallas_trade_bypass_for_evidence",
@@ -1044,7 +1045,7 @@
           "pallas_formalize_stoppage",
           "pallas_shield_nara",
           "pallas_classification_pressure",
-          "pallas_bioelevate_liability_frame",
+          "pallas_supplier_liability_frame",
           "pallas_climax_decision_line",
           "pallas_hold_for_recognition",
           "pallas_seal_evidence_without_bypass",
@@ -1054,7 +1055,7 @@
       {
         "modifier_id": "high_baseline_solidarity",
         "trigger": "baseline_solidarity >= 3",
-        "prompt": "Place Orrin and two baseline riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts shoulder-to-shoulder beside or slightly in front of the clean numbered gray-skinsuit engineered seal technicians near the amber loop-inner manifold face, with anchor tools lowered horizontally at waist height and the dark Kappa-7 access port kept visible behind the formation.",
+        "prompt": "Place Orrin and two baseline riggers in patched brown-orange work jackets, heavy gloves, magnetic boots, and tool belts near the loop-outer anchor rail and center lane, visibly refusing certification while deploying cross-lane lockout geometry: bright tethers running from sliding rail blocks to floor sockets and inner hardpoints around Kappa-7. Keep the dark Kappa-7 access port visibly unblocked by bodies; the leverage comes from rigging authority, haulback lines, and lockout hardpoints.",
         "apply_to_visual_scene_ids": [
           "pallas_orrin_solidarity",
           "pallas_climax_decision_line",
@@ -1070,7 +1071,7 @@
         "apply_to_visual_scene_ids": [
           "pallas_shield_nara",
           "pallas_classification_pressure",
-          "pallas_bioelevate_liability_frame",
+          "pallas_supplier_liability_frame",
           "pallas_nara_marks_path",
           "pallas_climax_decision_line",
           "pallas_hold_for_recognition",
@@ -1118,7 +1119,7 @@
         "prompt": "Add an outside-feed or public mirror indicator reflected on a slate or wall display.",
         "apply_to_visual_scene_ids": [
           "pallas_public_liability",
-          "pallas_bioelevate_liability_frame",
+          "pallas_supplier_liability_frame",
           "pallas_climax_decision_line",
           "pallas_seal_holds"
         ]
@@ -1149,12 +1150,12 @@
       },
       "nara_7": {
         "display_name": "Nara-7",
-        "species_or_body": "engineered humanoid seal technician, BioDrone Standard labor line",
-        "stable_visual_description": "Slender engineered humanoid worker with smooth androgynous features, close-cropped dark hair, pale gray-brown skin with faint subdermal route-interface lines at wrists and neck, and a clean gray numbered seal-technician skinsuit with a small BioDrone Standard batch tag. Movements are precise and economical, hands often flat against rails or wall panels.",
+        "species_or_body": "engineered humanoid seal technician, VitaForge BioDrone Standard labor line",
+        "stable_visual_description": "Slender engineered humanoid worker with smooth androgynous features, close-cropped dark hair, pale gray-brown skin with faint subdermal route-interface lines at wrists and neck, and a clean gray numbered seal-technician skinsuit with a small VitaForge BioDrone Standard batch tag. Movements are precise and economical, hands often flat against rails or wall panels.",
         "silhouette_notes": "Still, narrow, and controlled; frequently framed by the manifold or other clean numbered gray-skinsuit engineered technicians.",
         "do_not_change": [
           "gray numbered skinsuit",
-          "BioDrone Standard batch tag",
+          "VitaForge BioDrone Standard batch tag",
           "faint wrist and neck interface lines",
           "precise hand-touch ritual",
           "slender engineered humanoid silhouette"
@@ -1208,8 +1209,9 @@
     "Visual reviewer full pass expanded all Pallas base image prompts so setting labels such as loop-outer anchor rail, raised supervisor catwalk with transparent waist-high safety rail leading back to the glassed Kappa operations gallery, Kappa-7 access port, seal assembly, dry-operation work-support station, and manifold are backed by visible geometry and materials.",
     "Revised cephalopod visual and story assumptions: AU dry-operation work-support rigs are bare-minimum productivity equipment, AU industrial productivity hardware with sparse comfort and bare-minimum life support.",
     "Visual scene plan added after review noted that illustrated Ink needs click-through segmentation, per-section base prompts, character visibility controls, and imagegen-ready descriptions of fictional equipment.",
-    "Visual reviewer pass added missing branch-02 visual scenes and aftermath modifiers for strike spread, BioElevate liability, evidence strength, Nara exposure/protection, and high security pressure.",
+    "Visual reviewer pass added missing branch-02 visual scenes and aftermath modifiers for strike spread, supplier-liability, evidence strength, Nara exposure/protection, and high security pressure.",
     "Follow-up visual review returned accepted_with_minor_revisions; cleanup removed future-state modifiers from intro anchors and normalized ASCII possessives in visual prompts.",
-    "Added visual_character_refs so image prompts can assemble stable named-character identities so prompt assembly supplies stable visible identity for Lio Vale and other Pallas characters."
+    "Added visual_character_refs so image prompts can assemble stable named-character identities so prompt assembly supplies stable visible identity for Lio Vale and other Pallas characters.",
+    "Lore/spatial reviewer pass corrected BioDrone Standard provenance to VitaForge, narrowed BioElevate to uplift/body-adaptation liability language, made final object callback an explicit triptych across separate Kappa locations, added Ilya stair-route visibility, and tuned baseline solidarity imagery toward lockout rigging rather than human barricade."
   ]
 }

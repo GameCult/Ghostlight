@@ -169,7 +169,7 @@ asteroid aggregate, TCS substrate, seals, supports, and service systems,
 with image prompts written as affirmative visible targets. Treat it as
 coordinator/IF scaffold training data, not raw responder gold.
 
-Kappa geometry correction to preserve across compaction: Service Ring Kappa names a bounded local access loop around a dense seal-air-thermal equipment cluster. The
+Kappa geometry correction to preserve across compaction: Service Ring Kappa names this specific standardized industrial spoke manifold service ring: a bounded local access loop around a dense seal-air-thermal equipment cluster. The
 loop-inner side exposes manifold faces on the machinery cluster. The loop-outer
 side holds worker staging, the baseline anchor rail, lockers, carts, break
 ledge, and access back toward yard systems. Kappa-3, Kappa-5, and Kappa-7 are

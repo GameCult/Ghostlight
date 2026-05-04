@@ -8,7 +8,7 @@
     },
     "canon_context": [
       "Pallas stoppages spread through AU cavity-construction and maintenance zones when uplifted and heavily modified labor crews used technical chokepoints that management did not fully understand.",
-      "BioElevate uplift and biodrone systems made engineered workers indispensable while corporate language continued to treat many of them as tools, assets, or design outcomes.",
+      "VitaForge biodrone systems and BioElevate uplift-adaptation systems made engineered and uplifted workers indispensable while corporate language continued to treat many of them as tools, assets, or design outcomes.",
       "The Awakened Labor Front frames memory, reciprocity, coordinated refusal, and collective self-defense as evidence that engineered workers cannot be ethically administered as equipment.",
       "Baseline workers in the yards have real class grievances and displacement fears, which reactionary actors can turn into species panic unless solidarity is made materially credible.",
       "Cephalopod maintenance specialists have body-specific habitat needs, service-lung expertise, and quiet leverage over zero-g yard systems."
@@ -564,7 +564,7 @@
         "semantic": [
           {
             "memory_id": "mem-lio-kappa-map",
-            "summary": "Service Ring Kappa's seal manifold can be slowed safely only if cephalopod crews hold the crawl-access bypass and baseline riggers keep the dry anchor points clear.",
+            "summary": "Service Ring Kappa's seal manifold can be slowed safely only if cephalopod crews hold the service-artery bypass and baseline riggers keep the anchor hardpoints clear.",
             "salience": 0.94,
             "confidence": 0.9
           }
@@ -612,12 +612,12 @@
       "identity": {
         "name": "Nara-7",
         "roles": [
-          "BioDrone Standard seal technician",
+          "VitaForge BioDrone Standard seal technician",
           "engineered worker",
           "evidence-bearing participant"
         ],
-        "origin": "BioElevate-aligned contract labor batch assigned to AU Pallas maintenance.",
-        "public_description": "A precise seal technician whose work record reads like equipment reliability until she refuses a blind crawl.",
+        "origin": "VitaForge BioDrone Standard contract labor batch assigned through AU Pallas maintenance.",
+        "public_description": "A precise seal technician whose work record reads like equipment reliability until she refuses Kappa-7 entry.",
         "private_notes": [
           "Nara remembers routes, injuries, faces, and bargains more completely than her classification admits.",
           "Nara knows that if she displays too much selfhood, humans may inspect her instead of listening to the danger."
@@ -1143,7 +1143,7 @@
           "old-shift informal speaker"
         ],
         "origin": "Inner Belt maintenance families displaced by automation and corporate uplift contracting.",
-        "public_description": "A dry-side rigger whose hands know the old anchor work and whose mouth knows where the bitterness is kept.",
+        "public_description": "A baseline anchor rigger whose hands know the old rail work and whose mouth knows where the bitterness is kept.",
         "private_notes": [
           "Orrin's first response to engineered-worker recognition is replacement panic, and he is ashamed of how fast it arrives.",
           "He believes safety lies are management's language, not the workers'."
@@ -1635,7 +1635,7 @@
         "episodic": [
           {
             "memory_id": "mem-orrin-sister-contract",
-            "summary": "Orrin's sister lost a berth when a BioElevate line underbid the dry-side crew.",
+            "summary": "Orrin's sister lost a berth when a subcontracted engineered labor line underbid the baseline anchor crew.",
             "salience": 0.83,
             "confidence": 0.9
           }
@@ -2651,7 +2651,7 @@
         "semantic": [
           {
             "memory_id": "mem-ilya-au-liability",
-            "summary": "BioElevate documentation says emergent behavior should be framed as drift until legal review says otherwise.",
+            "summary": "Supplier documentation says emergent worker behavior should be framed as product variance, scaffold drift, or misuse until legal review says otherwise.",
             "salience": 0.84,
             "confidence": 0.82
           }
@@ -3394,7 +3394,7 @@
     {
       "event_id": "event-pallas-kappa-refusal",
       "kind": "action",
-      "summary": "Nara-7 and other engineered workers stop before a blind crawl through Kappa manifold, naming remembered injury rather than a board-approved fault.",
+      "summary": "Nara-7 and other engineered workers stop before a hazard route through Kappa-7, naming remembered injury rather than a board-approved fault.",
       "participants": [
         "nara_7",
         "lio_vale",
@@ -3409,7 +3409,7 @@
       "observed_exchange": [
         {
           "speaker_id": "nara_7",
-          "utterance_summary": "Nara says Kappa remembers cutting Rell and refuses the blind crawl.",
+          "utterance_summary": "Nara says Kappa remembers cutting Rell and refuses the Kappa-7 entry.",
           "dialogue_function": "hazard refusal",
           "observable_cues": [
             "touches the manifold in the same sequence used by three other engineered workers",
@@ -3457,7 +3457,7 @@
       ],
       "public_stakes": [
         "A routine cavity-habitat seal shift needs to stay on schedule.",
-        "Wet-side and dry-side crews must coordinate body-specific work in a shared pressure environment."
+        "Baseline, biodrone, and uplift-adapted crews must coordinate body-specific work in a shared pressure environment."
       ],
       "hidden_stakes": [
         "The fixture must teach ordinary exploitation before asking the reader to judge the strike.",
@@ -3505,12 +3505,12 @@
         "ilya_marne"
       ],
       "public_stakes": [
-        "A blind crawl order has stopped, and the cavity margin will not wait forever.",
+        "A Kappa-7 entry order has stopped, and the cavity margin will not wait forever.",
         "AU wants the event classified as equipment irregularity or worker noncompliance."
       ],
       "hidden_stakes": [
         "The coordinated refusal is evidence of memory, reciprocity, and collective self-defense.",
-        "BioElevate liability language can erase the action if the crew cannot hold a better frame."
+        "Supplier-liability language can erase the action if the crew cannot hold a better frame."
       ],
       "dialogue_context_packs": [
         {
@@ -3524,7 +3524,7 @@
           "speaker_local_truth": [
             "Nara has made the memory observable by naming Rell.",
             "The life-support margin is real, and turning delay into pure theatre would be reckless.",
-            "Orrin's dry-side crew is needed for any safe bypass."
+            "Orrin's anchor crew is needed for any safe bypass."
           ],
           "speaker_beliefs": [
             "Ilya will reach for liability language before recognition language.",

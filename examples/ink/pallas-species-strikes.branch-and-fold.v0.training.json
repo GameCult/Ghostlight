@@ -70,7 +70,7 @@
         ]
       },
       {
-        "text": "The biodrone limiter interface and BioElevate liability frame can shape legal danger, but the fixture must not claim a full technical implementation not yet documented.",
+        "text": "The biodrone limiter interface, VitaForge BioDrone Standard provenance, and supplier-liability frame can shape legal danger, but the fixture must not claim a full technical implementation not yet documented.",
         "source_refs": [
           "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
         ]
@@ -92,7 +92,7 @@
     ],
     "forbidden_resolutions": [
       {
-        "text": "Do not make AU instantly benevolent, BioElevate instantly honest, or baseline resentment vanish because one speech was tidy.",
+        "text": "Do not make AU instantly benevolent, VitaForge or BioElevate instantly honest, or baseline resentment vanish because one speech was tidy.",
         "source_refs": [
           "examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json"
         ]
@@ -115,7 +115,7 @@
       "life_support_margin",
       "evidence_of_sentience",
       "cephalopod_leverage",
-      "bioelevate_liability",
+      "supplier_liability",
       "worker_injury",
       "media_visibility"
     ],
@@ -227,7 +227,7 @@
         "Nara has already made the remembered injury observable by naming Rell."
       ],
       "reviewed_consequences": [
-        "Raises evidence_of_sentience and bioelevate_liability, sets nara_path_marked for later climax and visual callbacks."
+        "Raises evidence_of_sentience and supplier_liability, sets nara_path_marked for later climax and visual callbacks."
       ],
       "training_hooks": [
         "Evidence should be an object-mediated action when private state is unsafe."
@@ -272,7 +272,7 @@
         "Lio has access to ALF legal mirror channels as an embedded organizer."
       ],
       "reviewed_consequences": [
-        "Raises media_visibility, bioelevate_liability, and security_pressure."
+        "Raises media_visibility, supplier_liability, and security_pressure."
       ],
       "training_hooks": [
         "Evidence transfer should create protection and retaliation risk at the same time."
@@ -302,7 +302,7 @@
         "The scene has generated both safety pressure and evidence custody pressure."
       ],
       "reviewed_consequences": [
-        "Raises life_support_margin, evidence_of_sentience, and bioelevate_liability."
+        "Raises life_support_margin, evidence_of_sentience, and supplier_liability."
       ],
       "training_hooks": [
         "Compromise branches should preserve partial victory rather than pretending all objectives aligned."
@@ -317,7 +317,7 @@
         "The scene has generated evidence custody pressure, but bypass_ready is false, so Lio cannot trade a nonexistent safety bridge."
       ],
       "reviewed_consequences": [
-        "Raises evidence_of_sentience, bioelevate_liability, and security_pressure while leaving life_support_margin ugly."
+        "Raises evidence_of_sentience, supplier_liability, and security_pressure while leaving life_support_margin ugly."
       ],
       "training_hooks": [
         "Branch compiler must not offer object trades when the object was never established."
