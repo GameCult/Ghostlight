@@ -62,20 +62,6 @@ One-shot generation of both sides is allowed only as bootstrap scaffolding, and
 must be marked as such in the capture review. It is not the target runtime
 shape.
 
-Archived local-model draft path:
-
-```text
-examples/agent-state.cold-wake-story-lab.json
-  + examples/ink/cold-wake-sanctuary-intake.training.json
-  -> tools/run_qwen_ink_branch_generation.py
-  -> experiments/ink/cold-wake-sanctuary-intake-qwen-branch-candidates-v1.capture.json
-  -> tools/materialize_qwen_ink_draft.py
-  -> examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink
-  -> examples/ink/cold-wake-sanctuary-intake.qwen-draft.training.json
-```
-
-This path is a receipt from the old local-model materialization experiment. It
-is useful for validation and negative examples, not the current gold-data path.
 The current target path is source-grounded coordinator state, projected local
 context, reviewed character turns, branch compiler materialization, and IF
 artifact review.
@@ -146,14 +132,8 @@ Manual reviewed until trained:
 - activation changes
 - promotion from branch outcome into durable Aetheria lore
 
-The first early prototype lives in
-`examples/ink/cold-wake-sanctuary-intake.ink`.
-
-The archived Qwen-generated draft lives in
-`examples/ink/cold-wake-sanctuary-intake.qwen-draft.ink`.
-
-The current accepted-as-draft branch-and-fold scaffold lives in
-`examples/ink/cold-wake-branch-and-fold.v0.ink`.
+The current accepted-as-draft scaffold lives in
+`examples/ink/pallas-species-strikes.branch-and-fold.v0.ink`.
 
 ## Cross-Scene Consequence Carryover
 
@@ -177,10 +157,10 @@ model should learn to carry these consequences forward without flattening them
 into cosmetic callbacks. If a choice does not change later affordances, trust,
 resources, risk, or interpretation, it is probably not a meaningful branch.
 
-Cold Wake lesson: the clinic contact sequence is a useful climax seam, but it is
-not a full story by itself. A complete interactive fixture needs an opening
-pressure, at least one consequential branch before the clinic, and a resolution
-that visibly reflects earlier choices.
+A complete interactive fixture needs an ordinary-world opening, consequential
+branches before the crisis peak, and a resolution that visibly reflects earlier
+choices. A single tense exchange can prove a seam; it is not enough to prove the
+story machine.
 
 ## Branch And Fold
 
@@ -370,11 +350,10 @@ Common failure labels:
 - `ending_ignores_major_state`: the ending does not respond to major variables
   established earlier
 
-The first Cold Wake branch-and-fold review exposed this exact class of failure:
-`heat_time`, `clinic_exhaustion`, `evidence_quality`, `provisional_category`,
-and `authority_pressure` initially looked important before review forced them
-to alter gates, callbacks, and outcomes. That review belongs in the evaluator
-training seed, not in a shame drawer. Shame drawers have terrible indexing.
+Early branch-and-fold review exposed this exact class of failure: variables can
+look important while doing nothing. Review must force important variables to
+alter gates, callbacks, visuals, appraisals, or outcomes before a fixture enters
+the accepted corpus.
 
 ## Scene Imagery
 

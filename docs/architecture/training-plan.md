@@ -57,7 +57,7 @@ Future-branch examples must label:
 
 ## Lore Coverage Matrix
 
-Cold Wake is a fixture, not a corpus. A complete Aetheria training corpus needs
+No single fixture is a corpus. A complete Aetheria training corpus needs
 coverage across the setting's institutional ecology before the models can be
 trusted to carry tone, conflict, and cultural priors without constant hand
 feeding.
@@ -497,8 +497,9 @@ Purpose: turn canonical state into character-local operating context.
 
 Current implementation:
 
-- deterministic `tools/project_local_context.py`
 - projected context schema and validator
+- deterministic projector behavior remains the first target, but no live
+  fixture-specific projector script is currently treated as canonical
 
 Inputs:
 
@@ -558,7 +559,6 @@ Current implementation:
 
 - responder packet and output schemas with validators
 - reviewed packet, capture, and mutation receipts
-- archived local-model calls kept as plumbing tests and negative examples
 - future gold responder data should use isolated generation workers,
   sub-agents, or external model calls that receive only the projected local
   packet, not coordinator context
@@ -693,7 +693,8 @@ Purpose: interpret an observable event from one participant's local perspective.
 Current implementation:
 
 - manual reviewed appraisals in mutation receipts
-- archived local-model appraiser experiments exposed invalid path drift
+- future appraiser data should keep exact observable events, participant-local
+  context, accepted interpretations, rejected interpretations, and review notes
 
 Inputs:
 

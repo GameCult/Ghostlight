@@ -282,10 +282,9 @@ Training artifacts:
 - negative examples where generic sci-fi assumptions were rejected
 - reviewer notes tied to AetheriaLore paths
 
-This corpus trains the character agent/responder directly. It is how a
-Qwen-class base or another local model learns Aetheria's native assumptions
-rather than waiting for every prompt to drag the whole lore vault behind it in a
-little wagon.
+This corpus trains the character agent/responder directly. It is how a chosen
+base model learns Aetheria's native assumptions rather than waiting for every
+prompt to drag the whole lore vault behind it in a little wagon.
 
 The tuned responder should learn the smell of the setting: Dominion severity,
 Aya-coded care pressure, Navigator embodiment, corporate certification culture,
@@ -353,9 +352,8 @@ Training artifacts:
 - required fixes
 - repaired artifact refs, when available
 
-The first Cold Wake branch-and-fold review is seed material for this organ
-because it caught decorative variables before they were allowed to become
-training sludge.
+Early branch-and-fold reviews are seed material for this organ because they
+caught decorative variables before they were allowed to become training sludge.
 
 ### Institution, Faction, And Consumer Decision Models
 

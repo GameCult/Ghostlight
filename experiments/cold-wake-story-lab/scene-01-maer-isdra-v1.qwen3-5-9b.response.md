@@ -1,1 +1,0 @@
-Maer stands still as the board ticks, his voice a low, rhythmic counterpoint to the silence. "Record the cost of this delay in full; do not let the ledger balance itself against the lives held within."

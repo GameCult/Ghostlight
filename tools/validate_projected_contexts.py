@@ -153,7 +153,9 @@ def main() -> int:
     args = parser.parse_args()
 
     paths = args.paths or DEFAULT_CONTEXTS
-    require(paths, "no projected local context artifacts found")
+    if not paths:
+        print("ok: no projected local context artifacts found")
+        return 0
     for path in paths:
         validate_context(path)
     return 0

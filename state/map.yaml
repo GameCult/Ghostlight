@@ -24,9 +24,8 @@ mission:
     trust, concern, irritation, respect, boundaries, and expectations from
     evidence rather than generic friendliness.
   active_fixture: >
-    Pallas Species Strikes is the current pre-Elysium historical fixture. Cold
-    Wake remains an archived prototype fixture, not the product target. Call of
-    the Void and Elysium-era gameplay remain procedural consumer targets.
+    Pallas Species Strikes is the current accepted-as-draft historical fixture.
+    Call of the Void and Elysium-era gameplay remain procedural consumer targets.
 
 hard_boundaries:
   - Prompt text is projection, not truth storage.
@@ -47,7 +46,6 @@ hard_boundaries:
     - Image prompts must be affirmative target descriptions. Describe visible geometry, materials, composition, lighting, bodies, tools, and state deltas; keep forbidden assumptions in reviewer findings or validation errors instead of feeding negative constructions to imagegen.
     - Generated environment images are concept and material reference, not geometry authority. Multi-angle or branch-consistent illustrated IF needs a durable scene-set source such as a hand-built 3D blockout, procedural scene file, layout asset, or camera map with staging slots and occluders; imagegen paints over camera-specific visual input instead of preserving topology from memory.
     - Visual artifacts are auxiliary illustrated replay and website collateral for the corpus, not core training targets for responder, appraiser, mutator, or relationship models. Visual review judges the playable IF experience and visual plan, not clean-run prose receipts.
-  - Archived local-model prototype runners are receipts and plumbing tests, not the gold-data path.
 
 live_architecture:
   state_model:
@@ -134,40 +132,14 @@ current_artifacts:
     - prompts/sandboxed-responder-packet.md
     - prompts/research-sanity-responder.md
     - prompts/narrative-quality-reviewer.md
+    - prompts/lore-grounding-reviewer.md
+    - prompts/spatial-geometric-cohesion-reviewer.md
     - prompts/visual-scene-continuity-reviewer.md
   live_examples:
-    - examples/lore-grounding/cold-wake-panic.ganymede-corridor.json
-    - examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json
-    - examples/coordinator/cold-wake-sanctuary-intake.v0.json
-    - examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json
-    - experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json
-    - experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json
-    - experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json
-    - experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json
-    - experiments/research-sanity/navigator-embodiment-sanity-v0.capture.json
-    - examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json
-    - examples/projected-contexts/scene-03-callisto-provenance.veyr_oss.projected-context.json
-    - examples/responder-packets/scene-03-callisto-provenance.veyr_oss.packet.trace.v0.json
-    - examples/coordinator/cold-wake-callisto-provenance.v0.json
-    - experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.capture.json
-    - experiments/responder-packets/cold-wake-callisto-provenance-veyr-trace-v0.mutation.json
-    - examples/agent-state.cold-wake-story-lab.after-veyr-category-offer.json
-    - examples/projected-contexts/scene-04-convoy-threshold.isdra_vel.projected-context.json
-    - examples/responder-packets/scene-04-convoy-threshold.isdra_vel.packet.trace.v0.json
-    - examples/coordinator/cold-wake-convoy-threshold.v0.json
-    - experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.capture.json
-    - experiments/responder-packets/cold-wake-convoy-threshold-isdra-trace-v0.mutation.json
-    - examples/agent-state.cold-wake-story-lab.after-isdra-limited-contact.json
-    - examples/projected-contexts/scene-05-sanctuary-authorized-contact.sella_ren.projected-context.json
-    - examples/responder-packets/scene-05-sanctuary-authorized-contact.sella_ren.packet.trace.v0.json
-    - examples/coordinator/cold-wake-sanctuary-authorized-contact.v0.json
-    - experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.capture.json
-    - experiments/responder-packets/cold-wake-sanctuary-authorized-contact-sella-trace-v0.mutation.json
-    - examples/agent-state.cold-wake-story-lab.after-sella-bay-opened.json
-    - examples/ink/cold-wake-branch-and-fold.v0.ink
-    - examples/ink/cold-wake-branch-and-fold.v0.training.json
-    - examples/coordinator/cold-wake-branch-and-fold.v0.json
-    - experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md
+    - examples/agent-state.call-of-the-void.json
+    - examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl
+    - examples/projections/call-of-the-void.scene-broken-taxi-oz.pretty.json
+    - examples/lore-grounding/historical-flashpoint.template.json
     - examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json
     - examples/agent-state.pallas-species-strikes.v0.json
     - examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json
@@ -175,9 +147,9 @@ current_artifacts:
     - examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json
     - examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json
     - experiments/pallas-species-strikes/pallas-species-strikes.branch-and-fold-clean-run.v0.md
-  archived_receipts:
-    - Archived local-model prototype captures remain under experiments/ and examples/ink/ for validation and lessons, not active steering.
-    - docs/architecture/qwen-invocation-notes.md is archived local-model plumbing guidance, not the current gold-data route.
+    - experiments/pallas-species-strikes/pallas-species-strikes.visual-scene-review.v1.json
+  pruned_receipts:
+    - Old prototype fixture receipts and local runner files were removed from the live workspace after their lessons were distilled into docs, state, evidence, and git history.
 
 data_flow:
   - Rehydrate from map, handoff, system map, implementation plan, and `npm run state:status`.
@@ -188,5 +160,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: Pallas Species Strikes now has a reviewer-revised accepted-as-draft branch-and-fold IF fixture grounded in AU Bloom cavity-shell labor, Awakened Labor organizing, VitaForge biodrone systems and BioElevate uplift-adaptation systems, baseline displacement fear, and cephalopod maintenance leverage. Its lore digest and visual plan treat Bloom yards as engineered rotating habitat shells built from consolidated asteroid aggregate, TCS, shell plating, supports, seals, manifolds, and service systems. Kappa geometry is now understood as a bounded local loop around a dense seal-air-thermal equipment cluster: loop-inner manifold faces and Kappa access ports, loop-outer worker staging and anchor hardpoints, lower-observation far-loop break/access space, and a partial operations gallery that sees only the primary work segment. Kappa-7 False-Seam Artery, worker slang Rell's Cut, is the specific dangerous passage. Its training annotation now references a separate visual plan artifact for click-through visual segmentation, stable visual character refs, the global Dreams-style image cue, and affirmative imagegen-ready scene prompts. The visual pipeline now treats generated concept art as mood/material reference only; multi-angle illustrated replay needs a durable scene-set/blockout source with camera-specific inputs. Cold Wake remains an archived historical fixture and local-model receipt surface, not the active gold-data path.
+  summary: Pallas Species Strikes is the current accepted-as-draft branch-and-fold IF fixture. The live workspace has been pruned to remove old prototype fixture receipts, stale runner tools, and model-runner experiment debris after their lessons were distilled into the architecture docs, state, evidence, and git history. The next build step is corpus-scale coverage rather than further archaeology.
   next_action: Add the corpus coverage ledger seam or select the next Aetheria fixture from the 100-150 broad coverage target.

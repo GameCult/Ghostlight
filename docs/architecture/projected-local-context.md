@@ -31,12 +31,10 @@ Schema: `schemas/projected-local-context.schema.json`
 
 Validator: `tools/validate_projected_contexts.py`
 
-Generator: `tools/project_local_context.py`
-
-Current examples:
-
-- `examples/projected-contexts/scene-02-sanctuary-intake.maer_tidecall.projected-context.json`
-- `examples/projected-contexts/scene-02-sanctuary-intake.sella_ren.projected-context.json`
+Renderer: future projector/state-interpreter implementations should emit this
+schema before any character responder sees the scene. Historical prototype
+renderers have been removed from the live workspace after their lessons were
+folded into this contract.
 
 The context contains:
 
@@ -64,9 +62,10 @@ packet is built.
 `runtime_retrieval_requirements` are compact lore facts the runtime should
 include when their trigger is scene-relevant. They are not a license for a
 responder to browse the lore archive. They are coordinator or retriever outputs
-with source refs and a prompt role. In the Cold Wake sanctuary scene, the active
-requirements cover heat-debt timing, Navigator rescue ledgers, Aya sanctuary
-capacity politics, and Ganymede/Lightsail route obligations.
+with source refs and a prompt role. A Pallas labor scene might require AU
+claimshare hierarchy, uplift liability framing, species affordances, Bloom
+service-ring geometry, and strike-law pressure before a responder can act
+without drifting into generic sci-fi wallpaper.
 
 `latent_pressure_requirements` are character-local history or emotional pressure
 that must remain visible to the responder because it can shape behavior. They

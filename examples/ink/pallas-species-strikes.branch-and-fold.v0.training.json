@@ -358,7 +358,7 @@
     "review_notes": [
       "Sidecar was revised after independent narrative quality review found branch-only onboarding, folded-scene assumptions, decorative variables, and thin visual modifiers.",
       "Follow-up review returned accept_with_revisions; final cleanup made the shared climax bypass wording conditional and added explicit visual trigger mapping.",
-      "No local-model output was used.",
+      "No external responder output was used.",
       "Character private state is documented in the agent fixture but the Ink only relies on observable behavior and role knowledge.",
       "Visual review notes and prompt plans now live in examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json."
     ],

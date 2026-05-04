@@ -159,17 +159,13 @@ These controls are still speaker-local. They are not author omniscience handed
 to the response model; they are the projection layer preserving what the
 speaker's current state, scene position, and institutional role allow.
 
-The Cold Wake story lab exposed the need for this layer:
-
-- Isdra's first tribunal prompt needed a control saying she should preserve the
-  possibility of limited rescue contact without adopting Maer's abandonment
-  frame.
-- Maer's clinic prompt needed an authority boundary saying he does not own
-  Sella's beds.
-- Maer's threshold prompt needed object custody saying he holds the
-  claimant-status flag and can hand it to Isdra, not ask her for it.
-- The Maer/Veyr provenance prompt needed forbidden resolutions fencing off
-  person, passenger, victim, witness, and mind as settled nouns.
+Prototype story labs exposed the need for this layer. Projection controls catch
+cases where a responder adopts the wrong moral frame, assumes authority it does
+not hold, moves an object it cannot access, or resolves a disputed category too
+early. In the current Pallas fixture, that means controls for who can certify a
+strike, who can touch Kappa service ports, what evidence counts as sentience
+rather than mere coordination, and which AU liability phrases are character
+speech versus institutional pressure.
 
 ### 6. Render Prompt Sections
 

@@ -9,8 +9,8 @@ should be authored here first and referenced from artifacts or tools.
 
 ## Files
 
-- `sandboxed-responder-packet.md`: template used by
-  `tools/build_responder_packet.py` to render responder-visible packet prompts.
+- `sandboxed-responder-packet.md`: template for future packet renderers and
+  sandboxed responder workers to render responder-visible packet prompts.
 - `research-sanity-responder.md`: reusable one-turn prompt for checking whether
   a research-enabled responder actually grounds behavior in allowed
   AetheriaLore scope.

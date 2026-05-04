@@ -362,9 +362,11 @@ agent state + scene state
 
 The first implementation should not try to simulate a city. Calm down, wizard.
 
-Prototype one small Ink-backed branching scene loop:
+Prototype one small Ink-backed branching scene loop, using the current live
+fixture or a new source-grounded fixture:
 
-1. Load `examples/agent-state.cold-wake-story-lab.json`.
+1. Load a fixture agent-state artifact, such as
+   `examples/agent-state.pallas-species-strikes.v0.json`.
 2. Select one scene and one acting agent.
 3. Build a local awareness packet from existing state.
 4. Compile projection controls.

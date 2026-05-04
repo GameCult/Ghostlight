@@ -1128,7 +1128,7 @@
     "global_style_cue": "Style: Media Molecule Dreams-style 3D volumetric brushstroke painting; visible sculpted fleck strokes; painterly VR-made geometry; every detail is made of brush matter that feels partly solid, partly liquid, partly gas. Extremely detailed but soft, handmade, and non-photoreal. Tiny brushstrokes are allowed and encouraged, but the broad composition must remain readable.",
     "prompt_assembly_rule": "Assemble each image prompt from visual_scene_plan.global_style_cue, visual refs only for characters actually visible in the rendered frame, the scene base_image_prompt, triggered state_image_modifiers, and triggered global_branch_image_modifiers whose apply_to_visual_scene_ids includes the current visual_scene_id. Use visual_continuity_notes only as tooling/review constraints; assembled image prompts use concrete visible scene, character, and modifier text.",
     "review_notes": [
-      "Imagegen spot check showed stronger ensemble fidelity than BFL but pushed Teth's gear toward containment-chair imagery; visual prompts now favor mobile dry-operation harnesses, compact service racks, folded loops, oxygenation lines, pressure cuffs, and tool access while preserving sparse AU comfort."
+      "Image spot checks pushed Teth's gear toward containment-chair imagery; visual prompts now favor mobile dry-operation harnesses, compact service racks, folded loops, oxygenation lines, pressure cuffs, and tool access while preserving sparse AU comfort."
     ],
     "scene_set_guidance": {
       "status": "needed_for_replay_ready_multi_angle_art",

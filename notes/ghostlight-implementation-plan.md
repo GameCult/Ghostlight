@@ -1,14 +1,13 @@
-# Ghostlight Implementation Plan
+﻿# Ghostlight Implementation Plan
 
 ## Current Phase
 
-Build the first reliable data-generation loop for socially persistent Aetheria
-agents. The immediate target is not a full simulation. It is a clean, reviewed,
+Build a reliable data-generation loop for socially persistent Aetheria agents.
+The immediate target is not a full simulation. It is a clean, reviewed,
 sandboxed training-data pipeline for branching scenes and state consequences.
-The output should also preserve Aetheria's tonal range: wit with stakes,
-ordinary life before interruption, quiet ritual, domestic warmth, weirdness,
-dread, and systems pressure as needed. Do not let the pipeline's interest in
-state and consequence turn every fixture into the same crisis-procedure voice.
+The output should preserve Aetheria's tonal range: wit with stakes, ordinary
+life before interruption, quiet ritual, domestic warmth, weirdness, dread, and
+systems pressure as needed.
 
 Planning belongs in this file and the handoff/map state surfaces. Architecture
 docs should describe durable contracts, boundaries, and data shapes; they should
@@ -20,9 +19,7 @@ not carry live next-action lists.
    - Keep `schemas/agent-state.schema.json` and required vectors coherent.
    - Keep canonical state separate from perceived overlays.
    - Keep voice, presentation, relationship, memory, and situational pressure explainable.
-   - Add or preserve tonal-mode and ordinary-life cues where they affect prose:
-     humor, ritual, domesticity, boredom, tenderness, wonder, professional
-     routine, and slow dread are not decoration when they explain behavior.
+   - Add or preserve tonal-mode and ordinary-life cues where they affect prose.
    - Do not leak raw numeric state internals into responder prompt text.
 
 2. Stabilize responder packet and output seams.
@@ -30,86 +27,37 @@ not carry live next-action lists.
    - Build packets from coordinator artifacts plus projected local context.
    - Preserve exact responder-visible input, hidden-context audit, allowed actions, source excerpts, output contract, and lore-access mode.
    - Preserve raw output, parsed output, review labels, consulted refs, research summary, leakage audit, and coordinator interventions.
-
-3. Tighten research-enabled responder capture.
-   - The first no-fork research-enabled Sella sample and reviewed mutation receipt now exist.
-   - Preserve `consulted_refs`, `followed_refs`, `research_trace`, and `research_summary` inside raw responder output when the responder or runner produces them; mirror indexable provenance into capture metadata.
-   - Treat research scope as seed docs plus bounded relevant traversal, not a four-file pinhole.
-   - Require PSC, territory, resident-faction, technology, and social-movement context when it materially affects the scene.
    - Require `runner_captured` research trace status for accepted research-enabled gold data; coordinator-reconstructed trace is useful draft audit, not proof of the responder's actual research path.
-   - The Veyr/Callisto provenance sample is the first accepted coordinator-scoped retrieval lane with `runner_captured` trace. Use it as the current pattern for trace-backed gold candidates.
-   - Continue rejecting archived local-model prototype runners for gold responder data unless the task is explicitly model plumbing.
 
-4. Run the first full-story artifact pass.
-   - Completed clean Cold Wake IF scaffold:
-     `examples/ink/cold-wake-branch-and-fold.v0.ink`,
-     `examples/ink/cold-wake-branch-and-fold.v0.training.json`,
-     `examples/coordinator/cold-wake-branch-and-fold.v0.json`, and
-     `experiments/cold-wake-story-lab/cold-wake-branch-and-fold-clean-run.v0.md`.
-   - Treat that run as accepted-as-draft coordinator/IF scaffold training data,
-     not raw responder gold.
-   - Interactive-fiction correction: a full-story pass is not just a linear chain of responder receipts. It needs a beginning-to-ending narrative spine, branch points, and cross-scene consequence carryover so decisions visibly matter later. Responder artifacts should be generated at branch/action moments, while coordinator artifacts track branch flags, relationship deltas, resource costs, unresolved hooks, and later scene consequences.
-   - Branch-and-fold correction: do not let every choice create an isolated subtree. Normalize consequences into compact state bands and flags, fold most branches back into shared later scenes, and reserve major route splits for consequences that change the playable world enough that convergence would lie.
-   - Branch compiler correction: treat Ink materialization as its own organ. It receives fixture brief, lore digest, scene/world/relationship state, actor-local branch candidates, consequence packets, fold plan, and optional visual replay requirements; it emits playable Ink plus a training sidecar, a separate visual plan artifact when illustrated replay is in scope, and compiler notes. It does not own hidden character truth or social mutation.
-   - Website-content correction: illustrated fixtures should include an art-direction block with establishing shot, light/color, bodies/interfaces, material evidence, branch-visible marks, one durable base image prompt, and additive branch/state modification prompts. Visual continuity is presentation and replay support for the corpus, not a core social-model training target.
-   - Illustrated-IF correction: a narrative scene can contain multiple visual
-     sections. The branch compiler should segment introductions, focal areas,
-     object closeups, arrivals, alarms, pivotal one-sentence beats, standoffs,
-     and aftermaths into click-through Ink sections with stable visual ids.
-     Each visual section needs an imagegen-ready prompt that describes
-     fictional equipment and body affordances in visible terms. Named
-     recurring characters need stable visual character refs; names are handles,
-     not faces. When a fixture targets a specific image language, store one
-     global style cue and include it in every assembled image prompt. Include
-     character refs only for characters actually visible in the rendered frame;
-     keep continuity notes as tooling constraints unless rewritten as visible
-     prompt text.
-   - IF review correction: run an independent artifact reviewer after branch/Ink generation and before acceptance. The reviewer audits fake variables, cosmetic choices, missing state reads, fake folds, unearned convergence, state-named-instead-of-checked prose, visual callback gaps, and endings that ignore major state. The first Cold Wake user review is a seed failure taxonomy for this evaluator path.
-   - Visual review correction: run a visual scene continuity reviewer for
-     illustrated fixtures. It audits oversized Ink screens, missing visual
-     scene anchors, lore-password image prompts, missing character visibility,
-     weak stance control, and missing branch/state visual modifiers. It judges
-     the playable IF plus `.visual.json` plan, not clean-run prose receipts.
-   - Geometry correction: generated concept art can guide mood, materials, and
-     environment language, but it is not a durable layout contract. Fixtures
-     that need the same environment across several beats, branches, or camera
-     angles should use a `scene_set` source such as a hand-built 3D blockout,
-     procedural scene file, or explicit layout asset with named camera angles,
-     staging slots, routes, occluders, and branch-visible state anchors.
-     Imagegen should paint over a camera-specific blockout, not invent the
-     room shape from text or a prior generated image.
-   - The older Cold Wake v0/v1 fragments remain diagnostic seam tests around the clinic climax, not the accepted clean fixture.
+3. Keep the Pallas fixture as the current scaffold reference.
+   - Current fixture set:
+     `examples/lore-grounding/pallas-species-strikes.awakened-labor.v0.json`,
+     `examples/agent-state.pallas-species-strikes.v0.json`,
+     `examples/coordinator/pallas-species-strikes.branch-and-fold.v0.json`,
+     `examples/ink/pallas-species-strikes.branch-and-fold.v0.ink`,
+     `examples/ink/pallas-species-strikes.branch-and-fold.v0.training.json`,
+     `examples/visual/pallas-species-strikes.branch-and-fold.v0.visual.json`,
+     and `experiments/pallas-species-strikes/` receipts.
+   - Treat it as accepted-as-draft coordinator/IF scaffold training data, not raw responder gold.
+   - Preserve the lessons it established: ordinary-life onboarding, branch-and-fold discipline, material state variables, source-backed lore elaboration, visual segmentation, scene-set need for illustrated replay, and review before acceptance.
 
-   - Still emit training artifacts at material turns: projected local context, responder packet, raw output/capture, leakage audit, reviewed mutation receipt, and aftermath state where relevant.
-   - Do not stop for every minor prose flaw; curate as coordinator and continue. Stop to patch the pipeline only for core invariant failures: hidden-state leakage, lore grounding failure, visibility/object/body affordance errors, bad state mutation, or schema break.
-   - Keep fuzzy social changes manual and auditable until appraiser/classifier models exist.
-
-5. Generalize the loop.
-   - Next work should move away from Cold Wake to a different faction, movement,
-     flashpoint, or day-in-the-life fixture so the corpus does not become one
-     very cold hallway with delusions of grandeur.
+4. Generalize the loop.
+   - Add the corpus coverage ledger seam so future fixtures can be tracked by faction, movement, flashpoint, tonal mode, training target, review status, and cultural collisions.
+   - Select the next Aetheria fixture from the 100-150 broad coverage target.
    - Add more historical grounded fixtures from AetheriaLore.
    - Add future-branch Elysium fixtures with branch lineage and constraint labels.
-   - Track coverage across every major faction, minor faction, movement, and
-     major flashpoint; major factions require both founding-era and
-     day-in-the-life stories.
-   - Require cultural collision in coverage stories so training data captures
-     inter-faction dynamics, mutual misreads, and movement pressure instead of
-     sealed faction portraits.
-   - Vary tonal modes across fixtures so the corpus does not train one
-     flattened Aetheria voice. Use Adams/Pratchett-style wit-with-stakes as a
-     useful default touchstone, but allow controlled noir, horror, romance,
-     domestic comedy, dour poetry, dry technical systems prose, wonder, and
-     other scene-appropriate modes.
+   - Track coverage across every major faction, minor faction, movement, and major flashpoint; major factions require both founding-era and day-in-the-life stories.
+   - Require cultural collision in coverage stories so training data captures inter-faction dynamics, mutual misreads, and movement pressure.
+   - Vary tonal modes across fixtures so the corpus does not train one flattened Aetheria voice.
    - Emit technology/item manifest deltas when scenes discover or stress gear, assemblies, supply chains, or faction tech bases.
    - Keep artifacts database-shaped enough for future game-engine integration.
 
-6. Train only after schemas stop sliding.
+5. Train only after schemas stop sliding.
    - Pilot samples are schema shakedown, not robust corpus scale.
    - Specialized future models include coordinator, retriever, projector,
      responder, appraiser, mutator, relationship/perception updater, branch
-     compiler, IF artifact reviewer, evaluator, and
-     institution/faction/consumer decision models.
+     compiler, IF artifact reviewer, evaluator, and institution/faction/consumer
+     decision models.
    - Deterministic gates remain code: visibility, action legality, object
      custody, resource accounting, schema validation, source provenance,
      mutation authority, prompt leakage checks, and Ink compilation.
@@ -127,4 +75,4 @@ not carry live next-action lists.
 - Work one bounded organ at a time.
 - Prefer explicit maps and contracts over implicit context.
 - If the diff grows while understanding shrinks, stop and simplify.
-- Keep history in git and archived receipts; keep persisted state focused on the mission.
+- Keep history in git and distilled evidence; keep the live workspace focused on the mission.

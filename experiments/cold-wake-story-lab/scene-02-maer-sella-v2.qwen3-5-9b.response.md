@@ -1,1 +1,0 @@
-"Please, let me speak plainly about the beds we are displacing rather than letting the tribunal's uncertainty become a moral burden for you alone. If we can define what support would make a conditional slot real without sacrificing those who already need care, I will ensure that weight is carried on the record, not on your conscience."

@@ -13,7 +13,6 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INK_FILES = sorted((ROOT / "examples" / "ink").glob("*.ink"))
-DEFAULT_QWEN_INK_CAPTURES = sorted((ROOT / "experiments" / "ink").glob("*.capture.json"))
 DEFAULT_MUTATION_RECEIPTS = sorted((ROOT / "experiments" / "ink").glob("*.mutation.json"))
 VALID_ACTION_TYPES = {
     "speak",
@@ -331,154 +330,6 @@ def validate_ink_visual_plan(path: Path, ink_path: Path, annotation_path: Path) 
             require_affirmative_image_prompt(item, f"{ref_path}.do_not_change[{item_index}]")
 
 
-def validate_qwen_ink_capture(path: Path) -> None:
-    data = load_json(path)
-    require(isinstance(data, dict), f"{path} must be an object")
-    if data.get("schema_version") == "ghostlight.qwen_ink_sequential_capture.v0":
-        validate_qwen_ink_sequential_capture(path, data)
-        return
-    require_keys(
-        data,
-        [
-            "schema_version",
-            "capture_id",
-            "source_fixture_ref",
-            "source_annotation_ref",
-            "model",
-            "endpoint",
-            "request_options",
-            "prompt_text",
-            "response_text",
-            "parsed_response",
-            "review",
-        ],
-        str(path),
-    )
-    require(data["schema_version"] == "ghostlight.qwen_ink_branch_capture.v0", f"{path}.schema_version is wrong")
-    require((ROOT / data["source_fixture_ref"]).exists(), f"{path}.source_fixture_ref does not exist")
-    require((ROOT / data["source_annotation_ref"]).exists(), f"{path}.source_annotation_ref does not exist")
-    require(isinstance(data["prompt_text"], str) and data["prompt_text"].strip(), f"{path}.prompt_text must be non-empty")
-    require(isinstance(data["response_text"], str) and data["response_text"].strip(), f"{path}.response_text must be non-empty")
-
-    parsed = data["parsed_response"]
-    require(isinstance(parsed, dict), f"{path}.parsed_response must be an object")
-    branches = parsed.get("branches")
-    require(isinstance(branches, list) and branches, f"{path}.parsed_response.branches must be non-empty")
-    non_speech_count = 0
-    for index, branch in enumerate(branches):
-        branch_path = f"{path}.parsed_response.branches[{index}]"
-        require(isinstance(branch, dict), f"{branch_path} must be an object")
-        require_keys(
-            branch,
-            [
-                "branch_id",
-                "ink_path",
-                "choice_text",
-                "action_type",
-                "actor_intent",
-                "maer_action_prose",
-                "sella_response_prose",
-                "state_basis",
-                "reviewed_consequences",
-                "training_hooks",
-            ],
-            branch_path,
-        )
-        require(branch["action_type"] in VALID_ACTION_TYPES, f"{branch_path}.action_type is invalid")
-        non_speech_count += 0 if branch["action_type"] == "speak" else 1
-    require(non_speech_count >= 2, f"{path}.parsed_response.branches must include at least two non-speech branches")
-
-    review = data["review"]
-    require(isinstance(review, dict), f"{path}.review must be an object")
-    require_keys(review, ["status", "strengths", "failure_notes", "accepted_into_ink_ref", "pipeline_lessons"], f"{path}.review")
-    require(review["status"] in VALID_CAPTURE_REVIEW_STATUSES, f"{path}.review.status is invalid or unreviewed")
-    for list_key in ["strengths", "failure_notes", "pipeline_lessons"]:
-        require(isinstance(review[list_key], list), f"{path}.review.{list_key} must be an array")
-    accepted_ref = review["accepted_into_ink_ref"]
-    if accepted_ref is not None:
-        require((ROOT / accepted_ref).exists(), f"{path}.review.accepted_into_ink_ref does not exist")
-
-
-def validate_action_type_or_review_note(action_type: Any, review_status: str, path: str) -> None:
-    if action_type in VALID_ACTION_TYPES:
-        return
-    require(
-        review_status in {"needs_revision", "useful_needs_revision", "rejected"},
-        f"{path} has invalid action_type but review.status is not a revision/rejection status",
-    )
-
-
-def validate_qwen_ink_sequential_capture(path: Path, data: dict[str, Any]) -> None:
-    require_keys(
-        data,
-        [
-            "schema_version",
-            "capture_id",
-            "source_fixture_ref",
-            "source_annotation_ref",
-            "model",
-            "endpoint",
-            "request_options",
-            "passes",
-            "review",
-        ],
-        str(path),
-    )
-    require((ROOT / data["source_fixture_ref"]).exists(), f"{path}.source_fixture_ref does not exist")
-    require((ROOT / data["source_annotation_ref"]).exists(), f"{path}.source_annotation_ref does not exist")
-    review = data["review"]
-    require(isinstance(review, dict), f"{path}.review must be an object")
-    require_keys(review, ["status", "strengths", "failure_notes", "accepted_into_ink_ref", "pipeline_lessons"], f"{path}.review")
-    review_status = review["status"]
-    require(review_status in VALID_CAPTURE_REVIEW_STATUSES, f"{path}.review.status is invalid or unreviewed")
-
-    passes = data["passes"]
-    require_keys(passes, ["maer_choice_generation", "selected_observable_action", "sella_response_generation"], f"{path}.passes")
-    if "sella_immediate_appraisal" not in passes:
-        require(
-            review_status in {"needs_revision", "useful_needs_revision", "rejected"},
-            f"{path}.passes missing sella_immediate_appraisal but review.status is not a revision/rejection status",
-        )
-    for pass_key in ["maer_choice_generation", "sella_response_generation"]:
-        pass_payload = passes[pass_key]
-        require_keys(pass_payload, ["local_agent_id", "prompt_text", "response_text", "parsed_response", "validation_notes"], f"{path}.passes.{pass_key}")
-        require(isinstance(pass_payload["prompt_text"], str) and pass_payload["prompt_text"].strip(), f"{path}.passes.{pass_key}.prompt_text must be non-empty")
-        require(isinstance(pass_payload["response_text"], str) and pass_payload["response_text"].strip(), f"{path}.passes.{pass_key}.response_text must be non-empty")
-        require(isinstance(pass_payload["validation_notes"], list), f"{path}.passes.{pass_key}.validation_notes must be an array")
-    if "sella_immediate_appraisal" in passes:
-        pass_payload = passes["sella_immediate_appraisal"]
-        require_keys(pass_payload, ["local_agent_id", "prompt_text", "response_text", "parsed_response", "validation_notes"], f"{path}.passes.sella_immediate_appraisal")
-        if review_status in {"accepted", "accepted_as_draft"}:
-            appraisal_root = pass_payload["parsed_response"]
-            require(isinstance(appraisal_root, dict), f"{path}.passes.sella_immediate_appraisal.parsed_response must be an object")
-            appraisal = appraisal_root.get("appraisal")
-            require(isinstance(appraisal, dict), f"{path}.passes.sella_immediate_appraisal.parsed_response.appraisal must be an object")
-            for list_key in ["immediate_state_deltas", "relationship_deltas", "response_constraints"]:
-                require(isinstance(appraisal.get(list_key), list), f"{path}.passes.sella_immediate_appraisal.appraisal.{list_key} must be an array for accepted captures")
-
-    choice = passes["selected_observable_action"]
-    require(isinstance(choice, dict), f"{path}.passes.selected_observable_action must be an object")
-    require_keys(choice, ["branch_id", "ink_path", "choice_text", "action_type", "observable_action"], f"{path}.passes.selected_observable_action")
-    validate_action_type_or_review_note(choice["action_type"], review_status, f"{path}.passes.selected_observable_action.action_type")
-    if review_status in {"accepted", "accepted_as_draft"}:
-        for list_key in ["expected_consequence_surfaces", "training_hooks"]:
-            require(isinstance(choice.get(list_key), list), f"{path}.passes.selected_observable_action.{list_key} must be an array for accepted captures")
-
-    response = passes["sella_response_generation"]["parsed_response"]
-    if not isinstance(response, dict):
-        require(
-            review_status in {"needs_revision", "useful_needs_revision", "rejected"},
-            f"{path}.passes.sella_response_generation.parsed_response must be an object",
-        )
-        return
-    response_obj = response.get("response")
-    require(isinstance(response_obj, dict), f"{path}.passes.sella_response_generation.parsed_response.response must be an object")
-    require_keys(response_obj, ["responder_agent_id", "action_type", "observable_response", "sella_private_interpretation", "misread_risk"], f"{path}.passes.sella_response_generation.response")
-    validate_action_type_or_review_note(response_obj["action_type"], review_status, f"{path}.passes.sella_response_generation.response.action_type")
-    if review_status in {"accepted", "accepted_as_draft"}:
-        require(isinstance(response_obj.get("training_hooks"), list), f"{path}.passes.sella_response_generation.response.training_hooks must be an array for accepted captures")
-
-
 def validate_mutation_receipt(path: Path) -> None:
     data = load_json(path)
     require(isinstance(data, dict), f"{path} must be an object")
@@ -538,9 +389,6 @@ def main() -> int:
     require(paths, "no Ink examples found")
     for path in paths:
         validate_ink(path)
-    for path in DEFAULT_QWEN_INK_CAPTURES:
-        validate_qwen_ink_capture(path)
-        print(f"ok: {path}")
     for path in DEFAULT_MUTATION_RECEIPTS:
         validate_mutation_receipt(path)
         print(f"ok: {path}")

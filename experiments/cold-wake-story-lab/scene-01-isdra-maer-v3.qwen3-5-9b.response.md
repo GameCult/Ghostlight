@@ -1,1 +1,0 @@
-Idra taps the convoy board to isolate the telemetry anomaly, then states, "The hold remains narrow until the vessel's provenance reconciles with the corridor law; any contact before verified status is a liability we will not authorize."

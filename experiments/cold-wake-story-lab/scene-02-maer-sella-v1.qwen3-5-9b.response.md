@@ -1,1 +1,0 @@
-"Please, let me speak quietly without the triage lane; I know our beds are full, but I must ask if a single intake can be prepared now so that our rescue does not become mere theater for those already here."

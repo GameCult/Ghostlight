@@ -70,31 +70,18 @@ which lore facts the retriever or projector needs to feed at runtime.
 
 ## Current Artifact
 
-The v0 packet seam is:
+The packet seam is:
 
 - `schemas/responder-packet.schema.json`
-- `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.v0.json`
-- `examples/responder-packets/scene-02-sanctuary-intake.sella_ren.packet.research.v0.json`
-- `tools/build_responder_packet.py`
 - `tools/validate_responder_packets.py`
 - `npm run responder-packets:validate`
 - `schemas/responder-output.schema.json`
-- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.capture.json`
-- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-v0.mutation.json`
-- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-retrieval-v0.capture.json`
-- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.capture.json`
-- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-research-enabled-v0.mutation.json`
-- `examples/agent-state.cold-wake-story-lab.after-sella-research-conditions.json`
-- `experiments/responder-packets/cold-wake-sanctuary-intake-sella-lane-comparison.v0.json`
 - `tools/validate_responder_outputs.py`
-- `tools/apply_responder_output_mutation.py`
 - `npm run responder-outputs:validate`
 
-The first example is accepted as draft. It is suitable for testing the sandbox
-handoff shape. The first no-fork worker output from that packet is also accepted
-as draft, because the output is useful and clean but the review protocol is
-fresh enough to deserve some suspicion. Tiny ceremonies keep us from eating the
-paint.
+Current live fixtures may not include responder packet examples at all times.
+That is acceptable. The contract remains live; obsolete prototype captures do
+not need to stay in the working tree once their lessons are distilled.
 
 ## Packet Contents
 
@@ -179,20 +166,12 @@ list consulted refs and trace entries. The responder itself should not receive r
 the artifact uses `responder_scoped_repository_search`, sets `no_repo_access` to
 false, and includes visible research instructions in the prompt.
 
-The current Sella research packet can be regenerated with:
-
-```powershell
-& 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' .\tools\build_responder_packet.py --lore-access-mode responder_scoped_repository_search
-```
-
 Retrieval can also make the packet worse if it floods the scene with faction or
-event context and starves the character's own scars. The Sella v0 comparison is
-the first warning shot: the retrieval-augmented output used heat-debt and rescue
-ledger texture well, but review must still verify that Sella's packet-visible
-history of watching a sanctuary overpromise safety remains available as latent
-behavioral pressure. The point is not to make her trauma-dump during a
-mission-critical exchange. The point is that the responder cannot be shaped by
-a pressure it cannot see.
+event context and starves the character's own relevant pressures. Review must
+verify that packet-visible history, role strain, and local relationships remain
+available as behavioral pressure. The point is not to make a character
+trauma-dump during a mission-critical exchange. The point is that the responder
+cannot be shaped by a pressure it cannot see.
 
 ## Output Captures
 
@@ -224,18 +203,7 @@ response. If the runner cannot expose a machine-verifiable tool-call or
 retrieval transcript, label the sample as draft and say so in review notes.
 Trust, but make the trust write receipts like everyone else.
 
-The first lane comparison found the expected tradeoff. Packet-only output gave a
-clean runtime-parity conditional bay decision and stronger character-specific
-flavor. Retrieval-augmented output added stronger Aetheria-native institutional
-texture: heat-debt timing, rescue-ledger burden, dockfall responsibility, and
-Aya sanctuary capacity politics. Follow-up review clarified that Sella's
-packet-visible sanctuary-collapse scar does not need to be spoken aloud, but it
-does need to remain visible to the responder as behavioral pressure. Both lanes
-are useful; neither should impersonate the other.
-
 The current packet builder consumes `runtime_retrieval_requirements` from the
-projected local context. For the Sella sanctuary packet, that means packet-only
-source excerpts now come from the same retrieval/projector seam that would feed
-runtime context: Cold Wake heat-debt pressure, Navigator rescue ledgers, Aya
-sanctuary capacity, and Ganymede/Lightsail route obligations. The static lore
-sandwich is dead. We thank it for its service, then bury it shallow.
+projected local context. Packet-only source excerpts should come from the same
+retrieval/projector seam that would feed runtime context. Static lore sandwiches
+are useful only as rejected-path examples and emergency snacks.

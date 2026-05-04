@@ -1,8 +1,8 @@
-# Documentation Inventory
+﻿# Documentation Inventory
 
 Use this file as the navigation map for Ghostlight's docs. It classifies files
-by job so architecture, planning, archived receipts, raw imports, research
-backlog, and state ledgers do not slowly melt into one cursed binder.
+by job so architecture, planning, prompts, state ledgers, and live examples do
+not slowly melt into one cursed binder.
 
 ## Canonical Re-Entry And Planning
 
@@ -55,17 +55,8 @@ backlog, and state ledgers do not slowly melt into one cursed binder.
   training concept.
 - `docs/architecture/schema-future-mechanisms.md`: future schema organs waiting
   for more evidence.
-- `docs/architecture/aetheria-cold-wake-training-fixture.md`: Cold Wake fixture
-  notes and source-grounded room candidates.
 - `notes/architecture-rationale.md`: rationale notes for major design
   boundaries.
-
-## Archived Experiments And Plumbing
-
-- `docs/experiments/cold-wake-story-lab.md`: archived local-model/projection
-  experiment and failure lessons.
-- `docs/architecture/qwen-invocation-notes.md`: archived local-model invocation
-  plumbing notes.
 
 ## Raw Imported Source
 
@@ -91,5 +82,6 @@ backlog, and state ledgers do not slowly melt into one cursed binder.
 
 Architecture docs describe durable contracts. Live planning belongs in
 `notes/ghostlight-implementation-plan.md`, `notes/fresh-workspace-handoff.md`,
-and `state/map.yaml`. Archived experiments can keep history, but they must be
-labeled as archives when their path stops being the active route.
+and `state/map.yaml`. Experimental fixture receipts are not kept in the live
+workspace once their lessons have been distilled into docs, state, or git
+history.
