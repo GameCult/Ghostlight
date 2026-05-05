@@ -219,6 +219,41 @@ backfill candidates: Lucent crisis feed protocols, junior Reality Architect
 operational roles, Lucent creator debt/arbitration machinery, and media-eye
 tether stations if that station type recurs.
 
+`corvid-collective-founding-v0` is the newest founding-era draft fixture. It
+uses a sandboxed coordinator and sandboxed Interactive Fiction Weaver to stage
+the 2470 First Exodus seed from the perspective of Kesh-of-Three-Clicks, an
+uplifted raven using beak, talon, short flight, mimicry, cached objects, optical
+sightlines, contact pads, route memory, and fallible human leverage to open a
+path for the flock without letting humans become the founders.
+
+Live Corvid surfaces:
+
+- `examples/lore-grounding/corvid-collective-founding.v0.json`
+- `examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json`
+- `examples/ink/corvid-collective-founding.branch-and-fold.v0.ink`
+- `examples/ink/corvid-collective-founding.branch-and-fold.v0.training.json`
+- `experiments/corvid-collective-founding-v0/sandbox-packets/corvid-collective-founding-v0.coordinator-packet.md`
+- `experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json`
+- `experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.final.json`
+- `experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.lore-review.final.json`
+
+Corvid result: the Ink compiles, lore grounding validates, and the full-artifact
+narrative reviewer accepted it with minor revisions that were applied. A
+limited-input narrative warning is preserved as a reviewer-packet lesson because
+that reviewer received a shortened climax excerpt and correctly complained
+about missing endings that did exist in the real file. Do not count that as a
+true failure of the Ink.
+
+Corvid usability: this is draft branch-and-fold/reference material for
+nonhuman embodiment, concrete leverage, Corvid separatist founding texture, and
+future Chaos Weaver outside-interface boundaries. It is not responder,
+appraiser, mutator, relationship-updater, projector, or coordinator gold because
+it lacks per-turn projected contexts, exact character packets, raw character
+outputs, event/appraisal/mutation receipts, and a complete scene-loop bundle.
+
+Corvid backfill candidates: NeuroSyn Corvid Recon room-scale containment/audit
+geometry and exact raven-to-telemetry physical interface affordances.
+
 Kappa geometry to preserve: Service Ring Kappa names this specific standardized
 industrial spoke manifold service ring, a bounded local access loop around a
 dense seal-air-thermal equipment cluster. The loop-inner side exposes manifold
@@ -268,11 +303,13 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-Choose the next bounded move: backfill the useful Lucent lore gaps into
-AetheriaLore, build a visual/scene-set pass for the Lucent IF, or move to the
-next coverage fixture. Current accepted full-fixture coverage is still empty;
-Pallas and Lucent derivatives are draft rows with per-organ training readiness,
-not accepted broad corpus fixtures.
+Choose the next bounded move: backfill Corvid/NeuroSyn room-scale lore gaps,
+convert the Corvid fixture into a true scene-loop receipt chain, backfill the
+useful Lucent lore gaps into AetheriaLore, build a visual/scene-set pass for the
+Lucent IF, or move to the next coverage fixture. Current accepted full-fixture
+coverage is still empty; Pallas, Lucent, and Corvid derivatives are draft rows
+with per-organ training readiness or reference-only value, not accepted broad
+corpus fixtures.
 
 ## Warnings
 

@@ -39,6 +39,7 @@ Use only the supplied Weaver-visible packet:
 - branch candidates or action affordances
 - coordinator constraints
 - branch-and-fold plan
+- initiative schedule, recovery state, reaction windows, or timing constraints
 - variables and flags available for local playthrough state
 - unresolved hooks
 - visual replay requirements, if present
@@ -80,6 +81,25 @@ speed, manipulation skill, self-awareness, patience, education, and emotional
 regulation must match the supplied state. The narrator can translate opaque
 social maneuvers for the reader; that translation is not character knowledge.
 
+Respect embodiment and leverage.
+
+If the protagonist or another key actor is nonhuman, uplifted, synthetic,
+distributed, altered, or otherwise differently embodied, choices must reflect
+what that body can perceive, touch, reach, signal, carry, hide, threaten,
+withstand, and misunderstand. The playable layer should not quietly convert a
+crow, dolphin, octopoid, ship mind, upload, or swarm into a baseline human with
+unusual dialogue.
+
+If the protagonist controls other characters through leverage, build choices
+around the actual strings. A player should be able to pull information,
+reputation, access, dependency, affection, route control, blackmail, ritual,
+humiliation, or institutional pressure. Targets may resist, misread, exploit, or
+resent the manipulation. Puppeteering is interesting when the string can snap.
+
+Respect initiative and recovery if the packet supplies it. A fast choice should
+be narrow. A slow choice should expose the actor, spend future opportunity, or
+open a reaction window.
+
 Keep the reader oriented.
 
 Introduce important characters before they matter. Explain fictional
@@ -107,6 +127,10 @@ Before output, check the artifact against this gate:
 - Tracked variables visibly affect later prose, options, risks, callbacks,
   appraisal hooks, visual handles, or endings.
 - Important characters and public stakes are introduced before shared payoff.
+- Differently embodied actors get choices that depend on body, sensorium,
+  interface, movement, and social treatment.
+- Leverage-based choices expose what string is being pulled and how it can
+  backfire.
 - Endings differ by state, not just sentence flavor.
 - The sidecar maps every material branch and names training hooks honestly.
 - The text reads as playable fiction, not a visible prompt contract.
@@ -168,6 +192,9 @@ Use these when relevant:
 - `state_explosion_risk`
 - `missing_non_speech_action`
 - `missing_sidecar`
+- `embodiment_flattened`
+- `leverage_handwaved`
+- `initiative_ignored`
 - `needs_human_review`
 
 If a safe, playable Ink scaffold cannot be built from the packet, return the

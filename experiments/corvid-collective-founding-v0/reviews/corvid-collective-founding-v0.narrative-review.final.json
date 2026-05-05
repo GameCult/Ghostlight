@@ -1,0 +1,38 @@
+﻿{
+  "schema_version": "ghostlight.review_receipt.v0",
+  "review_id": "corvid-collective-founding-v0.narrative-review.final",
+  "artifact_ref": "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+  "reviewer": "sandboxed narrative quality reviewer",
+  "verdict": "accepted_with_minor_revisions",
+  "scores": {
+    "context_onboarding": 4,
+    "character_introduction": 4,
+    "branch_fold_coherence": 5,
+    "pacing_shape": 4,
+    "voice_prose": 5,
+    "tonal_fit": 5,
+    "if_player_experience": 4,
+    "lore_accessibility": 4
+  },
+  "findings": [
+    {
+      "severity": "minor",
+      "issue": "The opening introduces four named humans very quickly, with strong role cues but little breathing room.",
+      "evidence": "Voss, Rian, Sable, and Jun are introduced in rapid succession before the first choice, each with a separate pressure vector.",
+      "recommended_fix": "Add one short anchoring phrase per human that ties role to immediate playable leverage, especially Jun and Sable."
+    },
+    {
+      "severity": "minor",
+      "issue": "Some future-facing lore terms may feel abrupt for a first-time IF reader.",
+      "evidence": "The success endings reference Chaos Weavers, digital nest, and outside-interface principle with limited in-scene explanation.",
+      "recommended_fix": "Keep the terms, but ground each with one concrete action-image before or after naming it."
+    },
+    {
+      "severity": "minor",
+      "issue": "The final choice line is stylish but slightly abstract as a player instruction.",
+      "evidence": "Choose what the founding lie will not be appears immediately before the final priority choice set.",
+      "recommended_fix": "Consider a more legible bridge sentence that frames the choice as Kesh deciding what cost the flock can survive."
+    }
+  ],
+  "final_notes": "Strong artifact. Kesh remains embodied and fallible: leverage comes through beak, talon, cached objects, sightlines, mimicry, route memory, hatch habits, and bounded telemetry access rather than omniscient control. Branches fold cleanly into shared pressure, then pay off through distinct state-gated endings. Minor revisions should focus on onboarding density and lore term accessibility, not structural repair."
+}

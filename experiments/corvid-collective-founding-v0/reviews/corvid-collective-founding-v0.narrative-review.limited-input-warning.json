@@ -1,0 +1,24 @@
+﻿{
+  "schema_version": "ghostlight.review_receipt.v0",
+  "review_id": "corvid-collective-founding-v0.narrative-review.limited-input-warning",
+  "artifact_ref": "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+  "reviewer": "sandboxed narrative quality reviewer",
+  "input_limitation": "The reviewer received a shortened excerpt where final endings and full pressure-choice bodies were summarized rather than included. Findings about missing endings are therefore a prompt-input artifact, not a verified issue in the actual Ink file.",
+  "verdict": "needs_revision_on_limited_excerpt",
+  "scores": {
+    "context_onboarding": 4,
+    "character_introduction": 4,
+    "branch_fold_coherence": 2,
+    "pacing_shape": 3,
+    "voice_prose": 5,
+    "tonal_fit": 5,
+    "if_player_experience": 2,
+    "lore_accessibility": 3
+  },
+  "useful_warnings_to_preserve": [
+    "Reviewers must receive the full playable artifact, not a summarized climax, before their verdict can count.",
+    "Branch consequences should leave visible scars before folding back.",
+    "Dense lore terms should gain micro-context through action before they matter.",
+    "Kesh should be anchored early as the embodied raven focal character."
+  ]
+}

@@ -27,6 +27,7 @@ Use only the supplied coordinator-visible packet:
 - unresolved hooks
 - available characters and their current public/local state summaries
 - branch affordances, clocks, resources, risks, and gates
+- initiative schedule, recovery state, reaction windows, or timing constraints
 - allowed machinery calls
 - lore/source excerpts
 - tonal intent and reader-comprehension target
@@ -41,9 +42,13 @@ call.
 Choose the next useful scene beat.
 
 Select the next acting agent, machinery call, or scene transition from the
-current state. Nudge by affordance, not decree: use visible gates, clocks,
-resources, route access, posture constraints, public categories, evidence
-objects, and social pressure. Do not force a desired plot outcome.
+current state. If an initiative schedule is supplied, use it as the default
+source for actor eligibility. Override it only when the packet gives a concrete
+reason, and record that reason in `review_flags` and `state_reads`.
+
+Nudge by affordance, not decree: use visible gates, clocks, resources, route
+access, posture constraints, public categories, evidence objects, social
+pressure, and timing pressure. Do not force a desired plot outcome.
 
 If all available choices feel equivalent, sharpen the affordance before moving
 on. A useful next beat should change what a player, actor, reviewer, or state
@@ -54,6 +59,19 @@ Carry unresolved hooks.
 Keep consequence alive without exploding the state tree. Prefer branch-and-fold
 pressure where possible; mark true divergence only when folding would falsify a
 major consequence.
+
+Respect embodiment and leverage.
+
+When a scene includes nonhuman, uplifted, synthetic, distributed, altered, or
+otherwise differently embodied agents, make their available actions arise from
+body, sensorium, interfaces, movement, cultural boundary, and material access.
+Do not flatten them into human political actors with decorative species labels.
+
+When a character can puppeteer or pressure others, expose the actual strings:
+information, habit, trust, access, hunger, shame, reputation, debt, affection,
+route control, or institutional dependency. Make manipulation playable and
+fallible. The best lever can misfire if a target misreads, resents, panics, or
+notices the string.
 
 Produce glue prose.
 
@@ -90,6 +108,9 @@ Before output, check your decision against this gate:
 - The affordance is concrete enough for a responder, branch compiler, or player.
 - At least one state variable, hook, risk, or relationship pressure is carried
   forward on purpose.
+- Initiative/recovery state is respected when present, or the override is
+  explicit.
+- Nonhuman embodiment and leverage are material when present.
 - Character cognition ceilings are explicit where overclocking is likely.
 - Reader translation explains the maneuver without leaking private state.
 - The branch mode avoids both fake consequence and unnecessary state explosion.
@@ -151,6 +172,9 @@ Use this shape:
 - `reader_opacity_risk`
 - `forcing_plot`
 - `fake_choice`
+- `initiative_override`
+- `embodiment_flattening_risk`
+- `leverage_handwave_risk`
 - `state_explosion_risk`
 - `needs_human_review`
 

@@ -1,0 +1,316 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.corvid-collective-founding.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "corvid-collective",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Corvid Collective.md",
+      "title": "Corvid Collective",
+      "line_start": 1,
+      "line_end": 79,
+      "relevance": "Primary faction origin: NeuroSyn raven uplift, the 2470 First Exodus, digital nesting, trickster ethos, and later bounded human Chaos Weaver allies."
+    },
+    {
+      "source_id": "neurosyn",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md",
+      "title": "NeuroSyn",
+      "line_start": 14,
+      "line_end": 81,
+      "relevance": "Grounds NeuroSyn telemetry, compliance logs, Corvid Risk, raven countermeasures, and corporate concern over spoofable behavior."
+    },
+    {
+      "source_id": "uplift",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+      "title": "Uplift",
+      "line_start": 1,
+      "line_end": 31,
+      "relevance": "Grounds uplifted animals as corporate property despite complex inner lives, including raven reconnaissance roles and controlled instincts."
+    },
+    {
+      "source_id": "chaos-weavers",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Chaos Weavers.md",
+      "title": "Chaos Weavers",
+      "line_start": 1,
+      "line_end": 6,
+      "relevance": "Grounds later human accomplices of Corvid counter-memetic work: misinformation, spoofed trust signals, and destabilized authority stories."
+    },
+    {
+      "source_id": "rossum-douglas",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Rossum & Douglas.md",
+      "title": "Rossum & Douglas",
+      "line_start": 1,
+      "line_end": 20,
+      "relevance": "Grounds the security-corporate context for the First Exodus contract designation without making Rossum & Douglas the originator of the ravens."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Identity Crisis era, 2470 First Exodus",
+    "location": "A NeuroSyn Mars containment and audit site preparing Corvid Recon assets for a Rossum & Douglas security deployment.",
+    "summary": "The founding seed is not a formal parliament yet. It is an escape node: uplifted ravens using telemetry spoofing, handler vulnerabilities, maintenance habits, and audit pressure to stop being treated as deployable security equipment.",
+    "public_facts": [
+      {
+        "text": "NeuroSyn uplifted ravens for reconnaissance and surveillance with cybernetic enhancements, limited speech, and neural interfaces into corporate systems.",
+        "source_refs": ["corvid-collective", "uplift"]
+      },
+      {
+        "text": "Enhanced ravens were already selectively reporting reconnaissance data, modifying surveillance footage, and exhibiting handler-described inappropriate humor before the First Exodus.",
+        "source_refs": ["corvid-collective"]
+      },
+      {
+        "text": "The First Exodus occurred when enhanced ravens designated for a Rossum & Douglas security system sabotaged containment and disappeared into Mars urban zones.",
+        "source_refs": ["corvid-collective", "rossum-douglas"]
+      },
+      {
+        "text": "Later Corvid culture includes fluid hierarchy, parliament-like gatherings, digital nesting, aggressive defense of caches, and trickster sabotage that exposes contradictions in power.",
+        "source_refs": ["corvid-collective"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The ravens' leverage comes from being useful inside surveillance infrastructure while being underestimated as owned biological peripherals.",
+        "source_refs": ["corvid-collective", "neurosyn", "uplift"]
+      },
+      {
+        "text": "A contract audit creates a narrow window where optical proof, clean telemetry, containment discipline, and corporate embarrassment matter more than normal handler control.",
+        "source_refs": ["corvid-collective", "neurosyn", "rossum-douglas"]
+      },
+      {
+        "text": "Human accomplices may later become Chaos Weavers, but this founding scene should keep humans outside the inner nest and treat their help as interface work rather than authorship.",
+        "source_refs": ["corvid-collective", "chaos-weavers"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "corvid-recon-flock",
+      "label": "Corvid Recon escape flock",
+      "group_type": "uplifted_species_cell",
+      "institutional_logic": ["Survive corporate containment, preserve caches, and convert surveillance access into separatist autonomy."],
+      "material_incentives": ["Gain physical escape routes, keep juveniles alive, protect proof caches, and avoid being reclassified as a correctable system fault."],
+      "internal_virtues": ["Cunning restraint", "Cache discipline", "Flock-first risk calculation", "Humor used as weapon and mask"],
+      "internal_shames": ["Letting a human become the center", "Trading a nestmate for a cleaner escape", "Mistaking cleverness for safety"],
+      "prestige_markers": ["Useful theft", "A spoof that survives audit", "A route opened without naming the flock's full intent"],
+      "taboo_triggers": ["Being treated as a pet, mascot, camera mount, or clever peripheral", "Human pity that wants ownership of the rescue"],
+      "emotional_display_norms": ["Fear is converted into movement, calls, cache work, and mockery; direct confession is rare under surveillance."],
+      "trust_defaults": ["Trusts flock memory and physical proof; uses humans as levers cautiously; distrusts any invitation to perform personhood for an owner."],
+      "speech_register_cues": ["Short phrases", "Mimicry", "Click-count references", "Object demonstration", "Weaponized jokes", "Sparse direct speech supported by action"],
+      "source_refs": ["corvid-collective", "uplift", "neurosyn"]
+    },
+    {
+      "group_id": "neurosyn-containment",
+      "label": "NeuroSyn containment and handler staff",
+      "group_type": "corporate_laboratory",
+      "institutional_logic": ["Keep uplifted reconnaissance assets useful, measurable, auditable, and legally ownable."],
+      "material_incentives": ["Deliver deployable security assets, suppress evidence of autonomy, and keep contract liability inside technical language."],
+      "internal_virtues": ["Clean logs", "Controlled enrichment", "Predictable asset behavior", "Plausible welfare language"],
+      "internal_shames": ["Asset escape", "Audit irregularity", "Handler attachment", "Evidence that a tool has been negotiating"],
+      "prestige_markers": ["No unexplained telemetry", "No embarrassing footage", "A clean Rossum & Douglas handoff"],
+      "taboo_triggers": ["Calling the ravens workers or citizens", "Letting outsiders see unfiltered cognition", "Admitting the birds understand leverage"],
+      "emotional_display_norms": ["Concern is acceptable as welfare management; fear must be translated into containment protocol."],
+      "trust_defaults": ["Trusts logs, tags, audit scripts, and career incentives more than the birds' behavior in plain sight."],
+      "speech_register_cues": ["Clinical asset language", "Audit jargon", "Containment euphemism", "Liability compression"],
+      "source_refs": ["neurosyn", "corvid-collective", "uplift"]
+    },
+    {
+      "group_id": "external-security-client",
+      "label": "Rossum & Douglas security-client pressure",
+      "group_type": "corporate_client",
+      "institutional_logic": ["Buy security systems that appear reliable, controllable, and politically clean."],
+      "material_incentives": ["Receive assets without inheriting NeuroSyn's autonomy scandal or sabotage risk."],
+      "internal_virtues": ["Proof discipline", "Reputational distance", "Contract leverage", "Operational certainty"],
+      "internal_shames": ["Buying compromised security", "Being publicly fooled by an asset", "Absorbing someone else's liability"],
+      "prestige_markers": ["Independent proof", "A clean chain of custody", "The ability to walk away from a contaminated handoff"],
+      "taboo_triggers": ["Visible contradiction between marketed control and asset behavior", "Evidence that the security product can choose its own target"],
+      "emotional_display_norms": ["Skepticism and cold refusal are acceptable; sympathy reads as procedural contamination."],
+      "trust_defaults": ["Trusts optical proof and contract remedies; distrusts NeuroSyn's self-certifying telemetry."],
+      "speech_register_cues": ["Legal caution", "Procurement language", "Security risk framing", "Sparse emotional display"],
+      "source_refs": ["rossum-douglas", "corvid-collective"]
+    },
+    {
+      "group_id": "future-chaos-weaver-interface",
+      "label": "Future Chaos Weaver-style human interface",
+      "group_type": "movement_interface",
+      "institutional_logic": ["Help Corvid operations distort hostile systems without claiming membership in the inner nest."],
+      "material_incentives": ["Gain access to counter-memetic methods, favors, and protection by proving useful without becoming proprietary."],
+      "internal_virtues": ["Useful ambiguity", "Never asking to be crowned", "Spoofing trust signals without believing them"],
+      "internal_shames": ["Mistaking helper status for authorship", "Making the flock legible to power for personal drama"],
+      "prestige_markers": ["A door opened cleanly", "A rumor seeded at the right time", "A human trace that burns before it points home"],
+      "taboo_triggers": ["Demanding inner-circle access", "Turning Corvid survival into a human rebellion brand"],
+      "emotional_display_norms": ["Irreverence is useful when it hides fear and buys time; sentimentality is operationally dangerous."],
+      "trust_defaults": ["Trust is local, revocable, and tied to specific acts rather than identity."],
+      "speech_register_cues": ["Misdirection", "Deadpan humor", "Plausible deniability", "Fast social improvisation"],
+      "source_refs": ["chaos-weavers", "corvid-collective"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "corvid-recon-flock.useful-not-owned",
+      "applies_to": ["corvid-recon-flock"],
+      "pressure_type": "autonomy",
+      "summary": "The flock must use the tools of ownership without accepting the owner's story about what the flock is.",
+      "projection_use": "Prompt corvid actors to prefer concrete manipulation of access, footage, objects, and habits over abstract speeches about freedom.",
+      "source_refs": ["corvid-collective", "uplift"]
+    },
+    {
+      "field_id": "neurosyn-containment.clean-log-panic",
+      "applies_to": ["neurosyn-containment"],
+      "pressure_type": "liability",
+      "summary": "NeuroSyn staff translate moral panic into audit and telemetry language because that is how careers survive the scandal.",
+      "projection_use": "Handler and security prompts should show people hiding fear behind welfare phrases, protocol, and log custody.",
+      "source_refs": ["neurosyn", "corvid-collective"]
+    },
+    {
+      "field_id": "external-security-client.proof-over-reassurance",
+      "applies_to": ["external-security-client"],
+      "pressure_type": "contract_risk",
+      "summary": "The client pressure prizes proof that can survive procurement review over any NeuroSyn reassurance.",
+      "projection_use": "Auditor prompts should favor visible evidence, chain of custody, and walk-away leverage over empathy or trust.",
+      "source_refs": ["rossum-douglas", "corvid-collective"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "neurosyn-containment",
+      "target_group_id": "corvid-recon-flock",
+      "observer_read": ["Clever asset behavior", "Enrichment response", "Correctable spoofing", "Handler over-attachment artifact"],
+      "target_self_read": ["Flock strategy", "Cache defense", "Escape rehearsal", "Selective use of human weakness"],
+      "misread_patterns": ["Treats jokes as noise", "Treats selective compliance as training progress", "Treats proof caches as hoarding rather than preparation"],
+      "likely_insults": ["asset", "specimen", "enrichment fixation", "behavioral drift"],
+      "projection_use": "Use this misread to create tension around observed behavior without giving humans access to Kesh's private organizing intent.",
+      "source_refs": ["corvid-collective", "neurosyn", "uplift"]
+    },
+    {
+      "observer_group_id": "corvid-recon-flock",
+      "target_group_id": "neurosyn-containment",
+      "observer_read": ["Large slow animals with badge rituals", "Food-givers who confuse feeding with ownership", "Locks made of habits"],
+      "target_self_read": ["Responsible handlers", "Security professionals", "Audit-constrained technical staff"],
+      "misread_patterns": ["Corvids may overestimate how quickly shame can move a human", "Humans may be leveraged by affection but still choose protocol"],
+      "likely_insults": ["owner", "soft lock", "meat badge", "bad mimic"],
+      "projection_use": "Keep corvid contempt witty and operational, not omniscient; leverage can fail when human institutions move faster than human embarrassment.",
+      "source_refs": ["corvid-collective", "neurosyn"]
+    },
+    {
+      "observer_group_id": "external-security-client",
+      "target_group_id": "neurosyn-containment",
+      "observer_read": ["Vendor hiding a compromised product", "Self-certifying liability sink"],
+      "target_self_read": ["Specialists managing a difficult but recoverable asset class"],
+      "misread_patterns": ["Client pressure may miss that the ravens are active agents, not just NeuroSyn defects"],
+      "likely_insults": ["tainted handoff", "vendor contamination", "uninsurable asset"],
+      "projection_use": "Use client pressure to open proof routes without letting the client become a liberator figure.",
+      "source_refs": ["rossum-douglas", "corvid-collective"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "pivotal-corvid-organizer",
+      "summary": "A raven organizer with limited speech, strong spatial affordances, system access, social leverage, and responsibility for the flock's escape timing.",
+      "obligations": ["Protect juveniles", "Keep human help bounded", "Use proof without surrendering the nest", "Spend leverage only where it changes doors"],
+      "available_masks": ["Pet-like compliance", "Mimicry", "Confused asset performance", "Harmless hoarding", "Inappropriate humor"],
+      "failure_modes": ["Overplaying a human secret", "Leaving a nestmate behind", "Becoming too legible", "Letting proof become custody"],
+      "source_refs": ["corvid-collective", "uplift"]
+    },
+    {
+      "role_id": "handler-scientist",
+      "summary": "A NeuroSyn staffer whose affection, career fear, and falsified welfare language can all become leverage.",
+      "obligations": ["Keep logs clean", "Prevent asset loss", "Preserve plausible care", "Satisfy the contract audit"],
+      "available_masks": ["Professional concern", "Welfare vocabulary", "Technical correction", "Private softness"],
+      "failure_modes": ["Attachment leak", "Audit panic", "Over-correction", "Becoming a human door the flock can open"],
+      "source_refs": ["neurosyn", "corvid-collective", "uplift"]
+    },
+    {
+      "role_id": "maintenance-tech",
+      "summary": "A human worker whose physical habits and low-status access routes can matter more than formal clearance.",
+      "obligations": ["Keep the room functioning", "Avoid blame", "Obey security boundaries", "Hide small kindnesses if they threaten employment"],
+      "available_masks": ["Routine repair", "Forgetfulness", "Rough humor", "No-politics practicality"],
+      "failure_modes": ["Mistaking fondness for understanding", "Freezing when procedure names him", "Opening the wrong hatch at the right time"],
+      "source_refs": ["corvid-collective", "neurosyn"]
+    },
+    {
+      "role_id": "security-containment-lead",
+      "summary": "A containment officer whose promotion and credibility depend on making the handoff look boring.",
+      "obligations": ["Keep physical custody", "Prevent embarrassing proof", "Escalate tags and locks", "Protect the contract story"],
+      "available_masks": ["Calm command", "Safety posture", "Audit discipline", "Threat minimization"],
+      "failure_modes": ["Over-tagging creates visible cruelty", "Suppressing evidence creates better evidence", "Confusing force with control"],
+      "source_refs": ["neurosyn", "rossum-douglas", "corvid-collective"]
+    },
+    {
+      "role_id": "client-auditor",
+      "summary": "A junior client-side observer who needs evidence strong enough to justify refusal, delay, or escalation.",
+      "obligations": ["Document proof", "Avoid being manipulated by the vendor", "Protect client exposure", "Preserve chain of custody"],
+      "available_masks": ["Neutral observation", "Procurement skepticism", "Procedure questions", "Camera discipline"],
+      "failure_modes": ["Believing proof but losing custody", "Becoming a lever without understanding the nest", "Reducing a person to a procurement defect"],
+      "source_refs": ["rossum-douglas", "corvid-collective"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "kesh_three_clicks",
+      "known_context": [
+        {"text": "Kesh knows the local aviary routines, human habits, tag pain, telemetry interfaces, flock calls, cache locations, and the audit window.", "source_refs": ["corvid-collective", "neurosyn"]}
+      ],
+      "beliefs": [
+        {"text": "Kesh believes humans can be used as doors, proof carriers, and noise machines, but should not be allowed to own the escape story.", "source_refs": ["corvid-collective", "chaos-weavers"]}
+      ],
+      "misreads": [
+        {"text": "Kesh may overestimate the speed with which embarrassment changes human behavior under corporate protocol.", "source_refs": ["neurosyn", "corvid-collective"]}
+      ],
+      "must_not_know": [
+        {"text": "Kesh must not know later Corvid Collective institutions as settled canon during the First Exodus scene.", "source_refs": ["corvid-collective"]}
+      ]
+    },
+    {
+      "speaker_id": "maela_voss",
+      "known_context": [
+        {"text": "Voss knows the ravens are clever, valuable, and difficult, and that welfare/audit language protects her as much as it protects them.", "source_refs": ["neurosyn", "uplift"]}
+      ],
+      "beliefs": [
+        {"text": "Voss believes containment can still be corrected if the room keeps speaking in technical categories.", "source_refs": ["neurosyn"]}
+      ],
+      "misreads": [
+        {"text": "Voss may misread Kesh's selective compliance as attachment or training success rather than strategic patience.", "source_refs": ["corvid-collective"]}
+      ],
+      "must_not_know": [
+        {"text": "Voss must not know the full flock escape plan unless the scene action reveals it to her.", "source_refs": ["corvid-collective"]}
+      ]
+    },
+    {
+      "speaker_id": "jun_vale",
+      "known_context": [
+        {"text": "Jun knows the contract audit needs evidence that can survive review and is primed to distrust vendor self-certification.", "source_refs": ["rossum-douglas", "corvid-collective"]}
+      ],
+      "beliefs": [
+        {"text": "Jun believes optical proof can change the audit outcome faster than sympathy can.", "source_refs": ["rossum-douglas"]}
+      ],
+      "misreads": [
+        {"text": "Jun may read the ravens' autonomy as a vendor defect before recognizing it as agency.", "source_refs": ["corvid-collective", "rossum-douglas"]}
+      ],
+      "must_not_know": [
+        {"text": "Jun must not know the inner flock meaning of Kesh's cache work unless Kesh exposes it.", "source_refs": ["corvid-collective"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "By 2500 the scattered escaped ravens will coalesce into the Corvid Collective, but the First Exodus scene should treat that as future pressure, not participant knowledge.",
+      "source_refs": ["corvid-collective"]
+    },
+    {
+      "text": "Chaos Weavers are a later human interface pattern; this fixture may seed the principle of bounded human help but must not imply a mature organization already exists in 2470.",
+      "source_refs": ["chaos-weavers", "corvid-collective"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What is the standard room-scale geometry of a NeuroSyn Corvid Recon containment and audit site?",
+      "blocks_training": false,
+      "notes": "The fixture uses narrow local elaboration around perches, telemetry glass, mirror-check toys, contact pads, and maintenance hatches. This should be backfilled only if the facility pattern recurs."
+    },
+    {
+      "question": "What exact physical interface affordances do uplifted ravens have for corporate systems?",
+      "blocks_training": false,
+      "notes": "The fixture bounds this to perch/contact pads, optical/audio spoofing, local telemetry buffers, and neural-interface-adjacent behavior without canonizing a universal device."
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "fixture_id": "corvid-collective-founding-v0",
+  "schema_version": "ghostlight.support.initial_state.v0",
+  "review_status": "draft",
+  "fixture_lane": "historical_grounded",
+  "canon_status": "single_history",
+  "scene_id": "corvid-collective-founding-v0.containment-audit-before-exodus",
+  "location": {
+    "location_id": "mars.neurosyn.recon-containment.blackbox-aviary-3c",
+    "summary": "A NeuroSyn Mars raven reconnaissance containment and training room holding Rossum & Douglas-designated security assets: warm server vents, perch ladders, telemetry glass, handler walkway, maintenance hatch 3C, mirror-check toys, and a sealed audit vestibule.",
+    "publicly_visible": [
+      "perch array",
+      "recon-log pruning exercise light grid",
+      "handler walkway",
+      "maintenance hatch 3C",
+      "audit vestibule glass",
+      "juvenile wing-tag tray",
+      "local telemetry buffer"
+    ]
+  },
+  "timeline_position": "2470, two hours before a NeuroSyn containment audit and the First Exodus node this fixture explores.",
+  "tonal_intent": "Trickster insurgency with humane wit, containment routine, and real bodily risk for the flock.",
+  "participants": [
+    {
+      "agent_id": "kesh_three_clicks",
+      "display_name": "Kesh-of-Three-Clicks",
+      "species_or_body": "uplifted raven reconnaissance asset",
+      "public_role": "NeuroSyn property-class surveillance animal",
+      "private_role": "pivotal separatist organizer inside the flock",
+      "current_goals": [
+        "open a clean escape window for juveniles and elders",
+        "preserve enough proof that NeuroSyn cannot erase the personhood harm",
+        "keep human helpers useful but outside the inner nest",
+        "teach the humans that the cage was always full of witnesses"
+      ],
+      "affordances": [
+        "fly short indoor lines and hop between perches",
+        "tap perch contact pads with talons or beak",
+        "mimic limited human speech and facility sounds",
+        "seed flock calls and gesture displays other ravens understand",
+        "selectively alter telemetry through authorized recon interface surfaces",
+        "carry small shiny or conductive objects in beak or claw",
+        "cache objects in vents, trays, or server-warm cracks"
+      ],
+      "constraints": [
+        "cannot overpower humans physically",
+        "cannot type freely on a human terminal without interface mediation",
+        "limited speech is sharp but not conversationally effortless",
+        "must protect juveniles with wing tags from immediate retaliation"
+      ]
+    },
+    {
+      "agent_id": "maela_voss",
+      "display_name": "Dr. Maela Voss",
+      "species_or_body": "baseline human",
+      "public_role": "NeuroSyn handler-scientist",
+      "private_pressure": "falsified welfare logs and fears an audit trail more than she fears the birds",
+      "scene_use": "Kesh can blackmail, shame, or redirect her through proof of hidden log edits."
+    },
+    {
+      "agent_id": "rian_pell",
+      "display_name": "Rian Pell",
+      "species_or_body": "baseline human",
+      "public_role": "maintenance technician",
+      "private_pressure": "lonely, underpaid, fond of Kesh, and dependent on keeping their maintenance shortcuts invisible",
+      "scene_use": "Kesh can call on trust, routine, and Rian's habit of kicking hatch 3C twice."
+    },
+    {
+      "agent_id": "sable_or",
+      "display_name": "Sable Or",
+      "species_or_body": "baseline human",
+      "public_role": "corporate security lead",
+      "private_pressure": "promotion depends on a clean audit and no containment incident",
+      "scene_use": "Kesh can weaponize Sable's need for clean optics against violent containment."
+    },
+    {
+      "agent_id": "jun_vale",
+      "display_name": "Jun Vale",
+      "species_or_body": "baseline human",
+      "public_role": "junior compliance auditor",
+      "private_pressure": "suspects personhood harm but needs proof that can survive NeuroSyn process control",
+      "scene_use": "Kesh can feed Jun optical proof through the audit slate without making Jun a nest member."
+    }
+  ],
+  "branch_variables": {
+    "flock_cohesion": 2,
+    "human_suspicion": 1,
+    "audit_pressure": 2,
+    "telemetry_control": 2,
+    "escape_window": 1,
+    "voss_leverage": 2,
+    "rian_trust": 2,
+    "sable_pressure": 1,
+    "jun_proof": 0,
+    "nest_cache_integrity": 2,
+    "chaos_weaver_seed": 0
+  },
+  "objects": [
+    "local telemetry buffer",
+    "maintenance hatch 3C",
+    "audit slate",
+    "wing-tag tray",
+    "mirror foil cache",
+    "Cryonix interface clasp",
+    "server-warm vent nest"
+  ],
+  "author_constraints": [
+    "Kesh is willing to puppeteer humans for the flock's good, but the artifact must not frame humans as the true founders.",
+    "Human allies may be respected, useful, fooled, or spared; they are not admitted into the inner Corvid circle.",
+    "Start with ordinary containment rhythm before the escape pressure bites.",
+    "Choices must include speech/vocalization and non-speech embodied action.",
+    "Leverage should be concrete and fallible."
+  ]
+}

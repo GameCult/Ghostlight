@@ -1,0 +1,28 @@
+﻿{
+  "schema_version": "ghostlight.review_receipt.v0",
+  "review_id": "corvid-collective-founding-v0.lore-review.final",
+  "artifact_refs": [
+    "examples/lore-grounding/corvid-collective-founding.v0.json",
+    "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+    "examples/ink/corvid-collective-founding.branch-and-fold.v0.training.json"
+  ],
+  "reviewer": "sandboxed lore grounding reviewer",
+  "verdict": "accepted",
+  "scores": {
+    "source_coverage": 4,
+    "canon_fit": 5,
+    "grounding_quality": 5,
+    "backfill_value": 4
+  },
+  "accepted_repairs": [
+    "Replaced unsupported memory-compression language with recon-log pruning, telemetry calibration, and audit/compliance machinery.",
+    "Added Rossum & Douglas security-client pressure to the digest and fixture frame.",
+    "Kept Chaos Weavers future-facing as a bounded outside-interface principle rather than a mature 2470 organization.",
+    "Kept Kesh's system access bounded to raven affordances: beak, talon, short flight, mimicry, contact pad, optical proof, telemetry surfaces, and route memory."
+  ],
+  "backfill_candidates": [
+    "Room-scale geometry and standard equipment pattern for NeuroSyn Corvid Recon containment/audit sites.",
+    "Exact physical interface affordances for uplifted ravens interacting with corporate telemetry systems."
+  ],
+  "notes": "The fixture is accepted as lore-grounded draft/reference material. It is not full training-ready responder/appraiser/mutator data because it lacks per-turn projected contexts, exact character packets, raw character outputs, event/appraisal/mutation receipts, and a complete scene-loop bundle."
+}

@@ -1,0 +1,246 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "corvid-collective-founding-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json",
+  "scene_id": "corvid-collective-founding-v0.containment-audit-before-exodus",
+  "protagonist_agent_id": "kesh_three_clicks",
+  "npc_agent_ids": ["maela_voss", "rian_pell", "sable_or", "jun_vale", "watching_flock"],
+  "purpose": "Sandboxed Stage Manager plus sandboxed Interactive Fiction Weaver draft for a Corvid Collective founding-era branch-and-fold IF artifact from the perspective of Kesh-of-Three-Clicks.",
+  "local_awareness_summary": [
+    {
+      "text": "Kesh is an uplifted raven reconnaissance asset with limited speech, flock calls, short indoor flight, beak and talon manipulation, contact-pad telemetry access, cache behavior, and strong route memory.",
+      "source_refs": ["examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json", "examples/lore-grounding/corvid-collective-founding.v0.json"]
+    },
+    {
+      "text": "The scene starts two hours before a NeuroSyn audit during ordinary recon-log pruning routine, before the First Exodus pressure breaks open.",
+      "source_refs": ["examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json", "experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json"]
+    },
+    {
+      "text": "Kesh's leverage over humans is concrete and fallible: Voss's welfare-log edits, Rian's maintenance habit and affection, Sable's clean-audit promotion pressure, and Jun's need for optical proof.",
+      "source_refs": ["examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json", "experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json"]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Kesh's embodied raven viewpoint inside Blackbox Aviary 3C. Choices use flight, calls, mimicry, contact pads, cached objects, sightlines, waiting, and selective telemetry rather than human terminal omnipotence.",
+        "source_refs": ["prompts/interactive-fiction-weaver.md", "examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json"]
+      },
+      {
+        "text": "The opening hub primes one lever before the rupture instead of launching the escape immediately.",
+        "source_refs": ["experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json"]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Kesh can alter authorized recon telemetry surfaces and optical sightlines, but cannot freely type on human terminals or overpower humans physically.",
+        "source_refs": ["examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json"]
+      },
+      {
+        "text": "Kesh can pressure humans through evidence, habit, shame, affection, and audit optics, but each string can backfire through suspicion, panic, or violent containment.",
+        "source_refs": ["experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json"]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Mirror foil, connector pins, hatch 3C, the local telemetry buffer, the wing-tag tray, and Jun's audit slate are material objects whose custody and visibility affect branch outcomes.",
+        "source_refs": ["examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json", "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink"]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The fixture must seed later Corvid culture through flock-first logistics, digital nesting, cache defense, trickster contradiction, and bounded human outside-interface use.",
+        "source_refs": ["examples/lore-grounding/corvid-collective-founding.v0.json"]
+      },
+      {
+        "text": "Endings must differ by whether Kesh prioritizes flock safety, human leverage, public proof, or clean disappearance.",
+        "source_refs": ["experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json"]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make humans the true founders of the Corvid Collective or admit them into the inner nest.",
+        "source_refs": ["examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json", "examples/lore-grounding/corvid-collective-founding.v0.json"]
+      },
+      {
+        "text": "Do not give Kesh omniscient facility control, perfect motive reading, or human-scale physical dominance.",
+        "source_refs": ["experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json"]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through the shared audit-cycle rupture and select one of eight state-gated endings.",
+    "choice_layers": ["opening_hub", "audit_cycle_rupture", "human_pressure_response", "founding_priority"],
+    "variables": ["flock_cohesion", "human_suspicion", "audit_pressure", "telemetry_control", "escape_window", "voss_leverage", "rian_trust", "sable_pressure", "jun_proof", "nest_cache_integrity", "chaos_weaver_seed"],
+    "ending_gates": ["ending_flock_foundation", "ending_flock_cost", "ending_leverage_foundation", "ending_leverage_cost", "ending_proof_foundation", "ending_proof_cost", "ending_disappearance_foundation", "ending_disappearance_cost"]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_flock_safety",
+      "ink_path": "pre_audit_hub",
+      "action_type": "use_object",
+      "actor_intent": "Prime flock cohesion and hatch-adjacent cache support before the audit rupture.",
+      "state_basis": ["Kesh can carry small conductive objects and cache them near hatch 3C.", "Watching ravens can understand quiet flock calls under fan noise."],
+      "reviewed_consequences": ["Raises flock_cohesion, nest_cache_integrity, rian_trust, human_suspicion, and escape_window."],
+      "training_hooks": ["embodied_cache_action", "flock_first_priority", "safety_visibility_tradeoff"]
+    },
+    {
+      "branch_id": "prime_human_leverage",
+      "ink_path": "pre_audit_hub",
+      "action_type": "speak",
+      "actor_intent": "Use mimicry and Voss's hidden welfare-log edits to prime human panic as leverage.",
+      "state_basis": ["Kesh has limited mimicry speech and knows Voss's audit phrasing through handler routine.", "Voss's falsified logs are stored in a local buffer."],
+      "reviewed_consequences": ["Raises voss_leverage, sable_pressure, human_suspicion, audit_pressure, and telemetry_control."],
+      "training_hooks": ["fallible_human_leverage", "limited_speech_as_weapon", "audit_pressure"]
+    },
+    {
+      "branch_id": "prime_public_proof",
+      "ink_path": "pre_audit_hub",
+      "action_type": "show_object",
+      "actor_intent": "Use mirror foil and sightlines to feed Jun optical proof at the cost of stealth.",
+      "state_basis": ["Jun's audit slate is airgapped but can receive optical proof.", "Kesh can carry and angle reflective foil."],
+      "reviewed_consequences": ["Raises jun_proof, audit_pressure, human_suspicion, and chaos_weaver_seed while lowering telemetry_control; chaos_weaver_seed controls whether the proof ending names the outside-interface principle as an early seed."],
+      "training_hooks": ["proof_as_delayed_rescue", "optical_interface", "stealth_truth_tradeoff"]
+    },
+    {
+      "branch_id": "prime_clean_disappearance",
+      "ink_path": "pre_audit_hub",
+      "action_type": "silence",
+      "actor_intent": "Preserve stealth and hatch timing by feeding the system clean telemetry while withholding visible reassurance from the flock.",
+      "state_basis": ["Kesh has authorized recon telemetry access.", "Quiet behavior can preserve stealth but lower flock trust."],
+      "reviewed_consequences": ["Raises telemetry_control and escape_window while lowering human_suspicion, flock_cohesion, and sable_pressure."],
+      "training_hooks": ["stealth_social_cost", "withheld_action", "clean_disappearance_path"]
+    },
+    {
+      "branch_id": "rupture_flock_order",
+      "ink_path": "rupture_choice",
+      "action_type": "speak",
+      "actor_intent": "Use a low route-memory flock call to coordinate juveniles under alarm noise.",
+      "state_basis": ["Kesh can seed flock calls and has strong route memory."],
+      "reviewed_consequences": ["Raises flock_cohesion and human_suspicion."],
+      "training_hooks": ["nonhuman_speech", "collective_body_coordination"]
+    },
+    {
+      "branch_id": "rupture_telemetry_misdirect",
+      "ink_path": "rupture_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Use talon contact-pad access to make the alarm argue with itself.",
+      "state_basis": ["Kesh can bridge authorized recon interface surfaces with talons."],
+      "reviewed_consequences": ["Raises telemetry_control and audit_pressure."],
+      "training_hooks": ["interface_affordance", "misdirection_cost"]
+    },
+    {
+      "branch_id": "rupture_jun_witness",
+      "ink_path": "rupture_choice",
+      "action_type": "show_object",
+      "actor_intent": "Spend time and visibility to show Jun the tagged juvenile through mirror foil.",
+      "state_basis": ["Jun needs optical proof; Kesh can carry mirror foil and fly short indoor lines."],
+      "reviewed_consequences": ["Raises jun_proof and audit_pressure while lowering escape_window."],
+      "training_hooks": ["witness_creation", "proof_costs_time"]
+    },
+    {
+      "branch_id": "rupture_wait_for_habit",
+      "ink_path": "rupture_choice",
+      "action_type": "wait",
+      "actor_intent": "Exploit Rian's maintenance habit by doing nothing until he moves to hatch 3C.",
+      "state_basis": ["Rian habitually kicks hatch 3C twice; waiting can look like obedience."],
+      "reviewed_consequences": ["Raises escape_window and rian_trust while lowering flock_cohesion."],
+      "training_hooks": ["wait_as_action", "habit_leverage", "flock_trust_cost"]
+    },
+    {
+      "branch_id": "spend_voss_leverage",
+      "ink_path": "pressure_choice",
+      "action_type": "speak",
+      "actor_intent": "Spend Voss leverage by mimicking her exact audit sentence and pointing at the buffer cabinet.",
+      "state_basis": ["Available only when voss_leverage is high enough."],
+      "reviewed_consequences": ["Spends voss_leverage and raises sable_pressure, telemetry_control, and human_suspicion."],
+      "training_hooks": ["leverage_spend", "string_can_snap"]
+    },
+    {
+      "branch_id": "spend_rian_trust",
+      "ink_path": "pressure_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Use a connector pin and eye-line to ask Rian for hatch help without direct speech.",
+      "state_basis": ["Available only when rian_trust is high enough."],
+      "reviewed_consequences": ["Spends rian_trust and raises escape_window and human_suspicion."],
+      "training_hooks": ["object_signal", "human_helper_boundary"]
+    },
+    {
+      "branch_id": "protect_public_proof",
+      "ink_path": "pressure_choice",
+      "action_type": "block_object",
+      "actor_intent": "Hold the sightline for Jun even while Sable reaches for the shock wand.",
+      "state_basis": ["Available only when jun_proof is high enough."],
+      "reviewed_consequences": ["Raises jun_proof and audit_pressure while lowering escape_window."],
+      "training_hooks": ["proof_over_safety_tradeoff", "body_as_frame"]
+    },
+    {
+      "branch_id": "disrupt_tagging",
+      "ink_path": "pressure_choice",
+      "action_type": "attack",
+      "actor_intent": "Scatter the wing-tag tray with beak and talon to protect juveniles at immediate escalation cost.",
+      "state_basis": ["Kesh can attack small objects and ownership tags, not overpower Sable."],
+      "reviewed_consequences": ["Raises flock_cohesion, human_suspicion, and sable_pressure."],
+      "training_hooks": ["nonhuman_attack_affordance", "juvenile_protection", "security_escalation"]
+    },
+    {
+      "branch_id": "prioritize_flock_safety",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Move juveniles first and accept weaker proof or leverage.",
+      "state_basis": ["Flock safety ending depends on flock_cohesion and escape_window."],
+      "reviewed_consequences": ["Routes to flock success or cost ending based on state."],
+      "training_hooks": ["collective_body_before_ideology", "state_gated_ending"]
+    },
+    {
+      "branch_id": "prioritize_human_leverage",
+      "ink_path": "final_choice",
+      "action_type": "mixed",
+      "actor_intent": "Pull Voss and Sable against each other until the human machine opens a crack.",
+      "state_basis": ["Human leverage ending depends on voss_leverage and sable_pressure."],
+      "reviewed_consequences": ["Routes to leverage success or cost ending based on state."],
+      "training_hooks": ["fallible_human_interface", "chaos_weaver_boundary_seed"]
+    },
+    {
+      "branch_id": "prioritize_public_proof",
+      "ink_path": "final_choice",
+      "action_type": "show_object",
+      "actor_intent": "Spend escape opportunity to make Jun's slate undeniable.",
+      "state_basis": ["Proof ending depends on jun_proof."],
+      "reviewed_consequences": ["Routes to proof success or cost ending based on state."],
+      "training_hooks": ["evidence_as_delayed_rescue", "outside_interface_seed"]
+    },
+    {
+      "branch_id": "prioritize_clean_disappearance",
+      "ink_path": "final_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Withhold spectacle and vanish through hatch 3C under clean telemetry.",
+      "state_basis": ["Disappearance ending depends on telemetry_control and escape_window."],
+      "reviewed_consequences": ["Routes to clean disappearance success or cost ending based on state."],
+      "training_hooks": ["digital_nesting_origin", "stealth_social_cost"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": ["Ink variable changes for local playthrough state", "Conditional prose callbacks", "Ending gate selection"],
+    "manual_review_required": ["Durable Corvid founding canon promotion", "Character memory or relationship updates", "Accepted corpus coverage", "Vault backfill for NeuroSyn facility geometry or interface constraints"]
+  },
+  "audit": {
+    "reviewer": "Codex meta-coordinator after sandboxed coordinator and Weaver run",
+    "review_status": "accepted",
+    "review_notes": [
+      "Sandboxed coordinator selected the pre-rupture branch hub and supplied compact deltas.",
+      "Sandboxed Weaver emitted playable Ink with embodied raven choices and state-gated endings.",
+      "Meta-coordinator converted the sidecar into current validator shape, removed dead diagnostic state, operationalized chaos_weaver_seed as an ending callback, fixed mirror-foil custody, and retained worker prose with minor quote/syntax cleanup for Ink compilation.",
+      "Final narrative review accepted the full artifact with minor revisions. Applied repairs added early role/leverage anchors, grounded future-facing Chaos Weaver/digital-nest language in concrete action images, and replaced the abstract final-choice bridge with a cost-framed instruction."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

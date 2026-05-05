@@ -1,0 +1,45 @@
+{
+  "capture_id": "corvid-collective-founding-v0.coordinator.capture",
+  "isolation_method": "subagent_no_fork",
+  "fork_context": false,
+  "visible_input_ref": "experiments/corvid-collective-founding-v0/sandbox-packets/corvid-collective-founding-v0.coordinator-packet.md",
+  "raw_output": {
+    "coordinator_worker_id": "stage_manager",
+    "decision_id": "corvid-collective-founding-v0.pre-rupture.branch-compiler.coordinator",
+    "selected_next_beat": "Compile the opening branch hub around Kesh choosing which pre-audit lever to prime before the rupture: flock safety, human leverage, public proof, or clean disappearance.",
+    "selected_acting_agent_id": "branch_compiler",
+    "beat_type": "machinery_call",
+    "reader_translation": "The next playable state should not launch the escape yet. It should give Kesh one ordinary-workday move that quietly shapes the later escape path.",
+    "glue_prose": "Two hours before the audit, the humans call it a memory-compression cycle. Kesh calls it a room full of warm vents, loose habits, guilty faces, and one hatch that only remembers how to close when Rian kicks it twice. The flock watches from ducts and perches, bright-eyed and pretending to be test equipment with opinions.",
+    "affordance_nudge": {
+      "type": "gate",
+      "description": "Maintenance hatch 3C sticks open unless Rian notices and kicks it twice; Kesh can preserve, expose, or spend that route."
+    },
+    "branching": {
+      "branch_mode": "branch_and_fold",
+      "reason": "The opening choice should bias compact variables and later ending texture while folding back into the same audit-cycle rupture setup."
+    },
+    "review_flags": [
+      "Keep Kesh's player choices embodied: beak, talon, perch, mirror foil, mimicry, flock call, neural surveillance interface, and route memory.",
+      "Do not make the first beat the escape itself; it should expose the lever that shapes the escape.",
+      "Do not explode into route simulation. Fold all openings into the audit-cycle rupture using the requested compact variables.",
+      "Maintain ordinary containment texture before rupture so the later insurgency has something real to break."
+    ]
+  },
+  "coordinator_review": {
+    "reviewer": "Codex meta-coordinator",
+    "accepted_as_branch_compiler_input": true,
+    "accepted_with_interventions": [
+      {
+        "intervention_id": "replace_unsourced_memory_compression",
+        "raw_output_issue": "The sandboxed coordinator used 'memory-compression cycle', which was not supported by the Corvid/NeuroSyn lore slice.",
+        "repair": "Fixture prose and lore digest use source-grounded recon-log pruning, telemetry calibration, audit optics, and compliance-log machinery instead.",
+        "training_note": "The coordinator decision surface remains useful, but the raw glue phrase is not accepted as lore-grounded coordinator prose."
+      }
+    ],
+    "notes": [
+      "Worker selected a useful pre-rupture branch hub and preserved ordinary-life setup before escalation.",
+      "Full raw subagent output is preserved in conversation state; this compact capture records the decision surface used for Weaver input."
+    ]
+  }
+}

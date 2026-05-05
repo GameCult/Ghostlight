@@ -1,4 +1,4 @@
-﻿{
+{
     "schema_version":  "ghostlight.corpus_coverage.v0",
     "coverage_id":  "ghostlight-aetheria-corpus-coverage-v0",
     "coverage_targets":  {
@@ -360,6 +360,97 @@
                                                    "character_responder":  "not_training_data",
                                                    "participant_appraiser":  "not_training_data",
                                                    "state_mutator":  "not_training_data"
+                                               }
+                    },
+                    {
+                        "fixture_id":  "corvid-collective-founding-v0",
+                        "status":  "draft",
+                        "timeline_lane":  "historical_grounded",
+                        "canon_status":  "single_history",
+                        "story_type":  "founding_era_story",
+                        "era":  "Pre-Elysium, Identity Crisis era, 2470 First Exodus",
+                        "location":  "Mars, NeuroSyn Blackbox Aviary 3C containment and audit site preparing Corvid Recon assets for a Rossum \u0026 Douglas security deployment",
+                        "flashpoint":  "Corvid Collective First Exodus founding seed",
+                        "primary_subjects":  [
+                                                 "Corvid Collective"
+                                             ],
+                        "secondary_subjects":  [
+                                                   "NeuroSyn",
+                                                   "Rossum \u0026 Douglas",
+                                                   "Chaos Weavers",
+                                                   "Uplifted ravens"
+                                               ],
+                        "collision_axes":  [
+                                               "uplift_property_status",
+                                               "species_body",
+                                               "surveillance",
+                                               "audit_pressure",
+                                               "corporate_liability",
+                                               "human_leverage",
+                                               "separatist_rebellion",
+                                               "proof_custody"
+                                           ],
+                        "tonal_modes":  [
+                                            "trickster insurgency",
+                                            "wit with stakes",
+                                            "containment routine",
+                                            "embodied nonhuman pragmatism",
+                                            "dry institutional cruelty"
+                                        ],
+                        "training_targets":  [
+                                                 "lore_grounding_reference",
+                                                 "sandboxed_coordinator_draft",
+                                                 "branch_compiler_draft",
+                                                 "narrative_reviewer_draft",
+                                                 "lore_grounding_reviewer_draft",
+                                                 "story_shape_reference"
+                                             ],
+                        "artifacts":  {
+                                          "lore_digest":  "examples/lore-grounding/corvid-collective-founding.v0.json",
+                                          "initial_state":  "examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json",
+                                          "coordinator_packet":  "experiments/corvid-collective-founding-v0/sandbox-packets/corvid-collective-founding-v0.coordinator-packet.md",
+                                          "coordinator_capture":  "experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json",
+                                          "ink":  "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+                                          "training_sidecar":  "examples/ink/corvid-collective-founding.branch-and-fold.v0.training.json",
+                                          "narrative_review":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.final.json",
+                                          "lore_review":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.lore-review.final.json",
+                                          "limited_narrative_review":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.limited-input-warning.json"
+                                      },
+                        "review":  {
+                                       "schema":  "accepted",
+                                       "narrative":  "accepted_as_draft",
+                                       "lore":  "accepted",
+                                       "spatial":  "not_run",
+                                       "visual":  "not_run",
+                                       "if_artifact":  "accepted_as_draft"
+                                   },
+                        "economy_hooks":  [
+                                              "corvid_recon_contact_pad",
+                                              "wing_tag_inventory_clasp",
+                                              "airgapped_optical_audit_slate",
+                                              "local_telemetry_buffer",
+                                              "mirror_check_enrichment_foil",
+                                              "corvid_cache_pin"
+                                          ],
+                        "open_lore_gaps":  [
+                                               "Room-scale geometry and standard equipment pattern for NeuroSyn Corvid Recon containment and audit sites.",
+                                               "Exact physical interface affordances for uplifted ravens using corporate telemetry systems."
+                                           ],
+                        "notes":  "First Corvid Collective founding-era IF fixture. It used sandboxed coordinator and sandboxed Interactive Fiction Weaver prompts, then meta-coordinator conversion and labeled repair. It is useful as draft branch-and-fold/reference material for nonhuman embodiment, fallible human leverage, and Corvid founding texture. It is not full responder/appraiser/mutator training data because it lacks per-turn projected contexts, exact responder packets, raw character outputs, event records, participant-local appraisals, reviewed mutations, and a complete receipt-chain bundle. The limited-input narrative warning is preserved as a reviewer-packet lesson; the final full-artifact narrative review accepted the Ink with minor revisions, which were applied.",
+                        "training_usability":  {
+                                                   "overall":  "not_training_data",
+                                                   "story_shape_and_grounding":  "reference_only",
+                                                   "lore_grounding_compiler":  "reference_only",
+                                                   "sandboxed_coordinator":  "not_training_data",
+                                                   "branch_compiler":  "not_training_data",
+                                                   "projector":  "not_training_data",
+                                                   "character_responder":  "not_training_data",
+                                                   "participant_appraiser":  "not_training_data",
+                                                   "state_mutator":  "not_training_data",
+                                                   "relationship_perception_updater":  "not_training_data",
+                                                   "if_artifact_reviewer":  "not_training_data",
+                                                   "visual_artifacts":  "not_training_data",
+                                                   "technology_item_manifest":  "not_training_data"
                                                }
                     }
                 ]
