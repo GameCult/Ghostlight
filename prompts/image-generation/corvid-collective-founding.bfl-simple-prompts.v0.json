@@ -1,0 +1,76 @@
+﻿{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "corvid-collective-founding-v0.bfl-simple-v0",
+  "fixture_id": "corvid-collective-founding-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Abstract expressive science-fiction painting, exaggerated silhouettes, semantically distorted but readable, sharp central symbol, moody ink and bruised color, no text.",
+  "prompts": [
+    {
+      "id": "01_aviary_establishing",
+      "prompt": "Raven containment room: black birds on aluminum perch ladders, warm server vents, glass telemetry wall, low maintenance hatch, surveillance cameras, clinical cage atmosphere."
+    },
+    {
+      "id": "02_human_levers",
+      "prompt": "A black raven watches three human levers: guilty scientist at console, tired mechanic at low hatch, hard security figure near shock wand."
+    },
+    {
+      "id": "03_audit_glass",
+      "prompt": "Sealed audit glass: young auditor with glowing slate outside, security handler inside, wing-tag tray below frightened ravens."
+    },
+    {
+      "id": "04_kesh_interface",
+      "prompt": "Close raven at tiny contact-pad cabinet: black beak, claw on glowing pads, amber-green lights, mirror foil glint, hatch in shadow."
+    },
+    {
+      "id": "05_cache_tools",
+      "prompt": "Raven stealing small connector pin and mirror foil near low hatch; juvenile ravens watching; suspicious human silhouette turning."
+    },
+    {
+      "id": "06_mimicry_pressure",
+      "prompt": "Raven mid-cry between frozen humans; welfare log reflections on glass; liability made visible as cracked light."
+    },
+    {
+      "id": "07_optical_proof",
+      "prompt": "Mirror foil sightline: raven reflects green-tagged bird and compliance numbers into auditor slate through dirty glass."
+    },
+    {
+      "id": "08_false_calm",
+      "prompt": "Perfectly calm raven cage, obedient birds, smooth green telemetry, bad hatch hidden in warm vent shadow."
+    },
+    {
+      "id": "09_alarm_juvenile",
+      "prompt": "Amber alarm floods aviary; green-tagged juvenile raven screams; black flock flares wings around a flashing restraint clasp."
+    },
+    {
+      "id": "10_choice_web",
+      "prompt": "A raven poised between four levers: flock perch, contact pad, mirror foil, low hatch; alarm light turns the room into a puzzle."
+    },
+    {
+      "id": "11_human_pressure",
+      "prompt": "Confrontation under amber light: security hand near shock wand, scientist at console, mechanic by hatch, raven above pulling strings."
+    },
+    {
+      "id": "12_threshold",
+      "prompt": "Final threshold: low hatch, hot telemetry cabinet, raised auditor slate behind glass, flock clustered around raven leader."
+    },
+    {
+      "id": "13_flock_escape",
+      "prompt": "Warm service duct beyond hatch: black ravens moving into cable shadows, stolen pins on the floor, leader watching from duct mouth."
+    },
+    {
+      "id": "14_human_leverage_end",
+      "prompt": "Humans turn on each other in the aviary while a raven waits above; shock wand, hatch, console, and glass form a trap."
+    },
+    {
+      "id": "15_proof_end",
+      "prompt": "Glowing audit slate captures proof: wing tag, shock wand, scared juvenile, raven sightline, glass reflections like accusation."
+    },
+    {
+      "id": "16_disappearance_end",
+      "prompt": "Split image: empty perfect cage with green telemetry; hidden server darkness full of ravens, stolen logs, route marks."
+    }
+  ]
+}
