@@ -14,6 +14,7 @@ VAR sable_pressure = 1
 VAR jun_proof = 0
 VAR nest_cache_integrity = 2
 VAR chaos_weaver_seed = 0
+VAR hatch_3c_state = 1
 
 -> start
 
@@ -22,18 +23,28 @@ Blackbox Aviary 3C is warm in the places NeuroSyn forgets to bill as mercy. The 
 
 Server vents breathe along the high wall. Perch ladders cross the telemetry glass in cheap aluminum ribs. Mirror-check toys hang where the humans can pretend enrichment is not a word they use to make cages sound literate.
 
+-> intro_human_levers
+
+=== intro_human_levers ===
+
 Two hours before audit, Dr. Maela Voss calls the recon-log pruning cycle ordinary. She is the handler-scientist, which means she owns the welfare vocabulary and fears the welfare logs.
 
 Rian Pell checks maintenance hatch 3C and does not notice that it only seals after he kicks it twice. He is the low-status human who touches the physical doors after cleaner people have finished naming them secure. One. Two. The habit lands in Kesh-of-Three-Clicks like a route map.
 
 Kesh is an uplifted raven, black-eyed and tagged, built to watch for NeuroSyn and old enough now to watch NeuroSyn back.
 
+-> intro_containment_and_audit
+
+=== intro_containment_and_audit ===
 Sable Or, the containment lead, checks the shock wand charge beside a tray of extra wing tags for the juveniles. She is the person who turns fear into custody. Promotion smell. Clean audit smell. Metal and fear.
 
 Jun Vale waits beyond audit vestibule glass with an airgapped slate, young enough to believe a record can still bite its owner. She is not rescue; she is a camera with procurement authority.
 
 The watching flock hangs from rails and perches and camera housings, pretending to be test equipment with opinions.
 
+-> intro_kesh_interface
+
+=== intro_kesh_interface ===
 Kesh turns one black eye to the local telemetry buffer cabinet. Authorized recon interface. Narrow pipe. Enough if used like a beak in a lock.
 
 No exodus yet. First, one lever.
@@ -50,9 +61,10 @@ No exodus yet. First, one lever.
     ~ rian_trust = rian_trust + 1
     ~ human_suspicion = human_suspicion + 1
     ~ escape_window = escape_window + 1
+    ~ hatch_3c_state = 2
     Kesh hops down in three ugly, efficient drops. Talon. Tray edge. Cable shadow.
 
-    A connector pin disappears under the tongue. Mirror foil folds bright against the beak, then vanishes behind a warm vent lip near hatch 3C.
+    A connector pin pins briefly against the lower beak, then drops into Kesh's claw. Mirror foil folds bright against the beak, then vanishes behind a warm vent lip near hatch 3C.
 
     The call is almost nothing. A throat-click under fan noise. The wing-tagged juveniles stop worrying the tray and look up.
 
@@ -98,7 +110,7 @@ No exodus yet. First, one lever.
 
     The buffer cabinet pings a dropped frame. Subtle as a brick in a prayer bowl.
     -> ordinary_life_fold
-+ [Report clean telemetry, preserve hatch 3C, and draw attention away from the juvenile tag crate.]
++ [Report clean telemetry, preserve hatch 3C, and draw attention away from the spare wing-tag clasp tray.]
     // ghostlight.action_label: silence
     // ghostlight.branch_label: prime_clean_disappearance
     ~ telemetry_control = telemetry_control + 2
@@ -108,7 +120,7 @@ No exodus yet. First, one lever.
     ~ sable_pressure = sable_pressure - 1
     Kesh feeds the system the shape it wants: normal perch load, normal blink rate, normal pruning tolerance.
 
-    The hatch remains bad. The humans remain confident. The juvenile tag crate becomes visually boring in every camera that matters.
+    The hatch remains bad. The humans remain confident. The spare wing-tag clasp tray becomes visually boring in every camera that matters.
 
     The flock notices the quiet.
 
@@ -128,9 +140,12 @@ Voss reads from the welfare checklist. Rian pretends not to slip another discard
 {telemetry_control >= 4: The live feed is smooth enough to make reality feel underdressed.}
 {human_suspicion >= 3: Sable's eyes start moving like a checklist with teeth.}
 
+-> rupture_cycle
+
+=== rupture_cycle ===
 Then the recon-log pruning cycle does what NeuroSyn built it to do: it tries to file distress as cleaner telemetry.
 
-The juvenile with the green wing tag screams once when the calibration pulse climbs through the restraint clasp. Not speech. Not test noise. Body truth.
+The juvenile with the green interface wing tag screams once when the calibration pulse climbs through the attached restraint clasp. Not speech. Not test noise. Body truth.
 
 The telemetry glass flashes amber. Audit vestibule locks. Hatch 3C waits in its old, stupid way.
 
@@ -178,6 +193,7 @@ The telemetry glass flashes amber. Audit vestibule locks. Hatch 3C waits in its 
     ~ escape_window = escape_window + 1
     ~ rian_trust = rian_trust + 1
     ~ flock_cohesion = flock_cohesion - 1
+    ~ hatch_3c_state = 2
     Kesh does nothing.
 
     It is a cruel tool because it looks like obedience.
@@ -203,7 +219,7 @@ Jun's voice comes through the vestibule speaker, thin but present. "I need optic
 
 === pressure_choice ===
 // ghostlight.choice_layer: human_pressure_response
-+ {voss_leverage >= 4} [Mimic Voss's exact audit sentence and point three clicks at the buffer cabinet.]
++ {voss_leverage >= 4} [Mimic Voss's exact audit sentence, angle beak and body toward the buffer cabinet, and give three clicks.]
     // ghostlight.action_label: speak
     // ghostlight.branch_label: spend_voss_leverage
     ~ voss_leverage = voss_leverage - 2
@@ -224,6 +240,7 @@ Jun's voice comes through the vestibule speaker, thin but present. "I need optic
     ~ rian_trust = rian_trust - 1
     ~ escape_window = escape_window + 1
     ~ human_suspicion = human_suspicion + 1
+    ~ hatch_3c_state = 3
     The pin rings once on the walkway.
 
     Rian looks down. Kesh looks at his boot. Hatch 3C sits there, needing exactly the kind of maintenance corporate dignity cannot survive.
@@ -265,7 +282,15 @@ Jun's voice comes through the vestibule speaker, thin but present. "I need optic
 // ghostlight.fold: final_local_branch_before_endings
 The rupture has a shape now.
 
-Hatch 3C is not open. Not closed either. A bad promise in a wall.
+{hatch_3c_state >= 3:
+Hatch 3C is not open. It is pinned into a false-green promise by boot habit, bad maintenance, and a small conductive bribe in the seam.
+- else:
+    {hatch_3c_state == 2:
+Hatch 3C is not open. Not closed either. A bad promise in a wall, with just enough wrongness near the latch to matter.
+    - else:
+Hatch 3C remains mostly closed: faulty enough to tempt a plan, narrow enough to kill one if the room moves fast.
+    }
+}
 
 The local telemetry buffer is hot. Jun's slate is hungry. The flock is either a body or a scatter of bodies depending on what Kesh has spent.
 
@@ -309,7 +334,7 @@ Kesh has to choose what cost the flock can survive: missing bodies, burned lever
     // ghostlight.action_label: show_object
     // ghostlight.branch_label: prioritize_public_proof
         {jun_proof >= 3:
-        Kesh holds the line until the slate catches wing tags, shock wand, falsified welfare display, and the hatch habit in one ugly chain.
+        Kesh holds the line until the slate catches wing tags, shock wand, falsified welfare display, and the hatch vulnerability in one ugly chain.
         Jun whispers, "Got you."
         -> ending_proof_foundation
     - else:
@@ -392,7 +417,7 @@ In the duct, Kesh carries the lesson like a stolen pin: humans can be handles, b
 // ghostlight.training_hook: evidence_as_delayed_rescue_and_chaos_weaver_seed
 Jun's slate seals the chain.
 
-Green wing tag. Shock wand. Welfare display. Voss's falsified calm. Sable's extra tags. Rian's two kicks on hatch 3C.
+Green interface wing tag. Shock wand. Welfare display. Voss's falsified calm. Sable's spare wing-tag clasps. {hatch_3c_state >= 3: Rian's two kicks on hatch 3C.}{hatch_3c_state < 3: The bad hatch seam where a maintenance route should have been boring.}
 
 The escape is messier for it. Sable gets close enough that Kesh smells hot metal. A juvenile loses feathers to the tag tray.
 

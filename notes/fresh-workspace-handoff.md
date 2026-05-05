@@ -232,17 +232,29 @@ Live Corvid surfaces:
 - `examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json`
 - `examples/ink/corvid-collective-founding.branch-and-fold.v0.ink`
 - `examples/ink/corvid-collective-founding.branch-and-fold.v0.training.json`
+- `examples/visual/corvid-collective-founding.branch-and-fold.v0.visual.json`
 - `experiments/corvid-collective-founding-v0/sandbox-packets/corvid-collective-founding-v0.coordinator-packet.md`
 - `experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json`
 - `experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.final.json`
 - `experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.lore-review.final.json`
+- `experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.visual-enabled.json`
+- `experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.lore-review.visual-enabled.json`
+- `experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.spatial-review.final.json`
+- `experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.visual-review.final.json`
 
 Corvid result: the Ink compiles, lore grounding validates, and the full-artifact
-narrative reviewer accepted it with minor revisions that were applied. A
-limited-input narrative warning is preserved as a reviewer-packet lesson because
-that reviewer received a shortened climax excerpt and correctly complained
-about missing endings that did exist in the real file. Do not count that as a
-true failure of the Ink.
+narrative reviewer accepted it with minor revisions that were applied. Visual
+replay is now enabled through a separate `.visual.json` plan with click-through
+scene anchors, stable visual character refs, branch/state image modifiers,
+ending modifiers, explicit hatch 3C states, and a draft Blackbox Aviary 3C
+scene-set map. Visual-enabled narrative and lore reviewers accepted the fixture;
+spatial and visual reviewers accepted it as draft after fixes. The draft
+scene-set is enough for replay planning, not high-consistency website art; build
+a hand-made blockout before expecting multi-angle image generation to behave
+like it went to engineering school. A limited-input narrative warning is
+preserved as a reviewer-packet lesson because that reviewer received a shortened
+climax excerpt and correctly complained about missing endings that did exist in
+the real file. Do not count that as a true failure of the Ink.
 
 Corvid usability: this is draft branch-and-fold/reference material for
 nonhuman embodiment, concrete leverage, Corvid separatist founding texture, and
@@ -252,7 +264,9 @@ it lacks per-turn projected contexts, exact character packets, raw character
 outputs, event/appraisal/mutation receipts, and a complete scene-loop bundle.
 
 Corvid backfill candidates: NeuroSyn Corvid Recon room-scale containment/audit
-geometry and exact raven-to-telemetry physical interface affordances.
+geometry, exact raven-to-telemetry physical interface affordances, Rossum &
+Douglas high-risk handoff/audit practice, and the Corvid/Chaos Weaver
+outside-interface origin note.
 
 Kappa geometry to preserve: Service Ring Kappa names this specific standardized
 industrial spoke manifold service ring, a bounded local access loop around a

@@ -188,10 +188,15 @@ current_artifacts:
     - examples/training-loops/corvid-collective-founding-v0/corvid-collective-founding-v0.initial-state.json
     - examples/ink/corvid-collective-founding.branch-and-fold.v0.ink
     - examples/ink/corvid-collective-founding.branch-and-fold.v0.training.json
+    - examples/visual/corvid-collective-founding.branch-and-fold.v0.visual.json
     - experiments/corvid-collective-founding-v0/sandbox-packets/corvid-collective-founding-v0.coordinator-packet.md
     - experiments/corvid-collective-founding-v0/sandbox-captures/corvid-collective-founding-v0.coordinator.capture.json
     - experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.final.json
     - experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.lore-review.final.json
+    - experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.visual-enabled.json
+    - experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.lore-review.visual-enabled.json
+    - experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.spatial-review.final.json
+    - experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.visual-review.final.json
     - experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.coordinator-packet.md
     - experiments/lucent-hostage-feed-v0/sandbox-captures/lucent-hostage-feed.negotiator-branch.v1.coordinator.capture.json
     - experiments/lucent-hostage-feed-v0/sandbox-packets/lucent-hostage-feed.negotiator-branch.v1.weaver-packet.md
@@ -226,5 +231,5 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: `corvid-collective-founding-v0` is the newest founding-era draft fixture: a sandboxed coordinator plus sandboxed Interactive Fiction Weaver branch-and-fold pass from Kesh-of-Three-Clicks' embodied raven perspective during the 2470 First Exodus. The Ink compiles, lore grounding validates, and full-artifact narrative review accepted it with minor revisions that were applied. It is reference/draft branch material, not full responder/appraiser/mutator training data. `lucent-hostage-feed-v0` remains the open-ended training-loop draft with validated initiative scheduling; Pallas remains reference-only, with `pallas-training-loop-v0` as the smaller receipt-chain pilot.
+  summary: `corvid-collective-founding-v0` is the newest founding-era draft fixture: a sandboxed coordinator plus sandboxed Interactive Fiction Weaver branch-and-fold pass from Kesh-of-Three-Clicks' embodied raven perspective during the 2470 First Exodus. The Ink compiles, lore grounding validates, click-through visual segmentation now exists, and visual-enabled narrative, lore, spatial, and visual reviewers accepted it as draft after applied fixes. It is reference/draft branch and illustrated replay material, not full responder/appraiser/mutator training data. `lucent-hostage-feed-v0` remains the open-ended training-loop draft with validated initiative scheduling; Pallas remains reference-only, with `pallas-training-loop-v0` as the smaller receipt-chain pilot.
   next_action: Choose whether to backfill Corvid/NeuroSyn room-scale lore gaps into AetheriaLore, convert the Corvid fixture into a true scene-loop receipt chain, backfill the useful Lucent lore gaps, or move to the next coverage fixture. Keep broad corpus coverage at draft until artifacts have exact receipts for the organs they claim, and keep meta-coordinator repairs labeled.

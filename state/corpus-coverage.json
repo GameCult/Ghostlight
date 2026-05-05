@@ -414,14 +414,19 @@
                                           "training_sidecar":  "examples/ink/corvid-collective-founding.branch-and-fold.v0.training.json",
                                           "narrative_review":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.final.json",
                                           "lore_review":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.lore-review.final.json",
-                                          "limited_narrative_review":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.limited-input-warning.json"
+                                          "limited_narrative_review":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.limited-input-warning.json",
+                                          "visual_plan":  "examples/visual/corvid-collective-founding.branch-and-fold.v0.visual.json",
+                                          "narrative_review_visual_enabled":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.narrative-review.visual-enabled.json",
+                                          "lore_review_visual_enabled":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.lore-review.visual-enabled.json",
+                                          "spatial_review":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.spatial-review.final.json",
+                                          "visual_review":  "experiments/corvid-collective-founding-v0/reviews/corvid-collective-founding-v0.visual-review.final.json"
                                       },
                         "review":  {
                                        "schema":  "accepted",
                                        "narrative":  "accepted_as_draft",
                                        "lore":  "accepted",
-                                       "spatial":  "not_run",
-                                       "visual":  "not_run",
+                                       "spatial":  "accepted_as_draft",
+                                       "visual":  "accepted_as_draft",
                                        "if_artifact":  "accepted_as_draft"
                                    },
                         "economy_hooks":  [
@@ -434,9 +439,11 @@
                                           ],
                         "open_lore_gaps":  [
                                                "Room-scale geometry and standard equipment pattern for NeuroSyn Corvid Recon containment and audit sites.",
-                                               "Exact physical interface affordances for uplifted ravens using corporate telemetry systems."
+                                               "Exact physical interface affordances for uplifted ravens using corporate telemetry systems.",
+                                               "Rossum \u0026 Douglas high-risk handoff and audit practice around uplifted recon assets.",
+                                               "Corvid and Chaos Weaver outside-interface origin note."
                                            ],
-                        "notes":  "First Corvid Collective founding-era IF fixture. It used sandboxed coordinator and sandboxed Interactive Fiction Weaver prompts, then meta-coordinator conversion and labeled repair. It is useful as draft branch-and-fold/reference material for nonhuman embodiment, fallible human leverage, and Corvid founding texture. It is not full responder/appraiser/mutator training data because it lacks per-turn projected contexts, exact responder packets, raw character outputs, event records, participant-local appraisals, reviewed mutations, and a complete receipt-chain bundle. The limited-input narrative warning is preserved as a reviewer-packet lesson; the final full-artifact narrative review accepted the Ink with minor revisions, which were applied.",
+                        "notes":  "First Corvid Collective founding-era IF fixture. It used sandboxed coordinator and sandboxed Interactive Fiction Weaver prompts, then meta-coordinator conversion and labeled repair. It is useful as draft branch-and-fold/reference material for nonhuman embodiment, fallible human leverage, Corvid founding texture, and visual replay planning. It is not full responder/appraiser/mutator training data because it lacks per-turn projected contexts, exact responder packets, raw character outputs, event records, participant-local appraisals, reviewed mutations, and a complete receipt-chain bundle. The limited-input narrative warning is preserved as a reviewer-packet lesson; the final full-artifact narrative review accepted the Ink with minor revisions, which were applied. Visual-enabled narrative, lore, spatial, and visual reviewers accepted the fixture as draft; visual artifacts remain collateral, not core model training signal.",
                         "training_usability":  {
                                                    "overall":  "not_training_data",
                                                    "story_shape_and_grounding":  "reference_only",

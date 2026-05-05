@@ -1,0 +1,33 @@
+{
+  "schema_version": "ghostlight.review_receipt.v0",
+  "review_id": "corvid-collective-founding-v0.spatial-review.final",
+  "fixture_id": "corvid-collective-founding-v0",
+  "artifact_refs": [
+    "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+    "examples/ink/corvid-collective-founding.branch-and-fold.v0.training.json",
+    "examples/visual/corvid-collective-founding.branch-and-fold.v0.visual.json"
+  ],
+  "reviewer_prompt_ref": "prompts/spatial-geometric-cohesion-reviewer.md",
+  "review_mode": "sandboxed_subagent_final_pass",
+  "status": "accepted_as_draft",
+  "scores": {
+    "layout_cohesion": 4,
+    "sightline_cohesion": 4,
+    "body_affordance_respect": 5,
+    "movement_cohesion": 4,
+    "object_system_cohesion": 4,
+    "branch_spatial_state": 4
+  },
+  "findings": [
+    "Explicit hatch_3c_state now prevents the proof ending from claiming Rian physically opened the hatch unless prior choices made that true.",
+    "Raven affordances are respected: beak, talon, short flight, perch movement, mimicry, contact pads, cached objects, sightlines, and waiting.",
+    "The aviary geometry is coherent enough for draft IF, with a handler walkway, perch lattice, telemetry glass, audit vestibule, buffer cabinet, low hatch, and spare wing-tag clasp tray."
+  ],
+  "required_revisions": [],
+  "minor_revisions_applied_after_review": [
+    "Changed final proof choice wording from hatch habit to hatch vulnerability.",
+    "Changed proof ending wording from Sable's extra tags to Sable's spare wing-tag clasps.",
+    "Updated visual review notes to remove stale pre-fix language."
+  ],
+  "training_usability": "review_reference_only"
+}

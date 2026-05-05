@@ -1,0 +1,840 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "corvid-collective-founding-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/corvid-collective-founding.branch-and-fold.v0.training.json",
+  "scene_id": "corvid-collective-founding-v0.containment-audit-before-exodus",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Corvid Collective founding-era fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for Blackbox Aviary 3C, Kesh's embodied lever choices, the recon-log rupture, human pressure, final founding priorities, and state-gated aftermath images.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for establishing space, human leverage introduction, containment/audit power geometry, Kesh's interface focus, each pre-audit lever choice, ordinary routine fold, rupture alarm, human pressure, final threshold, and each ending family. Pivotal one-sentence turns such as the green-tagged juvenile scream should stand alone in replay.",
+    "prompting_rule": "Each base image prompt stands alone. It explains fictional objects in visible terms and includes only visible characters or groups. Continuity notes are for tooling and review; prompt assembly uses concrete visible geometry copied into the base prompt or modifier.",
+    "global_style_cue": "Style: moody illustrated science-fiction storybook frame, ink-wash shadows with restrained painterly color, sharp readable silhouettes, tactile industrial detail, expressive animal body language, storybook-illustrated, serious animal intelligence, cinematic but playable as interactive fiction.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for visible named characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. Do not include absent character refs. Do not rely on previous generated images for room memory.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture now includes a draft Blackbox Aviary 3C scene_set map for reviewer/tooling continuity. It is sufficient for draft replay planning, but a hand-built blockout is still required before high-consistency generated website art.",
+      "future_scene_set_need": "If promoted for website-quality replay, build a simple plan view or blockout for Blackbox Aviary 3C with perch ladders, telemetry glass, handler walkway, audit vestibule, local buffer cabinet, hatch 3C, vents, spare wing-tag clasp tray, and camera sightlines."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "corvid_aviary_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of Blackbox Aviary 3C, a compact NeuroSyn raven reconnaissance containment and audit room on Mars: warm server vents run along a high dark wall; cheap aluminum perch ladders cross a tall sheet of telemetry glass; mirror-check toys made of small reflective foil scraps hang from thin cords; camera housings watch from the ceiling; a local telemetry buffer cabinet with small status lights sits below the perch array; a maintenance hatch labeled 3C is set low in the wall; beyond transparent audit vestibule glass is a small observer booth with an airgapped slate dock. The room feels warm near the vents and clinically owned everywhere else. Several uplifted ravens perch at different heights, black feathers, small wing tags, bright watchful eyes, pretending to be test equipment.",
+        "visible_characters": [
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "scattered across perch ladders and camera housings, watchful but still",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Blackbox Aviary 3C is one compact room, not a habitat-scale aviary: perch arrays, telemetry glass, handler walkway, audit vestibule, buffer cabinet, mirror toys, spare wing-tag clasp tray, high server vents, and low maintenance hatch 3C all remain in consistent relative positions.",
+          "Kesh is an uplifted raven with avian-only anatomy. Raven body language uses head angle, eye focus, wing spread, claw grip, hopping, short flight, beak manipulation, and flock spacing."
+        ]
+      },
+      {
+        "visual_scene_id": "corvid_human_levers",
+        "ink_anchor": "intro_human_levers",
+        "base_image_prompt": "Medium-wide view inside the aviary focused on human routines and Kesh's observation: Dr. Maela Voss stands at the handler walkway beside a welfare-log display, tidy lab coat over corporate-gray work clothes, tired eyes, one hand near a console; Rian Pell crouches by low maintenance hatch 3C in scuffed technician coveralls, work boots planted by the hatch seam, one boot raised as if about to kick the latch; Kesh-of-Three-Clicks perches above them on aluminum rungs, black raven feathers, small numbered wing tag, sharp black eye tracking the hatch and the humans. The telemetry glass reflects pale compliance numbers across all three.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "perched above the hatch, head cocked toward Rian's boot habit",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "maela_voss",
+            "default_stance": "beside welfare-log display, controlled but guilty",
+            "visual_ref": "visual_character_refs.characters.maela_voss"
+          },
+          {
+            "agent_id": "rian_pell",
+            "default_stance": "crouched at hatch 3C, boot near the latch",
+            "visual_ref": "visual_character_refs.characters.rian_pell"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This frame establishes Voss as log leverage and Rian as hatch leverage before the player chooses a pre-audit lever."
+        ]
+      },
+      {
+        "visual_scene_id": "corvid_containment_and_audit",
+        "ink_anchor": "intro_containment_and_audit",
+        "base_image_prompt": "Medium-wide view across the aviary toward the audit vestibule: Sable Or, containment lead, stands near a tray of extra juvenile wing tags and a charged shock wand clipped at her side, wearing dark corporate security fabric with rigid collar and clean gloves; Jun Vale watches from beyond sealed transparent vestibule glass, slim junior auditor posture, holding a plain airgapped slate at chest height. Juvenile ravens with small colored wing tags cluster on lower perches, bodies angled away from the spare wing-tag clasp tray. Ceiling cameras and telemetry glass make the room feel witnessed but not protected.",
+        "visible_characters": [
+          {
+            "agent_id": "sable_or",
+            "default_stance": "beside spare wing-tag clasp tray and shock wand, counting bodies against tags",
+            "visual_ref": "visual_character_refs.characters.sable_or"
+          },
+          {
+            "agent_id": "jun_vale",
+            "default_stance": "behind vestibule glass with airgapped slate",
+            "visual_ref": "visual_character_refs.characters.jun_vale"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "juveniles and elders spaced across lower perches",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This frame establishes Sable as custody pressure and Jun as proof custody before choices can use the slate or spare wing-tag clasp tray."
+        ]
+      },
+      {
+        "visual_scene_id": "corvid_kesh_interface",
+        "ink_anchor": "intro_kesh_interface",
+        "base_image_prompt": "Close-medium view of Kesh-of-Three-Clicks at the local telemetry buffer cabinet: an uplifted raven grips a narrow perch beside a waist-high industrial cabinet with small amber and green status lights, contact pads sized for bird feet and beak taps, fiber cables leading behind telemetry glass, and a tiny optical port aimed across the room. Kesh's black eye reflects the status lights; one talon rests near a contact pad; mirror foil glints on a nearby enrichment cord; the low hatch 3C is visible in the background below the perch lattice.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "one talon near the contact pad, eye on the buffer lights",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The buffer cabinet is a bounded interface, not omnipotent terminal control. It accepts bird-body contact-pad interactions and local telemetry spoofing."
+        ]
+      },
+      {
+        "visual_scene_id": "corvid_prime_flock_cache",
+        "ink_anchor": "pre_audit_hub.prime_flock_safety",
+        "base_image_prompt": "Low-angle close action frame near hatch 3C: Kesh hops down in three sharp movements, black wings half-open for balance, beak gripping a folded scrap of mirror foil, one talon dragging a tiny connector pin toward the warm vent lip beside the low hatch. Juvenile ravens on nearby perches look toward the almost-silent flock call. Rian stands in the background pretending not to notice; Sable's distant silhouette turns with suspicion.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "hopping with connector pin and foil near hatch 3C",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "juveniles looking up from lower perches",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          },
+          {
+            "agent_id": "rian_pell",
+            "default_stance": "background, pretending not to notice",
+            "visual_ref": "visual_character_refs.characters.rian_pell"
+          },
+          {
+            "agent_id": "sable_or",
+            "default_stance": "distant silhouette turning with suspicion",
+            "visual_ref": "visual_character_refs.characters.sable_or"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "corvid_prime_human_leverage",
+        "ink_anchor": "pre_audit_hub.prime_human_leverage",
+        "base_image_prompt": "Medium shot of Kesh perched between Voss, Rian, and Sable while mimicry turns the room brittle: Kesh's beak is open mid-stolen phrase; Voss freezes by the welfare-log display with her own words reflected across her face; Rian goes still near hatch 3C; Sable looks toward the buffer cabinet as if liability has just made a sound. The local telemetry buffer cabinet glows behind the perch lattice.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "beak open in mimicry, body angled toward buffer cabinet",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "maela_voss",
+            "default_stance": "frozen by welfare-log display",
+            "visual_ref": "visual_character_refs.characters.maela_voss"
+          },
+          {
+            "agent_id": "rian_pell",
+            "default_stance": "still near hatch 3C",
+            "visual_ref": "visual_character_refs.characters.rian_pell"
+          },
+          {
+            "agent_id": "sable_or",
+            "default_stance": "turning toward the sound with suspicion",
+            "visual_ref": "visual_character_refs.characters.sable_or"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "corvid_prime_public_proof",
+        "ink_anchor": "pre_audit_hub.prime_public_proof",
+        "base_image_prompt": "Sightline composition through telemetry glass: Kesh drags a bright scrap of mirror foil along a perch ladder so the welfare-log display and a flinching green-tagged juvenile raven reflect into Jun Vale's airgapped slate beyond the vestibule glass. The image has three visible planes: dirty aviary perch lattice in front, glowing compliance numbers on glass in the middle, Jun's slate in the observer booth catching the contradiction in the back.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "pulling mirror foil along perch ladder",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "jun_vale",
+            "default_stance": "behind vestibule glass, slate angled toward reflection",
+            "visual_ref": "visual_character_refs.characters.jun_vale"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "one green-tagged juvenile flinching near spare wing-tag clasp tray",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "corvid_prime_clean_disappearance",
+        "ink_anchor": "pre_audit_hub.prime_clean_disappearance",
+        "base_image_prompt": "Quiet surveillance frame of the aviary looking almost normal: ravens hold obedient spacing on aluminum perches; the telemetry buffer cabinet shows smooth green status lights; the juvenile spare wing-tag clasp tray is visually boring in the corner; hatch 3C sits low and unnoticed under warm vent shadows. Kesh is high on a perch, still and watchful, choosing stealth while the flock below reads the distance.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "high, still, watchful",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "ravens spaced too evenly on perches",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "corvid_ordinary_life_fold",
+        "ink_anchor": "ordinary_life_fold",
+        "base_image_prompt": "Routine containment work before rupture: Voss reads a welfare checklist at the handler console; Rian slips a discarded connector pin near Kesh's perch while keeping his face turned away from the cameras; Sable counts raven bodies against wing tags beside the tray; Jun watches from behind vestibule glass with slate lowered; ravens hold different perch heights under warm server vents. The room is calm in the way a cage is calm when everyone knows where the locks are.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "perched near Rian's hidden connector pin",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "maela_voss",
+            "default_stance": "reading checklist at console",
+            "visual_ref": "visual_character_refs.characters.maela_voss"
+          },
+          {
+            "agent_id": "rian_pell",
+            "default_stance": "hand low near perch, not looking at cameras",
+            "visual_ref": "visual_character_refs.characters.rian_pell"
+          },
+          {
+            "agent_id": "sable_or",
+            "default_stance": "counting bodies against tags",
+            "visual_ref": "visual_character_refs.characters.sable_or"
+          },
+          {
+            "agent_id": "jun_vale",
+            "default_stance": "behind glass, watching",
+            "visual_ref": "visual_character_refs.characters.jun_vale"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "perched under warm vents",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "flock_cohesion >= 4",
+            "modifier_prompt": "Ravens cluster in coordinated living geometry, elders shielding juveniles with bodies and wings."
+          },
+          {
+            "trigger": "flock_cohesion <= 1",
+            "modifier_prompt": "Ravens perch farther apart with visible tension and less mutual shielding."
+          },
+          {
+            "trigger": "jun_proof >= 2",
+            "modifier_prompt": "Jun's slate is raised and angled toward the telemetry glass, catching reflected proof."
+          },
+          {
+            "trigger": "telemetry_control >= 4",
+            "modifier_prompt": "The telemetry displays glow smooth green and over-clean, making the room look falsely normal."
+          },
+          {
+            "trigger": "human_suspicion >= 3",
+            "modifier_prompt": "Sable's head and shoulders angle toward the perches as if counting exits, not bodies."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "corvid_rupture_alarm",
+        "ink_anchor": "rupture_cycle",
+        "base_image_prompt": "Pivotal alarm beat inside Blackbox Aviary 3C: amber light floods the telemetry glass; a green-interface-wing-tagged juvenile raven screams as a attached restraint clasp flashes with calibration current; nearby ravens flare wings and tighten around perches; Kesh's black silhouette snaps toward the juvenile; hatch 3C sits low in the wall under warm vents; the buffer cabinet shows conflicting amber and green status lights. The frame centers bodily distress, not abstract data.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "silhouette turned sharply toward the green-tagged juvenile",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "juvenile screaming, elders flaring wings nearby",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "corvid_rupture_choice",
+        "ink_anchor": "rupture_choice",
+        "base_image_prompt": "Four-affordance rupture choice composition inside the same aviary: Kesh can be seen near the flock-call perch line, the telemetry contact pad, a dangling mirror-check toy with foil, and the high perch overlooking Rian's path to hatch 3C. Amber alarm light washes across glass and aluminum perch ladders; the green-tagged juvenile is visible but not centered; the room presents several physical routes and levers at once.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "poised between perch, contact pad, foil toy, and hatch sightline",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "tense ravens on perches under amber alarm",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          },
+          {
+            "agent_id": "rian_pell",
+            "default_stance": "near the route toward hatch 3C",
+            "visual_ref": "visual_character_refs.characters.rian_pell"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "corvid_human_pressure",
+        "ink_anchor": "human_pressure",
+        "base_image_prompt": "Confrontation frame after the alarm: Sable steps onto the handler walkway with one gloved hand near the shock wand and the other by the spare wing-tag clasp tray; Voss stands tense at the console saying hold position; Rian faces the hatch path with frustration; Jun's face and slate appear through vestibule glass as her voice comes through the speaker. Kesh is perched above the centerline, small but visually central, deciding which human string can bear pressure.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "perched above centerline, body low and ready",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "sable_or",
+            "default_stance": "on handler walkway, hand near shock wand",
+            "visual_ref": "visual_character_refs.characters.sable_or"
+          },
+          {
+            "agent_id": "maela_voss",
+            "default_stance": "tense at console",
+            "visual_ref": "visual_character_refs.characters.maela_voss"
+          },
+          {
+            "agent_id": "rian_pell",
+            "default_stance": "angled toward hatch path",
+            "visual_ref": "visual_character_refs.characters.rian_pell"
+          },
+          {
+            "agent_id": "jun_vale",
+            "default_stance": "behind vestibule glass with slate raised",
+            "visual_ref": "visual_character_refs.characters.jun_vale"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "voss_leverage >= 4",
+            "modifier_prompt": "Voss is visibly looking toward the buffer cabinet instead of the alarm."
+          },
+          {
+            "trigger": "sable_pressure >= 2",
+            "modifier_prompt": "Sable's collar and jaw look tight, promotion panic showing through controlled posture."
+          },
+          {
+            "trigger": "rian_trust >= 3",
+            "modifier_prompt": "Rian deliberately avoids looking straight at Kesh while positioning his boot near the hatch route."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "corvid_hatch_and_slate",
+        "ink_anchor": "hatch_and_slate",
+        "base_image_prompt": "Final threshold frame inside Blackbox Aviary 3C: low hatch 3C sits under warm vent shadows; the telemetry buffer cabinet glows hot amber-green; Jun's airgapped slate is raised behind vestibule glass; Sable counts exits near the spare wing-tag clasp tray; Kesh and the flock occupy the aluminum perch lattice around the hatch sightline. The frame should make hatch, slate, buffer, spare wing-tag clasp tray, and flock spacing all readable while leaving specific cohesion and hatch-state changes to modifiers.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "near hatch sightline, ready to choose final priority",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "perch lattice body or scattered bodies depending on state",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          },
+          {
+            "agent_id": "sable_or",
+            "default_stance": "counting exits",
+            "visual_ref": "visual_character_refs.characters.sable_or"
+          },
+          {
+            "agent_id": "jun_vale",
+            "default_stance": "behind glass with slate raised",
+            "visual_ref": "visual_character_refs.characters.jun_vale"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "audit_pressure >= 4",
+            "modifier_prompt": "Jun has stopped pretending this is routine; her slate is sealed upright and bright."
+          },
+          {
+            "trigger": "human_suspicion >= 4",
+            "modifier_prompt": "Sable's attention is on exits and perches, not the tag count."
+          },
+          {
+            "trigger": "nest_cache_integrity >= 3",
+            "modifier_prompt": "Small cached foil and connector pins are visible near the hatch seam."
+          },
+          {
+            "trigger": "escape_window >= 3",
+            "modifier_prompt": "Hatch 3C has a visible dark seam wide enough for more than one raven body to pass."
+          },
+          {
+            "trigger": "escape_window <= 1",
+            "modifier_prompt": "Hatch 3C shows only a thin uncertain seam with Sable close enough to threaten it."
+          },
+          {
+            "trigger": "hatch_3c_state <= 1",
+            "modifier_prompt": "Hatch 3C shows a thin latch seam with no passable opening; it looks tempting but still mostly closed."
+          },
+          {
+            "trigger": "hatch_3c_state == 2",
+            "modifier_prompt": "Hatch 3C shows a misleading green latch light and a bad seam under warm vent shadow; the route is possible but narrow."
+          },
+          {
+            "trigger": "hatch_3c_state >= 3",
+            "modifier_prompt": "Hatch 3C has a small dark passable seam held by a conductive pin, wide enough for raven bodies under pressure."
+          },
+          {
+            "trigger": "flock_cohesion >= 4",
+            "modifier_prompt": "Elders shield juveniles with aligned bodies and wings, forming a coordinated route order around Kesh."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "corvid_ending_flock",
+        "ink_anchor": "ending_flock_foundation|ending_flock_cost",
+        "base_image_prompt": "Aftermath in the warm duct beyond hatch 3C: a narrow service duct lined with server heat pipes, cable bundles, dust, dark insulation, and small stolen connector pins. Kesh perches at the duct mouth while juveniles and elders move deeper into shadow. The frame centers the flock leaving the owned room through a practical service route.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "last at duct mouth, watching the flock pass",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "juveniles and elders moving through duct",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "corvid_ending_leverage",
+        "ink_anchor": "ending_leverage_foundation|ending_leverage_cost",
+        "base_image_prompt": "Human-leverage aftermath inside Blackbox Aviary 3C at hatch 3C: Voss and Sable turn on each other under amber alarm light on the handler walkway; the telemetry glass and perch lattice rise behind them; the local buffer cabinet glows near Kesh's perch; the spare wing-tag clasp tray sits within Sable's reach; Rian is near the low hatch seam; Kesh is poised above them on aluminum rungs. The frame centers fallible manipulation, pressure, and institutional self-protection.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "above the human conflict, tense and calculating",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "maela_voss",
+            "default_stance": "caught between self-protection and command",
+            "visual_ref": "visual_character_refs.characters.maela_voss"
+          },
+          {
+            "agent_id": "sable_or",
+            "default_stance": "angry near shock wand and spare wing-tag clasp tray",
+            "visual_ref": "visual_character_refs.characters.sable_or"
+          },
+          {
+            "agent_id": "rian_pell",
+            "default_stance": "at hatch 3C, boot near latch",
+            "visual_ref": "visual_character_refs.characters.rian_pell"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "corvid_ending_proof",
+        "ink_anchor": "ending_proof_foundation|ending_proof_cost",
+        "base_image_prompt": "Proof aftermath through vestibule glass: Jun's airgapped slate glows with a sealed chain of visible evidence; Kesh holds a dangerous sightline from the perch ladder; Sable is close enough that hot metal threat is visible; a green-interface-wing-tagged juvenile is near scattered feathers and the spare clasp tray.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "holding the sightline from a perch ladder",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "jun_vale",
+            "default_stance": "behind glass with slate sealed",
+            "visual_ref": "visual_character_refs.characters.jun_vale"
+          },
+          {
+            "agent_id": "sable_or",
+            "default_stance": "close with shock wand threat",
+            "visual_ref": "visual_character_refs.characters.sable_or"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "green-tagged juvenile near scattered feathers",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "chaos_weaver_seed >= 1",
+            "modifier_prompt": "The slate reflection also catches the mirror-foil sightline and the idea of outside proof as a useful door that remains outside the nest."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "corvid_ending_disappearance",
+        "ink_anchor": "ending_disappearance_foundation|ending_disappearance_cost",
+        "base_image_prompt": "Stealth aftermath split between empty aviary and server dark: one side shows a perfect-looking containment room with obedient telemetry, empty perches, and hatch 3C recorded closed; the other side shows abandoned server shadows where ravens cluster around stolen logs, cable warmth, cached pins, and route marks.",
+        "visible_characters": [
+          {
+            "agent_id": "kesh_three_clicks",
+            "default_stance": "in server shadow near route marks and cached pins",
+            "visual_ref": "visual_character_refs.characters.kesh_three_clicks"
+          },
+          {
+            "agent_id": "watching_flock",
+            "default_stance": "clustered in server dark or divided by the hatch depending on route",
+            "visual_ref": "visual_character_refs.groups.watching_flock"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "visible_cached_tools",
+        "trigger": "nest_cache_integrity >= 3",
+        "apply_to_visual_scene_ids": [
+          "corvid_hatch_and_slate",
+          "corvid_ending_flock",
+          "corvid_ending_disappearance"
+        ],
+        "modifier_prompt": "Show small connector pins and folded mirror foil cached near a warm vent or hatch seam as practical tools, not treasure."
+      },
+      {
+        "modifier_id": "high_human_suspicion",
+        "trigger": "human_suspicion >= 4",
+        "apply_to_visual_scene_ids": [
+          "corvid_human_pressure",
+          "corvid_hatch_and_slate"
+        ],
+        "modifier_prompt": "Human bodies tighten toward containment posture: Sable watches exits, Voss is frozen at the console, and Rian's help becomes more dangerous."
+      },
+      {
+        "modifier_id": "strong_public_proof",
+        "trigger": "jun_proof >= 3",
+        "apply_to_visual_scene_ids": [
+          "corvid_hatch_and_slate",
+          "corvid_ending_proof"
+        ],
+        "modifier_prompt": "Jun's slate is visibly sealed and bright, catching multiple proof elements in one readable chain."
+      },
+      {
+        "modifier_id": "low_flock_cohesion",
+        "trigger": "flock_cohesion <= 1",
+        "apply_to_visual_scene_ids": [
+          "corvid_ordinary_life_fold",
+          "corvid_hatch_and_slate",
+          "corvid_ending_flock",
+          "corvid_ending_disappearance"
+        ],
+        "modifier_prompt": "Ravens are spaced apart, with gaps between juveniles and elders that make the flock look socially frayed."
+      },
+      {
+        "modifier_id": "rupture_flock_order_visual",
+        "trigger": "branch_label == rupture_flock_order",
+        "apply_to_visual_scene_ids": [
+          "corvid_rupture_choice",
+          "corvid_human_pressure"
+        ],
+        "modifier_prompt": "Ravens shift into visible route order: elders tuck juveniles between bodies, heads aligned toward vent, hatch, and glass-shadow routes."
+      },
+      {
+        "modifier_id": "rupture_telemetry_misdirect_visual",
+        "trigger": "branch_label == rupture_telemetry_misdirect",
+        "apply_to_visual_scene_ids": [
+          "corvid_rupture_choice",
+          "corvid_human_pressure"
+        ],
+        "modifier_prompt": "Kesh bridges the bird-height contact pad with talons; the buffer cabinet shows conflicting amber and green diagnostics."
+      },
+      {
+        "modifier_id": "rupture_jun_witness_visual",
+        "trigger": "branch_label == rupture_jun_witness",
+        "apply_to_visual_scene_ids": [
+          "corvid_rupture_choice",
+          "corvid_human_pressure"
+        ],
+        "modifier_prompt": "Kesh grips torn mirror foil in the beak and aims it toward Jun; the green-interface-wing-tagged juvenile appears in a reflected sightline."
+      },
+      {
+        "modifier_id": "rupture_wait_for_habit_visual",
+        "trigger": "branch_label == rupture_wait_for_habit",
+        "apply_to_visual_scene_ids": [
+          "corvid_rupture_choice",
+          "corvid_hatch_and_slate"
+        ],
+        "modifier_prompt": "Kesh waits high and still while Rian moves toward hatch 3C; Rian's boot is staged near the latch seam."
+      },
+      {
+        "modifier_id": "spend_voss_leverage_visual",
+        "trigger": "branch_label == spend_voss_leverage",
+        "apply_to_visual_scene_ids": [
+          "corvid_human_pressure",
+          "corvid_hatch_and_slate"
+        ],
+        "modifier_prompt": "Voss flinches toward the buffer cabinet as Kesh angles beak and body toward it; Sable turns suspicion from the birds to Voss."
+      },
+      {
+        "modifier_id": "spend_rian_trust_visual",
+        "trigger": "branch_label == spend_rian_trust",
+        "apply_to_visual_scene_ids": [
+          "corvid_human_pressure",
+          "corvid_hatch_and_slate"
+        ],
+        "modifier_prompt": "A connector pin lies at Rian's boot; his boot is positioned at hatch 3C and the latch seam glows false green."
+      },
+      {
+        "modifier_id": "protect_public_proof_visual",
+        "trigger": "branch_label == protect_public_proof",
+        "apply_to_visual_scene_ids": [
+          "corvid_human_pressure",
+          "corvid_ending_proof"
+        ],
+        "modifier_prompt": "Kesh spreads wings on the perch ladder to frame the green-interface-wing-tagged juvenile for Jun's slate while Sable reaches toward the shock wand."
+      },
+      {
+        "modifier_id": "disrupt_tagging_visual",
+        "trigger": "branch_label == disrupt_tagging",
+        "apply_to_visual_scene_ids": [
+          "corvid_human_pressure",
+          "corvid_hatch_and_slate",
+          "corvid_ending_proof"
+        ],
+        "modifier_prompt": "Spare wing-tag clasps scatter under equipment racks; Sable's access to the clasp tray is visibly disrupted."
+      },
+      {
+        "modifier_id": "ending_flock_foundation_visual",
+        "trigger": "ending_label == flock_safety_success",
+        "apply_to_visual_scene_ids": [
+          "corvid_ending_flock"
+        ],
+        "modifier_prompt": "Ravens pass as a coordinated flock with elders shielding juveniles; Kesh is last at the duct mouth, watching all bodies through before turning away."
+      },
+      {
+        "modifier_id": "ending_flock_cost_visual",
+        "trigger": "ending_label == flock_safety_cost",
+        "apply_to_visual_scene_ids": [
+          "corvid_ending_flock"
+        ],
+        "modifier_prompt": "One wing tag is snagged, feathers scatter near the hatch, and survivors count missing bodies in a tight, wounded cluster."
+      },
+      {
+        "modifier_id": "ending_leverage_foundation_visual",
+        "trigger": "ending_label == human_leverage_success",
+        "apply_to_visual_scene_ids": [
+          "corvid_ending_leverage"
+        ],
+        "modifier_prompt": "Hierarchy consumes itself long enough for the flock to move: Voss and Sable face each other, Rian works the hatch, and Kesh stays above the string he pulled."
+      },
+      {
+        "modifier_id": "ending_leverage_cost_visual",
+        "trigger": "ending_label == human_leverage_cost",
+        "apply_to_visual_scene_ids": [
+          "corvid_ending_leverage"
+        ],
+        "modifier_prompt": "The shock wand cracks against a perch ladder; Rian moves too late; the hatch opens for fewer bodies than planned."
+      },
+      {
+        "modifier_id": "ending_proof_foundation_visual",
+        "trigger": "ending_label == public_proof_success",
+        "apply_to_visual_scene_ids": [
+          "corvid_ending_proof"
+        ],
+        "modifier_prompt": "Jun's slate holds a coherent proof chain: interface wing tag, shock wand, welfare display, falsified calm, extra clasps, and hatch vulnerability."
+      },
+      {
+        "modifier_id": "ending_proof_cost_visual",
+        "trigger": "ending_label == public_proof_cost",
+        "apply_to_visual_scene_ids": [
+          "corvid_ending_proof"
+        ],
+        "modifier_prompt": "Jun's slate shows fragments: a tag, a flinch, wand flash, and incomplete context; the room remains more dangerous than legible."
+      },
+      {
+        "modifier_id": "ending_disappearance_foundation_visual",
+        "trigger": "ending_label == clean_disappearance_success",
+        "apply_to_visual_scene_ids": [
+          "corvid_ending_disappearance"
+        ],
+        "modifier_prompt": "The empty room looks clinically perfect while server dark becomes a first digital nest of routes, stolen logs, safe ducts, and cached pins."
+      },
+      {
+        "modifier_id": "ending_disappearance_cost_visual",
+        "trigger": "ending_label == clean_disappearance_cost",
+        "apply_to_visual_scene_ids": [
+          "corvid_ending_disappearance"
+        ],
+        "modifier_prompt": "The flock is divided: some ravens vanish into server dark while others remain trapped in the perfect-looking aviary as unwitnessed evidence."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "blackbox_aviary_3c.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Compact rectangular-to-shallow-wedge containment/audit room with one raven-height perch wall, one human handler walkway, and a sealed audit vestibule behind glass.",
+      "fixed_zones": [
+        {
+          "zone_id": "perch_lattice_high_wall",
+          "visible_form": "cheap aluminum perch ladders crossing telemetry glass below warm server vents",
+          "used_for": "Kesh and flock staging, short flights, high waiting, route calls"
+        },
+        {
+          "zone_id": "telemetry_glass_plane",
+          "visible_form": "transparent internal display/reflection wall with welfare-log numbers and reflected sightlines",
+          "used_for": "proof reflection and room surveillance"
+        },
+        {
+          "zone_id": "handler_walkway",
+          "visible_form": "human-access strip beside console, spare wing-tag clasp tray, and shock-wand staging",
+          "used_for": "Voss and Sable movement"
+        },
+        {
+          "zone_id": "audit_vestibule",
+          "visible_form": "sealed glass observer booth with Jun and airgapped slate beyond the aviary",
+          "used_for": "proof custody and client pressure"
+        },
+        {
+          "zone_id": "buffer_cabinet_perch_interface",
+          "visible_form": "waist-high cabinet with bird-height contact-pad strip and fiber cables",
+          "used_for": "bounded telemetry spoofing by talon/beak contact"
+        },
+        {
+          "zone_id": "hatch_3c_low_wall",
+          "visible_form": "low maintenance hatch below warm vent shadows, faulty latch seam, service duct beyond",
+          "used_for": "escape route and hatch state modifiers"
+        },
+        {
+          "zone_id": "spare_wing_tag_clasp_tray",
+          "visible_form": "tray of small wing-tag/interface clasps near Sable and lower juvenile perches",
+          "used_for": "custody threat and tag-tray disruption"
+        },
+        {
+          "zone_id": "mirror_check_toys",
+          "visible_form": "dangling reflective foil scraps and enrichment cords on perch lattice",
+          "used_for": "optical proof routing"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_aviary_establishing",
+          "supports_visual_scene_ids": [
+            "corvid_aviary_establishing",
+            "corvid_ordinary_life_fold"
+          ]
+        },
+        {
+          "camera_id": "hatch_low_angle",
+          "supports_visual_scene_ids": [
+            "corvid_human_levers",
+            "corvid_prime_flock_cache",
+            "corvid_hatch_and_slate",
+            "corvid_ending_leverage"
+          ]
+        },
+        {
+          "camera_id": "vestibule_sightline",
+          "supports_visual_scene_ids": [
+            "corvid_containment_and_audit",
+            "corvid_prime_public_proof",
+            "corvid_ending_proof"
+          ]
+        },
+        {
+          "camera_id": "buffer_close",
+          "supports_visual_scene_ids": [
+            "corvid_kesh_interface",
+            "corvid_prime_human_leverage"
+          ]
+        },
+        {
+          "camera_id": "alarm_centerline",
+          "supports_visual_scene_ids": [
+            "corvid_rupture_alarm",
+            "corvid_rupture_choice",
+            "corvid_human_pressure"
+          ]
+        },
+        {
+          "camera_id": "service_duct_after",
+          "supports_visual_scene_ids": [
+            "corvid_ending_flock",
+            "corvid_ending_disappearance"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "foil_to_jun_slate",
+          "path": "mirror_check_toys -> telemetry_glass_plane -> audit_vestibule slate",
+          "supports": [
+            "prime_public_proof",
+            "rupture_jun_witness",
+            "protect_public_proof"
+          ]
+        },
+        {
+          "lane_id": "hatch_boot_observation",
+          "path": "Kesh high perch -> Rian boot -> hatch_3c_low_wall",
+          "supports": [
+            "rupture_wait_for_habit",
+            "spend_rian_trust"
+          ]
+        }
+      ],
+      "hatch_3c_states": [
+        {
+          "value": 1,
+          "label": "faulty_closed",
+          "visible_form": "thin latch seam, no visible passable opening"
+        },
+        {
+          "value": 2,
+          "label": "false_green",
+          "visible_form": "bad latch seam with misleading green indicator and cached tool glint nearby"
+        },
+        {
+          "value": 3,
+          "label": "pinned_passable",
+          "visible_form": "small dark seam held by conductive pin, wide enough for raven bodies under pressure"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "kesh_three_clicks": "Kesh-of-Three-Clicks: uplifted raven, glossy black feathers with slight oil-blue sheen, compact intelligent posture, one small numbered wing tag, sharp black eyes, strong beak, clawed feet able to grip contact pads and small objects, body language through head angle, wing spread, hopping, short flight, and talon placement. Avian-only silhouette: wings, beak, claws, perching feet, compact raven body.",
+      "maela_voss": "Dr. Maela Voss: baseline human handler-scientist, late-thirties to fifties, neat dark hair tied back, tired precise face, corporate-gray lab coat over practical work clothes, badge clipped high, hands often near welfare-log console, controlled guilt under professional posture.",
+      "rian_pell": "Rian Pell: baseline human maintenance technician, scuffed blue-gray coveralls, worn work boots, tool belt, tired face, practical shoulders, body language of someone low-status but physically familiar with the room's real doors and bad seals.",
+      "sable_or": "Sable Or: baseline human corporate containment lead, dark fitted security uniform with rigid collar, clean gloves, clipped shock wand, promotion-hungry stillness, sharp posture, eyes counting exits and bodies.",
+      "jun_vale": "Jun Vale: junior Rossum & Douglas compliance auditor behind vestibule glass, slim baseline human in simple formal audit jacket, young controlled face, airgapped slate held at chest height, posture caught between skepticism and dawning alarm."
+    },
+    "groups": {
+      "watching_flock": "Watching flock: uplifted ravens of different sizes on aluminum perches, rails, vents, and camera housings; glossy black feathers, small wing tags on some juveniles, bright alert eyes, coordinated spacing or anxious gaps depending on state; avian-only raven silhouettes: wings, beaks, claws, perching feet, compact bird bodies."
+    }
+  },
+  "review_notes": [
+    "This visual plan includes a draft scene_set map with fixed zones, camera slots, sightline lanes, and hatch states. It is sufficient for B-level draft illustrated replay planning.",
+    "If the fixture is promoted for high-consistency website art, build a hand-made plan view or 3D blockout for Blackbox Aviary 3C before relying on multi-angle image generation.",
+    "Prompts use affirmative visible descriptions: geometry, bodies, materials, lighting, props, and state deltas.",
+    "Spatial/visual review pass added a draft scene_set map, explicit hatch_3c state modifiers, branch-result modifiers, ending-label modifiers, and Sable visibility in the cache branch."
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "ghostlight.review_receipt.v0",
+  "review_id": "corvid-collective-founding-v0.narrative-review.visual-enabled",
+  "fixture_id": "corvid-collective-founding-v0",
+  "artifact_refs": [
+    "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+    "examples/ink/corvid-collective-founding.branch-and-fold.v0.training.json",
+    "examples/visual/corvid-collective-founding.branch-and-fold.v0.visual.json"
+  ],
+  "reviewer_prompt_ref": "prompts/narrative-quality-reviewer.md",
+  "review_mode": "sandboxed_subagent_visual_enabled_pass",
+  "status": "accepted_as_draft",
+  "scores": {
+    "context": 4,
+    "character_introduction": 4,
+    "branch_and_fold": 5,
+    "pacing": 5,
+    "voice": 5,
+    "tone": 5,
+    "interactive_fiction_playability": 4,
+    "lore_accessibility": 4
+  },
+  "findings": [
+    "The fixture provides readable Corvid founding texture with ordinary containment routine before rupture.",
+    "Some proper nouns remain frontloaded, but the revised opening supplies enough role and leverage context for play.",
+    "State consequences become visible mainly at folds and endings; acceptable for draft branch-and-fold, but future fixtures should surface state more often during mid-scene play.",
+    "The green-interface-wing-tagged juvenile now has stronger visual and physical grounding before the rupture beat."
+  ],
+  "required_revisions": [],
+  "applied_revisions": [
+    "Added click-through segmentation anchors to improve reader pacing and visual replay.",
+    "Clarified hatch 3C state and final proof wording after spatial review.",
+    "Kept the fixture in draft/reference status rather than training-ready status."
+  ],
+  "training_usability": "review_reference_only"
+}

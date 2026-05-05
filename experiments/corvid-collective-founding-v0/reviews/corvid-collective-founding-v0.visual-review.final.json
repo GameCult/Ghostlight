@@ -1,0 +1,31 @@
+{
+  "schema_version": "ghostlight.review_receipt.v0",
+  "review_id": "corvid-collective-founding-v0.visual-review.final",
+  "fixture_id": "corvid-collective-founding-v0",
+  "artifact_refs": [
+    "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+    "examples/visual/corvid-collective-founding.branch-and-fold.v0.visual.json"
+  ],
+  "reviewer_prompt_ref": "prompts/visual-scene-continuity-reviewer.md",
+  "review_mode": "sandboxed_subagent_final_pass",
+  "status": "accepted_as_draft",
+  "scores": {
+    "segmentation": 5,
+    "visual_prompt_specificity": 4,
+    "character_visibility": 5,
+    "branch_visual_continuity": 5,
+    "website_replay_readiness": 4
+  },
+  "findings": [
+    "The fixture is segmented for interactive replay with distinct visual anchors for ordinary life, role introduction, interface focus, rupture, pressure, threshold, and endings.",
+    "The visual plan includes stable visual refs, visible-character controls, branch modifiers, ending modifiers, hatch states, and a draft scene_set map.",
+    "The scene_set is sufficient for B-level draft replay planning, but a hand-built blockout remains required before high-consistency website art."
+  ],
+  "required_revisions": [],
+  "minor_revisions_applied_after_review": [
+    "Updated stale review notes.",
+    "Neutralized the hatch-and-slate base prompt so hatch state is carried by modifiers.",
+    "Expanded the leverage-ending base prompt with Blackbox Aviary geometry."
+  ],
+  "training_usability": "visual_collateral_only_not_core_model_training_data"
+}

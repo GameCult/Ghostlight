@@ -1,0 +1,32 @@
+{
+  "schema_version": "ghostlight.review_receipt.v0",
+  "review_id": "corvid-collective-founding-v0.lore-review.visual-enabled",
+  "fixture_id": "corvid-collective-founding-v0",
+  "artifact_refs": [
+    "examples/lore-grounding/corvid-collective-founding.v0.json",
+    "examples/ink/corvid-collective-founding.branch-and-fold.v0.ink",
+    "examples/visual/corvid-collective-founding.branch-and-fold.v0.visual.json"
+  ],
+  "reviewer_prompt_ref": "prompts/lore-grounding-reviewer.md",
+  "review_mode": "sandboxed_subagent_visual_enabled_pass",
+  "status": "accepted",
+  "scores": {
+    "source_coverage": 4,
+    "canon_fit": 5,
+    "grounding_quality": 5,
+    "vault_backfill_value": 4
+  },
+  "findings": [
+    "No canon drift was identified in the Corvid fixture pass.",
+    "NeuroSyn containment, Rossum & Douglas audit pressure, uplifted raven embodiment, and early outside-interface/Chaos Weaver implications are plausible and grounded enough for draft fixture use.",
+    "The visual plan correctly keeps fictional objects in visible, drawable terms rather than relying on lore labels."
+  ],
+  "vault_backfill_candidates": [
+    "NeuroSyn Corvid Recon containment and audit room geometry.",
+    "Raven interface affordances through micro-BCI, contact pads, optical spoofing, cached conductive objects, and beak/talon manipulation.",
+    "Rossum & Douglas high-risk handoff and audit practice around uplifted recon assets.",
+    "Corvid and Chaos Weaver outside-interface origin note."
+  ],
+  "required_revisions": [],
+  "training_usability": "review_reference_only"
+}

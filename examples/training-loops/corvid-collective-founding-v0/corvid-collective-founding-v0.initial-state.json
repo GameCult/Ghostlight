@@ -14,7 +14,7 @@
       "handler walkway",
       "maintenance hatch 3C",
       "audit vestibule glass",
-      "juvenile wing-tag tray",
+      "juvenile spare wing-tag clasp tray",
       "local telemetry buffer"
     ]
   },
@@ -93,15 +93,16 @@
     "sable_pressure": 1,
     "jun_proof": 0,
     "nest_cache_integrity": 2,
-    "chaos_weaver_seed": 0
+    "chaos_weaver_seed": 0,
+    "hatch_3c_state": 1
   },
   "objects": [
     "local telemetry buffer",
     "maintenance hatch 3C",
     "audit slate",
-    "wing-tag tray",
+    "spare wing-tag clasp tray",
     "mirror foil cache",
-    "Cryonix interface clasp",
+    "green interface wing tag and attached restraint clasp",
     "server-warm vent nest"
   ],
   "author_constraints": [
