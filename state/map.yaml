@@ -80,6 +80,7 @@ live_architecture:
     - Actions carry scale, recovery, initiative cost, interruptibility, commitment, and local affordance basis.
     - Reaction windows are event-triggered opportunities with eligible actors, urgency, expiry, and allowed action scales; they are not automatic responses or hidden-state access.
     - Coordinator overrides must record a reason before the artifact can claim training value.
+    - VoidBot's newer heartbeat routine is the reference for turning this seam into the cast swarm's live timing law: characters take scene turns through heartbeat initiative, cooldown begins after turn completion, and offstage agents use slower rumination/sleep turns for memory consolidation, resonance, incubation, and dreams. See `docs/architecture/voidbot-routine-adoption-plan.md`.
   coordinator:
     - The coordinator is a trainable soft organ: it stages scenes, chooses next beats and acting agents, invokes specialist machinery, carries unresolved hooks, emits glue prose, and proposes game-engine-shaped state changes.
     - Future coordinator turns should be sandboxed as their own promptable worker outputs, with exact visible input, raw output, parsed coordinator artifact, review labels, and interventions preserved. Codex acts as meta-coordinator: it scopes, launches, reviews, repairs, and wires Ghostlight organs, but should not silently collapse the trainable coordinator organ back into omniscient chat.

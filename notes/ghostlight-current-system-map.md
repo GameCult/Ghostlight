@@ -169,6 +169,13 @@ reaction windows; it does not decide what the actor wants or how other
 participants appraise the event. Every affected participant still appraises and
 mutates before the scheduler selects the next projected actor.
 
+VoidBot's newer heartbeat routine is the reference shape for turning that seam
+into a living swarm routine. For Ghostlight, the swarm is the cast: the same
+heartbeat initiative law selects characters taking turns within a scene, while
+offstage or maintenance heartbeats handle rumination, sleep consolidation,
+memory resonance, and reviewed upkeep. See
+`docs/architecture/voidbot-routine-adoption-plan.md`.
+
 ## Pruned Receipts
 
 Old prototype fixture receipts and model-runner files have been removed

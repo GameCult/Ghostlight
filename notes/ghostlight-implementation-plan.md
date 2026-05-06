@@ -43,6 +43,10 @@ not carry live next-action lists.
    - Training readiness is per organ. A receipt-complete scene loop does not
      automatically count as branch compiler, IF reviewer, visual artifact, or
      accepted full-fixture coverage.
+   - Adopt VoidBot's heartbeat routine as the cast initiative substrate:
+     characters take scene turns through heartbeat initiative, cooldown starts
+     after turn completion, and offstage agents use slower rumination/sleep
+     turns for memory consolidation instead of generating fake scene motion.
 
 4. Keep the Pallas fixture as the current scaffold reference.
    - Current fixture set:
