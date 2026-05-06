@@ -51,6 +51,15 @@ heartbeat initiative
   -> write canonical MessagePack + JSON working projection
 ```
 
+Epiphany now owns the first shared Rust heartbeat spine. Ghostlight should call
+that spine through `tools/ghostlight_epiphany_heartbeat.mjs` instead of growing a
+parallel scheduler. The Ghostlight-side command derives scene participants from
+the existing initial/agent-state fixtures, initializes a typed MessagePack
+`ghostlight-scene` heartbeat store, and asks Epiphany to emit
+`ghostlight.initiative_schedule.v0` receipts with `scene_turn` actions. Those
+receipts select the actor and local-turn machinery; responder, appraisal, and
+mutation organs still own the actual narrative action.
+
 ## Persistence Shape
 
 Ghostlight can start with the CultCacheTS contract directly for Node-side tools,

@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PATHS = sorted((ROOT / "examples" / "initiative").glob("*.json"))
 
 ACTION_TYPES = {
+    "scene_turn",
     "speak",
     "silence",
     "move",
@@ -103,6 +104,14 @@ def validate_participant(value: Any, path: str) -> dict[str, Any]:
     require_number(value["current_load"], f"{path}.current_load", minimum=0, maximum=1)
     require(value["status"] in PARTICIPANT_STATUSES, f"{path}.status is invalid")
     require_string_array(value["constraints"], f"{path}.constraints")
+    if "arena" in value:
+        require(value["arena"] in {"scene", "maintenance"}, f"{path}.arena is invalid")
+    if "participant_kind" in value:
+        require(value["participant_kind"] in {"character", "agent"}, f"{path}.participant_kind is invalid")
+    if "role_id" in value:
+        require_string(value["role_id"], f"{path}.role_id")
+    if "pending_turn" in value:
+        require(value["pending_turn"] is None or isinstance(value["pending_turn"], dict), f"{path}.pending_turn must be object or null")
     return value
 
 
@@ -133,6 +142,10 @@ def validate_action(value: Any, path: str, participant_ids: set[str]) -> dict[st
     require_number(value["interruptibility"], f"{path}.interruptibility", minimum=0, maximum=1)
     require_number(value["commitment"], f"{path}.commitment", minimum=0, maximum=1)
     require_string_array(value["local_affordance_basis"], f"{path}.local_affordance_basis", nonempty=True)
+    if "arena" in value:
+        require(value["arena"] in {"scene", "maintenance"}, f"{path}.arena is invalid")
+    if "participant_kind" in value:
+        require(value["participant_kind"] in {"character", "agent"}, f"{path}.participant_kind is invalid")
     return value
 
 
@@ -261,6 +274,10 @@ def validate_schedule(document: dict[str, Any], source: Path) -> None:
         if item["reaction_readiness"] is not None:
             require_number(item["reaction_readiness"], f"{item_path}.reaction_readiness")
         require(isinstance(item["eligible_for_reaction"], bool), f"{item_path}.eligible_for_reaction must be boolean")
+        if "arena" in item:
+            require(item["arena"] in {"scene", "maintenance"}, f"{item_path}.arena is invalid")
+        if "participant_kind" in item:
+            require(item["participant_kind"] in {"character", "agent"}, f"{item_path}.participant_kind is invalid")
     require(snapshot_ids == set(participant_ids), f"{base}.next_actor_selection.readiness_snapshot must include every participant")
 
     if selection["selection_kind"] == "coordinator_override":

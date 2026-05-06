@@ -77,6 +77,9 @@ The active path is a source-grounded branching-scene data loop:
 - Initiative schedule schema: `schemas/initiative-schedule.schema.json`
 - Training-loop validator: `npm run training-loop:validate`
 - Initiative schedule validator: `npm run initiative:validate`
+- Epiphany-backed scene heartbeat init: `npm run heartbeat:init`
+- Epiphany-backed scene heartbeat tick/status:
+  `npm run heartbeat:tick` / `npm run heartbeat:status`
 - Prompt folder: `prompts/`
 - Corpus coverage ledger: `state/corpus-coverage.json`
 - Corpus coverage command: `npm run coverage:status`
@@ -207,6 +210,13 @@ schedule artifact. The scheduler is mechanical: it selects eligible actors from
 initiative speed, next-ready time, load, status, action recovery, and reaction
 windows. It does not replace participant appraisal. Everyone affected by an
 event still updates before the scheduler chooses the next projected actor.
+The first live scheduler spine now lives in Epiphany's Rust
+`epiphany-heartbeat-store`. Ghostlight calls it through
+`tools/ghostlight_epiphany_heartbeat.mjs`, which derives participants from the
+existing initial/agent-state fixtures, initializes a typed MessagePack
+`ghostlight-scene` store, ticks `scene_turn` receipts, and can write a JSON
+initiative projection for review/validation. This is an audited external bridge,
+not a second Ghostlight scheduler in matching costume.
 
 Branch compiler seam correction: `lucent-hostage-feed.branch-and-fold.v0.ink`
 is the first meta-coordinator authored branch-and-fold draft for exploring the
@@ -322,13 +332,14 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-Choose the next bounded move: backfill Corvid/NeuroSyn room-scale lore gaps,
-convert the Corvid fixture into a true scene-loop receipt chain, backfill the
-useful Lucent lore gaps into AetheriaLore, build a visual/scene-set pass for the
-Lucent IF, or move to the next coverage fixture. Current accepted full-fixture
-coverage is still empty; Pallas, Lucent, and Corvid derivatives are draft rows
-with per-organ training readiness or reference-only value, not accepted broad
-corpus fixtures.
+For live initiative selection, use the Epiphany-backed heartbeat bridge before
+inventing any local scheduler. Then choose the next bounded content move:
+backfill Corvid/NeuroSyn room-scale lore gaps, convert the Corvid fixture into a
+true scene-loop receipt chain, backfill the useful Lucent lore gaps into
+AetheriaLore, build a visual/scene-set pass for the Lucent IF, or move to the
+next coverage fixture. Current accepted full-fixture coverage is still empty;
+Pallas, Lucent, and Corvid derivatives are draft rows with per-organ training
+readiness or reference-only value, not accepted broad corpus fixtures.
 
 ## Warnings
 

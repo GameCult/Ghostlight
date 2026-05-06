@@ -16,6 +16,9 @@
     "responder-outputs:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_responder_outputs.py",
     "training-loop:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_training_loop_artifacts.py",
     "initiative:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_initiative_schedules.py",
+    "heartbeat:init": "node .\\tools\\ghostlight_epiphany_heartbeat.mjs init-scene",
+    "heartbeat:tick": "node .\\tools\\ghostlight_epiphany_heartbeat.mjs tick-scene",
+    "heartbeat:status": "node .\\tools\\ghostlight_epiphany_heartbeat.mjs status",
     "ink:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_ink_examples.py",
     "images:count": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\scripts\\count_visual_images.py",
     "coverage:status": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_corpus_coverage.py"

@@ -162,6 +162,28 @@
         "constraints"
       ],
       "properties": {
+        "arena": {
+          "enum": [
+            "scene",
+            "maintenance"
+          ]
+        },
+        "participant_kind": {
+          "enum": [
+            "character",
+            "agent"
+          ]
+        },
+        "role_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pending_turn": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
         "agent_id": {
           "type": "string",
           "minLength": 1
@@ -226,6 +248,18 @@
         "local_affordance_basis"
       ],
       "properties": {
+        "arena": {
+          "enum": [
+            "scene",
+            "maintenance"
+          ]
+        },
+        "participant_kind": {
+          "enum": [
+            "character",
+            "agent"
+          ]
+        },
         "action_id": {
           "type": "string",
           "minLength": 1
@@ -236,6 +270,7 @@
         },
         "action_type": {
           "enum": [
+            "scene_turn",
             "speak",
             "silence",
             "move",
@@ -356,6 +391,18 @@
         "eligible_for_reaction"
       ],
       "properties": {
+        "arena": {
+          "enum": [
+            "scene",
+            "maintenance"
+          ]
+        },
+        "participant_kind": {
+          "enum": [
+            "character",
+            "agent"
+          ]
+        },
         "agent_id": {
           "type": "string",
           "minLength": 1
