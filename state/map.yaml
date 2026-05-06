@@ -57,6 +57,11 @@ hard_boundaries:
     - Visual artifacts are auxiliary illustrated replay and website collateral for the corpus, not core training targets for responder, appraiser, mutator, or relationship models. Visual review judges the playable IF experience and visual plan, not clean-run prose receipts.
 
 live_architecture:
+  persistence_spine:
+    - Ghostlight is migrating machine-managed persistent state behind `cultcache-py`, linked as `vendor/cultcache-py`.
+    - `state/ghostlight-state.cultcache.jsonl` is the current CultCache-backed store for migrated branch and evidence records.
+    - `state/branches.json` and `state/evidence.jsonl` remain readable export surfaces during migration so humans, diffs, and older validators do not lose the plot.
+    - New persistent state seams should use `tools/ghostlight_state_store.py` instead of direct file writes.
   state_model:
     - Layer personality through organization, disposition, behavior, presentation, situational activation, relationships, goals, and values.
     - Canonical authored state has no certainty; perceived overlays carry observed activation, attributed disposition, and confidence.
@@ -146,6 +151,7 @@ current_artifacts:
     - docs/architecture/soft-model-training-artifacts.md
     - docs/architecture/training-plan.md
     - docs/architecture/technology-item-manifest-plan.md
+    - docs/architecture/persistence-spine.md
   schemas:
     - schemas/agent-state.schema.json
     - schemas/projection-example.schema.json
@@ -171,6 +177,9 @@ current_artifacts:
     - prompts/spatial-geometric-cohesion-reviewer.md
     - prompts/visual-scene-continuity-reviewer.md
   live_examples:
+    - state/ghostlight-state.cultcache.jsonl
+    - tools/ghostlight_state_store.py
+    - vendor/cultcache-py
     - state/corpus-coverage.json
     - examples/agent-state.call-of-the-void.json
     - examples/projections/call-of-the-void.scene-broken-taxi-oz.jsonl

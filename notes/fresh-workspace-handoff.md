@@ -57,6 +57,10 @@ The active path is a source-grounded branching-scene data loop:
 ## Live Seams
 
 - Canonical map: `state/map.yaml`
+- CultCache-backed state spine: `state/ghostlight-state.cultcache.jsonl`
+- CultCache-Py submodule: `vendor/cultcache-py`
+- Ghostlight state cache seam: `tools/ghostlight_state_store.py`
+- Readable state exports during migration: `state/branches.json`, `state/evidence.jsonl`
 - Current system map: `notes/ghostlight-current-system-map.md`
 - Implementation plan: `notes/ghostlight-implementation-plan.md`
 - Documentation inventory: `notes/documentation-inventory.md`

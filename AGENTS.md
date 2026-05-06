@@ -13,9 +13,14 @@ inside another project.
 
 ## Canonical State
 
-- Treat `state/map.yaml` as the canonical project map.
+- Treat `state/ghostlight-state.cultcache.jsonl` as the CultCache-backed
+  persistence spine for machine-managed state records that have migrated.
+- Treat `state/map.yaml` as the canonical human-readable project map.
 - Treat `state/scratch.md` as disposable working memory for one bounded
   subgoal.
+- Treat `state/evidence.jsonl` and `state/branches.json` as readable export
+  surfaces during the persistence migration, not as the long-term direct-write
+  API.
 - Treat `state/evidence.jsonl` as the distilled durable ledger of what was
   learned, verified, rejected, or accepted.
 - Treat `notes/ghostlight-implementation-plan.md` as the current implementation
@@ -40,6 +45,9 @@ inside another project.
 - Implementation plan: `E:\Projects\Ghostlight\notes\ghostlight-implementation-plan.md`
 - Architecture rationale: `E:\Projects\Ghostlight\notes\architecture-rationale.md`
 - State CLI: `E:\Projects\Ghostlight\tools\ghostlight_state.py`
+- CultCache state seam: `E:\Projects\Ghostlight\tools\ghostlight_state_store.py`
+- CultCache-Py submodule: `E:\Projects\Ghostlight\vendor\cultcache-py`
+- CultCache state store: `E:\Projects\Ghostlight\state\ghostlight-state.cultcache.jsonl`
 - Pre-compaction helper: `E:\Projects\Ghostlight\tools\ghostlight_prepare_compaction.py`
 
 ## Useful Commands

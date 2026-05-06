@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from ghostlight_state_store import append_evidence, load_branches, save_branches
+
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE_DIR = ROOT / "state"
@@ -21,19 +23,6 @@ def read_text(path: Path) -> str:
 
 def write_text(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
-
-
-def load_branches() -> dict[str, Any]:
-    return json.loads(read_text(BRANCHES_PATH))
-
-
-def save_branches(data: dict[str, Any]) -> None:
-    write_text(BRANCHES_PATH, json.dumps(data, indent=2) + "\n")
-
-
-def append_evidence(record: dict[str, Any]) -> None:
-    with EVIDENCE_PATH.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record, ensure_ascii=True) + "\n")
 
 
 def utc_stamp() -> str:

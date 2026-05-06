@@ -17,6 +17,7 @@ MAP_PATH = STATE_DIR / "map.yaml"
 SCRATCH_PATH = STATE_DIR / "scratch.md"
 BRANCHES_PATH = STATE_DIR / "branches.json"
 EVIDENCE_PATH = STATE_DIR / "evidence.jsonl"
+CACHE_PATH = STATE_DIR / "ghostlight-state.cultcache.jsonl"
 HANDOFF_PATH = NOTES_DIR / "fresh-workspace-handoff.md"
 PLAN_PATH = NOTES_DIR / "ghostlight-implementation-plan.md"
 SYSTEM_MAP_PATH = NOTES_DIR / "ghostlight-current-system-map.md"
@@ -106,12 +107,31 @@ def load_branches() -> dict[str, Any]:
     return data
 
 
+def load_cache_envelopes() -> list[dict[str, Any]]:
+    envelopes: list[dict[str, Any]] = []
+    if not CACHE_PATH.exists():
+        raise ValueError("CultCache state store is missing")
+    for line_number, line in enumerate(read_text(CACHE_PATH).splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            envelope = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"CultCache envelope line {line_number} is invalid JSON: {exc}") from exc
+        for field in ["key", "type", "payload", "stored_at"]:
+            if field not in envelope:
+                raise ValueError(f"CultCache envelope line {line_number} is missing {field}")
+        envelopes.append(envelope)
+    return envelopes
+
+
 def add_required_file_checks(findings: list[Finding]) -> None:
     for path in [
         MAP_PATH,
         SCRATCH_PATH,
         BRANCHES_PATH,
         EVIDENCE_PATH,
+        CACHE_PATH,
         HANDOFF_PATH,
         PLAN_PATH,
         SYSTEM_MAP_PATH,
@@ -171,6 +191,38 @@ def add_content_checks(findings: list[Finding]) -> tuple[list[dict[str, Any]], d
         findings.append(Finding("ok", f"state/branches.json parses ({len(active)} active branch(es))"))
     except (json.JSONDecodeError, ValueError) as exc:
         findings.append(Finding("error", f"branches.json parse failed: {exc}"))
+
+    try:
+        envelopes = load_cache_envelopes()
+        evidence_envelopes = [
+            envelope
+            for envelope in envelopes
+            if envelope.get("type") == "ghostlight.evidence_record.v0"
+        ]
+        branch_envelopes = [
+            envelope
+            for envelope in envelopes
+            if envelope.get("type") == "ghostlight.branches.v0"
+        ]
+        findings.append(
+            Finding(
+                "ok",
+                f"state/ghostlight-state.cultcache.jsonl parses ({len(envelopes)} envelope(s))",
+            )
+        )
+        if evidence and len(evidence_envelopes) != len(evidence):
+            findings.append(
+                Finding(
+                    "warn",
+                    "CultCache evidence envelope count differs from state/evidence.jsonl export",
+                )
+            )
+        if len(branch_envelopes) != 1:
+            findings.append(
+                Finding("warn", "CultCache branch global envelope count is not exactly one")
+            )
+    except ValueError as exc:
+        findings.append(Finding("error", f"CultCache state parse failed: {exc}"))
 
     return evidence, branches
 
