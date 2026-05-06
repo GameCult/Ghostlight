@@ -18,6 +18,12 @@ MessagePack store for environments that install the optional `msgpack`
 dependency, but Ghostlight's state CLI must run on the bundled Python runtime
 without global package assumptions.
 
+For cross-runtime `DatabaseEntry` payloads, use `cultcache-py`'s
+`define_database_entry_type(...)` formatter. It writes MessagePack arrays by
+explicit slot key, preserves nil gaps for deleted/reserved fields, and uses
+defaults for missing older slots. That is the wire-compatibility contract shared
+with `cultcache-rs` and the updated CultLib MessagePack generator.
+
 ## Live Rule
 
 New machine-managed state should go through registered document definitions in
