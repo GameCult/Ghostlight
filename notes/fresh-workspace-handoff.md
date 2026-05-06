@@ -65,6 +65,7 @@ The active path is a source-grounded branching-scene data loop:
 - Implementation plan: `notes/ghostlight-implementation-plan.md`
 - Documentation inventory: `notes/documentation-inventory.md`
 - Agent-state schema: `schemas/agent-state.schema.json`
+- Shared CultNet state-contract note: `docs/architecture/cultnet-shared-agent-state-contract.md`
 - Projected local context schema: `schemas/projected-local-context.schema.json`
 - Coordinator artifact schema: `schemas/coordinator-artifact.schema.json`
 - Responder packet schema: `schemas/responder-packet.schema.json`
@@ -332,6 +333,7 @@ corpus fixtures.
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.
+- Treat `ghostlight.agent_state.v0` as the first shared cross-runtime payload contract. If another runtime needs to move agent state over a wire, it should carry the Ghostlight payload unchanged inside a typed CultNet document envelope instead of quietly forking the ontology.
 - Do not let notes, map, handoff, and evidence become four versions of the same brain.
 - Do not train on coordinator-repaired responder prose unless the repair is labeled.
 - Do not accept branch fixtures without branch compiler notes and IF artifact review.

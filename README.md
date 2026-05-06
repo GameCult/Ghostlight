@@ -139,6 +139,7 @@ To add distilled evidence:
 ## Best Starting Points
 
 - `docs/architecture/canonical-agent-state-schema.md`
+- `docs/architecture/cultnet-shared-agent-state-contract.md`
 - `docs/architecture/agent-state-variable-glossary.md`
 - `docs/architecture/prompt-projection-contract.md`
 - `docs/architecture/projection-distillation-plan.md`
