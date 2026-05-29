@@ -344,7 +344,7 @@ readiness or reference-only value, not accepted broad corpus fixtures.
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.
-- Treat `ghostlight.agent_state.v0` as the first shared cross-runtime payload contract. If another runtime needs to move agent state over a wire, it should carry the Ghostlight payload unchanged inside a typed CultNet document envelope instead of quietly forking the ontology.
+- Treat `gamecult.persona_state.v0` as the shared cross-runtime public-person payload contract. `ghostlight.agent_state.v0` remains Ghostlight's scene/world contract, not the portable Persona schema.
 - Do not let notes, map, handoff, and evidence become four versions of the same brain.
 - Do not train on coordinator-repaired responder prose unless the repair is labeled.
 - Do not accept branch fixtures without branch compiler notes and IF artifact review.

@@ -1,98 +1,102 @@
-# CultNet Shared Agent-State Contract
+# CultNet Shared Persona-State Contract
 
-Ghostlight owns the first cross-runtime agent-state payload contract.
+Ghostlight no longer treats `ghostlight.agent_state.v0` as the cross-runtime
+person-state contract. That schema still belongs here, but it owns scene,
+world, relationship, event, and dialogue-context state for storytelling.
 
-That contract is not a new ontology. It is the existing Ghostlight state shape
-moving over a wire without turning into bespoke JSON fog in every other repo.
+The portable person-shaped contract is now `gamecult.persona_state.v0`.
 
 ## Canonical Payload
 
-The first shared payload contract is:
+The shared payload contract is:
 
 - schema id:
-  `https://github.com/GameCult/Ghostlight/schemas/agent-state.schema.json`
+  `https://gamecult.dev/cultnet/gamecult.persona_state.v0.schema.json`
 - schema version:
-  `ghostlight.agent_state.v0`
-- canonical file:
-  `schemas/agent-state.schema.json`
+  `gamecult.persona_state.v0`
+- Ghostlight mirror:
+  `schemas/gamecult.persona_state.v0.schema.json`
 
-This is the same state shape already used for Ghostlight fixtures and the same
-top-level shape Epiphany role dossiers adopted. The contract is:
+The same schema is mirrored by Epiphany and VoidBot so Faces, repo
+representatives, and Ghostlight characters can cross runtime boundaries without
+each repo inventing its own local person-shaped blob.
 
-- `world`
-- `agents`
-- `relationships`
-- `events`
-- `scenes`
+## Ownership
 
-If another runtime wants to carry socially persistent agent state without
-inventing its own private folk religion, this is the first house shape.
+Ghostlight keeps owning the story machine:
+
+- world state
+- scenes
+- events
+- relationships
+- perceived overlays
+- dialogue context packs
+
+PersonaState owns the portable public-person projection:
+
+- presentation
+- values
+- activation profile
+- thought memory
+- agency pressure
+- candidate actions
+- affect
+- source provenance
+
+That projection can be generated from Ghostlight scene agents, VoidBot repo Face
+state, or Epiphany Face state. The projection does not erase native state. It is
+the wire shape, not a throne.
 
 ## Wire Envelope
 
-CultNet should carry the Ghostlight payload as a typed document replication
-message, not as a one-off ad hoc blob.
+CultNet should carry PersonaState as a typed document replication message.
 
 Current expected document envelope:
 
+- `documentType`: `gamecult.persona-state`
+- `documentKey`: stable runtime-defined persona key
+- `payloadSchemaVersion`: `gamecult.persona_state.v0`
+- `payload`: exact PersonaState document
+
+Native Ghostlight scene payloads may still travel separately with:
+
 - `documentType`: `ghostlight.agent-state`
-- `documentKey`: runtime-defined stable key
 - `payloadSchemaVersion`: `ghostlight.agent_state.v0`
-- `payload`: exact Ghostlight state document
 
-The current TypeScript client library is:
+Those are different contracts. One carries a story world. One carries a
+portable Persona.
 
-- repo: `GameCult/cultnet-ts`
+## Epiphany Boundary
 
-Its job is not merely to make pipes pretty. It owns:
+Epiphany public Faces use PersonaState when they need full persistent
+personhood. Epiphany work organs do not. A work organ such as Imagination can
+have a light organ state without affect, social bonds, public presentation, or
+candidate actions.
 
-- direct-pipe MessagePack framing
-- typed message contracts
-- authentication/session semantics compatible with CultLib's `GameCult.Networking`
-- typed replication into CultCache-compatible stores
-
-## Authentication Story
-
-CultNet inherits the useful security shape from CultLib:
-
-- a shared connection key known to client and server/runtime peers
-- AES-GCM encrypted auth/session payloads derived from that key
-- a server-side session-signing secret
-- signed session tokens used for verify/reconnect flows
-
-This matters because "shared agent state" is not only a serialization problem.
-It is also a trust boundary problem. We want one family resemblance across C#,
-TypeScript, Rust, and Python instead of four mutually unintelligible little
-shrines to local convenience.
+This prevents the old muddle where every useful subsystem was tempted to dress
+up as a whole person. Useful machines do not all need faces.
 
 ## Contract Discipline
 
-Ghostlight remains the source of truth for the payload shape.
+The schema lives in multiple repos for local validation, but the contract must
+move as one:
 
-That means:
+- Epiphany keeps the primary CultNet schema copy.
+- VoidBot mirrors it and emits PersonaState from repo Face reads.
+- Ghostlight mirrors it and validates PersonaState examples.
+- Native storage may stay richer than PersonaState.
+- Importers must preserve unknown extension data when possible.
+- Consumers must treat `provenance.authority` seriously.
 
-- if `schemas/agent-state.schema.json` changes, CultNet mirrors must update in
-  lockstep
-- consumers may add local document metadata around the payload, but should not
-  silently mutate the payload contract itself
-- if a runtime needs a narrower projection or local working view, that is a
-  derivative contract, not a revision of `ghostlight.agent_state.v0`
-
-The rule is simple:
-
-- prompt projection may differ
-- storage engines may differ
-- language bindings may differ
-- the shared payload contract does not drift just because another repo got
-  lonely
+Prompt projection may differ. Storage engines may differ. Story scenes may
+carry more structure. The shared person-state payload does not drift just
+because a runtime got clever at midnight.
 
 ## Immediate Consumers
 
 The first intended consumers are:
 
-- Ghostlight fixture/state tooling
-- EpiphanyAgent role dossiers and heartbeat-adjacent agent state
-- VoidBot companion-state and social memory machinery where the full Ghostlight
-  payload is useful
-
-More bindings can come later. They do not get to invent a prettier truth.
+- Ghostlight character projections for scene/story tooling
+- VoidBot repo Face MCP reads and social memory interop
+- Epiphany public Face state
+- future CultNet replication and inspection tools

@@ -62,7 +62,8 @@ live_architecture:
     - `state/ghostlight-state.cultcache.jsonl` is the current CultCache-backed store for migrated branch and evidence records.
     - `state/branches.json` and `state/evidence.jsonl` remain readable export surfaces during migration so humans, diffs, and older validators do not lose the plot.
     - New persistent state seams should use `tools/ghostlight_state_store.py` instead of direct file writes.
-    - `schemas/agent-state.schema.json` is also the first shared cross-runtime payload contract. CultNet clients should move `ghostlight.agent_state.v0` documents unchanged inside typed document envelopes instead of inventing forked state ontologies per repo.
+    - `schemas/agent-state.schema.json` remains Ghostlight's scene/world state contract; it is no longer the shared person-state wire contract.
+    - `schemas/gamecult.persona_state.v0.schema.json` mirrors the shared PersonaState contract used by Epiphany public Faces, VoidBot repo Faces, and Ghostlight character projections. CultNet clients should carry PersonaState as `gamecult.persona-state` documents when they need a portable public-person payload.
   state_model:
     - Layer personality through organization, disposition, behavior, presentation, situational activation, relationships, goals, and values.
     - Canonical authored state has no certainty; perceived overlays carry observed activation, attributed disposition, and confidence.
