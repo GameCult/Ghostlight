@@ -116,6 +116,8 @@ are stable.
 - `docs/research/`: research backlog and modeling notes
 - `docs/aetheria/`: Aetheria source material used by Ghostlight
 - `docs/architecture/`: state, projection, and authoring architecture
+- `docs/architecture/verse-service-contract.md`: GameCult Verse service contract
+  for Ghostlight's missing Eve GUI/TUI state and authoring surface
 - `schemas/`: JSON schema contracts and required field lists
 - `examples/`: schema fixtures and future projection examples
 - `tools/ghostlight_state.py`: state inspection and evidence helper
