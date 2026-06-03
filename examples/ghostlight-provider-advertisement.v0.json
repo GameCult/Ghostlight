@@ -1,0 +1,285 @@
+{
+  "schema_version": "ghostlight.provider_advertisement.v0",
+  "provider_id": "ghostlight",
+  "service_name": "Ghostlight",
+  "authority": {
+    "owner": "Ghostlight",
+    "mode": "read_only_advertisement",
+    "canonical_truth": [
+      "scene state",
+      "world state",
+      "agent state",
+      "relationship state",
+      "event state",
+      "observer-specific perceived state",
+      "projection inputs",
+      "reviewed mutation receipts",
+      "Persona projections derived from story agents"
+    ],
+    "non_owners": [
+      "Eve renderers",
+      "authoring dashboards",
+      "visual replay applets",
+      "prompt renderers",
+      "review helpers"
+    ],
+    "contract_doc": "docs/architecture/verse-service-contract.md"
+  },
+  "schemas": [
+    {
+      "schema_version": "ghostlight.agent_state.v0",
+      "path": "schemas/agent-state.schema.json",
+      "owns": [
+        "scene/world/story state",
+        "agents",
+        "relationships",
+        "events",
+        "observer-specific perceived overlays",
+        "dialogue context packs"
+      ]
+    },
+    {
+      "schema_version": "ghostlight.agent_state.required_fields.v0",
+      "path": "schemas/agent-state.required-fields.json",
+      "owns": [
+        "required canonical variable groups",
+        "required relationship stance fields"
+      ]
+    },
+    {
+      "schema_version": "gamecult.persona_state.v0",
+      "path": "schemas/gamecult.persona_state.v0.schema.json",
+      "owns": [
+        "portable public-person projection",
+        "presentation",
+        "values",
+        "activation profile",
+        "thought memory",
+        "agency pressure",
+        "candidate actions",
+        "affect",
+        "source provenance"
+      ],
+      "stewardship": "Huginn stewards shared Persona schema availability, migration pressure, .cc inspection, CultMesh publication, and Eve DSL inspection output."
+    }
+  ],
+  "cultcache_witnesses": [
+    {
+      "document_type": "ghostlight.branches.v0",
+      "witness_path": "state/ghostlight-state.cultcache.jsonl",
+      "readable_export": "state/branches.json",
+      "authority": "compatibility export is readable witness only; Ghostlight state seam owns writes"
+    },
+    {
+      "document_type": "ghostlight.evidence_record.v0",
+      "witness_path": "state/ghostlight-state.cultcache.jsonl",
+      "readable_export": "state/evidence.jsonl",
+      "authority": "compatibility export is readable witness only; Ghostlight state seam owns writes",
+      "indexes": [
+        "type",
+        "status",
+        "branch"
+      ]
+    }
+  ],
+  "persona_witnesses": [
+    {
+      "document_type": "gamecult.persona-state",
+      "payload_schema_version": "gamecult.persona_state.v0",
+      "fixture_path": "examples/persona-state.call-of-the-void.oz.json",
+      "schema_path": "schemas/gamecult.persona_state.v0.schema.json",
+      "authority": "portable projection witness; native Ghostlight scene state remains richer and canonical"
+    }
+  ],
+  "nested_verses": [
+    {
+      "verse_id": "ghostlight.scene",
+      "contains": [
+        "world canon context",
+        "scene records",
+        "visible participants",
+        "public stakes",
+        "event records",
+        "reviewed mutation receipts"
+      ],
+      "source_examples": [
+        "examples/agent-state.call-of-the-void.json",
+        "examples/agent-state.pallas-species-strikes.v0.json",
+        "examples/training-loops"
+      ]
+    },
+    {
+      "verse_id": "ghostlight.agent",
+      "contains": [
+        "identity",
+        "canonical_state",
+        "goals",
+        "memories",
+        "relationships",
+        "perceived_state_overlays",
+        "dialogue_context_packs"
+      ],
+      "source_examples": [
+        "examples/agent-state.call-of-the-void.json",
+        "examples/agent-state.pallas-species-strikes.v0.json"
+      ]
+    },
+    {
+      "verse_id": "ghostlight.persona",
+      "contains": [
+        "gamecult.persona_state.v0 projections",
+        "portable person-shaped state",
+        "projection provenance"
+      ],
+      "source_examples": [
+        "examples/persona-state.call-of-the-void.oz.json"
+      ]
+    }
+  ],
+  "cultmesh_publication": {
+    "provider_contract": "ghostlight.provider_advertisement.v0",
+    "intended_route": "CultMesh/Odin discovery",
+    "publication_mode": "read_only_provider_advertisement",
+    "state_authority": "Ghostlight-owned typed documents; CultMesh carries discovery and projected surfaces, not separate truth"
+  },
+  "eve_surfaces": [
+    {
+      "surface_id": "ghostlight.state_spine",
+      "title": "State Spine",
+      "panels": [
+        "CultCache store path",
+        "document families",
+        "migration status",
+        "readable export freshness",
+        "direct-write debt"
+      ]
+    },
+    {
+      "surface_id": "ghostlight.scene_and_agent_state",
+      "title": "Scene And Agent State",
+      "panels": [
+        "active scene fixtures",
+        "canonical agent state",
+        "observer/perceived overlays",
+        "relationship stance availability"
+      ]
+    },
+    {
+      "surface_id": "ghostlight.projection_pipeline",
+      "title": "Projection Pipeline",
+      "panels": [
+        "projected local context",
+        "responder packet",
+        "responder output",
+        "review status",
+        "leakage audit",
+        "mutation receipt state"
+      ]
+    },
+    {
+      "surface_id": "ghostlight.training_coverage",
+      "title": "Training Coverage",
+      "panels": [
+        "accepted/draft/planned/rejected fixture counts",
+        "coverage gaps",
+        "tonal modes",
+        "collision axes",
+        "training target families"
+      ]
+    },
+    {
+      "surface_id": "ghostlight.persona_projection",
+      "title": "Persona Projection",
+      "panels": [
+        "gamecult.persona_state.v0 availability",
+        "public character/person surfaces",
+        "provenance back to Ghostlight-native state"
+      ]
+    }
+  ],
+  "command_boundaries": {
+    "read_only": [
+      "status",
+      "provider-advertisement",
+      "fixture validators",
+      "future Eve DSL lowering",
+      "future CultMesh provider discovery"
+    ],
+    "reviewed_mutation_intent_only": [
+      "future authoring UI",
+      "future compact TUI command surface",
+      "review helpers"
+    ],
+    "write_authority": [
+      "tools/ghostlight_state_store.py registered document seam",
+      "reviewed mutation receipt acceptance path"
+    ],
+    "forbidden_direct_writers": [
+      "Eve GUI renderer",
+      "Eve TUI renderer",
+      "browser dashboard",
+      "visual replay applet",
+      "prompt renderer",
+      "unreviewed responder output"
+    ]
+  },
+  "style_capabilities": {
+    "source": "schemas/agent-state.required-fields.json and docs/architecture/canonical-agent-state-schema.md",
+    "voice_style_dimensions": [
+      "dryness",
+      "verbal_warmth",
+      "formality",
+      "verbosity",
+      "pace",
+      "plainspoken_directness",
+      "lexical_precision",
+      "technical_density",
+      "technical_compression",
+      "figurative_language",
+      "lyricism",
+      "narrative_detail",
+      "emotional_explicitness",
+      "pointedness",
+      "self_disclosure",
+      "hedging",
+      "certainty_marking",
+      "politeness",
+      "coded_politeness",
+      "ritualized_address",
+      "register_switching",
+      "dialect_marking",
+      "theatricality",
+      "humor",
+      "conversational_dominance",
+      "listening_responsiveness",
+      "question_asking",
+      "profanity"
+    ],
+    "style_derivation": [
+      "presentation_strategy",
+      "voice_style",
+      "situational_state",
+      "underlying_organization",
+      "behavioral_dimensions",
+      "relationship stance",
+      "observer-specific perceived overlays",
+      "dialogue context packs"
+    ],
+    "invariant": "style is derived from typed character state and local context; renderers do not own personality truth"
+  },
+  "huginn_stewardship": {
+    "owns": [
+      "Persona-state schema availability",
+      ".cc inspection pressure",
+      "projection health inspection",
+      "access-tool sanity",
+      "CultMesh publication coordination",
+      "Eve DSL inspection output"
+    ],
+    "does_not_own": [
+      "Ghostlight native story state",
+      "Eve presentation runtime",
+      "browser/native/TUI renderer truth"
+    ]
+  }
+}

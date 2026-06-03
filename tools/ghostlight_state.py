@@ -15,6 +15,9 @@ MAP_PATH = STATE_DIR / "map.yaml"
 BRANCHES_PATH = STATE_DIR / "branches.json"
 EVIDENCE_PATH = STATE_DIR / "evidence.jsonl"
 COVERAGE_PATH = STATE_DIR / "corpus-coverage.json"
+PROVIDER_ADVERTISEMENT_FIXTURE_PATH = (
+    ROOT / "examples" / "ghostlight-provider-advertisement.v0.json"
+)
 
 
 def read_text(path: Path) -> str:
@@ -70,6 +73,20 @@ def load_coverage_summary() -> str | None:
     if isinstance(minimum, int) and isinstance(maximum, int):
         return f"{len(accepted)} / {minimum}-{maximum} accepted fixtures"
     return f"{len(accepted)} accepted fixtures"
+
+
+def cmd_provider_advertisement(args: argparse.Namespace) -> int:
+    content = read_text(PROVIDER_ADVERTISEMENT_FIXTURE_PATH)
+    json.loads(content)
+    if args.output:
+        output_path = (ROOT / args.output).resolve()
+        if ROOT not in output_path.parents and output_path != ROOT:
+            raise SystemExit("Output path must stay inside the Ghostlight repo.")
+        output_path.write_text(content, encoding="utf-8")
+        print(f"Wrote provider advertisement to {output_path}")
+    else:
+        print(content, end="")
+    return 0
 
 
 def cmd_status(_: argparse.Namespace) -> int:
@@ -148,6 +165,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     status_parser = subparsers.add_parser("status", help="Show a compact state summary.")
     status_parser.set_defaults(func=cmd_status)
+
+    provider_parser = subparsers.add_parser(
+        "provider-advertisement",
+        help="Export Ghostlight's read-only CultMesh/Eve provider advertisement.",
+    )
+    provider_parser.add_argument(
+        "--output",
+        help="Repo-relative path to write instead of printing to stdout.",
+    )
+    provider_parser.set_defaults(func=cmd_provider_advertisement)
 
     evidence_parser = subparsers.add_parser(
         "add-evidence", help="Append one distilled JSONL evidence record."
