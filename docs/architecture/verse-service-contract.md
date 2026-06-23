@@ -49,6 +49,10 @@ Ghostlight already has these substrate pieces:
   state;
 - architecture docs for persistence, projection, training loops, prompt
   projection, and shared Persona/CultNet contracts.
+- `tools/ghostlight_state.py publish-odin` and
+  `tools/publish_odin_provider_advertisement.cjs` publish Ghostlight's
+  provider advertisement once to Odin's CultMesh/RUDP document ingress when an
+  endpoint is supplied.
 
 The missing surface is not another readable export. The missing surface is a
 provider-owned Eve GUI/TUI composition over the existing state and review seams.
@@ -79,7 +83,7 @@ not the canonical owner.
 2. Define a `ghostlight.eve_surface.v0` provider contract over the current
    state, projection, review, and Persona documents.
 3. Add a read-only command that lowers those documents into Eve DSL.
-4. Publish the surface through CultMesh/Odin discovery.
+4. Publish the provider advertisement through CultMesh/Odin discovery.
 5. Let browser/native/TUI runtimes lower the same surface.
 6. Demote old preview/status dashboards to renderers of the provider-owned Eve
    surface.

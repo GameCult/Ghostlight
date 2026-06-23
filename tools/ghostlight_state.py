@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -17,6 +20,17 @@ EVIDENCE_PATH = STATE_DIR / "evidence.jsonl"
 COVERAGE_PATH = STATE_DIR / "corpus-coverage.json"
 PROVIDER_ADVERTISEMENT_FIXTURE_PATH = (
     ROOT / "examples" / "ghostlight-provider-advertisement.v0.json"
+)
+ODIN_PROVIDER_PUBLISHER_PATH = ROOT / "tools" / "publish_odin_provider_advertisement.cjs"
+DEFAULT_NODE_PATH = (
+    Path.home()
+    / ".cache"
+    / "codex-runtimes"
+    / "codex-primary-runtime"
+    / "dependencies"
+    / "node"
+    / "bin"
+    / ("node.exe" if os.name == "nt" else "node")
 )
 
 
@@ -87,6 +101,29 @@ def cmd_provider_advertisement(args: argparse.Namespace) -> int:
     else:
         print(content, end="")
     return 0
+
+
+def cmd_publish_odin(args: argparse.Namespace) -> int:
+    endpoint = args.odin_cultmesh_rudp or os.environ.get("GHOSTLIGHT_ODIN_CULTMESH_RUDP", "")
+    if not endpoint:
+        raise SystemExit(
+            "Missing Odin endpoint. Pass --odin-cultmesh-rudp host:port or set GHOSTLIGHT_ODIN_CULTMESH_RUDP."
+        )
+
+    node = Path(args.node or os.environ.get("NODE", "") or DEFAULT_NODE_PATH)
+    if not node.exists():
+        raise SystemExit(f"Node runtime not found: {node}")
+
+    command = [
+        str(node),
+        str(ODIN_PROVIDER_PUBLISHER_PATH),
+        "--odin-cultmesh-rudp",
+        endpoint,
+        "--fixture",
+        str(PROVIDER_ADVERTISEMENT_FIXTURE_PATH.relative_to(ROOT)),
+    ]
+    result = subprocess.run(command, cwd=ROOT, text=True)
+    return result.returncode
 
 
 def cmd_status(_: argparse.Namespace) -> int:
@@ -175,6 +212,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Repo-relative path to write instead of printing to stdout.",
     )
     provider_parser.set_defaults(func=cmd_provider_advertisement)
+
+    publish_odin_parser = subparsers.add_parser(
+        "publish-odin",
+        help="Publish Ghostlight's provider advertisement once to Odin over CultMesh/RUDP.",
+    )
+    publish_odin_parser.add_argument(
+        "--odin-cultmesh-rudp",
+        dest="odin_cultmesh_rudp",
+        help="Odin CultMesh/RUDP document ingress endpoint as host:port.",
+    )
+    publish_odin_parser.add_argument(
+        "--node",
+        help="Node executable to use for the CultMesh runtime publisher.",
+    )
+    publish_odin_parser.set_defaults(func=cmd_publish_odin)
 
     evidence_parser = subparsers.add_parser(
         "add-evidence", help="Append one distilled JSONL evidence record."
