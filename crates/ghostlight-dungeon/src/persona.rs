@@ -1,6 +1,7 @@
 use crate::model::{ModelPort, ModelStageRequest, run_validated_stage};
 use anyhow::{Result, anyhow};
 use async_trait::async_trait;
+use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -27,12 +28,12 @@ pub struct LivedNarrativeStream {
     pub projector_receipt: crate::model::ModelStageReceipt,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct PersonaProposalBundle {
-    pub private_deltas: Vec<serde_json::Value>,
+    pub private_delta: crate::domain::ActorStateDelta,
     pub speech: Option<String>,
     pub reaction_priority: i16,
-    pub world_actions: Vec<serde_json::Value>,
+    pub world_actions: Vec<crate::domain::WorldActionProposal>,
 }
 
 #[derive(Clone, Debug)]
@@ -57,6 +58,7 @@ impl ExecutionPermit for AllowAllPermit {
     }
 }
 
+#[derive(Clone)]
 pub struct PersonaProjectionEngine {
     pub model: Arc<dyn ModelPort>,
     pub permit: Arc<dyn ExecutionPermit>,
@@ -113,17 +115,14 @@ impl PersonaProjectionEngine {
         self.permit
             .require(&slice.actor_id, &slice.snapshot_binding, "interpreter")
             .await?;
-        let schema = serde_json::json!({"type":"object","required":["private_deltas","speech","reaction_priority","world_actions"]});
+        let schema = serde_json::to_value(schema_for!(PersonaProposalBundle))?;
         let interpreted = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
                 stage: "interpreter".into(),
                 model: self.interpreter_model.clone(),
                 snapshot_binding: slice.snapshot_binding.clone(),
-                lived_stream: format!(
-                    "LIVED STREAM:\n{}\n\nPERSONA OUTPUT:\n{}",
-                    lived.text, persona.narrative
-                ),
+                lived_stream: format!("Interpret the Persona output into the exact JSON schema below. Record only private changes supported by the lived stream. World actions are attempts, not completed effects. Every world action actor_id must be {}.\nSCHEMA:\n{}\nLIVED STREAM:\n{}\n\nPERSONA OUTPUT:\n{}",slice.actor_id,serde_json::to_string_pretty(&schema)?,lived.text, persona.narrative),
                 output_schema: Some(schema),
                 source_receipt_ids: slice.source_receipt_ids,
             },

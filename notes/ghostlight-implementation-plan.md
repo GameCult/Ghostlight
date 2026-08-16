@@ -19,8 +19,8 @@ campaign-plus-evidence admission, and the browser opening/role/custom flow. A
 live DeepSeek plus VoidBot custom compilation passed without committing. A
 disposable HTTP run proved approval persistence and durable hashed invite and
 session state across restart. Implement material-gap decisions, on-demand
-destination compilation, and canon-candidate persistence before moving to the
-action/Persona loop.
+destination compilation, canon-candidate persistence, and reversible gestalt
+member materialization before moving to the action/Persona loop.
 
 ## Prior research-program phase
 

@@ -81,6 +81,14 @@ impl CampaignStore {
                 receipt,
             )?);
         }
+        for candidate in campaign.canon_candidates.values() {
+            rows.push(envelope(
+                "canon_candidate.v1",
+                "ghostlight.canon_candidate.v1",
+                &candidate.id,
+                candidate,
+            )?);
+        }
         if !self.inner.compare_and_swap_batch(&[], rows)? {
             return Err(anyhow!("campaign store is not empty"));
         }
@@ -116,6 +124,55 @@ impl CampaignStore {
             std::slice::from_ref(expected),
             vec![next_row.clone(), receipt_row],
         )? {
+            return Err(anyhow!("stale CultCache snapshot"));
+        }
+        Ok(next_row)
+    }
+
+    pub fn append_world_commit<T: Serialize, R: Serialize>(
+        &self,
+        expected: &CultCacheEnvelope,
+        next: &T,
+        receipt_key: &str,
+        receipt: &R,
+        evidence: &[VaultEvidenceReceipt],
+        candidates: &[crate::domain::CanonCandidate],
+    ) -> Result<CultCacheEnvelope> {
+        let next_row = envelope(
+            &expected.r#type,
+            "ghostlight.campaign.v1",
+            &expected.key,
+            next,
+        )?;
+        let mut rows = vec![
+            next_row.clone(),
+            envelope(
+                "world_commit_receipt.v1",
+                "ghostlight.world_commit_receipt.v1",
+                receipt_key,
+                receipt,
+            )?,
+        ];
+        for item in evidence {
+            rows.push(envelope(
+                "vault_evidence_receipt.v1",
+                "ghostlight.vault_evidence_receipt.v1",
+                &item.id,
+                item,
+            )?);
+        }
+        for item in candidates {
+            rows.push(envelope(
+                "canon_candidate.v1",
+                "ghostlight.canon_candidate.v1",
+                &item.id,
+                item,
+            )?);
+        }
+        if !self
+            .inner
+            .compare_and_swap_batch(std::slice::from_ref(expected), rows)?
+        {
             return Err(anyhow!("stale CultCache snapshot"));
         }
         Ok(next_row)

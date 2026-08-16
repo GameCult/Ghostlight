@@ -9,11 +9,14 @@ use axum::{
 use ghostlight_dungeon::windows_secret::unprotect_machine_utf8;
 use ghostlight_dungeon::{
     WorldKernel,
+    assessor::ActionAssessor,
     compiler::{CustomStart, OpeningRequest, OpeningSuggestion, SelectedStart, WorldCompiler},
-    domain::{Campaign, WorldCommand, WorldCompilePreview},
+    domain::{Campaign, RegionExpansionPreview, WorldCommand, WorldCompilePreview},
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     persistence::CampaignStore,
+    persona::PersonaProjectionEngine,
     surface::player_surface,
+    turn::{SnapshotPermit, appraise_present},
     vault::VoidBotMcpVault,
 };
 use serde::Deserialize;
@@ -36,7 +39,10 @@ struct AppState {
     auth: Arc<Mutex<AuthOwner>>,
     deepseek_status: String,
     compiler: Option<Arc<WorldCompiler>>,
+    assessor: Option<Arc<ActionAssessor>>,
+    model: Option<Arc<dyn ModelPort>>,
     compile_previews: Arc<Mutex<BTreeMap<String, WorldCompilePreview>>>,
+    expansion_previews: Arc<Mutex<BTreeMap<String, RegionExpansionPreview>>>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -111,7 +117,7 @@ async fn main() -> anyhow::Result<()> {
         }
     };
     let secret_path = runtime_root.join("secrets/deepseek.dpapi");
-    let (deepseek_status, compiler) = if secret_path.is_file() {
+    let (deepseek_status, compiler, assessor, shared_model) = if secret_path.is_file() {
         let provider: Arc<dyn ModelPort> =
             Arc::new(DeepSeekPort::from_machine_dpapi(&secret_path)?);
         let probe = run_validated_stage(
@@ -130,12 +136,17 @@ async fn main() -> anyhow::Result<()> {
             format!("ready:{}", probe.receipt.output_hash),
             Some(Arc::new(WorldCompiler::new(
                 Arc::new(VoidBotMcpVault::starfire_loopback()),
-                provider,
+                provider.clone(),
                 "deepseek-v4-pro",
             ))),
+            Some(Arc::new(ActionAssessor::new(
+                provider.clone(),
+                "deepseek-v4-pro",
+            ))),
+            Some(provider),
         )
     } else {
-        ("missing-secret".into(), None)
+        ("missing-secret".into(), None, None, None)
     };
     let state = AppState {
         kernel,
@@ -147,8 +158,12 @@ async fn main() -> anyhow::Result<()> {
         })),
         deepseek_status,
         compiler,
+        assessor,
+        model: shared_model,
         compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
+        expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
     };
+    tokio::spawn(scheduler_loop(state.clone()));
     let release_web_root = std::env::current_exe()?
         .parent()
         .map(|parent| parent.join("web"));
@@ -164,6 +179,11 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/compiler/selected", post(compile_selected))
         .route("/api/compiler/custom", post(compile_custom))
         .route("/api/compiler/approve/{preview_id}", post(approve_preview))
+        .route("/api/compiler/destination", post(compile_destination))
+        .route(
+            "/api/compiler/destination/approve/{preview_id}",
+            post(approve_destination),
+        )
         .route("/api/command", post(command))
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state);
@@ -373,16 +393,197 @@ async fn approve_preview(
     }
 }
 
-async fn command(
+#[derive(Deserialize)]
+struct DestinationRequest {
+    origin_location_id: String,
+    destination: String,
+}
+
+async fn compile_destination(
     headers: HeaderMap,
     State(state): State<AppState>,
-    Json(command): Json<WorldCommand>,
+    Json(request): Json<DestinationRequest>,
 ) -> Response {
     if !authorized(&headers, &state).await {
         return StatusCode::UNAUTHORIZED.into_response();
     }
+    let campaign = match load_campaign(&state.store) {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    let Some(compiler) = &state.compiler else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "DeepSeek credential is unavailable",
+        )
+            .into_response();
+    };
+    match compiler
+        .compile_destination(&campaign, &request.origin_location_id, &request.destination)
+        .await
+    {
+        Ok((preview, receipt)) => {
+            let id = uuid::Uuid::new_v4().to_string();
+            state
+                .expansion_previews
+                .lock()
+                .await
+                .insert(id.clone(), preview.clone());
+            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipt":receipt}))
+                .into_response()
+        }
+        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
+    }
+}
+
+async fn approve_destination(
+    Path(preview_id): Path<String>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    if !authorized(&headers, &state).await {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    let Some(preview) = state.expansion_previews.lock().await.remove(&preview_id) else {
+        return (StatusCode::NOT_FOUND, "preview missing or already consumed").into_response();
+    };
+    match state
+        .kernel
+        .command(WorldCommand::ExpandRegion {
+            expected_revision: preview.expected_revision,
+            expansion: preview.expansion,
+            evidence_receipts: preview.evidence_receipts,
+            canon_candidates: preview.canon_candidates,
+        })
+        .await
+    {
+        Ok(value) => Json(value).into_response(),
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
+async fn command(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(mut command): Json<WorldCommand>,
+) -> Response {
+    if !authorized(&headers, &state).await {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    if let Err(error) = process_due_ticks(&state).await {
+        return (
+            StatusCode::CONFLICT,
+            Json(ErrorBody {
+                error: error.to_string(),
+            }),
+        )
+            .into_response();
+    }
+    if let WorldCommand::Assess {
+        intent, proposal, ..
+    } = &mut command
+    {
+        if proposal.is_none() {
+            let Some(assessor) = &state.assessor else {
+                return (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    Json(ErrorBody {
+                        error: "DeepSeek assessor is unavailable".into(),
+                    }),
+                )
+                    .into_response();
+            };
+            let campaign = match load_campaign(&state.store) {
+                Ok(value) => value,
+                Err(error) => {
+                    return (
+                        StatusCode::NOT_FOUND,
+                        Json(ErrorBody {
+                            error: error.to_string(),
+                        }),
+                    )
+                        .into_response();
+                }
+            };
+            match assessor.assess(&campaign, intent.clone()).await {
+                Ok((assessment, receipt)) => {
+                    let _ = state.store.insert(
+                        "persona_stage_receipt.v1",
+                        "ghostlight.persona_stage_receipt.v1",
+                        &receipt.output_hash,
+                        &receipt,
+                    );
+                    *proposal = Some(assessment);
+                }
+                Err(error) => {
+                    return (
+                        StatusCode::UNPROCESSABLE_ENTITY,
+                        Json(ErrorBody {
+                            error: error.to_string(),
+                        }),
+                    )
+                        .into_response();
+                }
+            }
+        }
+    }
+    let should_react = matches!(
+        &command,
+        WorldCommand::Attempt { .. } | WorldCommand::Speak { .. }
+    );
     match state.kernel.command(command).await {
-        Ok(result) => Json(result).into_response(),
+        Ok(result) => {
+            if should_react {
+                if let ghostlight_dungeon::kernel::CommandResult::Committed { campaign, .. } =
+                    &result
+                {
+                    if campaign.actors.len() > 1 {
+                        if let Some(model) = &state.model {
+                            let summary = campaign
+                                .transcript
+                                .last()
+                                .map(|turn| turn.text.clone())
+                                .unwrap_or_else(|| "A consequential event occurred.".into());
+                            let engine = PersonaProjectionEngine {
+                                model: model.clone(),
+                                permit: Arc::new(SnapshotPermit::new(
+                                    state.store.clone(),
+                                    campaign.id,
+                                    campaign.revision,
+                                )),
+                                projector_model: "deepseek-v4-flash".into(),
+                                persona_model: "deepseek-v4-pro".into(),
+                                interpreter_model: "deepseek-v4-flash".into(),
+                            };
+                            match appraise_present(engine, campaign, &summary).await {
+                                Ok(wave) if !wave.reactions.is_empty() => {
+                                    for receipt in wave.receipts {
+                                        let _ = state.store.insert(
+                                            "persona_stage_receipt.v1",
+                                            "ghostlight.persona_stage_receipt.v1",
+                                            &receipt.output_hash,
+                                            &receipt,
+                                        );
+                                    }
+                                    match state.kernel.command(WorldCommand::ResolveReactionWave{expected_revision:campaign.revision,event_summary:summary,reactions:wave.reactions}).await{Ok(reaction)=>return Json(serde_json::json!({"primary":result,"reaction_wave":reaction})).into_response(),Err(error)=>return(StatusCode::CONFLICT,Json(ErrorBody{error:error.to_string()})).into_response()}
+                                }
+                                Ok(_) => {}
+                                Err(error) => {
+                                    return (
+                                        StatusCode::BAD_GATEWAY,
+                                        Json(ErrorBody {
+                                            error: error.to_string(),
+                                        }),
+                                    )
+                                        .into_response();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Json(result).into_response()
+        }
         Err(error) => (
             StatusCode::CONFLICT,
             Json(ErrorBody {
@@ -390,6 +591,41 @@ async fn command(
             }),
         )
             .into_response(),
+    }
+}
+
+async fn scheduler_loop(state: AppState) {
+    let mut pulse = tokio::time::interval(std::time::Duration::from_secs(300));
+    pulse.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    pulse.tick().await;
+    loop {
+        pulse.tick().await;
+        if let Err(error) = process_due_ticks(&state).await {
+            tracing::warn!(%error,"strategic scheduler pulse refused");
+        }
+    }
+}
+
+async fn process_due_ticks(state: &AppState) -> anyhow::Result<()> {
+    loop {
+        let campaign = match load_campaign(&state.store) {
+            Ok(value) => value,
+            Err(_) => return Ok(()),
+        };
+        let target = ghostlight_dungeon::scheduler::due_tick_target(
+            chrono::Utc::now(),
+            campaign.last_player_activity,
+        );
+        if campaign.away_ticks_processed >= target {
+            return Ok(());
+        }
+        state
+            .kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: campaign.revision,
+                source: ghostlight_dungeon::domain::TickSource::ReturnCatchUp,
+            })
+            .await?;
     }
 }
 
@@ -459,6 +695,7 @@ fn seed_campaign() -> Campaign {
         obligations: BTreeSet::new(),
         relationships: BTreeMap::new(),
         goals: vec!["Compile a world worth entering.".into()],
+        memories: vec![],
     };
     Campaign {
         schema: "ghostlight.campaign.v1".into(),
@@ -480,5 +717,12 @@ fn seed_campaign() -> Campaign {
         transcript: vec![],
         last_player_activity: chrono::Utc::now(),
         pending_ticks: 0,
+        away_ticks_processed: 0,
+        events: vec![],
+        news: vec![],
+        canon_candidates: BTreeMap::new(),
+        gestalts: BTreeMap::new(),
+        gestalt_members: BTreeMap::new(),
+        pending_world_proposals: vec![],
     }
 }

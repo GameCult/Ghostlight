@@ -90,7 +90,7 @@ pub struct FixtureModel;
 impl ModelPort for FixtureModel {
     async fn run(&self, request: &ModelStageRequest) -> Result<String> {
         Ok(if request.output_schema.is_some() {
-            r#"{"private_deltas":[],"speech":null,"reaction_priority":0,"world_actions":[]}"#.into()
+            r#"{"private_delta":{"memories_add":[],"conditions_add":[],"conditions_remove":[],"goals_add":[],"relationship_updates":{}},"speech":null,"reaction_priority":0,"world_actions":[]}"#.into()
         } else {
             format!("{}", request.lived_stream)
         })

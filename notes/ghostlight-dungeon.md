@@ -50,6 +50,21 @@ Ghostlight’s existing v0 schemas and training fixtures remain evidence and reg
 
 ### Persona and world action loop
 
+Population scaling uses reversible gestalt materialization. A crowd, village,
+crew, or corporation may act offscreen through one gestalt Persona. When a
+specific member becomes relevant, the WorldKernel materializes an individual
+from the gestalt baseline plus a persistent member delta and current scene.
+When relevance expires, it folds individual consequences back into that delta,
+admits only reviewed aggregate learning to the gestalt, and removes the active
+simulation slot. The member delta remains durable so returning to the person
+reconstructs the same individual rather than a fresh approximation.
+
+Gestalt projection, relevance detection, and merge proposals cannot commit.
+`MaterializeGestaltMember` and `DematerializeGestaltMember` use the normal
+revisioned WorldCommand path. A named member's relationships, memories,
+possessions, injuries, promises, and identity never become disposable gestalt
+texture.
+
 Ghostlight owns its own generalized projection machinery:
 
 1. Projector converts the actor’s permitted typed slice, memories, perceived events, relationships, goals, and retrieved knowledge into a private lived narrative stream.
@@ -134,6 +149,8 @@ DeepSeek currently documents both V4 model IDs, streaming, and JSON output throu
 - `player_action_assessment.v1`, `roll_receipt.v1`, `world_commit_receipt.v1`
 - `persona_stage_receipt.v1`, `actor_state_delta.v1`, `world_action_proposal.v1`
 - `strategic_tick.v1`, `news_issue.v1`, `canon_candidate.v1`
+- `gestalt_persona_state.v1`, `gestalt_member_delta.v1`,
+  `gestalt_materialization_receipt.v1`
 - Existing `gamecult.eve.surface.v1` and `gamecult.eve.command.v1`
 
 Publish JSON Schema only as the schema catalog. Runtime documents and exports use MessagePack-backed CultCache `.cc`; JSON exists only at browser, MCP, and model-provider boundaries.

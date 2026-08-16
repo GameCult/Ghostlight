@@ -100,6 +100,13 @@ struct CompiledSeed {
     opening_narration: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledExpansionSeed {
+    locations: Vec<Location>,
+    facts: Vec<WorldFact>,
+    gaps: Vec<String>,
+}
+
 pub struct WorldCompiler {
     vault: Arc<dyn VaultProvider>,
     model: Arc<dyn ModelPort>,
@@ -209,6 +216,77 @@ impl WorldCompiler {
         .await
     }
 
+    pub async fn compile_destination(
+        &self,
+        campaign: &Campaign,
+        origin_location_id: &str,
+        destination_request: &str,
+    ) -> Result<(crate::domain::RegionExpansionPreview, ModelStageReceipt)> {
+        let origin = campaign
+            .locations
+            .get(origin_location_id)
+            .ok_or_else(|| anyhow!("origin location is unknown"))?;
+        let queries = [
+            format!(
+                "{} {} geography containment routes",
+                origin.name, destination_request
+            ),
+            format!("{} travel time institutions access", destination_request),
+        ];
+        let receipts = self
+            .retrieve_all(&queries, &campaign.branch_origin.canon_cutoff, 10)
+            .await?;
+        let output=self.structured("destination_compile",&format!("campaign:{}:revision:{}",campaign.id,campaign.revision),&format!("Compile only the requested bounded destination region. Every new location id must be new. At least one new location must route back to origin id {} with a positive travel time. Do not rewrite existing geography. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",origin_location_id,serde_json::to_string(&campaign.locations)?,destination_request,evidence_text(&receipts)),serde_json::to_value(schema_for!(CompiledExpansionSeed))?,receipt_ids(&receipts)).await?;
+        let seed: CompiledExpansionSeed = serde_json::from_value(output.0)?;
+        let evidence_ids = receipt_ids(&receipts);
+        let affected_sources: Vec<String> = receipts
+            .iter()
+            .flat_map(|r| r.witnesses.iter().map(|w| w.source_id.clone()))
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        let candidates = seed
+            .gaps
+            .iter()
+            .enumerate()
+            .map(|(index, gap)| crate::domain::CanonCandidate {
+                schema: "ghostlight.canon_candidate.v1".into(),
+                id: format!(
+                    "canon-candidate:{}:r{}:{}",
+                    campaign.id,
+                    campaign.revision,
+                    index + 1
+                ),
+                originating_campaign_id: campaign.id,
+                gap: gap.clone(),
+                evidence_receipt_ids: evidence_ids.clone(),
+                conflicts: vec![],
+                proposed_wording: format!("Clarify the documented answer to: {gap}"),
+                affected_vault_sources: affected_sources.clone(),
+                status: "review".into(),
+            })
+            .collect();
+        let expansion = crate::domain::RegionExpansion {
+            origin_location_id: origin_location_id.into(),
+            locations: seed.locations,
+            facts: seed.facts,
+        };
+        validate_region_expansion(campaign, &expansion)?;
+        Ok((
+            crate::domain::RegionExpansionPreview {
+                schema: "ghostlight.region_expansion_preview.v1".into(),
+                campaign_id: campaign.id,
+                expected_revision: campaign.revision,
+                expansion,
+                evidence_receipts: receipts,
+                gaps: seed.gaps,
+                canon_candidates: candidates,
+                requires_approval: true,
+            },
+            output.1,
+        ))
+    }
+
     async fn retrieve_all(
         &self,
         queries: &[String],
@@ -266,6 +344,46 @@ impl WorldCompiler {
     }
 }
 
+pub fn validate_region_expansion(
+    campaign: &Campaign,
+    expansion: &crate::domain::RegionExpansion,
+) -> Result<()> {
+    if !campaign
+        .locations
+        .contains_key(&expansion.origin_location_id)
+    {
+        return Err(anyhow!("destination expansion origin is unknown"));
+    }
+    let new_ids: BTreeSet<_> = expansion.locations.iter().map(|x| x.id.as_str()).collect();
+    if expansion.locations.is_empty() || new_ids.len() != expansion.locations.len() {
+        return Err(anyhow!("destination expansion has no unique locations"));
+    }
+    if new_ids
+        .iter()
+        .any(|id| campaign.locations.contains_key(*id))
+    {
+        return Err(anyhow!(
+            "destination expansion collides with stable topology"
+        ));
+    }
+    let known = |id: &str| campaign.locations.contains_key(id) || new_ids.contains(id);
+    let mut attached = false;
+    for location in &expansion.locations {
+        for route in location.routes.values() {
+            if route.travel_minutes == 0 || !known(&route.destination_id) {
+                return Err(anyhow!("destination expansion has a dangling route"));
+            }
+            if route.destination_id == expansion.origin_location_id {
+                attached = true;
+            }
+        }
+    }
+    if !attached {
+        return Err(anyhow!("destination expansion is not attached to origin"));
+    }
+    Ok(())
+}
+
 fn evidence_text(receipts: &[VaultEvidenceReceipt]) -> String {
     receipts
         .iter()
@@ -309,6 +427,32 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
     if actors.insert(player_id.clone(), seed.player).is_some() {
         return Err(anyhow!("player id duplicates an NPC"));
     }
+    let evidence_receipt_ids = receipt_ids(receipts);
+    let affected_sources: Vec<String> = receipts
+        .iter()
+        .flat_map(|r| r.witnesses.iter().map(|w| w.source_id.clone()))
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    let canon_candidates = seed
+        .gaps
+        .iter()
+        .enumerate()
+        .map(|(index, gap)| {
+            let candidate = crate::domain::CanonCandidate {
+                schema: "ghostlight.canon_candidate.v1".into(),
+                id: format!("canon-candidate:{}:{}", id, index + 1),
+                originating_campaign_id: id,
+                gap: gap.clone(),
+                evidence_receipt_ids: evidence_receipt_ids.clone(),
+                conflicts: vec![],
+                proposed_wording: format!("Clarify the documented answer to: {gap}"),
+                affected_vault_sources: affected_sources.clone(),
+                status: "review".into(),
+            };
+            (candidate.id.clone(), candidate)
+        })
+        .collect();
     Ok(Campaign {
         schema: "ghostlight.campaign.v1".into(),
         id,
@@ -316,7 +460,7 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
         revision: 0,
         branch_origin: BranchOrigin {
             canon_cutoff: seed.canon_cutoff,
-            evidence_receipt_ids: receipt_ids(receipts),
+            evidence_receipt_ids,
         },
         world_time: seed.world_time,
         tick_hours: seed.tick_hours,
@@ -351,6 +495,13 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
         }],
         last_player_activity: now,
         pending_ticks: 0,
+        away_ticks_processed: 0,
+        events: vec![],
+        news: vec![],
+        canon_candidates,
+        gestalts: BTreeMap::new(),
+        gestalt_members: BTreeMap::new(),
+        pending_world_proposals: vec![],
     })
 }
 
@@ -416,7 +567,7 @@ mod tests {
                         "locations":[{"id":"yard","name":"Yard","container_id":null,"routes":{"out":{"destination_id":destination,"distance":"near","travel_minutes":5}},"persistent_features":["same yard"]}],
                         "actors":[],"institutions":[],"clocks":[{"id":"shift","label":"Shift ends","progress":0,"threshold":4,"consequence":"night"}],
                         "facts":[{"id":"f","statement":"A witnessed fact","scope":"canon_baseline","evidence_receipt_ids":["fixture"]}],
-                        "gaps":[],"branch_assumptions":[],"opening_narration":"The yard persists."
+                        "gaps":["Who owns the outer gate?"],"branch_assumptions":[],"opening_narration":"The yard persists."
                     }).to_string()
                 }
                 _ => return Err(anyhow!("unexpected stage")),
@@ -482,6 +633,7 @@ mod tests {
         assert!(preview.requires_approval);
         assert_eq!(preview.campaign.revision, 0);
         assert_eq!(preview.campaign.locations.len(), 1);
+        assert_eq!(preview.campaign.canon_candidates.len(), 1);
     }
 
     #[tokio::test]

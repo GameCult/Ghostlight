@@ -7,6 +7,7 @@ const status = document.querySelector<HTMLElement>("#status")!;
 const receipt = document.querySelector<HTMLElement>("#receipt")!;
 const compiler = document.querySelector<HTMLElement>("#compiler")!;
 const composer = document.querySelector<HTMLFormElement>("#composer")!;
+const destinationForm = document.querySelector<HTMLFormElement>("#destination-form")!;
 const compilerResults = document.querySelector<HTMLElement>("#compiler-results")!;
 let revision = 0;
 
@@ -15,7 +16,7 @@ async function refresh() {
   if (response.status === 401) { status.textContent = "This laboratory requires an unused invite link."; return; }
   const surface = await response.json();
   const needsCompilation = surface.surface_id === "ghostlight.compiler";
-  compiler.hidden = !needsCompilation; composer.hidden = needsCompilation; host.hidden = needsCompilation;
+  compiler.hidden = !needsCompilation; composer.hidden = needsCompilation; destinationForm.hidden = needsCompilation; host.hidden = needsCompilation;
   if (needsCompilation) { status.textContent = "No campaign exists. Retrieve the Vault and approve a world seed."; return; }
   revision = Number(surface.version ?? 0);
   renderEveSurface(surface, host, { body: document.body, clientId: "ghostlight.browser", statusElement: status });
@@ -52,7 +53,8 @@ async function showPreview(result: any) {
   status.textContent = "Preview compiled. Nothing has entered world state yet.";
 }
 
-async function send(command: unknown) { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await response.json(); receipt.hidden = false; receipt.textContent = JSON.stringify(body, null, 2); if (!response.ok) { status.textContent = body.error ?? "The command was refused."; return; } await refresh(); }
-composer.addEventListener("submit", event => { event.preventDefault(); const text = document.querySelector<HTMLTextAreaElement>("#attempt")!.value.trim(); if (text) void send({ type: "assess", expected_revision: revision, intent: { actor_id: "player", description: text, intended_effect: text } }); });
+async function send(command: unknown) { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await response.json(); receipt.hidden = false; receipt.textContent = JSON.stringify(body, null, 2); if (!response.ok) { status.textContent = body.error ?? "The command was refused."; await refresh(); return body; } await refresh(); return body; }
+composer.addEventListener("submit", async event => { event.preventDefault(); const text = document.querySelector<HTMLTextAreaElement>("#attempt")!.value.trim(); if (!text) return; const result=await send({ type: "assess", expected_revision: revision, intent: { actor_id: "player", description: text, intended_effect: text } }); if(result?.kind==="assessed"){const button=document.createElement("button");button.textContent=result.assessment.admissible?"Confirm server roll":"Revise attempt";button.addEventListener("click",async()=>{if(result.assessment.admissible){await send({type:"attempt",assessment_digest:result.assessment.digest});button.remove();}else{document.querySelector<HTMLTextAreaElement>("#attempt")!.focus();}});composer.append(button);} });
 document.querySelector<HTMLButtonElement>("#wait")!.addEventListener("click", () => void send({ type: "wait", expected_revision: revision, minutes: 60 }));
+destinationForm.addEventListener("submit",async event=>{event.preventDefault();const result=await compilerPost("/api/compiler/destination",Object.fromEntries(new FormData(destinationForm)));const preview=result.preview;receipt.hidden=false;receipt.textContent=JSON.stringify(preview,null,2);status.textContent="Destination preview compiled; topology is unchanged until approval.";const button=document.createElement("button");button.textContent="Approve destination";button.addEventListener("click",async()=>{await compilerPost(`/api/compiler/destination/approve/${result.preview_id}`,{});button.remove();await refresh();});destinationForm.append(button);});
 void refresh();

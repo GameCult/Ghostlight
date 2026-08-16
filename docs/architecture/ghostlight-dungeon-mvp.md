@@ -165,6 +165,39 @@ implementation to make competing decisions after migration.
 
 ## Persona projection ownership
 
+### Gestalt population materialization
+
+Large low-focus populations use a gestalt Persona without sacrificing durable
+individual identity.
+
+- **Owner:** `WorldKernel` owns whether a member currently occupies an active
+  actor slot. The gestalt owns shared baseline state. The member delta owns
+  individual divergence.
+- **Inputs:** relevance/perception proposal, expected campaign revision,
+  expected gestalt version, expected member-delta version, current scene, and
+  reviewed consequences.
+- **Outputs:** a materialized actor derived from baseline plus delta, or an
+  updated persistent delta plus optional reviewed aggregate gestalt changes and
+  a materialization receipt.
+- **Derived state:** the active actor is a projection/composition. It is not a
+  second owner of the gestalt or member identity.
+- **Forbidden writers:** proximity checks, Persona output, scheduler, scene
+  rendering, and relevance heuristics may propose promotion or demotion but
+  cannot create, erase, merge, or rewrite a person.
+- **Shared paths:** first encounter, named interaction, return to a known
+  member, leaving perception, scene teardown, reload, and offscreen catch-up
+  all use `MaterializeGestaltMember` or `DematerializeGestaltMember` through the
+  campaign mailbox.
+- **Cut line:** dematerialization never deletes the member delta. Gestalt ticks
+  never overwrite member-specific memories, relationships, possessions,
+  injuries, promises, or identity.
+
+The composition order is `gestalt baseline -> persistent member delta ->
+current scene`. Dematerialization writes individual consequences to the delta;
+only explicitly reviewed population-level learning may update the gestalt.
+This allows a corporation or village to take one strategic turn while John the
+blacksmith remains John when encountered again.
+
 ### The ownership decision
 
 Ghostlight owns the reusable Persona projection machinery:

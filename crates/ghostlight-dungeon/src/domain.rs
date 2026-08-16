@@ -22,6 +22,20 @@ pub struct Campaign {
     pub transcript: Vec<NarrativeTurn>,
     pub last_player_activity: DateTime<Utc>,
     pub pending_ticks: u8,
+    #[serde(default)]
+    pub away_ticks_processed: u8,
+    #[serde(default)]
+    pub events: Vec<Event>,
+    #[serde(default)]
+    pub news: Vec<NewsIssue>,
+    #[serde(default)]
+    pub canon_candidates: BTreeMap<String, CanonCandidate>,
+    #[serde(default)]
+    pub gestalts: BTreeMap<String, GestaltPersonaState>,
+    #[serde(default)]
+    pub gestalt_members: BTreeMap<String, GestaltMemberDelta>,
+    #[serde(default)]
+    pub pending_world_proposals: Vec<WorldActionProposal>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -58,6 +72,76 @@ pub struct ActorState {
     pub obligations: BTreeSet<String>,
     pub relationships: BTreeMap<String, String>,
     pub goals: Vec<String>,
+    #[serde(default)]
+    pub memories: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltPersonaState {
+    pub schema: String,
+    pub id: String,
+    pub name: String,
+    pub version: u64,
+    pub home_location_id: String,
+    pub shared_capabilities: BTreeSet<String>,
+    pub shared_knowledge: BTreeSet<String>,
+    pub resources: BTreeSet<String>,
+    pub goals: Vec<String>,
+    pub pressures: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltMemberDelta {
+    pub schema: String,
+    pub id: String,
+    pub gestalt_id: String,
+    pub version: u64,
+    pub name: String,
+    pub capability_additions: BTreeSet<String>,
+    pub capability_removals: BTreeSet<String>,
+    pub knowledge_additions: BTreeSet<String>,
+    pub knowledge_removals: BTreeSet<String>,
+    pub equipment: BTreeSet<String>,
+    pub conditions: BTreeSet<String>,
+    pub obligations: BTreeSet<String>,
+    pub relationships: BTreeMap<String, String>,
+    pub goals: Vec<String>,
+    pub memories: Vec<String>,
+    pub last_location_id: Option<String>,
+    pub materialized_actor_id: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+pub struct GestaltAggregateDelta {
+    pub knowledge_additions: BTreeSet<String>,
+    pub resource_additions: BTreeSet<String>,
+    pub pressures: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+pub struct ActorStateDelta {
+    pub memories_add: Vec<String>,
+    pub conditions_add: BTreeSet<String>,
+    pub conditions_remove: BTreeSet<String>,
+    pub goals_add: Vec<String>,
+    pub relationship_updates: BTreeMap<String, String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct WorldActionProposal {
+    pub actor_id: String,
+    pub intent: String,
+    pub intended_effect: String,
+    pub priority: i16,
+    pub state_references: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ActorReaction {
+    pub actor_id: String,
+    pub speech: Option<String>,
+    pub private_delta: ActorStateDelta,
+    pub action_proposals: Vec<WorldActionProposal>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -84,6 +168,41 @@ pub struct WorldFact {
     pub statement: String,
     pub scope: FactScope,
     pub evidence_receipt_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct Event {
+    pub id: String,
+    pub at: DateTime<Utc>,
+    pub kind: String,
+    pub summary: String,
+    pub actor_ids: Vec<String>,
+    pub institution_ids: Vec<String>,
+    pub location_ids: Vec<String>,
+    pub public_channels: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct NewsIssue {
+    pub id: String,
+    pub at: DateTime<Utc>,
+    pub channel: String,
+    pub headline: String,
+    pub event_ids: Vec<String>,
+    pub reliability: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct CanonCandidate {
+    pub schema: String,
+    pub id: String,
+    pub originating_campaign_id: Uuid,
+    pub gap: String,
+    pub evidence_receipt_ids: Vec<String>,
+    pub conflicts: Vec<String>,
+    pub proposed_wording: String,
+    pub affected_vault_sources: Vec<String>,
+    pub status: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -125,6 +244,8 @@ pub enum WorldCommand {
     Assess {
         expected_revision: u64,
         intent: ActionIntent,
+        #[serde(default)]
+        proposal: Option<ActionAssessment>,
     },
     Attempt {
         assessment_digest: String,
@@ -137,6 +258,49 @@ pub enum WorldCommand {
         expected_revision: u64,
         source: TickSource,
     },
+    ExpandRegion {
+        expected_revision: u64,
+        expansion: RegionExpansion,
+        evidence_receipts: Vec<VaultEvidenceReceipt>,
+        canon_candidates: Vec<CanonCandidate>,
+    },
+    MaterializeGestaltMember {
+        expected_revision: u64,
+        gestalt_id: String,
+        expected_gestalt_version: u64,
+        member_id: String,
+        expected_member_version: u64,
+        location_id: String,
+    },
+    DematerializeGestaltMember {
+        expected_revision: u64,
+        actor_id: String,
+        aggregate_delta: GestaltAggregateDelta,
+    },
+    ResolveReactionWave {
+        expected_revision: u64,
+        event_summary: String,
+        reactions: Vec<ActorReaction>,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct RegionExpansion {
+    pub origin_location_id: String,
+    pub locations: Vec<Location>,
+    pub facts: Vec<WorldFact>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct RegionExpansionPreview {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub expected_revision: u64,
+    pub expansion: RegionExpansion,
+    pub evidence_receipts: Vec<VaultEvidenceReceipt>,
+    pub gaps: Vec<String>,
+    pub canon_candidates: Vec<CanonCandidate>,
+    pub requires_approval: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
