@@ -5,6 +5,7 @@ pub mod domain;
 pub mod gestalt;
 pub mod initiative;
 pub mod kernel;
+pub mod mesh;
 pub mod model;
 pub mod narrator;
 pub mod persistence;

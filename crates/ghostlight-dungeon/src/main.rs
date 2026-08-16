@@ -16,6 +16,7 @@ use ghostlight_dungeon::{
     },
     gestalt::GestaltPresencePlanner,
     kernel::CommandResult,
+    mesh::MeshPublisher,
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     narrator::Narrator,
     persistence::CampaignStore,
@@ -51,6 +52,7 @@ struct AppState {
     compile_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<WorldCompilePreview>>>>,
     expansion_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<RegionExpansionPreview>>>>,
     live_turns: Arc<AtomicUsize>,
+    mesh: MeshPublisher,
 }
 
 struct LiveTurnGuard(Arc<AtomicUsize>);
@@ -85,7 +87,7 @@ struct AuthState {
 
 struct AuthOwner {
     store: CampaignStore,
-    row: cultcache_rs::CultCacheEnvelope,
+    row: cultcache_legacy::CultCacheEnvelope,
     state: AuthState,
 }
 
@@ -181,6 +183,11 @@ async fn main() -> anyhow::Result<()> {
     } else {
         ("missing-secret".into(), None, None, None)
     };
+    let mesh_target = std::env::var("GHOSTLIGHT_ODIN_RUDP")
+        .ok()
+        .map(|value| value.parse())
+        .transpose()?;
+    let mesh = MeshPublisher::open(runtime_root.join("service/mesh.cc"), mesh_target)?;
     let state = AppState {
         registry,
         runtime_root,
@@ -196,7 +203,9 @@ async fn main() -> anyhow::Result<()> {
         compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
         expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
         live_turns: Arc::new(AtomicUsize::new(0)),
+        mesh,
     };
+    refresh_mesh(&state).await?;
     tokio::spawn(scheduler_loop(state.clone()));
     let release_web_root = std::env::current_exe()?
         .parent()
@@ -239,10 +248,11 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn health(State(state): State<AppState>) -> Json<serde_json::Value> {
-    Json(
-        serde_json::json!({"schema":"ghostlight.service_health.v1","status":"ok","campaigns":state.registry.list().await.len(),"deepseek":state.deepseek_status}),
-    )
+async fn health(State(state): State<AppState>) -> Response {
+    match state.mesh.health() {
+        Ok(value) => Json(value).into_response(),
+        Err(error) => (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response(),
+    }
 }
 
 async fn invite(Path(token): Path<String>, State(state): State<AppState>) -> Response {
@@ -483,7 +493,12 @@ async fn approve_preview(
     {
         Ok(runtime) => match select_campaign(&state, &session, campaign_id).await {
             Ok(()) => match load_campaign(&runtime.store) {
-                Ok(campaign) => Json(CommandResult::Created { campaign }).into_response(),
+                Ok(campaign) => {
+                    if let Err(error) = refresh_mesh(&state).await {
+                        tracing::warn!(%error, "campaign approval CultMesh publication failed");
+                    }
+                    Json(CommandResult::Created { campaign }).into_response()
+                }
                 Err(error) => {
                     (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
                 }
@@ -900,6 +915,9 @@ async fn command(
                                                     .await
                                                     .ok()
                                                     .flatten();
+                                            if let Err(error) = refresh_mesh(&state).await {
+                                                tracing::warn!(%error, "post-command CultMesh publication failed");
+                                            }
                                             return Json(serde_json::json!({"primary":result,"presence":presence_result,"reaction_wave":reaction,"npc_initiative":initiative,"narration":narration})).into_response();
                                         }
                                         Err(error) => {
@@ -930,6 +948,9 @@ async fn command(
                                 .await
                                 .ok()
                                 .flatten();
+                            if let Err(error) = refresh_mesh(&state).await {
+                                tracing::warn!(%error, "post-command CultMesh publication failed");
+                            }
                             return Json(
                                 serde_json::json!({"primary":result,"presence":presence_result,"narration":narration}),
                             )
@@ -946,6 +967,9 @@ async fn command(
                     .await
                     .ok()
                     .flatten();
+                if let Err(error) = refresh_mesh(&state).await {
+                    tracing::warn!(%error, "post-command CultMesh publication failed");
+                }
                 Json(serde_json::json!({"result":result,"narration":narration})).into_response()
             } else {
                 Json(result).into_response()
@@ -1001,7 +1025,39 @@ async fn scheduler_loop(state: AppState) {
                 }
             }
         }
+        if let Err(error) = refresh_mesh(&state).await {
+            tracing::warn!(%error, "CultMesh projection refresh failed");
+        }
     }
+}
+
+async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
+    let mut snapshots = Vec::new();
+    for id in state.registry.list().await {
+        let runtime = state.registry.runtime(id).await?;
+        let campaign = load_campaign(&runtime.store)?;
+        let mut narrations = runtime
+            .store
+            .keys("narration_projection.v1")?
+            .into_iter()
+            .filter_map(|key| {
+                runtime
+                    .store
+                    .load::<NarrationProjection>("narration_projection.v1", &key)
+                    .ok()
+                    .flatten()
+                    .map(|(_, value)| value)
+            })
+            .filter(|value| value.campaign_id == campaign.id)
+            .collect::<Vec<_>>();
+        narrations.sort_by_key(|value| value.source_revision);
+        snapshots.push((campaign, narrations));
+    }
+    let publisher = state.mesh.clone();
+    let deepseek = state.deepseek_status.clone();
+    let pressure = state.live_turns.load(Ordering::SeqCst);
+    tokio::task::spawn_blocking(move || publisher.publish_snapshot(&snapshots, &deepseek, pressure))
+        .await?
 }
 
 #[derive(Deserialize)]
@@ -1099,7 +1155,12 @@ async fn fork_campaign(
                 }
             };
             match select_campaign(&state, &session, campaign.id).await {
-                Ok(()) => Json(campaign).into_response(),
+                Ok(()) => {
+                    if let Err(error) = refresh_mesh(&state).await {
+                        tracing::warn!(%error, "campaign fork CultMesh publication failed");
+                    }
+                    Json(campaign).into_response()
+                }
                 Err(error) => {
                     (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
                 }
@@ -1139,7 +1200,12 @@ async fn reset_campaign(
                 }
             };
             match select_campaign(&state, &session, campaign.id).await {
-                Ok(()) => Json(campaign).into_response(),
+                Ok(()) => {
+                    if let Err(error) = refresh_mesh(&state).await {
+                        tracing::warn!(%error, "campaign reset CultMesh publication failed");
+                    }
+                    Json(campaign).into_response()
+                }
                 Err(error) => {
                     (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
                 }
@@ -1474,6 +1540,7 @@ mod tests {
             compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
             expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
             live_turns: Arc::new(AtomicUsize::new(0)),
+            mesh: MeshPublisher::open(dir.path().join("mesh.cc"), None).unwrap(),
         };
         let left_runtime = session_runtime(&state, "left").await.unwrap().unwrap();
         let right_runtime = session_runtime(&state, "right").await.unwrap().unwrap();

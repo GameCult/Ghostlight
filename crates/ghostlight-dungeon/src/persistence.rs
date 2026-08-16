@@ -1,7 +1,7 @@
 use crate::domain::{Campaign, VaultEvidenceReceipt};
 use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
-use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
+use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use serde::{Serialize, de::DeserializeOwned};
 use std::path::Path;
 

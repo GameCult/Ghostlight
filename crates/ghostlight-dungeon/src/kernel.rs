@@ -796,7 +796,7 @@ fn assess(c: &Campaign, intent: ActionIntent) -> ActionAssessment {
 
 fn commit(
     store: &CampaignStore,
-    row: cultcache_rs::CultCacheEnvelope,
+    row: cultcache_legacy::CultCacheEnvelope,
     mut campaign: Campaign,
     kind: &str,
     roll: Option<RollReceipt>,
@@ -828,7 +828,7 @@ fn commit(
 
 fn commit_with_records(
     store: &CampaignStore,
-    row: cultcache_rs::CultCacheEnvelope,
+    row: cultcache_legacy::CultCacheEnvelope,
     mut campaign: Campaign,
     kind: &str,
     evidence: Vec<VaultEvidenceReceipt>,

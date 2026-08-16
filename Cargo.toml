@@ -1,5 +1,11 @@
 [workspace]
-members = ["crates/ghostlight-dungeon"]
+members = [
+  "crates/ghostlight-dungeon",
+  "vendor/cultcache-rs",
+  "vendor/cultcache-rs/cultcache-rs-derive",
+  "vendor/cultnet-rs",
+  "vendor/cultmesh-rs",
+]
 resolver = "2"
 
 [workspace.package]
@@ -12,7 +18,10 @@ anyhow = "1"
 async-trait = "0.1"
 axum = { version = "0.8", features = ["macros"] }
 chrono = { version = "0.4", features = ["serde"] }
-cultcache-rs = { git = "https://github.com/GameCult/cultcache-rs.git", rev = "0ba87453115e3d44e8fcb7419866cd7dd70fb096" }
+cultcache-legacy = { package = "cultcache-rs", git = "https://github.com/GameCult/cultcache-rs.git", rev = "0ba87453115e3d44e8fcb7419866cd7dd70fb096" }
+cultcache-rs = { path = "vendor/cultcache-rs" }
+cultnet-rs = { path = "vendor/cultnet-rs" }
+cultmesh-rs = { path = "vendor/cultmesh-rs" }
 rand = "0.9"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
 rmp-serde = "1.3"
