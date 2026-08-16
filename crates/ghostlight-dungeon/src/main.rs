@@ -17,14 +17,9 @@ use ghostlight_dungeon::{
 use serde::Serialize;
 use std::{
     collections::{BTreeMap, BTreeSet},
-    ffi::OsString,
     net::SocketAddr,
     path::PathBuf,
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
-    time::Duration,
+    sync::Arc,
 };
 use tokio::sync::Mutex;
 use tower_http::services::ServeDir;
@@ -39,19 +34,8 @@ struct AppState {
     deepseek_status: String,
 }
 
-fn main() -> anyhow::Result<()> {
-    #[cfg(windows)]
-    if std::env::args().any(|argument| argument == "--service") {
-        windows_service_host::run()?;
-        return Ok(());
-    }
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()?
-        .block_on(run_daemon(None))
-}
-
-async fn run_daemon(shutdown: Option<Arc<AtomicBool>>) -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
@@ -135,96 +119,8 @@ async fn run_daemon(shutdown: Option<Arc<AtomicBool>>) -> anyhow::Result<()> {
     let address: SocketAddr = "0.0.0.0:8831".parse()?;
     let listener = tokio::net::TcpListener::bind(address).await?;
     tracing::info!(%address, "GhostlightDungeon listening");
-    let server = axum::serve(listener, app);
-    if let Some(shutdown) = shutdown {
-        server
-            .with_graceful_shutdown(async move {
-                while !shutdown.load(Ordering::Acquire) {
-                    tokio::time::sleep(Duration::from_millis(200)).await;
-                }
-            })
-            .await?;
-    } else {
-        server.await?;
-    }
+    axum::serve(listener, app).await?;
     Ok(())
-}
-
-#[cfg(windows)]
-mod windows_service_host {
-    use super::*;
-    use windows_service::{
-        define_windows_service,
-        service::{
-            ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus,
-            ServiceType,
-        },
-        service_control_handler::{self, ServiceControlHandlerResult},
-        service_dispatcher,
-    };
-
-    const NAME: &str = "GhostlightDungeon";
-    const TYPE: ServiceType = ServiceType::OWN_PROCESS;
-
-    pub fn run() -> windows_service::Result<()> {
-        service_dispatcher::start(NAME, ffi_service_main)
-    }
-    define_windows_service!(ffi_service_main, service_main);
-
-    fn service_main(_arguments: Vec<OsString>) {
-        let _ = run_service();
-    }
-
-    fn run_service() -> windows_service::Result<()> {
-        let shutdown = Arc::new(AtomicBool::new(false));
-        let handler_flag = shutdown.clone();
-        let handler = move |event| match event {
-            ServiceControl::Stop => {
-                handler_flag.store(true, Ordering::Release);
-                ServiceControlHandlerResult::NoError
-            }
-            ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,
-            _ => ServiceControlHandlerResult::NotImplemented,
-        };
-        let status = service_control_handler::register(NAME, handler)?;
-        status.set_service_status(ServiceStatus {
-            service_type: TYPE,
-            current_state: ServiceState::StartPending,
-            controls_accepted: ServiceControlAccept::empty(),
-            exit_code: ServiceExitCode::Win32(0),
-            checkpoint: 1,
-            wait_hint: Duration::from_secs(30),
-            process_id: None,
-        })?;
-        status.set_service_status(ServiceStatus {
-            service_type: TYPE,
-            current_state: ServiceState::Running,
-            controls_accepted: ServiceControlAccept::STOP,
-            exit_code: ServiceExitCode::Win32(0),
-            checkpoint: 0,
-            wait_hint: Duration::default(),
-            process_id: None,
-        })?;
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .map_err(|_| windows_service::Error::Winapi(std::io::Error::last_os_error()))?;
-        let result = runtime.block_on(run_daemon(Some(shutdown)));
-        status.set_service_status(ServiceStatus {
-            service_type: TYPE,
-            current_state: ServiceState::Stopped,
-            controls_accepted: ServiceControlAccept::empty(),
-            exit_code: if result.is_ok() {
-                ServiceExitCode::Win32(0)
-            } else {
-                ServiceExitCode::Win32(1)
-            },
-            checkpoint: 0,
-            wait_hint: Duration::default(),
-            process_id: None,
-        })?;
-        Ok(())
-    }
 }
 
 async fn health(State(state): State<AppState>) -> Json<serde_json::Value> {
