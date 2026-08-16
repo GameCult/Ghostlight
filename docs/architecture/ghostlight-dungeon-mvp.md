@@ -451,14 +451,18 @@ Starfire's private LAN and `10.77.0.0/24`; there is no public listener or
 Yggdrasil web gateway. Two single-use invites establish separate HttpOnly
 sessions. Campaigns remain single-player.
 
-The Windows service uses a dedicated virtual service identity. Runtime ACLs
-permit only administrators and that identity. Setup reads the DeepSeek key from
-stdin and writes a machine-scoped DPAPI secret with restricted ACLs. The key is
-absent from source, arguments, logs, environment projections, and exports.
+The MVP runs as a normal detached process under the Starfire operator account.
+The launcher records the PID, exact executable path, release commit, and logs;
+the stop path refuses an executable mismatch. Runtime ACLs permit the operator,
+SYSTEM, and administrators. Setup reads the DeepSeek key once and writes a
+machine-scoped DPAPI secret. The key is absent from source, arguments, logs,
+environment projections, and exports.
 
 Releases are immutable directories built from exact commits. Activation is an
-atomic pointer switch, recorded in CultCache. The service has restart recovery
-and the rollback runbook lives in `gamecult-ops`.
+atomic pointer switch, recorded in CultCache, and the rollback runbook lives in
+`gamecult-ops`. The MVP process does not automatically survive logout or reboot.
+Task Scheduler may be added when tester availability makes that useful; native
+Windows service machinery is outside the MVP.
 
 Live VoidBot integration remains gated on independent verification of the SSH
 host fingerprint, reconciliation of Yggdrasil inventory/DNS, repair of the
@@ -508,8 +512,8 @@ The UI consumes existing `gamecult.eve.surface.v1` and
 7. Add the VoidBot and DeepSeek production adapters without granting either
    commit authority.
 8. Publish the CultMesh/Eve surface and thin authenticated browser host.
-9. Add service installation, DPAPI setup, release activation, firewall, and
-   rollback tooling under the correct repository owners.
+9. Add detached-process launch/stop, DPAPI setup, release activation, firewall,
+   and rollback tooling under the correct repository owners.
 10. Run fixture regressions, invariant fault tests, browser acceptance, and the
     final Starfire deployment smoke.
 
