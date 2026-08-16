@@ -31,12 +31,17 @@ pub async fn propose_strategic_tick(
         "world_time":campaign.world_time,
         "tick_hours":campaign.tick_hours,
         "locations":campaign.locations,
+        "player_information_access": campaign.actors.get(player_id).map(|actor| serde_json::json!({
+            "knowledge_channels": actor.knowledge,
+            "equipment": actor.equipment
+        })),
         "remote_actors":actors,
         "institutions":campaign.institutions,
         "gestalts":campaign.gestalts,
         "clocks":campaign.clocks,
         "recent_events":campaign.events.iter().rev().take(12).collect::<Vec<_>>()
     });
+    let schema = serde_json::to_value(schema_for!(StrategicTickPlan))?;
     let output = run_validated_stage(
         model,
         &ModelStageRequest {
@@ -44,10 +49,11 @@ pub async fn propose_strategic_tick(
             model: "deepseek-v4-flash".into(),
             snapshot_binding: format!("campaign:{}:revision:{}", campaign.id, campaign.revision),
             lived_stream: format!(
-                "Propose one bounded offscreen strategic tick. Institutions, remote actors, and gestalt populations act in their own interests. Do not control, move, injure, or directly target the absent player. Use only supplied IDs. Actor movement must use a direct listed route whose travel time fits inside tick_hours. Keep summaries concrete. Pressure additions are branch-local population pressure, not new canon knowledge. Empty arrays are valid when nobody has a credible action. Return only the schema JSON.\nSTATE:\n{}",
-                serde_json::to_string(&context)?
+                "Propose one bounded offscreen strategic tick. Institutions, remote actors, and gestalt populations act in their own interests. At least one supplied non-player power with a credible goal, pressure, resource, or reachable movement must act; use empty arrays only when the supplied state genuinely affords no action. Do not control, move, injure, or directly target the absent player. Use only supplied IDs. Actor movement must use a direct listed route whose travel time fits inside tick_hours. Keep summaries concrete. Pressure additions are branch-local population pressure, not new canon knowledge. For each action, public_channels names concrete information mechanisms through which that event can later become known (radio, newspaper, courier, rumor network); leave it empty only for a genuinely secret event. When a public event credibly travels through one of player_information_access.knowledge_channels, copy that channel string exactly. The kernel independently gates news by exact channel access. Return only one JSON object matching the supplied schema.\nSTATE:\n{}\nOUTPUT JSON SCHEMA:\n{}",
+                serde_json::to_string(&context)?,
+                serde_json::to_string_pretty(&schema)?
             ),
-            output_schema: Some(serde_json::to_value(schema_for!(StrategicTickPlan))?),
+            output_schema: Some(schema),
             source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
         },
     )

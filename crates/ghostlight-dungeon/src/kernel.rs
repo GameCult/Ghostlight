@@ -276,12 +276,10 @@ fn execute(
             };
             let player = campaign.actors.get(&campaign.player_actor_id);
             for event in &tick_events {
-                let accessible = event.public_channels.iter().find(|channel| {
-                    player.is_some_and(|actor| {
-                        actor.knowledge.contains(*channel)
-                            || actor.equipment.contains("communications")
-                    })
-                });
+                let accessible = event
+                    .public_channels
+                    .iter()
+                    .find(|channel| player.is_some_and(|actor| actor.knowledge.contains(*channel)));
                 if let Some(channel) = accessible {
                     campaign.news.push(crate::domain::NewsIssue {
                         id: format!("news:{}", event.id),
