@@ -519,7 +519,6 @@ fn rudp_session_expires_bounded_reliable_media_resends() -> Result<()> {
         connection_id: 100,
         initial_sequence: 1,
         resend_delay_ms: 20,
-        media_reliable_expire_after_ms: Some(50),
         max_pending_reliable_packets: Some(1),
     });
     session.receive(

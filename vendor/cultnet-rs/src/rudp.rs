@@ -1013,35 +1013,21 @@ impl CultNetRudpSocketTransportConnection {
     }
 
     fn channel_send_options(&self, channel_id: &str, now_ms: u64) -> CultNetRudpSendOptions {
-        match channel_id {
-            "schema" => CultNetRudpSendOptions {
-                reliable: true,
-                ordered: true,
-                sequenced: false,
-                now_ms,
-                reliable_expire_after_ms: None,
-            },
-            "latest" => CultNetRudpSendOptions {
-                reliable: false,
-                ordered: false,
-                sequenced: true,
-                now_ms,
-                reliable_expire_after_ms: None,
-            },
-            "media" => CultNetRudpSendOptions {
-                reliable: false,
-                ordered: false,
-                sequenced: false,
-                now_ms,
-                reliable_expire_after_ms: None,
-            },
-            _ => CultNetRudpSendOptions {
-                reliable: false,
-                ordered: false,
-                sequenced: false,
-                now_ms,
-                reliable_expire_after_ms: None,
-            },
+        let channel = self
+            .profile
+            .transports
+            .iter()
+            .flat_map(|transport| &transport.channels)
+            .find(|channel| channel.channel_id == channel_id);
+        CultNetRudpSendOptions {
+            reliable: channel
+                .is_some_and(|channel| channel.delivery == CultNetTransportDelivery::Reliable),
+            ordered: channel
+                .is_some_and(|channel| channel.ordering == CultNetTransportOrdering::Ordered),
+            sequenced: channel
+                .is_some_and(|channel| channel.ordering == CultNetTransportOrdering::Sequenced),
+            now_ms,
+            reliable_expire_after_ms: channel.and_then(|channel| channel.reliable_expire_after_ms),
         }
     }
 
@@ -1254,12 +1240,12 @@ pub fn create_rudp_transport_profile(
                 },
                 CultNetTransportChannel {
                     channel_id: "media".to_string(),
-                    delivery: CultNetTransportDelivery::Unreliable,
+                    delivery: CultNetTransportDelivery::Reliable,
                     ordering: CultNetTransportOrdering::Unordered,
                     max_payload_bytes: options.max_payload_bytes,
                     max_fragment_bytes: options.max_fragment_bytes,
                     max_pending_reliable_packets: options.max_pending_reliable_packets,
-                    reliable_expire_after_ms: None,
+                    reliable_expire_after_ms: options.media_reliable_expire_after_ms,
                 },
             ],
         }],
