@@ -56,45 +56,79 @@ impl ActionAssessor {
             .values()
             .map(|x| serde_json::json!({"id":x.id,"name":x.name,"posture":x.posture}))
             .collect();
+        let present_actors: Vec<_> = campaign
+            .actors
+            .values()
+            .filter(|candidate| candidate.location_id == actor.location_id)
+            .map(|candidate| {
+                serde_json::json!({
+                    "id": candidate.id,
+                    "name": candidate.name,
+                    "conditions": candidate.conditions,
+                    "relationships": candidate.relationships,
+                })
+            })
+            .collect();
         let allowed_references = allowed_references(campaign, actor);
         let schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
-        let prompt = format!(
-            "Assess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only change existing actor conditions or relationships, move the acting actor along an existing route, advance existing clocks, or change existing institution posture. Keep a delta empty when prose consequence has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}\nOUTPUT JSON SCHEMA:\n{}",
+        let base_prompt = format!(
+            "Assess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. Keep a delta empty when prose consequence has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}\nOUTPUT JSON SCHEMA:\n{}",
             serde_json::to_string(&intent)?,
             serde_json::to_string(actor)?,
             serde_json::to_string(location)?,
+            serde_json::to_string(&present_actors)?,
             serde_json::to_string(&visible_institutions)?,
             serde_json::to_string(&allowed_references)?,
             serde_json::to_string_pretty(&schema)?
         );
-        let out = run_validated_stage(
-            self.model.as_ref(),
-            &ModelStageRequest {
-                stage: "action_assessment".into(),
-                model: self.model_id.clone(),
-                snapshot_binding: format!(
-                    "campaign:{}:revision:{}",
-                    campaign.id, campaign.revision
-                ),
-                lived_stream: prompt,
-                output_schema: Some(schema),
-                source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
-            },
-        )
-        .await?;
-        let proposal: AssessmentProposal = serde_json::from_value(
-            out.structured
-                .ok_or_else(|| anyhow!("assessor returned no typed proposal"))?,
-        )?;
-        validate_proposal(&proposal, &allowed_references)?;
-        for effect in [
-            &proposal.strong_effect,
-            &proposal.success_effect,
-            &proposal.mixed_effect,
-            &proposal.failure_effect,
-        ] {
-            validate_effect(campaign, actor, effect)?;
-        }
+        let snapshot_binding = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
+        let mut correction = String::new();
+        let mut attempts = 0;
+        let (proposal, out) = loop {
+            attempts += 1;
+            let out = run_validated_stage(
+                self.model.as_ref(),
+                &ModelStageRequest {
+                    stage: "action_assessment".into(),
+                    model: self.model_id.clone(),
+                    snapshot_binding: snapshot_binding.clone(),
+                    lived_stream: format!("{base_prompt}{correction}"),
+                    output_schema: Some(schema.clone()),
+                    source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
+                },
+            )
+            .await?;
+            let candidate = (|| -> Result<AssessmentProposal> {
+                let proposal: AssessmentProposal = serde_json::from_value(
+                    out.structured
+                        .clone()
+                        .ok_or_else(|| anyhow!("assessor returned no typed proposal"))?,
+                )?;
+                validate_proposal(&proposal, &allowed_references)?;
+                for effect in [
+                    &proposal.strong_effect,
+                    &proposal.success_effect,
+                    &proposal.mixed_effect,
+                    &proposal.failure_effect,
+                ] {
+                    validate_effect(campaign, actor, effect)?;
+                }
+                Ok(proposal)
+            })();
+            match candidate {
+                Ok(proposal) => break (proposal, out),
+                Err(error) if attempts == 1 => {
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ASSESSMENT: {error}\nReturn a corrected complete assessment against the same snapshot. Copy every actor and destination ID exactly from the supplied state; leave typed deltas empty when no legal mutation is needed."
+                    );
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "assessor failed local validation after one correction: {error}"
+                    ));
+                }
+            }
+        };
         let modifier_total =
             crate::d20::capped_modifier(proposal.modifiers.iter().map(|m| m.value));
         let mut assessment = ActionAssessment {
