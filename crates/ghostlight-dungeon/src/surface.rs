@@ -1,4 +1,10 @@
-use crate::domain::{Campaign, NarrationProjection};
+use crate::{
+    domain::{
+        Campaign, GestaltMaterializationReceipt, NarrationProjection, RejectedProposalReceipt,
+        StrategicTickReceipt, VaultEvidenceReceipt, WorldCommitReceipt,
+    },
+    model::ModelStageReceipt,
+};
 use serde_json::{Value, json};
 
 pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -> Value {
@@ -44,6 +50,37 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
         {"id":"dungeon.composer","kind":"text-input","props":{"label":"What do you attempt?","commandId":"attempt.assess"},"children":[]}
       ]},"styles":{"tokens":{"colorBackground":"#0c1110","colorPanel":"#17201d","colorText":"#e8e1cf","colorMuted":"#9aa69f","colorAccent":"#d49b58"}}},
       "commands":[{"id":"attempt.assess","schema":"gamecult.eve.command.v1","receiptSchema":"ghostlight.player_action_assessment.v1"}]
+    })
+}
+
+pub fn operator_surface(
+    campaign: &Campaign,
+    evidence: &[VaultEvidenceReceipt],
+    commits: &[WorldCommitReceipt],
+    stages: &[ModelStageReceipt],
+    strategic_ticks: &[StrategicTickReceipt],
+    gestalt_receipts: &[GestaltMaterializationReceipt],
+    rejected: &[RejectedProposalReceipt],
+    live_turn_pressure: usize,
+) -> Value {
+    let typed = json!({
+        "campaign": campaign,
+        "evidence": evidence,
+        "commit_receipts": commits,
+        "model_stage_receipts": stages,
+        "strategic_ticks": strategic_ticks,
+        "gestalt_materialization_receipts": gestalt_receipts,
+        "rejected_proposals": rejected,
+        "scheduler": {"live_turn_pressure": live_turn_pressure}
+    });
+    json!({
+      "type":"surface-state", "schema":"gamecult.eve.surface.v1", "providerId":"gamecult.ghostlight.dungeon",
+      "providerKind":"narrative.simulation.operator", "title":format!("{} operator",campaign.name), "version":campaign.revision,
+      "surface":{"id":format!("ghostlight.operator.{}",campaign.id),"root":{"id":"dungeon.operator.root","kind":"surface","props":{},"children":[
+        {"id":"dungeon.operator.status","kind":"card","props":{"title":format!("Revision {} · {} model stages · {} rejected proposals",campaign.revision,stages.len(),rejected.len())},"children":[]},
+        {"id":"dungeon.operator.typed","kind":"code","props":{"language":"json","value":serde_json::to_string_pretty(&typed).unwrap_or_else(|_| "operator projection failed".into())},"children":[]}
+      ]},"styles":{"tokens":{"colorBackground":"#0c1110","colorPanel":"#17201d","colorText":"#e8e1cf","colorMuted":"#9aa69f","colorAccent":"#d49b58"}}},
+      "commands":[]
     })
 }
 

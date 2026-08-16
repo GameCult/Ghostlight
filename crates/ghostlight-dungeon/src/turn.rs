@@ -58,19 +58,28 @@ pub async fn appraise_present(
         })
         .cloned()
         .collect();
+    let perceived_actors = campaign
+        .actors
+        .values()
+        .filter(|actor| actor.location_id == player.location_id)
+        .map(|actor| (actor.id.clone(), actor.name.clone()))
+        .collect::<std::collections::BTreeMap<_, _>>();
     let mut jobs = tokio::task::JoinSet::new();
     for actor in actors {
         let engine = engine.clone();
         let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
         let event = event_summary.to_owned();
         let receipts = campaign.branch_origin.evidence_receipt_ids.clone();
+        let perceived_actors = perceived_actors.clone();
         jobs.spawn(async move {
             let slice = PermittedActorSlice {
                 actor_id: actor.id.clone(),
+                location_id: actor.location_id.clone(),
                 snapshot_binding: snapshot,
                 identity_experience: vec![format!("You are {}.", actor.name)],
                 memories: actor.memories,
                 perceived_events: vec![event],
+                perceived_actors,
                 relationships: actor
                     .relationships
                     .into_iter()

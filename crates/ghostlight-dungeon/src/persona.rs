@@ -12,10 +12,12 @@ use std::sync::Arc;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct PermittedActorSlice {
     pub actor_id: String,
+    pub location_id: String,
     pub snapshot_binding: String,
     pub identity_experience: Vec<String>,
     pub memories: Vec<String>,
     pub perceived_events: Vec<String>,
+    pub perceived_actors: std::collections::BTreeMap<String, String>,
     pub relationships: Vec<String>,
     pub goals: Vec<String>,
     pub knowledge: Vec<String>,
@@ -129,7 +131,8 @@ impl PersonaProjectionEngine {
         self.permit
             .require(&slice.actor_id, &slice.snapshot_binding, "interpreter")
             .await?;
-        let schema = serde_json::to_value(schema_for!(PersonaProposalBundle))?;
+        let mut schema = serde_json::to_value(schema_for!(PersonaProposalBundle))?;
+        constrain_interpreter_schema(&mut schema, &slice)?;
         let interpreted = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -138,10 +141,11 @@ impl PersonaProjectionEngine {
                 snapshot_binding: slice.snapshot_binding.clone(),
                 lived_stream: build_interpreter_prompt(&InterpreterPrompt {
                     identity: &slice.actor_id,
+                    typed_context: &typed_context,
                     lived_stream: &lived.text,
                     persona_output: &persona.narrative,
                     output_schema: &serde_json::to_string_pretty(&schema)?,
-                    domain_guidance: "Record only private changes supported by the lived stream. World actions are attempts, not completed effects. Every world action actor_id must match the identity.",
+                    domain_guidance: "Record only private changes supported by the lived stream and typed context. World actions are attempts, not completed effects. Use only exact actor ids and state-reference tokens admitted by the output schema.",
                 }),
                 output_schema: Some(schema),
                 source_receipt_ids: slice.source_receipt_ids,
@@ -166,6 +170,51 @@ impl PersonaProjectionEngine {
     }
 }
 
+fn constrain_interpreter_schema(
+    schema: &mut serde_json::Value,
+    slice: &PermittedActorSlice,
+) -> Result<()> {
+    let allowed_references = slice
+        .capabilities
+        .iter()
+        .map(|value| format!("capability:{value}"))
+        .chain(
+            slice
+                .knowledge
+                .iter()
+                .map(|value| format!("knowledge:{value}")),
+        )
+        .chain(
+            slice
+                .affordances
+                .iter()
+                .map(|value| format!("equipment:{value}")),
+        )
+        .chain(std::iter::once(format!("location:{}", slice.location_id)))
+        .collect::<Vec<_>>();
+    let world_action = schema
+        .pointer_mut("/$defs/WorldActionProposal/properties")
+        .and_then(|value| value.as_object_mut())
+        .ok_or_else(|| anyhow!("Persona proposal schema has no world action properties"))?;
+    world_action.insert(
+        "actor_id".into(),
+        serde_json::json!({"const":slice.actor_id}),
+    );
+    world_action.insert(
+        "state_references".into(),
+        serde_json::json!({"type":"array","items":{"type":"string","enum":allowed_references}}),
+    );
+    let relationship_updates = schema
+        .pointer_mut("/$defs/ActorStateDelta/properties/relationship_updates")
+        .and_then(|value| value.as_object_mut())
+        .ok_or_else(|| anyhow!("Persona proposal schema has no relationship updates"))?;
+    relationship_updates.insert(
+        "propertyNames".into(),
+        serde_json::json!({"enum":slice.perceived_actors.keys().collect::<Vec<_>>()}),
+    );
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -181,10 +230,15 @@ mod tests {
         };
         let slice = PermittedActorSlice {
             actor_id: "npc".into(),
+            location_id: "room".into(),
             snapshot_binding: "campaign:1".into(),
             identity_experience: vec!["A tired navigator".into()],
             memories: vec![],
             perceived_events: vec![],
+            perceived_actors: std::collections::BTreeMap::from([(
+                "player".into(),
+                "Player".into(),
+            )]),
             relationships: vec![],
             goals: vec![],
             knowledge: vec![],

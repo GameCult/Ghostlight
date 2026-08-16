@@ -16,7 +16,7 @@ use ghostlight_dungeon::{
     },
     gestalt::GestaltPresencePlanner,
     kernel::CommandResult,
-    mesh::MeshPublisher,
+    mesh::{CampaignMeshSnapshot, MeshPublisher},
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     narrator::Narrator,
     persistence::CampaignStore,
@@ -1052,6 +1052,7 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::ExpandRegion { .. }
         | WorldCommand::MaterializeGestaltMember { .. }
         | WorldCommand::DematerializeGestaltMember { .. }
+        | WorldCommand::IndividuateGestaltMember { .. }
         | WorldCommand::ReconcileGestaltPresence { .. }
         | WorldCommand::ResolveReactionWave { .. }
         | WorldCommand::BeginNpcAction { .. } => false,
@@ -1112,7 +1113,18 @@ async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
             .filter(|value| value.campaign_id == campaign.id)
             .collect::<Vec<_>>();
         narrations.sort_by_key(|value| value.source_revision);
-        snapshots.push((campaign, narrations));
+        snapshots.push(CampaignMeshSnapshot {
+            campaign,
+            narrations,
+            evidence: runtime.store.load_all("vault_evidence_receipt.v1")?,
+            commits: runtime.store.load_all("world_commit_receipt.v1")?,
+            stages: runtime.store.load_all("persona_stage_receipt.v1")?,
+            strategic_ticks: runtime.store.load_all("strategic_tick.v1")?,
+            gestalt_receipts: runtime
+                .store
+                .load_all("gestalt_materialization_receipt.v1")?,
+            rejected: runtime.store.load_all("rejected_proposal_receipt.v1")?,
+        });
     }
     let publisher = state.mesh.clone();
     let deepseek = state.deepseek_status.clone();
@@ -1341,33 +1353,10 @@ async fn operator_inspector(headers: HeaderMap, State(state): State<AppState>) -
             return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
         }
     };
-    let evidence = runtime
-        .store
-        .load_all::<ghostlight_dungeon::domain::VaultEvidenceReceipt>("vault_evidence_receipt.v1")
-        .unwrap_or_default();
-    let commits = runtime
-        .store
-        .load_all::<ghostlight_dungeon::domain::WorldCommitReceipt>("world_commit_receipt.v1")
-        .unwrap_or_default();
-    let stages = runtime
-        .store
-        .load_all::<ghostlight_dungeon::model::ModelStageReceipt>("persona_stage_receipt.v1")
-        .unwrap_or_default();
-    let rejected = runtime
-        .store
-        .load_all::<RejectedProposalReceipt>("rejected_proposal_receipt.v1")
-        .unwrap_or_default();
-    let strategic_ticks = runtime
-        .store
-        .load_all::<ghostlight_dungeon::domain::StrategicTickReceipt>("strategic_tick.v1")
-        .unwrap_or_default();
-    let gestalt_receipts = runtime
-        .store
-        .load_all::<ghostlight_dungeon::domain::GestaltMaterializationReceipt>(
-            "gestalt_materialization_receipt.v1",
-        )
-        .unwrap_or_default();
-    Json(serde_json::json!({"schema":"ghostlight.operator_inspector.v1","campaign":campaign,"evidence":evidence,"commit_receipts":commits,"model_stage_receipts":stages,"strategic_ticks":strategic_ticks,"gestalt_materialization_receipts":gestalt_receipts,"rejected_proposals":rejected,"scheduler":{"live_turn_pressure":state.live_turns.load(Ordering::SeqCst)}})).into_response()
+    match state.mesh.operator_surface(campaign.id) {
+        Ok(surface) => Json(surface).into_response(),
+        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+    }
 }
 
 async fn process_due_ticks(

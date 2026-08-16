@@ -34,7 +34,7 @@ impl GestaltPresencePlanner {
                 model: self.model_name.clone(),
                 snapshot_binding: format!("campaign:{}:revision:{}", campaign.id, campaign.revision),
                 lived_stream: format!(
-                    "Choose reversible Persona population presence after this event. Promote a member only when individualized interaction, perception, custody, promise, injury, possession, or relationship now matters. Demote a materialized member when they are no longer scene-relevant. Use only the supplied IDs and exact versions. Never place a promoted member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
+                    "Choose reversible Persona population presence after this event. Promote an existing member when they become individually relevant. If the event makes an anonymous population member individually relevant and no supplied member fits, individuate exactly one durable member delta from the gestalt baseline; use a new stable lowercase id, version 0, the exact gestalt id/version, no materialized actor id, and record only personal departures from the shared baseline. Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
                     serde_json::to_string_pretty(&schema)?, candidates, event_summary
                 ),
                 output_schema: Some(schema),
@@ -58,6 +58,27 @@ fn validate_plan(
     player_location: &str,
 ) -> Result<()> {
     let mut members = BTreeSet::new();
+    for individuation in &plan.individuations {
+        let member = &individuation.member;
+        let gestalt = campaign
+            .gestalts
+            .get(&individuation.gestalt_id)
+            .ok_or_else(|| anyhow!("presence plan invented a gestalt"))?;
+        if individuation.expected_gestalt_version != gestalt.version
+            || individuation.location_id != player_location
+            || member.gestalt_id != individuation.gestalt_id
+            || member.version != 0
+            || member.materialized_actor_id.is_some()
+            || member.id.trim().is_empty()
+            || member.name.trim().is_empty()
+            || campaign.gestalt_members.contains_key(&member.id)
+            || !members.insert(member.id.clone())
+        {
+            return Err(anyhow!(
+                "presence individuation does not match its snapshot"
+            ));
+        }
+    }
     for promotion in &plan.promotions {
         if !members.insert(promotion.member_id.clone()) {
             return Err(anyhow!("presence plan promotes one member twice"));

@@ -71,8 +71,12 @@ materialize newly relevant members and fold irrelevant members back into their
 persistent deltas. The planner may propose presence only; it cannot promote
 population-wide learning or mutate state directly.
 
-World compilation seeds collective populations and a bounded roster of durable
-member identities. Population-scale capabilities, knowledge, resources, goals,
+World compilation may seed collective populations and a bounded roster of durable
+member identities, but that roster is not exhaustive. When an anonymous member
+first becomes identity-bearing in play, the relevance planner may propose a new
+member delta and the WorldKernel atomically creates that durable identity and its
+active actor slot. Existing deltas are always preferred when they fit, preventing
+the same person from being invented twice. Population-scale capabilities, knowledge, resources, goals,
 and pressures belong to the gestalt. A member record owns identity, memories,
 relationships, possessions, injuries, obligations, last known location, and
 additions to or removals from the shared baseline. Materialization is a derived

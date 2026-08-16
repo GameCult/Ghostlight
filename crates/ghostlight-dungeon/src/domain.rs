@@ -150,6 +150,14 @@ pub struct GestaltPromotion {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltIndividuation {
+    pub gestalt_id: String,
+    pub expected_gestalt_version: u64,
+    pub member: GestaltMemberDelta,
+    pub location_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct GestaltDemotion {
     pub actor_id: String,
     #[serde(default)]
@@ -158,6 +166,8 @@ pub struct GestaltDemotion {
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
 pub struct GestaltPresencePlan {
+    #[serde(default)]
+    pub individuations: Vec<GestaltIndividuation>,
     pub promotions: Vec<GestaltPromotion>,
     pub demotions: Vec<GestaltDemotion>,
 }
@@ -421,6 +431,10 @@ pub enum WorldCommand {
         member_id: String,
         expected_member_version: u64,
         location_id: String,
+    },
+    IndividuateGestaltMember {
+        expected_revision: u64,
+        individuation: GestaltIndividuation,
     },
     DematerializeGestaltMember {
         expected_revision: u64,

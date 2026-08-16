@@ -348,6 +348,22 @@ fn execute(
                 "direct materialization command",
             )
         }
+        WorldCommand::IndividuateGestaltMember {
+            expected_revision,
+            individuation,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            let before = campaign.clone();
+            apply_individuation(&mut campaign, &individuation)?;
+            commit_gestalt_presence(
+                store,
+                row,
+                before,
+                campaign,
+                "individuate_gestalt_member",
+                "direct individuation command",
+            )
+        }
         WorldCommand::DematerializeGestaltMember {
             expected_revision,
             actor_id,
@@ -384,6 +400,9 @@ fn execute(
             let mut candidate = campaign.clone();
             for demotion in &plan.demotions {
                 apply_demotion(&mut candidate, demotion)?;
+            }
+            for individuation in &plan.individuations {
+                apply_individuation(&mut candidate, individuation)?;
             }
             for promotion in &plan.promotions {
                 apply_promotion(&mut candidate, promotion)?;
@@ -503,6 +522,42 @@ fn execute(
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
     }
+}
+
+fn apply_individuation(
+    campaign: &mut Campaign,
+    individuation: &GestaltIndividuation,
+) -> Result<(), KernelError> {
+    let member = &individuation.member;
+    let gestalt = campaign
+        .gestalts
+        .get(&individuation.gestalt_id)
+        .ok_or_else(|| KernelError::Invalid("gestalt is unknown".into()))?;
+    if gestalt.version != individuation.expected_gestalt_version
+        || member.gestalt_id != individuation.gestalt_id
+        || member.version != 0
+        || member.materialized_actor_id.is_some()
+        || member.id.trim().is_empty()
+        || member.name.trim().is_empty()
+        || campaign.gestalt_members.contains_key(&member.id)
+    {
+        return Err(KernelError::Invalid(
+            "gestalt individuation is stale or malformed".into(),
+        ));
+    }
+    campaign
+        .gestalt_members
+        .insert(member.id.clone(), member.clone());
+    apply_promotion(
+        campaign,
+        &GestaltPromotion {
+            gestalt_id: individuation.gestalt_id.clone(),
+            expected_gestalt_version: individuation.expected_gestalt_version,
+            member_id: member.id.clone(),
+            expected_member_version: 0,
+            location_id: individuation.location_id.clone(),
+        },
+    )
 }
 
 fn apply_promotion(
@@ -1664,30 +1719,27 @@ mod tests {
                 pressures: vec![],
             },
         );
-        seed.gestalt_members.insert(
-            "john".into(),
-            GestaltMemberDelta {
-                schema: "ghostlight.gestalt_member_delta.v1".into(),
-                id: "john".into(),
-                gestalt_id: "village".into(),
-                version: 0,
-                name: "John".into(),
-                capability_additions: BTreeSet::from(["master blacksmith".into()]),
-                capability_removals: BTreeSet::new(),
-                knowledge_additions: BTreeSet::new(),
-                knowledge_removals: BTreeSet::new(),
-                equipment: BTreeSet::from(["John's hammer".into()]),
-                conditions: BTreeSet::new(),
-                obligations: BTreeSet::new(),
-                relationships: BTreeMap::from([("player".into(), "new acquaintance".into())]),
-                goals: vec![],
-                memories: vec!["met the player".into()],
-                last_location_id: None,
-                materialized_actor_id: None,
-                last_relevant_revision: 0,
-                relevance_lease_until_revision: 0,
-            },
-        );
+        let john = GestaltMemberDelta {
+            schema: "ghostlight.gestalt_member_delta.v1".into(),
+            id: "john".into(),
+            gestalt_id: "village".into(),
+            version: 0,
+            name: "John".into(),
+            capability_additions: BTreeSet::from(["master blacksmith".into()]),
+            capability_removals: BTreeSet::new(),
+            knowledge_additions: BTreeSet::new(),
+            knowledge_removals: BTreeSet::new(),
+            equipment: BTreeSet::from(["John's hammer".into()]),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::from([("player".into(), "new acquaintance".into())]),
+            goals: vec![],
+            memories: vec!["met the player".into()],
+            last_location_id: None,
+            materialized_actor_id: None,
+            last_relevant_revision: 0,
+            relevance_lease_until_revision: 0,
+        };
         kernel
             .command(WorldCommand::CreateCampaign {
                 campaign: seed,
@@ -1697,13 +1749,14 @@ mod tests {
             .await
             .unwrap();
         let first = kernel
-            .command(WorldCommand::MaterializeGestaltMember {
+            .command(WorldCommand::IndividuateGestaltMember {
                 expected_revision: 0,
-                gestalt_id: "village".into(),
-                expected_gestalt_version: 0,
-                member_id: "john".into(),
-                expected_member_version: 0,
-                location_id: "room".into(),
+                individuation: GestaltIndividuation {
+                    gestalt_id: "village".into(),
+                    expected_gestalt_version: 0,
+                    member: john,
+                    location_id: "room".into(),
+                },
             })
             .await
             .unwrap();
@@ -1788,6 +1841,7 @@ mod tests {
         );
 
         let bad_plan = GestaltPresencePlan {
+            individuations: vec![],
             demotions: vec![GestaltDemotion {
                 actor_id: "member:john".into(),
                 aggregate_delta: GestaltAggregateDelta::default(),

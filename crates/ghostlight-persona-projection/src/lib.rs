@@ -21,6 +21,7 @@ pub struct PersonaPrompt<'a> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InterpreterPrompt<'a> {
     pub identity: &'a str,
+    pub typed_context: &'a str,
     pub lived_stream: &'a str,
     pub persona_output: &'a str,
     pub output_schema: &'a str,
@@ -48,9 +49,10 @@ pub fn build_persona_prompt(input: &PersonaPrompt<'_>) -> String {
 
 pub fn build_interpreter_prompt(input: &InterpreterPrompt<'_>) -> String {
     format!(
-        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are the private Interpreter for {identity}. Convert the natural Persona turn into typed candidate effects supported by the lived stream. Candidates are proposals only; the owning runtime validates and commits them. Do not invent knowledge, capability, custody, perception, or completed consequences.\n\nDomain guidance:\n{guidance}\n\nLived stream:\n{stream}\n\nPersona turn:\n{output}\n\nReturn exactly one JSON object matching this schema:\n{schema}",
+        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are the private Interpreter for {identity}. Convert the natural Persona turn into typed candidate effects supported by the lived stream and permissioned typed context. Candidates are proposals only; the owning runtime validates and commits them. Do not invent knowledge, capability, custody, perception, identifiers, state references, or completed consequences.\n\nDomain guidance:\n{guidance}\n\nPermissioned typed context:\n{context}\n\nLived stream:\n{stream}\n\nPersona turn:\n{output}\n\nReturn exactly one JSON object matching this schema:\n{schema}",
         identity = input.identity,
         guidance = input.domain_guidance,
+        context = input.typed_context,
         stream = input.lived_stream,
         output = input.persona_output,
         schema = input.output_schema,

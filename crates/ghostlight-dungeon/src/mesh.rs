@@ -8,7 +8,7 @@ use crate::{
         WorldActionProposal, WorldClock, WorldCommitReceipt, WorldCompilePreview, WorldFact,
     },
     model::ModelStageReceipt,
-    surface::player_surface,
+    surface::{operator_surface, player_surface},
 };
 use anyhow::{Context, Result};
 use chrono::Utc;
@@ -26,6 +26,18 @@ use std::{
 pub const PROVIDER_ID: &str = "gamecult.ghostlight.dungeon";
 pub const HEALTH_KEY: &str = "ghostlight:dungeon:health";
 pub const ADVERTISEMENT_KEY: &str = "eve:provider:gamecult.ghostlight.dungeon";
+
+#[derive(Clone)]
+pub struct CampaignMeshSnapshot {
+    pub campaign: Campaign,
+    pub narrations: Vec<NarrationProjection>,
+    pub evidence: Vec<VaultEvidenceReceipt>,
+    pub commits: Vec<WorldCommitReceipt>,
+    pub stages: Vec<ModelStageReceipt>,
+    pub strategic_ticks: Vec<StrategicTickReceipt>,
+    pub gestalt_receipts: Vec<GestaltMaterializationReceipt>,
+    pub rejected: Vec<RejectedProposalReceipt>,
+}
 
 #[derive(Clone, Debug, PartialEq, DatabaseEntry)]
 #[cultcache(type = "gamecult.eve.surface", schema = "gamecult.eve.surface.v1")]
@@ -117,7 +129,7 @@ impl MeshPublisher {
 
     pub fn publish_snapshot(
         &self,
-        campaigns: &[(Campaign, Vec<NarrationProjection>)],
+        campaigns: &[CampaignMeshSnapshot],
         deepseek_status: &str,
         live_turn_pressure: usize,
     ) -> Result<Value> {
@@ -157,18 +169,32 @@ impl MeshPublisher {
         });
         let surfaces = campaigns
             .iter()
-            .map(|(campaign, _)| {
-                json!({
-                    "schema":"gamecult.eve.surface.v1",
-                    "surfaceId":format!("ghostlight.campaign.{}",campaign.id),
-                    "key":format!("eve:surface:ghostlight.campaign.{}",campaign.id),
-                    "transport":"cultmesh-record",
-                    "status":"available",
-                    "audience":"authenticated-player",
-                    "mode":"interactive",
-                    "surfaceKind":"interactive-world",
-                    "interactionModel":"provider-command-receipts"
-                })
+            .flat_map(|snapshot| {
+                let campaign = &snapshot.campaign;
+                [
+                    json!({
+                        "schema":"gamecult.eve.surface.v1",
+                        "surfaceId":format!("ghostlight.campaign.{}",campaign.id),
+                        "key":format!("eve:surface:ghostlight.campaign.{}",campaign.id),
+                        "transport":"cultmesh-record",
+                        "status":"available",
+                        "audience":"authenticated-player",
+                        "mode":"interactive",
+                        "surfaceKind":"interactive-world",
+                        "interactionModel":"provider-command-receipts"
+                    }),
+                    json!({
+                        "schema":"gamecult.eve.surface.v1",
+                        "surfaceId":format!("ghostlight.operator.{}",campaign.id),
+                        "key":format!("eve:operator:ghostlight.campaign.{}",campaign.id),
+                        "transport":"cultmesh-record",
+                        "status":"available",
+                        "audience":"authenticated-operator",
+                        "mode":"inspect",
+                        "surfaceKind":"operator-inspector",
+                        "interactionModel":"read-only-receipt-inspection"
+                    }),
+                ]
             })
             .collect::<Vec<_>>();
         let advertisement = json!({
@@ -212,14 +238,43 @@ impl MeshPublisher {
                 value: advertisement,
             },
         )?;
-        for (campaign, narrations) in campaigns {
-            let surface = player_surface(campaign, narrations);
+        for snapshot in campaigns {
+            let campaign = &snapshot.campaign;
+            let surface = player_surface(campaign, &snapshot.narrations);
             let key = format!("eve:surface:ghostlight.campaign.{}", campaign.id);
             self.put_and_publish(
                 &mut node,
                 &key,
                 &EveSurfaceRecord {
                     value: surface.clone(),
+                },
+            )?;
+            let operator = operator_surface(
+                campaign,
+                &snapshot.evidence,
+                &snapshot.commits,
+                &snapshot.stages,
+                &snapshot.strategic_ticks,
+                &snapshot.gestalt_receipts,
+                &snapshot.rejected,
+                live_turn_pressure,
+            );
+            self.put_and_publish(
+                &mut node,
+                format!("eve:operator:ghostlight.campaign.{}", campaign.id),
+                &EveSurfaceRecord {
+                    value: operator.clone(),
+                },
+            )?;
+            self.put_and_publish(
+                &mut node,
+                format!("eve:operator-state:ghostlight.campaign.{}", campaign.id),
+                &EveSurfaceStateRecord {
+                    provider_id: PROVIDER_ID.into(),
+                    title: format!("{} operator", campaign.name),
+                    version: campaign.revision as i64,
+                    updated_at: updated_at.clone(),
+                    surface: operator,
                 },
             )?;
             self.put_and_publish(
@@ -243,6 +298,16 @@ impl MeshPublisher {
             .lock()
             .map_err(|_| anyhow::anyhow!("mesh lock poisoned"))?
             .get_required::<ServiceHealthRecord>(HEALTH_KEY)
+            .map(|record| record.value)
+    }
+
+    pub fn operator_surface(&self, campaign_id: uuid::Uuid) -> Result<Value> {
+        self.node
+            .lock()
+            .map_err(|_| anyhow::anyhow!("mesh lock poisoned"))?
+            .get_required::<EveSurfaceRecord>(&format!(
+                "eve:operator:ghostlight.campaign.{campaign_id}"
+            ))
             .map(|record| record.value)
     }
 
