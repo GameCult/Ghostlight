@@ -115,6 +115,46 @@ mod tests {
         assert!(result.witnesses[0].content_hash.starts_with("sha256:"));
         assert_eq!(result.witnesses[0].authority_lane, "AetheriaLore");
     }
+
+    #[tokio::test]
+    async fn voidbot_exact_document_is_hashed_as_the_complete_archive_witness() {
+        let app=Router::new().route("/mcp",post(||async { ([ ("content-type","text/event-stream") ], "event: message\ndata: {\"result\":{\"structuredContent\":{\"found\":true,\"sourceId\":\"AetheriaLore:forge.md\",\"repoName\":\"AetheriaLore\",\"path\":\"forge.md\",\"content\":\"John keeps the forge.\\nThe road takes six hours.\",\"lastModifiedAt\":\"2026-01-01T00:00:00Z\"}}}\n\n").into_response() }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        let witness = VoidBotMcpVault::new(format!("http://{address}/mcp"))
+            .exact_document("AetheriaLore:forge.md")
+            .await
+            .unwrap();
+        assert_eq!(
+            witness.excerpt,
+            "John keeps the forge.\nThe road takes six hours."
+        );
+        assert_eq!(witness.exact_locator, "forge.md");
+        assert_eq!(witness.authority_lane, "AetheriaLore");
+        assert_eq!(
+            witness.content_hash,
+            format!("sha256:{:x}", Sha256::digest(witness.excerpt.as_bytes()))
+        );
+    }
+
+    #[tokio::test]
+    async fn voidbot_context_combines_the_typed_chunk_window() {
+        let app=Router::new().route("/mcp",post(||async { ([ ("content-type","text/event-stream") ], "event: message\ndata: {\"result\":{\"structuredContent\":{\"found\":true,\"sourceId\":\"AetheriaLore:forge.md\",\"repoName\":\"AetheriaLore\",\"path\":\"forge.md\",\"chunks\":[{\"lineStart\":1,\"lineEnd\":2,\"text\":\"first\"},{\"lineStart\":3,\"lineEnd\":4,\"text\":\"second\"}]}}}\n\n").into_response() }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        let witness = VoidBotMcpVault::new(format!("http://{address}/mcp"))
+            .surrounding_context("AetheriaLore:forge.md", 0)
+            .await
+            .unwrap();
+        assert_eq!(witness.excerpt, "first\nsecond");
+        assert_eq!(witness.exact_locator, "forge.md:1-4");
+    }
 }
 #[async_trait]
 impl VaultProvider for VoidBotMcpVault {
@@ -149,24 +189,84 @@ impl VaultProvider for VoidBotMcpVault {
         let value = response
             .pointer("/result/structuredContent")
             .ok_or_else(|| anyhow!("VoidBot MCP returned no source context"))?;
-        let excerpt = value
-            .get("text")
+        let chunks = value
+            .get("chunks")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| anyhow!("VoidBot source context contained no chunks"))?;
+        let excerpt = chunks
+            .iter()
+            .filter_map(|chunk| chunk.get("text").and_then(|v| v.as_str()))
+            .collect::<Vec<_>>()
+            .join("\n");
+        if excerpt.is_empty() {
+            return Err(anyhow!("VoidBot source context contained no text"));
+        }
+        let path = value
+            .get("path")
             .and_then(|v| v.as_str())
-            .or_else(|| value.get("context").and_then(|v| v.as_str()))
-            .ok_or_else(|| anyhow!("VoidBot source context contained no text"))?;
+            .unwrap_or(source_id);
+        let first_line = chunks
+            .first()
+            .and_then(|chunk| chunk.get("lineStart"))
+            .and_then(|v| v.as_u64());
+        let last_line = chunks
+            .last()
+            .and_then(|chunk| chunk.get("lineEnd"))
+            .and_then(|v| v.as_u64());
+        let exact_locator = match (first_line, last_line) {
+            (Some(first), Some(last)) => format!("{path}:{first}-{last}"),
+            _ => format!("{source_id}#chunk={chunk_index}"),
+        };
         Ok(SourceWitness {
             source_id: source_id.into(),
-            exact_locator: format!("{source_id}#chunk={chunk_index}"),
+            exact_locator,
             content_hash: format!("sha256:{:x}", Sha256::digest(excerpt.as_bytes())),
-            excerpt: excerpt.into(),
-            authority_lane: "source_context".into(),
+            excerpt,
+            authority_lane: value
+                .get("repoName")
+                .and_then(|v| v.as_str())
+                .unwrap_or("source_context")
+                .into(),
             temporal_scope: "unspecified".into(),
         })
     }
-    async fn exact_document(&self, _source_id: &str) -> Result<SourceWitness> {
-        Err(anyhow!(
-            "exact-document VoidBot adapter awaits restored trusted crossing contract verification"
-        ))
+    async fn exact_document(&self, source_id: &str) -> Result<SourceWitness> {
+        let response = self
+            .call_tool(
+                "get_exact_source_document",
+                serde_json::json!({"sourceId":source_id}),
+            )
+            .await?;
+        let value = response
+            .pointer("/result/structuredContent")
+            .ok_or_else(|| anyhow!("VoidBot MCP returned no exact source document"))?;
+        if value.get("found").and_then(|v| v.as_bool()) != Some(true) {
+            return Err(anyhow!("VoidBot exact source document was not found"));
+        }
+        let content = value
+            .get("content")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("VoidBot exact source document contained no content"))?;
+        let path = value
+            .get("path")
+            .and_then(|v| v.as_str())
+            .unwrap_or(source_id);
+        Ok(SourceWitness {
+            source_id: source_id.into(),
+            exact_locator: path.into(),
+            content_hash: format!("sha256:{:x}", Sha256::digest(content.as_bytes())),
+            excerpt: content.into(),
+            authority_lane: value
+                .get("repoName")
+                .and_then(|v| v.as_str())
+                .unwrap_or("source_archive")
+                .into(),
+            temporal_scope: value
+                .get("lastModifiedAt")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unspecified")
+                .into(),
+        })
     }
     fn provider_id(&self) -> &'static str {
         "voidbot.aetheria"
