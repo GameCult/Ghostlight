@@ -23,7 +23,7 @@ typed proposal; the WorldKernel forbids player puppeting, invented IDs,
 unreachable movement, and unbounded information or population-pressure edits.
 The implementation cut is closed. Final acceptance evidence covers hosted
 VoidBot compilation, invite isolation, automatic gestalt presence, three NPC
-reactions, a 15.16-second four-actor parallel wave, model-driven institutional,
+reactions, a 13.57-second four-actor parallel wave, model-driven institutional,
 gestalt, and remote-actor away simulation, exact-channel news, full workspace
 tests, legacy Pallas/Lucent/Corvid validation, CultMesh publication, explicit
 process restart, and exact release provenance. Future work belongs in a new

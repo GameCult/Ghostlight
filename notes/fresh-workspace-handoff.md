@@ -41,7 +41,7 @@ fiction-first d20 receipts, parallel Persona waves, automatic gestalt
 individuation and folding, model-driven strategic ticks, exact-channel news,
 CultMesh/Eve publication, invite-isolated campaigns, and `.cc` export. Live
 acceptance has proved two invite sessions, Vault compilation, three concurrent
-NPC reactions, a 15.16-second four-actor wave, and material offscreen agency
+NPC reactions, a 13.57-second four-actor wave, and material offscreen agency
 without player puppeting. Re-enter through the authoritative architecture and
 the latest exact deployment evidence; do not resume the superseded compiler
 foundation checklist below. Existing Ghostlight fixtures remain regression
