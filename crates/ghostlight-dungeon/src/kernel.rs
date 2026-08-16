@@ -18,8 +18,13 @@ pub enum KernelError {
     Stale { expected: u64, actual: u64 },
     #[error("action is impossible: {0}")]
     Impossible(String),
-    #[error("assessment is stale or unknown")]
-    StaleAssessment,
+    #[error("assessment is unknown")]
+    UnknownAssessment,
+    #[error("assessment is stale at campaign revision {actual_revision}")]
+    StaleAssessment {
+        intent: ActionIntent,
+        actual_revision: u64,
+    },
     #[error("invalid command: {0}")]
     Invalid(String),
     #[error("persistence failure: {0}")]
@@ -144,11 +149,17 @@ fn execute(
         }
         WorldCommand::Attempt { assessment_digest } => {
             let assessment = assessments
-                .remove(&assessment_digest)
-                .ok_or(KernelError::StaleAssessment)?;
+                .get(&assessment_digest)
+                .cloned()
+                .ok_or(KernelError::UnknownAssessment)?;
             if assessment.revision != campaign.revision || assessment.expires_at < Utc::now() {
-                return Err(KernelError::StaleAssessment);
+                assessments.remove(&assessment_digest);
+                return Err(KernelError::StaleAssessment {
+                    intent: assessment.intent,
+                    actual_revision: campaign.revision,
+                });
             }
+            assessments.remove(&assessment_digest);
             if !assessment.admissible {
                 return Err(KernelError::Impossible(
                     assessment
@@ -1242,12 +1253,10 @@ fn commit(
         roll,
     };
     store
-        .append_with_replace(
+        .append_world_transition(
             &row,
             "ghostlight.campaign.v1",
             &campaign,
-            "world_commit_receipt.v1",
-            "ghostlight.world_commit_receipt.v1",
             &format!("{}-{}", campaign.id, campaign.revision),
             &receipt,
         )
@@ -1469,6 +1478,65 @@ mod tests {
         assert_eq!(campaign.revision, 1);
         assert!(receipt.roll.is_some());
         assert_eq!(store.keys("world_commit_receipt.v1").unwrap().len(), 1);
+        assert_eq!(store.keys("roll_receipt.v1").unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn stale_assessment_returns_original_intent_for_fresh_compilation() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = campaign();
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let intent = ActionIntent {
+            actor_id: "player".into(),
+            description: "Open the ordinary door".into(),
+            intended_effect: "Pass through".into(),
+        };
+        let CommandResult::Assessed { assessment } = kernel
+            .command(WorldCommand::Assess {
+                expected_revision: 0,
+                intent: intent.clone(),
+                proposal: None,
+            })
+            .await
+            .unwrap()
+        else {
+            panic!()
+        };
+        kernel
+            .command(WorldCommand::Speak {
+                expected_revision: 0,
+                actor_id: "player".into(),
+                text: "Wait.".into(),
+                intended_effect: None,
+            })
+            .await
+            .unwrap();
+        let error = kernel
+            .command(WorldCommand::Attempt {
+                assessment_digest: assessment.digest,
+            })
+            .await
+            .unwrap_err();
+        match error {
+            KernelError::StaleAssessment {
+                intent: stale_intent,
+                actual_revision,
+            } => {
+                assert_eq!(stale_intent, intent);
+                assert_eq!(actual_revision, 1);
+            }
+            other => panic!("unexpected error: {other}"),
+        }
+        assert!(store.keys("roll_receipt.v1").unwrap().is_empty());
     }
 
     #[tokio::test]
@@ -1636,7 +1704,14 @@ mod tests {
             id: "vault:route".into(),
             provider: "fixture".into(),
             query_hash: "sha256:q".into(),
-            witnesses: vec![],
+            witnesses: vec![SourceWitness {
+                source_id: "lore/roads.md".into(),
+                exact_locator: "line:10".into(),
+                content_hash: "sha256:witness".into(),
+                excerpt: "The annex road remains open.".into(),
+                authority_lane: "canon".into(),
+                temporal_scope: "fixture-era".into(),
+            }],
             retrieved_at: Utc::now(),
         };
         let candidate = CanonCandidate {
@@ -1685,6 +1760,13 @@ mod tests {
         assert_eq!(campaign.revision, 1);
         assert_eq!(store.keys("vault_evidence_receipt.v1").unwrap().len(), 1);
         assert_eq!(store.keys("canon_candidate.v1").unwrap().len(), 1);
+        let (_, manifest): (_, VaultManifest) = store
+            .load("vault_manifest.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap();
+        assert!(manifest.source_ids.contains("lore/roads.md"));
+        assert!(manifest.authority_lanes.contains("canon"));
+        assert!(manifest.temporal_scopes.contains("fixture-era"));
     }
 
     #[tokio::test]

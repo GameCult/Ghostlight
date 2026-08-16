@@ -59,7 +59,30 @@ async function showPreview(result: any) {
 }
 
 async function send(command: unknown) { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await response.json(); receipt.hidden = false; receipt.textContent = JSON.stringify(body, null, 2); if (!response.ok) { status.textContent = body.error ?? "The command was refused."; await refresh(); return body; } await refresh(); return body; }
-composer.addEventListener("submit", async event => { event.preventDefault(); const text = document.querySelector<HTMLTextAreaElement>("#attempt")!.value.trim(); if (!text) return; const result=await send({ type: "assess", expected_revision: revision, intent: { actor_id: "player", description: text, intended_effect: text } }); if(result?.kind==="assessed"){const button=document.createElement("button");button.textContent=result.assessment.admissible?"Confirm server roll":"Revise attempt";button.addEventListener("click",async()=>{if(result.assessment.admissible){await send({type:"attempt",assessment_digest:result.assessment.digest});button.remove();}else{document.querySelector<HTMLTextAreaElement>("#attempt")!.focus();}});composer.append(button);} });
+function installAssessment(result: any) {
+  if (result?.kind !== "assessed") return;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = result.assessment.admissible ? "Confirm server roll" : "Revise attempt";
+  button.addEventListener("click", async () => {
+    if (!result.assessment.admissible) {
+      document.querySelector<HTMLTextAreaElement>("#attempt")!.focus();
+      return;
+    }
+    const attempted = await send({ type: "attempt", assessment_digest: result.assessment.digest });
+    button.remove();
+    // A stale preview is compiled again against the new revision. It still
+    // requires explicit confirmation; the server never rebases or auto-rolls it.
+    installAssessment(attempted);
+  });
+  composer.append(button);
+}
+composer.addEventListener("submit", async event => {
+  event.preventDefault();
+  const text = document.querySelector<HTMLTextAreaElement>("#attempt")!.value.trim();
+  if (!text) return;
+  installAssessment(await send({ type: "assess", expected_revision: revision, intent: { actor_id: "player", description: text, intended_effect: text } }));
+});
 document.querySelector<HTMLButtonElement>("#wait")!.addEventListener("click", () => void send({ type: "wait", expected_revision: revision, minutes: 60 }));
 destinationForm.addEventListener("submit",async event=>{event.preventDefault();const result=await compilerPost("/api/compiler/destination",Object.fromEntries(new FormData(destinationForm)));const preview=result.preview;receipt.hidden=false;receipt.textContent=JSON.stringify(preview,null,2);status.textContent="Destination preview compiled; topology is unchanged until approval.";const button=document.createElement("button");button.textContent="Approve destination";button.addEventListener("click",async()=>{await compilerPost(`/api/compiler/destination/approve/${result.preview_id}`,{});button.remove();await refresh();});destinationForm.append(button);});
 document.querySelector<HTMLFormElement>("#fork-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerPost("/api/campaigns/fork",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));await refresh();});

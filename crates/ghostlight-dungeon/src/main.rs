@@ -15,7 +15,7 @@ use ghostlight_dungeon::{
         RejectedProposalReceipt, WorldCommand, WorldCompilePreview,
     },
     gestalt::GestaltPresencePlanner,
-    kernel::CommandResult,
+    kernel::{CommandResult, KernelError},
     mesh::{CampaignMeshSnapshot, MeshPublisher},
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     narrator::Narrator,
@@ -238,6 +238,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/campaigns/fork", post(fork_campaign))
         .route("/api/campaigns/reset", post(reset_campaign))
         .route("/api/campaigns/export", get(export_campaign))
+        .route(
+            "/api/campaigns/canon-candidates.md",
+            get(export_canon_candidates_markdown),
+        )
         .route("/api/operator", get(operator_inspector))
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state);
@@ -870,7 +874,10 @@ async fn command(
                                         &receipt.output_hash,
                                         &receipt,
                                     );
-                                    if !plan.promotions.is_empty() || !plan.demotions.is_empty() {
+                                    if !plan.individuations.is_empty()
+                                        || !plan.promotions.is_empty()
+                                        || !plan.demotions.is_empty()
+                                    {
                                         match runtime.kernel.command(WorldCommand::ReconcileGestaltPresence {
                                             expected_revision: campaign.revision,
                                             reason: summary.clone(),
@@ -1012,6 +1019,66 @@ async fn command(
             }
         }
         Err(error) => {
+            if let KernelError::StaleAssessment { intent, .. } = &error {
+                let Some(assessor) = &state.assessor else {
+                    return (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        Json(ErrorBody {
+                            error: "DeepSeek assessor is unavailable".into(),
+                        }),
+                    )
+                        .into_response();
+                };
+                let campaign = match load_campaign(&runtime.store) {
+                    Ok(value) => value,
+                    Err(load_error) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ErrorBody {
+                                error: load_error.to_string(),
+                            }),
+                        )
+                            .into_response();
+                    }
+                };
+                match assessor.assess(&campaign, intent.clone()).await {
+                    Ok((assessment, receipt)) => {
+                        let _ = runtime.store.insert(
+                            "persona_stage_receipt.v1",
+                            "ghostlight.persona_stage_receipt.v1",
+                            &receipt.output_hash,
+                            &receipt,
+                        );
+                        return match runtime
+                            .kernel
+                            .command(WorldCommand::Assess {
+                                expected_revision: campaign.revision,
+                                intent: intent.clone(),
+                                proposal: Some(assessment),
+                            })
+                            .await
+                        {
+                            Ok(result) => Json(result).into_response(),
+                            Err(recompile_error) => (
+                                StatusCode::CONFLICT,
+                                Json(ErrorBody {
+                                    error: recompile_error.to_string(),
+                                }),
+                            )
+                                .into_response(),
+                        };
+                    }
+                    Err(recompile_error) => {
+                        return (
+                            StatusCode::BAD_GATEWAY,
+                            Json(ErrorBody {
+                                error: recompile_error.to_string(),
+                            }),
+                        )
+                            .into_response();
+                    }
+                }
+            }
             if let Ok(campaign) = load_campaign(&runtime.store) {
                 let receipt = RejectedProposalReceipt {
                     schema: "ghostlight.rejected_proposal_receipt.v1".into(),
@@ -1331,6 +1398,60 @@ async fn export_campaign(headers: HeaderMap, State(state): State<AppState>) -> R
         },
         Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
     }
+}
+
+async fn export_canon_candidates_markdown(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match session_runtime(&state, &session).await {
+        Ok(Some(value)) => value,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let campaign = match load_campaign(&runtime.store) {
+        Ok(value) => value,
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let mut markdown = format!(
+        "# Canon candidates — {}\n\nCampaign: `{}`  \nRevision: `{}`\n\n",
+        campaign.name, campaign.id, campaign.revision
+    );
+    if campaign.canon_candidates.is_empty() {
+        markdown.push_str("No canon candidates have been recorded.\n");
+    }
+    for candidate in campaign.canon_candidates.values() {
+        markdown.push_str(&format!(
+            "## {}\n\n- Status: `{}`\n- Gap: {}\n- Proposed wording: {}\n- Evidence receipts: {}\n- Affected Vault sources: {}\n- Conflicts: {}\n\n",
+            candidate.id,
+            candidate.status,
+            candidate.gap,
+            candidate.proposed_wording,
+            candidate.evidence_receipt_ids.join(", "),
+            candidate.affected_vault_sources.join(", "),
+            candidate.conflicts.join("; "),
+        ));
+    }
+    let mut response = Response::new(axum::body::Body::from(markdown));
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("text/markdown; charset=utf-8"),
+    );
+    response.headers_mut().insert(
+        header::CONTENT_DISPOSITION,
+        HeaderValue::from_static("attachment; filename=canon-candidates.md"),
+    );
+    response
 }
 
 async fn operator_inspector(headers: HeaderMap, State(state): State<AppState>) -> Response {

@@ -1,12 +1,12 @@
 use crate::domain::{
     Campaign, GestaltMaterializationReceipt, StrategicTickReceipt, VaultEvidenceReceipt,
-    WorldCommitReceipt,
+    VaultManifest, WorldCommitReceipt,
 };
 use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
 use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use serde::{Serialize, de::DeserializeOwned};
-use std::path::Path;
+use std::{collections::BTreeSet, path::Path};
 
 #[derive(Clone)]
 pub struct CampaignStore {
@@ -92,6 +92,13 @@ impl CampaignStore {
             &campaign.id.to_string(),
             campaign,
         )?);
+        let manifest = merge_vault_manifest(None, receipts);
+        rows.push(envelope(
+            "vault_manifest.v1",
+            "ghostlight.vault_manifest.v1",
+            &campaign.id.to_string(),
+            &manifest,
+        )?);
         for receipt in receipts {
             rows.push(envelope(
                 "vault_evidence_receipt.v1",
@@ -144,22 +151,36 @@ impl CampaignStore {
         Ok(next)
     }
 
-    pub fn append_with_replace<T: Serialize, R: Serialize>(
+    pub fn append_world_transition<T: Serialize>(
         &self,
         expected: &CultCacheEnvelope,
         next_schema: &str,
         next: &T,
-        receipt_kind: &str,
-        receipt_schema: &str,
         receipt_key: &str,
-        receipt: &R,
+        receipt: &WorldCommitReceipt,
     ) -> Result<CultCacheEnvelope> {
         let next_row = envelope(&expected.r#type, next_schema, &expected.key, next)?;
-        let receipt_row = envelope(receipt_kind, receipt_schema, receipt_key, receipt)?;
-        if !self.inner.compare_and_swap_batch(
-            std::slice::from_ref(expected),
-            vec![next_row.clone(), receipt_row],
-        )? {
+        let mut rows = vec![
+            next_row.clone(),
+            envelope(
+                "world_commit_receipt.v1",
+                "ghostlight.world_commit_receipt.v1",
+                receipt_key,
+                receipt,
+            )?,
+        ];
+        if let Some(roll) = &receipt.roll {
+            rows.push(envelope(
+                "roll_receipt.v1",
+                "ghostlight.roll_receipt.v1",
+                &roll.assessment_digest,
+                roll,
+            )?);
+        }
+        if !self
+            .inner
+            .compare_and_swap_batch(std::slice::from_ref(expected), rows)?
+        {
             return Err(anyhow!("stale CultCache snapshot"));
         }
         Ok(next_row)
@@ -190,6 +211,15 @@ impl CampaignStore {
                 receipt,
             )?,
         ];
+        let existing_manifest = self.load::<VaultManifest>("vault_manifest.v1", &expected.key)?;
+        let manifest =
+            merge_vault_manifest(existing_manifest.as_ref().map(|(_, value)| value), evidence);
+        rows.push(envelope(
+            "vault_manifest.v1",
+            "ghostlight.vault_manifest.v1",
+            &expected.key,
+            &manifest,
+        )?);
         for item in evidence {
             rows.push(envelope(
                 "vault_evidence_receipt.v1",
@@ -214,10 +244,11 @@ impl CampaignStore {
                 item,
             )?);
         }
-        if !self
-            .inner
-            .compare_and_swap_batch(std::slice::from_ref(expected), rows)?
-        {
+        let mut expected_rows = vec![expected.clone()];
+        if let Some((row, _)) = existing_manifest {
+            expected_rows.push(row);
+        }
+        if !self.inner.compare_and_swap_batch(&expected_rows, rows)? {
             return Err(anyhow!("stale CultCache snapshot"));
         }
         Ok(next_row)
@@ -297,6 +328,43 @@ impl CampaignStore {
             return Err(anyhow!("stale CultCache snapshot"));
         }
         Ok(next_row)
+    }
+}
+
+fn merge_vault_manifest(
+    existing: Option<&VaultManifest>,
+    receipts: &[VaultEvidenceReceipt],
+) -> VaultManifest {
+    let mut providers = existing
+        .map(|manifest| BTreeSet::from([manifest.provider.clone()]))
+        .unwrap_or_default();
+    let mut source_ids = existing
+        .map(|manifest| manifest.source_ids.clone())
+        .unwrap_or_default();
+    let mut authority_lanes = existing
+        .map(|manifest| manifest.authority_lanes.clone())
+        .unwrap_or_default();
+    let mut temporal_scopes = existing
+        .map(|manifest| manifest.temporal_scopes.clone())
+        .unwrap_or_default();
+    for receipt in receipts {
+        providers.insert(receipt.provider.clone());
+        for witness in &receipt.witnesses {
+            source_ids.insert(witness.source_id.clone());
+            authority_lanes.insert(witness.authority_lane.clone());
+            temporal_scopes.insert(witness.temporal_scope.clone());
+        }
+    }
+    VaultManifest {
+        schema: "ghostlight.vault_manifest.v1".into(),
+        provider: if providers.is_empty() {
+            "none".into()
+        } else {
+            providers.into_iter().collect::<Vec<_>>().join("+")
+        },
+        source_ids,
+        authority_lanes,
+        temporal_scopes,
     }
 }
 
