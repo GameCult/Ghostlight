@@ -493,9 +493,10 @@ fn execute(
             });
             commit(store, row, campaign, "reaction_wave", None)
         }
-        WorldCommand::BeginNpcAction {
+        WorldCommand::ResolveNpcAction {
             expected_revision,
             proposal,
+            assessment,
         } => {
             require_revision(&campaign, expected_revision)?;
             let selected = crate::initiative::winner(&campaign.pending_world_proposals)
@@ -510,14 +511,70 @@ fn execute(
                 .get(&proposal.actor_id)
                 .ok_or_else(|| KernelError::Invalid("initiative actor is unknown".into()))?;
             validate_world_proposal(actor, &proposal)?;
+            let intent = ActionIntent {
+                actor_id: proposal.actor_id.clone(),
+                description: proposal.intent.clone(),
+                intended_effect: proposal.intended_effect.clone(),
+            };
+            if assessment.campaign_id != campaign.id
+                || assessment.revision != campaign.revision
+                || assessment.intent != intent
+                || assessment.expires_at < Utc::now()
+                || crate::assessor::assessment_digest(&assessment)
+                    .map_err(|error| KernelError::Invalid(error.to_string()))?
+                    != assessment.digest
+            {
+                return Err(KernelError::Invalid(
+                    "NPC assessment is stale or invalid".into(),
+                ));
+            }
+            for effect in [
+                &assessment.strong_effect,
+                &assessment.success_effect,
+                &assessment.mixed_effect,
+                &assessment.failure_effect,
+            ] {
+                crate::assessor::validate_effect(&campaign, actor, effect)
+                    .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            }
             let actor_name = actor.name.clone();
             let actor_location = actor.location_id.clone();
             campaign.pending_world_proposals.clear();
+            let roll = if assessment.admissible {
+                let roll = receipt(
+                    assessment.digest.clone(),
+                    rand::rng().random_range(1..=20),
+                    assessment.modifier_total,
+                    assessment.dc,
+                );
+                let (text, effect) = match roll.outcome {
+                    OutcomeBand::StrongSuccess => {
+                        (&assessment.success_stake, &assessment.strong_effect)
+                    }
+                    OutcomeBand::Success => (&assessment.success_stake, &assessment.success_effect),
+                    OutcomeBand::Mixed => (&assessment.mixed_stake, &assessment.mixed_effect),
+                    OutcomeBand::Failure => (&assessment.failure_stake, &assessment.failure_effect),
+                };
+                apply_world_effect(&mut campaign, effect)?;
+                campaign.transcript.push(NarrativeTurn {
+                    revision: campaign.revision + 1,
+                    at: Utc::now(),
+                    speaker: "world".into(),
+                    text: text.clone(),
+                });
+                Some(roll)
+            } else {
+                None
+            };
             campaign.events.push(Event {
-                id: format!("npc-action-begun:{}", campaign.revision + 1),
+                id: format!("npc-action-resolved:{}", campaign.revision + 1),
                 at: campaign.world_time,
-                kind: "npc_action_begun".into(),
-                summary: format!("{} attempts {}", actor_name, proposal.intent),
+                kind: "npc_action_resolved".into(),
+                summary: if assessment.admissible {
+                    format!("{} attempts {}", actor_name, proposal.intent)
+                } else {
+                    format!("{} cannot yet attempt {}", actor_name, proposal.intent)
+                },
                 actor_ids: vec![proposal.actor_id.clone()],
                 institution_ids: vec![],
                 location_ids: vec![actor_location],
@@ -527,7 +584,7 @@ fn execute(
                 &mut campaign,
                 std::iter::once(proposal.actor_id.as_str()),
             );
-            commit(store, row, campaign, "begin_npc_action", None)
+            commit(store, row, campaign, "resolve_npc_action", roll)
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
     }
@@ -2070,6 +2127,7 @@ mod tests {
             );
         }
         let activity = seed.last_player_activity;
+        let campaign_id = seed.id;
         kernel
             .command(WorldCommand::CreateCampaign {
                 campaign: seed,
@@ -2108,58 +2166,90 @@ mod tests {
             })
             .await
             .unwrap();
+        let assessment_for = |actor: &str| ActionIntent {
+            actor_id: actor.into(),
+            description: "intervene".into(),
+            intended_effect: "take control of the immediate situation".into(),
+        };
+        let CommandResult::Assessed {
+            assessment: bert_assessment,
+        } = kernel
+            .command(WorldCommand::Assess {
+                expected_revision: 1,
+                intent: assessment_for("bert"),
+                proposal: None,
+            })
+            .await
+            .unwrap()
+        else {
+            panic!()
+        };
         assert!(
             kernel
-                .command(WorldCommand::BeginNpcAction {
+                .command(WorldCommand::ResolveNpcAction {
                     expected_revision: 1,
                     proposal: bert,
+                    assessment: bert_assessment,
                 })
                 .await
                 .is_err()
         );
-        let begun = kernel
-            .command(WorldCommand::BeginNpcAction {
+        let CommandResult::Assessed { assessment } = kernel
+            .command(WorldCommand::Assess {
+                expected_revision: 1,
+                intent: assessment_for("anna"),
+                proposal: None,
+            })
+            .await
+            .unwrap()
+        else {
+            panic!()
+        };
+        let mut malformed = assessment.clone();
+        malformed
+            .success_effect
+            .actor_conditions
+            .insert("invented-actor".into(), ConditionDelta::default());
+        malformed.digest = crate::assessor::assessment_digest(&malformed).unwrap();
+        assert!(
+            kernel
+                .command(WorldCommand::ResolveNpcAction {
+                    expected_revision: 1,
+                    proposal: anna.clone(),
+                    assessment: malformed,
+                })
+                .await
+                .is_err()
+        );
+        let unchanged = store
+            .load::<Campaign>("campaign.v1", &campaign_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(unchanged.revision, 1);
+        assert_eq!(unchanged.pending_world_proposals.len(), 2);
+        let resolved = kernel
+            .command(WorldCommand::ResolveNpcAction {
                 expected_revision: 1,
                 proposal: anna,
+                assessment,
             })
             .await
             .unwrap();
         let CommandResult::Committed {
-            campaign: begun, ..
-        } = begun
+            campaign: resolved, ..
+        } = resolved
         else {
             panic!()
         };
-        assert!(begun.pending_world_proposals.is_empty());
-        let intent = ActionIntent {
-            actor_id: "anna".into(),
-            description: "intervene".into(),
-            intended_effect: "take control of the immediate situation".into(),
-        };
-        let assessed = kernel
-            .command(WorldCommand::Assess {
-                expected_revision: 2,
-                intent,
-                proposal: None,
-            })
-            .await
-            .unwrap();
-        let CommandResult::Assessed { assessment } = assessed else {
-            panic!()
-        };
-        kernel
-            .command(WorldCommand::Attempt {
-                assessment_digest: assessment.digest,
-            })
-            .await
-            .unwrap();
+        assert!(resolved.pending_world_proposals.is_empty());
         let persisted = store
-            .load::<Campaign>("campaign.v1", &begun.id.to_string())
+            .load::<Campaign>("campaign.v1", &resolved.id.to_string())
             .unwrap()
             .unwrap()
             .1;
         assert_eq!(persisted.last_player_activity, activity);
-        assert_eq!(persisted.revision, 3);
+        assert_eq!(persisted.revision, 2);
         let CommandResult::Committed { campaign, .. } = wave else {
             panic!()
         };

@@ -103,9 +103,10 @@ All affected scene participants appraise a committed event in parallel. Actor-pr
 
 Canonical NPC consequence is serialized one opportunity at a time. The
 deterministic initiative projection chooses the highest-priority stable winner;
-`BeginNpcAction` verifies that exact proposal against the committed wave,
-consumes its siblings, and advances the revision. The chosen NPC then traverses
-the same assessment and server-side d20 path as the player without resetting
+`ResolveNpcAction` verifies that exact proposal and its same-revision assessment
+against the committed wave, then consumes its siblings, obtains the server-side
+d20, and applies the typed outcome in one atomic commit. A malformed assessment
+therefore leaves no action-begun half-state. NPC resolution never resets
 player-activity or away-time state.
 
 Use DeepSeek’s current API directly:

@@ -152,20 +152,23 @@ source intent
 - **Owner:** `WorldKernel` owns the transition from a pending reaction proposal
   to the single NPC action opportunity for that revision.
 - **Inputs:** the complete validated proposal set committed by the reaction
-  wave, expected campaign revision, and the deterministic initiative winner.
-- **Outputs:** one `npc_action_begun` commit that records the selected attempt
-  and consumes the entire stale proposal set; assessment and resolution then
-  operate on the resulting revision.
+  wave, expected campaign revision, deterministic initiative winner, and a
+  locally validated assessment bound to that same revision.
+- **Outputs:** one `npc_action_resolved` commit that consumes the proposal set,
+  obtains the server-side roll when admissible, applies the selected typed
+  outcome, and stores the roll and commit receipts atomically.
 - **Derived state:** priority ordering and the selected winner are calculations,
   not world truth and not commits.
 - **Forbidden writers:** Persona output, the initiative selector, narrator, and
   HTTP handler cannot begin or resolve an NPC action directly.
 - **Shared paths:** live reactions, interrupts, and future offscreen
-  individualized actions all submit `BeginNpcAction`, then use the same
-  `Assess -> Attempt` resolution spine as player attempts.
+  individualized actions all submit `ResolveNpcAction`; it applies the same
+  assessment validation, d20 bands, and typed outcome rules as player attempts.
 - **Cut line:** pending proposals are no longer a durable action queue. Once one
   proposal gains the opportunity, every sibling proposal from that snapshot is
-  consumed; actors reappraise the committed result before another action.
+  consumed in the same commit as its resolution; actors reappraise that result
+  before another action. Model or validation failure before this command cannot
+  leave an action-begun half-state.
 
 This deliberately serializes canonical consequence while keeping perception
 parallel. It prevents two proposals assessed against the same world snapshot

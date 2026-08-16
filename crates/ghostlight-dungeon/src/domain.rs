@@ -451,9 +451,10 @@ pub enum WorldCommand {
         event_summary: String,
         reactions: Vec<ActorReaction>,
     },
-    BeginNpcAction {
+    ResolveNpcAction {
         expected_revision: u64,
         proposal: WorldActionProposal,
+        assessment: ActionAssessment,
     },
 }
 

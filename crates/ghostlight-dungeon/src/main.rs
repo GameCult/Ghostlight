@@ -632,54 +632,31 @@ async fn resolve_npc_initiative(
     else {
         return Ok(serde_json::Value::Null);
     };
-    let begun = runtime
-        .kernel
-        .command(WorldCommand::BeginNpcAction {
-            expected_revision: campaign.revision,
-            proposal: proposal.clone(),
-        })
-        .await?;
-    let CommandResult::Committed {
-        campaign: begun_campaign,
-        ..
-    } = &begun
-    else {
-        unreachable!()
-    };
     let assessor = state
         .assessor
         .as_ref()
         .ok_or_else(|| anyhow::anyhow!("NPC initiative requires the action assessor"))?;
     let intent = ActionIntent {
-        actor_id: proposal.actor_id,
-        description: proposal.intent,
-        intended_effect: proposal.intended_effect,
+        actor_id: proposal.actor_id.clone(),
+        description: proposal.intent.clone(),
+        intended_effect: proposal.intended_effect.clone(),
     };
-    let (assessment, receipt) = assessor.assess(begun_campaign, intent.clone()).await?;
+    let (assessment, receipt) = assessor.assess(campaign, intent).await?;
     let _ = runtime.store.insert(
         "persona_stage_receipt.v1",
         "ghostlight.persona_stage_receipt.v1",
         &receipt.output_hash,
         &receipt,
     );
-    let assessed = runtime
+    let resolved = runtime
         .kernel
-        .command(WorldCommand::Assess {
-            expected_revision: begun_campaign.revision,
-            intent,
-            proposal: Some(assessment.clone()),
+        .command(WorldCommand::ResolveNpcAction {
+            expected_revision: campaign.revision,
+            proposal: proposal.clone(),
+            assessment,
         })
         .await?;
-    if !assessment.admissible {
-        return Ok(serde_json::json!({"begun":begun,"assessment":assessed,"attempt":null}));
-    }
-    let attempted = runtime
-        .kernel
-        .command(WorldCommand::Attempt {
-            assessment_digest: assessment.digest,
-        })
-        .await?;
-    Ok(serde_json::json!({"begun":begun,"assessment":assessed,"attempt":attempted}))
+    Ok(serde_json::to_value(resolved)?)
 }
 
 async fn publish_latest_narration(
@@ -1122,7 +1099,7 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::IndividuateGestaltMember { .. }
         | WorldCommand::ReconcileGestaltPresence { .. }
         | WorldCommand::ResolveReactionWave { .. }
-        | WorldCommand::BeginNpcAction { .. } => false,
+        | WorldCommand::ResolveNpcAction { .. } => false,
     }
 }
 
