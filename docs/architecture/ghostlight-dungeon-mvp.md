@@ -31,14 +31,14 @@ The Rust runtime now contains the first honest world-compiler seam:
 - approval alone submits `CreateCampaign`, which atomically stores the campaign
   and the exact Vault receipts in the campaign `.cc` store.
 
-This is not yet the complete MVP compiler. The browser compiler flow, selected
-opening/role compilation path, material-gap approval controls, exact-document
-retrieval beyond bounded source context, on-demand destination compilation,
-  canon-candidate persistence remain. A live custom-start acceptance run on
-  2026-08-16 consumed 30 VoidBot witnesses across three exact receipts and
-  produced three locations, three actors, two institutions, two clocks,
-  explicit gaps, and branch assumptions. It remained an uncommitted revision-0
-  preview with `requires_approval: true`.
+The hosted compiler now exposes generated openings, grounded role selection,
+unrestricted custom starts, approval-gated material gaps, exact-document
+witnesses, on-demand destination expansion, and persistent canon candidates.
+A live custom-start acceptance run on 2026-08-16 consumed 30 VoidBot witnesses
+across three exact receipts and produced three locations, three actors, two
+institutions, two clocks, explicit gaps, and branch assumptions. It remained
+an uncommitted revision-0 preview with `requires_approval: true` until the
+tester explicitly approved it.
 
 The invite/session authority is persisted separately in `service/auth.cc`.
 Only hashes of invite and session tokens enter CultCache. Consuming an invite
@@ -643,10 +643,10 @@ atomic pointer switch, recorded in CultCache, and the rollback runbook lives in
 Task Scheduler may be added when tester availability makes that useful; native
 Windows service machinery is outside the MVP.
 
-Live VoidBot integration remains gated on independent verification of the SSH
-host fingerprint, reconciliation of Yggdrasil inventory/DNS, repair of the
-Starfire tunnel task from `E:\Projects` to `F:\Projects`, and restoration of
-`127.0.0.1:17875/mcp`. Retired local VoidBot/Qdrant writers stay retired.
+Live VoidBot integration uses the independently verified Yggdrasil host and the
+restored Starfire loopback crossing at `127.0.0.1:17875/mcp`. The repaired
+tunnel task uses the live `F:\Projects` body. Retired local VoidBot/Qdrant
+writers stay retired.
 
 ## Public contracts
 
