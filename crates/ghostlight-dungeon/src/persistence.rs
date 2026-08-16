@@ -30,6 +30,15 @@ impl CampaignStore {
             .collect())
     }
 
+    pub fn load_all<T: DeserializeOwned>(&self, kind: &str) -> Result<Vec<T>> {
+        self.inner
+            .pull_all()?
+            .into_iter()
+            .filter(|row| row.r#type == kind)
+            .map(|row| rmp_serde::from_slice(&row.payload).context("decode CultCache row"))
+            .collect()
+    }
+
     pub fn load<T: DeserializeOwned>(
         &self,
         kind: &str,

@@ -11,8 +11,8 @@ use ghostlight_dungeon::{
     assessor::ActionAssessor,
     compiler::{CustomStart, OpeningRequest, OpeningSuggestion, SelectedStart, WorldCompiler},
     domain::{
-        ActionIntent, Campaign, NarrationProjection, RegionExpansionPreview, WorldCommand,
-        WorldCompilePreview,
+        ActionIntent, Campaign, NarrationProjection, RegionExpansionPreview,
+        RejectedProposalReceipt, WorldCommand, WorldCompilePreview,
     },
     gestalt::GestaltPresencePlanner,
     kernel::CommandResult,
@@ -33,6 +33,7 @@ use std::{
     net::SocketAddr,
     path::PathBuf,
     sync::Arc,
+    sync::atomic::{AtomicUsize, Ordering},
 };
 use tokio::sync::Mutex;
 use tower_http::services::ServeDir;
@@ -49,6 +50,20 @@ struct AppState {
     model: Option<Arc<dyn ModelPort>>,
     compile_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<WorldCompilePreview>>>>,
     expansion_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<RegionExpansionPreview>>>>,
+    live_turns: Arc<AtomicUsize>,
+}
+
+struct LiveTurnGuard(Arc<AtomicUsize>);
+impl LiveTurnGuard {
+    fn enter(counter: &Arc<AtomicUsize>) -> Self {
+        counter.fetch_add(1, Ordering::SeqCst);
+        Self(counter.clone())
+    }
+}
+impl Drop for LiveTurnGuard {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
 }
 
 #[derive(Clone)]
@@ -180,6 +195,7 @@ async fn main() -> anyhow::Result<()> {
         model: shared_model,
         compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
         expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
+        live_turns: Arc::new(AtomicUsize::new(0)),
     };
     tokio::spawn(scheduler_loop(state.clone()));
     let release_web_root = std::env::current_exe()?
@@ -211,6 +227,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/campaigns/fork", post(fork_campaign))
         .route("/api/campaigns/reset", post(reset_campaign))
         .route("/api/campaigns/export", get(export_campaign))
+        .route("/api/operator", get(operator_inspector))
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state);
     let address: SocketAddr = std::env::var("GHOSTLIGHT_DUNGEON_BIND")
@@ -299,6 +316,7 @@ async fn compile_openings(
     if !authorized(&headers, &state).await {
         return StatusCode::UNAUTHORIZED.into_response();
     }
+    let _live = LiveTurnGuard::enter(&state.live_turns);
     let Some(compiler) = &state.compiler else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -321,6 +339,7 @@ async fn compile_custom(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
+    let _live = LiveTurnGuard::enter(&state.live_turns);
     if session_runtime(&state, &session)
         .await
         .ok()
@@ -365,6 +384,7 @@ async fn compile_roles(
     if !authorized(&headers, &state).await {
         return StatusCode::UNAUTHORIZED.into_response();
     }
+    let _live = LiveTurnGuard::enter(&state.live_turns);
     let Some(compiler) = &state.compiler else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -387,6 +407,7 @@ async fn compile_selected(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
+    let _live = LiveTurnGuard::enter(&state.live_turns);
     if session_runtime(&state, &session)
         .await
         .ok()
@@ -443,6 +464,7 @@ async fn approve_preview(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
+    let _live = LiveTurnGuard::enter(&state.live_turns);
     let mut previews = state.compile_previews.lock().await;
     let Some(owned) = previews.get(&preview_id).cloned() else {
         return (StatusCode::NOT_FOUND, "preview missing or already consumed").into_response();
@@ -487,6 +509,7 @@ async fn compile_destination(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
+    let _live = LiveTurnGuard::enter(&state.live_turns);
     let runtime = match session_runtime(&state, &session).await {
         Ok(Some(value)) => value,
         Ok(None) => {
@@ -677,6 +700,7 @@ async fn command(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
+    let _live = LiveTurnGuard::enter(&state.live_turns);
     let runtime = match session_runtime(&state, &session).await {
         Ok(Some(value)) => value,
         Ok(None) => {
@@ -759,6 +783,15 @@ async fn command(
         &command,
         WorldCommand::Attempt { .. } | WorldCommand::Speak { .. }
     );
+    let command_kind = serde_json::to_value(&command)
+        .ok()
+        .and_then(|value| {
+            value
+                .get("type")
+                .and_then(|value| value.as_str())
+                .map(str::to_owned)
+        })
+        .unwrap_or_else(|| "unknown".into());
     match runtime.kernel.command(command).await {
         Ok(result) => {
             if should_react {
@@ -918,13 +951,32 @@ async fn command(
                 Json(result).into_response()
             }
         }
-        Err(error) => (
-            StatusCode::CONFLICT,
-            Json(ErrorBody {
-                error: error.to_string(),
-            }),
-        )
-            .into_response(),
+        Err(error) => {
+            if let Ok(campaign) = load_campaign(&runtime.store) {
+                let receipt = RejectedProposalReceipt {
+                    schema: "ghostlight.rejected_proposal_receipt.v1".into(),
+                    id: uuid::Uuid::new_v4().to_string(),
+                    campaign_id: campaign.id,
+                    revision: campaign.revision,
+                    command_kind,
+                    reason: error.to_string(),
+                    rejected_at: chrono::Utc::now(),
+                };
+                let _ = runtime.store.insert(
+                    "rejected_proposal_receipt.v1",
+                    "ghostlight.rejected_proposal_receipt.v1",
+                    &receipt.id,
+                    &receipt,
+                );
+            }
+            (
+                StatusCode::CONFLICT,
+                Json(ErrorBody {
+                    error: error.to_string(),
+                }),
+            )
+                .into_response()
+        }
     }
 }
 
@@ -934,6 +986,9 @@ async fn scheduler_loop(state: AppState) {
     pulse.tick().await;
     loop {
         pulse.tick().await;
+        if state.live_turns.load(Ordering::SeqCst) > 0 {
+            continue;
+        }
         for id in state.registry.list().await {
             match state.registry.runtime(id).await {
                 Ok(runtime) => {
@@ -1137,6 +1192,45 @@ async fn export_campaign(headers: HeaderMap, State(state): State<AppState>) -> R
         },
         Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
     }
+}
+
+async fn operator_inspector(headers: HeaderMap, State(state): State<AppState>) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match session_runtime(&state, &session).await {
+        Ok(Some(value)) => value,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let campaign = match load_campaign(&runtime.store) {
+        Ok(value) => value,
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let evidence = runtime
+        .store
+        .load_all::<ghostlight_dungeon::domain::VaultEvidenceReceipt>("vault_evidence_receipt.v1")
+        .unwrap_or_default();
+    let commits = runtime
+        .store
+        .load_all::<ghostlight_dungeon::domain::WorldCommitReceipt>("world_commit_receipt.v1")
+        .unwrap_or_default();
+    let stages = runtime
+        .store
+        .load_all::<ghostlight_dungeon::model::ModelStageReceipt>("persona_stage_receipt.v1")
+        .unwrap_or_default();
+    let rejected = runtime
+        .store
+        .load_all::<RejectedProposalReceipt>("rejected_proposal_receipt.v1")
+        .unwrap_or_default();
+    Json(serde_json::json!({"schema":"ghostlight.operator_inspector.v1","campaign":campaign,"evidence":evidence,"commit_receipts":commits,"model_stage_receipts":stages,"rejected_proposals":rejected,"scheduler":{"live_turn_pressure":state.live_turns.load(Ordering::SeqCst)}})).into_response()
 }
 
 async fn process_due_ticks(runtime: &CampaignRuntime) -> anyhow::Result<()> {
@@ -1379,6 +1473,7 @@ mod tests {
             model: None,
             compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
             expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
+            live_turns: Arc::new(AtomicUsize::new(0)),
         };
         let left_runtime = session_runtime(&state, "left").await.unwrap().unwrap();
         let right_runtime = session_runtime(&state, "right").await.unwrap().unwrap();

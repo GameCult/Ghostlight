@@ -593,6 +593,19 @@ campaign management, fork/reset/export, and optional operator inspection.
 CultMesh state is the source of the UI projection. HTTP health is a probe over
 the same service-state document.
 
+The authenticated operator inspector projects the selected campaign's full
+typed state, topology, evidence receipts, commit receipts, model-stage receipts,
+rejected-proposal receipts, and scheduler live-turn pressure. It contains no
+provider reasoning content or secret material. Kernel command refusals append a
+private receipt without changing campaign revision, allowing the laboratory to
+inspect why impossible, stale, or malformed proposals were rejected.
+
+Live compiler and player command paths hold a process-local inference-pressure
+lease. The five-minute scheduler observes that pressure and launches no new
+campaign work while any live lease exists. Already-committed campaign state
+does not require a repair pass when background launch is skipped; the next
+scheduler pulse or return catch-up uses the same strategic-tick command.
+
 ## Model boundary
 
 The provider-neutral model port records provider, model, request hash, source

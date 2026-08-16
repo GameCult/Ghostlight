@@ -266,6 +266,17 @@ pub struct CampaignLifecycleReceipt {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct RejectedProposalReceipt {
+    pub schema: String,
+    pub id: String,
+    pub campaign_id: Uuid,
+    pub revision: u64,
+    pub command_kind: String,
+    pub reason: String,
+    pub rejected_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct ActionIntent {
     pub actor_id: String,
     pub description: String,

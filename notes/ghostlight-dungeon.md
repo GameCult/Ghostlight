@@ -169,6 +169,7 @@ stake prose alone never impersonates world mutation.
 - `persona_stage_receipt.v1`, `actor_state_delta.v1`, `world_action_proposal.v1`
 - `narration_projection.v1`
 - `strategic_tick.v1`, `news_issue.v1`, `canon_candidate.v1`
+- `rejected_proposal_receipt.v1`, `campaign_lifecycle_receipt.v1`
 - `gestalt_persona_state.v1`, `gestalt_member_delta.v1`,
   `gestalt_materialization_receipt.v1`
 - Existing `gamecult.eve.surface.v1` and `gamecult.eve.command.v1`
