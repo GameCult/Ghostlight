@@ -167,6 +167,7 @@ stake prose alone never impersonates world mutation.
 - `campaign.v1`, `world_fact.v1`, `location.v1`, `actor_state.v1`, `institution_state.v1`, `relationship_state.v1`, `world_clock.v1`, `event.v1`
 - `player_action_assessment.v1`, `roll_receipt.v1`, `world_commit_receipt.v1`
 - `persona_stage_receipt.v1`, `actor_state_delta.v1`, `world_action_proposal.v1`
+- `narration_projection.v1`
 - `strategic_tick.v1`, `news_issue.v1`, `canon_candidate.v1`
 - `gestalt_persona_state.v1`, `gestalt_member_delta.v1`,
   `gestalt_materialization_receipt.v1`

@@ -11,10 +11,14 @@ use ghostlight_dungeon::{
     WorldKernel,
     assessor::ActionAssessor,
     compiler::{CustomStart, OpeningRequest, OpeningSuggestion, SelectedStart, WorldCompiler},
-    domain::{ActionIntent, Campaign, RegionExpansionPreview, WorldCommand, WorldCompilePreview},
+    domain::{
+        ActionIntent, Campaign, NarrationProjection, RegionExpansionPreview, WorldCommand,
+        WorldCompilePreview,
+    },
     gestalt::GestaltPresencePlanner,
     kernel::CommandResult,
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
+    narrator::Narrator,
     persistence::CampaignStore,
     persona::PersonaProjectionEngine,
     surface::player_surface,
@@ -238,7 +242,25 @@ async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response 
         return StatusCode::UNAUTHORIZED.into_response();
     }
     match load_campaign(&state.store) {
-        Ok(campaign) => Json(player_surface(&campaign)).into_response(),
+        Ok(campaign) => {
+            let mut narrations = state
+                .store
+                .keys("narration_projection.v1")
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|key| {
+                    state
+                        .store
+                        .load::<NarrationProjection>("narration_projection.v1", &key)
+                        .ok()
+                        .flatten()
+                        .map(|(_, value)| value)
+                })
+                .filter(|value| value.campaign_id == campaign.id)
+                .collect::<Vec<_>>();
+            narrations.sort_by_key(|value| value.source_revision);
+            Json(player_surface(&campaign, &narrations)).into_response()
+        }
         Err(_) => Json(serde_json::json!({"schema":"gamecult.eve.surface.v1","surface_id":"ghostlight.compiler","version":0,"title":"Compile a world","layout":{"kind":"stack","children":[]}})).into_response(),
     }
 }
@@ -525,6 +547,39 @@ async fn resolve_npc_initiative(
     Ok(serde_json::json!({"begun":begun,"assessment":assessed,"attempt":attempted}))
 }
 
+async fn publish_latest_narration(state: &AppState) -> anyhow::Result<Option<NarrationProjection>> {
+    let campaign = load_campaign(&state.store)?;
+    let key = format!("{}:{}", campaign.id, campaign.revision);
+    if let Some((_, existing)) = state
+        .store
+        .load::<NarrationProjection>("narration_projection.v1", &key)?
+    {
+        return Ok(Some(existing));
+    }
+    let model = state
+        .model
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("narration requires the model provider"))?;
+    let narrator = Narrator {
+        model: model.clone(),
+        model_name: "deepseek-v4-pro".into(),
+    };
+    let (projection, receipt) = narrator.project(&state.store, &campaign).await?;
+    state.store.insert(
+        "narration_projection.v1",
+        "ghostlight.narration_projection.v1",
+        &projection.id,
+        &projection,
+    )?;
+    let _ = state.store.insert(
+        "persona_stage_receipt.v1",
+        "ghostlight.persona_stage_receipt.v1",
+        &receipt.output_hash,
+        &receipt,
+    );
+    Ok(Some(projection))
+}
+
 async fn command(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -696,7 +751,11 @@ async fn command(
                                                             .into_response();
                                                     }
                                                 };
-                                            return Json(serde_json::json!({"primary":result,"presence":presence_result,"reaction_wave":reaction,"npc_initiative":initiative})).into_response();
+                                            let narration = publish_latest_narration(&state)
+                                                .await
+                                                .ok()
+                                                .flatten();
+                                            return Json(serde_json::json!({"primary":result,"presence":presence_result,"reaction_wave":reaction,"npc_initiative":initiative,"narration":narration})).into_response();
                                         }
                                         Err(error) => {
                                             return (
@@ -722,15 +781,24 @@ async fn command(
                             }
                         }
                         if presence_result.is_some() {
+                            let narration = publish_latest_narration(&state).await.ok().flatten();
                             return Json(
-                                serde_json::json!({"primary":result,"presence":presence_result}),
+                                serde_json::json!({"primary":result,"presence":presence_result,"narration":narration}),
                             )
                             .into_response();
                         }
                     }
                 }
             }
-            Json(result).into_response()
+            if matches!(
+                &result,
+                CommandResult::Committed { .. } | CommandResult::Created { .. }
+            ) {
+                let narration = publish_latest_narration(&state).await.ok().flatten();
+                Json(serde_json::json!({"result":result,"narration":narration})).into_response()
+            } else {
+                Json(result).into_response()
+            }
         }
         Err(error) => (
             StatusCode::CONFLICT,

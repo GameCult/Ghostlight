@@ -6,6 +6,7 @@ pub mod gestalt;
 pub mod initiative;
 pub mod kernel;
 pub mod model;
+pub mod narrator;
 pub mod persistence;
 pub mod persona;
 pub mod scheduler;

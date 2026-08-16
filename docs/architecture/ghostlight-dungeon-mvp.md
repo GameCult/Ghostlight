@@ -185,6 +185,29 @@ The scheduler may calculate pending work, but `AdvanceStrategicTick` owns the
 transition. Return catch-up invokes that same command before the next player
 action is admitted.
 
+### Narration projection authority
+
+- **Owner:** committed campaign state and events own what happened; the
+  narrator owns only a readable projection of one exact revision.
+- **Inputs:** a player-visible slice of location, visible actors, explicit
+  speech/stakes, recent committed events, and evidence receipts.
+- **Outputs:** immutable `narration_projection.v1` CultCache rows bound to a
+  campaign ID and source revision, plus private model-stage receipts.
+- **Derived state:** story prose and the Eve transcript card are projections;
+  neither is a world fact, actor memory, action, or correction path.
+- **Forbidden writers:** narrator output cannot append events, speech, facts,
+  deltas, memories, clocks, topology, or campaign revision.
+- **Shared paths:** player attempts, NPC attempts, waits, strategic ticks, and
+  other committed transitions invoke the same post-commit narrator projection.
+- **Cut line:** the existing campaign transcript retains explicit speech and
+  deterministic stake text only. Generated connective prose lives outside the
+  campaign row and cannot be read back as canonical input except as a display
+  projection.
+
+The narrator rechecks the campaign revision after inference. Stale or malformed
+prose is discarded. Successful projections survive refresh without acquiring
+write authority over the world they describe.
+
 ### Cut line
 
 Ghostlight has no existing hosted runtime authority to preserve. The v0
