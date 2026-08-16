@@ -313,44 +313,16 @@ fn execute(
             location_id,
         } => {
             require_revision(&campaign, expected_revision)?;
-            if !campaign.locations.contains_key(&location_id) {
-                return Err(KernelError::Invalid(
-                    "materialization location is unknown".into(),
-                ));
-            }
-            let gestalt = campaign
-                .gestalts
-                .get(&gestalt_id)
-                .ok_or_else(|| KernelError::Invalid("gestalt is unknown".into()))?
-                .clone();
-            if gestalt.version != expected_gestalt_version {
-                return Err(KernelError::Invalid("gestalt snapshot is stale".into()));
-            }
-            let member = campaign
-                .gestalt_members
-                .get_mut(&member_id)
-                .ok_or_else(|| KernelError::Invalid("gestalt member is unknown".into()))?;
-            if member.gestalt_id != gestalt_id || member.version != expected_member_version {
-                return Err(KernelError::Invalid(
-                    "member snapshot is stale or belongs to another gestalt".into(),
-                ));
-            }
-            if member.materialized_actor_id.is_some() {
-                return Err(KernelError::Invalid(
-                    "gestalt member is already materialized".into(),
-                ));
-            }
-            let actor_id = format!("member:{}", member.id);
-            if campaign.actors.contains_key(&actor_id) {
-                return Err(KernelError::Invalid(
-                    "materialized actor id collides".into(),
-                ));
-            }
-            let actor = materialize_actor(&gestalt, member, &actor_id, &location_id);
-            member.materialized_actor_id = Some(actor_id.clone());
-            member.last_location_id = Some(location_id);
-            member.version += 1;
-            campaign.actors.insert(actor_id, actor);
+            apply_promotion(
+                &mut campaign,
+                &GestaltPromotion {
+                    gestalt_id,
+                    expected_gestalt_version,
+                    member_id,
+                    expected_member_version,
+                    location_id,
+                },
+            )?;
             commit(store, row, campaign, "materialize_gestalt_member", None)
         }
         WorldCommand::DematerializeGestaltMember {
@@ -359,44 +331,32 @@ fn execute(
             aggregate_delta,
         } => {
             require_revision(&campaign, expected_revision)?;
-            let actor = campaign
-                .actors
-                .get(&actor_id)
-                .ok_or_else(|| KernelError::Invalid("materialized actor is unknown".into()))?
-                .clone();
-            let member_id = campaign
-                .gestalt_members
-                .values()
-                .find(|member| member.materialized_actor_id.as_deref() == Some(actor_id.as_str()))
-                .map(|member| member.id.clone())
-                .ok_or_else(|| {
-                    KernelError::Invalid("actor is not a materialized gestalt member".into())
-                })?;
-            let gestalt_id = campaign.gestalt_members[&member_id].gestalt_id.clone();
-            let gestalt = campaign
-                .gestalts
-                .get_mut(&gestalt_id)
-                .ok_or_else(|| KernelError::Invalid("gestalt is missing".into()))?;
-            let member = campaign
-                .gestalt_members
-                .get_mut(&member_id)
-                .expect("member exists");
-            fold_actor_delta(&actor, gestalt, member);
-            member.materialized_actor_id = None;
-            member.version += 1;
-            if !aggregate_delta.knowledge_additions.is_empty()
-                || !aggregate_delta.resource_additions.is_empty()
-                || !aggregate_delta.pressures.is_empty()
-            {
-                gestalt
-                    .shared_knowledge
-                    .extend(aggregate_delta.knowledge_additions);
-                gestalt.resources.extend(aggregate_delta.resource_additions);
-                gestalt.pressures.extend(aggregate_delta.pressures);
-                gestalt.version += 1;
-            }
-            campaign.actors.remove(&actor_id);
+            apply_demotion(
+                &mut campaign,
+                &GestaltDemotion {
+                    actor_id,
+                    aggregate_delta,
+                },
+            )?;
             commit(store, row, campaign, "dematerialize_gestalt_member", None)
+        }
+        WorldCommand::ReconcileGestaltPresence {
+            expected_revision,
+            reason,
+            plan,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            if reason.trim().is_empty() {
+                return Err(KernelError::Invalid("presence plan has no reason".into()));
+            }
+            let mut candidate = campaign.clone();
+            for demotion in &plan.demotions {
+                apply_demotion(&mut candidate, demotion)?;
+            }
+            for promotion in &plan.promotions {
+                apply_promotion(&mut candidate, promotion)?;
+            }
+            commit(store, row, candidate, "reconcile_gestalt_presence", None)
         }
         WorldCommand::ResolveReactionWave {
             expected_revision,
@@ -467,6 +427,96 @@ fn execute(
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
     }
+}
+
+fn apply_promotion(
+    campaign: &mut Campaign,
+    promotion: &GestaltPromotion,
+) -> Result<(), KernelError> {
+    if !campaign.locations.contains_key(&promotion.location_id) {
+        return Err(KernelError::Invalid(
+            "materialization location is unknown".into(),
+        ));
+    }
+    let gestalt = campaign
+        .gestalts
+        .get(&promotion.gestalt_id)
+        .ok_or_else(|| KernelError::Invalid("gestalt is unknown".into()))?
+        .clone();
+    if gestalt.version != promotion.expected_gestalt_version {
+        return Err(KernelError::Invalid("gestalt snapshot is stale".into()));
+    }
+    let member = campaign
+        .gestalt_members
+        .get_mut(&promotion.member_id)
+        .ok_or_else(|| KernelError::Invalid("gestalt member is unknown".into()))?;
+    if member.gestalt_id != promotion.gestalt_id
+        || member.version != promotion.expected_member_version
+    {
+        return Err(KernelError::Invalid(
+            "member snapshot is stale or belongs to another gestalt".into(),
+        ));
+    }
+    if member.materialized_actor_id.is_some() {
+        return Err(KernelError::Invalid(
+            "gestalt member is already materialized".into(),
+        ));
+    }
+    let actor_id = format!("member:{}", member.id);
+    if campaign.actors.contains_key(&actor_id) {
+        return Err(KernelError::Invalid(
+            "materialized actor id collides".into(),
+        ));
+    }
+    let actor = materialize_actor(&gestalt, member, &actor_id, &promotion.location_id);
+    member.materialized_actor_id = Some(actor_id.clone());
+    member.last_location_id = Some(promotion.location_id.clone());
+    member.version += 1;
+    campaign.actors.insert(actor_id, actor);
+    Ok(())
+}
+
+fn apply_demotion(campaign: &mut Campaign, demotion: &GestaltDemotion) -> Result<(), KernelError> {
+    let actor = campaign
+        .actors
+        .get(&demotion.actor_id)
+        .ok_or_else(|| KernelError::Invalid("materialized actor is unknown".into()))?
+        .clone();
+    let member_id = campaign
+        .gestalt_members
+        .values()
+        .find(|member| member.materialized_actor_id.as_deref() == Some(demotion.actor_id.as_str()))
+        .map(|member| member.id.clone())
+        .ok_or_else(|| KernelError::Invalid("actor is not a materialized gestalt member".into()))?;
+    let gestalt_id = campaign.gestalt_members[&member_id].gestalt_id.clone();
+    let gestalt = campaign
+        .gestalts
+        .get_mut(&gestalt_id)
+        .ok_or_else(|| KernelError::Invalid("gestalt is missing".into()))?;
+    let member = campaign
+        .gestalt_members
+        .get_mut(&member_id)
+        .expect("member exists");
+    fold_actor_delta(&actor, gestalt, member);
+    member.materialized_actor_id = None;
+    member.version += 1;
+    if !demotion.aggregate_delta.knowledge_additions.is_empty()
+        || !demotion.aggregate_delta.resource_additions.is_empty()
+        || !demotion.aggregate_delta.pressures.is_empty()
+    {
+        gestalt
+            .shared_knowledge
+            .extend(demotion.aggregate_delta.knowledge_additions.clone());
+        gestalt
+            .resources
+            .extend(demotion.aggregate_delta.resource_additions.clone());
+        gestalt
+            .pressures
+            .extend(demotion.aggregate_delta.pressures.clone());
+        gestalt.version += 1;
+    }
+    campaign.actors.remove(&demotion.actor_id);
+    Ok(())
 }
 
 fn validate_world_proposal(
@@ -962,7 +1012,7 @@ mod tests {
     async fn gestalt_member_dematerializes_to_delta_and_returns_as_same_person() {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
-        let kernel = WorldKernel::start(store);
+        let kernel = WorldKernel::start(store.clone());
         let mut seed = campaign();
         seed.gestalts.insert(
             "village".into(),
@@ -1078,6 +1128,43 @@ mod tests {
             again.gestalts["village"]
                 .shared_knowledge
                 .contains("the player keeps promises")
+        );
+
+        let bad_plan = GestaltPresencePlan {
+            demotions: vec![GestaltDemotion {
+                actor_id: "member:john".into(),
+                aggregate_delta: GestaltAggregateDelta::default(),
+            }],
+            promotions: vec![GestaltPromotion {
+                gestalt_id: "village".into(),
+                expected_gestalt_version: 1,
+                member_id: "invented-person".into(),
+                expected_member_version: 0,
+                location_id: "room".into(),
+            }],
+        };
+        assert!(
+            kernel
+                .command(WorldCommand::ReconcileGestaltPresence {
+                    expected_revision: 3,
+                    reason: "scene relevance changed".into(),
+                    plan: bad_plan,
+                })
+                .await
+                .is_err()
+        );
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &again.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(persisted.revision, 3);
+        assert!(persisted.actors.contains_key("member:john"));
+        assert_eq!(
+            persisted.gestalt_members["john"]
+                .materialized_actor_id
+                .as_deref(),
+            Some("member:john")
         );
     }
 

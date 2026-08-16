@@ -65,6 +65,12 @@ revisioned WorldCommand path. A named member's relationships, memories,
 possessions, injuries, promises, and identity never become disposable gestalt
 texture.
 
+Live turns run a structured gestalt-relevance planner after the player event
+and before NPC appraisal. Its atomic `ReconcileGestaltPresence` command can
+materialize newly relevant members and fold irrelevant members back into their
+persistent deltas. The planner may propose presence only; it cannot promote
+population-wide learning or mutate state directly.
+
 Ghostlight owns its own generalized projection machinery:
 
 1. Projector converts the actor’s permitted typed slice, memories, perceived events, relationships, goals, and retrieved knowledge into a private lived narrative stream.

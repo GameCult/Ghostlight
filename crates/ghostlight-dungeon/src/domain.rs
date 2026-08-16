@@ -118,6 +118,28 @@ pub struct GestaltAggregateDelta {
     pub pressures: Vec<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltPromotion {
+    pub gestalt_id: String,
+    pub expected_gestalt_version: u64,
+    pub member_id: String,
+    pub expected_member_version: u64,
+    pub location_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltDemotion {
+    pub actor_id: String,
+    #[serde(default)]
+    pub aggregate_delta: GestaltAggregateDelta,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+pub struct GestaltPresencePlan {
+    pub promotions: Vec<GestaltPromotion>,
+    pub demotions: Vec<GestaltDemotion>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
 pub struct ActorStateDelta {
     pub memories_add: Vec<String>,
@@ -276,6 +298,11 @@ pub enum WorldCommand {
         expected_revision: u64,
         actor_id: String,
         aggregate_delta: GestaltAggregateDelta,
+    },
+    ReconcileGestaltPresence {
+        expected_revision: u64,
+        reason: String,
+        plan: GestaltPresencePlan,
     },
     ResolveReactionWave {
         expected_revision: u64,

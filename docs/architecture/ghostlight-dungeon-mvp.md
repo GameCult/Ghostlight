@@ -198,6 +198,15 @@ only explicitly reviewed population-level learning may update the gestalt.
 This allows a corporation or village to take one strategic turn while John the
 blacksmith remains John when encountered again.
 
+After each committed player event, a cheap structured relevance stage receives
+only the current gestalt/member catalog, materialized member IDs, player
+location, and event summary. It proposes one `GestaltPresencePlan`. The kernel
+validates exact gestalt/member versions, known IDs, current materialization
+state, and scene location, then applies the entire demotion/promotion set as one
+atomic `ReconcileGestaltPresence` command before the participant appraisal
+wave. Automatic plans cannot write aggregate gestalt learning. A malformed,
+invented, stale, or partially invalid plan changes nothing.
+
 ### The ownership decision
 
 Ghostlight owns the reusable Persona projection machinery:

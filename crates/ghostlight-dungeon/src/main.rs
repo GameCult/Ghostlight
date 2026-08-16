@@ -12,6 +12,7 @@ use ghostlight_dungeon::{
     assessor::ActionAssessor,
     compiler::{CustomStart, OpeningRequest, OpeningSuggestion, SelectedStart, WorldCompiler},
     domain::{Campaign, RegionExpansionPreview, WorldCommand, WorldCompilePreview},
+    gestalt::GestaltPresencePlanner,
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     persistence::CampaignStore,
     persona::PersonaProjectionEngine,
@@ -537,25 +538,68 @@ async fn command(
                 if let ghostlight_dungeon::kernel::CommandResult::Committed { campaign, .. } =
                     &result
                 {
-                    if campaign.actors.len() > 1 {
-                        if let Some(model) = &state.model {
-                            let summary = campaign
-                                .transcript
-                                .last()
-                                .map(|turn| turn.text.clone())
-                                .unwrap_or_else(|| "A consequential event occurred.".into());
+                    if let Some(model) = &state.model {
+                        let summary = campaign
+                            .transcript
+                            .last()
+                            .map(|turn| turn.text.clone())
+                            .unwrap_or_else(|| "A consequential event occurred.".into());
+                        let mut reaction_campaign = campaign.clone();
+                        let mut presence_result = None;
+                        if !campaign.gestalts.is_empty() {
+                            let planner = GestaltPresencePlanner {
+                                model: model.clone(),
+                                model_name: "deepseek-v4-flash".into(),
+                            };
+                            match planner.plan(campaign, &summary).await {
+                                Ok((plan, receipt)) => {
+                                    let _ = state.store.insert(
+                                        "persona_stage_receipt.v1",
+                                        "ghostlight.persona_stage_receipt.v1",
+                                        &receipt.output_hash,
+                                        &receipt,
+                                    );
+                                    if !plan.promotions.is_empty() || !plan.demotions.is_empty() {
+                                        match state.kernel.command(WorldCommand::ReconcileGestaltPresence {
+                                            expected_revision: campaign.revision,
+                                            reason: summary.clone(),
+                                            plan,
+                                        }).await {
+                                            Ok(committed @ ghostlight_dungeon::kernel::CommandResult::Committed { .. }) => {
+                                                if let ghostlight_dungeon::kernel::CommandResult::Committed { campaign, .. } = &committed {
+                                                    reaction_campaign = campaign.clone();
+                                                }
+                                                presence_result = Some(committed);
+                                            }
+                                            Ok(_) => unreachable!(),
+                                            Err(error) => return (StatusCode::CONFLICT, Json(ErrorBody { error: error.to_string() })).into_response(),
+                                        }
+                                    }
+                                }
+                                Err(error) => {
+                                    return (
+                                        StatusCode::BAD_GATEWAY,
+                                        Json(ErrorBody {
+                                            error: error.to_string(),
+                                        }),
+                                    )
+                                        .into_response();
+                                }
+                            }
+                        }
+                        if reaction_campaign.actors.len() > 1 {
                             let engine = PersonaProjectionEngine {
                                 model: model.clone(),
                                 permit: Arc::new(SnapshotPermit::new(
                                     state.store.clone(),
-                                    campaign.id,
-                                    campaign.revision,
+                                    reaction_campaign.id,
+                                    reaction_campaign.revision,
                                 )),
                                 projector_model: "deepseek-v4-flash".into(),
                                 persona_model: "deepseek-v4-pro".into(),
                                 interpreter_model: "deepseek-v4-flash".into(),
                             };
-                            match appraise_present(engine, campaign, &summary).await {
+                            match appraise_present(engine, &reaction_campaign, &summary).await {
                                 Ok(wave) if !wave.reactions.is_empty() => {
                                     for receipt in wave.receipts {
                                         let _ = state.store.insert(
@@ -565,7 +609,7 @@ async fn command(
                                             &receipt,
                                         );
                                     }
-                                    match state.kernel.command(WorldCommand::ResolveReactionWave{expected_revision:campaign.revision,event_summary:summary,reactions:wave.reactions}).await{Ok(reaction)=>return Json(serde_json::json!({"primary":result,"reaction_wave":reaction})).into_response(),Err(error)=>return(StatusCode::CONFLICT,Json(ErrorBody{error:error.to_string()})).into_response()}
+                                    match state.kernel.command(WorldCommand::ResolveReactionWave{expected_revision:reaction_campaign.revision,event_summary:summary,reactions:wave.reactions}).await{Ok(reaction)=>return Json(serde_json::json!({"primary":result,"presence":presence_result,"reaction_wave":reaction})).into_response(),Err(error)=>return(StatusCode::CONFLICT,Json(ErrorBody{error:error.to_string()})).into_response()}
                                 }
                                 Ok(_) => {}
                                 Err(error) => {
@@ -578,6 +622,12 @@ async fn command(
                                         .into_response();
                                 }
                             }
+                        }
+                        if presence_result.is_some() {
+                            return Json(
+                                serde_json::json!({"primary":result,"presence":presence_result}),
+                            )
+                            .into_response();
                         }
                     }
                 }
