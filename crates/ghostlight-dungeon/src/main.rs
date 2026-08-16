@@ -16,7 +16,9 @@ use ghostlight_dungeon::{
     surface::player_surface,
     vault::VoidBotMcpVault,
 };
+use serde::Deserialize;
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, BTreeSet},
     net::SocketAddr,
@@ -31,11 +33,23 @@ use tracing_subscriber::EnvFilter;
 struct AppState {
     kernel: WorldKernel,
     store: CampaignStore,
-    invites: Arc<Mutex<BTreeSet<String>>>,
-    sessions: Arc<Mutex<BTreeSet<String>>>,
+    auth: Arc<Mutex<AuthOwner>>,
     deepseek_status: String,
     compiler: Option<Arc<WorldCompiler>>,
     compile_previews: Arc<Mutex<BTreeMap<String, WorldCompilePreview>>>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct AuthState {
+    schema: String,
+    unused_invite_hashes: BTreeSet<String>,
+    session_hashes: BTreeSet<String>,
+}
+
+struct AuthOwner {
+    store: CampaignStore,
+    row: cultcache_rs::CultCacheEnvelope,
+    state: AuthState,
 }
 
 #[tokio::main]
@@ -74,6 +88,28 @@ async fn main() -> anyhow::Result<()> {
             "GhostlightDungeon requires exactly two unused invite tokens"
         ));
     }
+    std::fs::create_dir_all(runtime_root.join("service"))?;
+    let auth_store = CampaignStore::open(runtime_root.join("service/auth.cc"))?;
+    let (auth_row, auth_state) = match auth_store.load::<AuthState>("auth_state.v1", "primary")? {
+        Some(existing) => existing,
+        None => {
+            let state = AuthState {
+                schema: "ghostlight.auth_state.v1".into(),
+                unused_invite_hashes: invite_tokens
+                    .iter()
+                    .map(|token| secret_hash(token))
+                    .collect(),
+                session_hashes: BTreeSet::new(),
+            };
+            let row = auth_store.insert(
+                "auth_state.v1",
+                "ghostlight.auth_state.v1",
+                "primary",
+                &state,
+            )?;
+            (row, state)
+        }
+    };
     let secret_path = runtime_root.join("secrets/deepseek.dpapi");
     let (deepseek_status, compiler) = if secret_path.is_file() {
         let provider: Arc<dyn ModelPort> =
@@ -104,8 +140,11 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState {
         kernel,
         store,
-        invites: Arc::new(Mutex::new(invite_tokens)),
-        sessions: Arc::new(Mutex::new(BTreeSet::new())),
+        auth: Arc::new(Mutex::new(AuthOwner {
+            store: auth_store,
+            row: auth_row,
+            state: auth_state,
+        })),
         deepseek_status,
         compiler,
         compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
@@ -128,7 +167,9 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/command", post(command))
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state);
-    let address: SocketAddr = "0.0.0.0:8831".parse()?;
+    let address: SocketAddr = std::env::var("GHOSTLIGHT_DUNGEON_BIND")
+        .unwrap_or_else(|_| "0.0.0.0:8831".into())
+        .parse()?;
     let listener = tokio::net::TcpListener::bind(address).await?;
     tracing::info!(%address, "GhostlightDungeon listening");
     axum::serve(listener, app).await?;
@@ -142,11 +183,23 @@ async fn health(State(state): State<AppState>) -> Json<serde_json::Value> {
 }
 
 async fn invite(Path(token): Path<String>, State(state): State<AppState>) -> Response {
-    if !state.invites.lock().await.remove(&token) {
+    let mut auth = state.auth.lock().await;
+    if !auth.state.unused_invite_hashes.remove(&secret_hash(&token)) {
         return (StatusCode::UNAUTHORIZED, "invalid or consumed invite").into_response();
     }
     let session = uuid::Uuid::new_v4().to_string();
-    state.sessions.lock().await.insert(session.clone());
+    auth.state.session_hashes.insert(secret_hash(&session));
+    let next = match auth
+        .store
+        .replace(&auth.row, "ghostlight.auth_state.v1", &auth.state)
+    {
+        Ok(row) => row,
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    auth.row = next;
+    drop(auth);
     let mut response = Redirect::to("/").into_response();
     response.headers_mut().insert(
         header::SET_COOKIE,
@@ -351,9 +404,19 @@ async fn authorized(headers: &HeaderMap, state: &AppState) -> bool {
                 .find_map(|cookie| cookie.strip_prefix("ghostlight_session="))
         });
     match session {
-        Some(id) => state.sessions.lock().await.contains(id),
+        Some(id) => state
+            .auth
+            .lock()
+            .await
+            .state
+            .session_hashes
+            .contains(&secret_hash(id)),
         None => false,
     }
+}
+
+fn secret_hash(value: &str) -> String {
+    format!("sha256:{:x}", Sha256::digest(value.as_bytes()))
 }
 
 fn load_campaign(store: &CampaignStore) -> anyhow::Result<Campaign> {

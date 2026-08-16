@@ -40,6 +40,14 @@ retrieval beyond bounded source context, on-demand destination compilation,
   explicit gaps, and branch assumptions. It remained an uncommitted revision-0
   preview with `requires_approval: true`.
 
+The invite/session authority is persisted separately in `service/auth.cc`.
+Only hashes of invite and session tokens enter CultCache. Consuming an invite
+atomically replaces that auth row, so daemon restart neither resurrects a used
+invite nor invalidates an established session. A disposable HTTP acceptance
+run verified unauthenticated `401`, pre-approval compiler surface, explicit
+approval, campaign/evidence persistence, session survival across restart, and
+`401` on consumed-invite reuse.
+
 ## Body and faculty map
 
 | Faculty | Owner | Body | Authority |

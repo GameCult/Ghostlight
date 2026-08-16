@@ -39,11 +39,12 @@ distinct openings and roles, compiles approval-gated custom starts, rejects
 invalid topology, and atomically admits campaign plus evidence only on
 approval. The browser now exposes generated opening/role selection and custom
 starts. A live DeepSeek plus VoidBot custom compilation passed with 30 witnessed
-source chunks and remained an uncommitted approval preview. Next, prove browser
-session/invite flow plus approval persistence against a disposable campaign
-store, then add material-gap decisions, on-demand destination compilation, and
-canon-candidate persistence. Existing Ghostlight fixtures remain regression
-evidence.
+source chunks and remained an uncommitted approval preview. A disposable HTTP
+run then proved approval persistence, authenticated-session survival across
+restart, and rejection of consumed invite reuse using hashed auth state in a
+separate `.cc`. Next, add material-gap decisions, on-demand destination
+compilation, and canon-candidate persistence. Existing Ghostlight fixtures
+remain regression evidence.
 
 ## Prior research pipeline focus
 
