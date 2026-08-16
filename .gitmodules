@@ -1,3 +1,6 @@
 [submodule "vendor/cultcache-py"]
 	path = vendor/cultcache-py
 	url = https://github.com/GameCult/cultcache-py.git
+[submodule "vendor/eve"]
+	path = vendor/eve
+	url = https://github.com/GameCult/Eve.git

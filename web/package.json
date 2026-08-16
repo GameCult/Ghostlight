@@ -1,0 +1,8 @@
+{
+  "name": "@gamecult/ghostlight-dungeon-web",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "vite build", "dev": "vite --host 127.0.0.1 --port 8832" },
+  "dependencies": { "@gamecult/eve-browser-lowering": "file:../vendor/eve/packages/eve-browser-lowering" },
+  "devDependencies": { "typescript": "^5.6.3", "vite": "^7.1.2" }
+}
