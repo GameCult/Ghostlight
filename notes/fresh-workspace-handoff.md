@@ -33,9 +33,17 @@ per-campaign WorldKernel mailbox is the sole canonical writer. Ghostlight owns
 the generalized Projector → Persona → Interpreter organ; Epiphany retains her
 canonical Persona mind and will consume the shared organ through an adapter.
 
-The immediate next action is to map Epiphany's existing projection machinery
-into move/stay/split/delete ownership before continuing the Rust scaffold.
-Existing Ghostlight fixtures remain regression evidence.
+The Epiphany extraction map is complete. The active bounded organ is the world
+compiler. Its Rust seam now retrieves hashed VoidBot witnesses, generates
+distinct openings and roles, compiles approval-gated custom starts, rejects
+invalid topology, and atomically admits campaign plus evidence only on
+approval. The browser now exposes generated opening/role selection and custom
+starts. A live DeepSeek plus VoidBot custom compilation passed with 30 witnessed
+source chunks and remained an uncommitted approval preview. Next, prove browser
+session/invite flow plus approval persistence against a disposable campaign
+store, then add material-gap decisions, on-demand destination compilation, and
+canon-candidate persistence. Existing Ghostlight fixtures remain regression
+evidence.
 
 ## Prior research pipeline focus
 

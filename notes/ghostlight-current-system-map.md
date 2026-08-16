@@ -203,6 +203,9 @@ paths as active state surfaces.
 
 ## Missing Or Incomplete Organs
 
+- World compiler browser flow, selected-opening/role path, live provider
+  acceptance, material-gap approval, on-demand destination expansion, and
+  canon-candidate persistence
 - Deterministic speaker-local input slicer
 - Full prompt renderer
 - Classifier/appraiser pipeline

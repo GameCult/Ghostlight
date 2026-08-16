@@ -114,6 +114,7 @@ pub struct ActionIntent {
 pub enum WorldCommand {
     CreateCampaign {
         campaign: Campaign,
+        evidence_receipts: Vec<VaultEvidenceReceipt>,
     },
     Speak {
         expected_revision: u64,

@@ -1,3 +1,9 @@
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GhostlightDungeon</title></head>
-<body><header><p class="eyebrow">STARFIRE / PRIVATE VERSE</p><h1>GhostlightDungeon</h1><p id="status">Reading the world…</p></header><main><section id="surface"></section><form id="composer"><label for="attempt">Describe what you attempt</label><textarea id="attempt" required></textarea><div><button type="submit">Assess</button><button type="button" id="wait">Wait one hour</button></div></form><pre id="receipt" hidden></pre></main><script type="module" src="/src/main.ts"></script></body></html>
+<body><header><p class="eyebrow">STARFIRE / PRIVATE VERSE</p><h1>GhostlightDungeon</h1><p id="status">Reading the world…</p></header><main>
+<section id="compiler" hidden><h2>Compile a world</h2><div class="compiler-grid">
+<form id="suggest-form"><label for="setting">Generate three grounded openings</label><input id="setting" value="Aetheria" required><button type="submit">Retrieve and suggest</button></form>
+<form id="custom-form"><label>Or describe your own beginning</label><input name="campaign_name" placeholder="Campaign name" required><input name="who" placeholder="Who are you?" required><input name="where_" placeholder="Where?" required><input name="when" placeholder="When?" required><textarea name="goal" placeholder="What do you want?" required></textarea><button type="submit">Compile custom start</button></form>
+</div><div id="compiler-results"></div></section><section id="surface"></section>
+<form id="composer"><label for="attempt">Describe what you attempt</label><textarea id="attempt" required></textarea><div><button type="submit">Assess</button><button type="button" id="wait">Wait one hour</button></div></form><pre id="receipt" hidden></pre>
+</main><script type="module" src="/src/main.ts"></script></body></html>

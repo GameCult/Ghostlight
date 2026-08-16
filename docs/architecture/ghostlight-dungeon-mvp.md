@@ -15,6 +15,31 @@ core world, Persona, and Vault contracts remain setting-neutral.
 Ghostlight's existing v0 schemas and Pallas, Lucent, and Corvid fixtures are
 evidence and regression scenarios. They do not own runtime state or commits.
 
+## Implementation frontier
+
+The Rust runtime now contains the first honest world-compiler seam:
+
+- `VaultProvider` search results become exact, hashed evidence witnesses from
+  VoidBot's live streamable MCP response shape;
+- opening generation requires exactly three distinct eras, places, and
+  pressures;
+- role generation requires exactly three grounded roles;
+- custom compilation emits a bounded typed campaign, evidence receipts, gaps,
+  branch assumptions, and an approval-required preview;
+- deterministic seed validation rejects missing occupancy, dangling or
+  zero-time routes, invalid containment, invalid clocks, and missing players;
+- approval alone submits `CreateCampaign`, which atomically stores the campaign
+  and the exact Vault receipts in the campaign `.cc` store.
+
+This is not yet the complete MVP compiler. The browser compiler flow, selected
+opening/role compilation path, material-gap approval controls, exact-document
+retrieval beyond bounded source context, on-demand destination compilation,
+  canon-candidate persistence remain. A live custom-start acceptance run on
+  2026-08-16 consumed 30 VoidBot witnesses across three exact receipts and
+  produced three locations, three actors, two institutions, two clocks,
+  explicit gaps, and branch assumptions. It remained an uncommitted revision-0
+  preview with `requires_approval: true`.
+
 ## Body and faculty map
 
 | Faculty | Owner | Body | Authority |

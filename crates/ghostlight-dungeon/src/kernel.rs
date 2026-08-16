@@ -78,14 +78,18 @@ fn execute(
     assessments: &mut BTreeMap<String, ActionAssessment>,
     command: WorldCommand,
 ) -> Result<CommandResult, KernelError> {
-    if let WorldCommand::CreateCampaign { campaign } = command {
+    if let WorldCommand::CreateCampaign {
+        campaign,
+        evidence_receipts,
+    } = command
+    {
+        if !store.keys("campaign.v1").map_err(persist)?.is_empty() {
+            return Err(KernelError::Invalid("campaign already exists".into()));
+        }
+        crate::compiler::validate_campaign_seed(&campaign)
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
         store
-            .insert(
-                "campaign.v1",
-                "ghostlight.campaign.v1",
-                &campaign.id.to_string(),
-                &campaign,
-            )
+            .create_campaign(&campaign, &evidence_receipts)
             .map_err(persist)?;
         return Ok(CommandResult::Created { campaign });
     }
@@ -351,6 +355,7 @@ mod tests {
         kernel
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
+                evidence_receipts: vec![],
             })
             .await
             .unwrap();
@@ -385,6 +390,7 @@ mod tests {
         kernel
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
+                evidence_receipts: vec![],
             })
             .await
             .unwrap();

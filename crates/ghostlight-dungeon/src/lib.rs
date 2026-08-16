@@ -1,3 +1,4 @@
+pub mod compiler;
 pub mod d20;
 pub mod domain;
 pub mod kernel;

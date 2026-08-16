@@ -1,3 +1,4 @@
+use crate::domain::{Campaign, VaultEvidenceReceipt};
 use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
 use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
@@ -58,6 +59,32 @@ impl CampaignStore {
             return Err(anyhow!("row already exists: {kind}/{key}"));
         }
         Ok(row)
+    }
+
+    pub fn create_campaign(
+        &self,
+        campaign: &Campaign,
+        receipts: &[VaultEvidenceReceipt],
+    ) -> Result<CultCacheEnvelope> {
+        let campaign_row = envelope(
+            "campaign.v1",
+            "ghostlight.campaign.v1",
+            &campaign.id.to_string(),
+            campaign,
+        )?;
+        let mut rows = vec![campaign_row.clone()];
+        for receipt in receipts {
+            rows.push(envelope(
+                "vault_evidence_receipt.v1",
+                "ghostlight.vault_evidence_receipt.v1",
+                &receipt.id,
+                receipt,
+            )?);
+        }
+        if !self.inner.compare_and_swap_batch(&[], rows)? {
+            return Err(anyhow!("campaign store is not empty"));
+        }
+        Ok(campaign_row)
     }
 
     pub fn replace<T: Serialize>(

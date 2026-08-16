@@ -8,11 +8,18 @@ architecture and ownership map is
 pipeline and fixtures remain regression evidence; they do not become hosted
 runtime authorities.
 
-The first required cut is documentation and extraction mapping: inventory the
-Projector → Persona → Interpreter machinery currently embedded in Epiphany,
-classify move/stay/split/delete ownership, and only then continue runtime code.
+The Epiphany Projector → Persona → Interpreter extraction map is complete.
 Ghostlight owns the generalized projection organ. Epiphany keeps her canonical
 Persona mind and consumes the shared organ through a narrow adapter.
+
+The active implementation cut is the world compiler. The first Rust seam now
+owns Vault witness conversion, distinct opening and role proposals,
+approval-gated custom compilation, deterministic seed validation, atomic
+campaign-plus-evidence admission, and the browser opening/role/custom flow. A
+live DeepSeek plus VoidBot custom compilation passed without committing. Prove
+invite/session plus approval persistence against a disposable campaign store,
+then implement material-gap decisions, on-demand destination compilation, and
+canon-candidate persistence before moving to the action/Persona loop.
 
 ## Prior research-program phase
 

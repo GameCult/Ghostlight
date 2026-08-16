@@ -35,20 +35,20 @@ inside another project.
 
 ## Important Paths
 
-- Project root: `E:\Projects\Ghostlight`
-- Canonical map: `E:\Projects\Ghostlight\state\map.yaml`
-- Scratch surface: `E:\Projects\Ghostlight\state\scratch.md`
-- Distilled evidence ledger: `E:\Projects\Ghostlight\state\evidence.jsonl`
-- Branch ledger: `E:\Projects\Ghostlight\state\branches.json`
-- Handoff summary: `E:\Projects\Ghostlight\notes\fresh-workspace-handoff.md`
-- System map: `E:\Projects\Ghostlight\notes\ghostlight-current-system-map.md`
-- Implementation plan: `E:\Projects\Ghostlight\notes\ghostlight-implementation-plan.md`
-- Architecture rationale: `E:\Projects\Ghostlight\notes\architecture-rationale.md`
-- State CLI: `E:\Projects\Ghostlight\tools\ghostlight_state.py`
-- CultCache state seam: `E:\Projects\Ghostlight\tools\ghostlight_state_store.py`
-- CultCache-Py submodule: `E:\Projects\Ghostlight\vendor\cultcache-py`
-- CultCache state store: `E:\Projects\Ghostlight\state\ghostlight-state.cultcache.jsonl`
-- Pre-compaction helper: `E:\Projects\Ghostlight\tools\ghostlight_prepare_compaction.py`
+- Project root: `F:\Projects\Ghostlight`
+- Canonical map: `F:\Projects\Ghostlight\state\map.yaml`
+- Scratch surface: `F:\Projects\Ghostlight\state\scratch.md`
+- Distilled evidence ledger: `F:\Projects\Ghostlight\state\evidence.jsonl`
+- Branch ledger: `F:\Projects\Ghostlight\state\branches.json`
+- Handoff summary: `F:\Projects\Ghostlight\notes\fresh-workspace-handoff.md`
+- System map: `F:\Projects\Ghostlight\notes\ghostlight-current-system-map.md`
+- Implementation plan: `F:\Projects\Ghostlight\notes\ghostlight-implementation-plan.md`
+- Architecture rationale: `F:\Projects\Ghostlight\notes\architecture-rationale.md`
+- State CLI: `F:\Projects\Ghostlight\tools\ghostlight_state.py`
+- CultCache state seam: `F:\Projects\Ghostlight\tools\ghostlight_state_store.py`
+- CultCache-Py submodule: `F:\Projects\Ghostlight\vendor\cultcache-py`
+- CultCache state store: `F:\Projects\Ghostlight\state\ghostlight-state.cultcache.jsonl`
+- Pre-compaction helper: `F:\Projects\Ghostlight\tools\ghostlight_prepare_compaction.py`
 
 ## Useful Commands
 

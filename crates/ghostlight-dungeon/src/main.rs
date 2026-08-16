@@ -9,10 +9,12 @@ use axum::{
 use ghostlight_dungeon::windows_secret::unprotect_machine_utf8;
 use ghostlight_dungeon::{
     WorldKernel,
-    domain::{Campaign, WorldCommand},
-    model::{DeepSeekPort, ModelStageRequest, run_validated_stage},
+    compiler::{CustomStart, OpeningRequest, OpeningSuggestion, SelectedStart, WorldCompiler},
+    domain::{Campaign, WorldCommand, WorldCompilePreview},
+    model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     persistence::CampaignStore,
     surface::player_surface,
+    vault::VoidBotMcpVault,
 };
 use serde::Serialize;
 use std::{
@@ -32,6 +34,8 @@ struct AppState {
     invites: Arc<Mutex<BTreeSet<String>>>,
     sessions: Arc<Mutex<BTreeSet<String>>>,
     deepseek_status: String,
+    compiler: Option<Arc<WorldCompiler>>,
+    compile_previews: Arc<Mutex<BTreeMap<String, WorldCompilePreview>>>,
 }
 
 #[tokio::main]
@@ -45,13 +49,6 @@ async fn main() -> anyhow::Result<()> {
     std::fs::create_dir_all(runtime_root.join("campaigns/default"))?;
     let store = CampaignStore::open(runtime_root.join("campaigns/default/campaign.cc"))?;
     let kernel = WorldKernel::start(store.clone());
-    if store.keys("campaign.v1")?.is_empty() {
-        kernel
-            .command(WorldCommand::CreateCampaign {
-                campaign: seed_campaign(),
-            })
-            .await?;
-    }
     let invite_blob = runtime_root.join("secrets/invites.dpapi");
     #[cfg(windows)]
     let invite_material = if invite_blob.is_file() {
@@ -78,10 +75,11 @@ async fn main() -> anyhow::Result<()> {
         ));
     }
     let secret_path = runtime_root.join("secrets/deepseek.dpapi");
-    let deepseek_status = if secret_path.is_file() {
-        let provider = DeepSeekPort::from_machine_dpapi(&secret_path)?;
+    let (deepseek_status, compiler) = if secret_path.is_file() {
+        let provider: Arc<dyn ModelPort> =
+            Arc::new(DeepSeekPort::from_machine_dpapi(&secret_path)?);
         let probe = run_validated_stage(
-            &provider,
+            provider.as_ref(),
             &ModelStageRequest {
                 stage: "startup_probe".into(),
                 model: "deepseek-v4-flash".into(),
@@ -92,9 +90,16 @@ async fn main() -> anyhow::Result<()> {
             },
         )
         .await?;
-        format!("ready:{}", probe.receipt.output_hash)
+        (
+            format!("ready:{}", probe.receipt.output_hash),
+            Some(Arc::new(WorldCompiler::new(
+                Arc::new(VoidBotMcpVault::starfire_loopback()),
+                provider,
+                "deepseek-v4-pro",
+            ))),
+        )
     } else {
-        "missing-secret".into()
+        ("missing-secret".into(), None)
     };
     let state = AppState {
         kernel,
@@ -102,6 +107,8 @@ async fn main() -> anyhow::Result<()> {
         invites: Arc::new(Mutex::new(invite_tokens)),
         sessions: Arc::new(Mutex::new(BTreeSet::new())),
         deepseek_status,
+        compiler,
+        compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
     };
     let release_web_root = std::env::current_exe()?
         .parent()
@@ -113,6 +120,11 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health))
         .route("/invite/{token}", get(invite))
         .route("/api/surface", get(surface))
+        .route("/api/compiler/openings", post(compile_openings))
+        .route("/api/compiler/roles", post(compile_roles))
+        .route("/api/compiler/selected", post(compile_selected))
+        .route("/api/compiler/custom", post(compile_custom))
+        .route("/api/compiler/approve/{preview_id}", post(approve_preview))
         .route("/api/command", post(command))
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state);
@@ -152,7 +164,159 @@ async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response 
     }
     match load_campaign(&state.store) {
         Ok(campaign) => Json(player_surface(&campaign)).into_response(),
-        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+        Err(_) => Json(serde_json::json!({"schema":"gamecult.eve.surface.v1","surface_id":"ghostlight.compiler","version":0,"title":"Compile a world","layout":{"kind":"stack","children":[]}})).into_response(),
+    }
+}
+
+async fn compile_openings(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<OpeningRequest>,
+) -> Response {
+    if !authorized(&headers, &state).await {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    let Some(compiler) = &state.compiler else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "DeepSeek credential is unavailable",
+        )
+            .into_response();
+    };
+    match compiler.suggest_openings(request).await {
+        Ok(value) => Json(value).into_response(),
+        Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
+    }
+}
+
+async fn compile_custom(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<CustomStart>,
+) -> Response {
+    if !authorized(&headers, &state).await {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    if !state
+        .store
+        .keys("campaign.v1")
+        .unwrap_or_default()
+        .is_empty()
+    {
+        return (StatusCode::CONFLICT, "campaign already exists").into_response();
+    }
+    let Some(compiler) = &state.compiler else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "DeepSeek credential is unavailable",
+        )
+            .into_response();
+    };
+    match compiler.compile_custom(request).await {
+        Ok((preview, receipt)) => {
+            let id = uuid::Uuid::new_v4().to_string();
+            state
+                .compile_previews
+                .lock()
+                .await
+                .insert(id.clone(), preview.clone());
+            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipt":receipt}))
+                .into_response()
+        }
+        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
+    }
+}
+
+async fn compile_roles(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(opening): Json<OpeningSuggestion>,
+) -> Response {
+    if !authorized(&headers, &state).await {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    let Some(compiler) = &state.compiler else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "DeepSeek credential is unavailable",
+        )
+            .into_response();
+    };
+    match compiler.suggest_roles(&opening).await {
+        Ok(value) => Json(value).into_response(),
+        Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
+    }
+}
+
+async fn compile_selected(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SelectedStart>,
+) -> Response {
+    if !authorized(&headers, &state).await {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    if !state
+        .store
+        .keys("campaign.v1")
+        .unwrap_or_default()
+        .is_empty()
+    {
+        return (StatusCode::CONFLICT, "campaign already exists").into_response();
+    }
+    let Some(compiler) = &state.compiler else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "DeepSeek credential is unavailable",
+        )
+            .into_response();
+    };
+    store_preview(&state, compiler.compile_selected(request).await).await
+}
+
+async fn store_preview(
+    state: &AppState,
+    result: anyhow::Result<(
+        WorldCompilePreview,
+        ghostlight_dungeon::model::ModelStageReceipt,
+    )>,
+) -> Response {
+    match result {
+        Ok((preview, receipt)) => {
+            let id = uuid::Uuid::new_v4().to_string();
+            state
+                .compile_previews
+                .lock()
+                .await
+                .insert(id.clone(), preview.clone());
+            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipt":receipt}))
+                .into_response()
+        }
+        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
+    }
+}
+
+async fn approve_preview(
+    Path(preview_id): Path<String>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    if !authorized(&headers, &state).await {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    let Some(preview) = state.compile_previews.lock().await.remove(&preview_id) else {
+        return (StatusCode::NOT_FOUND, "preview missing or already consumed").into_response();
+    };
+    match state
+        .kernel
+        .command(WorldCommand::CreateCampaign {
+            campaign: preview.campaign,
+            evidence_receipts: preview.evidence_receipts,
+        })
+        .await
+    {
+        Ok(value) => Json(value).into_response(),
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
     }
 }
 
@@ -209,6 +373,7 @@ struct ErrorBody {
     error: String,
 }
 
+#[allow(dead_code)]
 fn seed_campaign() -> Campaign {
     let id = uuid::Uuid::new_v4();
     let location = ghostlight_dungeon::domain::Location {
