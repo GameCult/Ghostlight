@@ -314,6 +314,43 @@ impl WorldCompiler {
         if receipts.iter().all(|r| r.witnesses.is_empty()) {
             return Err(anyhow!("Vault returned no evidence; compilation refused"));
         }
+        let source_ids = receipts
+            .iter()
+            .flat_map(|receipt| {
+                receipt
+                    .witnesses
+                    .iter()
+                    .map(|witness| witness.source_id.clone())
+            })
+            .collect::<BTreeSet<_>>();
+        let mut tasks = tokio::task::JoinSet::new();
+        for source_id in source_ids {
+            let vault = self.vault.clone();
+            tasks.spawn(async move {
+                let exact = vault.exact_document(&source_id).await?;
+                Ok::<_, anyhow::Error>((source_id, exact))
+            });
+        }
+        let mut exact_documents = BTreeMap::new();
+        while let Some(result) = tasks.join_next().await {
+            let (source_id, exact) = result??;
+            exact_documents.insert(source_id, exact);
+        }
+        for witness in receipts
+            .iter_mut()
+            .flat_map(|receipt| receipt.witnesses.iter_mut())
+        {
+            let exact = exact_documents
+                .get(&witness.source_id)
+                .ok_or_else(|| anyhow!("Vault omitted exact document for {}", witness.source_id))?;
+            if !normalized_contains(&exact.excerpt, &witness.excerpt) {
+                return Err(anyhow!(
+                    "retrieval excerpt is not witnessed by exact document {}",
+                    witness.source_id
+                ));
+            }
+            witness.content_hash = exact.content_hash.clone();
+        }
         Ok(receipts)
     }
 
@@ -347,6 +384,12 @@ impl WorldCompiler {
             out.receipt,
         ))
     }
+}
+
+fn normalized_contains(document: &str, excerpt: &str) -> bool {
+    let document = document.split_whitespace().collect::<Vec<_>>().join(" ");
+    let excerpt = excerpt.split_whitespace().collect::<Vec<_>>().join(" ");
+    !excerpt.is_empty() && document.contains(&excerpt)
 }
 
 pub fn validate_region_expansion(
@@ -583,6 +626,7 @@ mod tests {
     use super::*;
     use crate::{domain::SourceWitness, model::ModelPort, vault::FixtureVault};
     use async_trait::async_trait;
+    use sha2::Digest;
 
     struct CompilerModel {
         invalid_route: bool,
@@ -631,6 +675,49 @@ mod tests {
         })
     }
 
+    struct ExactWitnessVault;
+    #[async_trait]
+    impl VaultProvider for ExactWitnessVault {
+        async fn search(&self, query: &VaultQuery) -> Result<VaultEvidenceReceipt> {
+            Ok(VaultEvidenceReceipt {
+                schema: "ghostlight.vault_evidence_receipt.v1".into(),
+                id: "search-receipt".into(),
+                provider: "fixture".into(),
+                query_hash: "sha256:query".into(),
+                witnesses: vec![SourceWitness {
+                    source_id: "AetheriaLore:route.md".into(),
+                    exact_locator: "route.md:2-2".into(),
+                    content_hash: "sha256:excerpt-only".into(),
+                    excerpt: "The route takes six hours.".into(),
+                    authority_lane: query.authority_lanes.join(","),
+                    temporal_scope: query.temporal_scope.clone(),
+                }],
+                retrieved_at: Utc::now(),
+            })
+        }
+
+        async fn surrounding_context(&self, _: &str, _: u32) -> Result<SourceWitness> {
+            unreachable!()
+        }
+
+        async fn exact_document(&self, source_id: &str) -> Result<SourceWitness> {
+            let content =
+                "The forge opens at dawn.\nThe route takes six hours.\nThe gate closes at dusk.";
+            Ok(SourceWitness {
+                source_id: source_id.into(),
+                exact_locator: "route.md".into(),
+                content_hash: format!("sha256:{:x}", sha2::Sha256::digest(content.as_bytes())),
+                excerpt: content.into(),
+                authority_lane: "AetheriaLore".into(),
+                temporal_scope: "fixture".into(),
+            })
+        }
+
+        fn provider_id(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
     #[tokio::test]
     async fn opening_stage_requires_three_distinct_axes() {
         let compiler = WorldCompiler::new(
@@ -649,6 +736,24 @@ mod tests {
             .unwrap();
         assert_eq!(output.openings.len(), 3);
         assert_eq!(output.evidence_receipts.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn retrieval_receipts_bind_excerpts_to_exact_archive_hashes() {
+        let compiler = WorldCompiler::new(
+            Arc::new(ExactWitnessVault),
+            Arc::new(CompilerModel {
+                invalid_route: false,
+            }),
+            "pro",
+        );
+        let receipts = compiler
+            .retrieve_all(&["route".into()], "fixture", 3)
+            .await
+            .unwrap();
+        let witness = &receipts[0].witnesses[0];
+        assert_ne!(witness.content_hash, "sha256:excerpt-only");
+        assert_eq!(witness.exact_locator, "route.md:2-2");
     }
 
     #[tokio::test]

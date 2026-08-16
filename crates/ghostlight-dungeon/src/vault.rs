@@ -162,7 +162,15 @@ impl VaultProvider for VoidBotMcpVault {
         let response = self
             .call_tool(
                 "search_sources",
-                serde_json::json!({"query":query.query,"limit":query.limit}),
+                serde_json::json!({
+                    "query":query.query,
+                    "limit":query.limit,
+                    "repoName": if query.authority_lanes.iter().any(|lane| lane == "AetheriaLore") {
+                        Some("AetheriaLore")
+                    } else {
+                        None
+                    }
+                }),
             )
             .await?;
         let results = response
