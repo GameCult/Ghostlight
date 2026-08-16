@@ -2,6 +2,20 @@
 
 ## Current Phase
 
+GhostlightDungeon is now the active implementation program. Its authoritative
+architecture and ownership map is
+`docs/architecture/ghostlight-dungeon-mvp.md`. The existing data-generation
+pipeline and fixtures remain regression evidence; they do not become hosted
+runtime authorities.
+
+The first required cut is documentation and extraction mapping: inventory the
+Projector → Persona → Interpreter machinery currently embedded in Epiphany,
+classify move/stay/split/delete ownership, and only then continue runtime code.
+Ghostlight owns the generalized projection organ. Epiphany keeps her canonical
+Persona mind and consumes the shared organ through a narrow adapter.
+
+## Prior research-program phase
+
 Build a reliable data-generation loop for socially persistent Aetheria agents.
 The immediate target is not a full simulation. It is a clean, reviewed,
 sandboxed training-data pipeline for branching scenes and state consequences.

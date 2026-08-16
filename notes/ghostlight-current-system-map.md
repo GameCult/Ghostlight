@@ -1,7 +1,25 @@
 ﻿# Ghostlight Current System Map
 
-Ghostlight does not have a full runtime yet. The live system is a set of
-validated artifact seams for producing reviewed training data.
+GhostlightDungeon is the active runtime program. Its authority map is
+`docs/architecture/ghostlight-dungeon-mvp.md`. The runtime is not yet complete;
+the existing validated artifact seams remain regression evidence.
+
+## GhostlightDungeon target flow
+
+```text
+Vault evidence receipts + typed campaign snapshot
+  -> permissioned projection
+  -> Persona receives private lived narrative only
+  -> Interpreter emits typed deltas and action proposals
+  -> deterministic gates + expected revision
+  -> one WorldCommand enters the campaign mailbox
+  -> atomic CultCache commit + receipt
+  -> parallel affected-participant appraisal
+  -> CultMesh/Eve projection
+```
+
+Ghostlight owns the generalized projection organ. Epiphany and other consumers
+own their canonical Persona state and consequence commits.
 
 ## Control Flow
 

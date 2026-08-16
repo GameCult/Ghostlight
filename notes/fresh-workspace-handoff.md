@@ -27,6 +27,18 @@ behavior, major faction decision-making, and technology/item manifest generation
 
 ## Current Focus
 
+GhostlightDungeon is the active MVP. Read
+`docs/architecture/ghostlight-dungeon-mvp.md` before touching its runtime. The
+per-campaign WorldKernel mailbox is the sole canonical writer. Ghostlight owns
+the generalized Projector → Persona → Interpreter organ; Epiphany retains her
+canonical Persona mind and will consume the shared organ through an adapter.
+
+The immediate next action is to map Epiphany's existing projection machinery
+into move/stay/split/delete ownership before continuing the Rust scaffold.
+Existing Ghostlight fixtures remain regression evidence.
+
+## Prior research pipeline focus
+
 The active path is a source-grounded branching-scene data loop:
 
 1. Source-ground Aetheria context.
@@ -322,13 +334,11 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-Choose the next bounded move: backfill Corvid/NeuroSyn room-scale lore gaps,
-convert the Corvid fixture into a true scene-loop receipt chain, backfill the
-useful Lucent lore gaps into AetheriaLore, build a visual/scene-set pass for the
-Lucent IF, or move to the next coverage fixture. Current accepted full-fixture
-coverage is still empty; Pallas, Lucent, and Corvid derivatives are draft rows
-with per-organ training readiness or reference-only value, not accepted broad
-corpus fixtures.
+Inventory Epiphany's current Persona projection body with source references:
+canonical state owner, slice inputs, projector, narrative contract, Persona
+invocation, Interpreter, commit boundary, receipts, model transport, and
+Epiphany-specific policy. Record move/stay/split/delete decisions in the
+GhostlightDungeon architecture before moving implementation code.
 
 ## Warnings
 
