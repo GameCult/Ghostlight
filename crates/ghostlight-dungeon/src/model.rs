@@ -173,7 +173,10 @@ pub struct DeepSeekPort {
 impl DeepSeekPort {
     pub fn new(api_key: String) -> Self {
         Self {
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(45))
+                .build()
+                .expect("static DeepSeek client configuration is valid"),
             api_key: Zeroizing::new(api_key),
             endpoint: "https://api.deepseek.com/chat/completions".into(),
         }

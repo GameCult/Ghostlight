@@ -2,8 +2,8 @@ use crate::{
     domain::{
         ActionAssessment, ActorState, ActorStateDelta, Campaign, CanonCandidate, Event,
         GestaltMemberDelta, GestaltPersonaState, InstitutionState, Location, NarrationProjection,
-        NewsIssue, RollReceipt, VaultEvidenceReceipt, WorldActionProposal, WorldClock,
-        WorldCommitReceipt, WorldCompilePreview, WorldFact,
+        NewsIssue, RollReceipt, StrategicTickPlan, VaultEvidenceReceipt, WorldActionProposal,
+        WorldClock, WorldCommitReceipt, WorldCompilePreview, WorldFact,
     },
     model::ModelStageReceipt,
     surface::player_surface,
@@ -285,6 +285,7 @@ fn schema_catalog() -> Value {
         "ghostlight.persona_stage_receipt.v1": schemars::schema_for!(ModelStageReceipt),
         "ghostlight.actor_state_delta.v1": schemars::schema_for!(ActorStateDelta),
         "ghostlight.world_action_proposal.v1": schemars::schema_for!(WorldActionProposal),
+        "ghostlight.strategic_tick_plan.v1": schemars::schema_for!(StrategicTickPlan),
         "ghostlight.news_issue.v1": schemars::schema_for!(NewsIssue),
         "ghostlight.canon_candidate.v1": schemars::schema_for!(CanonCandidate),
         "ghostlight.gestalt_persona_state.v1": schemars::schema_for!(GestaltPersonaState),

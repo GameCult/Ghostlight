@@ -240,6 +240,7 @@ fn execute(
         WorldCommand::AdvanceStrategicTick {
             expected_revision,
             source: _,
+            plan,
         } => {
             require_revision(&campaign, expected_revision)?;
             campaign.world_time += Duration::hours(i64::from(campaign.tick_hours));
@@ -247,44 +248,10 @@ fn execute(
                 clock.progress = clock.progress.saturating_add(1).min(clock.threshold);
             }
             let tick_number = campaign.away_ticks_processed.saturating_add(1);
-            let mut tick_events = Vec::new();
-            for institution in campaign.institutions.values_mut() {
-                let summary = if let Some(goal) = institution.goals.first() {
-                    format!("{} advances its interest: {}", institution.name, goal)
-                } else {
-                    format!("{} consolidates its current position", institution.name)
-                };
-                institution.posture = format!("acting after strategic tick {tick_number}");
-                let event_id = format!("strategic:{}:{}", campaign.revision + 1, institution.id);
-                tick_events.push(crate::domain::Event {
-                    id: event_id,
-                    at: campaign.world_time,
-                    kind: "institution_action".into(),
-                    summary,
-                    actor_ids: vec![],
-                    institution_ids: vec![institution.id.clone()],
-                    location_ids: vec![],
-                    public_channels: vec![format!("institution:{}", institution.id)],
-                });
-            }
-            for gestalt in campaign.gestalts.values_mut() {
-                gestalt.version += 1;
-                let summary = if let Some(goal) = gestalt.goals.first() {
-                    format!("{} collectively advances: {}", gestalt.name, goal)
-                } else {
-                    format!("{} carries on its shared routine", gestalt.name)
-                };
-                tick_events.push(crate::domain::Event {
-                    id: format!("strategic:{}:gestalt:{}", campaign.revision + 1, gestalt.id),
-                    at: campaign.world_time,
-                    kind: "gestalt_action".into(),
-                    summary,
-                    actor_ids: vec![],
-                    institution_ids: vec![],
-                    location_ids: vec![gestalt.home_location_id.clone()],
-                    public_channels: vec![format!("gestalt:{}", gestalt.id)],
-                });
-            }
+            let tick_events = match plan {
+                Some(plan) => apply_strategic_tick_plan(&mut campaign, plan)?,
+                None => deterministic_strategic_tick(&mut campaign, tick_number),
+            };
             let player = campaign.actors.get(&campaign.player_actor_id);
             for event in &tick_events {
                 let accessible = event.public_channels.iter().find(|channel| {
@@ -847,6 +814,209 @@ fn assess(c: &Campaign, intent: ActionIntent) -> ActionAssessment {
     a
 }
 
+fn apply_strategic_tick_plan(
+    campaign: &mut Campaign,
+    plan: crate::domain::StrategicTickPlan,
+) -> Result<Vec<crate::domain::Event>, KernelError> {
+    let revision = campaign.revision + 1;
+    let at = campaign.world_time;
+    let mut events = Vec::new();
+    let mut seen_institutions = BTreeSet::new();
+    for action in plan.institution_actions {
+        if !seen_institutions.insert(action.institution_id.clone()) {
+            return Err(KernelError::Invalid(
+                "institution acts twice in one strategic tick".into(),
+            ));
+        }
+        if action.summary.trim().is_empty() || action.posture.trim().is_empty() {
+            return Err(KernelError::Invalid(
+                "strategic institution action is empty".into(),
+            ));
+        }
+        if action
+            .location_ids
+            .iter()
+            .any(|id| !campaign.locations.contains_key(id))
+        {
+            return Err(KernelError::Invalid(
+                "strategic institution action invented a location".into(),
+            ));
+        }
+        validate_public_channels(&action.public_channels)?;
+        let institution = campaign
+            .institutions
+            .get_mut(&action.institution_id)
+            .ok_or_else(|| KernelError::Invalid("strategic plan invented an institution".into()))?;
+        institution.posture = action.posture;
+        events.push(crate::domain::Event {
+            id: format!("strategic:{revision}:institution:{}", institution.id),
+            at,
+            kind: "institution_action".into(),
+            summary: action.summary,
+            actor_ids: vec![],
+            institution_ids: vec![institution.id.clone()],
+            location_ids: action.location_ids,
+            public_channels: action.public_channels,
+        });
+    }
+
+    let mut seen_gestalts = BTreeSet::new();
+    for action in plan.gestalt_actions {
+        if !seen_gestalts.insert(action.gestalt_id.clone()) {
+            return Err(KernelError::Invalid(
+                "gestalt acts twice in one strategic tick".into(),
+            ));
+        }
+        if action.summary.trim().is_empty()
+            || action.pressure_additions.len() > 4
+            || action
+                .pressure_additions
+                .iter()
+                .any(|p| p.trim().is_empty() || p.len() > 240)
+        {
+            return Err(KernelError::Invalid(
+                "strategic gestalt action is invalid".into(),
+            ));
+        }
+        validate_public_channels(&action.public_channels)?;
+        let gestalt = campaign
+            .gestalts
+            .get_mut(&action.gestalt_id)
+            .ok_or_else(|| KernelError::Invalid("strategic plan invented a gestalt".into()))?;
+        for pressure in action.pressure_additions {
+            if !gestalt.pressures.contains(&pressure) {
+                gestalt.pressures.push(pressure);
+            }
+        }
+        gestalt.version += 1;
+        events.push(crate::domain::Event {
+            id: format!("strategic:{revision}:gestalt:{}", gestalt.id),
+            at,
+            kind: "gestalt_action".into(),
+            summary: action.summary,
+            actor_ids: vec![],
+            institution_ids: vec![],
+            location_ids: vec![gestalt.home_location_id.clone()],
+            public_channels: action.public_channels,
+        });
+    }
+
+    let mut seen_actors = BTreeSet::new();
+    for action in plan.actor_moves {
+        if !seen_actors.insert(action.actor_id.clone()) {
+            return Err(KernelError::Invalid(
+                "actor moves twice in one strategic tick".into(),
+            ));
+        }
+        if action.actor_id == campaign.player_actor_id {
+            return Err(KernelError::Invalid(
+                "strategic simulation cannot puppet the player".into(),
+            ));
+        }
+        if action.summary.trim().is_empty() {
+            return Err(KernelError::Invalid(
+                "strategic actor movement has no summary".into(),
+            ));
+        }
+        validate_public_channels(&action.public_channels)?;
+        let actor = campaign
+            .actors
+            .get(&action.actor_id)
+            .ok_or_else(|| KernelError::Invalid("strategic plan invented an actor".into()))?;
+        let route = campaign
+            .locations
+            .get(&actor.location_id)
+            .and_then(|location| {
+                location
+                    .routes
+                    .values()
+                    .find(|route| route.destination_id == action.destination_id)
+            })
+            .ok_or_else(|| {
+                KernelError::Invalid("strategic actor movement has no direct route".into())
+            })?;
+        if route.travel_minutes > campaign.tick_hours.saturating_mul(60) {
+            return Err(KernelError::Invalid(
+                "strategic actor movement exceeds the tick duration".into(),
+            ));
+        }
+        let origin = actor.location_id.clone();
+        campaign
+            .actors
+            .get_mut(&action.actor_id)
+            .expect("actor was validated")
+            .location_id = action.destination_id.clone();
+        events.push(crate::domain::Event {
+            id: format!("strategic:{revision}:actor:{}", action.actor_id),
+            at,
+            kind: "actor_movement".into(),
+            summary: action.summary,
+            actor_ids: vec![action.actor_id],
+            institution_ids: vec![],
+            location_ids: vec![origin, action.destination_id],
+            public_channels: action.public_channels,
+        });
+    }
+    Ok(events)
+}
+
+fn deterministic_strategic_tick(
+    campaign: &mut Campaign,
+    tick_number: u8,
+) -> Vec<crate::domain::Event> {
+    let mut events = Vec::new();
+    for institution in campaign.institutions.values_mut() {
+        let summary = institution
+            .goals
+            .first()
+            .map(|goal| format!("{} advances its interest: {}", institution.name, goal))
+            .unwrap_or_else(|| format!("{} consolidates its current position", institution.name));
+        institution.posture = format!("acting after strategic tick {tick_number}");
+        events.push(crate::domain::Event {
+            id: format!("strategic:{}:{}", campaign.revision + 1, institution.id),
+            at: campaign.world_time,
+            kind: "institution_action".into(),
+            summary,
+            actor_ids: vec![],
+            institution_ids: vec![institution.id.clone()],
+            location_ids: vec![],
+            public_channels: vec![format!("institution:{}", institution.id)],
+        });
+    }
+    for gestalt in campaign.gestalts.values_mut() {
+        gestalt.version += 1;
+        let summary = gestalt
+            .goals
+            .first()
+            .map(|goal| format!("{} collectively advances: {}", gestalt.name, goal))
+            .unwrap_or_else(|| format!("{} carries on its shared routine", gestalt.name));
+        events.push(crate::domain::Event {
+            id: format!("strategic:{}:gestalt:{}", campaign.revision + 1, gestalt.id),
+            at: campaign.world_time,
+            kind: "gestalt_action".into(),
+            summary,
+            actor_ids: vec![],
+            institution_ids: vec![],
+            location_ids: vec![gestalt.home_location_id.clone()],
+            public_channels: vec![format!("gestalt:{}", gestalt.id)],
+        });
+    }
+    events
+}
+
+fn validate_public_channels(channels: &[String]) -> Result<(), KernelError> {
+    if channels.len() > 8
+        || channels
+            .iter()
+            .any(|c| c.trim().is_empty() || c.len() > 160)
+    {
+        return Err(KernelError::Invalid(
+            "strategic action has invalid information channels".into(),
+        ));
+    }
+    Ok(())
+}
+
 fn commit(
     store: &CampaignStore,
     row: cultcache_legacy::CultCacheEnvelope,
@@ -1117,6 +1287,7 @@ mod tests {
             .command(WorldCommand::AdvanceStrategicTick {
                 expected_revision: 0,
                 source: TickSource::Scheduler,
+                plan: None,
             })
             .await
             .unwrap();
@@ -1127,6 +1298,93 @@ mod tests {
         assert!(campaign.news.is_empty());
         assert_eq!(campaign.away_ticks_processed, 1);
         assert!(campaign.institutions["board"].posture.contains("acting"));
+    }
+
+    #[tokio::test]
+    async fn strategic_plan_moves_remote_actors_but_cannot_puppet_the_player() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.locations.get_mut("room").unwrap().routes.insert(
+            "road".into(),
+            Route {
+                destination_id: "yard".into(),
+                distance: "near".into(),
+                travel_minutes: 20,
+            },
+        );
+        seed.locations.insert(
+            "yard".into(),
+            Location {
+                id: "yard".into(),
+                name: "Yard".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec![],
+            },
+        );
+        let mut npc = seed.actors["player"].clone();
+        npc.id = "runner".into();
+        npc.name = "Runner".into();
+        seed.actors.insert(npc.id.clone(), npc);
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let puppet = crate::domain::StrategicTickPlan {
+            actor_moves: vec![crate::domain::StrategicActorMove {
+                actor_id: "player".into(),
+                destination_id: "yard".into(),
+                summary: "The absent player obeys.".into(),
+                public_channels: vec![],
+            }],
+            ..Default::default()
+        };
+        assert!(matches!(
+            kernel
+                .command(WorldCommand::AdvanceStrategicTick {
+                    expected_revision: 0,
+                    source: TickSource::Scheduler,
+                    plan: Some(puppet),
+                })
+                .await,
+            Err(KernelError::Invalid(_))
+        ));
+        let (_, unchanged): (_, Campaign) = store
+            .load("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap();
+        assert_eq!(unchanged.revision, 0);
+        assert_eq!(unchanged.actors["player"].location_id, "room");
+
+        let valid = crate::domain::StrategicTickPlan {
+            actor_moves: vec![crate::domain::StrategicActorMove {
+                actor_id: "runner".into(),
+                destination_id: "yard".into(),
+                summary: "The runner carries the warning to the yard.".into(),
+                public_channels: vec!["courier-network".into()],
+            }],
+            ..Default::default()
+        };
+        let result = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 0,
+                source: TickSource::Scheduler,
+                plan: Some(valid),
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!("expected commit")
+        };
+        assert_eq!(campaign.actors["runner"].location_id, "yard");
+        assert_eq!(campaign.actors["player"].location_id, "room");
+        assert_eq!(campaign.events[0].kind, "actor_movement");
     }
 
     #[tokio::test]

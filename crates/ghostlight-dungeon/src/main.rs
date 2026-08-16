@@ -737,7 +737,14 @@ async fn command(
                 .into_response();
         }
     };
-    if let Err(error) = process_due_ticks(&runtime).await {
+    if let Err(error) = process_due_ticks(
+        &state,
+        &runtime,
+        ghostlight_dungeon::domain::TickSource::ReturnCatchUp,
+        false,
+    )
+    .await
+    {
         return (
             StatusCode::CONFLICT,
             Json(ErrorBody {
@@ -1016,7 +1023,14 @@ async fn scheduler_loop(state: AppState) {
         for id in state.registry.list().await {
             match state.registry.runtime(id).await {
                 Ok(runtime) => {
-                    if let Err(error) = process_due_ticks(&runtime).await {
+                    if let Err(error) = process_due_ticks(
+                        &state,
+                        &runtime,
+                        ghostlight_dungeon::domain::TickSource::Scheduler,
+                        true,
+                    )
+                    .await
+                    {
                         tracing::warn!(%id,%error,"strategic scheduler pulse refused");
                     }
                 }
@@ -1299,8 +1313,16 @@ async fn operator_inspector(headers: HeaderMap, State(state): State<AppState>) -
     Json(serde_json::json!({"schema":"ghostlight.operator_inspector.v1","campaign":campaign,"evidence":evidence,"commit_receipts":commits,"model_stage_receipts":stages,"rejected_proposals":rejected,"scheduler":{"live_turn_pressure":state.live_turns.load(Ordering::SeqCst)}})).into_response()
 }
 
-async fn process_due_ticks(runtime: &CampaignRuntime) -> anyhow::Result<()> {
+async fn process_due_ticks(
+    state: &AppState,
+    runtime: &CampaignRuntime,
+    source: ghostlight_dungeon::domain::TickSource,
+    yield_to_live_turns: bool,
+) -> anyhow::Result<()> {
     loop {
+        if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
+            return Ok(());
+        }
         let campaign = match load_campaign(&runtime.store) {
             Ok(value) => value,
             Err(_) => return Ok(()),
@@ -1312,11 +1334,40 @@ async fn process_due_ticks(runtime: &CampaignRuntime) -> anyhow::Result<()> {
         if campaign.away_ticks_processed >= target {
             return Ok(());
         }
+        let plan = if let Some(model) = &state.model {
+            let (plan, stage) =
+                ghostlight_dungeon::scheduler::propose_strategic_tick(model.as_ref(), &campaign)
+                    .await?;
+            match runtime
+                .store
+                .load::<ghostlight_dungeon::model::ModelStageReceipt>(
+                    "persona_stage_receipt.v1",
+                    &stage.receipt.output_hash,
+                )? {
+                Some((_, existing)) if existing == stage.receipt => {}
+                Some(_) => anyhow::bail!("strategic model receipt hash collision"),
+                None => {
+                    runtime.store.insert(
+                        "persona_stage_receipt.v1",
+                        "ghostlight.persona_stage_receipt.v1",
+                        &stage.receipt.output_hash,
+                        &stage.receipt,
+                    )?;
+                }
+            }
+            Some(plan)
+        } else {
+            None
+        };
+        if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
+            return Ok(());
+        }
         runtime
             .kernel
             .command(WorldCommand::AdvanceStrategicTick {
                 expected_revision: campaign.revision,
-                source: ghostlight_dungeon::domain::TickSource::ReturnCatchUp,
+                source: source.clone(),
+                plan,
             })
             .await?;
     }

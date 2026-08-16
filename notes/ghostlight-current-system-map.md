@@ -21,6 +21,21 @@ Vault evidence receipts + typed campaign snapshot
 Ghostlight owns the generalized projection organ. Epiphany and other consumers
 own their canonical Persona state and consequence commits.
 
+Away-time agency follows a separate proposal/commit seam:
+
+```text
+exact campaign revision
+  -> flash-model StrategicTickPlan proposal
+  -> WorldKernel validates IDs, non-player scope, topology, duration, and bounds
+  -> AdvanceStrategicTick through the campaign mailbox
+  -> atomic campaign/event/news commit
+```
+
+The model owns no tick mutation. A provider failure or invalid proposal leaves
+the campaign revision and world time untouched. Background inference checks
+live-turn pressure before launch and again before commit; return catch-up uses
+the same command path with player-turn priority.
+
 ## Control Flow
 
 1. Rehydrate from `state/map.yaml`, `notes/fresh-workspace-handoff.md`, this

@@ -148,6 +148,12 @@ stake prose alone never impersonates world mutation.
 - The daemon owns a five-minute scheduler pulse. Campaigns enter away simulation after fifteen minutes without player activity.
 - Each real hour awards one strategic tick, capped at eight pending ticks per absence. The compiled campaign chooses the in-world tick duration; default is six hours.
 - Background simulation affects remote actors, institutions, resources, movement, bargains, investigations, preparation, recruitment, obstruction, and clocks. The absent player is never puppeted or directly harmed.
+- Each due tick asks the flash model for a typed `StrategicTickPlan` against the
+  exact campaign revision. The WorldKernel accepts only known institutions,
+  gestalts, and non-player actors; direct-route movement must fit inside the
+  tick duration, information channels are bounded, and population pressure
+  cannot silently become canon knowledge. Invalid, stale, timed-out, or
+  malformed plans leave world state unchanged.
 - The scheduler and return-time catch-up invoke the same `AdvanceStrategicTick` command. Catch-up processes missed ticks before accepting the next player action.
 - Live play has inference priority; background work stops launching new calls while a player turn is active.
 - Offscreen events generate information-channel-aware news leads. On return, the player may receive newspapers, reports, messages, or rumors only when the character has access to them; the news layer cannot reveal omniscient state.

@@ -8,19 +8,22 @@ architecture and ownership map is
 pipeline and fixtures remain regression evidence; they do not become hosted
 runtime authorities.
 
-The Epiphany Projector → Persona → Interpreter extraction map is complete.
-Ghostlight owns the generalized projection organ. Epiphany keeps her canonical
-Persona mind and consumes the shared organ through a narrow adapter.
+The Epiphany Projector → Persona → Interpreter extraction and handback are
+complete. Ghostlight owns the generalized projection membrane in the
+`ghostlight-persona-projection` crate. Epiphany consumes an exact Ghostlight Git
+revision and now gives Persona only one lived narrative stream; Epiphany keeps
+her canonical Persona mind, receipts, effect admission, brakes, and external
+consequence authority.
 
-The active implementation cut is the world compiler. The first Rust seam now
-owns Vault witness conversion, distinct opening and role proposals,
-approval-gated custom compilation, deterministic seed validation, atomic
-campaign-plus-evidence admission, and the browser opening/role/custom flow. A
-live DeepSeek plus VoidBot custom compilation passed without committing. A
-disposable HTTP run proved approval persistence and durable hashed invite and
-session state across restart. Implement material-gap decisions, on-demand
-destination compilation, canon-candidate persistence, and reversible gestalt
-member materialization before moving to the action/Persona loop.
+The hosted runtime owns compiler approval, exact VoidBot evidence, campaign
+mailboxes, fiction-first d20 resolution, parallel Persona appraisal, narration,
+reversible gestalt materialization, isolated sessions/campaigns, CultMesh/Eve
+publication, and away-time scheduling. Strategic ticks now use a flash-model
+typed proposal; the WorldKernel forbids player puppeting, invented IDs,
+unreachable movement, and unbounded information or population-pressure edits.
+The active cut is acceptance and deployment truth: exercise live scheduled and
+return-time ticks, the gestalt round trip, model failure, four-actor latency,
+remote CultMesh publication, restart, and exact release provenance.
 
 ## Prior research-program phase
 
@@ -107,10 +110,9 @@ not carry live next-action lists.
      custody, resource accounting, schema validation, source provenance,
      mutation authority, prompt leakage checks, and Ink compilation.
 
-## Deferred
+## Deferred from the earlier fixture program
 
 - Full world simulation loop
-- Autonomous offscreen faction simulation
 - Economy simulation loop
 - Long-horizon plot generation without author scaffolding
 - Fine-tuning before artifact schemas, review criteria, and evaluators stabilize

@@ -218,6 +218,38 @@ pub struct NewsIssue {
     pub reliability: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+pub struct StrategicTickPlan {
+    pub institution_actions: Vec<StrategicInstitutionAction>,
+    pub gestalt_actions: Vec<StrategicGestaltAction>,
+    pub actor_moves: Vec<StrategicActorMove>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct StrategicInstitutionAction {
+    pub institution_id: String,
+    pub posture: String,
+    pub summary: String,
+    pub location_ids: Vec<String>,
+    pub public_channels: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct StrategicGestaltAction {
+    pub gestalt_id: String,
+    pub summary: String,
+    pub pressure_additions: Vec<String>,
+    pub public_channels: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct StrategicActorMove {
+    pub actor_id: String,
+    pub destination_id: String,
+    pub summary: String,
+    pub public_channels: Vec<String>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct CanonCandidate {
     pub schema: String,
@@ -316,6 +348,8 @@ pub enum WorldCommand {
     AdvanceStrategicTick {
         expected_revision: u64,
         source: TickSource,
+        #[serde(default)]
+        plan: Option<StrategicTickPlan>,
     },
     ExpandRegion {
         expected_revision: u64,

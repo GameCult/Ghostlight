@@ -343,11 +343,13 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-Inventory Epiphany's current Persona projection body with source references:
-canonical state owner, slice inputs, projector, narrative contract, Persona
-invocation, Interpreter, commit boundary, receipts, model transport, and
-Epiphany-specific policy. Record move/stay/split/delete decisions in the
-GhostlightDungeon architecture before moving implementation code.
+The Persona extraction and Epiphany handback are complete. Continue the hosted
+MVP acceptance pass: prove live strategic scheduling and return catch-up use the
+flash-model `StrategicTickPlan`, malformed or forbidden plans do not mutate the
+campaign, gestalt individuals survive dematerialization and later population
+ticks, four-actor live latency meets target, remote CultMesh publication works,
+and the normal-process Starfire release has exact restart/firewall/provenance
+evidence.
 
 ## Warnings
 
