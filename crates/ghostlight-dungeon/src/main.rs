@@ -8,7 +8,6 @@ use axum::{
 #[cfg(windows)]
 use ghostlight_dungeon::windows_secret::unprotect_machine_utf8;
 use ghostlight_dungeon::{
-    WorldKernel,
     assessor::ActionAssessor,
     compiler::{CustomStart, OpeningRequest, OpeningSuggestion, SelectedStart, WorldCompiler},
     domain::{
@@ -21,6 +20,7 @@ use ghostlight_dungeon::{
     narrator::Narrator,
     persistence::CampaignStore,
     persona::PersonaProjectionEngine,
+    registry::{CampaignRegistry, CampaignRuntime},
     surface::player_surface,
     turn::{SnapshotPermit, appraise_present},
     vault::VoidBotMcpVault,
@@ -40,15 +40,21 @@ use tracing_subscriber::EnvFilter;
 
 #[derive(Clone)]
 struct AppState {
-    kernel: WorldKernel,
-    store: CampaignStore,
+    registry: CampaignRegistry,
+    runtime_root: PathBuf,
     auth: Arc<Mutex<AuthOwner>>,
     deepseek_status: String,
     compiler: Option<Arc<WorldCompiler>>,
     assessor: Option<Arc<ActionAssessor>>,
     model: Option<Arc<dyn ModelPort>>,
-    compile_previews: Arc<Mutex<BTreeMap<String, WorldCompilePreview>>>,
-    expansion_previews: Arc<Mutex<BTreeMap<String, RegionExpansionPreview>>>,
+    compile_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<WorldCompilePreview>>>>,
+    expansion_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<RegionExpansionPreview>>>>,
+}
+
+#[derive(Clone)]
+struct OwnedPreview<T> {
+    session_hash: String,
+    value: T,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -56,6 +62,10 @@ struct AuthState {
     schema: String,
     unused_invite_hashes: BTreeSet<String>,
     session_hashes: BTreeSet<String>,
+    #[serde(default)]
+    session_campaigns: BTreeMap<String, uuid::Uuid>,
+    #[serde(default)]
+    session_campaign_ids: BTreeMap<String, BTreeSet<uuid::Uuid>>,
 }
 
 struct AuthOwner {
@@ -72,9 +82,9 @@ async fn main() -> anyhow::Result<()> {
     let runtime_root = std::env::var_os("GHOSTLIGHT_DUNGEON_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon"));
-    std::fs::create_dir_all(runtime_root.join("campaigns/default"))?;
-    let store = CampaignStore::open(runtime_root.join("campaigns/default/campaign.cc"))?;
-    let kernel = WorldKernel::start(store.clone());
+    migrate_default_campaign(&runtime_root)?;
+    let registry = CampaignRegistry::new(runtime_root.join("campaigns"))?;
+    registry.load_existing().await?;
     let invite_blob = runtime_root.join("secrets/invites.dpapi");
     #[cfg(windows)]
     let invite_material = if invite_blob.is_file() {
@@ -112,6 +122,8 @@ async fn main() -> anyhow::Result<()> {
                     .map(|token| secret_hash(token))
                     .collect(),
                 session_hashes: BTreeSet::new(),
+                session_campaigns: BTreeMap::new(),
+                session_campaign_ids: BTreeMap::new(),
             };
             let row = auth_store.insert(
                 "auth_state.v1",
@@ -155,8 +167,8 @@ async fn main() -> anyhow::Result<()> {
         ("missing-secret".into(), None, None, None)
     };
     let state = AppState {
-        kernel,
-        store,
+        registry,
+        runtime_root,
         auth: Arc::new(Mutex::new(AuthOwner {
             store: auth_store,
             row: auth_row,
@@ -191,6 +203,14 @@ async fn main() -> anyhow::Result<()> {
             post(approve_destination),
         )
         .route("/api/command", post(command))
+        .route("/api/campaigns", get(campaigns))
+        .route(
+            "/api/campaigns/select/{campaign_id}",
+            post(select_campaign_route),
+        )
+        .route("/api/campaigns/fork", post(fork_campaign))
+        .route("/api/campaigns/reset", post(reset_campaign))
+        .route("/api/campaigns/export", get(export_campaign))
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state);
     let address: SocketAddr = std::env::var("GHOSTLIGHT_DUNGEON_BIND")
@@ -204,7 +224,7 @@ async fn main() -> anyhow::Result<()> {
 
 async fn health(State(state): State<AppState>) -> Json<serde_json::Value> {
     Json(
-        serde_json::json!({"schema":"ghostlight.service_health.v1","status":"ok","storeIdentity":state.store.identity(),"deepseek":state.deepseek_status}),
+        serde_json::json!({"schema":"ghostlight.service_health.v1","status":"ok","campaigns":state.registry.list().await.len(),"deepseek":state.deepseek_status}),
     )
 }
 
@@ -238,18 +258,24 @@ async fn invite(Path(token): Path<String>, State(state): State<AppState>) -> Res
 }
 
 async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
-    match load_campaign(&state.store) {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match session_runtime(&state, &session).await {
+        Ok(Some(value)) => value,
+        Ok(None) => return Json(serde_json::json!({"schema":"gamecult.eve.surface.v1","surface_id":"ghostlight.compiler","version":0,"title":"Compile a world","layout":{"kind":"stack","children":[]}})).into_response(),
+        Err(error) => return (StatusCode::INTERNAL_SERVER_ERROR,error.to_string()).into_response(),
+    };
+    match load_campaign(&runtime.store) {
         Ok(campaign) => {
-            let mut narrations = state
+            let mut narrations = runtime
                 .store
                 .keys("narration_projection.v1")
                 .unwrap_or_default()
                 .into_iter()
                 .filter_map(|key| {
-                    state
+                    runtime
                         .store
                         .load::<NarrationProjection>("narration_projection.v1", &key)
                         .ok()
@@ -261,7 +287,7 @@ async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response 
             narrations.sort_by_key(|value| value.source_revision);
             Json(player_surface(&campaign, &narrations)).into_response()
         }
-        Err(_) => Json(serde_json::json!({"schema":"gamecult.eve.surface.v1","surface_id":"ghostlight.compiler","version":0,"title":"Compile a world","layout":{"kind":"stack","children":[]}})).into_response(),
+        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
     }
 }
 
@@ -291,16 +317,21 @@ async fn compile_custom(
     State(state): State<AppState>,
     Json(request): Json<CustomStart>,
 ) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
-    if !state
-        .store
-        .keys("campaign.v1")
-        .unwrap_or_default()
-        .is_empty()
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    if session_runtime(&state, &session)
+        .await
+        .ok()
+        .flatten()
+        .is_some()
     {
-        return (StatusCode::CONFLICT, "campaign already exists").into_response();
+        return (
+            StatusCode::CONFLICT,
+            "session already has a selected campaign",
+        )
+            .into_response();
     }
     let Some(compiler) = &state.compiler else {
         return (
@@ -312,11 +343,13 @@ async fn compile_custom(
     match compiler.compile_custom(request).await {
         Ok((preview, receipt)) => {
             let id = uuid::Uuid::new_v4().to_string();
-            state
-                .compile_previews
-                .lock()
-                .await
-                .insert(id.clone(), preview.clone());
+            state.compile_previews.lock().await.insert(
+                id.clone(),
+                OwnedPreview {
+                    session_hash: session,
+                    value: preview.clone(),
+                },
+            );
             Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipt":receipt}))
                 .into_response()
         }
@@ -350,16 +383,21 @@ async fn compile_selected(
     State(state): State<AppState>,
     Json(request): Json<SelectedStart>,
 ) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
-    if !state
-        .store
-        .keys("campaign.v1")
-        .unwrap_or_default()
-        .is_empty()
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    if session_runtime(&state, &session)
+        .await
+        .ok()
+        .flatten()
+        .is_some()
     {
-        return (StatusCode::CONFLICT, "campaign already exists").into_response();
+        return (
+            StatusCode::CONFLICT,
+            "session already has a selected campaign",
+        )
+            .into_response();
     }
     let Some(compiler) = &state.compiler else {
         return (
@@ -368,11 +406,12 @@ async fn compile_selected(
         )
             .into_response();
     };
-    store_preview(&state, compiler.compile_selected(request).await).await
+    store_preview(&state, session, compiler.compile_selected(request).await).await
 }
 
 async fn store_preview(
     state: &AppState,
+    session_hash: String,
     result: anyhow::Result<(
         WorldCompilePreview,
         ghostlight_dungeon::model::ModelStageReceipt,
@@ -381,11 +420,13 @@ async fn store_preview(
     match result {
         Ok((preview, receipt)) => {
             let id = uuid::Uuid::new_v4().to_string();
-            state
-                .compile_previews
-                .lock()
-                .await
-                .insert(id.clone(), preview.clone());
+            state.compile_previews.lock().await.insert(
+                id.clone(),
+                OwnedPreview {
+                    session_hash,
+                    value: preview.clone(),
+                },
+            );
             Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipt":receipt}))
                 .into_response()
         }
@@ -398,21 +439,35 @@ async fn approve_preview(
     headers: HeaderMap,
     State(state): State<AppState>,
 ) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
-    let Some(preview) = state.compile_previews.lock().await.remove(&preview_id) else {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let mut previews = state.compile_previews.lock().await;
+    let Some(owned) = previews.get(&preview_id).cloned() else {
         return (StatusCode::NOT_FOUND, "preview missing or already consumed").into_response();
     };
+    if owned.session_hash != session {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    previews.remove(&preview_id);
+    drop(previews);
+    let preview = owned.value;
+    let campaign_id = preview.campaign.id;
     match state
-        .kernel
-        .command(WorldCommand::CreateCampaign {
-            campaign: preview.campaign,
-            evidence_receipts: preview.evidence_receipts,
-        })
+        .registry
+        .create(preview.campaign, preview.evidence_receipts)
         .await
     {
-        Ok(value) => Json(value).into_response(),
+        Ok(runtime) => match select_campaign(&state, &session, campaign_id).await {
+            Ok(()) => match load_campaign(&runtime.store) {
+                Ok(campaign) => Json(CommandResult::Created { campaign }).into_response(),
+                Err(error) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                }
+            },
+            Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+        },
         Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
     }
 }
@@ -428,10 +483,20 @@ async fn compile_destination(
     State(state): State<AppState>,
     Json(request): Json<DestinationRequest>,
 ) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
-    let campaign = match load_campaign(&state.store) {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match session_runtime(&state, &session).await {
+        Ok(Some(value)) => value,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let campaign = match load_campaign(&runtime.store) {
         Ok(value) => value,
         Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
     };
@@ -448,11 +513,13 @@ async fn compile_destination(
     {
         Ok((preview, receipt)) => {
             let id = uuid::Uuid::new_v4().to_string();
-            state
-                .expansion_previews
-                .lock()
-                .await
-                .insert(id.clone(), preview.clone());
+            state.expansion_previews.lock().await.insert(
+                id.clone(),
+                OwnedPreview {
+                    session_hash: session,
+                    value: preview.clone(),
+                },
+            );
             Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipt":receipt}))
                 .into_response()
         }
@@ -465,13 +532,30 @@ async fn approve_destination(
     headers: HeaderMap,
     State(state): State<AppState>,
 ) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
-    let Some(preview) = state.expansion_previews.lock().await.remove(&preview_id) else {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let mut previews = state.expansion_previews.lock().await;
+    let Some(owned) = previews.get(&preview_id).cloned() else {
         return (StatusCode::NOT_FOUND, "preview missing or already consumed").into_response();
     };
-    match state
+    if owned.session_hash != session {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    previews.remove(&preview_id);
+    drop(previews);
+    let preview = owned.value;
+    let runtime = match session_runtime(&state, &session).await {
+        Ok(Some(value)) => value,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    match runtime
         .kernel
         .command(WorldCommand::ExpandRegion {
             expected_revision: preview.expected_revision,
@@ -488,6 +572,7 @@ async fn approve_destination(
 
 async fn resolve_npc_initiative(
     state: &AppState,
+    runtime: &CampaignRuntime,
     reaction: &CommandResult,
 ) -> anyhow::Result<serde_json::Value> {
     let CommandResult::Committed { campaign, .. } = reaction else {
@@ -497,7 +582,7 @@ async fn resolve_npc_initiative(
     else {
         return Ok(serde_json::Value::Null);
     };
-    let begun = state
+    let begun = runtime
         .kernel
         .command(WorldCommand::BeginNpcAction {
             expected_revision: campaign.revision,
@@ -521,13 +606,13 @@ async fn resolve_npc_initiative(
         intended_effect: proposal.intended_effect,
     };
     let (assessment, receipt) = assessor.assess(begun_campaign, intent.clone()).await?;
-    let _ = state.store.insert(
+    let _ = runtime.store.insert(
         "persona_stage_receipt.v1",
         "ghostlight.persona_stage_receipt.v1",
         &receipt.output_hash,
         &receipt,
     );
-    let assessed = state
+    let assessed = runtime
         .kernel
         .command(WorldCommand::Assess {
             expected_revision: begun_campaign.revision,
@@ -538,7 +623,7 @@ async fn resolve_npc_initiative(
     if !assessment.admissible {
         return Ok(serde_json::json!({"begun":begun,"assessment":assessed,"attempt":null}));
     }
-    let attempted = state
+    let attempted = runtime
         .kernel
         .command(WorldCommand::Attempt {
             assessment_digest: assessment.digest,
@@ -547,10 +632,13 @@ async fn resolve_npc_initiative(
     Ok(serde_json::json!({"begun":begun,"assessment":assessed,"attempt":attempted}))
 }
 
-async fn publish_latest_narration(state: &AppState) -> anyhow::Result<Option<NarrationProjection>> {
-    let campaign = load_campaign(&state.store)?;
+async fn publish_latest_narration(
+    state: &AppState,
+    runtime: &CampaignRuntime,
+) -> anyhow::Result<Option<NarrationProjection>> {
+    let campaign = load_campaign(&runtime.store)?;
     let key = format!("{}:{}", campaign.id, campaign.revision);
-    if let Some((_, existing)) = state
+    if let Some((_, existing)) = runtime
         .store
         .load::<NarrationProjection>("narration_projection.v1", &key)?
     {
@@ -564,14 +652,14 @@ async fn publish_latest_narration(state: &AppState) -> anyhow::Result<Option<Nar
         model: model.clone(),
         model_name: "deepseek-v4-pro".into(),
     };
-    let (projection, receipt) = narrator.project(&state.store, &campaign).await?;
-    state.store.insert(
+    let (projection, receipt) = narrator.project(&runtime.store, &campaign).await?;
+    runtime.store.insert(
         "narration_projection.v1",
         "ghostlight.narration_projection.v1",
         &projection.id,
         &projection,
     )?;
-    let _ = state.store.insert(
+    let _ = runtime.store.insert(
         "persona_stage_receipt.v1",
         "ghostlight.persona_stage_receipt.v1",
         &receipt.output_hash,
@@ -585,10 +673,32 @@ async fn command(
     State(state): State<AppState>,
     Json(mut command): Json<WorldCommand>,
 ) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
-    if let Err(error) = process_due_ticks(&state).await {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match session_runtime(&state, &session).await {
+        Ok(Some(value)) => value,
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(ErrorBody {
+                    error: "session has no selected campaign".into(),
+                }),
+            )
+                .into_response();
+        }
+        Err(error) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorBody {
+                    error: error.to_string(),
+                }),
+            )
+                .into_response();
+        }
+    };
+    if let Err(error) = process_due_ticks(&runtime).await {
         return (
             StatusCode::CONFLICT,
             Json(ErrorBody {
@@ -611,7 +721,7 @@ async fn command(
                 )
                     .into_response();
             };
-            let campaign = match load_campaign(&state.store) {
+            let campaign = match load_campaign(&runtime.store) {
                 Ok(value) => value,
                 Err(error) => {
                     return (
@@ -625,7 +735,7 @@ async fn command(
             };
             match assessor.assess(&campaign, intent.clone()).await {
                 Ok((assessment, receipt)) => {
-                    let _ = state.store.insert(
+                    let _ = runtime.store.insert(
                         "persona_stage_receipt.v1",
                         "ghostlight.persona_stage_receipt.v1",
                         &receipt.output_hash,
@@ -649,7 +759,7 @@ async fn command(
         &command,
         WorldCommand::Attempt { .. } | WorldCommand::Speak { .. }
     );
-    match state.kernel.command(command).await {
+    match runtime.kernel.command(command).await {
         Ok(result) => {
             if should_react {
                 if let ghostlight_dungeon::kernel::CommandResult::Committed { campaign, .. } =
@@ -670,14 +780,14 @@ async fn command(
                             };
                             match planner.plan(campaign, &summary).await {
                                 Ok((plan, receipt)) => {
-                                    let _ = state.store.insert(
+                                    let _ = runtime.store.insert(
                                         "persona_stage_receipt.v1",
                                         "ghostlight.persona_stage_receipt.v1",
                                         &receipt.output_hash,
                                         &receipt,
                                     );
                                     if !plan.promotions.is_empty() || !plan.demotions.is_empty() {
-                                        match state.kernel.command(WorldCommand::ReconcileGestaltPresence {
+                                        match runtime.kernel.command(WorldCommand::ReconcileGestaltPresence {
                                             expected_revision: campaign.revision,
                                             reason: summary.clone(),
                                             plan,
@@ -708,7 +818,7 @@ async fn command(
                             let engine = PersonaProjectionEngine {
                                 model: model.clone(),
                                 permit: Arc::new(SnapshotPermit::new(
-                                    state.store.clone(),
+                                    runtime.store.clone(),
                                     reaction_campaign.id,
                                     reaction_campaign.revision,
                                 )),
@@ -719,14 +829,14 @@ async fn command(
                             match appraise_present(engine, &reaction_campaign, &summary).await {
                                 Ok(wave) if !wave.reactions.is_empty() => {
                                     for receipt in wave.receipts {
-                                        let _ = state.store.insert(
+                                        let _ = runtime.store.insert(
                                             "persona_stage_receipt.v1",
                                             "ghostlight.persona_stage_receipt.v1",
                                             &receipt.output_hash,
                                             &receipt,
                                         );
                                     }
-                                    match state
+                                    match runtime
                                         .kernel
                                         .command(WorldCommand::ResolveReactionWave {
                                             expected_revision: reaction_campaign.revision,
@@ -736,25 +846,27 @@ async fn command(
                                         .await
                                     {
                                         Ok(reaction) => {
-                                            let initiative =
-                                                match resolve_npc_initiative(&state, &reaction)
+                                            let initiative = match resolve_npc_initiative(
+                                                &state, &runtime, &reaction,
+                                            )
+                                            .await
+                                            {
+                                                Ok(value) => value,
+                                                Err(error) => {
+                                                    return (
+                                                        StatusCode::BAD_GATEWAY,
+                                                        Json(ErrorBody {
+                                                            error: error.to_string(),
+                                                        }),
+                                                    )
+                                                        .into_response();
+                                                }
+                                            };
+                                            let narration =
+                                                publish_latest_narration(&state, &runtime)
                                                     .await
-                                                {
-                                                    Ok(value) => value,
-                                                    Err(error) => {
-                                                        return (
-                                                            StatusCode::BAD_GATEWAY,
-                                                            Json(ErrorBody {
-                                                                error: error.to_string(),
-                                                            }),
-                                                        )
-                                                            .into_response();
-                                                    }
-                                                };
-                                            let narration = publish_latest_narration(&state)
-                                                .await
-                                                .ok()
-                                                .flatten();
+                                                    .ok()
+                                                    .flatten();
                                             return Json(serde_json::json!({"primary":result,"presence":presence_result,"reaction_wave":reaction,"npc_initiative":initiative,"narration":narration})).into_response();
                                         }
                                         Err(error) => {
@@ -781,7 +893,10 @@ async fn command(
                             }
                         }
                         if presence_result.is_some() {
-                            let narration = publish_latest_narration(&state).await.ok().flatten();
+                            let narration = publish_latest_narration(&state, &runtime)
+                                .await
+                                .ok()
+                                .flatten();
                             return Json(
                                 serde_json::json!({"primary":result,"presence":presence_result,"narration":narration}),
                             )
@@ -794,7 +909,10 @@ async fn command(
                 &result,
                 CommandResult::Committed { .. } | CommandResult::Created { .. }
             ) {
-                let narration = publish_latest_narration(&state).await.ok().flatten();
+                let narration = publish_latest_narration(&state, &runtime)
+                    .await
+                    .ok()
+                    .flatten();
                 Json(serde_json::json!({"result":result,"narration":narration})).into_response()
             } else {
                 Json(result).into_response()
@@ -816,15 +934,214 @@ async fn scheduler_loop(state: AppState) {
     pulse.tick().await;
     loop {
         pulse.tick().await;
-        if let Err(error) = process_due_ticks(&state).await {
-            tracing::warn!(%error,"strategic scheduler pulse refused");
+        for id in state.registry.list().await {
+            match state.registry.runtime(id).await {
+                Ok(runtime) => {
+                    if let Err(error) = process_due_ticks(&runtime).await {
+                        tracing::warn!(%id,%error,"strategic scheduler pulse refused");
+                    }
+                }
+                Err(error) => {
+                    tracing::warn!(%id,%error,"campaign runtime vanished during scheduler pulse")
+                }
+            }
         }
     }
 }
 
-async fn process_due_ticks(state: &AppState) -> anyhow::Result<()> {
+#[derive(Deserialize)]
+struct CampaignBranchRequest {
+    name: String,
+}
+
+async fn campaigns(headers: HeaderMap, State(state): State<AppState>) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let ids = state
+        .auth
+        .lock()
+        .await
+        .state
+        .session_campaign_ids
+        .get(&session)
+        .cloned()
+        .unwrap_or_default();
+    let mut values = Vec::new();
+    let selected = state
+        .auth
+        .lock()
+        .await
+        .state
+        .session_campaigns
+        .get(&session)
+        .copied();
+    for id in ids {
+        if let Ok(runtime) = state.registry.runtime(id).await {
+            if let Ok(campaign) = load_campaign(&runtime.store) {
+                values.push(serde_json::json!({"id":id,"name":campaign.name,"revision":campaign.revision,"selected":selected==Some(id)}));
+            }
+        }
+    }
+    Json(serde_json::json!({"schema":"ghostlight.campaign_list.v1","campaigns":values}))
+        .into_response()
+}
+
+async fn select_campaign_route(
+    Path(campaign_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let owned = state
+        .auth
+        .lock()
+        .await
+        .state
+        .session_campaign_ids
+        .get(&session)
+        .is_some_and(|ids| ids.contains(&campaign_id));
+    if !owned {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    match select_campaign(&state, &session, campaign_id).await {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+    }
+}
+
+async fn fork_campaign(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<CampaignBranchRequest>,
+) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let source = match state
+        .auth
+        .lock()
+        .await
+        .state
+        .session_campaigns
+        .get(&session)
+        .copied()
+    {
+        Some(value) => value,
+        None => return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response(),
+    };
+    match state.registry.fork(source, request.name).await {
+        Ok(runtime) => {
+            let campaign = match load_campaign(&runtime.store) {
+                Ok(value) => value,
+                Err(error) => {
+                    return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+                }
+            };
+            match select_campaign(&state, &session, campaign.id).await {
+                Ok(()) => Json(campaign).into_response(),
+                Err(error) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                }
+            }
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
+async fn reset_campaign(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<CampaignBranchRequest>,
+) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let source = match state
+        .auth
+        .lock()
+        .await
+        .state
+        .session_campaigns
+        .get(&session)
+        .copied()
+    {
+        Some(value) => value,
+        None => return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response(),
+    };
+    match state.registry.reset(source, request.name).await {
+        Ok(runtime) => {
+            let campaign = match load_campaign(&runtime.store) {
+                Ok(value) => value,
+                Err(error) => {
+                    return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+                }
+            };
+            match select_campaign(&state, &session, campaign.id).await {
+                Ok(()) => Json(campaign).into_response(),
+                Err(error) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                }
+            }
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
+async fn export_campaign(headers: HeaderMap, State(state): State<AppState>) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let campaign_id = match state
+        .auth
+        .lock()
+        .await
+        .state
+        .session_campaigns
+        .get(&session)
+        .copied()
+    {
+        Some(value) => value,
+        None => return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response(),
+    };
+    match state
+        .registry
+        .export(campaign_id, state.runtime_root.join("exports"))
+        .await
+    {
+        Ok(path) => match std::fs::read(&path) {
+            Ok(bytes) => {
+                let filename = path
+                    .file_name()
+                    .and_then(|value| value.to_str())
+                    .unwrap_or("campaign.cc");
+                let mut response = Response::new(axum::body::Body::from(bytes));
+                response.headers_mut().insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_static("application/octet-stream"),
+                );
+                response.headers_mut().insert(
+                    header::CONTENT_DISPOSITION,
+                    HeaderValue::from_str(&format!("attachment; filename=\"{filename}\"")).unwrap(),
+                );
+                response
+            }
+            Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+        },
+        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+    }
+}
+
+async fn process_due_ticks(runtime: &CampaignRuntime) -> anyhow::Result<()> {
     loop {
-        let campaign = match load_campaign(&state.store) {
+        let campaign = match load_campaign(&runtime.store) {
             Ok(value) => value,
             Err(_) => return Ok(()),
         };
@@ -835,7 +1152,7 @@ async fn process_due_ticks(state: &AppState) -> anyhow::Result<()> {
         if campaign.away_ticks_processed >= target {
             return Ok(());
         }
-        state
+        runtime
             .kernel
             .command(WorldCommand::AdvanceStrategicTick {
                 expected_revision: campaign.revision,
@@ -846,6 +1163,10 @@ async fn process_due_ticks(state: &AppState) -> anyhow::Result<()> {
 }
 
 async fn authorized(headers: &HeaderMap, state: &AppState) -> bool {
+    authenticated_session(headers, state).await.is_some()
+}
+
+async fn authenticated_session(headers: &HeaderMap, state: &AppState) -> Option<String> {
     let session = headers
         .get(header::COOKIE)
         .and_then(|v| v.to_str().ok())
@@ -855,16 +1176,57 @@ async fn authorized(headers: &HeaderMap, state: &AppState) -> bool {
                 .map(str::trim)
                 .find_map(|cookie| cookie.strip_prefix("ghostlight_session="))
         });
-    match session {
-        Some(id) => state
-            .auth
-            .lock()
-            .await
-            .state
-            .session_hashes
-            .contains(&secret_hash(id)),
-        None => false,
+    let hash = secret_hash(session?);
+    state
+        .auth
+        .lock()
+        .await
+        .state
+        .session_hashes
+        .contains(&hash)
+        .then_some(hash)
+}
+
+async fn session_runtime(
+    state: &AppState,
+    session_hash: &str,
+) -> anyhow::Result<Option<CampaignRuntime>> {
+    let campaign_id = state
+        .auth
+        .lock()
+        .await
+        .state
+        .session_campaigns
+        .get(session_hash)
+        .copied();
+    match campaign_id {
+        Some(id) => Ok(Some(state.registry.runtime(id).await?)),
+        None => Ok(None),
     }
+}
+
+async fn select_campaign(
+    state: &AppState,
+    session_hash: &str,
+    campaign_id: uuid::Uuid,
+) -> anyhow::Result<()> {
+    state.registry.runtime(campaign_id).await?;
+    let mut auth = state.auth.lock().await;
+    if !auth.state.session_hashes.contains(session_hash) {
+        return Err(anyhow::anyhow!("session is no longer authorized"));
+    }
+    auth.state
+        .session_campaigns
+        .insert(session_hash.to_owned(), campaign_id);
+    auth.state
+        .session_campaign_ids
+        .entry(session_hash.to_owned())
+        .or_default()
+        .insert(campaign_id);
+    auth.row = auth
+        .store
+        .replace(&auth.row, "ghostlight.auth_state.v1", &auth.state)?;
+    Ok(())
 }
 
 fn secret_hash(value: &str) -> String {
@@ -883,62 +1245,149 @@ fn load_campaign(store: &CampaignStore) -> anyhow::Result<Campaign> {
         .ok_or_else(|| anyhow::anyhow!("campaign missing"))
 }
 
+fn migrate_default_campaign(runtime_root: &std::path::Path) -> anyhow::Result<()> {
+    let legacy_directory = runtime_root.join("campaigns/default");
+    let legacy_store_path = legacy_directory.join("campaign.cc");
+    if !legacy_store_path.is_file() {
+        std::fs::create_dir_all(runtime_root.join("campaigns"))?;
+        return Ok(());
+    }
+    let keys = CampaignStore::open(&legacy_store_path)?.keys("campaign.v1")?;
+    if keys.is_empty() {
+        return Ok(());
+    }
+    if keys.len() != 1 {
+        return Err(anyhow::anyhow!(
+            "legacy default store contains multiple campaigns"
+        ));
+    }
+    let id = uuid::Uuid::parse_str(&keys[0])?;
+    let target = runtime_root.join("campaigns").join(id.to_string());
+    if target.exists() {
+        return Err(anyhow::anyhow!(
+            "legacy campaign migration target already exists"
+        ));
+    }
+    std::fs::rename(legacy_directory, target)?;
+    Ok(())
+}
+
 #[derive(Serialize)]
 struct ErrorBody {
     error: String,
 }
 
-#[allow(dead_code)]
-fn seed_campaign() -> Campaign {
-    let id = uuid::Uuid::new_v4();
-    let location = ghostlight_dungeon::domain::Location {
-        id: "starfire-lab".into(),
-        name: "Starfire Narrative Laboratory".into(),
-        container_id: None,
-        routes: BTreeMap::new(),
-        persistent_features: vec![
-            "A stable room waiting for an approved world compilation.".into(),
-        ],
-    };
-    let actor = ghostlight_dungeon::domain::ActorState {
-        id: "player".into(),
-        name: "Tester".into(),
-        location_id: location.id.clone(),
-        capabilities: BTreeSet::new(),
-        knowledge: BTreeSet::new(),
-        equipment: BTreeSet::new(),
-        conditions: BTreeSet::new(),
-        obligations: BTreeSet::new(),
-        relationships: BTreeMap::new(),
-        goals: vec!["Compile a world worth entering.".into()],
-        memories: vec![],
-    };
-    Campaign {
-        schema: "ghostlight.campaign.v1".into(),
-        id,
-        name: "GhostlightDungeon MVP".into(),
-        revision: 0,
-        branch_origin: ghostlight_dungeon::domain::BranchOrigin {
-            canon_cutoff: "fixture-development".into(),
-            evidence_receipt_ids: vec![],
-        },
-        world_time: chrono::Utc::now(),
-        tick_hours: 6,
-        player_actor_id: actor.id.clone(),
-        locations: BTreeMap::from([(location.id.clone(), location)]),
-        actors: BTreeMap::from([(actor.id.clone(), actor)]),
-        institutions: BTreeMap::new(),
-        clocks: BTreeMap::new(),
-        facts: BTreeMap::new(),
-        transcript: vec![],
-        last_player_activity: chrono::Utc::now(),
-        pending_ticks: 0,
-        away_ticks_processed: 0,
-        events: vec![],
-        news: vec![],
-        canon_candidates: BTreeMap::new(),
-        gestalts: BTreeMap::new(),
-        gestalt_members: BTreeMap::new(),
-        pending_world_proposals: vec![],
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ghostlight_dungeon::domain::{ActorState, BranchOrigin, Location};
+
+    fn seed(name: &str) -> Campaign {
+        let actor = ActorState {
+            id: "player".into(),
+            name: "Player".into(),
+            location_id: "room".into(),
+            capabilities: BTreeSet::new(),
+            knowledge: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::new(),
+            goals: vec![],
+            memories: vec![],
+        };
+        Campaign {
+            schema: "ghostlight.campaign.v1".into(),
+            id: uuid::Uuid::new_v4(),
+            name: name.into(),
+            revision: 0,
+            branch_origin: BranchOrigin {
+                canon_cutoff: "test".into(),
+                evidence_receipt_ids: vec![],
+            },
+            world_time: chrono::Utc::now(),
+            tick_hours: 6,
+            player_actor_id: "player".into(),
+            locations: BTreeMap::from([(
+                "room".into(),
+                Location {
+                    id: "room".into(),
+                    name: "Room".into(),
+                    container_id: None,
+                    routes: BTreeMap::new(),
+                    persistent_features: vec![],
+                },
+            )]),
+            actors: BTreeMap::from([("player".into(), actor)]),
+            institutions: BTreeMap::new(),
+            clocks: BTreeMap::new(),
+            facts: BTreeMap::new(),
+            transcript: vec![],
+            last_player_activity: chrono::Utc::now(),
+            pending_ticks: 0,
+            away_ticks_processed: 0,
+            events: vec![],
+            news: vec![],
+            canon_candidates: BTreeMap::new(),
+            gestalts: BTreeMap::new(),
+            gestalt_members: BTreeMap::new(),
+            pending_world_proposals: vec![],
+        }
+    }
+
+    #[tokio::test]
+    async fn sessions_resolve_only_their_selected_campaign_runtime() {
+        let dir = tempfile::tempdir().unwrap();
+        let registry = CampaignRegistry::new(dir.path().join("campaigns")).unwrap();
+        let left = seed("Left");
+        let right = seed("Right");
+        registry.create(left.clone(), vec![]).await.unwrap();
+        registry.create(right.clone(), vec![]).await.unwrap();
+        let auth_store = CampaignStore::open(dir.path().join("auth.cc")).unwrap();
+        let auth_state = AuthState {
+            schema: "ghostlight.auth_state.v1".into(),
+            unused_invite_hashes: BTreeSet::new(),
+            session_hashes: BTreeSet::from(["left".into(), "right".into()]),
+            session_campaigns: BTreeMap::from([
+                ("left".into(), left.id),
+                ("right".into(), right.id),
+            ]),
+            session_campaign_ids: BTreeMap::from([
+                ("left".into(), BTreeSet::from([left.id])),
+                ("right".into(), BTreeSet::from([right.id])),
+            ]),
+        };
+        let row = auth_store
+            .insert(
+                "auth_state.v1",
+                "ghostlight.auth_state.v1",
+                "primary",
+                &auth_state,
+            )
+            .unwrap();
+        let state = AppState {
+            registry,
+            runtime_root: dir.path().into(),
+            auth: Arc::new(Mutex::new(AuthOwner {
+                store: auth_store,
+                row,
+                state: auth_state,
+            })),
+            deepseek_status: "fixture".into(),
+            compiler: None,
+            assessor: None,
+            model: None,
+            compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
+            expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
+        };
+        let left_runtime = session_runtime(&state, "left").await.unwrap().unwrap();
+        let right_runtime = session_runtime(&state, "right").await.unwrap().unwrap();
+        assert_eq!(load_campaign(&left_runtime.store).unwrap().id, left.id);
+        assert_eq!(load_campaign(&right_runtime.store).unwrap().id, right.id);
+        assert_ne!(
+            left_runtime.store.identity(),
+            right_runtime.store.identity()
+        );
+        assert!(!state.auth.lock().await.state.session_campaign_ids["left"].contains(&right.id));
     }
 }

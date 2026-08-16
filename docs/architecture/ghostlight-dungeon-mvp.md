@@ -516,6 +516,13 @@ branch from the campaign's approved seed/export rather than rewriting history
 in place. Export snapshots the selected `.cc` plus manifest and evidence
 receipts without granting the export path write authority over live state.
 
+The service auth row stores only hashed session IDs, each session's owned
+campaign-ID set, and its selected campaign ID. Routes resolve that selection to
+the registry before loading state or dispatching commands. Preview ownership is
+also session-bound; a different authenticated tester receives `403` without
+consuming the owner's preview. The scheduler enumerates registry runtimes and
+submits ticks to each campaign's own mailbox.
+
 ### Vault provider and world compiler
 
 `VaultProvider` exposes source search, surrounding context, exact documents,

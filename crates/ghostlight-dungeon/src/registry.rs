@@ -40,6 +40,9 @@ impl CampaignRegistry {
         let mut found = BTreeMap::new();
         for entry in fs::read_dir(&self.root)? {
             let entry = entry?;
+            let Ok(id) = Uuid::parse_str(&entry.file_name().to_string_lossy()) else {
+                continue;
+            };
             let path = entry.path().join("campaign.cc");
             if !path.is_file() {
                 continue;
@@ -49,7 +52,9 @@ impl CampaignRegistry {
             if keys.len() != 1 {
                 return Err(anyhow!("campaign store must contain exactly one campaign"));
             }
-            let id = Uuid::parse_str(&keys[0])?;
+            if keys[0] != id.to_string() {
+                return Err(anyhow!("campaign directory and stored id disagree"));
+            }
             found.insert(
                 id,
                 CampaignRuntime {

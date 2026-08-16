@@ -7,4 +7,5 @@
 </div><div id="compiler-results"></div></section><section id="surface"></section>
 <form id="composer"><label for="attempt">Describe what you attempt</label><textarea id="attempt" required></textarea><div><button type="submit">Assess</button><button type="button" id="wait">Wait one hour</button></div></form><pre id="receipt" hidden></pre>
 <form id="destination-form"><label>Compile a destination without moving there</label><input name="origin_location_id" placeholder="Current location id" required><input name="destination" placeholder="Where do you want the world to extend?" required><button type="submit">Retrieve destination</button></form>
+<section id="campaign-lab" hidden><h2>Campaign laboratory</h2><div id="campaign-list"></div><form id="fork-form"><input name="name" placeholder="Fork name" required><button type="submit">Fork selected campaign</button></form><form id="reset-form"><input name="name" placeholder="Reset branch name" required><button type="submit">Reset from approved seed</button></form><a href="/api/campaigns/export" download>Export selected CultCache .cc</a></section>
 </main><script type="module" src="/src/main.ts"></script></body></html>
