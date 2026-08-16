@@ -1,7 +1,8 @@
 use crate::{
     domain::{
-        ActorState, BranchOrigin, Campaign, FactScope, InstitutionState, Location,
-        VaultEvidenceReceipt, WorldClock, WorldCompilePreview, WorldFact,
+        ActorState, BranchOrigin, Campaign, FactScope, GestaltMemberDelta, GestaltPersonaState,
+        InstitutionState, Location, VaultEvidenceReceipt, WorldClock, WorldCompilePreview,
+        WorldFact,
     },
     model::{ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage},
     vault::{VaultProvider, VaultQuery},
@@ -92,6 +93,10 @@ struct CompiledSeed {
     player: ActorState,
     locations: Vec<Location>,
     actors: Vec<ActorState>,
+    #[serde(default)]
+    gestalts: Vec<GestaltPersonaState>,
+    #[serde(default)]
+    gestalt_members: Vec<GestaltMemberDelta>,
     institutions: Vec<InstitutionState>,
     clocks: Vec<WorldClock>,
     facts: Vec<WorldFact>,
@@ -184,7 +189,7 @@ impl WorldCompiler {
             format!("{} capabilities mechanics {}", start.who, start.goal),
         ];
         let receipts = self.retrieve_all(&queries, &start.when, 10).await?;
-        let output = self.structured("world_compile", "custom-start", &format!("Compile a bounded playable region and institutional pressure graph. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. START:\n{}\nEVIDENCE:\n{}", serde_json::to_string(&start)?, evidence_text(&receipts)), serde_json::to_value(schema_for!(CompiledSeed))?, receipt_ids(&receipts)).await?;
+        let output = self.structured("world_compile", "custom-start", &format!("Compile a bounded playable region and institutional pressure graph. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. START:\n{}\nEVIDENCE:\n{}", serde_json::to_string(&start)?, evidence_text(&receipts)), serde_json::to_value(schema_for!(CompiledSeed))?, receipt_ids(&receipts)).await?;
         let seed: CompiledSeed = serde_json::from_value(output.0)?;
         let campaign = seed_to_campaign(seed.clone(), &receipts)?;
         validate_campaign_seed(&campaign)?;
@@ -499,8 +504,16 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
         events: vec![],
         news: vec![],
         canon_candidates,
-        gestalts: BTreeMap::new(),
-        gestalt_members: BTreeMap::new(),
+        gestalts: seed
+            .gestalts
+            .into_iter()
+            .map(|x| (x.id.clone(), x))
+            .collect(),
+        gestalt_members: seed
+            .gestalt_members
+            .into_iter()
+            .map(|x| (x.id.clone(), x))
+            .collect(),
         pending_world_proposals: vec![],
     })
 }
@@ -518,6 +531,30 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
                 "actor {} occupies unknown location {}",
                 actor.id,
                 actor.location_id
+            ));
+        }
+    }
+    for gestalt in c.gestalts.values() {
+        if !c.locations.contains_key(&gestalt.home_location_id) {
+            return Err(anyhow!(
+                "gestalt {} occupies unknown home location {}",
+                gestalt.id,
+                gestalt.home_location_id
+            ));
+        }
+    }
+    for member in c.gestalt_members.values() {
+        if !c.gestalts.contains_key(&member.gestalt_id) {
+            return Err(anyhow!(
+                "gestalt member {} references unknown gestalt {}",
+                member.id,
+                member.gestalt_id
+            ));
+        }
+        if member.materialized_actor_id.is_some() {
+            return Err(anyhow!(
+                "compiled gestalt member {} must begin dematerialized",
+                member.id
             ));
         }
     }
@@ -565,7 +602,10 @@ mod tests {
                         "title":"Grounded test", "canon_cutoff":"fixture", "world_time":"2026-01-01T00:00:00Z", "tick_hours":6,
                         "player":{"id":"player","name":"Tester","location_id":"yard","capabilities":[],"knowledge":[],"equipment":[],"conditions":[],"obligations":[],"relationships":{},"goals":["learn"]},
                         "locations":[{"id":"yard","name":"Yard","container_id":null,"routes":{"out":{"destination_id":destination,"distance":"near","travel_minutes":5}},"persistent_features":["same yard"]}],
-                        "actors":[],"institutions":[],"clocks":[{"id":"shift","label":"Shift ends","progress":0,"threshold":4,"consequence":"night"}],
+                        "actors":[],
+                        "gestalts":[{"schema":"ghostlight.gestalt_persona_state.v1","id":"yard-workers","name":"Yard workers","version":0,"home_location_id":"yard","shared_capabilities":["maintain machinery"],"shared_knowledge":["yard routines"],"resources":["tool shed"],"goals":["finish the shift"],"pressures":["the gate is failing"]}],
+                        "gestalt_members":[{"schema":"ghostlight.gestalt_member_delta.v1","id":"john","gestalt_id":"yard-workers","version":0,"name":"John the smith","capability_additions":["forge hinges"],"capability_removals":[],"knowledge_additions":[],"knowledge_removals":[],"equipment":["hammer"],"conditions":[],"obligations":[],"relationships":{},"goals":[],"memories":[],"last_location_id":"yard","materialized_actor_id":null}],
+                        "institutions":[],"clocks":[{"id":"shift","label":"Shift ends","progress":0,"threshold":4,"consequence":"night"}],
                         "facts":[{"id":"f","statement":"A witnessed fact","scope":"canon_baseline","evidence_receipt_ids":["fixture"]}],
                         "gaps":["Who owns the outer gate?"],"branch_assumptions":[],"opening_narration":"The yard persists."
                     }).to_string()
@@ -634,6 +674,16 @@ mod tests {
         assert_eq!(preview.campaign.revision, 0);
         assert_eq!(preview.campaign.locations.len(), 1);
         assert_eq!(preview.campaign.canon_candidates.len(), 1);
+        assert_eq!(preview.campaign.gestalts.len(), 1);
+        assert_eq!(
+            preview.campaign.gestalt_members["john"].name,
+            "John the smith"
+        );
+        assert!(
+            preview.campaign.gestalt_members["john"]
+                .materialized_actor_id
+                .is_none()
+        );
     }
 
     #[tokio::test]

@@ -71,6 +71,16 @@ materialize newly relevant members and fold irrelevant members back into their
 persistent deltas. The planner may propose presence only; it cannot promote
 population-wide learning or mutate state directly.
 
+World compilation seeds collective populations and a bounded roster of durable
+member identities. Population-scale capabilities, knowledge, resources, goals,
+and pressures belong to the gestalt. A member record owns identity, memories,
+relationships, possessions, injuries, obligations, last known location, and
+additions to or removals from the shared baseline. Materialization is a derived
+composition of those two owners; the temporary actor slot owns neither source.
+Dematerialization deletes only that slot after atomically updating the member
+delta. Strategic ticks address the gestalt and its dematerialized deltas rather
+than iterating every member as a live Persona.
+
 Ghostlight owns its own generalized projection machinery:
 
 1. Projector converts the actor’s permitted typed slice, memories, perceived events, relationships, goals, and retrieved knowledge into a private lived narrative stream.
