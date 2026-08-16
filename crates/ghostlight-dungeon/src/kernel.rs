@@ -83,6 +83,7 @@ fn execute(
     if let WorldCommand::CreateCampaign {
         campaign,
         evidence_receipts,
+        model_stage_receipts,
     } = command
     {
         if !store.keys("campaign.v1").map_err(persist)?.is_empty() {
@@ -91,7 +92,7 @@ fn execute(
         crate::compiler::validate_campaign_seed(&campaign)
             .map_err(|error| KernelError::Invalid(error.to_string()))?;
         store
-            .create_campaign(&campaign, &evidence_receipts)
+            .create_campaign(&campaign, &evidence_receipts, &model_stage_receipts)
             .map_err(persist)?;
         return Ok(CommandResult::Created { campaign });
     }
@@ -292,6 +293,7 @@ fn execute(
             expansion,
             evidence_receipts,
             canon_candidates,
+            model_stage_receipts,
         } => {
             require_revision(&campaign, expected_revision)?;
             crate::compiler::validate_region_expansion(&campaign, &expansion)
@@ -314,6 +316,7 @@ fn execute(
                 "expand_region",
                 evidence_receipts,
                 canon_candidates,
+                model_stage_receipts,
             )
         }
         WorldCommand::MaterializeGestaltMember {
@@ -1204,6 +1207,7 @@ fn commit_with_records(
     kind: &str,
     evidence: Vec<VaultEvidenceReceipt>,
     candidates: Vec<CanonCandidate>,
+    model_receipts: Vec<crate::model::ModelStageReceipt>,
 ) -> Result<CommandResult, KernelError> {
     let previous_revision = campaign.revision;
     campaign.revision += 1;
@@ -1224,6 +1228,7 @@ fn commit_with_records(
             &receipt,
             &evidence,
             &candidates,
+            &model_receipts,
         )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
@@ -1302,6 +1307,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -1343,6 +1349,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed,
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -1371,6 +1378,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -1428,6 +1436,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -1488,6 +1497,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -1562,6 +1572,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -1608,6 +1619,7 @@ mod tests {
                 },
                 evidence_receipts: vec![evidence],
                 canon_candidates: vec![candidate],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -1680,6 +1692,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed,
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -1849,6 +1862,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -1926,6 +1940,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed,
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();
@@ -2028,6 +2043,7 @@ mod tests {
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
                 evidence_receipts: vec![],
+                model_stage_receipts: vec![],
             })
             .await
             .unwrap();

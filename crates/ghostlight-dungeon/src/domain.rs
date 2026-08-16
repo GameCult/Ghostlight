@@ -376,6 +376,8 @@ pub enum WorldCommand {
     CreateCampaign {
         campaign: Campaign,
         evidence_receipts: Vec<VaultEvidenceReceipt>,
+        #[serde(default)]
+        model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
     },
     Speak {
         expected_revision: u64,
@@ -409,6 +411,8 @@ pub enum WorldCommand {
         expansion: RegionExpansion,
         evidence_receipts: Vec<VaultEvidenceReceipt>,
         canon_candidates: Vec<CanonCandidate>,
+        #[serde(default)]
+        model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
     },
     MaterializeGestaltMember {
         expected_revision: u64,

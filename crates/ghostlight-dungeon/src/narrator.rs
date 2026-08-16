@@ -152,7 +152,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let seed = campaign();
-        store.create_campaign(&seed, &[]).unwrap();
+        store.create_campaign(&seed, &[], &[]).unwrap();
         let narrator = Narrator {
             model: Arc::new(FixtureModel),
             model_name: "fixture".into(),

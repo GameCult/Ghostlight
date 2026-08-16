@@ -77,6 +77,7 @@ impl CampaignStore {
         &self,
         campaign: &Campaign,
         receipts: &[VaultEvidenceReceipt],
+        model_receipts: &[crate::model::ModelStageReceipt],
     ) -> Result<CultCacheEnvelope> {
         let campaign_row = envelope(
             "campaign.v1",
@@ -96,6 +97,14 @@ impl CampaignStore {
                 "vault_evidence_receipt.v1",
                 "ghostlight.vault_evidence_receipt.v1",
                 &receipt.id,
+                receipt,
+            )?);
+        }
+        for receipt in model_receipts {
+            rows.push(envelope(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                &receipt.output_hash,
                 receipt,
             )?);
         }
@@ -164,6 +173,7 @@ impl CampaignStore {
         receipt: &R,
         evidence: &[VaultEvidenceReceipt],
         candidates: &[crate::domain::CanonCandidate],
+        model_receipts: &[crate::model::ModelStageReceipt],
     ) -> Result<CultCacheEnvelope> {
         let next_row = envelope(
             &expected.r#type,
@@ -193,6 +203,14 @@ impl CampaignStore {
                 "canon_candidate.v1",
                 "ghostlight.canon_candidate.v1",
                 &item.id,
+                item,
+            )?);
+        }
+        for item in model_receipts {
+            rows.push(envelope(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                &item.output_hash,
                 item,
             )?);
         }

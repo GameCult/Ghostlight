@@ -84,7 +84,18 @@ impl VoidBotMcpVault {
             .lines()
             .find_map(|line| line.strip_prefix("data: "))
             .ok_or_else(|| anyhow!("VoidBot MCP returned no event payload"))?;
-        Ok(serde_json::from_str(payload)?)
+        let value: serde_json::Value = serde_json::from_str(payload)?;
+        if let Some(error) = value.pointer("/error/message").and_then(|v| v.as_str()) {
+            return Err(anyhow!("VoidBot MCP JSON-RPC error: {error}"));
+        }
+        if value.pointer("/result/isError").and_then(|v| v.as_bool()) == Some(true) {
+            let detail = value
+                .pointer("/result/content/0/text")
+                .and_then(|v| v.as_str())
+                .unwrap_or("tool returned an unspecified error");
+            return Err(anyhow!("VoidBot MCP tool error: {detail}"));
+        }
+        Ok(value)
     }
 }
 

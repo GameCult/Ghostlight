@@ -65,6 +65,7 @@ pub struct SuggestedOpenings {
     pub openings: Vec<OpeningSuggestion>,
     pub evidence_receipts: Vec<VaultEvidenceReceipt>,
     pub model_receipt: ModelStageReceipt,
+    pub retrieval_receipt: ModelStageReceipt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -72,6 +73,7 @@ pub struct SuggestedRoles {
     pub roles: Vec<RoleSuggestion>,
     pub evidence_receipts: Vec<VaultEvidenceReceipt>,
     pub model_receipt: ModelStageReceipt,
+    pub retrieval_receipt: ModelStageReceipt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -82,6 +84,11 @@ struct OpeningSet {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct RoleSet {
     roles: Vec<RoleSuggestion>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct RetrievalQueryPlan {
+    queries: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -115,6 +122,7 @@ struct CompiledExpansionSeed {
 pub struct WorldCompiler {
     vault: Arc<dyn VaultProvider>,
     model: Arc<dyn ModelPort>,
+    retrieval_model: String,
     compiler_model: String,
 }
 
@@ -122,21 +130,26 @@ impl WorldCompiler {
     pub fn new(
         vault: Arc<dyn VaultProvider>,
         model: Arc<dyn ModelPort>,
+        retrieval_model: impl Into<String>,
         compiler_model: impl Into<String>,
     ) -> Self {
         Self {
             vault,
             model,
+            retrieval_model: retrieval_model.into(),
             compiler_model: compiler_model.into(),
         }
     }
 
     pub async fn suggest_openings(&self, request: OpeningRequest) -> Result<SuggestedOpenings> {
-        let queries = [
-            format!("{} history eras locations institutions", request.setting),
-            format!("{} conflicts pressures ordinary life", request.setting),
-            format!("{} travel geography routes", request.setting),
-        ];
+        let (queries, retrieval_receipt) = self
+            .plan_queries(
+                "opening_retrieval_plan",
+                "opening-suggestions",
+                &serde_json::to_string(&request)?,
+                3,
+            )
+            .await?;
         let receipts = self.retrieve_all(&queries, "all", 8).await?;
         let evidence = evidence_text(&receipts);
         let output = self.structured("world_openings", "opening-suggestions", &format!("Generate exactly three source-grounded openings. They must use distinct eras, places, and pressures. Do not fill material evidence gaps with invention. REQUEST:\n{}\nEVIDENCE:\n{}", serde_json::to_string(&request)?, evidence), serde_json::to_value(schema_for!(OpeningSet))?, receipt_ids(&receipts)).await?;
@@ -149,20 +162,19 @@ impl WorldCompiler {
             openings: parsed.openings,
             evidence_receipts: receipts,
             model_receipt: output.1,
+            retrieval_receipt,
         })
     }
 
     pub async fn suggest_roles(&self, opening: &OpeningSuggestion) -> Result<SuggestedRoles> {
-        let queries = [
-            format!(
-                "{} {} people occupations institutions",
-                opening.era, opening.place
-            ),
-            format!(
-                "{} capabilities obligations {}",
-                opening.place, opening.pressure
-            ),
-        ];
+        let (queries, retrieval_receipt) = self
+            .plan_queries(
+                "role_retrieval_plan",
+                &format!("roles:{}", opening.id),
+                &serde_json::to_string(opening)?,
+                2,
+            )
+            .await?;
         let receipts = self.retrieve_all(&queries, &opening.era, 8).await?;
         let output = self.structured("world_roles", &format!("roles:{}", opening.id), &format!("Generate exactly three materially distinct player roles grounded in this opening and evidence. OPENING:\n{}\nEVIDENCE:\n{}", serde_json::to_string(opening)?, evidence_text(&receipts)), serde_json::to_value(schema_for!(RoleSet))?, receipt_ids(&receipts)).await?;
         let parsed: RoleSet = serde_json::from_value(output.0)?;
@@ -173,21 +185,22 @@ impl WorldCompiler {
             roles: parsed.roles,
             evidence_receipts: receipts,
             model_receipt: output.1,
+            retrieval_receipt,
         })
     }
 
     pub async fn compile_custom(
         &self,
         start: CustomStart,
-    ) -> Result<(WorldCompilePreview, ModelStageReceipt)> {
-        let queries = [
-            format!(
-                "{} {} geography routes containment",
-                start.where_, start.when
-            ),
-            format!("{} {} people institutions powers", start.where_, start.when),
-            format!("{} capabilities mechanics {}", start.who, start.goal),
-        ];
+    ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
+        let (queries, retrieval_receipt) = self
+            .plan_queries(
+                "custom_retrieval_plan",
+                "custom-start",
+                &serde_json::to_string(&start)?,
+                3,
+            )
+            .await?;
         let receipts = self.retrieve_all(&queries, &start.when, 10).await?;
         let output = self.structured("world_compile", "custom-start", &format!("Compile a bounded playable region and institutional pressure graph. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. START:\n{}\nEVIDENCE:\n{}", serde_json::to_string(&start)?, evidence_text(&receipts)), serde_json::to_value(schema_for!(CompiledSeed))?, receipt_ids(&receipts)).await?;
         let seed: CompiledSeed = serde_json::from_value(output.0)?;
@@ -203,14 +216,14 @@ impl WorldCompiler {
                 branch_assumptions: seed.branch_assumptions,
                 requires_approval: true,
             },
-            output.1,
+            vec![retrieval_receipt, output.1],
         ))
     }
 
     pub async fn compile_selected(
         &self,
         start: SelectedStart,
-    ) -> Result<(WorldCompilePreview, ModelStageReceipt)> {
+    ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
         self.compile_custom(CustomStart {
             campaign_name: start.campaign_name,
             who: format!("{} — {}", start.role.name, start.role.premise),
@@ -226,18 +239,26 @@ impl WorldCompiler {
         campaign: &Campaign,
         origin_location_id: &str,
         destination_request: &str,
-    ) -> Result<(crate::domain::RegionExpansionPreview, ModelStageReceipt)> {
+    ) -> Result<(
+        crate::domain::RegionExpansionPreview,
+        Vec<ModelStageReceipt>,
+    )> {
         let origin = campaign
             .locations
             .get(origin_location_id)
             .ok_or_else(|| anyhow!("origin location is unknown"))?;
-        let queries = [
-            format!(
-                "{} {} geography containment routes",
-                origin.name, destination_request
-            ),
-            format!("{} travel time institutions access", destination_request),
-        ];
+        let (queries, retrieval_receipt) = self
+            .plan_queries(
+                "destination_retrieval_plan",
+                &format!("campaign:{}:revision:{}", campaign.id, campaign.revision),
+                &serde_json::to_string(&serde_json::json!({
+                    "origin": origin,
+                    "destination": destination_request,
+                    "canon_cutoff": campaign.branch_origin.canon_cutoff,
+                }))?,
+                2,
+            )
+            .await?;
         let receipts = self
             .retrieve_all(&queries, &campaign.branch_origin.canon_cutoff, 10)
             .await?;
@@ -288,7 +309,7 @@ impl WorldCompiler {
                 canon_candidates: candidates,
                 requires_approval: true,
             },
-            output.1,
+            vec![retrieval_receipt, output.1],
         ))
     }
 
@@ -352,6 +373,57 @@ impl WorldCompiler {
             witness.content_hash = exact.content_hash.clone();
         }
         Ok(receipts)
+    }
+
+    async fn plan_queries(
+        &self,
+        stage: &str,
+        binding: &str,
+        subject: &str,
+        count: usize,
+    ) -> Result<(Vec<String>, ModelStageReceipt)> {
+        let schema = serde_json::to_value(schema_for!(RetrievalQueryPlan))?;
+        let prompt = format!(
+            "Plan exactly {count} distinct source-search queries for the supplied subject. Each query must be a concise natural-language search string of 1 to 240 Unicode characters. Preserve proper nouns, era, place, institutions, mechanics, geography, and pressure when relevant. Do not answer the subject. SUBJECT:\n{subject}\n\nOUTPUT JSON SCHEMA (follow exactly):\n{}",
+            serde_json::to_string_pretty(&schema)?
+        );
+        let output = run_validated_stage(
+            self.model.as_ref(),
+            &ModelStageRequest {
+                stage: stage.into(),
+                model: self.retrieval_model.clone(),
+                snapshot_binding: binding.into(),
+                lived_stream: prompt,
+                output_schema: Some(schema),
+                source_receipt_ids: vec![],
+            },
+        )
+        .await?;
+        let plan: RetrievalQueryPlan = serde_json::from_value(
+            output
+                .structured
+                .ok_or_else(|| anyhow!("retrieval planner returned no structured output"))?,
+        )?;
+        let normalized = plan
+            .queries
+            .into_iter()
+            .map(|query| query.trim().to_owned())
+            .collect::<Vec<_>>();
+        let unique = normalized.iter().collect::<BTreeSet<_>>();
+        if normalized.len() != count || unique.len() != count {
+            return Err(anyhow!(
+                "retrieval planner must return exactly {count} distinct queries"
+            ));
+        }
+        if normalized
+            .iter()
+            .any(|query| query.is_empty() || query.chars().count() > 240)
+        {
+            return Err(anyhow!(
+                "retrieval planner query must contain 1 to 240 characters"
+            ));
+        }
+        Ok((normalized, output.receipt))
     }
 
     async fn structured(
@@ -631,10 +703,31 @@ mod tests {
     struct CompilerModel {
         invalid_route: bool,
     }
+
+    struct OversizedQueryModel;
+    #[async_trait]
+    impl ModelPort for OversizedQueryModel {
+        async fn run(&self, _: &ModelStageRequest) -> Result<String> {
+            Ok(serde_json::json!({"queries":["x".repeat(241)]}).to_string())
+        }
+        fn provider(&self) -> &'static str {
+            "oversized-query-fixture"
+        }
+    }
     #[async_trait]
     impl ModelPort for CompilerModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             Ok(match request.stage.as_str() {
+                stage if stage.ends_with("_retrieval_plan") => {
+                    let count = if stage == "role_retrieval_plan"
+                        || stage == "destination_retrieval_plan"
+                    {
+                        2
+                    } else {
+                        3
+                    };
+                    serde_json::json!({"queries":(1..=count).map(|index|format!("fixture grounded query {index}")).collect::<Vec<_>>()}).to_string()
+                }
                 "world_openings" => serde_json::json!({"openings":[
                     {"id":"a","title":"Ash","era":"early","place":"ring","pressure":"strike","player_hook":"work","evidence_receipt_ids":[]},
                     {"id":"b","title":"Glass","era":"middle","place":"moon","pressure":"siege","player_hook":"survive","evidence_receipt_ids":[]},
@@ -725,6 +818,7 @@ mod tests {
             Arc::new(CompilerModel {
                 invalid_route: false,
             }),
+            "flash",
             "pro",
         );
         let output = compiler
@@ -739,12 +833,23 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn retrieval_planner_refuses_provider_oversized_queries() {
+        let compiler = WorldCompiler::new(vault(), Arc::new(OversizedQueryModel), "flash", "pro");
+        let error = compiler
+            .plan_queries("custom_retrieval_plan", "test", "subject", 1)
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("1 to 240"));
+    }
+
+    #[tokio::test]
     async fn retrieval_receipts_bind_excerpts_to_exact_archive_hashes() {
         let compiler = WorldCompiler::new(
             Arc::new(ExactWitnessVault),
             Arc::new(CompilerModel {
                 invalid_route: false,
             }),
+            "flash",
             "pro",
         );
         let receipts = compiler
@@ -763,6 +868,7 @@ mod tests {
             Arc::new(CompilerModel {
                 invalid_route: false,
             }),
+            "flash",
             "pro",
         );
         let (preview, _) = compiler
@@ -798,6 +904,7 @@ mod tests {
             Arc::new(CompilerModel {
                 invalid_route: true,
             }),
+            "flash",
             "pro",
         );
         let result = compiler

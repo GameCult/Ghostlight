@@ -72,6 +72,7 @@ impl Drop for LiveTurnGuard {
 struct OwnedPreview<T> {
     session_hash: String,
     value: T,
+    model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -172,6 +173,7 @@ async fn main() -> anyhow::Result<()> {
             Some(Arc::new(WorldCompiler::new(
                 Arc::new(VoidBotMcpVault::starfire_loopback()),
                 provider.clone(),
+                "deepseek-v4-flash",
                 "deepseek-v4-pro",
             ))),
             Some(Arc::new(ActionAssessor::new(
@@ -370,16 +372,17 @@ async fn compile_custom(
             .into_response();
     };
     match compiler.compile_custom(request).await {
-        Ok((preview, receipt)) => {
+        Ok((preview, model_receipts)) => {
             let id = uuid::Uuid::new_v4().to_string();
             state.compile_previews.lock().await.insert(
                 id.clone(),
                 OwnedPreview {
                     session_hash: session,
                     value: preview.clone(),
+                    model_receipts: model_receipts.clone(),
                 },
             );
-            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipt":receipt}))
+            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipts":model_receipts}))
                 .into_response()
         }
         Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
@@ -445,20 +448,21 @@ async fn store_preview(
     session_hash: String,
     result: anyhow::Result<(
         WorldCompilePreview,
-        ghostlight_dungeon::model::ModelStageReceipt,
+        Vec<ghostlight_dungeon::model::ModelStageReceipt>,
     )>,
 ) -> Response {
     match result {
-        Ok((preview, receipt)) => {
+        Ok((preview, model_receipts)) => {
             let id = uuid::Uuid::new_v4().to_string();
             state.compile_previews.lock().await.insert(
                 id.clone(),
                 OwnedPreview {
                     session_hash,
                     value: preview.clone(),
+                    model_receipts: model_receipts.clone(),
                 },
             );
-            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipt":receipt}))
+            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipts":model_receipts}))
                 .into_response()
         }
         Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
@@ -485,10 +489,11 @@ async fn approve_preview(
     previews.remove(&preview_id);
     drop(previews);
     let preview = owned.value;
+    let model_receipts = owned.model_receipts;
     let campaign_id = preview.campaign.id;
     match state
         .registry
-        .create(preview.campaign, preview.evidence_receipts)
+        .create(preview.campaign, preview.evidence_receipts, model_receipts)
         .await
     {
         Ok(runtime) => match select_campaign(&state, &session, campaign_id).await {
@@ -549,16 +554,17 @@ async fn compile_destination(
         .compile_destination(&campaign, &request.origin_location_id, &request.destination)
         .await
     {
-        Ok((preview, receipt)) => {
+        Ok((preview, model_receipts)) => {
             let id = uuid::Uuid::new_v4().to_string();
             state.expansion_previews.lock().await.insert(
                 id.clone(),
                 OwnedPreview {
                     session_hash: session,
                     value: preview.clone(),
+                    model_receipts: model_receipts.clone(),
                 },
             );
-            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipt":receipt}))
+            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipts":model_receipts}))
                 .into_response()
         }
         Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
@@ -584,6 +590,7 @@ async fn approve_destination(
     previews.remove(&preview_id);
     drop(previews);
     let preview = owned.value;
+    let model_receipts = owned.model_receipts;
     let runtime = match session_runtime(&state, &session).await {
         Ok(Some(value)) => value,
         Ok(None) => {
@@ -600,6 +607,7 @@ async fn approve_destination(
             expansion: preview.expansion,
             evidence_receipts: preview.evidence_receipts,
             canon_candidates: preview.canon_candidates,
+            model_stage_receipts: model_receipts,
         })
         .await
     {
@@ -1602,8 +1610,11 @@ mod tests {
         let registry = CampaignRegistry::new(dir.path().join("campaigns")).unwrap();
         let left = seed("Left");
         let right = seed("Right");
-        registry.create(left.clone(), vec![]).await.unwrap();
-        registry.create(right.clone(), vec![]).await.unwrap();
+        registry.create(left.clone(), vec![], vec![]).await.unwrap();
+        registry
+            .create(right.clone(), vec![], vec![])
+            .await
+            .unwrap();
         let auth_store = CampaignStore::open(dir.path().join("auth.cc")).unwrap();
         let auth_state = AuthState {
             schema: "ghostlight.auth_state.v1".into(),

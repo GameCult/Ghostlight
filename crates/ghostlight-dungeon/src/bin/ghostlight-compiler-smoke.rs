@@ -20,6 +20,7 @@ async fn main() -> anyhow::Result<()> {
     let compiler = WorldCompiler::new(
         Arc::new(VoidBotMcpVault::starfire_loopback()),
         model,
+        "deepseek-v4-flash",
         "deepseek-v4-pro",
     );
     let (preview, receipt) = compiler.compile_custom(CustomStart {

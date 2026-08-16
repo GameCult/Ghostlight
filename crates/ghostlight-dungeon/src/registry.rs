@@ -1,6 +1,7 @@
 use crate::{
     domain::{Campaign, CampaignLifecycleReceipt, VaultEvidenceReceipt},
     kernel::WorldKernel,
+    model::ModelStageReceipt,
     persistence::CampaignStore,
 };
 use anyhow::{Result, anyhow};
@@ -84,6 +85,7 @@ impl CampaignRegistry {
         &self,
         campaign: Campaign,
         evidence: Vec<VaultEvidenceReceipt>,
+        model_receipts: Vec<ModelStageReceipt>,
     ) -> Result<CampaignRuntime> {
         if self.runtimes.read().await.contains_key(&campaign.id) {
             return Err(anyhow!("campaign already exists"));
@@ -96,6 +98,7 @@ impl CampaignRegistry {
             .command(crate::domain::WorldCommand::CreateCampaign {
                 campaign: campaign.clone(),
                 evidence_receipts: evidence,
+                model_stage_receipts: model_receipts,
             })
             .await?;
         store.insert(
@@ -135,13 +138,16 @@ impl CampaignRegistry {
                 evidence.push(receipt);
             }
         }
+        let model_receipts = source
+            .store
+            .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")?;
         let parent_revision = parent.revision;
         let mut fork = parent;
         fork.id = Uuid::new_v4();
         fork.name = name;
         fork.revision = 0;
         fork.pending_world_proposals.clear();
-        let runtime = self.create(fork.clone(), evidence).await?;
+        let runtime = self.create(fork.clone(), evidence, model_receipts).await?;
         runtime.store.insert(
             "campaign_lifecycle_receipt.v1",
             "ghostlight.campaign_lifecycle_receipt.v1",
@@ -183,7 +189,10 @@ impl CampaignRegistry {
                 evidence.push(receipt);
             }
         }
-        let runtime = self.create(seed.clone(), evidence).await?;
+        let model_receipts = source
+            .store
+            .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")?;
+        let runtime = self.create(seed.clone(), evidence, model_receipts).await?;
         runtime.store.insert(
             "campaign_lifecycle_receipt.v1",
             "ghostlight.campaign_lifecycle_receipt.v1",
@@ -281,12 +290,33 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let registry = CampaignRegistry::new(dir.path().join("campaigns")).unwrap();
         let original = seed("Original");
-        registry.create(original.clone(), vec![]).await.unwrap();
+        let model_receipt = ModelStageReceipt {
+            schema: "ghostlight.persona_stage_receipt.v1".into(),
+            provider: "fixture".into(),
+            model: "fixture".into(),
+            stage: "world_compile".into(),
+            snapshot_binding: "custom-start".into(),
+            request_hash: "sha256:request".into(),
+            output_hash: "sha256:output".into(),
+            source_receipt_ids: vec![],
+            latency_ms: 1,
+            validation_result: "valid".into(),
+        };
+        registry
+            .create(original.clone(), vec![], vec![model_receipt.clone()])
+            .await
+            .unwrap();
         let fork = registry.fork(original.id, "Fork".into()).await.unwrap();
         let fork_id = fork.store.keys("campaign.v1").unwrap()[0]
             .parse::<Uuid>()
             .unwrap();
         assert_ne!(fork_id, original.id);
+        assert_eq!(
+            fork.store
+                .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")
+                .unwrap(),
+            vec![model_receipt]
+        );
         let reset = registry.reset(original.id, "Reset".into()).await.unwrap();
         let reset_id = reset.store.keys("campaign.v1").unwrap()[0]
             .parse::<Uuid>()
