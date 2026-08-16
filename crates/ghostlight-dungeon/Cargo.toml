@@ -25,6 +25,7 @@ tracing-subscriber.workspace = true
 uuid.workspace = true
 windows.workspace = true
 zeroize.workspace = true
+windows-service.workspace = true
 
 [dev-dependencies]
 tempfile = "3"
