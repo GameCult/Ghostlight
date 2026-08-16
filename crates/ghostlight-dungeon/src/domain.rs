@@ -349,6 +349,21 @@ pub struct ContextModifier {
     pub references: Vec<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+pub struct ConditionDelta {
+    pub add: BTreeSet<String>,
+    pub remove: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+pub struct WorldEffectDelta {
+    pub actor_conditions: BTreeMap<String, ConditionDelta>,
+    pub actor_relationship_updates: BTreeMap<String, BTreeMap<String, String>>,
+    pub actor_moves: BTreeMap<String, String>,
+    pub clock_advances: BTreeMap<String, u8>,
+    pub institution_postures: BTreeMap<String, String>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct ActionAssessment {
     pub schema: String,
@@ -364,6 +379,14 @@ pub struct ActionAssessment {
     pub success_stake: String,
     pub mixed_stake: String,
     pub failure_stake: String,
+    #[serde(default)]
+    pub strong_effect: WorldEffectDelta,
+    #[serde(default)]
+    pub success_effect: WorldEffectDelta,
+    #[serde(default)]
+    pub mixed_effect: WorldEffectDelta,
+    #[serde(default)]
+    pub failure_effect: WorldEffectDelta,
     pub bargains: Vec<String>,
     pub expires_at: DateTime<Utc>,
     pub digest: String,

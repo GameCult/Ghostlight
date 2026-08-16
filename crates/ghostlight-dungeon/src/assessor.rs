@@ -1,5 +1,5 @@
 use crate::{
-    domain::{ActionAssessment, ActionIntent, Campaign, ContextModifier},
+    domain::{ActionAssessment, ActionIntent, Campaign, ContextModifier, WorldEffectDelta},
     model::{ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage},
 };
 use anyhow::{Result, anyhow};
@@ -20,6 +20,10 @@ struct AssessmentProposal {
     success_stake: String,
     mixed_stake: String,
     failure_stake: String,
+    strong_effect: WorldEffectDelta,
+    success_effect: WorldEffectDelta,
+    mixed_effect: WorldEffectDelta,
+    failure_effect: WorldEffectDelta,
     bargains: Vec<String>,
 }
 
@@ -55,7 +59,7 @@ impl ActionAssessor {
         let allowed_references = allowed_references(campaign, actor);
         let schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
         let prompt = format!(
-            "Assess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}\nOUTPUT JSON SCHEMA:\n{}",
+            "Assess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only change existing actor conditions or relationships, move the acting actor along an existing route, advance existing clocks, or change existing institution posture. Keep a delta empty when prose consequence has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}\nOUTPUT JSON SCHEMA:\n{}",
             serde_json::to_string(&intent)?,
             serde_json::to_string(actor)?,
             serde_json::to_string(location)?,
@@ -83,6 +87,14 @@ impl ActionAssessor {
                 .ok_or_else(|| anyhow!("assessor returned no typed proposal"))?,
         )?;
         validate_proposal(&proposal, &allowed_references)?;
+        for effect in [
+            &proposal.strong_effect,
+            &proposal.success_effect,
+            &proposal.mixed_effect,
+            &proposal.failure_effect,
+        ] {
+            validate_effect(campaign, actor, effect)?;
+        }
         let modifier_total =
             crate::d20::capped_modifier(proposal.modifiers.iter().map(|m| m.value));
         let mut assessment = ActionAssessment {
@@ -99,6 +111,10 @@ impl ActionAssessor {
             success_stake: proposal.success_stake,
             mixed_stake: proposal.mixed_stake,
             failure_stake: proposal.failure_stake,
+            strong_effect: proposal.strong_effect,
+            success_effect: proposal.success_effect,
+            mixed_effect: proposal.mixed_effect,
+            failure_effect: proposal.failure_effect,
             bargains: proposal.bargains,
             expires_at: Utc::now() + Duration::minutes(10),
             digest: String::new(),
@@ -157,6 +173,63 @@ fn validate_proposal(p: &AssessmentProposal, allowed: &BTreeSet<String>) -> Resu
     }
     Ok(())
 }
+
+pub(crate) fn validate_effect(
+    campaign: &Campaign,
+    acting_actor: &crate::domain::ActorState,
+    effect: &WorldEffectDelta,
+) -> Result<()> {
+    let affected = effect
+        .actor_conditions
+        .keys()
+        .chain(effect.actor_relationship_updates.keys());
+    for id in affected {
+        let target = campaign
+            .actors
+            .get(id)
+            .ok_or_else(|| anyhow!("outcome delta invented an actor"))?;
+        if target.location_id != acting_actor.location_id {
+            return Err(anyhow!("outcome delta exceeds spatial reach"));
+        }
+    }
+    for delta in effect.actor_conditions.values() {
+        if delta.add.iter().any(|value| value.trim().is_empty())
+            || delta.remove.iter().any(|value| value.trim().is_empty())
+            || !delta.add.is_disjoint(&delta.remove)
+        {
+            return Err(anyhow!("outcome condition delta is contradictory"));
+        }
+    }
+    for relationships in effect.actor_relationship_updates.values() {
+        if relationships.iter().any(|(id, value)| {
+            (!campaign.actors.contains_key(id) && !campaign.institutions.contains_key(id))
+                || value.trim().is_empty()
+        }) {
+            return Err(anyhow!("outcome relationship delta invented a target"));
+        }
+    }
+    for (actor_id, destination) in &effect.actor_moves {
+        if actor_id != &acting_actor.id
+            || !campaign.locations.contains_key(destination)
+            || !campaign.locations[&acting_actor.location_id]
+                .routes
+                .contains_key(destination)
+        {
+            return Err(anyhow!("outcome movement exceeds spatial reach"));
+        }
+    }
+    if effect
+        .clock_advances
+        .iter()
+        .any(|(id, amount)| *amount == 0 || !campaign.clocks.contains_key(id))
+        || effect.institution_postures.iter().any(|(id, posture)| {
+            !campaign.institutions.contains_key(id) || posture.trim().is_empty()
+        })
+    {
+        return Err(anyhow!("outcome delta cites unknown world state"));
+    }
+    Ok(())
+}
 pub fn assessment_digest(assessment: &ActionAssessment) -> Result<String> {
     let mut value = assessment.clone();
     value.digest.clear();
@@ -185,6 +258,10 @@ mod tests {
             success_stake: "gate opens".into(),
             mixed_stake: "gate opens noisily".into(),
             failure_stake: "lock jams".into(),
+            strong_effect: WorldEffectDelta::default(),
+            success_effect: WorldEffectDelta::default(),
+            mixed_effect: WorldEffectDelta::default(),
+            failure_effect: WorldEffectDelta::default(),
             bargains: vec![],
         }
     }

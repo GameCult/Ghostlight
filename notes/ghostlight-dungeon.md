@@ -120,6 +120,12 @@ DeepSeek currently documents both V4 model IDs, streaming, and JSON output throu
 - Overreach returns explicit sacrifices or bargains that could admit a new assessment.
 - Speech and its intended effect are separated: the character may successfully say something while failing to persuade, deceive, or intimidate.
 
+Every roll band carries a prevalidated `WorldEffectDelta`. The MVP vocabulary
+can change local conditions and relationships, move the acting character over
+an existing route, advance known clocks, or change a known institution's
+posture. The chosen band and its delta commit atomically with the roll receipt;
+stake prose alone never impersonates world mutation.
+
 ### Away-time world agency
 
 - The daemon owns a five-minute scheduler pulse. Campaigns enter away simulation after fifteen minutes without player activity.

@@ -119,6 +119,19 @@ fn execute(
                             "assessment proposal is stale or invalid".into(),
                         ));
                     }
+                    let actor = campaign
+                        .actors
+                        .get(&assessment.intent.actor_id)
+                        .ok_or_else(|| KernelError::Invalid("assessment actor vanished".into()))?;
+                    for effect in [
+                        &assessment.strong_effect,
+                        &assessment.success_effect,
+                        &assessment.mixed_effect,
+                        &assessment.failure_effect,
+                    ] {
+                        crate::assessor::validate_effect(&campaign, actor, effect)
+                            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+                    }
                     assessment
                 }
                 None => assess(&campaign, intent),
@@ -152,6 +165,13 @@ fn execute(
                 OutcomeBand::Mixed => &assessment.mixed_stake,
                 OutcomeBand::Failure => &assessment.failure_stake,
             };
+            let effect = match roll.outcome {
+                OutcomeBand::StrongSuccess => assessment.strong_effect.clone(),
+                OutcomeBand::Success => assessment.success_effect.clone(),
+                OutcomeBand::Mixed => assessment.mixed_effect.clone(),
+                OutcomeBand::Failure => assessment.failure_effect.clone(),
+            };
+            apply_world_effect(&mut campaign, &effect)?;
             if assessment.intent.actor_id == campaign.player_actor_id {
                 campaign.last_player_activity = Utc::now();
                 campaign.away_ticks_processed = 0;
@@ -508,6 +528,52 @@ fn apply_promotion(
     Ok(())
 }
 
+fn apply_world_effect(
+    campaign: &mut Campaign,
+    effect: &WorldEffectDelta,
+) -> Result<(), KernelError> {
+    for (actor_id, delta) in &effect.actor_conditions {
+        let actor = campaign
+            .actors
+            .get_mut(actor_id)
+            .ok_or_else(|| KernelError::Invalid("outcome actor vanished".into()))?;
+        actor.conditions.extend(delta.add.clone());
+        for value in &delta.remove {
+            actor.conditions.remove(value);
+        }
+    }
+    for (actor_id, relationships) in &effect.actor_relationship_updates {
+        campaign
+            .actors
+            .get_mut(actor_id)
+            .ok_or_else(|| KernelError::Invalid("outcome actor vanished".into()))?
+            .relationships
+            .extend(relationships.clone());
+    }
+    for (actor_id, destination) in &effect.actor_moves {
+        campaign
+            .actors
+            .get_mut(actor_id)
+            .ok_or_else(|| KernelError::Invalid("outcome actor vanished".into()))?
+            .location_id = destination.clone();
+    }
+    for (clock_id, amount) in &effect.clock_advances {
+        let clock = campaign
+            .clocks
+            .get_mut(clock_id)
+            .ok_or_else(|| KernelError::Invalid("outcome clock vanished".into()))?;
+        clock.progress = clock.progress.saturating_add(*amount).min(clock.threshold);
+    }
+    for (institution_id, posture) in &effect.institution_postures {
+        campaign
+            .institutions
+            .get_mut(institution_id)
+            .ok_or_else(|| KernelError::Invalid("outcome institution vanished".into()))?
+            .posture = posture.clone();
+    }
+    Ok(())
+}
+
 fn apply_demotion(campaign: &mut Campaign, demotion: &GestaltDemotion) -> Result<(), KernelError> {
     let actor = campaign
         .actors
@@ -708,6 +774,10 @@ fn assess(c: &Campaign, intent: ActionIntent) -> ActionAssessment {
         success_stake: "The intended local effect succeeds and the world reacts.".into(),
         mixed_stake: "The effect lands with the previewed cost or complication.".into(),
         failure_stake: "Opposition holds and gains a concrete advantage.".into(),
+        strong_effect: WorldEffectDelta::default(),
+        success_effect: WorldEffectDelta::default(),
+        mixed_effect: WorldEffectDelta::default(),
+        failure_effect: WorldEffectDelta::default(),
         bargains: if admissible {
             vec![]
         } else {
@@ -1394,5 +1464,79 @@ mod tests {
             panic!()
         };
         assert_eq!(campaign.pending_world_proposals.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn roll_commits_only_the_prevalidated_typed_outcome_delta() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = campaign();
+        let campaign_id = seed.id;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let intent = ActionIntent {
+            actor_id: "player".into(),
+            description: "brace the door".into(),
+            intended_effect: "become braced".into(),
+        };
+        let mut invalid = assess(&seed, intent.clone());
+        invalid
+            .success_effect
+            .actor_moves
+            .insert("player".into(), "nowhere".into());
+        invalid.digest = crate::assessor::assessment_digest(&invalid).unwrap();
+        assert!(
+            kernel
+                .command(WorldCommand::Assess {
+                    expected_revision: 0,
+                    intent: intent.clone(),
+                    proposal: Some(invalid),
+                })
+                .await
+                .is_err()
+        );
+        let delta = WorldEffectDelta {
+            actor_conditions: BTreeMap::from([(
+                "player".into(),
+                ConditionDelta {
+                    add: BTreeSet::from(["braced".into()]),
+                    remove: BTreeSet::new(),
+                },
+            )]),
+            ..Default::default()
+        };
+        let mut valid = assess(&seed, intent.clone());
+        valid.strong_effect = delta.clone();
+        valid.success_effect = delta.clone();
+        valid.mixed_effect = delta.clone();
+        valid.failure_effect = delta;
+        valid.digest = crate::assessor::assessment_digest(&valid).unwrap();
+        kernel
+            .command(WorldCommand::Assess {
+                expected_revision: 0,
+                intent,
+                proposal: Some(valid.clone()),
+            })
+            .await
+            .unwrap();
+        kernel
+            .command(WorldCommand::Attempt {
+                assessment_digest: valid.digest,
+            })
+            .await
+            .unwrap();
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &campaign_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(persisted.revision, 1);
+        assert!(persisted.actors["player"].conditions.contains("braced"));
     }
 }

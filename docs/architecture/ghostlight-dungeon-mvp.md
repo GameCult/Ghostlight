@@ -171,6 +171,16 @@ This deliberately serializes canonical consequence while keeping perception
 parallel. It prevents two proposals assessed against the same world snapshot
 from both committing incompatible outcomes.
 
+Each assessment also carries four bounded typed outcome deltas. The accepted
+MVP delta vocabulary is deliberately narrow: conditions and relationships on
+actors within the acting actor's location, self-movement over an existing
+route, advancement of existing clocks, and posture changes to existing
+institutions. It cannot create actors, places, capabilities, knowledge,
+equipment, clocks, institutions, custody, or branch facts. The kernel validates
+all four bands before storing an assessment and applies only the OS-random
+roll's selected band in the same atomic commit as the roll receipt. Narrative
+stakes describe that transition; they are no longer the transition.
+
 The scheduler may calculate pending work, but `AdvanceStrategicTick` owns the
 transition. Return catch-up invokes that same command before the next player
 action is admitted.
