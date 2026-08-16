@@ -13,6 +13,7 @@ cultcache-legacy.workspace = true
 cultcache-rs.workspace = true
 cultnet-rs.workspace = true
 cultmesh-rs.workspace = true
+jsonschema.workspace = true
 rand.workspace = true
 reqwest.workspace = true
 rmp-serde.workspace = true

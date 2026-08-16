@@ -48,6 +48,12 @@ pub async fn run_validated_stage(
     request: &ModelStageRequest,
 ) -> Result<ModelStageOutput> {
     let request_bytes = serde_json::to_vec(request)?;
+    let validator = request
+        .output_schema
+        .as_ref()
+        .map(jsonschema::validator_for)
+        .transpose()
+        .map_err(|error| anyhow!("invalid local output schema: {error}"))?;
     for attempt in 0..2 {
         let started = Instant::now();
         let output = port.run(request).await?;
@@ -57,9 +63,18 @@ pub async fn run_validated_stage(
             }
             return Err(anyhow!("model returned empty output twice"));
         }
-        let structured = match &request.output_schema {
+        let structured = match &validator {
             Some(_) => match serde_json::from_str(&output) {
-                Ok(value) => Some(value),
+                Ok(value) => {
+                    let validation = validator.as_ref().expect("structured validator");
+                    if let Err(error) = validation.validate(&value) {
+                        if attempt == 0 {
+                            continue;
+                        }
+                        return Err(anyhow!("model returned schema-invalid JSON twice: {error}"));
+                    }
+                    Some(value)
+                }
                 Err(_) if attempt == 0 => continue,
                 Err(error) => return Err(anyhow!("model returned malformed JSON twice: {error}")),
             },
@@ -83,6 +98,55 @@ pub async fn run_validated_stage(
         });
     }
     unreachable!()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    struct InvalidThenValid {
+        calls: AtomicUsize,
+    }
+
+    #[async_trait]
+    impl ModelPort for InvalidThenValid {
+        async fn run(&self, _: &ModelStageRequest) -> Result<String> {
+            Ok(if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                r#"{"answer":7}"#.into()
+            } else {
+                r#"{"answer":"ready"}"#.into()
+            })
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn schema_invalid_json_gets_one_same_snapshot_retry() {
+        let port = InvalidThenValid {
+            calls: AtomicUsize::new(0),
+        };
+        let request = ModelStageRequest {
+            stage: "typed-stage".into(),
+            model: "fixture".into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "fixture".into(),
+            output_schema: Some(serde_json::json!({
+                "$schema":"https://json-schema.org/draft/2020-12/schema",
+                "type":"object",
+                "required":["answer"],
+                "properties":{"answer":{"type":"string"}}
+            })),
+            source_receipt_ids: vec![],
+        };
+        let output = run_validated_stage(&port, &request).await.unwrap();
+        assert_eq!(port.calls.load(Ordering::SeqCst), 2);
+        assert_eq!(output.structured.unwrap()["answer"], "ready");
+        assert_eq!(output.receipt.snapshot_binding, request.snapshot_binding);
+    }
 }
 
 #[derive(Clone)]
