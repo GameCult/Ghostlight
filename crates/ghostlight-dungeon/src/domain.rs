@@ -45,6 +45,15 @@ pub struct BranchOrigin {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct VaultManifest {
+    pub schema: String,
+    pub provider: String,
+    pub source_ids: BTreeSet<String>,
+    pub authority_lanes: BTreeSet<String>,
+    pub temporal_scopes: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct Location {
     pub id: String,
     pub name: String,
@@ -74,6 +83,15 @@ pub struct ActorState {
     pub goals: Vec<String>,
     #[serde(default)]
     pub memories: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct RelationshipState {
+    pub schema: String,
+    pub actor_id: String,
+    pub other_actor_id: String,
+    pub description: String,
+    pub source_revision: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -142,6 +160,27 @@ pub struct GestaltDemotion {
 pub struct GestaltPresencePlan {
     pub promotions: Vec<GestaltPromotion>,
     pub demotions: Vec<GestaltDemotion>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltMaterializationReceipt {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub previous_revision: u64,
+    pub revision: u64,
+    pub reason: String,
+    pub changes: Vec<GestaltPresenceChange>,
+    pub committed_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltPresenceChange {
+    pub operation: String,
+    pub gestalt_id: String,
+    pub member_id: String,
+    pub actor_id: String,
+    pub gestalt_version: u64,
+    pub member_version: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
@@ -251,6 +290,18 @@ pub struct StrategicActorMove {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct StrategicTickReceipt {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub previous_revision: u64,
+    pub revision: u64,
+    pub source: TickSource,
+    pub model_receipt_hash: Option<String>,
+    pub event_ids: Vec<String>,
+    pub committed_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct CanonCandidate {
     pub schema: String,
     pub id: String,
@@ -350,6 +401,8 @@ pub enum WorldCommand {
         source: TickSource,
         #[serde(default)]
         plan: Option<StrategicTickPlan>,
+        #[serde(default)]
+        model_receipt_hash: Option<String>,
     },
     ExpandRegion {
         expected_revision: u64,

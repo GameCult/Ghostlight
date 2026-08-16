@@ -47,6 +47,14 @@ pub async fn run_validated_stage(
     port: &dyn ModelPort,
     request: &ModelStageRequest,
 ) -> Result<ModelStageOutput> {
+    run_validated_stage_with_timeout(port, request, std::time::Duration::from_secs(45)).await
+}
+
+pub async fn run_validated_stage_with_timeout(
+    port: &dyn ModelPort,
+    request: &ModelStageRequest,
+    timeout: std::time::Duration,
+) -> Result<ModelStageOutput> {
     let request_bytes = serde_json::to_vec(request)?;
     let validator = request
         .output_schema
@@ -56,7 +64,9 @@ pub async fn run_validated_stage(
         .map_err(|error| anyhow!("invalid local output schema: {error}"))?;
     for attempt in 0..2 {
         let started = Instant::now();
-        let output = port.run(request).await?;
+        let output = tokio::time::timeout(timeout, port.run(request))
+            .await
+            .map_err(|_| anyhow!("model stage {} timed out", request.stage))??;
         if output.trim().is_empty() {
             if attempt == 0 {
                 continue;
@@ -109,6 +119,19 @@ mod tests {
         calls: AtomicUsize,
     }
 
+    struct NeverReturns;
+
+    #[async_trait]
+    impl ModelPort for NeverReturns {
+        async fn run(&self, _: &ModelStageRequest) -> Result<String> {
+            std::future::pending().await
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
     #[async_trait]
     impl ModelPort for InvalidThenValid {
         async fn run(&self, _: &ModelStageRequest) -> Result<String> {
@@ -146,6 +169,26 @@ mod tests {
         assert_eq!(port.calls.load(Ordering::SeqCst), 2);
         assert_eq!(output.structured.unwrap()["answer"], "ready");
         assert_eq!(output.receipt.snapshot_binding, request.snapshot_binding);
+    }
+
+    #[tokio::test]
+    async fn provider_timeout_returns_no_stage_output() {
+        let request = ModelStageRequest {
+            stage: "timeout-stage".into(),
+            model: "fixture".into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "fixture".into(),
+            output_schema: None,
+            source_receipt_ids: vec![],
+        };
+        let error = run_validated_stage_with_timeout(
+            &NeverReturns,
+            &request,
+            std::time::Duration::from_millis(5),
+        )
+        .await
+        .unwrap_err();
+        assert!(error.to_string().contains("timed out"));
     }
 }
 

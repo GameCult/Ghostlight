@@ -1349,7 +1349,17 @@ async fn operator_inspector(headers: HeaderMap, State(state): State<AppState>) -
         .store
         .load_all::<RejectedProposalReceipt>("rejected_proposal_receipt.v1")
         .unwrap_or_default();
-    Json(serde_json::json!({"schema":"ghostlight.operator_inspector.v1","campaign":campaign,"evidence":evidence,"commit_receipts":commits,"model_stage_receipts":stages,"rejected_proposals":rejected,"scheduler":{"live_turn_pressure":state.live_turns.load(Ordering::SeqCst)}})).into_response()
+    let strategic_ticks = runtime
+        .store
+        .load_all::<ghostlight_dungeon::domain::StrategicTickReceipt>("strategic_tick.v1")
+        .unwrap_or_default();
+    let gestalt_receipts = runtime
+        .store
+        .load_all::<ghostlight_dungeon::domain::GestaltMaterializationReceipt>(
+            "gestalt_materialization_receipt.v1",
+        )
+        .unwrap_or_default();
+    Json(serde_json::json!({"schema":"ghostlight.operator_inspector.v1","campaign":campaign,"evidence":evidence,"commit_receipts":commits,"model_stage_receipts":stages,"strategic_ticks":strategic_ticks,"gestalt_materialization_receipts":gestalt_receipts,"rejected_proposals":rejected,"scheduler":{"live_turn_pressure":state.live_turns.load(Ordering::SeqCst)}})).into_response()
 }
 
 async fn process_due_ticks(
@@ -1373,7 +1383,7 @@ async fn process_due_ticks(
         if campaign.away_ticks_processed >= target {
             return Ok(());
         }
-        let plan = if let Some(model) = &state.model {
+        let (plan, model_receipt_hash) = if let Some(model) = &state.model {
             let (plan, stage) =
                 ghostlight_dungeon::scheduler::propose_strategic_tick(model.as_ref(), &campaign)
                     .await?;
@@ -1394,9 +1404,9 @@ async fn process_due_ticks(
                     )?;
                 }
             }
-            Some(plan)
+            (Some(plan), Some(stage.receipt.output_hash))
         } else {
-            None
+            (None, None)
         };
         if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
             return Ok(());
@@ -1407,6 +1417,7 @@ async fn process_due_ticks(
                 expected_revision: campaign.revision,
                 source: source.clone(),
                 plan,
+                model_receipt_hash,
             })
             .await?;
     }
@@ -1675,6 +1686,7 @@ mod tests {
                 expected_revision: 4,
                 source: ghostlight_dungeon::domain::TickSource::Scheduler,
                 plan: None,
+                model_receipt_hash: None,
             },
             "player",
         ));

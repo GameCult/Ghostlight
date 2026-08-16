@@ -239,10 +239,20 @@ fn execute(
         }
         WorldCommand::AdvanceStrategicTick {
             expected_revision,
-            source: _,
+            source,
             plan,
+            model_receipt_hash,
         } => {
             require_revision(&campaign, expected_revision)?;
+            if plan.is_some()
+                && model_receipt_hash
+                    .as_deref()
+                    .is_none_or(|hash| !valid_sha256(hash))
+            {
+                return Err(KernelError::Invalid(
+                    "model-driven strategic tick lacks an exact model receipt hash".into(),
+                ));
+            }
             campaign.world_time += Duration::hours(i64::from(campaign.tick_hours));
             for clock in campaign.clocks.values_mut() {
                 clock.progress = clock.progress.saturating_add(1).min(clock.threshold);
@@ -271,10 +281,11 @@ fn execute(
                     });
                 }
             }
+            let event_ids = tick_events.iter().map(|event| event.id.clone()).collect();
             campaign.events.extend(tick_events);
             campaign.away_ticks_processed = tick_number.min(8);
             campaign.pending_ticks = campaign.pending_ticks.saturating_sub(1);
-            commit(store, row, campaign, "strategic_tick", None)
+            commit_strategic_tick(store, row, campaign, source, model_receipt_hash, event_ids)
         }
         WorldCommand::ExpandRegion {
             expected_revision,
@@ -314,6 +325,7 @@ fn execute(
             location_id,
         } => {
             require_revision(&campaign, expected_revision)?;
+            let before = campaign.clone();
             apply_promotion(
                 &mut campaign,
                 &GestaltPromotion {
@@ -324,7 +336,14 @@ fn execute(
                     location_id,
                 },
             )?;
-            commit(store, row, campaign, "materialize_gestalt_member", None)
+            commit_gestalt_presence(
+                store,
+                row,
+                before,
+                campaign,
+                "materialize_gestalt_member",
+                "direct materialization command",
+            )
         }
         WorldCommand::DematerializeGestaltMember {
             expected_revision,
@@ -332,6 +351,7 @@ fn execute(
             aggregate_delta,
         } => {
             require_revision(&campaign, expected_revision)?;
+            let before = campaign.clone();
             apply_demotion(
                 &mut campaign,
                 &GestaltDemotion {
@@ -339,7 +359,14 @@ fn execute(
                     aggregate_delta,
                 },
             )?;
-            commit(store, row, campaign, "dematerialize_gestalt_member", None)
+            commit_gestalt_presence(
+                store,
+                row,
+                before,
+                campaign,
+                "dematerialize_gestalt_member",
+                "direct dematerialization command",
+            )
         }
         WorldCommand::ReconcileGestaltPresence {
             expected_revision,
@@ -350,6 +377,7 @@ fn execute(
             if reason.trim().is_empty() {
                 return Err(KernelError::Invalid("presence plan has no reason".into()));
             }
+            let before = campaign.clone();
             let mut candidate = campaign.clone();
             for demotion in &plan.demotions {
                 apply_demotion(&mut candidate, demotion)?;
@@ -357,7 +385,14 @@ fn execute(
             for promotion in &plan.promotions {
                 apply_promotion(&mut candidate, promotion)?;
             }
-            commit(store, row, candidate, "reconcile_gestalt_presence", None)
+            commit_gestalt_presence(
+                store,
+                row,
+                before,
+                candidate,
+                "reconcile_gestalt_presence",
+                &reason,
+            )
         }
         WorldCommand::ResolveReactionWave {
             expected_revision,
@@ -1017,6 +1052,119 @@ fn validate_public_channels(channels: &[String]) -> Result<(), KernelError> {
     Ok(())
 }
 
+fn valid_sha256(value: &str) -> bool {
+    value
+        .strip_prefix("sha256:")
+        .is_some_and(|digest| digest.len() == 64 && digest.bytes().all(|b| b.is_ascii_hexdigit()))
+}
+
+fn commit_gestalt_presence(
+    store: &CampaignStore,
+    row: cultcache_legacy::CultCacheEnvelope,
+    before: Campaign,
+    mut campaign: Campaign,
+    kind: &str,
+    reason: &str,
+) -> Result<CommandResult, KernelError> {
+    let mut changes = Vec::new();
+    for (member_id, member) in &campaign.gestalt_members {
+        let previous_actor = before
+            .gestalt_members
+            .get(member_id)
+            .and_then(|value| value.materialized_actor_id.as_deref());
+        let current_actor = member.materialized_actor_id.as_deref();
+        if previous_actor == current_actor {
+            continue;
+        }
+        let (operation, actor_id) = match (previous_actor, current_actor) {
+            (None, Some(actor)) => ("materialized", actor),
+            (Some(actor), None) => ("dematerialized", actor),
+            (Some(_), Some(actor)) => ("rematerialized", actor),
+            (None, None) => unreachable!(),
+        };
+        let gestalt = campaign
+            .gestalts
+            .get(&member.gestalt_id)
+            .ok_or_else(|| KernelError::Invalid("gestalt receipt lost its baseline".into()))?;
+        changes.push(crate::domain::GestaltPresenceChange {
+            operation: operation.into(),
+            gestalt_id: member.gestalt_id.clone(),
+            member_id: member_id.clone(),
+            actor_id: actor_id.into(),
+            gestalt_version: gestalt.version,
+            member_version: member.version,
+        });
+    }
+    if changes.is_empty() {
+        return Err(KernelError::Invalid(
+            "gestalt presence command produced no presence change".into(),
+        ));
+    }
+    let previous_revision = campaign.revision;
+    campaign.revision += 1;
+    let committed_at = Utc::now();
+    let receipt = WorldCommitReceipt {
+        schema: "ghostlight.world_commit_receipt.v1".into(),
+        campaign_id: campaign.id,
+        previous_revision,
+        revision: campaign.revision,
+        command_kind: kind.into(),
+        committed_at,
+        roll: None,
+    };
+    let gestalt_receipt = crate::domain::GestaltMaterializationReceipt {
+        schema: "ghostlight.gestalt_materialization_receipt.v1".into(),
+        campaign_id: campaign.id,
+        previous_revision,
+        revision: campaign.revision,
+        reason: reason.into(),
+        changes,
+        committed_at,
+    };
+    let key = format!("{}-{}", campaign.id, campaign.revision);
+    store
+        .append_gestalt_presence(&row, &campaign, &key, &receipt, &gestalt_receipt)
+        .map_err(persist)?;
+    Ok(CommandResult::Committed { campaign, receipt })
+}
+
+fn commit_strategic_tick(
+    store: &CampaignStore,
+    row: cultcache_legacy::CultCacheEnvelope,
+    mut campaign: Campaign,
+    source: TickSource,
+    model_receipt_hash: Option<String>,
+    event_ids: Vec<String>,
+) -> Result<CommandResult, KernelError> {
+    let previous_revision = campaign.revision;
+    campaign.revision += 1;
+    let committed_at = Utc::now();
+    let receipt = WorldCommitReceipt {
+        schema: "ghostlight.world_commit_receipt.v1".into(),
+        campaign_id: campaign.id,
+        previous_revision,
+        revision: campaign.revision,
+        command_kind: "strategic_tick".into(),
+        committed_at,
+        roll: None,
+    };
+    let strategic = crate::domain::StrategicTickReceipt {
+        schema: "ghostlight.strategic_tick.v1".into(),
+        campaign_id: campaign.id,
+        previous_revision,
+        revision: campaign.revision,
+        source,
+        model_receipt_hash,
+        event_ids,
+        committed_at,
+    };
+    let key = format!("{}-{}", campaign.id, campaign.revision);
+    store
+        .append_strategic_tick(&row, &campaign, &key, &receipt, &strategic)
+        .map_err(persist)?;
+    Ok(CommandResult::Committed { campaign, receipt })
+}
+
 fn commit(
     store: &CampaignStore,
     row: cultcache_legacy::CultCacheEnvelope,
@@ -1288,6 +1436,7 @@ mod tests {
                 expected_revision: 0,
                 source: TickSource::Scheduler,
                 plan: None,
+                model_receipt_hash: None,
             })
             .await
             .unwrap();
@@ -1298,6 +1447,13 @@ mod tests {
         assert!(campaign.news.is_empty());
         assert_eq!(campaign.away_ticks_processed, 1);
         assert!(campaign.institutions["board"].posture.contains("acting"));
+        let ticks = store
+            .load_all::<crate::domain::StrategicTickReceipt>("strategic_tick.v1")
+            .unwrap();
+        assert_eq!(ticks.len(), 1);
+        assert_eq!(ticks[0].source, TickSource::Scheduler);
+        assert_eq!(ticks[0].event_ids, vec![campaign.events[0].id.clone()]);
+        assert!(ticks[0].model_receipt_hash.is_none());
     }
 
     #[tokio::test]
@@ -1351,6 +1507,7 @@ mod tests {
                     expected_revision: 0,
                     source: TickSource::Scheduler,
                     plan: Some(puppet),
+                    model_receipt_hash: Some(format!("sha256:{}", "a".repeat(64))),
                 })
                 .await,
             Err(KernelError::Invalid(_))
@@ -1376,6 +1533,7 @@ mod tests {
                 expected_revision: 0,
                 source: TickSource::Scheduler,
                 plan: Some(valid),
+                model_receipt_hash: Some(format!("sha256:{}", "b".repeat(64))),
             })
             .await
             .unwrap();
@@ -1385,6 +1543,13 @@ mod tests {
         assert_eq!(campaign.actors["runner"].location_id, "yard");
         assert_eq!(campaign.actors["player"].location_id, "room");
         assert_eq!(campaign.events[0].kind, "actor_movement");
+        let ticks = store
+            .load_all::<crate::domain::StrategicTickReceipt>("strategic_tick.v1")
+            .unwrap();
+        assert_eq!(
+            ticks[0].model_receipt_hash,
+            Some(format!("sha256:{}", "b".repeat(64)))
+        );
     }
 
     #[tokio::test]
@@ -1645,6 +1810,15 @@ mod tests {
                 .as_deref(),
             Some("member:john")
         );
+        let receipts = store
+            .load_all::<crate::domain::GestaltMaterializationReceipt>(
+                "gestalt_materialization_receipt.v1",
+            )
+            .unwrap();
+        assert_eq!(receipts.len(), 3);
+        assert_eq!(receipts[0].changes[0].operation, "materialized");
+        assert_eq!(receipts[1].changes[0].operation, "dematerialized");
+        assert_eq!(receipts[2].changes[0].member_id, "john");
     }
 
     #[tokio::test]

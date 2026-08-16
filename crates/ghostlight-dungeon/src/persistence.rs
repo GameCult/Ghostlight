@@ -1,4 +1,7 @@
-use crate::domain::{Campaign, VaultEvidenceReceipt};
+use crate::domain::{
+    Campaign, GestaltMaterializationReceipt, StrategicTickReceipt, VaultEvidenceReceipt,
+    WorldCommitReceipt,
+};
 use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
 use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
@@ -193,6 +196,82 @@ impl CampaignStore {
                 item,
             )?);
         }
+        if !self
+            .inner
+            .compare_and_swap_batch(std::slice::from_ref(expected), rows)?
+        {
+            return Err(anyhow!("stale CultCache snapshot"));
+        }
+        Ok(next_row)
+    }
+
+    pub fn append_strategic_tick(
+        &self,
+        expected: &CultCacheEnvelope,
+        next: &Campaign,
+        receipt_key: &str,
+        world_receipt: &WorldCommitReceipt,
+        strategic_receipt: &StrategicTickReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        let next_row = envelope(
+            &expected.r#type,
+            "ghostlight.campaign.v1",
+            &expected.key,
+            next,
+        )?;
+        let rows = vec![
+            next_row.clone(),
+            envelope(
+                "world_commit_receipt.v1",
+                "ghostlight.world_commit_receipt.v1",
+                receipt_key,
+                world_receipt,
+            )?,
+            envelope(
+                "strategic_tick.v1",
+                "ghostlight.strategic_tick.v1",
+                receipt_key,
+                strategic_receipt,
+            )?,
+        ];
+        if !self
+            .inner
+            .compare_and_swap_batch(std::slice::from_ref(expected), rows)?
+        {
+            return Err(anyhow!("stale CultCache snapshot"));
+        }
+        Ok(next_row)
+    }
+
+    pub fn append_gestalt_presence(
+        &self,
+        expected: &CultCacheEnvelope,
+        next: &Campaign,
+        receipt_key: &str,
+        world_receipt: &WorldCommitReceipt,
+        gestalt_receipt: &GestaltMaterializationReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        let next_row = envelope(
+            &expected.r#type,
+            "ghostlight.campaign.v1",
+            &expected.key,
+            next,
+        )?;
+        let rows = vec![
+            next_row.clone(),
+            envelope(
+                "world_commit_receipt.v1",
+                "ghostlight.world_commit_receipt.v1",
+                receipt_key,
+                world_receipt,
+            )?,
+            envelope(
+                "gestalt_materialization_receipt.v1",
+                "ghostlight.gestalt_materialization_receipt.v1",
+                receipt_key,
+                gestalt_receipt,
+            )?,
+        ];
         if !self
             .inner
             .compare_and_swap_batch(std::slice::from_ref(expected), rows)?

@@ -1,9 +1,11 @@
 use crate::{
     domain::{
-        ActionAssessment, ActorState, ActorStateDelta, Campaign, CanonCandidate, Event,
-        GestaltMemberDelta, GestaltPersonaState, InstitutionState, Location, NarrationProjection,
-        NewsIssue, RollReceipt, StrategicTickPlan, VaultEvidenceReceipt, WorldActionProposal,
-        WorldClock, WorldCommitReceipt, WorldCompilePreview, WorldFact,
+        ActionAssessment, ActorState, ActorStateDelta, Campaign, CampaignLifecycleReceipt,
+        CanonCandidate, Event, GestaltMaterializationReceipt, GestaltMemberDelta,
+        GestaltPersonaState, InstitutionState, Location, NarrationProjection, NewsIssue,
+        RegionExpansionPreview, RejectedProposalReceipt, RelationshipState, RollReceipt,
+        StrategicTickPlan, StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest,
+        WorldActionProposal, WorldClock, WorldCommitReceipt, WorldCompilePreview, WorldFact,
     },
     model::ModelStageReceipt,
     surface::player_surface,
@@ -270,12 +272,14 @@ impl MeshPublisher {
 
 fn schema_catalog() -> Value {
     json!({
+        "ghostlight.vault_manifest.v1": schemars::schema_for!(VaultManifest),
         "ghostlight.vault_evidence_receipt.v1": schemars::schema_for!(VaultEvidenceReceipt),
         "ghostlight.world_compile_preview.v1": schemars::schema_for!(WorldCompilePreview),
         "ghostlight.campaign.v1": schemars::schema_for!(Campaign),
         "ghostlight.world_fact.v1": schemars::schema_for!(WorldFact),
         "ghostlight.location.v1": schemars::schema_for!(Location),
         "ghostlight.actor_state.v1": schemars::schema_for!(ActorState),
+        "ghostlight.relationship_state.v1": schemars::schema_for!(RelationshipState),
         "ghostlight.institution_state.v1": schemars::schema_for!(InstitutionState),
         "ghostlight.world_clock.v1": schemars::schema_for!(WorldClock),
         "ghostlight.event.v1": schemars::schema_for!(Event),
@@ -285,11 +289,17 @@ fn schema_catalog() -> Value {
         "ghostlight.persona_stage_receipt.v1": schemars::schema_for!(ModelStageReceipt),
         "ghostlight.actor_state_delta.v1": schemars::schema_for!(ActorStateDelta),
         "ghostlight.world_action_proposal.v1": schemars::schema_for!(WorldActionProposal),
+        "ghostlight.narration_projection.v1": schemars::schema_for!(NarrationProjection),
+        "ghostlight.region_expansion_preview.v1": schemars::schema_for!(RegionExpansionPreview),
+        "ghostlight.rejected_proposal_receipt.v1": schemars::schema_for!(RejectedProposalReceipt),
+        "ghostlight.campaign_lifecycle_receipt.v1": schemars::schema_for!(CampaignLifecycleReceipt),
         "ghostlight.strategic_tick_plan.v1": schemars::schema_for!(StrategicTickPlan),
+        "ghostlight.strategic_tick.v1": schemars::schema_for!(StrategicTickReceipt),
         "ghostlight.news_issue.v1": schemars::schema_for!(NewsIssue),
         "ghostlight.canon_candidate.v1": schemars::schema_for!(CanonCandidate),
         "ghostlight.gestalt_persona_state.v1": schemars::schema_for!(GestaltPersonaState),
         "ghostlight.gestalt_member_delta.v1": schemars::schema_for!(GestaltMemberDelta)
+        ,"ghostlight.gestalt_materialization_receipt.v1": schemars::schema_for!(GestaltMaterializationReceipt)
     })
 }
 
@@ -312,6 +322,14 @@ mod tests {
             .get_required::<SchemaCatalogRecord>("ghostlight:schema-catalog")
             .unwrap();
         assert!(catalog.value["schemas"]["ghostlight.campaign.v1"]["$schema"].is_string());
+        for schema in [
+            "ghostlight.vault_manifest.v1",
+            "ghostlight.relationship_state.v1",
+            "ghostlight.strategic_tick.v1",
+            "ghostlight.gestalt_materialization_receipt.v1",
+        ] {
+            assert!(catalog.value["schemas"][schema]["$schema"].is_string());
+        }
         drop(catalog);
         drop(publisher);
         let reopened = MeshPublisher::open(temp.path().join("mesh.cc"), None).unwrap();

@@ -43,6 +43,14 @@ approval has its own route. Strategic ticks, region commits, gestalt presence,
 reaction waves, NPC initiative, and campaign creation are internal mailbox
 commands and cannot be invoked through `/api/command`.
 
+Relationship documents in the schema catalog are revision-bound projections
+of actor-owned relationship maps; they are not a second relationship writer.
+Vault manifests summarize the exact provider/source/authority/temporal lanes
+covered by evidence receipts and do not own Vault content. Strategic tick and
+gestalt materialization receipts are different: they are atomic commit
+companions binding the generic world commit to the causal model output or
+baseline/member presence transition.
+
 ## Control Flow
 
 1. Rehydrate from `state/map.yaml`, `notes/fresh-workspace-handoff.md`, this
