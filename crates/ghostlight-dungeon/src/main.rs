@@ -11,8 +11,9 @@ use ghostlight_dungeon::{
     WorldKernel,
     assessor::ActionAssessor,
     compiler::{CustomStart, OpeningRequest, OpeningSuggestion, SelectedStart, WorldCompiler},
-    domain::{Campaign, RegionExpansionPreview, WorldCommand, WorldCompilePreview},
+    domain::{ActionIntent, Campaign, RegionExpansionPreview, WorldCommand, WorldCompilePreview},
     gestalt::GestaltPresencePlanner,
+    kernel::CommandResult,
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     persistence::CampaignStore,
     persona::PersonaProjectionEngine,
@@ -463,6 +464,67 @@ async fn approve_destination(
     }
 }
 
+async fn resolve_npc_initiative(
+    state: &AppState,
+    reaction: &CommandResult,
+) -> anyhow::Result<serde_json::Value> {
+    let CommandResult::Committed { campaign, .. } = reaction else {
+        return Ok(serde_json::Value::Null);
+    };
+    let Some(proposal) = ghostlight_dungeon::initiative::winner(&campaign.pending_world_proposals)
+    else {
+        return Ok(serde_json::Value::Null);
+    };
+    let begun = state
+        .kernel
+        .command(WorldCommand::BeginNpcAction {
+            expected_revision: campaign.revision,
+            proposal: proposal.clone(),
+        })
+        .await?;
+    let CommandResult::Committed {
+        campaign: begun_campaign,
+        ..
+    } = &begun
+    else {
+        unreachable!()
+    };
+    let assessor = state
+        .assessor
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("NPC initiative requires the action assessor"))?;
+    let intent = ActionIntent {
+        actor_id: proposal.actor_id,
+        description: proposal.intent,
+        intended_effect: proposal.intended_effect,
+    };
+    let (assessment, receipt) = assessor.assess(begun_campaign, intent.clone()).await?;
+    let _ = state.store.insert(
+        "persona_stage_receipt.v1",
+        "ghostlight.persona_stage_receipt.v1",
+        &receipt.output_hash,
+        &receipt,
+    );
+    let assessed = state
+        .kernel
+        .command(WorldCommand::Assess {
+            expected_revision: begun_campaign.revision,
+            intent,
+            proposal: Some(assessment.clone()),
+        })
+        .await?;
+    if !assessment.admissible {
+        return Ok(serde_json::json!({"begun":begun,"assessment":assessed,"attempt":null}));
+    }
+    let attempted = state
+        .kernel
+        .command(WorldCommand::Attempt {
+            assessment_digest: assessment.digest,
+        })
+        .await?;
+    Ok(serde_json::json!({"begun":begun,"assessment":assessed,"attempt":attempted}))
+}
+
 async fn command(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -609,7 +671,43 @@ async fn command(
                                             &receipt,
                                         );
                                     }
-                                    match state.kernel.command(WorldCommand::ResolveReactionWave{expected_revision:reaction_campaign.revision,event_summary:summary,reactions:wave.reactions}).await{Ok(reaction)=>return Json(serde_json::json!({"primary":result,"presence":presence_result,"reaction_wave":reaction})).into_response(),Err(error)=>return(StatusCode::CONFLICT,Json(ErrorBody{error:error.to_string()})).into_response()}
+                                    match state
+                                        .kernel
+                                        .command(WorldCommand::ResolveReactionWave {
+                                            expected_revision: reaction_campaign.revision,
+                                            event_summary: summary,
+                                            reactions: wave.reactions,
+                                        })
+                                        .await
+                                    {
+                                        Ok(reaction) => {
+                                            let initiative =
+                                                match resolve_npc_initiative(&state, &reaction)
+                                                    .await
+                                                {
+                                                    Ok(value) => value,
+                                                    Err(error) => {
+                                                        return (
+                                                            StatusCode::BAD_GATEWAY,
+                                                            Json(ErrorBody {
+                                                                error: error.to_string(),
+                                                            }),
+                                                        )
+                                                            .into_response();
+                                                    }
+                                                };
+                                            return Json(serde_json::json!({"primary":result,"presence":presence_result,"reaction_wave":reaction,"npc_initiative":initiative})).into_response();
+                                        }
+                                        Err(error) => {
+                                            return (
+                                                StatusCode::CONFLICT,
+                                                Json(ErrorBody {
+                                                    error: error.to_string(),
+                                                }),
+                                            )
+                                                .into_response();
+                                        }
+                                    }
                                 }
                                 Ok(_) => {}
                                 Err(error) => {

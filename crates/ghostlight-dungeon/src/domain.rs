@@ -309,6 +309,10 @@ pub enum WorldCommand {
         event_summary: String,
         reactions: Vec<ActorReaction>,
     },
+    BeginNpcAction {
+        expected_revision: u64,
+        proposal: WorldActionProposal,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]

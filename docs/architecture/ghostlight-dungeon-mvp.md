@@ -147,6 +147,30 @@ source intent
   -> post-commit appraisal/projection wave
 ```
 
+### NPC initiative authority
+
+- **Owner:** `WorldKernel` owns the transition from a pending reaction proposal
+  to the single NPC action opportunity for that revision.
+- **Inputs:** the complete validated proposal set committed by the reaction
+  wave, expected campaign revision, and the deterministic initiative winner.
+- **Outputs:** one `npc_action_begun` commit that records the selected attempt
+  and consumes the entire stale proposal set; assessment and resolution then
+  operate on the resulting revision.
+- **Derived state:** priority ordering and the selected winner are calculations,
+  not world truth and not commits.
+- **Forbidden writers:** Persona output, the initiative selector, narrator, and
+  HTTP handler cannot begin or resolve an NPC action directly.
+- **Shared paths:** live reactions, interrupts, and future offscreen
+  individualized actions all submit `BeginNpcAction`, then use the same
+  `Assess -> Attempt` resolution spine as player attempts.
+- **Cut line:** pending proposals are no longer a durable action queue. Once one
+  proposal gains the opportunity, every sibling proposal from that snapshot is
+  consumed; actors reappraise the committed result before another action.
+
+This deliberately serializes canonical consequence while keeping perception
+parallel. It prevents two proposals assessed against the same world snapshot
+from both committing incompatible outcomes.
+
 The scheduler may calculate pending work, but `AdvanceStrategicTick` owns the
 transition. Return catch-up invokes that same command before the next player
 action is admitted.

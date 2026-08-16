@@ -152,9 +152,11 @@ fn execute(
                 OutcomeBand::Mixed => &assessment.mixed_stake,
                 OutcomeBand::Failure => &assessment.failure_stake,
             };
-            campaign.last_player_activity = Utc::now();
-            campaign.away_ticks_processed = 0;
-            campaign.pending_ticks = 0;
+            if assessment.intent.actor_id == campaign.player_actor_id {
+                campaign.last_player_activity = Utc::now();
+                campaign.away_ticks_processed = 0;
+                campaign.pending_ticks = 0;
+            }
             campaign.transcript.push(NarrativeTurn {
                 revision: campaign.revision + 1,
                 at: Utc::now(),
@@ -424,6 +426,36 @@ fn execute(
                 public_channels: vec![],
             });
             commit(store, row, campaign, "reaction_wave", None)
+        }
+        WorldCommand::BeginNpcAction {
+            expected_revision,
+            proposal,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            let selected = crate::initiative::winner(&campaign.pending_world_proposals)
+                .ok_or_else(|| KernelError::Invalid("there is no pending NPC action".into()))?;
+            if proposal != selected {
+                return Err(KernelError::Invalid(
+                    "proposal does not own the current initiative opportunity".into(),
+                ));
+            }
+            let actor = campaign
+                .actors
+                .get(&proposal.actor_id)
+                .ok_or_else(|| KernelError::Invalid("initiative actor is unknown".into()))?;
+            validate_world_proposal(actor, &proposal)?;
+            campaign.pending_world_proposals.clear();
+            campaign.events.push(Event {
+                id: format!("npc-action-begun:{}", campaign.revision + 1),
+                at: campaign.world_time,
+                kind: "npc_action_begun".into(),
+                summary: format!("{} attempts {}", actor.name, proposal.intent),
+                actor_ids: vec![proposal.actor_id],
+                institution_ids: vec![],
+                location_ids: vec![actor.location_id.clone()],
+                public_channels: vec![],
+            });
+            commit(store, row, campaign, "begin_npc_action", None)
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
     }
@@ -1241,5 +1273,126 @@ mod tests {
         assert!(persisted.actors["anna"].memories.is_empty());
         assert!(persisted.transcript.is_empty());
         assert!(persisted.pending_world_proposals.is_empty());
+    }
+
+    #[tokio::test]
+    async fn initiative_grants_one_npc_opportunity_without_faking_player_activity() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.last_player_activity = Utc::now() - Duration::hours(2);
+        for id in ["anna", "bert"] {
+            seed.actors.insert(
+                id.into(),
+                ActorState {
+                    id: id.into(),
+                    name: id.into(),
+                    location_id: "room".into(),
+                    capabilities: BTreeSet::from(["intervene".into()]),
+                    knowledge: BTreeSet::new(),
+                    equipment: BTreeSet::new(),
+                    conditions: BTreeSet::new(),
+                    obligations: BTreeSet::new(),
+                    relationships: BTreeMap::new(),
+                    goals: vec![],
+                    memories: vec![],
+                },
+            );
+        }
+        let activity = seed.last_player_activity;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let proposal = |actor: &str, priority| WorldActionProposal {
+            actor_id: actor.into(),
+            intent: "intervene".into(),
+            intended_effect: "take control of the immediate situation".into(),
+            priority,
+            state_references: vec!["capability:intervene".into(), "location:room".into()],
+        };
+        let anna = proposal("anna", 9);
+        let bert = proposal("bert", 4);
+        let wave = kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "a disturbance".into(),
+                reactions: vec![
+                    ActorReaction {
+                        actor_id: "anna".into(),
+                        speech: None,
+                        private_delta: ActorStateDelta::default(),
+                        action_proposals: vec![anna.clone()],
+                    },
+                    ActorReaction {
+                        actor_id: "bert".into(),
+                        speech: None,
+                        private_delta: ActorStateDelta::default(),
+                        action_proposals: vec![bert.clone()],
+                    },
+                ],
+            })
+            .await
+            .unwrap();
+        assert!(
+            kernel
+                .command(WorldCommand::BeginNpcAction {
+                    expected_revision: 1,
+                    proposal: bert,
+                })
+                .await
+                .is_err()
+        );
+        let begun = kernel
+            .command(WorldCommand::BeginNpcAction {
+                expected_revision: 1,
+                proposal: anna,
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed {
+            campaign: begun, ..
+        } = begun
+        else {
+            panic!()
+        };
+        assert!(begun.pending_world_proposals.is_empty());
+        let intent = ActionIntent {
+            actor_id: "anna".into(),
+            description: "intervene".into(),
+            intended_effect: "take control of the immediate situation".into(),
+        };
+        let assessed = kernel
+            .command(WorldCommand::Assess {
+                expected_revision: 2,
+                intent,
+                proposal: None,
+            })
+            .await
+            .unwrap();
+        let CommandResult::Assessed { assessment } = assessed else {
+            panic!()
+        };
+        kernel
+            .command(WorldCommand::Attempt {
+                assessment_digest: assessment.digest,
+            })
+            .await
+            .unwrap();
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &begun.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(persisted.last_player_activity, activity);
+        assert_eq!(persisted.revision, 3);
+        let CommandResult::Committed { campaign, .. } = wave else {
+            panic!()
+        };
+        assert_eq!(campaign.pending_world_proposals.len(), 2);
     }
 }

@@ -80,6 +80,13 @@ Ghostlight owns its own generalized projection machinery:
 
 All affected scene participants appraise a committed event in parallel. Actor-private deltas commit against their own snapshot versions; initiative then chooses compatible reactions or actions for world resolution. This ensures present characters continue perceiving and reacting even when another character currently holds conversational focus.
 
+Canonical NPC consequence is serialized one opportunity at a time. The
+deterministic initiative projection chooses the highest-priority stable winner;
+`BeginNpcAction` verifies that exact proposal against the committed wave,
+consumes its siblings, and advances the revision. The chosen NPC then traverses
+the same assessment and server-side d20 path as the player without resetting
+player-activity or away-time state.
+
 Use DeepSeek’s current API directly:
 
 - `deepseek-v4-flash`, non-thinking: Projectors, Interpreters, retrieval planning/reranking, verification, and offscreen actors.

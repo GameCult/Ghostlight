@@ -3,6 +3,7 @@ pub mod compiler;
 pub mod d20;
 pub mod domain;
 pub mod gestalt;
+pub mod initiative;
 pub mod kernel;
 pub mod model;
 pub mod persistence;
