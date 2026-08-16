@@ -202,10 +202,45 @@ impl WorldCompiler {
             )
             .await?;
         let receipts = self.retrieve_all(&queries, &start.when, 10).await?;
-        let output = self.structured("world_compile", "custom-start", &format!("Compile a bounded playable region and institutional pressure graph. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. START:\n{}\nEVIDENCE:\n{}", serde_json::to_string(&start)?, evidence_text(&receipts)), serde_json::to_value(schema_for!(CompiledSeed))?, receipt_ids(&receipts)).await?;
-        let seed: CompiledSeed = serde_json::from_value(output.0)?;
-        let campaign = seed_to_campaign(seed.clone(), &receipts)?;
-        validate_campaign_seed(&campaign)?;
+        let base_prompt = format!(
+            "Compile a bounded playable region and institutional pressure graph. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. START:\n{}\nEVIDENCE:\n{}",
+            serde_json::to_string(&start)?,
+            evidence_text(&receipts)
+        );
+        let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
+        let sources = receipt_ids(&receipts);
+        let mut compiler_receipts = Vec::new();
+        let mut correction = String::new();
+        let (seed, campaign) = loop {
+            let output = self
+                .structured(
+                    "world_compile",
+                    "custom-start",
+                    &format!("{base_prompt}{correction}"),
+                    schema.clone(),
+                    sources.clone(),
+                )
+                .await?;
+            compiler_receipts.push(output.1);
+            let seed: CompiledSeed = serde_json::from_value(output.0)?;
+            match seed_to_campaign(seed.clone(), &receipts)
+                .and_then(|campaign| validate_campaign_seed(&campaign).map(|_| campaign))
+            {
+                Ok(campaign) => break (seed, campaign),
+                Err(error) if compiler_receipts.len() == 1 => {
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nReturn a corrected complete candidate against the same START and EVIDENCE."
+                    );
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "world compiler failed local validation after one correction: {error}"
+                    ));
+                }
+            }
+        };
+        let mut model_receipts = vec![retrieval_receipt];
+        model_receipts.extend(compiler_receipts);
         Ok((
             WorldCompilePreview {
                 schema: "ghostlight.world_compile_preview.v1".into(),
@@ -216,7 +251,7 @@ impl WorldCompiler {
                 branch_assumptions: seed.branch_assumptions,
                 requires_approval: true,
             },
-            vec![retrieval_receipt, output.1],
+            model_receipts,
         ))
     }
 
