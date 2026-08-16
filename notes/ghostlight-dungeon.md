@@ -202,6 +202,10 @@ Publish JSON Schema only as the schema catalog. Runtime documents and exports us
 - Acceptance scenarios:
   - compile an obscure Aetheria time/place or return an honest evidence-gap preview;
   - leave a location, advance the world, and return to the same geometry and inhabitants;
+  - approach a gestalt population, automatically materialize a durable member,
+    form a member-specific relationship, leave until the relevance lease expires,
+    fold the active actor into its persistent delta, tick the population once as a
+    gestalt, and later rematerialize the same person with that relationship intact;
   - show reactions from every affected present actor;
   - prevent an NPC from acquiring unearned knowledge or expertise;
   - reject impossible action claims and offer explicit bargains;
