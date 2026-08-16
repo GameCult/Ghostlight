@@ -3,6 +3,9 @@ use std::process::Command;
 fn main() {
     println!("cargo:rerun-if-env-changed=GHOSTLIGHT_BUILD_COMMIT");
     println!("cargo:rerun-if-changed=../../.git/HEAD");
+    // Release tooling injects the clean-tree commit. Git discovery is only a
+    // convenience for local builds because Cargo cannot reliably observe a
+    // moving branch ref through `.git/HEAD` alone.
     let commit = std::env::var("GHOSTLIGHT_BUILD_COMMIT")
         .ok()
         .filter(|value| is_commit(value))
