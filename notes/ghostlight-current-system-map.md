@@ -36,6 +36,13 @@ the campaign revision and world time untouched. Background inference checks
 live-turn pressure before launch and again before commit; return catch-up uses
 the same command path with player-turn priority.
 
+The browser command boundary is deliberately smaller than `WorldCommand`.
+Authenticated HTTP admits only player-owned Speak, unfilled Assess, Attempt,
+and Wait requests. Actor identity must match the campaign player. Compiler
+approval has its own route. Strategic ticks, region commits, gestalt presence,
+reaction waves, NPC initiative, and campaign creation are internal mailbox
+commands and cannot be invoked through `/api/command`.
+
 ## Control Flow
 
 1. Rehydrate from `state/map.yaml`, `notes/fresh-workspace-handoff.md`, this

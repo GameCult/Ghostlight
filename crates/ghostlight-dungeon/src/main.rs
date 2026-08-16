@@ -737,6 +737,27 @@ async fn command(
                 .into_response();
         }
     };
+    let player_id = match load_campaign(&runtime.store) {
+        Ok(campaign) => campaign.player_actor_id,
+        Err(error) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorBody {
+                    error: error.to_string(),
+                }),
+            )
+                .into_response();
+        }
+    };
+    if !player_http_command_allowed(&command, &player_id) {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(ErrorBody {
+                error: "command is not admitted through the player HTTP boundary".into(),
+            }),
+        )
+            .into_response();
+    }
     if let Err(error) = process_due_ticks(
         &state,
         &runtime,
@@ -1008,6 +1029,24 @@ async fn command(
             )
                 .into_response()
         }
+    }
+}
+
+fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) -> bool {
+    match command {
+        WorldCommand::Speak { actor_id, .. } => actor_id == player_actor_id,
+        WorldCommand::Assess {
+            intent, proposal, ..
+        } => intent.actor_id == player_actor_id && proposal.is_none(),
+        WorldCommand::Attempt { .. } | WorldCommand::Wait { .. } => true,
+        WorldCommand::CreateCampaign { .. }
+        | WorldCommand::AdvanceStrategicTick { .. }
+        | WorldCommand::ExpandRegion { .. }
+        | WorldCommand::MaterializeGestaltMember { .. }
+        | WorldCommand::DematerializeGestaltMember { .. }
+        | WorldCommand::ReconcileGestaltPresence { .. }
+        | WorldCommand::ResolveReactionWave { .. }
+        | WorldCommand::BeginNpcAction { .. } => false,
     }
 }
 
@@ -1602,5 +1641,50 @@ mod tests {
             right_runtime.store.identity()
         );
         assert!(!state.auth.lock().await.state.session_campaign_ids["left"].contains(&right.id));
+    }
+
+    #[test]
+    fn player_http_boundary_cannot_invoke_internal_world_commands_or_npcs() {
+        assert!(player_http_command_allowed(
+            &WorldCommand::Wait {
+                expected_revision: 4,
+                minutes: 10,
+            },
+            "player",
+        ));
+        assert!(player_http_command_allowed(
+            &WorldCommand::Speak {
+                expected_revision: 4,
+                actor_id: "player".into(),
+                text: "Hello.".into(),
+                intended_effect: None,
+            },
+            "player",
+        ));
+        assert!(!player_http_command_allowed(
+            &WorldCommand::Speak {
+                expected_revision: 4,
+                actor_id: "npc".into(),
+                text: "I have been puppeted.".into(),
+                intended_effect: None,
+            },
+            "player",
+        ));
+        assert!(!player_http_command_allowed(
+            &WorldCommand::AdvanceStrategicTick {
+                expected_revision: 4,
+                source: ghostlight_dungeon::domain::TickSource::Scheduler,
+                plan: None,
+            },
+            "player",
+        ));
+        assert!(!player_http_command_allowed(
+            &WorldCommand::ReconcileGestaltPresence {
+                expected_revision: 4,
+                reason: "browser says so".into(),
+                plan: Default::default(),
+            },
+            "player",
+        ));
     }
 }
