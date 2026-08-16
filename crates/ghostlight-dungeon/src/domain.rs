@@ -109,6 +109,10 @@ pub struct GestaltMemberDelta {
     pub memories: Vec<String>,
     pub last_location_id: Option<String>,
     pub materialized_actor_id: Option<String>,
+    #[serde(default)]
+    pub last_relevant_revision: u64,
+    #[serde(default)]
+    pub relevance_lease_until_revision: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]

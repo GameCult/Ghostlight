@@ -8,6 +8,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
 
+const GESTALT_RELEVANCE_LEASE_REVISIONS: u64 = 2;
+
 #[derive(Debug, Error)]
 pub enum KernelError {
     #[error("campaign not found")]
@@ -172,6 +174,10 @@ fn execute(
                 OutcomeBand::Failure => assessment.failure_effect.clone(),
             };
             apply_world_effect(&mut campaign, &effect)?;
+            refresh_materialized_member_relevance(
+                &mut campaign,
+                std::iter::once(assessment.intent.actor_id.as_str()),
+            );
             if assessment.intent.actor_id == campaign.player_actor_id {
                 campaign.last_player_activity = Utc::now();
                 campaign.away_ticks_processed = 0;
@@ -198,7 +204,7 @@ fn execute(
             campaign.transcript.push(NarrativeTurn {
                 revision: campaign.revision + 1,
                 at: Utc::now(),
-                speaker: actor_id,
+                speaker: actor_id.clone(),
                 text,
             });
             if let Some(effect) = intended_effect {
@@ -209,9 +215,15 @@ fn execute(
                     text: format!("Intended effect requires assessment: {effect}"),
                 });
             }
-            campaign.last_player_activity = Utc::now();
-            campaign.away_ticks_processed = 0;
-            campaign.pending_ticks = 0;
+            refresh_materialized_member_relevance(
+                &mut campaign,
+                std::iter::once(actor_id.as_str()),
+            );
+            if actor_id == campaign.player_actor_id {
+                campaign.last_player_activity = Utc::now();
+                campaign.away_ticks_processed = 0;
+                campaign.pending_ticks = 0;
+            }
             commit(store, row, campaign, "speak", None)
         }
         WorldCommand::Wait {
@@ -435,6 +447,7 @@ fn execute(
                     .pending_world_proposals
                     .extend(reaction.action_proposals);
             }
+            refresh_materialized_member_relevance(&mut campaign, seen.iter().map(String::as_str));
             campaign.events.push(Event {
                 id: format!("reaction-wave:{}", campaign.revision + 1),
                 at: campaign.world_time,
@@ -464,17 +477,23 @@ fn execute(
                 .get(&proposal.actor_id)
                 .ok_or_else(|| KernelError::Invalid("initiative actor is unknown".into()))?;
             validate_world_proposal(actor, &proposal)?;
+            let actor_name = actor.name.clone();
+            let actor_location = actor.location_id.clone();
             campaign.pending_world_proposals.clear();
             campaign.events.push(Event {
                 id: format!("npc-action-begun:{}", campaign.revision + 1),
                 at: campaign.world_time,
                 kind: "npc_action_begun".into(),
-                summary: format!("{} attempts {}", actor.name, proposal.intent),
-                actor_ids: vec![proposal.actor_id],
+                summary: format!("{} attempts {}", actor_name, proposal.intent),
+                actor_ids: vec![proposal.actor_id.clone()],
                 institution_ids: vec![],
-                location_ids: vec![actor.location_id.clone()],
+                location_ids: vec![actor_location],
                 public_channels: vec![],
             });
+            refresh_materialized_member_relevance(
+                &mut campaign,
+                std::iter::once(proposal.actor_id.as_str()),
+            );
             commit(store, row, campaign, "begin_npc_action", None)
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
@@ -523,6 +542,10 @@ fn apply_promotion(
     let actor = materialize_actor(&gestalt, member, &actor_id, &promotion.location_id);
     member.materialized_actor_id = Some(actor_id.clone());
     member.last_location_id = Some(promotion.location_id.clone());
+    member.last_relevant_revision = campaign.revision;
+    member.relevance_lease_until_revision = campaign
+        .revision
+        .saturating_add(GESTALT_RELEVANCE_LEASE_REVISIONS);
     member.version += 1;
     campaign.actors.insert(actor_id, actor);
     Ok(())
@@ -586,6 +609,16 @@ fn apply_demotion(campaign: &mut Campaign, demotion: &GestaltDemotion) -> Result
         .find(|member| member.materialized_actor_id.as_deref() == Some(demotion.actor_id.as_str()))
         .map(|member| member.id.clone())
         .ok_or_else(|| KernelError::Invalid("actor is not a materialized gestalt member".into()))?;
+    if actor.location_id == campaign.actors[&campaign.player_actor_id].location_id {
+        return Err(KernelError::Invalid(
+            "a visible gestalt member remains individually relevant".into(),
+        ));
+    }
+    if campaign.gestalt_members[&member_id].relevance_lease_until_revision > campaign.revision {
+        return Err(KernelError::Invalid(
+            "gestalt member relevance lease has not expired".into(),
+        ));
+    }
     let gestalt_id = campaign.gestalt_members[&member_id].gestalt_id.clone();
     let gestalt = campaign
         .gestalts
@@ -615,6 +648,26 @@ fn apply_demotion(campaign: &mut Campaign, demotion: &GestaltDemotion) -> Result
     }
     campaign.actors.remove(&demotion.actor_id);
     Ok(())
+}
+
+fn refresh_materialized_member_relevance<'a>(
+    campaign: &mut Campaign,
+    actor_ids: impl IntoIterator<Item = &'a str>,
+) {
+    let actor_ids = actor_ids.into_iter().collect::<BTreeSet<_>>();
+    for member in campaign.gestalt_members.values_mut() {
+        if member
+            .materialized_actor_id
+            .as_deref()
+            .is_some_and(|actor_id| actor_ids.contains(actor_id))
+        {
+            member.last_relevant_revision = campaign.revision;
+            member.relevance_lease_until_revision = campaign
+                .revision
+                .saturating_add(GESTALT_RELEVANCE_LEASE_REVISIONS);
+            member.version = member.version.saturating_add(1);
+        }
+    }
 }
 
 fn validate_world_proposal(
@@ -957,6 +1010,40 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn npc_speech_does_not_impersonate_player_activity() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store);
+        let mut seed = campaign();
+        let inactive_since = Utc::now() - Duration::hours(2);
+        seed.last_player_activity = inactive_since;
+        let mut npc = seed.actors["player"].clone();
+        npc.id = "npc".into();
+        npc.name = "NPC".into();
+        seed.actors.insert("npc".into(), npc);
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let result = kernel
+            .command(WorldCommand::Speak {
+                expected_revision: 0,
+                actor_id: "npc".into(),
+                text: "The world does not wait.".into(),
+                intended_effect: None,
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!()
+        };
+        assert_eq!(campaign.last_player_activity, inactive_since);
+    }
+
+    #[tokio::test]
     async fn assessment_is_private_and_attempt_commits_roll_atomically() {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
@@ -1116,6 +1203,17 @@ mod tests {
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let kernel = WorldKernel::start(store.clone());
         let mut seed = campaign();
+        seed.locations.insert(
+            "away".into(),
+            Location {
+                id: "away".into(),
+                name: "Away".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec![],
+            },
+        );
+        seed.actors.get_mut("player").unwrap().location_id = "away".into();
         seed.gestalts.insert(
             "village".into(),
             GestaltPersonaState {
@@ -1151,6 +1249,8 @@ mod tests {
                 memories: vec!["met the player".into()],
                 last_location_id: None,
                 materialized_actor_id: None,
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 0,
             },
         );
         kernel
@@ -1182,9 +1282,28 @@ mod tests {
                 .capabilities
                 .contains("master blacksmith")
         );
+        assert!(
+            kernel
+                .command(WorldCommand::DematerializeGestaltMember {
+                    expected_revision: 1,
+                    actor_id: "member:john".into(),
+                    aggregate_delta: Default::default(),
+                })
+                .await
+                .unwrap_err()
+                .to_string()
+                .contains("lease")
+        );
+        kernel
+            .command(WorldCommand::Wait {
+                expected_revision: 1,
+                minutes: 1,
+            })
+            .await
+            .unwrap();
         let folded = kernel
             .command(WorldCommand::DematerializeGestaltMember {
-                expected_revision: 1,
+                expected_revision: 2,
                 actor_id: "member:john".into(),
                 aggregate_delta: GestaltAggregateDelta {
                     knowledge_additions: BTreeSet::from(["the player keeps promises".into()]),
@@ -1206,7 +1325,7 @@ mod tests {
         );
         let again = kernel
             .command(WorldCommand::MaterializeGestaltMember {
-                expected_revision: 2,
+                expected_revision: 3,
                 gestalt_id: "village".into(),
                 expected_gestalt_version: 1,
                 member_id: "john".into(),
@@ -1248,7 +1367,7 @@ mod tests {
         assert!(
             kernel
                 .command(WorldCommand::ReconcileGestaltPresence {
-                    expected_revision: 3,
+                    expected_revision: 4,
                     reason: "scene relevance changed".into(),
                     plan: bad_plan,
                 })
@@ -1260,7 +1379,7 @@ mod tests {
             .unwrap()
             .unwrap()
             .1;
-        assert_eq!(persisted.revision, 3);
+        assert_eq!(persisted.revision, 4);
         assert!(persisted.actors.contains_key("member:john"));
         assert_eq!(
             persisted.gestalt_members["john"]

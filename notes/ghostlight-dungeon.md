@@ -81,6 +81,13 @@ Dematerialization deletes only that slot after atomically updating the member
 delta. Strategic ticks address the gestalt and its dematerialized deltas rather
 than iterating every member as a live Persona.
 
+Materialization grants a short revision-bound relevance lease. Speech, private
+appraisal changes, and resolved actions refresh it through the WorldKernel.
+Neither the model planner nor a direct command may dematerialize a member while
+the player can still perceive them or before that lease expires. This prevents
+quiet conversational beats from making people flicker between individual and
+gestalt state.
+
 Ghostlight owns its own generalized projection machinery:
 
 1. Projector converts the actor’s permitted typed slice, memories, perceived events, relationships, goals, and retrieved knowledge into a private lived narrative stream.

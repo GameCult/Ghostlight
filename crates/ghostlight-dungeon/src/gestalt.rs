@@ -96,6 +96,21 @@ fn validate_plan(
                 "automatic presence planning cannot rewrite gestalt knowledge"
             ));
         }
+        let member = campaign
+            .gestalt_members
+            .values()
+            .find(|member| {
+                member.materialized_actor_id.as_deref() == Some(demotion.actor_id.as_str())
+            })
+            .expect("materialized member was validated");
+        let actor = &campaign.actors[&demotion.actor_id];
+        if actor.location_id == player_location
+            || member.relevance_lease_until_revision > campaign.revision
+        {
+            return Err(anyhow!(
+                "presence plan demotes a visible or recently relevant member"
+            ));
+        }
     }
     Ok(())
 }
