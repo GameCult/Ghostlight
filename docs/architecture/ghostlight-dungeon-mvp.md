@@ -181,6 +181,149 @@ Classify each part:
 - **Delete:** duplicate local orchestration or adapters that preserve two
   projection authorities.
 
+### Source-grounded Epiphany extraction map
+
+The current implementation lives across these Epiphany source owners:
+
+| Current source | Current responsibility | Decision |
+| --- | --- | --- |
+| `epiphany-core/src/persona_turn.rs` | Epiphany-specific input documents, prompt rendering, effect schema, effect validation, stage/terminal receipt documents, and atomic terminal-decision insertion | Split |
+| `epiphany-openai-runtime/src/persona_executor.rs` | Three-stage ordering, model-runner port, stage replay, brake checks, causal reasoning contexts, output hashing, and terminal receipt creation | Move/generalize |
+| `epiphany-openai-runtime/src/bin/epiphany-persona-service.rs` | Reserves Epiphany heartbeat work, reads Epiphany memory and transcript, observes repo activity, assembles the execution plan, admits failure/terminal state, and routes accepted speech toward Epiphany's signed Discord crossing | Stay/adapt |
+| `epiphany-core/src/persona_conversation.rs` | Epiphany conversation lifecycle, retention, terminal reconciliation, and downstream state/mouth routing | Stay |
+| `epiphany-core/src/persona_discord_crossing.rs` and `persona_discord_permit.rs` | Signed Epiphany public-consequence crossing and receipt verification | Stay |
+| Epiphany runtime spine, Mind, heartbeat, memory, and CultMesh brake documents | Canonical Epiphany state, admission, scheduling, memory, and inference permission | Stay |
+
+#### Move to Ghostlight
+
+The shared Ghostlight organ owns:
+
+- `PersonaProjectionPlan` with actor id, snapshot/version binding, stage model
+  choices, permitted typed input slice, and consumer receipt context;
+- `ProjectorInput` as a consumer-supplied typed slice whose generic categories
+  are identity experience, memories, perceived events, relationships, goals,
+  knowledge, capabilities, pressures, and affordances;
+- Projector rendering and the rule that its output is one private lived
+  narrative stream without JSON, action syntax, raw state, or substrate
+  instructions;
+- Persona invocation whose domain input is only that lived narrative stream;
+- Interpreter invocation over the lived stream plus Persona output;
+- generic `PersonaStageReceipt`, causal predecessor binding, snapshot binding,
+  request/output hashes, exact replay, empty-output refusal, schema validation,
+  and terminal receipt;
+- generic typed outputs: private delta proposals, explicit speech, reaction
+  priority, and world/action proposals;
+- concurrency primitives for parallel participant appraisal waves.
+
+The current `PersonaModelRunner` trait and `execute_persona_model_turn_with_runner`
+shape in `persona_executor.rs` are the strongest extraction seed. They already
+separate inference transport from orchestration and prove exact replay. The
+Epiphany reasoning-basis and decision-context types are consumer-specific;
+Ghostlight instead exposes receipt-context hooks so Epiphany can keep generating
+those documents without placing her Mind inside the shared crate.
+
+#### Stay in Epiphany
+
+Epiphany keeps:
+
+- `PersonaIdentity` meaning and the canonical `gamecult.persona_state.v0`
+  projection of her Mind;
+- `EpiphanyAgentMemoryEntry`, semantic-memory retrieval, pending Discord
+  mentions, repo activity observation, social affordances, organ dependencies,
+  and raw transcript ownership;
+- heartbeat reservation, swarm brake state, runtime sessions/jobs, reasoning
+  basis, decision contexts, and Epiphany terminal conversation lifecycle;
+- the `state_note`, `say`, and `drop` mapping used by her current public Persona;
+- Mind admission of memory effects and all signed Bifrost/Discord request,
+  permit, delivery, and receipt paths;
+- policy about allowed channels, speech acts, safety notes, retention, and
+  whether a candidate becomes a public consequence.
+
+`put_persona_terminal_decision` currently atomically stores Epiphany's effect
+document and terminal receipt. That storage remains Epiphany-owned. The shared
+organ returns a terminal bundle; Epiphany translates it to her documents and
+performs her own exact CAS.
+
+#### Split at narrow ports
+
+- **Typed state slicer:** Ghostlight defines generic categories and redaction
+  invariants. Epiphany reads her state and constructs the permitted slice.
+- **Narrative rendering:** Ghostlight owns the generic membrane and stage
+  contract. Epiphany supplies Persona-specific doctrine and authored voice
+  material as typed inputs, not an alternate orchestration path.
+- **Model transport:** Ghostlight defines an async stage-runner port. Epiphany
+  implements it with `EpiphanyModelRequest`, Codex/OpenAI-compatible auth,
+  runtime jobs, and private model-event recovery. GhostlightDungeon implements
+  it with DeepSeek.
+- **Receipts:** Ghostlight owns portable stage and terminal fields. Epiphany's
+  adapter augments them with `EpiphanyReasoningBasis`, sealed decision contexts,
+  brake evidence, and runtime-spine identities.
+- **Interpreter vocabulary:** Ghostlight owns the portable proposal envelope.
+  Each consumer registers or supplies its typed effect payload schema. The
+  consumer validates domain policy again before admission.
+- **Execution permission:** the shared executor asks a consumer-owned permit
+  port before each inference stage and before terminalization. Epiphany binds
+  it to the CultMesh swarm brake; GhostlightDungeon binds it to live-priority
+  and campaign snapshot gates.
+
+#### Delete or demote in Epiphany after parity
+
+- Delete local ownership of three-stage ordering, stage id generation, hashing,
+  exact replay, and terminal bundle construction from
+  `persona_executor.rs`; its replacement is an Epiphany adapter around the
+  Ghostlight crate.
+- Delete the second injection of semantic memory, repo activity, pending
+  mentions, social affordances, and raw transcript into the Persona turn.
+  Those inputs belong to the Projector and must reach Persona only through the
+  lived narrative stream.
+- Demote Epiphany's prompt builders to Persona-specific policy/templates fed to
+  Ghostlight, or delete them when the generic renderer fully owns the membrane.
+- Keep the old effect document reader only as a migration reader for already
+  persisted receipts. It cannot execute new turns or admit new effects.
+- Do not retain an environment flag, fallback runner, or compatibility mode
+  capable of choosing the old local executor for a new turn.
+
+#### Strict narrative-stream correction
+
+The current Epiphany `PersonaTurnInput` contains `projected_state` **and**
+identity, semantic recall, pending mentions, repo activity, social affordances,
+and transcript. Its prompt renders those channels again. That means the Persona
+does not currently receive only the Projector's narrative stream.
+
+The shared v1 contract removes those parallel inputs:
+
+```text
+consumer-owned typed slice
+  -> Ghostlight Projector
+  -> LivedNarrativeStream { text, snapshot_binding, receipt_ref }
+  -> Persona model receives text only as domain context
+  -> natural Persona narrative
+  -> Ghostlight Interpreter receives stream + output + consumer effect schema
+  -> typed proposal bundle
+  -> consumer-owned validation and commit
+```
+
+Model transport may carry provider metadata and a fixed system instruction that
+identifies the model as the Persona, but it may not smuggle state, transcript,
+tools, routing instructions, or effect syntax around the lived stream.
+
+#### Extraction verification
+
+Before deleting the Epiphany executor, capture replay fixtures from its existing
+tests and representative real terminal receipts. Run old and shared organs over
+the same typed projector inputs with frozen model outputs. Verify:
+
+- identical stage order, causal chain, hashes, replay refusal, and terminal
+  idempotency;
+- channel escape, malformed effects, empty output, wrong-model replay, brake
+  engagement, and stale snapshot all fail without a terminal admission;
+- Epiphany's adapter produces the same admissible `state_note`, `say`, and
+  `drop` documents from the shared proposal bundle;
+- the Persona request contains no second state or transcript channel;
+- no new Epiphany turn can invoke the old executor after cutover;
+- signed mouth delivery remains entirely downstream of Epiphany Mind admission
+  and is never inferred from Ghostlight completion.
+
 ### Handing the organ back to Epiphany
 
 Epiphany consumes the Ghostlight projection crate/service through a pinned
@@ -386,4 +529,3 @@ invariant needs a negative proof at its visible layer:
 - background launch pressure yields before a live player inference wave;
 - unauthenticated, reused-invite, public-network, and cross-session campaign
   access are rejected.
-
