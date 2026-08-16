@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::time::Instant;
+use zeroize::Zeroizing;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ModelStageRequest {
@@ -99,19 +100,25 @@ impl ModelPort for FixtureModel {
     }
 }
 
-#[derive(Clone)]
 pub struct DeepSeekPort {
     client: reqwest::Client,
-    api_key: String,
+    api_key: Zeroizing<String>,
     endpoint: String,
 }
 impl DeepSeekPort {
     pub fn new(api_key: String) -> Self {
         Self {
             client: reqwest::Client::new(),
-            api_key,
+            api_key: Zeroizing::new(api_key),
             endpoint: "https://api.deepseek.com/chat/completions".into(),
         }
+    }
+
+    #[cfg(windows)]
+    pub fn from_machine_dpapi(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        Ok(Self::new(crate::windows_secret::unprotect_machine_utf8(
+            path,
+        )?))
     }
 }
 #[async_trait]
@@ -124,7 +131,7 @@ impl ModelPort for DeepSeekPort {
         let value: serde_json::Value = self
             .client
             .post(&self.endpoint)
-            .bearer_auth(&self.api_key)
+            .bearer_auth(self.api_key.as_str())
             .json(&body)
             .send()
             .await?

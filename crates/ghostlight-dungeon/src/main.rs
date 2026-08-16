@@ -5,9 +5,12 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
     routing::{get, post},
 };
+#[cfg(windows)]
+use ghostlight_dungeon::windows_secret::unprotect_machine_utf8;
 use ghostlight_dungeon::{
     WorldKernel,
     domain::{Campaign, WorldCommand},
+    model::{DeepSeekPort, ModelStageRequest, run_validated_stage},
     persistence::CampaignStore,
     surface::player_surface,
 };
@@ -28,6 +31,7 @@ struct AppState {
     store: CampaignStore,
     invites: Arc<Mutex<BTreeSet<String>>>,
     sessions: Arc<Mutex<BTreeSet<String>>>,
+    deepseek_status: String,
 }
 
 #[tokio::main]
@@ -48,20 +52,63 @@ async fn main() -> anyhow::Result<()> {
             })
             .await?;
     }
-    let invite_tokens = std::env::var("GHOSTLIGHT_INVITES")
-        .unwrap_or_else(|_| "tester-one,tester-two".into())
+    let invite_blob = runtime_root.join("secrets/invites.dpapi");
+    #[cfg(windows)]
+    let invite_material = if invite_blob.is_file() {
+        unprotect_machine_utf8(&invite_blob)?
+    } else {
+        std::env::var("GHOSTLIGHT_INVITES").map_err(|_| {
+            anyhow::anyhow!(
+                "protected invite blob is missing; run the privileged GhostlightDungeon setup"
+            )
+        })?
+    };
+    #[cfg(not(windows))]
+    let invite_material = std::env::var("GHOSTLIGHT_INVITES")
+        .map_err(|_| anyhow::anyhow!("GHOSTLIGHT_INVITES is required outside Windows"))?;
+    let invite_tokens: BTreeSet<String> = invite_material
         .split(',')
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_owned)
         .collect();
+    if invite_tokens.len() != 2 {
+        return Err(anyhow::anyhow!(
+            "GhostlightDungeon requires exactly two unused invite tokens"
+        ));
+    }
+    let secret_path = runtime_root.join("secrets/deepseek.dpapi");
+    let deepseek_status = if secret_path.is_file() {
+        let provider = DeepSeekPort::from_machine_dpapi(&secret_path)?;
+        let probe = run_validated_stage(
+            &provider,
+            &ModelStageRequest {
+                stage: "startup_probe".into(),
+                model: "deepseek-v4-flash".into(),
+                snapshot_binding: "service-startup".into(),
+                lived_stream: "Reply with the single word ready.".into(),
+                output_schema: None,
+                source_receipt_ids: vec![],
+            },
+        )
+        .await?;
+        format!("ready:{}", probe.receipt.output_hash)
+    } else {
+        "missing-secret".into()
+    };
     let state = AppState {
         kernel,
         store,
         invites: Arc::new(Mutex::new(invite_tokens)),
         sessions: Arc::new(Mutex::new(BTreeSet::new())),
+        deepseek_status,
     };
-    let web_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/dist");
+    let release_web_root = std::env::current_exe()?
+        .parent()
+        .map(|parent| parent.join("web"));
+    let web_root = release_web_root
+        .filter(|path| path.join("index.html").is_file())
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/dist"));
     let app = Router::new()
         .route("/health", get(health))
         .route("/invite/{token}", get(invite))
@@ -78,7 +125,7 @@ async fn main() -> anyhow::Result<()> {
 
 async fn health(State(state): State<AppState>) -> Json<serde_json::Value> {
     Json(
-        serde_json::json!({"schema":"ghostlight.service_health.v1","status":"ok","storeIdentity":state.store.identity()}),
+        serde_json::json!({"schema":"ghostlight.service_health.v1","status":"ok","storeIdentity":state.store.identity(),"deepseek":state.deepseek_status}),
     )
 }
 
