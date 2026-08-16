@@ -686,6 +686,7 @@ dependencies = [
  "cultcache-rs 0.1.0 (git+https://github.com/GameCult/cultcache-rs.git?rev=0ba87453115e3d44e8fcb7419866cd7dd70fb096)",
  "cultmesh-rs",
  "cultnet-rs",
+ "ghostlight-persona-projection",
  "jsonschema",
  "rand 0.9.5",
  "reqwest",
@@ -703,6 +704,14 @@ dependencies = [
  "uuid",
  "windows",
  "zeroize",
+]
+
+[[package]]
+name = "ghostlight-persona-projection"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "sha2",
 ]
 
 [[package]]

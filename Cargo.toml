@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "crates/ghostlight-dungeon",
+  "crates/ghostlight-persona-projection",
   "vendor/cultcache-rs",
   "vendor/cultcache-rs/cultcache-rs-derive",
   "vendor/cultnet-rs",

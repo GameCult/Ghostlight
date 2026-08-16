@@ -1,6 +1,10 @@
 use crate::model::{ModelPort, ModelStageRequest, run_validated_stage};
 use anyhow::{Result, anyhow};
 use async_trait::async_trait;
+use ghostlight_persona_projection::{
+    InterpreterPrompt, PersonaPrompt, ProjectorPrompt, build_interpreter_prompt,
+    build_persona_prompt, build_projector_prompt, narrative_stream_is_clean,
+};
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -72,10 +76,14 @@ impl PersonaProjectionEngine {
         self.permit
             .require(&slice.actor_id, &slice.snapshot_binding, "projector")
             .await?;
-        let projector_prompt = format!(
-            "Project this permitted typed experience into one private lived narrative stream. Emit narrative only; no JSON, action syntax, schemas, or raw field labels.\n\n{}",
-            serde_json::to_string(&slice)?
-        );
+        let typed_context = serde_json::to_string(&slice)?;
+        let visible_stimulus = slice.perceived_events.join("\n");
+        let projector_prompt = build_projector_prompt(&ProjectorPrompt {
+            identity: &slice.actor_id,
+            typed_context: &typed_context,
+            visible_stimulus: &visible_stimulus,
+            domain_guidance: "The runtime is a persistent fictional world. Distances, knowledge, capabilities, relationships, and custody remain bounded by the supplied slice.",
+        });
         let projected = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -88,7 +96,9 @@ impl PersonaProjectionEngine {
             },
         )
         .await?;
-        require_narrative_membrane(&projected.narrative)?;
+        if !narrative_stream_is_clean(&projected.narrative) {
+            return Err(anyhow!("projector violated lived-narrative membrane"));
+        }
         let lived = LivedNarrativeStream {
             text: projected.narrative.clone(),
             snapshot_binding: slice.snapshot_binding.clone(),
@@ -105,7 +115,11 @@ impl PersonaProjectionEngine {
                 stage: "persona".into(),
                 model: self.persona_model.clone(),
                 snapshot_binding: slice.snapshot_binding.clone(),
-                lived_stream: lived.text.clone(),
+                lived_stream: build_persona_prompt(&PersonaPrompt {
+                    identity: &slice.actor_id,
+                    lived_stream: &lived.text,
+                    domain_guidance: "Respond as a situated character. Speech and attempted effects are distinct; the world kernel resolves consequences.",
+                }),
                 output_schema: None,
                 source_receipt_ids: vec![],
             },
@@ -122,7 +136,13 @@ impl PersonaProjectionEngine {
                 stage: "interpreter".into(),
                 model: self.interpreter_model.clone(),
                 snapshot_binding: slice.snapshot_binding.clone(),
-                lived_stream: format!("Interpret the Persona output into the exact JSON schema below. Record only private changes supported by the lived stream. World actions are attempts, not completed effects. Every world action actor_id must be {}.\nSCHEMA:\n{}\nLIVED STREAM:\n{}\n\nPERSONA OUTPUT:\n{}",slice.actor_id,serde_json::to_string_pretty(&schema)?,lived.text, persona.narrative),
+                lived_stream: build_interpreter_prompt(&InterpreterPrompt {
+                    identity: &slice.actor_id,
+                    lived_stream: &lived.text,
+                    persona_output: &persona.narrative,
+                    output_schema: &serde_json::to_string_pretty(&schema)?,
+                    domain_guidance: "Record only private changes supported by the lived stream. World actions are attempts, not completed effects. Every world action actor_id must match the identity.",
+                }),
                 output_schema: Some(schema),
                 source_receipt_ids: slice.source_receipt_ids,
             },
@@ -144,14 +164,6 @@ impl PersonaProjectionEngine {
             stage_receipts: vec![projected.receipt, persona.receipt, interpreted.receipt],
         })
     }
-}
-
-fn require_narrative_membrane(text: &str) -> Result<()> {
-    let trimmed = text.trim();
-    if trimmed.is_empty() || trimmed.starts_with('{') || trimmed.contains("```json") {
-        return Err(anyhow!("projector violated lived-narrative membrane"));
-    }
-    Ok(())
 }
 
 #[cfg(test)]
