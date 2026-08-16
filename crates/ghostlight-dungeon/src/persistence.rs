@@ -73,6 +73,12 @@ impl CampaignStore {
             campaign,
         )?;
         let mut rows = vec![campaign_row.clone()];
+        rows.push(envelope(
+            "campaign_seed.v1",
+            "ghostlight.campaign.v1",
+            &campaign.id.to_string(),
+            campaign,
+        )?);
         for receipt in receipts {
             rows.push(envelope(
                 "vault_evidence_receipt.v1",
@@ -93,6 +99,15 @@ impl CampaignStore {
             return Err(anyhow!("campaign store is not empty"));
         }
         Ok(campaign_row)
+    }
+
+    pub fn snapshot_to(&self, path: impl AsRef<Path>) -> Result<()> {
+        let rows = self.inner.pull_all()?;
+        let target = OwnedRedbMessagePackBackingStore::new(path.as_ref())?;
+        if !target.compare_and_swap_batch(&[], rows)? {
+            return Err(anyhow!("export target is not empty"));
+        }
+        Ok(())
     }
 
     pub fn replace<T: Serialize>(

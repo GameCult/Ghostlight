@@ -489,6 +489,33 @@ state use their own `.cc` store.
 JSON exists only for published JSON Schemas and browser, MCP, and model-provider
 boundaries. It is not load-bearing runtime state.
 
+### Campaign registry and session authority
+
+- **Owner:** the service `CampaignRegistry` owns the mapping from authenticated
+  session hash to selected campaign ID and from campaign ID to its sole
+  `CampaignRuntime` (`CampaignStore` plus `WorldKernel` mailbox).
+- **Inputs:** persisted hashed session authority, named campaign lifecycle
+  commands, runtime-root inventory, and exact campaign IDs.
+- **Outputs:** one selected single-player runtime per session, isolated campaign
+  `.cc` paths, lifecycle receipts, and immutable export bundles.
+- **Derived state:** browser selection, campaign lists, filenames, download
+  responses, and operator cards are projections of registry/control state.
+- **Forbidden writers:** route handlers, invite cookies, filesystem discovery,
+  fork/reset/export helpers, and the browser cannot select or mutate a campaign
+  except through the registry's typed lifecycle operations.
+- **Shared paths:** campaign creation approval, selection, fork, reset, reload,
+  scheduler lookup, command dispatch, and export all resolve the same
+  session-owned registry entry before touching a kernel.
+- **Cut line:** `campaigns/default/campaign.cc` and the process-global kernel are
+  removed as authorities. A session token is authentication, not campaign
+  identity; its persisted control record explicitly selects a campaign.
+
+Fork creates a new campaign ID and store from a consistent source snapshot,
+records lineage, then starts a fresh mailbox over the fork. Reset creates a new
+branch from the campaign's approved seed/export rather than rewriting history
+in place. Export snapshots the selected `.cc` plus manifest and evidence
+receipts without granting the export path write authority over live state.
+
 ### Vault provider and world compiler
 
 `VaultProvider` exposes source search, surrounding context, exact documents,

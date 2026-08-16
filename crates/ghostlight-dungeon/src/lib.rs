@@ -9,6 +9,7 @@ pub mod model;
 pub mod narrator;
 pub mod persistence;
 pub mod persona;
+pub mod registry;
 pub mod scheduler;
 pub mod surface;
 pub mod turn;

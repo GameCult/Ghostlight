@@ -256,6 +256,16 @@ pub struct NarrationProjection {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct CampaignLifecycleReceipt {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub operation: String,
+    pub parent_campaign_id: Option<Uuid>,
+    pub parent_revision: Option<u64>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct ActionIntent {
     pub actor_id: String,
     pub description: String,
