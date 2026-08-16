@@ -297,8 +297,49 @@ impl WorldCompiler {
         let receipts = self
             .retrieve_all(&queries, &campaign.branch_origin.canon_cutoff, 10)
             .await?;
-        let output=self.structured("destination_compile",&format!("campaign:{}:revision:{}",campaign.id,campaign.revision),&format!("Compile only the requested bounded destination region. Every new location id must be new. At least one new location must route back to origin id {} with a positive travel time. Do not rewrite existing geography. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",origin_location_id,serde_json::to_string(&campaign.locations)?,destination_request,evidence_text(&receipts)),serde_json::to_value(schema_for!(CompiledExpansionSeed))?,receipt_ids(&receipts)).await?;
-        let seed: CompiledExpansionSeed = serde_json::from_value(output.0)?;
+        let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
+        let base_prompt = format!(
+            "Compile only the requested bounded destination region. Every new location id must be new. At least one new location must route back to origin id {} with a positive travel time. Do not rewrite existing geography. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            origin_location_id,
+            serde_json::to_string(&campaign.locations)?,
+            destination_request,
+            evidence_text(&receipts)
+        );
+        let schema = serde_json::to_value(schema_for!(CompiledExpansionSeed))?;
+        let sources = receipt_ids(&receipts);
+        let mut compiler_receipts = Vec::new();
+        let mut correction = String::new();
+        let (seed, expansion) = loop {
+            let output = self
+                .structured(
+                    "destination_compile",
+                    &snapshot,
+                    &format!("{base_prompt}{correction}"),
+                    schema.clone(),
+                    sources.clone(),
+                )
+                .await?;
+            compiler_receipts.push(output.1);
+            let seed: CompiledExpansionSeed = serde_json::from_value(output.0)?;
+            let expansion = crate::domain::RegionExpansion {
+                origin_location_id: origin_location_id.into(),
+                locations: seed.locations.clone(),
+                facts: seed.facts.clone(),
+            };
+            match validate_region_expansion(campaign, &expansion) {
+                Ok(()) => break (seed, expansion),
+                Err(error) if compiler_receipts.len() == 1 => {
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nReturn a corrected complete candidate against the same CAMPAIGN, REQUEST, and EVIDENCE."
+                    );
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "destination compiler failed local validation after one correction: {error}"
+                    ));
+                }
+            }
+        };
         let evidence_ids = receipt_ids(&receipts);
         let affected_sources: Vec<String> = receipts
             .iter()
@@ -327,12 +368,6 @@ impl WorldCompiler {
                 status: "review".into(),
             })
             .collect();
-        let expansion = crate::domain::RegionExpansion {
-            origin_location_id: origin_location_id.into(),
-            locations: seed.locations,
-            facts: seed.facts,
-        };
-        validate_region_expansion(campaign, &expansion)?;
         Ok((
             crate::domain::RegionExpansionPreview {
                 schema: "ghostlight.region_expansion_preview.v1".into(),
@@ -344,7 +379,9 @@ impl WorldCompiler {
                 canon_candidates: candidates,
                 requires_approval: true,
             },
-            vec![retrieval_receipt, output.1],
+            std::iter::once(retrieval_receipt)
+                .chain(compiler_receipts)
+                .collect(),
         ))
     }
 

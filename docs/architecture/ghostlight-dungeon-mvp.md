@@ -231,8 +231,9 @@ individual identity.
   actor slot. The gestalt owns shared baseline state. The member delta owns
   individual divergence.
 - **Inputs:** relevance/perception proposal, expected campaign revision,
-  expected gestalt version, expected member-delta version, current scene, and
-  reviewed consequences.
+  expected gestalt version, optional existing member-delta version, current
+  scene, and reviewed consequences. A first encounter may propose a bounded
+  identity and initial delta for a member not yet present in the catalog.
 - **Outputs:** a materialized actor derived from baseline plus delta, or an
   updated persistent delta plus optional reviewed aggregate gestalt changes and
   a materialization receipt.
@@ -241,10 +242,10 @@ individual identity.
 - **Forbidden writers:** proximity checks, Persona output, scheduler, scene
   rendering, and relevance heuristics may propose promotion or demotion but
   cannot create, erase, merge, or rewrite a person.
-- **Shared paths:** first encounter, named interaction, return to a known
-  member, leaving perception, scene teardown, reload, and offscreen catch-up
-  all use `MaterializeGestaltMember` or `DematerializeGestaltMember` through the
-  campaign mailbox.
+- **Shared paths:** first encounter uses `IndividuateGestaltMember`; return to a
+  known member uses `MaterializeGestaltMember`; leaving perception uses
+  `DematerializeGestaltMember`. Scene teardown, reload, and offscreen catch-up
+  reach those commands through the campaign mailbox.
 - **Cut line:** dematerialization never deletes the member delta. Gestalt ticks
   never overwrite member-specific memories, relationships, possessions,
   injuries, promises, or identity.
@@ -257,12 +258,14 @@ blacksmith remains John when encountered again.
 
 After each committed player event, a cheap structured relevance stage receives
 only the current gestalt/member catalog, materialized member IDs, player
-location, and event summary. It proposes one `GestaltPresencePlan`. The kernel
-validates exact gestalt/member versions, known IDs, current materialization
-state, and scene location, then applies the entire demotion/promotion set as one
-atomic `ReconcileGestaltPresence` command before the participant appraisal
-wave. Automatic plans cannot write aggregate gestalt learning. A malformed,
-invented, stale, or partially invalid plan changes nothing.
+location, and event summary. It proposes one `GestaltPresencePlan`, including
+at most the bounded first-relevance identities needed by the scene. The kernel
+validates exact gestalt/member versions, identity uniqueness, current
+materialization state, and scene location, then applies the whole plan through
+revisioned commands before the participant appraisal wave. Automatic plans
+cannot write aggregate gestalt learning. A malformed, conflicting, stale, or
+partially invalid plan changes nothing. The compiler may seed likely members,
+but it is not required to predict every future person at campaign creation.
 
 ### The ownership decision
 

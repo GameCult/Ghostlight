@@ -1,8 +1,10 @@
 ﻿# Ghostlight Current System Map
 
-GhostlightDungeon is the active runtime program. Its authority map is
-`docs/architecture/ghostlight-dungeon-mvp.md`. The runtime is not yet complete;
-the existing validated artifact seams remain regression evidence.
+GhostlightDungeon is the active hosted runtime. Its authority map is
+`docs/architecture/ghostlight-dungeon-mvp.md`. The implemented Rust daemon,
+CultCache campaign stores, CultMesh/Eve surfaces, browser lowerer, and Starfire
+process/release scripts are the live machine; the older validated artifact
+seams remain regression evidence only.
 
 ## GhostlightDungeon target flow
 
@@ -35,6 +37,21 @@ The model owns no tick mutation. A provider failure or invalid proposal leaves
 the campaign revision and world time untouched. Background inference checks
 live-turn pressure before launch and again before commit; return catch-up uses
 the same command path with player-turn priority.
+
+Population scale uses reversible individuation:
+
+```text
+gestalt baseline + existing member delta, or a first-relevance identity proposal
+  -> WorldKernel validates gestalt/member/revision/location
+  -> atomic durable member delta + temporary ActorState
+  -> ordinary Persona appraisal and world commands
+  -> expired relevance lease outside player perception
+  -> atomic fold into the member delta; active slot removed
+  -> gestalt receives strategic ticks without erasing the individual
+```
+
+The temporary actor slot is derived. It never owns identity, relationship,
+memory, equipment, injury, or obligation state.
 
 The browser command boundary is deliberately smaller than `WorldCommand`.
 Authenticated HTTP admits only player-owned Speak, unfilled Assess, Attempt,

@@ -21,9 +21,13 @@ reversible gestalt materialization, isolated sessions/campaigns, CultMesh/Eve
 publication, and away-time scheduling. Strategic ticks now use a flash-model
 typed proposal; the WorldKernel forbids player puppeting, invented IDs,
 unreachable movement, and unbounded information or population-pressure edits.
-The active cut is acceptance and deployment truth: exercise live scheduled and
-return-time ticks, the gestalt round trip, model failure, four-actor latency,
-remote CultMesh publication, restart, and exact release provenance.
+The implementation cut is closed. Final acceptance evidence covers hosted
+VoidBot compilation, invite isolation, automatic gestalt presence, three NPC
+reactions, a 15.16-second four-actor parallel wave, model-driven institutional,
+gestalt, and remote-actor away simulation, exact-channel news, full workspace
+tests, legacy Pallas/Lucent/Corvid validation, CultMesh publication, explicit
+process restart, and exact release provenance. Future work belongs in a new
+post-MVP plan rather than silently extending this one.
 
 ## Prior research-program phase
 

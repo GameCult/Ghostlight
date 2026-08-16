@@ -33,18 +33,19 @@ per-campaign WorldKernel mailbox is the sole canonical writer. Ghostlight owns
 the generalized Projector → Persona → Interpreter organ; Epiphany retains her
 canonical Persona mind and will consume the shared organ through an adapter.
 
-The Epiphany extraction map is complete. The active bounded organ is the world
-compiler. Its Rust seam now retrieves hashed VoidBot witnesses, generates
-distinct openings and roles, compiles approval-gated custom starts, rejects
-invalid topology, and atomically admits campaign plus evidence only on
-approval. The browser now exposes generated opening/role selection and custom
-starts. A live DeepSeek plus VoidBot custom compilation passed with 30 witnessed
-source chunks and remained an uncommitted approval preview. A disposable HTTP
-run then proved approval persistence, authenticated-session survival across
-restart, and rejection of consumed invite reuse using hashed auth state in a
-separate `.cc`. Next, add material-gap decisions, on-demand destination
-compilation, and canon-candidate persistence. Existing Ghostlight fixtures
-remain regression evidence.
+The hosted MVP is implemented and in final acceptance. Ghostlight owns the
+generalized projection membrane; Epiphany consumes its pinned crate while
+retaining her own Mind and consequence authority. The Rust daemon now owns
+VoidBot-grounded compilation and approval, stable topology, campaign mailboxes,
+fiction-first d20 receipts, parallel Persona waves, automatic gestalt
+individuation and folding, model-driven strategic ticks, exact-channel news,
+CultMesh/Eve publication, invite-isolated campaigns, and `.cc` export. Live
+acceptance has proved two invite sessions, Vault compilation, three concurrent
+NPC reactions, a 15.16-second four-actor wave, and material offscreen agency
+without player puppeting. Re-enter through the authoritative architecture and
+the latest exact deployment evidence; do not resume the superseded compiler
+foundation checklist below. Existing Ghostlight fixtures remain regression
+evidence.
 
 ## Prior research pipeline focus
 

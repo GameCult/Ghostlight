@@ -1,7 +1,7 @@
 experiment:
   name: Ghostlight
   status: active_mvp_build
-  phase: ghostlight_dungeon_foundation
+  phase: ghostlight_dungeon_final_acceptance
   premise: >
     Build a durable research and implementation home for socially persistent
     generative agents whose behavior emerges from personality, culture,
@@ -67,13 +67,13 @@ live_architecture:
     - One per-campaign WorldKernel mailbox owns canonical state and revision numbers.
     - Every player, NPC, institution, scheduler, import, and reload transition uses the same typed WorldCommand validation and atomic CultCache commit path.
     - Ghostlight owns generalized Projector to Persona to Interpreter machinery; consuming Personas retain their own canonical minds and commit authority.
-    - Epiphany will consume the extracted Ghostlight organ through a narrow adapter after her current machinery is mapped into move, stay, split, and delete decisions.
+    - Epiphany consumes the extracted Ghostlight projection crate at an exact Git revision while retaining her canonical Mind, effect admission, and consequence authority.
+    - Gestalt Personas own shared population state; first-relevance individuation and later folding are revisioned WorldKernel commits, and durable member deltas preserve specific people between appearances.
+    - Model-driven strategic ticks can change remote actors, institutions, gestalts, clocks, and exact-channel news while the absent player remains outside their write authority.
     - Existing v0 training fixtures are regression evidence and have no runtime write authority.
   persistence_spine:
-    - Ghostlight is migrating machine-managed persistent state behind `cultcache-py`, linked as `vendor/cultcache-py`.
-    - `state/ghostlight-state.cultcache.jsonl` is the current CultCache-backed store for migrated branch and evidence records.
-    - `state/branches.json` and `state/evidence.jsonl` remain readable export surfaces during migration so humans, diffs, and older validators do not lose the plot.
-    - New persistent state seams should use `tools/ghostlight_state_store.py` instead of direct file writes.
+    - The hosted runtime uses Rust CultCache/redb `.cc` stores: one store per campaign plus service auth and CultMesh stores.
+    - `state/ghostlight-state.cultcache.jsonl`, `state/branches.json`, and `state/evidence.jsonl` belong to the older research pipeline and have no hosted runtime authority.
     - `schemas/agent-state.schema.json` is also the first shared cross-runtime payload contract. CultNet clients should move `ghostlight.agent_state.v0` documents unchanged inside typed document envelopes instead of inventing forked state ontologies per repo.
   state_model:
     - Layer personality through organization, disposition, behavior, presentation, situational activation, relationships, goals, and values.
@@ -255,5 +255,5 @@ data_flow:
 
 current_status:
   summary: GhostlightDungeon is the active MVP program. The approval-gated compiler persists exact VoidBot evidence, canon candidates, bounded topology, gestalt baselines, and durable member deltas. Fiction-first player and NPC attempts use deterministic initiative, model assessment, server-side d20, and prevalidated typed outcome deltas. Present NPCs appraise events in parallel; gestalt populations materialize durable individuals and fold them back without losing identity. Ghostlight owns the generalized Persona projection membrane and Epiphany consumes it at an exact Git revision. CampaignRegistry isolates per-campaign stores/mailboxes and sessions. CultMesh/Eve publication owns hosted state sight. Away-time ticks now use revision-bound flash-model strategic proposals validated by WorldKernel; invalid plans, player puppeting, invented IDs, and unreachable movement cannot mutate state.
-  next_action: Run authenticated live scheduler/return-catch-up and four-actor latency acceptance, then connect the published local CultMesh/Eve state to Odin when a Starfire Odin RUDP catalog is listening. Restart, scoped LAN/WireGuard firewall, exact-release provenance, model-failure isolation, and gestalt round-trip are verified.
+  next_action: Preserve the final deployed release and acceptance receipts, then treat additional rulesets, Vault adapters, multiplayer, and richer Persona projections as post-MVP work requiring a new authority map.
   gestalt_population: Gestalt Personas own shared population baselines; persistent member deltas own named individuality; WorldKernel materialization commands compose and demote active actors without deleting member identity.

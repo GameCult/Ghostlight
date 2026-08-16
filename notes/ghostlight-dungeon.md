@@ -177,9 +177,9 @@ stake prose alone never impersonates world mutation.
 - Do not expose model chain-of-thought or secrets.
 - Serve the embedded web bundle on TCP `8831`. Firewall access is limited to Starfire’s private LAN and `10.77.0.0/24`; no public listener or Yggdrasil web gateway is added.
 - Use two single-use invite links that establish separate HttpOnly sessions. Campaigns are single-player; simultaneous co-op is outside the MVP.
-- Install `GhostlightDungeon` as an automatic Windows service under a dedicated virtual service identity. ACL the runtime root to administrators and the service identity.
+- Run `GhostlightDungeon` as a normal detached process under the Starfire operator account. Record its PID, executable, and logs; explicit start, stop, health, release, and rollback scripts own lifecycle. ACL the runtime root to administrators and that operator account.
 - Read the DeepSeek key from stdin during setup, protect it with machine-scoped DPAPI plus file ACLs, and never place it in source, arguments, logs, or environment projections.
-- Build immutable release directories from the exact Git commit, switch the active release atomically, record provenance in CultCache, and configure service restart recovery.
+- Build immutable release directories from the exact Git commit, switch the active release through the guarded junction, and record provenance in CultCache plus the immutable release manifest. Process restart is explicit; Windows service installation and automatic boot recovery are outside this MVP by operator choice.
 
 ### Repository and operational documentation
 
@@ -229,7 +229,7 @@ Publish JSON Schema only as the schema catalog. Runtime documents and exports us
   - all actor stages execute in parallel waves;
   - a four-actor live turn completes within 20 seconds;
   - background inference yields immediately to live work.
-- Final deployment smoke verifies service restart, LAN and WireGuard access, blocked public access, DeepSeek inference, VoidBot-grounded retrieval, scheduler continuation, state persistence, CultMesh/Eve publication, and exact deployed commit provenance.
+- Final deployment smoke verifies explicit process restart, LAN and WireGuard access, blocked public access, DeepSeek inference, VoidBot-grounded retrieval, scheduler continuation, state persistence, CultMesh/Eve publication, and exact deployed commit provenance.
 
 ## Assumptions and exclusions
 
