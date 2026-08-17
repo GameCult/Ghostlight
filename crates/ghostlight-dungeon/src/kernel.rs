@@ -1437,11 +1437,7 @@ fn apply_strategic_tick_plan(
             crate::resolution::strategic_activity_targets(campaign, &action.gestalt_id);
         let unique_targets = action.target_subject_ids.iter().collect::<BTreeSet<_>>();
         let unique_locations = action.location_ids.iter().collect::<BTreeSet<_>>();
-        let needs_target = !matches!(
-            action.activity,
-            crate::domain::StrategicActivityKind::Prepare
-                | crate::domain::StrategicActivityKind::Investigate
-        );
+        let needs_target = !action.activity.allows_targetless_local_attempt();
         if action.target_subject_ids.len() > 4
             || unique_targets.len() != action.target_subject_ids.len()
             || action
@@ -1593,10 +1589,7 @@ fn apply_strategic_tick_plan(
             crate::resolution::dormant_member_location(campaign, &action.member_id)
                 .map_err(|error| KernelError::Invalid(error.to_string()))?;
         let unique_targets = action.target_subject_ids.iter().collect::<BTreeSet<_>>();
-        let needs_target = !matches!(
-            action.activity,
-            StrategicActivityKind::Prepare | StrategicActivityKind::Investigate
-        );
+        let needs_target = !action.activity.allows_targetless_local_attempt();
         if action.target_subject_ids.len() > 4
             || unique_targets.len() != action.target_subject_ids.len()
             || action
@@ -1732,6 +1725,9 @@ fn strategic_activity_summary(
         }
         (StrategicActivityKind::Trade, false) => {
             format!("{source_name} offers a trade to {targets}.")
+        }
+        (StrategicActivityKind::Communicate, true) => {
+            format!("{source_name} attempts a local communication.")
         }
         (StrategicActivityKind::Communicate, false) => {
             format!("{source_name} sends a communication to {targets}.")
@@ -2558,6 +2554,63 @@ mod tests {
         );
         assert!(events[0].actor_ids.is_empty());
         assert!(events[0].institution_ids.is_empty());
+    }
+
+    #[test]
+    fn local_communication_records_the_source_without_inventing_a_listener() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(value, before);
+        assert_eq!(
+            events[0].summary,
+            "Eastern transit refugees attempts a local communication."
+        );
+        assert!(events[0].actor_ids.is_empty());
+        assert!(events[0].institution_ids.is_empty());
+        assert_eq!(events[0].gestalt_ids, vec!["refugees-east"]);
+    }
+
+    #[test]
+    fn dormant_member_can_speak_locally_without_inventing_a_listener() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                member_activities: vec![StrategicMemberActivity {
+                    member_id: "mira".into(),
+                    source_gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(value, before);
+        assert_eq!(
+            events[0].summary,
+            "Mira Venn attempts a local communication."
+        );
+        assert_eq!(events[0].actor_ids, vec!["member:mira"]);
+        assert!(events[0].institution_ids.is_empty());
+        assert_eq!(events[0].gestalt_ids, vec!["refugees-east"]);
     }
 
     #[test]

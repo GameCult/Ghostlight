@@ -385,6 +385,13 @@ gestalt participant IDs so later demand and perception can attribute the
 attempt without treating an arena as an actor. A later resolved outcome needs
 its own admitted effect.
 
+Two local attempts may omit a canonical target while retaining the source's
+exact current location. Targetless `investigate` seeks facts from the
+environment or an unnamed ordinary role. Targetless `communicate` records the
+source speaking, offering, requesting permission, or notifying such a role.
+Neither form creates a listener, reply, acceptance, discovery, or target
+agency. All other target-bearing activity uses exact canonical subject IDs.
+
 The shared validators run in the Interpreter membrane, wave resolver, and
 kernel. One gestalt can contribute at most one selected pressure transition or
 activity per tick; deterministic priority resolution cannot let two effect

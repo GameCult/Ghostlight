@@ -1813,10 +1813,7 @@ fn validate_cell_proposal(
             let allowed_targets = strategic_activity_targets(campaign, gestalt_id);
             let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
             let unique_locations = location_ids.iter().collect::<BTreeSet<_>>();
-            let needs_target = !matches!(
-                activity,
-                StrategicActivityKind::Prepare | StrategicActivityKind::Investigate
-            );
+            let needs_target = !activity.allows_targetless_local_attempt();
             if gestalt_id != &proposal.subject_id
                 || !campaign.gestalts.contains_key(gestalt_id)
                 || target_subject_ids.len() > 4
@@ -1975,10 +1972,7 @@ fn validate_member_cell_proposal(
             let allowed_targets = member_activity_targets(campaign, member_id)?;
             let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
             let exact_location = dormant_member_location(campaign, member_id)?;
-            let needs_target = !matches!(
-                activity,
-                StrategicActivityKind::Prepare | StrategicActivityKind::Investigate
-            );
+            let needs_target = !activity.allows_targetless_local_attempt();
             if effect_member_id != member_id
                 || target_subject_ids.len() > 4
                 || unique_targets.len() != target_subject_ids.len()
@@ -3149,6 +3143,16 @@ pub(crate) mod tests {
             validate_and_resolve_wave(&value, &make_wave(member_activity.clone())).unwrap();
         assert_eq!(activity_plan.member_activities.len(), 1);
         assert!(activity_plan.member_migrations.is_empty());
+
+        let mut local_member_communication = member_activity.clone();
+        let StrategicCellEffect::MemberActivity {
+            target_subject_ids, ..
+        } = &mut local_member_communication.effect
+        else {
+            unreachable!()
+        };
+        target_subject_ids.clear();
+        assert!(validate_and_resolve_wave(&value, &make_wave(local_member_communication)).is_ok());
 
         let same_member_wave = ResolutionWaveCommit {
             schema: "ghostlight.resolution_wave_commit.v1".into(),

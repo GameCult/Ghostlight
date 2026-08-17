@@ -170,6 +170,15 @@ mismatch class. Supported actions carry no explanatory prose. Runtime rejects
 missing, reordered, or incoherent discriminators before they can authorize a
 wave.
 
+The next strict attempt exposed a coherent `target_substitution`: Mira asked
+an unnamed camp coordinator for permission, the Interpreter first emitted an
+empty communication target, and duplicated validators rejected that shape;
+the correction then stole `refugees-east` as the listener. Empty-target local
+communication is now a first-class source-attributed attempt at the exact
+current location. It never creates the ordinary role, a reply, acceptance, or
+an outcome. One domain method owns which activity kinds allow this shape, and
+the Interpreter membrane, wave resolver, and kernel all use it.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

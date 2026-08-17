@@ -472,6 +472,12 @@ pub enum StrategicActivityKind {
     Communicate,
 }
 
+impl StrategicActivityKind {
+    pub fn allows_targetless_local_attempt(&self) -> bool {
+        matches!(self, Self::Prepare | Self::Investigate | Self::Communicate)
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct CellActionProposal {
     pub subject_id: String,

@@ -116,9 +116,11 @@ destination population remains a separate canonical subject, and named member
 deltas are not carried by implication. Approval-gated fission creates
 destination/stayer cohorts; the same migration primitive moves any resulting
 leaf regardless of lineage depth. A local `investigate` activity may omit a
-target when it examines the exact current environment; this admits ordinary
-roles such as an unnamed clerk without inventing an actor or claiming an
-answer.
+target when it examines the exact current environment. A local `communicate`
+may likewise omit a target when its exact source speaks, offers, requests
+permission, or notifies an unnamed ordinary role. Both admit ordinary texture
+without inventing a listener, response, acceptance, discovered fact, or target
+agency.
 
 Salient dormant members have their own `member_activity` path for ordinary
 local attempts. It uses the same bounded verbs, the member's exact location,
