@@ -413,7 +413,11 @@ fn dynamics_campaign() -> ghostlight_dungeon::domain::Campaign {
                 id.clone(),
                 InstitutionState {
                     id,
-                    name: format!("Regional Power {index:02}"),
+                    name: match index {
+                        0 => "Port Authority".into(),
+                        1 => "Relief Union".into(),
+                        _ => format!("Regional Power {index:02}"),
+                    },
                     resources: vec![
                         format!("regional reserve {index:02}"),
                         "public harbor bulletin".into(),

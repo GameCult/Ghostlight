@@ -250,6 +250,16 @@ knowledge is never treated as an information channel; while dematerialized,
 the member can publish only through channels owned by their current leaf
 gestalt's agency profile.
 
+A committed strategic effect must change canonical state. Institutions cannot
+re-adopt their current posture. Population effects carry an explicit pressure
+lifecycle: `pressure_resolutions` must name exact current pressure markers, and
+`pressure_additions` must introduce genuinely new unresolved constraints,
+threats, obligations, or conditions. Completed action prose is not a pressure.
+The shared transition validator runs in the Interpreter membrane, wave
+resolver, and kernel; repeated busywork and invented resolutions therefore
+fail before mutation rather than generating another event that says nothing
+happened.
+
 ## Public state and controls
 
 The schema catalog and CultCache stores publish:

@@ -1636,9 +1636,11 @@ pub fn validate_and_resolve_wave(
             StrategicCellEffect::Gestalt {
                 gestalt_id,
                 pressure_additions,
+                pressure_resolutions,
             } => plan.gestalt_actions.push(StrategicGestaltAction {
                 gestalt_id,
                 pressure_additions,
+                pressure_resolutions,
                 public_channels: proposal.public_channels,
             }),
             StrategicCellEffect::ActorMove {
@@ -1720,11 +1722,14 @@ fn validate_cell_proposal(
     match &proposal.effect {
         StrategicCellEffect::Institution {
             institution_id,
+            posture,
             location_ids,
-            ..
         } => {
             if institution_id != &proposal.subject_id
                 || !campaign.institutions.contains_key(institution_id)
+                || posture.trim().is_empty()
+                || posture.len() > 240
+                || !substantive_text_change(&campaign.institutions[institution_id].posture, posture)
                 || location_ids
                     .iter()
                     .any(|id| !campaign.locations.contains_key(id))
@@ -1738,14 +1743,16 @@ fn validate_cell_proposal(
         StrategicCellEffect::Gestalt {
             gestalt_id,
             pressure_additions,
+            pressure_resolutions,
         } => {
             if gestalt_id != &proposal.subject_id
                 || !campaign.gestalts.contains_key(gestalt_id)
-                || pressure_additions.is_empty()
-                || pressure_additions.len() > 4
-                || pressure_additions
-                    .iter()
-                    .any(|pressure| pressure.trim().is_empty() || pressure.len() > 240)
+                || validate_gestalt_pressure_transition(
+                    &campaign.gestalts[gestalt_id].pressures,
+                    pressure_additions,
+                    pressure_resolutions,
+                )
+                .is_err()
             {
                 return Err(anyhow!("gestalt proposal exceeds constituent state"));
             }
@@ -1777,6 +1784,56 @@ fn validate_cell_proposal(
                 "a population, institution, actor, or arena cannot migrate a named member"
             ));
         }
+    }
+    Ok(())
+}
+
+pub fn substantive_text_change(current: &str, candidate: &str) -> bool {
+    let current = current.trim();
+    let candidate = candidate.trim();
+    !candidate.is_empty() && candidate.len() <= 240 && !current.eq_ignore_ascii_case(candidate)
+}
+
+pub fn validate_gestalt_pressure_transition(
+    current: &[String],
+    additions: &[String],
+    resolutions: &[String],
+) -> Result<()> {
+    if additions.len() + resolutions.len() == 0 || additions.len() + resolutions.len() > 4 {
+        return Err(anyhow!(
+            "gestalt pressure transition must change one to four markers"
+        ));
+    }
+    let clean = |value: &String| {
+        !value.is_empty() && value.len() <= 240 && value.trim().len() == value.len()
+    };
+    if additions.iter().any(|value| !clean(value)) || resolutions.iter().any(|value| !clean(value))
+    {
+        return Err(anyhow!(
+            "gestalt pressure markers must be clean bounded text"
+        ));
+    }
+    let normalized_additions = additions
+        .iter()
+        .map(|value| value.to_lowercase())
+        .collect::<BTreeSet<_>>();
+    let normalized_resolutions = resolutions
+        .iter()
+        .map(|value| value.to_lowercase())
+        .collect::<BTreeSet<_>>();
+    let normalized_current = current
+        .iter()
+        .map(|value| value.to_lowercase())
+        .collect::<BTreeSet<_>>();
+    if normalized_additions.len() != additions.len()
+        || normalized_resolutions.len() != resolutions.len()
+        || !normalized_additions.is_disjoint(&normalized_resolutions)
+        || !normalized_additions.is_disjoint(&normalized_current)
+        || resolutions.iter().any(|value| !current.contains(value))
+    {
+        return Err(anyhow!(
+            "gestalt pressure transition repeats, overlaps, or invents a resolved pressure"
+        ));
     }
     Ok(())
 }
@@ -2523,6 +2580,44 @@ pub(crate) mod tests {
         let before = value.clone();
         let _ = plan_cover(&value, default_demand(&value, "read only")).unwrap();
         assert_eq!(value, before);
+    }
+
+    #[test]
+    fn pressure_transition_rejects_noops_and_invented_resolutions() {
+        let current = vec!["the ferry deadline is near".into()];
+        assert!(
+            validate_gestalt_pressure_transition(
+                &current,
+                &["shelter assignments are disputed".into()],
+                &["the ferry deadline is near".into()],
+            )
+            .is_ok()
+        );
+        assert!(validate_gestalt_pressure_transition(&current, &[], &[]).is_err());
+        assert!(
+            validate_gestalt_pressure_transition(
+                &current,
+                &["THE FERRY DEADLINE IS NEAR".into()],
+                &[],
+            )
+            .is_err()
+        );
+        assert!(
+            validate_gestalt_pressure_transition(
+                &current,
+                &[],
+                &["an invented solved problem".into()],
+            )
+            .is_err()
+        );
+        assert!(!substantive_text_change(
+            "holding position",
+            "Holding Position"
+        ));
+        assert!(substantive_text_change(
+            "holding position",
+            "releasing the reserve"
+        ));
     }
 
     #[test]

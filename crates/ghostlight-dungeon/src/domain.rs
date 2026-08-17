@@ -427,7 +427,10 @@ pub enum StrategicCellEffect {
     },
     Gestalt {
         gestalt_id: String,
+        #[serde(default)]
         pressure_additions: Vec<String>,
+        #[serde(default)]
+        pressure_resolutions: Vec<String>,
     },
     ActorMove {
         actor_id: String,
@@ -591,6 +594,7 @@ pub struct StrategicInstitutionAction {
 pub struct StrategicGestaltAction {
     pub gestalt_id: String,
     pub pressure_additions: Vec<String>,
+    pub pressure_resolutions: Vec<String>,
     pub public_channels: Vec<String>,
 }
 

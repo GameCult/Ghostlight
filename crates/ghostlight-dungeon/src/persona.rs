@@ -136,7 +136,7 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
       "state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},
       "effect":{"oneOf":[
         {"type":"object","required":["type","institution_id","posture","location_ids"],"properties":{"type":{"const":"institution"},"institution_id":{"type":"string"},"posture":{"type":"string"},"location_ids":{"type":"array","items":{"type":"string"}}}},
-        {"type":"object","required":["type","gestalt_id","pressure_additions"],"properties":{"type":{"const":"gestalt"},"gestalt_id":{"type":"string"},"pressure_additions":{"type":"array","minItems":1,"maxItems":4,"items":{"type":"string"}}}},
+        {"type":"object","required":["type","gestalt_id","pressure_additions","pressure_resolutions"],"properties":{"type":{"const":"gestalt"},"gestalt_id":{"type":"string"},"pressure_additions":{"type":"array","maxItems":4,"items":{"type":"string"}},"pressure_resolutions":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
         {"type":"object","required":["type","actor_id","destination_id"],"properties":{"type":{"const":"actor_move"},"actor_id":{"type":"string"},"destination_id":{"type":"string"}}},
         {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"member_migration"},"destination_gestalt_id":{"type":"string"}}}
       ]}
@@ -371,6 +371,7 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "allowed_public_channels": subject.information_channels,
             "permitted_state_references": subject.permitted_state_references,
             "reachable_destination_ids": subject.reachable_destination_ids,
+            "current_pressures": subject.pressures,
         })).collect::<Vec<_>>(),
         "member_permissions": slice.member_exceptions.iter().map(|member| serde_json::json!({
             "subject_id": member.subject_id,
@@ -500,7 +501,7 @@ impl CellProjectionEngine {
         constrain_cell_proposal_schema(&mut schema, &slice)?;
         let interpreter_context = serde_json::to_string(&cell_interpreter_context(&slice))?;
         let permission_guidance = format!(
-            "Emit at most {} exact constituent- or named-member-attributed attempts. Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt, actor -> actor_move, named member -> member_migration. Use only that subject's permitted_state_references and allowed_public_channels; facet labels are not public channels. A named member uses one supplied migration destination; a population or arena cannot migrate a person. The runtime binds cell identity, revisions, membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
+            "Emit at most {} exact constituent- or named-member-attributed attempts. Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt, actor -> actor_move, named member -> member_migration. Institution posture must be a specific new commitment or withholding, never the current posture or a generic label. Gestalt pressure_resolutions must copy exact current_pressures that the attempted action resolves; pressure_additions are only new unresolved constraints, threats, obligations, or conditions, never completed actions. At least one and at most four total pressure changes are required. Use only that subject's permitted_state_references and allowed_public_channels; facet labels are not public channels. A named member uses one supplied migration destination; a population or arena cannot migrate a person. The runtime binds cell identity, revisions, membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
             slice.max_actions
         );
         let mut request = ModelStageRequest {
@@ -650,20 +651,24 @@ fn validate_cell_appraisal(
                     location_ids,
                 } if subject.subject_kind == crate::domain::AgencySubjectKind::Institution
                     && institution_id == &subject.subject_id
-                    && !posture.trim().is_empty()
+                    && subject.pressures.first().is_some_and(|current| {
+                        crate::resolution::substantive_text_change(current, posture)
+                    })
                     && location_ids
                         .iter()
                         .all(|location| subject.location_ids.contains(location)) => {}
                 crate::domain::StrategicCellEffect::Gestalt {
                     gestalt_id,
                     pressure_additions,
+                    pressure_resolutions,
                 } if subject.subject_kind == crate::domain::AgencySubjectKind::Gestalt
                     && gestalt_id == &subject.subject_id
-                    && !pressure_additions.is_empty()
-                    && pressure_additions.len() <= 4
-                    && pressure_additions
-                        .iter()
-                        .all(|pressure| !pressure.trim().is_empty() && pressure.len() <= 240) => {}
+                    && crate::resolution::validate_gestalt_pressure_transition(
+                        &subject.pressures,
+                        pressure_additions,
+                        pressure_resolutions,
+                    )
+                    .is_ok() => {}
                 crate::domain::StrategicCellEffect::ActorMove {
                     actor_id,
                     destination_id,
@@ -973,6 +978,7 @@ mod tests {
                     effect: StrategicCellEffect::Gestalt {
                         gestalt_id: "crowd".into(),
                         pressure_additions: vec![],
+                        pressure_resolutions: vec![],
                     },
                 }],
                 inaction_reason: None,

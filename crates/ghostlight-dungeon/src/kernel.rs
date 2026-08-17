@@ -1195,7 +1195,7 @@ fn apply_strategic_tick_plan(
                 "institution acts twice in one strategic tick".into(),
             ));
         }
-        if action.posture.trim().is_empty() {
+        if action.posture.trim().is_empty() || action.posture.len() > 240 {
             return Err(KernelError::Invalid(
                 "strategic institution posture is empty".into(),
             ));
@@ -1214,6 +1214,11 @@ fn apply_strategic_tick_plan(
             .institutions
             .get_mut(&action.institution_id)
             .ok_or_else(|| KernelError::Invalid("strategic plan invented an institution".into()))?;
+        if !crate::resolution::substantive_text_change(&institution.posture, &action.posture) {
+            return Err(KernelError::Invalid(
+                "strategic institution action would not change its posture".into(),
+            ));
+        }
         institution.posture = action.posture;
         let summary = format!(
             "{} adopts posture: {}",
@@ -1238,37 +1243,43 @@ fn apply_strategic_tick_plan(
                 "gestalt acts twice in one strategic tick".into(),
             ));
         }
-        if action.pressure_additions.is_empty()
-            || action.pressure_additions.len() > 4
-            || action
-                .pressure_additions
-                .iter()
-                .any(|p| p.trim().is_empty() || p.len() > 240)
-        {
-            return Err(KernelError::Invalid(
-                "strategic gestalt action is invalid".into(),
-            ));
-        }
         validate_public_channels(&action.public_channels)?;
-        let pressure_summary = action.pressure_additions.join("; ");
         let gestalt = campaign
             .gestalts
             .get_mut(&action.gestalt_id)
             .ok_or_else(|| KernelError::Invalid("strategic plan invented a gestalt".into()))?;
+        crate::resolution::validate_gestalt_pressure_transition(
+            &gestalt.pressures,
+            &action.pressure_additions,
+            &action.pressure_resolutions,
+        )
+        .map_err(|error| KernelError::Invalid(error.to_string()))?;
+        let mut summary_parts = Vec::new();
+        if !action.pressure_resolutions.is_empty() {
+            summary_parts.push(format!(
+                "resolves pressure: {}",
+                action.pressure_resolutions.join("; ")
+            ));
+        }
+        if !action.pressure_additions.is_empty() {
+            summary_parts.push(format!(
+                "takes on pressure: {}",
+                action.pressure_additions.join("; ")
+            ));
+        }
+        let resolved = action.pressure_resolutions.iter().collect::<BTreeSet<_>>();
+        gestalt
+            .pressures
+            .retain(|pressure| !resolved.contains(pressure));
         for pressure in action.pressure_additions {
-            if !gestalt.pressures.contains(&pressure) {
-                gestalt.pressures.push(pressure);
-            }
+            gestalt.pressures.push(pressure);
         }
         gestalt.version += 1;
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:gestalt:{}", gestalt.id),
             at,
             kind: "gestalt_action".into(),
-            summary: format!(
-                "{} changes its collective situation: {}",
-                gestalt.name, pressure_summary
-            ),
+            summary: format!("{} {}", gestalt.name, summary_parts.join("; ")),
             actor_ids: vec![],
             institution_ids: vec![],
             location_ids: vec![gestalt.home_location_id.clone()],
@@ -1995,6 +2006,35 @@ mod tests {
         .unwrap_err();
         assert!(error.to_string().contains("migration relation"));
         assert_eq!(value.gestalt_members, before.gestalt_members);
+    }
+
+    #[test]
+    fn gestalt_action_resolves_exact_pressure_and_records_only_the_typed_transition() {
+        let mut value = hierarchical_refugee_campaign();
+        value.gestalts.get_mut("refugees-east").unwrap().pressures =
+            vec!["the storm closes the camp".into()];
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_actions: vec![StrategicGestaltAction {
+                    gestalt_id: "refugees-east".into(),
+                    pressure_additions: vec!["shelter assignments remain unsettled".into()],
+                    pressure_resolutions: vec!["the storm closes the camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            value.gestalts["refugees-east"].pressures,
+            vec!["shelter assignments remain unsettled"]
+        );
+        assert_eq!(value.gestalts["refugees-east"].version, 1);
+        assert_eq!(
+            events[0].summary,
+            "Eastern transit refugees resolves pressure: the storm closes the camp; takes on pressure: shelter assignments remain unsettled"
+        );
     }
 
     #[tokio::test]
