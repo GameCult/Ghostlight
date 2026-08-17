@@ -97,6 +97,17 @@ reachable destination leaf. This lets a refugee who mattered during a crisis
 make an offscreen choice, settle elsewhere, and later rematerialize as the same
 person without forcing every refugee to consume an active Persona cell.
 
+Presence projection is location- and lineage-bounded. The planner sees only
+active gestalt leaves at the player's location, dormant members whose exact
+current location is there, and materialized members that might be eligible to
+fold. Inactive ancestors and remote dormant rosters do not enter the prompt.
+The kernel independently rejects individuation from an inactive leaf,
+promotion outside the member's exact location, and automatic reconciliation
+outside the player's active location. A direct internal command may preserve a
+named offscreen actor, but model-driven presence reconciliation cannot teleport
+one into view. Existing member deltas are preferred when their relationship,
+memory, obligation, or goal makes an ordinary encounter a meaningful callback.
+
 ## Demand projection
 
 A flash-model structured stage converts the committed event or strategic
@@ -250,15 +261,28 @@ knowledge is never treated as an information channel; while dematerialized,
 the member can publish only through channels owned by their current leaf
 gestalt's agency profile.
 
-A committed strategic effect must change canonical state. Institutions cannot
-re-adopt their current posture. Population effects carry an explicit pressure
-lifecycle: `pressure_resolutions` must name exact current pressure markers, and
-`pressure_additions` must introduce genuinely new unresolved constraints,
-threats, obligations, or conditions. Completed action prose is not a pressure.
-The shared transition validator runs in the Interpreter membrane, wave
-resolver, and kernel; repeated busywork and invented resolutions therefore
-fail before mutation rather than generating another event that says nothing
-happened.
+A committed strategic effect must produce an exact canonical consequence.
+Institutions cannot re-adopt their current posture. Population pressure effects
+carry an explicit lifecycle: `pressure_resolutions` must name exact current
+pressure markers, and `pressure_additions` must introduce genuinely new
+unresolved constraints, threats, obligations, or conditions. Completed action
+prose is not a pressure.
+
+Populations may instead propose a bounded `gestalt_activity`: prepare,
+coordinate, investigate, recruit, obstruct, trade, or communicate. Its source
+is an exact active gestalt leaf; its targets must be adjacent canonical agency
+subjects; its locations and channels must belong to the source's permitted
+slice. The effect commits only an attributed attempted-activity event. It does
+not claim successful discovery, recruitment, persuasion, delivery, exchange,
+obstruction, preparation, or target response. Event records carry exact
+gestalt participant IDs so later demand and perception can attribute the
+attempt without treating an arena as an actor. A later resolved outcome needs
+its own admitted effect.
+
+The shared validators run in the Interpreter membrane, wave resolver, and
+kernel. One gestalt can contribute at most one selected pressure transition or
+activity per tick; deterministic priority resolution cannot let two effect
+forms bypass that limit.
 
 Semantic correction feedback names the exact failed boundary and current
 value. A repeated institution posture receives its present posture; an invalid

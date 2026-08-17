@@ -634,6 +634,21 @@ fn execute(
             if reason.trim().is_empty() {
                 return Err(KernelError::Invalid("presence plan has no reason".into()));
             }
+            let player_location = &campaign.actors[&campaign.player_actor_id].location_id;
+            if plan
+                .individuations
+                .iter()
+                .any(|entry| &entry.location_id != player_location)
+                || plan
+                    .promotions
+                    .iter()
+                    .any(|entry| &entry.location_id != player_location)
+            {
+                return Err(KernelError::Invalid(
+                    "automatic presence reconciliation is confined to the player's active location"
+                        .into(),
+                ));
+            }
             let before = campaign.clone();
             let mut candidate = campaign.clone();
             for demotion in &plan.demotions {
@@ -717,6 +732,7 @@ fn execute(
                 summary: event_summary,
                 actor_ids: seen.into_iter().collect(),
                 institution_ids: vec![],
+                gestalt_ids: vec![],
                 location_ids: vec![player_location],
                 public_channels: vec![],
             });
@@ -806,6 +822,7 @@ fn execute(
                 },
                 actor_ids: vec![proposal.actor_id.clone()],
                 institution_ids: vec![],
+                gestalt_ids: vec![],
                 location_ids: vec![actor_location],
                 public_channels: vec![],
             });
@@ -828,6 +845,12 @@ fn apply_individuation(
         .gestalts
         .get(&individuation.gestalt_id)
         .ok_or_else(|| KernelError::Invalid("gestalt is unknown".into()))?;
+    crate::resolution::validate_active_gestalt_presence_location(
+        campaign,
+        &individuation.gestalt_id,
+        &individuation.location_id,
+    )
+    .map_err(|error| KernelError::Invalid(error.to_string()))?;
     if gestalt.version != individuation.expected_gestalt_version
         || member.gestalt_id != individuation.gestalt_id
         || member.version != 0
@@ -864,6 +887,12 @@ fn apply_promotion(
             "materialization location is unknown".into(),
         ));
     }
+    crate::resolution::validate_active_gestalt_presence_location(
+        campaign,
+        &promotion.gestalt_id,
+        &promotion.location_id,
+    )
+    .map_err(|error| KernelError::Invalid(error.to_string()))?;
     let gestalt = campaign
         .gestalts
         .get(&promotion.gestalt_id)
@@ -871,6 +900,14 @@ fn apply_promotion(
         .clone();
     if gestalt.version != promotion.expected_gestalt_version {
         return Err(KernelError::Invalid("gestalt snapshot is stale".into()));
+    }
+    let member_location =
+        crate::resolution::dormant_member_location(campaign, &promotion.member_id)
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    if member_location != promotion.location_id {
+        return Err(KernelError::Invalid(
+            "gestalt member cannot materialize outside their exact location".into(),
+        ));
     }
     let member = campaign
         .gestalt_members
@@ -1269,6 +1306,7 @@ fn apply_strategic_tick_plan(
             summary,
             actor_ids: vec![],
             institution_ids: vec![institution.id.clone()],
+            gestalt_ids: vec![],
             location_ids: action.location_ids,
             public_channels: action.public_channels,
         });
@@ -1320,7 +1358,89 @@ fn apply_strategic_tick_plan(
             summary: format!("{} {}", gestalt.name, summary_parts.join("; ")),
             actor_ids: vec![],
             institution_ids: vec![],
+            gestalt_ids: vec![gestalt.id.clone()],
             location_ids: vec![gestalt.home_location_id.clone()],
+            public_channels: action.public_channels,
+        });
+    }
+
+    for action in plan.gestalt_activities {
+        if !seen_gestalts.insert(action.gestalt_id.clone()) {
+            return Err(KernelError::Invalid(
+                "gestalt acts twice in one strategic tick".into(),
+            ));
+        }
+        validate_public_channels(&action.public_channels)?;
+        let gestalt = campaign
+            .gestalts
+            .get(&action.gestalt_id)
+            .ok_or_else(|| KernelError::Invalid("strategic plan invented a gestalt".into()))?;
+        let profile = campaign
+            .agency_profiles
+            .get(&action.gestalt_id)
+            .ok_or_else(|| KernelError::Invalid("strategic gestalt lacks agency scope".into()))?;
+        let allowed_targets =
+            crate::resolution::strategic_activity_targets(campaign, &action.gestalt_id);
+        let unique_targets = action.target_subject_ids.iter().collect::<BTreeSet<_>>();
+        let unique_locations = action.location_ids.iter().collect::<BTreeSet<_>>();
+        let needs_target = !matches!(
+            action.activity,
+            crate::domain::StrategicActivityKind::Prepare
+        );
+        if action.target_subject_ids.len() > 4
+            || unique_targets.len() != action.target_subject_ids.len()
+            || action
+                .target_subject_ids
+                .iter()
+                .any(|target| !allowed_targets.contains(target))
+            || (needs_target && action.target_subject_ids.is_empty())
+            || action.location_ids.len() > 4
+            || unique_locations.len() != action.location_ids.len()
+            || action
+                .location_ids
+                .iter()
+                .any(|location| !profile.location_ids.contains(location))
+        {
+            return Err(KernelError::Invalid(
+                "strategic gestalt activity exceeds exact graph or location scope".into(),
+            ));
+        }
+        let target_names = action
+            .target_subject_ids
+            .iter()
+            .map(|target| agency_subject_name(campaign, target))
+            .collect::<Result<Vec<_>, _>>()?;
+        let locations = if action.location_ids.is_empty() {
+            vec![gestalt.home_location_id.clone()]
+        } else {
+            action.location_ids
+        };
+        let institution_ids = action
+            .target_subject_ids
+            .iter()
+            .filter(|target| campaign.institutions.contains_key(*target))
+            .cloned()
+            .collect();
+        let mut gestalt_ids = vec![action.gestalt_id.clone()];
+        gestalt_ids.extend(
+            action
+                .target_subject_ids
+                .iter()
+                .filter(|target| campaign.gestalts.contains_key(*target))
+                .cloned(),
+        );
+        events.push(crate::domain::Event {
+            id: format!(
+                "strategic:{revision}:gestalt-activity:{}",
+                action.gestalt_id
+            ),
+            at,
+            kind: "gestalt_activity".into(),
+            summary: strategic_activity_summary(&gestalt.name, &action.activity, &target_names),
+            actor_ids: vec![],
+            institution_ids,
+            gestalt_ids,
+            location_ids: locations,
             public_channels: action.public_channels,
         });
     }
@@ -1376,6 +1496,7 @@ fn apply_strategic_tick_plan(
             ),
             actor_ids: vec![action.actor_id],
             institution_ids: vec![],
+            gestalt_ids: vec![],
             location_ids: vec![origin, action.destination_id],
             public_channels: action.public_channels,
         });
@@ -1417,11 +1538,67 @@ fn apply_strategic_tick_plan(
             ),
             actor_ids: vec![format!("member:{}", action.member_id)],
             institution_ids: vec![],
+            gestalt_ids: vec![action.source_gestalt_id, action.destination_gestalt_id],
             location_ids: vec![origin, action.destination_location_id],
             public_channels: action.public_channels,
         });
     }
     Ok(events)
+}
+
+fn strategic_activity_summary(
+    source_name: &str,
+    activity: &StrategicActivityKind,
+    target_names: &[String],
+) -> String {
+    let targets = target_names.join(", ");
+    match (activity, target_names.is_empty()) {
+        (StrategicActivityKind::Prepare, true) => {
+            format!("{source_name} undertakes preparations.")
+        }
+        (StrategicActivityKind::Prepare, false) => {
+            format!("{source_name} undertakes preparations concerning {targets}.")
+        }
+        (StrategicActivityKind::Coordinate, false) => {
+            format!("{source_name} attempts to coordinate with {targets}.")
+        }
+        (StrategicActivityKind::Investigate, false) => {
+            format!("{source_name} begins investigating {targets}.")
+        }
+        (StrategicActivityKind::Recruit, false) => {
+            format!("{source_name} attempts recruitment involving {targets}.")
+        }
+        (StrategicActivityKind::Obstruct, false) => {
+            format!("{source_name} attempts to obstruct {targets}.")
+        }
+        (StrategicActivityKind::Trade, false) => {
+            format!("{source_name} offers a trade to {targets}.")
+        }
+        (StrategicActivityKind::Communicate, false) => {
+            format!("{source_name} sends a communication to {targets}.")
+        }
+        _ => unreachable!("validated strategic activity requires a target"),
+    }
+}
+
+fn agency_subject_name(campaign: &Campaign, subject_id: &str) -> Result<String, KernelError> {
+    campaign
+        .actors
+        .get(subject_id)
+        .map(|value| value.name.clone())
+        .or_else(|| {
+            campaign
+                .institutions
+                .get(subject_id)
+                .map(|value| value.name.clone())
+        })
+        .or_else(|| {
+            campaign
+                .gestalts
+                .get(subject_id)
+                .map(|value| value.name.clone())
+        })
+        .ok_or_else(|| KernelError::Invalid("strategic activity target vanished".into()))
 }
 
 fn rebase_member_migration(
@@ -1506,6 +1683,7 @@ fn deterministic_strategic_tick(
             summary,
             actor_ids: vec![],
             institution_ids: vec![institution.id.clone()],
+            gestalt_ids: vec![],
             location_ids: vec![],
             public_channels: vec![format!("institution:{}", institution.id)],
         });
@@ -1524,6 +1702,7 @@ fn deterministic_strategic_tick(
             summary,
             actor_ids: vec![],
             institution_ids: vec![],
+            gestalt_ids: vec![gestalt.id.clone()],
             location_ids: vec![gestalt.home_location_id.clone()],
             public_channels: vec![format!("gestalt:{}", gestalt.id)],
         });
@@ -2073,6 +2252,77 @@ mod tests {
             events[0].summary,
             "Eastern transit refugees resolves pressure: the storm closes the camp; takes on pressure: shelter assignments remain unsettled"
         );
+    }
+
+    #[test]
+    fn gestalt_activity_records_an_attributed_attempt_without_claiming_an_outcome() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Coordinate,
+                    target_subject_ids: vec!["dock-neighbors".into()],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(value, before);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].kind, "gestalt_activity");
+        assert_eq!(
+            events[0].summary,
+            "Eastern transit refugees attempts to coordinate with South dock neighbors."
+        );
+        assert_eq!(
+            events[0].gestalt_ids,
+            vec!["refugees-east", "dock-neighbors"]
+        );
+        assert!(events[0].actor_ids.is_empty());
+        assert!(events[0].institution_ids.is_empty());
+    }
+
+    #[test]
+    fn gestalt_activity_rejects_a_nonadjacent_target_without_mutation() {
+        let mut value = hierarchical_refugee_campaign();
+        value.gestalts.insert(
+            "distant-crowd".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "distant-crowd".into(),
+                name: "Distant crowd".into(),
+                version: 0,
+                home_location_id: "docks".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut value);
+        let before = value.clone();
+        let error = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec!["distant-crowd".into()],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("exact graph or location scope"));
+        assert_eq!(value, before);
     }
 
     #[tokio::test]

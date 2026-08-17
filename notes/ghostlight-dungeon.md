@@ -166,8 +166,12 @@ stake prose alone never impersonates world mutation.
   It accepts only known institutions, gestalts, members, and non-player actors;
   direct-route movement must fit inside the tick duration, information channels
   are bounded per constituent, and population pressure cannot silently become
-  canon knowledge. Invalid, stale, timed-out, or malformed waves leave world
-  state unchanged.
+  canon knowledge. Gestalts may also emit typed preparation, coordination,
+  investigation, recruitment, obstruction, trade, or communication attempts
+  against exact graph-adjacent subjects. These commit only an attributed
+  attempted-activity event; success and target response require later admitted
+  effects. Invalid, stale, timed-out, or malformed waves leave world state
+  unchanged.
 - The scheduler and return-time catch-up invoke the same `AdvanceStrategicTick` command. Catch-up processes missed ticks before accepting the next player action.
 - Live play has inference priority; background work stops launching new calls while a player turn is active.
 - Offscreen events generate information-channel-aware news leads. On return, the player may receive newspapers, reports, messages, or rumors only when the character has access to them; the news layer cannot reveal omniscient state.
@@ -198,6 +202,10 @@ stake prose alone never impersonates world mutation.
 - Population fission is a separate approval-gated canonical operation. It
   creates enumerated child leaves plus `other/unknown`, preserves the parent as
   lineage, and reassigns durable member deltas without rewriting identity.
+- Presence planning sees only active nearby leaves and people whose exact
+  dormant location matches the player. Inactive ancestors and remote rosters
+  stay out of the prompt. The WorldKernel rejects inactive-leaf individuation,
+  location teleportation, and model-driven promotion outside the active scene.
 - Provider request parallelism is an operator control with its own epoch. It
   batches the selected cell pipelines and cannot change the cover or fictional
   state.

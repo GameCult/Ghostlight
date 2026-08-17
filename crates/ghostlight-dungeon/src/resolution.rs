@@ -1238,6 +1238,7 @@ fn subject_salience(campaign: &Campaign, profile: &AgencyProfile) -> f32 {
     let event = campaign.events.iter().rev().take(16).any(|event| {
         event.actor_ids.contains(&profile.subject_id)
             || event.institution_ids.contains(&profile.subject_id)
+            || event.gestalt_ids.contains(&profile.subject_id)
     }) as u8 as f32;
     let conflict = campaign.agency_relations.values().any(|relation| {
         relation.active
@@ -1643,6 +1644,18 @@ pub fn validate_and_resolve_wave(
                 pressure_resolutions,
                 public_channels: proposal.public_channels,
             }),
+            StrategicCellEffect::GestaltActivity {
+                gestalt_id,
+                activity,
+                target_subject_ids,
+                location_ids,
+            } => plan.gestalt_activities.push(StrategicGestaltActivity {
+                gestalt_id,
+                activity,
+                target_subject_ids,
+                location_ids,
+                public_channels: proposal.public_channels,
+            }),
             StrategicCellEffect::ActorMove {
                 actor_id,
                 destination_id,
@@ -1674,6 +1687,7 @@ pub fn validate_and_resolve_wave(
         }
         if plan.institution_actions.len()
             + plan.gestalt_actions.len()
+            + plan.gestalt_activities.len()
             + plan.actor_moves.len()
             + plan.member_migrations.len()
             >= consequence_limit
@@ -1756,6 +1770,35 @@ fn validate_cell_proposal(
                 .is_err()
             {
                 return Err(anyhow!("gestalt proposal exceeds constituent state"));
+            }
+        }
+        StrategicCellEffect::GestaltActivity {
+            gestalt_id,
+            activity,
+            target_subject_ids,
+            location_ids,
+        } => {
+            let allowed_targets = strategic_activity_targets(campaign, gestalt_id);
+            let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
+            let unique_locations = location_ids.iter().collect::<BTreeSet<_>>();
+            let needs_target = !matches!(activity, StrategicActivityKind::Prepare);
+            if gestalt_id != &proposal.subject_id
+                || !campaign.gestalts.contains_key(gestalt_id)
+                || target_subject_ids.len() > 4
+                || unique_targets.len() != target_subject_ids.len()
+                || target_subject_ids
+                    .iter()
+                    .any(|target| !allowed_targets.contains(target))
+                || (needs_target && target_subject_ids.is_empty())
+                || location_ids.len() > 4
+                || unique_locations.len() != location_ids.len()
+                || location_ids
+                    .iter()
+                    .any(|location| !profile.location_ids.contains(location))
+            {
+                return Err(anyhow!(
+                    "gestalt activity exceeds exact subject, graph, or location scope"
+                ));
             }
         }
         StrategicCellEffect::ActorMove {
@@ -2153,12 +2196,75 @@ pub fn subject_state_references(campaign: &Campaign, subject_id: &str) -> Result
     Ok(references)
 }
 
+pub fn strategic_activity_targets(campaign: &Campaign, subject_id: &str) -> BTreeSet<String> {
+    campaign
+        .agency_relations
+        .values()
+        .filter(|relation| relation.active)
+        .filter_map(|relation| {
+            if relation.from_subject_id == subject_id {
+                Some(relation.to_subject_id.clone())
+            } else if relation.to_subject_id == subject_id {
+                Some(relation.from_subject_id.clone())
+            } else {
+                None
+            }
+        })
+        .filter(|target| target != subject_id && campaign.agency_profiles.contains_key(target))
+        .collect()
+}
+
+pub fn validate_active_gestalt_presence_location(
+    campaign: &Campaign,
+    gestalt_id: &str,
+    location_id: &str,
+) -> Result<()> {
+    let profile = campaign
+        .agency_profiles
+        .get(gestalt_id)
+        .filter(|profile| {
+            profile.subject_kind == AgencySubjectKind::Gestalt
+                && profile.active_leaf
+                && profile.simulation_eligible
+        })
+        .ok_or_else(|| anyhow!("gestalt presence requires an active population leaf"))?;
+    if !profile.location_ids.contains(location_id) {
+        return Err(anyhow!(
+            "gestalt presence location is outside the population's exact scope"
+        ));
+    }
+    Ok(())
+}
+
+pub fn dormant_member_location(campaign: &Campaign, member_id: &str) -> Result<String> {
+    let member = campaign
+        .gestalt_members
+        .get(member_id)
+        .filter(|member| member.materialized_actor_id.is_none())
+        .ok_or_else(|| anyhow!("gestalt member is not dormant"))?;
+    let location_id = member
+        .last_location_id
+        .clone()
+        .or_else(|| {
+            campaign
+                .gestalts
+                .get(&member.gestalt_id)
+                .map(|gestalt| gestalt.home_location_id.clone())
+        })
+        .ok_or_else(|| anyhow!("gestalt member has no population location"))?;
+    validate_active_gestalt_presence_location(campaign, &member.gestalt_id, &location_id)?;
+    Ok(location_id)
+}
+
 fn proposal_target_key(proposal: &CellActionProposal) -> String {
     match &proposal.effect {
         StrategicCellEffect::Institution { institution_id, .. } => {
             format!("institution:{institution_id}")
         }
         StrategicCellEffect::Gestalt { gestalt_id, .. } => format!("gestalt:{gestalt_id}"),
+        StrategicCellEffect::GestaltActivity { gestalt_id, .. } => {
+            format!("gestalt:{gestalt_id}")
+        }
         StrategicCellEffect::ActorMove { actor_id, .. } => format!("actor:{actor_id}"),
         StrategicCellEffect::MemberMigration { .. } => proposal.subject_id.clone(),
     }
@@ -2842,6 +2948,73 @@ pub(crate) mod tests {
             .state_references
             .push("knowledge:private dock code".into());
         assert!(validate_and_resolve_wave(&value, &make_wave(borrowed_secret)).is_err());
+
+        let exact_rival_activity = CellActionProposal {
+            subject_id: "refugees".into(),
+            intent: "challenge the dockers' exclusion plan".into(),
+            intended_effect: "attempt to obstruct the dockers without speaking for them".into(),
+            priority: 80,
+            state_references: vec!["subject:refugees".into()],
+            public_channels: vec!["camp-bulletin".into()],
+            effect: StrategicCellEffect::GestaltActivity {
+                gestalt_id: "refugees".into(),
+                activity: StrategicActivityKind::Obstruct,
+                target_subject_ids: vec!["dockers".into()],
+                location_ids: vec!["center".into()],
+            },
+        };
+        let activity_plan =
+            validate_and_resolve_wave(&value, &make_wave(exact_rival_activity.clone())).unwrap();
+        assert_eq!(activity_plan.gestalt_activities.len(), 1);
+        assert!(activity_plan.gestalt_actions.is_empty());
+
+        let lower_priority_pressure = CellActionProposal {
+            subject_id: "refugees".into(),
+            intent: "register the unresolved exclusion".into(),
+            intended_effect: "add a pressure marker".into(),
+            priority: 20,
+            state_references: vec!["subject:refugees".into()],
+            public_channels: vec![],
+            effect: StrategicCellEffect::Gestalt {
+                gestalt_id: "refugees".into(),
+                pressure_additions: vec!["the dockers' exclusion remains unresolved".into()],
+                pressure_resolutions: vec![],
+            },
+        };
+        let same_subject_wave = ResolutionWaveCommit {
+            schema: "ghostlight.resolution_wave_commit.v1".into(),
+            world_revision: value.revision,
+            resolution_epoch: value.resolution_policy.resolution_epoch,
+            plan_receipt: plan_receipt(&value, &cover),
+            appraisals: vec![CellAppraisal {
+                schema: "ghostlight.cell_appraisal.v1".into(),
+                cell_id: cover.cells[0].id.clone(),
+                world_revision: value.revision,
+                resolution_epoch: value.resolution_policy.resolution_epoch,
+                considered_subject_ids: cover.cells[0].subject_ids.clone(),
+                actions: vec![exact_rival_activity.clone(), lower_priority_pressure],
+                inaction_reason: None,
+            }],
+            cover: cover.clone(),
+            model_receipt_hashes: vec![],
+        };
+        let same_subject_plan = validate_and_resolve_wave(&value, &same_subject_wave).unwrap();
+        assert_eq!(same_subject_plan.gestalt_activities.len(), 1);
+        assert!(same_subject_plan.gestalt_actions.is_empty());
+
+        let mut borrowed_rival_channel = exact_rival_activity.clone();
+        borrowed_rival_channel.public_channels = vec!["private dock code".into()];
+        assert!(validate_and_resolve_wave(&value, &make_wave(borrowed_rival_channel)).is_err());
+
+        let mut invented_target = exact_rival_activity;
+        let StrategicCellEffect::GestaltActivity {
+            target_subject_ids, ..
+        } = &mut invented_target.effect
+        else {
+            unreachable!()
+        };
+        *target_subject_ids = vec!["player".into()];
+        assert!(validate_and_resolve_wave(&value, &make_wave(invented_target)).is_err());
     }
 
     #[test]
@@ -2982,6 +3155,45 @@ pub(crate) mod tests {
             value.gestalt_lineages["villagers"].residual_child_id,
             "other"
         );
+
+        let nested = GestaltFissionPreview {
+            schema: "ghostlight.gestalt_fission_preview.v1".into(),
+            campaign_id: value.id,
+            expected_world_revision: value.revision,
+            parent_gestalt_id: "other".into(),
+            partition_axis: AgencyAxis::EconomyRole,
+            children: vec![
+                child("other-smiths", "Smiths among the other villagers"),
+                child("other-unknown", "Other unclassified villagers"),
+            ],
+            child_partition_values: BTreeMap::from([
+                ("other-smiths".into(), "smith".into()),
+                ("other-unknown".into(), "other/unknown".into()),
+            ]),
+            residual_child_id: "other-unknown".into(),
+            member_child_assignments: BTreeMap::from([("john".into(), "other-smiths".into())]),
+            evidence_receipt_ids: vec![],
+            gaps: vec![],
+            canon_candidates: vec![],
+            requires_approval: true,
+        };
+        apply_fission(&mut value, &nested).unwrap();
+        assert!(!value.agency_profiles["other"].active_leaf);
+        assert!(value.agency_profiles["other-smiths"].active_leaf);
+        assert_eq!(value.gestalt_members["john"].gestalt_id, "other-smiths");
+        assert_eq!(value.gestalt_members["john"].version, 5);
+        assert_eq!(
+            value.gestalt_members["john"].memories,
+            vec!["met the traveler"]
+        );
+        assert!(
+            effective_member_capabilities(&value, "john")
+                .unwrap()
+                .contains("smith")
+        );
+        validate_active_gestalt_presence_location(&value, "other-smiths", "center").unwrap();
+        assert!(validate_active_gestalt_presence_location(&value, "other", "center").is_err());
+        assert!(validate_active_gestalt_presence_location(&value, "villagers", "center").is_err());
     }
 
     #[test]

@@ -19,12 +19,51 @@ impl GestaltPresencePlanner {
         event_summary: &str,
     ) -> Result<(GestaltPresencePlan, ModelStageReceipt)> {
         let player_location = &campaign.actors[&campaign.player_actor_id].location_id;
+        let nearby_gestalts = campaign
+            .gestalts
+            .values()
+            .filter(|gestalt| {
+                crate::resolution::validate_active_gestalt_presence_location(
+                    campaign,
+                    &gestalt.id,
+                    player_location,
+                )
+                .is_ok()
+            })
+            .collect::<Vec<_>>();
+        let nearby_gestalt_ids = nearby_gestalts
+            .iter()
+            .map(|gestalt| gestalt.id.as_str())
+            .collect::<BTreeSet<_>>();
+        let nearby_dormant_members = campaign
+            .gestalt_members
+            .values()
+            .filter(|member| {
+                nearby_gestalt_ids.contains(member.gestalt_id.as_str())
+                    && crate::resolution::dormant_member_location(campaign, &member.id)
+                        .is_ok_and(|location| location == *player_location)
+            })
+            .collect::<Vec<_>>();
+        let materialized_members = campaign
+            .gestalt_members
+            .values()
+            .filter_map(|member| {
+                let actor_id = member.materialized_actor_id.as_ref()?;
+                let actor = campaign.actors.get(actor_id)?;
+                Some(serde_json::json!({
+                    "member_id":member.id,
+                    "member_version":member.version,
+                    "actor_id":actor_id,
+                    "actor_location_id":actor.location_id,
+                    "relevance_lease_until_revision":member.relevance_lease_until_revision,
+                }))
+            })
+            .collect::<Vec<_>>();
         let candidates = serde_json::json!({
             "player_location_id": player_location,
-            "gestalts": campaign.gestalts,
-            "members": campaign.gestalt_members,
-            "materialized_member_actor_ids": campaign.gestalt_members.values()
-                .filter_map(|member| member.materialized_actor_id.clone()).collect::<Vec<_>>(),
+            "nearby_active_leaf_gestalts": nearby_gestalts,
+            "nearby_dormant_members": nearby_dormant_members,
+            "materialized_members": materialized_members,
         });
         let schema = serde_json::to_value(schema_for!(GestaltPresencePlan))?;
         let output = run_validated_stage(
@@ -34,7 +73,7 @@ impl GestaltPresencePlanner {
                 model: self.model_name.clone(),
                 snapshot_binding: format!("campaign:{}:revision:{}", campaign.id, campaign.revision),
                 lived_stream: format!(
-                    "Choose reversible Persona population presence after this event. Promote an existing member when they become individually relevant. If the event makes an anonymous population member individually relevant and no supplied member fits, individuate exactly one durable member delta from the gestalt baseline; use a new stable lowercase id, version 0, the exact gestalt id/version, no materialized actor id, and record only personal departures from the shared baseline. Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
+                    "Choose reversible Persona population presence after this event. Promote an existing member when they become individually relevant. A nearby dormant member with a specific relationship, memory, obligation, or unresolved goal tied to the player may create a natural callback during an otherwise ordinary encounter; prefer that existing person over anonymous individuation when their exact delta supports it. If the event makes an anonymous population member individually relevant and no supplied member fits, individuate exactly one durable member delta from the gestalt baseline; use a new stable lowercase id, version 0, the exact gestalt id/version, no materialized actor id, and record only personal departures from the shared baseline. Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
                     serde_json::to_string_pretty(&schema)?, candidates, event_summary
                 ),
                 output_schema: Some(schema),
@@ -66,6 +105,11 @@ fn validate_plan(
             .gestalts
             .get(&individuation.gestalt_id)
             .ok_or_else(|| anyhow!("presence plan invented a gestalt"))?;
+        crate::resolution::validate_active_gestalt_presence_location(
+            campaign,
+            &individuation.gestalt_id,
+            player_location,
+        )?;
         if individuation.expected_gestalt_version != gestalt.version
             || individuation.location_id != player_location
             || member.gestalt_id != individuation.gestalt_id
@@ -93,11 +137,13 @@ fn validate_plan(
             .gestalts
             .get(&promotion.gestalt_id)
             .ok_or_else(|| anyhow!("presence plan invented a gestalt"))?;
+        let member_location = crate::resolution::dormant_member_location(campaign, &member.id)?;
         if member.gestalt_id != promotion.gestalt_id
             || member.version != promotion.expected_member_version
             || gestalt.version != promotion.expected_gestalt_version
             || member.materialized_actor_id.is_some()
             || promotion.location_id != player_location
+            || member_location != promotion.location_id
         {
             return Err(anyhow!("presence promotion does not match its snapshot"));
         }
@@ -136,4 +182,127 @@ fn validate_plan(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        domain::{GestaltMemberDelta, GestaltPersonaState, Location},
+        model::ModelStageRequest,
+    };
+    use async_trait::async_trait;
+    use std::{
+        collections::{BTreeMap, BTreeSet},
+        sync::Mutex,
+    };
+
+    struct CapturePresenceModel {
+        prompt: Arc<Mutex<String>>,
+    }
+
+    #[async_trait]
+    impl ModelPort for CapturePresenceModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            *self.prompt.lock().unwrap() = request.lived_stream.clone();
+            Ok(serde_json::json!({
+                "individuations":[],
+                "promotions":[],
+                "demotions":[]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "presence-capture"
+        }
+    }
+
+    #[tokio::test]
+    async fn presence_projection_contains_only_nearby_active_leaves_and_relevant_members() {
+        let mut campaign = crate::resolution::tests::campaign(0, 8);
+        campaign.locations.insert(
+            "far".into(),
+            Location {
+                id: "far".into(),
+                name: "Far".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec![],
+            },
+        );
+        let gestalt = |id: &str, name: &str, location: &str| GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: id.into(),
+            name: name.into(),
+            version: 0,
+            home_location_id: location.into(),
+            shared_capabilities: BTreeSet::new(),
+            shared_knowledge: BTreeSet::new(),
+            resources: BTreeSet::new(),
+            goals: vec![],
+            pressures: vec![],
+        };
+        campaign.gestalts.insert(
+            "nearby-leaf".into(),
+            gestalt("nearby-leaf", "Nearby leaf", "center"),
+        );
+        campaign
+            .gestalts
+            .insert("far-leaf".into(), gestalt("far-leaf", "Far leaf", "far"));
+        campaign.gestalts.insert(
+            "inactive-parent".into(),
+            gestalt("inactive-parent", "Inactive parent", "center"),
+        );
+        let member = |id: &str, name: &str, gestalt_id: &str, location: &str| GestaltMemberDelta {
+            schema: "ghostlight.gestalt_member_delta.v1".into(),
+            id: id.into(),
+            gestalt_id: gestalt_id.into(),
+            version: 0,
+            name: name.into(),
+            capability_additions: BTreeSet::new(),
+            capability_removals: BTreeSet::new(),
+            knowledge_additions: BTreeSet::new(),
+            knowledge_removals: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::new(),
+            goals: vec![],
+            memories: vec![],
+            last_location_id: Some(location.into()),
+            materialized_actor_id: None,
+            last_relevant_revision: 0,
+            relevance_lease_until_revision: 0,
+        };
+        campaign.gestalt_members.insert(
+            "mira".into(),
+            member("mira", "Mira Nearby", "nearby-leaf", "center"),
+        );
+        campaign.gestalt_members.insert(
+            "far-person".into(),
+            member("far-person", "Far Person", "far-leaf", "far"),
+        );
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        let parent = campaign.agency_profiles.get_mut("inactive-parent").unwrap();
+        parent.active_leaf = false;
+        parent.simulation_eligible = false;
+
+        let prompt = Arc::new(Mutex::new(String::new()));
+        GestaltPresencePlanner {
+            model: Arc::new(CapturePresenceModel {
+                prompt: prompt.clone(),
+            }),
+            model_name: "fixture".into(),
+        }
+        .plan(&campaign, "The player works in the square.")
+        .await
+        .unwrap();
+        let prompt = prompt.lock().unwrap();
+        assert!(prompt.contains("Nearby leaf"));
+        assert!(prompt.contains("Mira Nearby"));
+        assert!(!prompt.contains("Far leaf"));
+        assert!(!prompt.contains("Far Person"));
+        assert!(!prompt.contains("Inactive parent"));
+    }
 }

@@ -432,6 +432,14 @@ pub enum StrategicCellEffect {
         #[serde(default)]
         pressure_resolutions: Vec<String>,
     },
+    GestaltActivity {
+        gestalt_id: String,
+        activity: StrategicActivityKind,
+        #[serde(default)]
+        target_subject_ids: Vec<String>,
+        #[serde(default)]
+        location_ids: Vec<String>,
+    },
     ActorMove {
         actor_id: String,
         destination_id: String,
@@ -439,6 +447,18 @@ pub enum StrategicCellEffect {
     MemberMigration {
         destination_gestalt_id: String,
     },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum StrategicActivityKind {
+    Prepare,
+    Coordinate,
+    Investigate,
+    Recruit,
+    Obstruct,
+    Trade,
+    Communicate,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -559,6 +579,8 @@ pub struct Event {
     pub summary: String,
     pub actor_ids: Vec<String>,
     pub institution_ids: Vec<String>,
+    #[serde(default)]
+    pub gestalt_ids: Vec<String>,
     pub location_ids: Vec<String>,
     pub public_channels: Vec<String>,
 }
@@ -577,6 +599,8 @@ pub struct NewsIssue {
 pub struct StrategicTickPlan {
     pub institution_actions: Vec<StrategicInstitutionAction>,
     pub gestalt_actions: Vec<StrategicGestaltAction>,
+    #[serde(default)]
+    pub gestalt_activities: Vec<StrategicGestaltActivity>,
     pub actor_moves: Vec<StrategicActorMove>,
     #[serde(default)]
     pub member_migrations: Vec<StrategicMemberMigration>,
@@ -595,6 +619,15 @@ pub struct StrategicGestaltAction {
     pub gestalt_id: String,
     pub pressure_additions: Vec<String>,
     pub pressure_resolutions: Vec<String>,
+    pub public_channels: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct StrategicGestaltActivity {
+    pub gestalt_id: String,
+    pub activity: StrategicActivityKind,
+    pub target_subject_ids: Vec<String>,
+    pub location_ids: Vec<String>,
     pub public_channels: Vec<String>,
 }
 

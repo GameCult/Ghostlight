@@ -43,6 +43,7 @@ async fn main() -> anyhow::Result<()> {
         summary: pressure.clone(),
         actor_ids: vec!["runner".into()],
         institution_ids: vec!["board".into()],
+        gestalt_ids: vec![],
         location_ids: vec!["depot".into(), "yard".into()],
         public_channels: vec!["station radio".into()],
     });
@@ -67,6 +68,7 @@ async fn main() -> anyhow::Result<()> {
     let plan = ghostlight_dungeon::resolution::validate_and_resolve_wave(&campaign, &output.wave)?;
     if plan.institution_actions.is_empty()
         && plan.gestalt_actions.is_empty()
+        && plan.gestalt_activities.is_empty()
         && plan.actor_moves.is_empty()
     {
         anyhow::bail!(

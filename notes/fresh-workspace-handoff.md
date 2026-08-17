@@ -63,6 +63,17 @@ populations never merge; only the derived simulation cover does. Budget/pin
 changes use `resolution_epoch`, provider parallelism uses its own configuration
 epoch, and neither advances fictional time.
 
+The current acceptance candidate adds a bounded population activity vocabulary
+for preparation, coordination, investigation, recruitment, obstruction,
+trade, and communication. Each action is constituent-attributed, graph- and
+location-scoped, semantically verified, and committed only as an attempt event;
+pressure markers carry only unresolved pressure. Event participants include
+exact gestalt IDs for later perception and demand. Presence planning projects
+only nearby active leaves and exact-location dormant members, while the
+WorldKernel rejects inactive-leaf or teleported promotions. The refugee-return
+live-fire harness requires the presence planner, rather than a direct
+materialization command, to surface the same migrated member.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

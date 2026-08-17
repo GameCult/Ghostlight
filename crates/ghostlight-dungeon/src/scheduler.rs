@@ -325,6 +325,7 @@ fn resolution_demand_context(campaign: &Campaign) -> (Vec<String>, serde_json::V
                 "summary":event.summary,
                 "actor_ids":event.actor_ids,
                 "institution_ids":event.institution_ids,
+                "gestalt_ids":event.gestalt_ids,
                 "location_ids":event.location_ids,
                 "public_channels":event.public_channels,
             })
@@ -335,7 +336,13 @@ fn resolution_demand_context(campaign: &Campaign) -> (Vec<String>, serde_json::V
         .iter()
         .rev()
         .take(12)
-        .flat_map(|event| event.actor_ids.iter().chain(event.institution_ids.iter()))
+        .flat_map(|event| {
+            event
+                .actor_ids
+                .iter()
+                .chain(event.institution_ids.iter())
+                .chain(event.gestalt_ids.iter())
+        })
         .filter(|id| campaign.agency_profiles.contains_key(*id))
         .cloned()
         .collect::<BTreeSet<_>>();
@@ -453,6 +460,7 @@ fn cell_perceived_events(
                 .filter(|subject| {
                     event.actor_ids.contains(&subject.subject_id)
                         || event.institution_ids.contains(&subject.subject_id)
+                        || event.gestalt_ids.contains(&subject.subject_id)
                         || !event
                             .location_ids
                             .iter()
@@ -660,6 +668,7 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
         information_channels: profile.information_channels.clone(),
         permitted_state_references: crate::resolution::subject_state_references(campaign, id)?,
         reachable_destination_ids: BTreeSet::new(),
+        activity_target_ids: crate::resolution::strategic_activity_targets(campaign, id),
         goals: vec![],
         pressures: vec![],
     };
@@ -845,6 +854,7 @@ mod tests {
             summary: "One faction receives an exceptional warning.".into(),
             actor_ids: vec![],
             institution_ids: vec!["faction-0007".into()],
+            gestalt_ids: vec![],
             location_ids: vec![],
             public_channels: vec![],
         });
@@ -979,6 +989,7 @@ mod tests {
                 summary: "East receives a private order.".into(),
                 actor_ids: vec![],
                 institution_ids: vec!["faction-0000".into()],
+                gestalt_ids: vec![],
                 location_ids: vec![],
                 public_channels: vec![],
             },
@@ -989,6 +1000,7 @@ mod tests {
                 summary: "A warning travels on the west wire.".into(),
                 actor_ids: vec![],
                 institution_ids: vec![],
+                gestalt_ids: vec![],
                 location_ids: vec![],
                 public_channels: vec!["west-wire".into()],
             },
@@ -999,6 +1011,7 @@ mod tests {
                 summary: "Mira witnesses the departure.".into(),
                 actor_ids: vec!["member:mira".into()],
                 institution_ids: vec![],
+                gestalt_ids: vec![],
                 location_ids: vec![],
                 public_channels: vec![],
             },
@@ -1009,6 +1022,7 @@ mod tests {
                 summary: "Nobody in this arena can know this.".into(),
                 actor_ids: vec![],
                 institution_ids: vec![],
+                gestalt_ids: vec![],
                 location_ids: vec!["far-away".into()],
                 public_channels: vec!["sealed-channel".into()],
             },

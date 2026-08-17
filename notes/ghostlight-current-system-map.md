@@ -68,6 +68,13 @@ the planner already owns. Stable prompt prefixes are deliberately placed before
 dynamic state, and provider receipts expose per-attempt token/cache usage plus
 bounded local validation failures.
 
+Gestalt background choices use two distinct typed paths. Pressure transitions
+change exact unresolved markers. `gestalt_activity` records an attributed
+preparation, coordination, investigation, recruitment, obstruction, trade, or
+communication attempt against graph-adjacent subjects without claiming the
+outcome. The kernel derives the event text and exact gestalt participant IDs;
+the arena and model prose own neither.
+
 Population scale uses reversible individuation:
 
 ```text
@@ -82,6 +89,12 @@ gestalt baseline + existing member delta, or a first-relevance identity proposal
 
 The temporary actor slot is derived. It never owns identity, relationship,
 memory, equipment, injury, or obligation state.
+
+Automatic presence planning projects only active leaves at the player's
+location, dormant members whose exact location matches, and materialized
+members eligible for folding. The kernel rejects inactive hierarchy nodes and
+location mismatches. Nested fission and migration therefore change which
+baseline a durable delta composes with, never who the person is.
 
 The active cell budget and provider concurrency limit are separate controls.
 Budget and pins increment `resolution_epoch` without advancing world revision or

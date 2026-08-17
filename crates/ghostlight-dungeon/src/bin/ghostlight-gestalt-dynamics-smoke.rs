@@ -85,6 +85,7 @@ async fn main() -> anyhow::Result<()> {
     use chrono::Utc;
     use ghostlight_dungeon::{
         domain::{SimulationCellMode, TickSource, WorldCommand},
+        gestalt::GestaltPresencePlanner,
         kernel::{CommandResult, WorldKernel},
         model::{DeepSeekPort, ModelPort},
         persistence::CampaignStore,
@@ -200,8 +201,10 @@ async fn main() -> anyhow::Result<()> {
     if plan.member_migrations.len() != usize::from(migration_proposal.is_some()) {
         anyhow::bail!("validated wave changed the attributed member choice")
     }
-    let background_action_count =
-        plan.institution_actions.len() + plan.gestalt_actions.len() + plan.actor_moves.len();
+    let background_action_count = plan.institution_actions.len()
+        + plan.gestalt_actions.len()
+        + plan.gestalt_activities.len()
+        + plan.actor_moves.len();
     for stage in &output.stages {
         store.insert(
             "persona_stage_receipt.v1",
@@ -401,14 +404,34 @@ async fn main() -> anyhow::Result<()> {
         anyhow::bail!("sustained population simulation damaged Mira's dormant identity")
     }
 
+    let return_event = "The player spends a quiet afternoon repairing the South Harbor ferry steps after the resettlement. The settled harbor populations move through their ordinary routines nearby.";
+    let presence_planner = GestaltPresencePlanner {
+        model: model.clone(),
+        model_name: "deepseek-v4-flash".into(),
+    };
+    let (presence_plan, presence_receipt) = presence_planner.plan(&advanced, return_event).await?;
+    if presence_plan.individuations.len() != 0
+        || presence_plan.demotions.len() != 0
+        || presence_plan.promotions.len() != 1
+        || presence_plan.promotions[0].member_id != "mira-venn"
+        || presence_plan.promotions[0].gestalt_id != "harbor-neighbors"
+    {
+        anyhow::bail!(
+            "automatic presence planning did not surface the existing refugee callback: {}",
+            serde_json::to_string(&presence_plan)?
+        )
+    }
+    store.insert(
+        "persona_stage_receipt.v1",
+        "ghostlight.persona_stage_receipt.v1",
+        presence_receipt.storage_key(),
+        &presence_receipt,
+    )?;
     let materialized = kernel
-        .command(WorldCommand::MaterializeGestaltMember {
+        .command(WorldCommand::ReconcileGestaltPresence {
             expected_revision: advanced.revision,
-            gestalt_id: "harbor-neighbors".into(),
-            expected_gestalt_version: advanced.gestalts["harbor-neighbors"].version,
-            member_id: "mira-venn".into(),
-            expected_member_version: member_after_sustained.version,
-            location_id: "south-harbor".into(),
+            reason: return_event.into(),
+            plan: presence_plan.clone(),
         })
         .await?;
     let CommandResult::Committed {
@@ -454,6 +477,8 @@ async fn main() -> anyhow::Result<()> {
         "plan":plan,
         "commit":committed,
         "materialization":materialized,
+        "automatic_presence_plan":presence_plan,
+        "automatic_presence_receipt":presence_receipt,
         "identity_preserved":true,
         "effective_state_preserved":true,
         "player_unchanged":true,
@@ -716,6 +741,7 @@ fn dynamics_campaign() -> ghostlight_dungeon::domain::Campaign {
             summary: pressure.into(),
             actor_ids: vec![],
             institution_ids: vec![],
+            gestalt_ids: vec!["refugees-east".into(), "harbor-neighbors".into()],
             location_ids: vec!["transit-camp".into(), "south-harbor".into()],
             public_channels: vec!["public harbor bulletin".into()],
         }],

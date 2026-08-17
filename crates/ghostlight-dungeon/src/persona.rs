@@ -65,6 +65,7 @@ pub struct CellConstituentSlice {
     pub information_channels: BTreeSet<String>,
     pub permitted_state_references: BTreeSet<String>,
     pub reachable_destination_ids: BTreeSet<String>,
+    pub activity_target_ids: BTreeSet<String>,
     pub goals: Vec<String>,
     pub pressures: Vec<String>,
 }
@@ -146,6 +147,7 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
       "effect":{"oneOf":[
         {"type":"object","required":["type","institution_id","posture","location_ids"],"properties":{"type":{"const":"institution"},"institution_id":{"type":"string"},"posture":{"type":"string"},"location_ids":{"type":"array","items":{"type":"string"}}}},
         {"type":"object","required":["type","gestalt_id","pressure_additions","pressure_resolutions"],"properties":{"type":{"const":"gestalt"},"gestalt_id":{"type":"string"},"pressure_additions":{"type":"array","maxItems":4,"items":{"type":"string"}},"pressure_resolutions":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
+        {"type":"object","required":["type","gestalt_id","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"gestalt_activity"},"gestalt_id":{"type":"string"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
         {"type":"object","required":["type","actor_id","destination_id"],"properties":{"type":{"const":"actor_move"},"actor_id":{"type":"string"},"destination_id":{"type":"string"}}},
         {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"member_migration"},"destination_gestalt_id":{"type":"string"}}}
       ]}
@@ -336,6 +338,7 @@ fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "resources": subject.resources,
             "information_channels": subject.information_channels,
             "reachable_destination_ids": subject.reachable_destination_ids,
+            "activity_target_ids": subject.activity_target_ids,
             "goals": subject.goals,
             "pressures": subject.pressures,
         })).collect::<Vec<_>>(),
@@ -380,6 +383,7 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "allowed_public_channels": subject.information_channels,
             "permitted_state_references": subject.permitted_state_references,
             "reachable_destination_ids": subject.reachable_destination_ids,
+            "activity_target_ids": subject.activity_target_ids,
             "current_pressures": subject.pressures,
         })).collect::<Vec<_>>(),
         "member_permissions": slice.member_exceptions.iter().map(|member| serde_json::json!({
@@ -399,7 +403,7 @@ fn allowed_effect_type(kind: &crate::domain::AgencySubjectKind) -> &'static str 
     match kind {
         crate::domain::AgencySubjectKind::Actor => "actor_move",
         crate::domain::AgencySubjectKind::Institution => "institution",
-        crate::domain::AgencySubjectKind::Gestalt => "gestalt",
+        crate::domain::AgencySubjectKind::Gestalt => "gestalt_pressure_or_gestalt_activity",
     }
 }
 
@@ -496,7 +500,7 @@ impl CellProjectionEngine {
         constrain_cell_proposal_schema(&mut schema, &slice)?;
         let interpreter_context = serde_json::to_string(&cell_interpreter_context(&slice))?;
         let permission_guidance = format!(
-            "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first; never use ordinal list rank where 1 means first. Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt, actor -> actor_move, named member -> member_migration. Institution posture must be a specific new commitment or withholding, never the current posture or a generic label. Gestalt pressure_resolutions must copy exact current_pressures that the attempted action resolves; pressure_additions are only new unresolved constraints, threats, obligations, or conditions, never completed actions. At least one and at most four total pressure changes are required. Use only that subject's permitted_state_references and allowed_public_channels; facet labels are not public channels. A named member uses one supplied migration destination; a population or arena cannot migrate a person. The runtime binds cell identity, revisions, membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
+            "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first; never use ordinal list rank where 1 means first. Copy each subject's allowed_effect_type: institution -> institution, gestalt -> either gestalt pressure transition or gestalt_activity, actor -> actor_move, named member -> member_migration. Use gestalt_activity for a concrete preparation, coordination, investigation, recruitment, obstruction, trade, or communication attempt that does not itself change pressure; target_subject_ids must come from that gestalt's activity_target_ids and location_ids from its exact location_ids. An activity records only the attempt, never success or a target's response. Institution posture must be a specific new commitment or withholding, never the current posture or a generic label. Gestalt pressure_resolutions must copy exact current_pressures that the attempted action resolves; pressure_additions are only new unresolved constraints, threats, obligations, or conditions, never completed actions. A pressure transition requires one to four total changes. Use only that subject's permitted_state_references and allowed_public_channels; facet labels are not public channels. A named member uses one supplied migration destination; a population or arena cannot migrate a person. The runtime binds cell identity, revisions, membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
             slice.max_actions
         );
         let mut request = ModelStageRequest {
@@ -561,7 +565,7 @@ impl CellProjectionEngine {
                                 model: self.interpreter_model.clone(),
                                 snapshot_binding: verifier_binding,
                                 lived_stream: format!(
-                                    "You are the private semantic verifier between an Interpreter and the world kernel. Decide whether every candidate typed effect faithfully represents the exact attributed subject's own attempted consequence in the Persona turn. Structural permissions were already checked. A member_migration means that named member personally chooses to travel to the destination; giving away a berth, sending somebody else, waiting, or merely considering travel does not entail it. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. Reject omissions, reversals, subject swaps, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object with this shape and no other fields: {{\"supported\":true or false,\"rejected_action_indices\":[zero-based integer indices],\"rationale\":\"one concise reason\"}}. When supported is true, rejected_action_indices must be empty. When false, list every rejected action index.\n\nCONTEXT:\n{}",
+                                    "You are the private semantic verifier between an Interpreter and the world kernel. Decide whether every candidate typed effect faithfully represents the exact attributed subject's own attempted consequence in the Persona turn. Structural permissions were already checked. A member_migration means that named member personally chooses to travel to the destination; giving away a berth, sending somebody else, waiting, or merely considering travel does not entail it. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. A gestalt_activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, or target response. Reject omissions, reversals, subject swaps, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object with this shape and no other fields: {{\"supported\":true or false,\"rejected_action_indices\":[zero-based integer indices],\"rationale\":\"one concise reason\"}}. When supported is true, rejected_action_indices must be empty. When false, list every rejected action index.\n\nCONTEXT:\n{}",
                                     serde_json::to_string(&verifier_context)?
                                 ),
                                 output_schema: Some(serde_json::to_value(schema_for!(
@@ -876,6 +880,40 @@ fn validate_constituent_effect(
                 )
             })?;
         }
+        crate::domain::StrategicCellEffect::GestaltActivity {
+            gestalt_id,
+            activity,
+            target_subject_ids,
+            location_ids,
+        } => {
+            let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
+            let unique_locations = location_ids.iter().collect::<BTreeSet<_>>();
+            let needs_target = !matches!(activity, crate::domain::StrategicActivityKind::Prepare);
+            if subject.subject_kind != crate::domain::AgencySubjectKind::Gestalt
+                || gestalt_id != &subject.subject_id
+                || target_subject_ids.len() > 4
+                || unique_targets.len() != target_subject_ids.len()
+                || target_subject_ids
+                    .iter()
+                    .any(|target| !subject.activity_target_ids.contains(target))
+                || (needs_target && target_subject_ids.is_empty())
+                || location_ids.len() > 4
+                || unique_locations.len() != location_ids.len()
+                || location_ids
+                    .iter()
+                    .any(|location| !subject.location_ids.contains(location))
+            {
+                return Err(anyhow!(
+                    "gestalt {} proposed {:?} toward {:?} at {:?}; exact allowed targets are {:?} and locations are {:?}",
+                    subject.subject_id,
+                    activity,
+                    target_subject_ids,
+                    location_ids,
+                    subject.activity_target_ids,
+                    subject.location_ids
+                ));
+            }
+        }
         crate::domain::StrategicCellEffect::ActorMove {
             actor_id,
             destination_id,
@@ -1090,6 +1128,7 @@ mod tests {
                 information_channels: BTreeSet::from(["public bulletin".into()]),
                 permitted_state_references: BTreeSet::from(["institution:faction-06".into()]),
                 reachable_destination_ids: BTreeSet::new(),
+                activity_target_ids: BTreeSet::new(),
                 goals: vec!["publish a position".into()],
                 pressures: vec!["the vote is near".into()],
             }],
@@ -1314,6 +1353,52 @@ mod tests {
                 .to_string()
                 .contains("must change one to four markers")
         );
+    }
+
+    #[test]
+    fn gestalt_activity_requires_an_exact_permitted_target_and_location() {
+        let mut slice = fixture_cell_slice();
+        let subject = &mut slice.constituents[0];
+        subject.subject_id = "refugees".into();
+        subject.subject_kind = AgencySubjectKind::Gestalt;
+        subject.permitted_state_references = BTreeSet::from(["gestalt:refugees".into()]);
+        subject.activity_target_ids = BTreeSet::from(["dockers".into()]);
+        let valid = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "refugees".into(),
+            activity: crate::domain::StrategicActivityKind::Coordinate,
+            target_subject_ids: vec!["dockers".into()],
+            location_ids: vec!["forum".into()],
+        };
+        validate_constituent_effect(subject, &valid).unwrap();
+
+        let invented_target = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "refugees".into(),
+            activity: crate::domain::StrategicActivityKind::Coordinate,
+            target_subject_ids: vec!["unseen-ministry".into()],
+            location_ids: vec!["forum".into()],
+        };
+        assert!(
+            validate_constituent_effect(subject, &invented_target)
+                .unwrap_err()
+                .to_string()
+                .contains("exact allowed targets")
+        );
+
+        let targetless_obstruction = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "refugees".into(),
+            activity: crate::domain::StrategicActivityKind::Obstruct,
+            target_subject_ids: vec![],
+            location_ids: vec!["forum".into()],
+        };
+        assert!(validate_constituent_effect(subject, &targetless_obstruction).is_err());
+
+        let internal_preparation = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "refugees".into(),
+            activity: crate::domain::StrategicActivityKind::Prepare,
+            target_subject_ids: vec![],
+            location_ids: vec!["forum".into()],
+        };
+        validate_constituent_effect(subject, &internal_preparation).unwrap();
     }
 
     #[test]
