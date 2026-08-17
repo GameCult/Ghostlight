@@ -459,14 +459,25 @@ fn execute(
                         .iter()
                         .find(|appraisal| appraisal.cell_id == cell.id)
                         .is_some_and(|appraisal| !appraisal.actions.is_empty());
-                    if actionful
-                        && !stage_bindings
-                            .contains(&("cell_effect_verifier".into(), binding.clone()))
-                    {
-                        return Err(KernelError::Invalid(format!(
-                            "resolution wave lacks cell_effect_verifier receipt for {}",
-                            cell.id
-                        )));
+                    if actionful {
+                        let appraisal = wave
+                            .appraisals
+                            .iter()
+                            .find(|appraisal| appraisal.cell_id == cell.id)
+                            .expect("active cell appraisal was validated");
+                        let verifier_binding = crate::persona::cell_effect_verification_binding(
+                            &binding,
+                            &appraisal.actions,
+                        )
+                        .map_err(|error| KernelError::Invalid(error.to_string()))?;
+                        if !stage_bindings
+                            .contains(&("cell_effect_verifier".into(), verifier_binding))
+                        {
+                            return Err(KernelError::Invalid(format!(
+                                "resolution wave lacks action-bound cell_effect_verifier receipt for {}",
+                                cell.id
+                            )));
+                        }
                     }
                 }
             }
@@ -3397,7 +3408,9 @@ mod tests {
             .await
             .unwrap_err();
         assert!(
-            error.to_string().contains("lacks cell_effect_verifier"),
+            error
+                .to_string()
+                .contains("lacks action-bound cell_effect_verifier"),
             "unexpected kernel rejection: {error}"
         );
         let stored = store

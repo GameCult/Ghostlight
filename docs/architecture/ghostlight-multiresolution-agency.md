@@ -274,7 +274,10 @@ mapping “Mira gives her berth to somebody else” into a migration of Mira
 herself. The rejected appraisal and concise rationale return to one
 same-snapshot Interpreter correction. Inaction cells skip the call. The kernel
 requires a valid verifier receipt for every actionful cell; an invalid or
-missing verifier cannot satisfy the wave receipt gate.
+missing verifier cannot satisfy the wave receipt gate. The verifier receipt's
+snapshot binding includes a MessagePack content hash of the ordered action
+bundle. The kernel recomputes it, so a verdict for another proposal at the same
+world revision and cell cannot be replayed as authority.
 
 ## Public state and controls
 

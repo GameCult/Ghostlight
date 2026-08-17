@@ -7,6 +7,7 @@ use ghostlight_persona_projection::{
 };
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
@@ -563,12 +564,16 @@ impl CellProjectionEngine {
                             })).collect::<Vec<_>>(),
                             "subject_names":slice.constituents.iter().map(|subject|(&subject.subject_id, &subject.name)).chain(slice.member_exceptions.iter().map(|member|(&member.subject_id, &member.name))).collect::<BTreeMap<_,_>>(),
                         });
+                        let verifier_binding = cell_effect_verification_binding(
+                            &slice.snapshot_binding,
+                            &appraisal.actions,
+                        )?;
                         let mut verified = run_validated_stage(
                             self.model.as_ref(),
                             &ModelStageRequest {
                                 stage: "cell_effect_verifier".into(),
                                 model: self.interpreter_model.clone(),
-                                snapshot_binding: slice.snapshot_binding.clone(),
+                                snapshot_binding: verifier_binding,
                                 lived_stream: format!(
                                     "You are the private semantic verifier between an Interpreter and the world kernel. Decide whether every candidate typed effect faithfully represents the exact attributed subject's own attempted consequence in the Persona turn. Structural permissions were already checked. A member_migration means that named member personally chooses to travel to the destination; giving away a berth, sending somebody else, waiting, or merely considering travel does not entail it. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. Reject omissions, reversals, subject swaps, wishful outcomes, and effects that the Persona did not choose. Be concise. Return JSON only.\n\nCONTEXT:\n{}",
                                     serde_json::to_string(&verifier_context)?
@@ -673,6 +678,17 @@ fn validate_effect_verification(
         ));
     }
     Ok(())
+}
+
+pub fn cell_effect_verification_binding(
+    cell_snapshot_binding: &str,
+    actions: &[crate::domain::CellActionProposal],
+) -> Result<String> {
+    let payload = rmp_serde::to_vec_named(actions)?;
+    Ok(format!(
+        "{cell_snapshot_binding}:effects:sha256:{:x}",
+        Sha256::digest(payload)
+    ))
 }
 
 fn bind_cell_appraisal(
@@ -1225,6 +1241,33 @@ mod tests {
     #[test]
     fn compact_cell_prompt_contract_is_valid_json() {
         serde_json::from_str::<serde_json::Value>(CELL_APPRAISAL_OUTPUT_CONTRACT).unwrap();
+    }
+
+    #[test]
+    fn effect_verifier_binding_changes_with_the_exact_action_bundle() {
+        let first = crate::domain::CellActionProposal {
+            subject_id: "faction-06".into(),
+            intent: "withhold the reserve".into(),
+            intended_effect: "wait for a verified count".into(),
+            priority: 1,
+            state_references: vec![],
+            public_channels: vec![],
+            effect: StrategicCellEffect::Institution {
+                institution_id: "faction-06".into(),
+                posture: "withholding pending verification".into(),
+                location_ids: vec!["forum".into()],
+            },
+        };
+        let mut second = first.clone();
+        second.intended_effect = "release immediately".into();
+        assert_eq!(
+            cell_effect_verification_binding("snapshot", std::slice::from_ref(&first)).unwrap(),
+            cell_effect_verification_binding("snapshot", std::slice::from_ref(&first)).unwrap()
+        );
+        assert_ne!(
+            cell_effect_verification_binding("snapshot", &[first]).unwrap(),
+            cell_effect_verification_binding("snapshot", &[second]).unwrap()
+        );
     }
 
     #[test]
