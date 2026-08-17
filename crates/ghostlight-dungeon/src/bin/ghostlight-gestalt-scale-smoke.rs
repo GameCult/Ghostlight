@@ -100,9 +100,18 @@ async fn main() -> anyhow::Result<()> {
         anyhow::bail!("cross-faction budget pressure produced no arena cells")
     }
     let plan = validate_and_resolve_wave(&campaign, &output.wave)?;
-    if plan.institution_actions.is_empty() {
-        anyhow::bail!("24-subject strategic wave proposed no material institution action")
-    }
+    let explicit_inaction_count = output
+        .wave
+        .appraisals
+        .iter()
+        .filter(|appraisal| {
+            appraisal.actions.is_empty()
+                && appraisal
+                    .inaction_reason
+                    .as_deref()
+                    .is_some_and(|reason| !reason.trim().is_empty())
+        })
+        .count();
     for stage in &output.stages {
         store.insert(
             "persona_stage_receipt.v1",
@@ -143,6 +152,8 @@ async fn main() -> anyhow::Result<()> {
         "cover":cover,
         "appraisals":output.wave.appraisals,
         "plan":plan,
+        "material_action_count":plan.institution_actions.len(),
+        "explicit_inaction_count":explicit_inaction_count,
         "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
         "commit":committed,
         "player_location_unchanged":true,

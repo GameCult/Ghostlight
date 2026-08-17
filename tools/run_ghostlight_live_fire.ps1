@@ -341,13 +341,20 @@ function Read-ScenarioSummary($Run) {
         'strategic' { if ($result) { "$($result.event_count) events; $($result.news_count) news" } }
         'scale' { if ($result) { "budget=$($result.configured_budget); cells=$($result.cell_count); arenas=$($result.arena_count)" } }
     }
+    $elapsedSeconds = if ($result -and $result.PSObject.Properties.Name -contains 'elapsed_seconds') {
+        [double]$result.elapsed_seconds
+    } elseif ($result -and $result.PSObject.Properties.Name -contains 'total_seconds') {
+        [double]$result.total_seconds
+    } else {
+        ([DateTimeOffset]$Run.Process.ExitTime - $Run.StartedAt).TotalSeconds
+    }
     [pscustomobject]@{
         schema = 'ghostlight.live_fire_scenario_summary.v1'
         scenario_id = $Run.Scenario.Id
         kind = $Run.Scenario.Kind
         exit_code = $Run.Process.ExitCode
         succeeded = ($Run.Process.ExitCode -eq 0 -and $null -ne $result)
-        elapsed_seconds = [math]::Round(([DateTimeOffset]::UtcNow - $Run.StartedAt).TotalSeconds, 3)
+        elapsed_seconds = [math]::Round($elapsedSeconds, 3)
         stage_count = $receipts.Count
         provider_attempt_count = $providerAttempts
         prompt_tokens = $promptTokens

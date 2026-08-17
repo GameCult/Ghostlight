@@ -444,12 +444,18 @@ impl CellProjectionEngine {
                     });
                 }
                 Err(error) if attempt == 0 => {
+                    let rejected_appraisal = interpreted
+                        .structured
+                        .as_ref()
+                        .map(serde_json::to_string)
+                        .transpose()?
+                        .unwrap_or_else(|| "null".into());
                     interpreted.receipt.validation_result = "semantic_invalid".into();
                     interpreted.receipt.local_validation_error =
                         Some(error.to_string().chars().take(1_000).collect());
                     stage_receipts.push(interpreted.receipt);
                     request.lived_stream.push_str(&format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS APPRAISAL: {error}\nReturn one corrected complete appraisal against the same snapshot, lived stream, and Persona turn."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS APPRAISAL: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. Change or remove every action that exceeds its attributed constituent's permissions; explicit inaction is valid."
                     ));
                 }
                 Err(error) => {
@@ -549,7 +555,12 @@ fn validate_cell_appraisal(
                 && subject.reachable_destination_ids.contains(destination_id) => {}
             _ => {
                 return Err(anyhow!(
-                    "action effect exceeds its exact constituent authority"
+                    "action for subject {} has effect {:?}, which exceeds exact authority for kind {:?}, locations {:?}, and reachable destinations {:?}",
+                    subject.subject_id,
+                    action.effect,
+                    subject.subject_kind,
+                    subject.location_ids,
+                    subject.reachable_destination_ids
                 ));
             }
         }
@@ -609,31 +620,131 @@ fn constrain_interpreter_schema(
     Ok(())
 }
 
-fn allowed_actor_references(slice: &PermittedActorSlice) -> Vec<String> {
-    slice
-        .capabilities
-        .iter()
-        .map(|value| format!("capability:{value}"))
-        .chain(
-            slice
-                .knowledge
-                .iter()
-                .map(|value| format!("knowledge:{value}")),
-        )
-        .chain(
-            slice
-                .affordances
-                .iter()
-                .map(|value| format!("equipment:{value}")),
-        )
-        .chain(std::iter::once(format!("location:{}", slice.location_id)))
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::FixtureModel;
+    use crate::{
+        domain::{AgencySubjectKind, SimulationCellMode, StrategicCellEffect},
+        model::{FixtureModel, ModelStageRequest},
+    };
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+    struct CorrectingCellModel {
+        interpreter_calls: AtomicUsize,
+        saw_rejected_appraisal: AtomicBool,
+    }
+
+    #[async_trait]
+    impl ModelPort for CorrectingCellModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "cell_projector" => {
+                    Ok("Faction Six sees the public deadline and reviews its own mandate.".into())
+                }
+                "cell_persona" => Ok(
+                    "Faction Six will publish a bounded position using its bulletin access.".into(),
+                ),
+                "cell_interpreter" => {
+                    let call = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
+                    if call == 0 {
+                        return Ok(serde_json::json!({
+                            "actions":[{
+                                "subject_id":"faction-06",
+                                "intent":"publish a position",
+                                "intended_effect":"move a person instead",
+                                "priority":5,
+                                "state_references":["institution:faction-06"],
+                                "public_channels":["public bulletin"],
+                                "effect":{"type":"actor_move","actor_id":"faction-06","destination_id":"forum"}
+                            }],
+                            "inaction_reason":null
+                        }).to_string());
+                    }
+                    self.saw_rejected_appraisal.store(
+                        request.lived_stream.contains("PREVIOUS_REJECTED_APPRAISAL")
+                            && request.lived_stream.contains("actor_move")
+                            && request.lived_stream.contains("faction-06"),
+                        Ordering::SeqCst,
+                    );
+                    Ok(serde_json::json!({
+                        "actions":[{
+                            "subject_id":"faction-06",
+                            "intent":"publish a position",
+                            "intended_effect":"state its bounded institutional posture",
+                            "priority":5,
+                            "state_references":["institution:faction-06"],
+                            "public_channels":["public bulletin"],
+                            "effect":{"type":"institution","institution_id":"faction-06","posture":"published a bounded position","location_ids":["forum"]}
+                        }],
+                        "inaction_reason":null
+                    }).to_string())
+                }
+                stage => Err(anyhow!("unexpected fixture stage {stage}")),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "correcting-cell-fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn cell_semantic_retry_receives_the_rejected_appraisal() {
+        let model = Arc::new(CorrectingCellModel {
+            interpreter_calls: AtomicUsize::new(0),
+            saw_rejected_appraisal: AtomicBool::new(false),
+        });
+        let engine = CellProjectionEngine {
+            model: model.clone(),
+            permit: Arc::new(AllowAllPermit),
+            projector_model: "flash".into(),
+            persona_model: "flash".into(),
+            interpreter_model: "flash".into(),
+        };
+        let output = engine
+            .execute(PermittedCellSlice {
+                cell_id: "cell:test".into(),
+                mode: SimulationCellMode::Arena,
+                world_revision: 4,
+                resolution_epoch: 2,
+                snapshot_binding: "campaign:4:2".into(),
+                constituents: vec![CellConstituentSlice {
+                    subject_id: "faction-06".into(),
+                    subject_kind: AgencySubjectKind::Institution,
+                    name: "Faction Six".into(),
+                    collective_authority_id: None,
+                    location_ids: BTreeSet::from(["forum".into()]),
+                    knowledge: BTreeSet::from(["the public deadline".into()]),
+                    capabilities: BTreeSet::new(),
+                    resources: BTreeSet::from(["bulletin access".into()]),
+                    information_channels: BTreeSet::from(["public bulletin".into()]),
+                    permitted_state_references: BTreeSet::from(["institution:faction-06".into()]),
+                    reachable_destination_ids: BTreeSet::new(),
+                    goals: vec!["publish a position".into()],
+                    pressures: vec!["the vote is near".into()],
+                }],
+                shared_knowledge: BTreeSet::new(),
+                shared_capabilities: BTreeSet::new(),
+                perceived_events: vec!["The final vote is public.".into()],
+                world_clock_pressure: vec!["vote 5/6".into()],
+                detail_focus_subject_id: Some("faction-06".into()),
+                max_actions: 1,
+                source_receipt_ids: vec![],
+            })
+            .await
+            .unwrap();
+        assert!(model.saw_rejected_appraisal.load(Ordering::SeqCst));
+        assert_eq!(output.stage_receipts.len(), 4);
+        assert_eq!(
+            output.stage_receipts[2].validation_result,
+            "semantic_invalid"
+        );
+        assert!(matches!(
+            output.appraisal.actions[0].effect,
+            StrategicCellEffect::Institution { .. }
+        ));
+    }
+
     #[tokio::test]
     async fn persona_receives_only_projected_stream() {
         let engine = PersonaProjectionEngine {
@@ -666,4 +777,25 @@ mod tests {
         assert_eq!(result.stage_receipts.len(), 3);
         assert_eq!(result.proposals.reaction_priority, 0);
     }
+}
+
+fn allowed_actor_references(slice: &PermittedActorSlice) -> Vec<String> {
+    slice
+        .capabilities
+        .iter()
+        .map(|value| format!("capability:{value}"))
+        .chain(
+            slice
+                .knowledge
+                .iter()
+                .map(|value| format!("knowledge:{value}")),
+        )
+        .chain(
+            slice
+                .affordances
+                .iter()
+                .map(|value| format!("equipment:{value}")),
+        )
+        .chain(std::iter::once(format!("location:{}", slice.location_id)))
+        .collect()
 }

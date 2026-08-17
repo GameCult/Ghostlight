@@ -332,8 +332,10 @@ impl WorldCompiler {
                             .expect("receipt was just stored"),
                         &error,
                     );
+                    let previous_structure =
+                        serde_json::to_string(&compiled_seed_structure(&seed))?;
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nReturn a corrected complete candidate against the same START and EVIDENCE."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nPREVIOUS_CANDIDATE_STRUCTURE:\n{previous_structure}\nReturn a corrected complete candidate against the same START and EVIDENCE. Preserve valid detail, but make every reference use an ID declared by the corrected candidate."
                     );
                 }
                 Err(error) => {
@@ -1657,6 +1659,38 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
     Ok(campaign)
 }
 
+fn compiled_seed_structure(seed: &CompiledSeed) -> serde_json::Value {
+    serde_json::json!({
+        "tick_hours": seed.tick_hours,
+        "player": {"id": seed.player.id, "location_id": seed.player.location_id},
+        "locations": seed.locations.iter().map(|location| serde_json::json!({
+            "id": location.id,
+            "container_id": location.container_id,
+            "routes": location.routes,
+        })).collect::<Vec<_>>(),
+        "actors": seed.actors.iter().map(|actor| serde_json::json!({
+            "id": actor.id,
+            "location_id": actor.location_id,
+        })).collect::<Vec<_>>(),
+        "institution_ids": seed.institutions.iter().map(|institution| institution.id.as_str()).collect::<Vec<_>>(),
+        "gestalts": seed.gestalts.iter().map(|gestalt| serde_json::json!({
+            "id": gestalt.id,
+            "home_location_id": gestalt.home_location_id,
+        })).collect::<Vec<_>>(),
+        "gestalt_members": seed.gestalt_members.iter().map(|member| serde_json::json!({
+            "id": member.id,
+            "gestalt_id": member.gestalt_id,
+            "materialized_actor_id": member.materialized_actor_id,
+        })).collect::<Vec<_>>(),
+        "clocks": seed.clocks.iter().map(|clock| serde_json::json!({
+            "id": clock.id,
+            "progress": clock.progress,
+            "threshold": clock.threshold,
+        })).collect::<Vec<_>>(),
+        "fact_ids": seed.facts.iter().map(|fact| fact.id.as_str()).collect::<Vec<_>>(),
+    })
+}
+
 fn require_unique_ids<'a>(label: &str, ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
     let mut seen = BTreeSet::new();
     let mut duplicates = BTreeSet::new();
@@ -1954,12 +1988,55 @@ mod tests {
     use crate::{domain::SourceWitness, model::ModelPort, vault::FixtureVault};
     use async_trait::async_trait;
     use sha2::Digest;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     struct CompilerModel {
         invalid_route: bool,
     }
 
     struct OversizedQueryModel;
+
+    struct CorrectionAwareCompilerModel {
+        world_calls: AtomicUsize,
+        saw_previous_structure: AtomicBool,
+    }
+
+    #[async_trait]
+    impl ModelPort for CorrectionAwareCompilerModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            let output = CompilerModel {
+                invalid_route: false,
+            }
+            .run(request)
+            .await?;
+            if request.stage != "world_compile" {
+                return Ok(output);
+            }
+            let call = self.world_calls.fetch_add(1, Ordering::SeqCst);
+            if call == 0 {
+                let mut candidate: serde_json::Value = serde_json::from_str(&output)?;
+                candidate["locations"][0]["routes"]["out"]["destination_id"] =
+                    serde_json::Value::String("missing".into());
+                return Ok(candidate.to_string());
+            }
+            self.saw_previous_structure.store(
+                request
+                    .lived_stream
+                    .contains("PREVIOUS_CANDIDATE_STRUCTURE")
+                    && request
+                        .lived_stream
+                        .contains("\"destination_id\":\"missing\"")
+                    && request.lived_stream.contains("\"id\":\"yard\""),
+                Ordering::SeqCst,
+            );
+            Ok(output)
+        }
+
+        fn provider(&self) -> &'static str {
+            "correction-aware-compiler-fixture"
+        }
+    }
+
     #[async_trait]
     impl ModelPort for OversizedQueryModel {
         async fn run(&self, _: &ModelStageRequest) -> Result<String> {
@@ -2405,5 +2482,32 @@ mod tests {
                 .to_string()
                 .contains("references missing destination_id missing")
         );
+    }
+
+    #[tokio::test]
+    async fn semantic_retry_receives_the_previous_candidates_structural_ids() {
+        let model = Arc::new(CorrectionAwareCompilerModel {
+            world_calls: AtomicUsize::new(0),
+            saw_previous_structure: AtomicBool::new(false),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let (_, receipts) = compiler
+            .compile_custom(CustomStart {
+                campaign_name: "Correction context".into(),
+                who: "worker".into(),
+                where_: "yard".into(),
+                when: "fixture".into(),
+                goal: "learn".into(),
+            })
+            .await
+            .unwrap();
+        assert!(model.saw_previous_structure.load(Ordering::SeqCst));
+        let world_receipts = receipts
+            .iter()
+            .filter(|receipt| receipt.stage == "world_compile")
+            .collect::<Vec<_>>();
+        assert_eq!(world_receipts.len(), 2);
+        assert_eq!(world_receipts[0].validation_result, "semantic_invalid");
+        assert_eq!(world_receipts[1].validation_result, "valid");
     }
 }
