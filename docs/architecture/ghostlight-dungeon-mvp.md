@@ -587,6 +587,9 @@ On resolution, only the acting character may receive those bounded knowledge
 additions; the same statement is committed as a provisional branch fact. A
 vague promise such as “identify any faults” is not a valid informational
 outcome, and an unstated hidden finding cannot appear after the roll.
+The assessor normalizes each bounded typed finding into its visible stake before
+validation and digesting. Exact visibility is therefore deterministic; a model
+retry is reserved for semantic or authority failure, not punctuation mismatch.
 
 ### Actor and world action loop
 

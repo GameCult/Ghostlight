@@ -41,7 +41,8 @@ The current browser/compiler hardening adds three ownership cuts before the
 next isolated acceptance run: compiler evidence is triaged into direct,
 background, and excluded lanes before generation, with only direct source text
 admitted to the causal world seed; informational action effects
-must name the exact player-visible finding they commit; and player HTTP command
+must name the exact finding they commit, which the runtime binds into the
+player-visible stake before validation; and player HTTP command
 responses are spoiler-safe projections rather than serialized campaigns. The
 browser renders these projections as labeled, escaped human-readable controls,
 and narration receives only the latest causal turn rather than a route dump.

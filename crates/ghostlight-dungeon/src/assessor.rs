@@ -81,7 +81,7 @@ impl ActionAssessor {
             "maximum":10
         });
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. When an outcome directly reveals information to the acting actor, actor_knowledge_additions must contain the specific observed finding, not a vague claim that a reading or clue exists; copy each exact finding verbatim into that outcome's visible stake. Such findings become provisional branch facts on commit, so do not invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. When an outcome directly reveals information to the acting actor, actor_knowledge_additions must contain the specific observed finding, not a vague claim that a reading or clue exists. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. Findings become provisional branch facts on commit, so do not invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(&intent)?,
             serde_json::to_string(actor)?,
@@ -110,11 +110,12 @@ impl ActionAssessor {
             )
             .await?;
             let candidate = (|| -> Result<AssessmentProposal> {
-                let proposal: AssessmentProposal = serde_json::from_value(
+                let mut proposal: AssessmentProposal = serde_json::from_value(
                     out.structured
                         .clone()
                         .ok_or_else(|| anyhow!("assessor returned no typed proposal"))?,
                 )?;
+                bind_visible_knowledge(&mut proposal)?;
                 validate_proposal(&proposal, &allowed_references)?;
                 for (effect, stake) in [
                     (&proposal.strong_effect, &proposal.success_stake),
@@ -130,7 +131,7 @@ impl ActionAssessor {
                 Ok(proposal) => break (proposal, out),
                 Err(error) if attempts == 1 => {
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ASSESSMENT: {error}\nReturn a corrected complete assessment against the same snapshot. Copy every actor and destination ID exactly from the supplied state. Bind specific directly observed findings to the acting actor and repeat them verbatim in the matching visible stake; otherwise leave the typed delta empty."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ASSESSMENT: {error}\nReturn a corrected complete assessment against the same snapshot. Copy every actor and destination ID exactly from the supplied state. Bind specific directly observed findings only to the acting actor; strong and ordinary success must use identical knowledge additions. Otherwise leave the typed delta empty."
                     );
                 }
                 Err(error) => {
@@ -166,6 +167,36 @@ impl ActionAssessor {
         };
         assessment.digest = assessment_digest(&assessment)?;
         Ok((assessment, out.receipt))
+    }
+}
+
+fn bind_visible_knowledge(proposal: &mut AssessmentProposal) -> Result<()> {
+    if proposal.strong_effect.actor_knowledge_additions
+        != proposal.success_effect.actor_knowledge_additions
+    {
+        return Err(anyhow!(
+            "strong and ordinary success must expose identical knowledge because they share one visible stake"
+        ));
+    }
+    append_visible_findings(&mut proposal.success_stake, &proposal.success_effect);
+    append_visible_findings(&mut proposal.mixed_stake, &proposal.mixed_effect);
+    append_visible_findings(&mut proposal.failure_stake, &proposal.failure_effect);
+    Ok(())
+}
+
+fn append_visible_findings(stake: &mut String, effect: &WorldEffectDelta) {
+    for finding in effect
+        .actor_knowledge_additions
+        .values()
+        .flat_map(|findings| findings.iter())
+    {
+        if !stake.contains(finding) {
+            if !stake.trim_end().is_empty() {
+                stake.push(' ');
+            }
+            stake.push_str("Observed finding: ");
+            stake.push_str(finding);
+        }
     }
 }
 
@@ -341,5 +372,22 @@ mod tests {
         let mut value = proposal("equipment:key");
         value.dc = 17;
         assert!(validate_proposal(&value, &BTreeSet::from(["equipment:key".into()])).is_err());
+    }
+
+    #[test]
+    fn exact_knowledge_is_bound_into_visible_stakes_without_model_duplication() {
+        let finding = "The relay's backup cell is depleted.".to_string();
+        let mut value = proposal("equipment:key");
+        let additions = std::collections::BTreeMap::from([(
+            "player".into(),
+            BTreeSet::from([finding.clone()]),
+        )]);
+        value.strong_effect.actor_knowledge_additions = additions.clone();
+        value.success_effect.actor_knowledge_additions = additions;
+
+        bind_visible_knowledge(&mut value).unwrap();
+
+        assert!(value.success_stake.contains(&finding));
+        assert_eq!(value.success_stake.matches(&finding).count(), 1);
     }
 }

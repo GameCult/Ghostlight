@@ -379,6 +379,12 @@ direct source text to the causal world seed, and narrows narration to the latest
 causal turn. Browser strings use text nodes and the laboratory inputs have
 programmatic labels.
 
+The first clean-seed diagnostic then spent its correction attempt on a verbatim
+stake/knowledge mismatch. The assessor now deterministically appends each
+bounded typed finding to the corresponding visible stake before validation and
+digesting. Semantic or authority errors may retry; punctuation no longer gets a
+second provider call.
+
 Next: commit and build this repaired candidate, replay the same authenticated
 Huygens campaign in an isolated runtime, inspect both the visible surface and
 the literal HTTP response, then prove away catch-up/concurrency/persistence/

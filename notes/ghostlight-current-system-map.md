@@ -84,7 +84,9 @@ That boundary also projects less state outward than the kernel returns inward.
 Player HTTP responses contain only assessment, public commit/roll receipts, and
 narration. Canonical campaign state and spoiler-bearing actor or institution
 state are operator-only. Informational rolls add only their exact previewed
-finding to the acting character and a provisional branch fact. The compiler
+finding to the acting character and a provisional branch fact. The assessor
+deterministically binds typed findings into visible stakes before validation,
+so formatting is not delegated to a correction attempt. The compiler
 classifies each retrieved source as direct seed, setting background, or excluded
 before generation. Only direct-seed source text enters causal world compilation;
 background and excluded sources remain coverage provenance and cannot donate
