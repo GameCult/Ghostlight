@@ -583,7 +583,6 @@ pub struct StrategicTickPlan {
 pub struct StrategicInstitutionAction {
     pub institution_id: String,
     pub posture: String,
-    pub summary: String,
     pub location_ids: Vec<String>,
     pub public_channels: Vec<String>,
 }
@@ -591,7 +590,6 @@ pub struct StrategicInstitutionAction {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct StrategicGestaltAction {
     pub gestalt_id: String,
-    pub summary: String,
     pub pressure_additions: Vec<String>,
     pub public_channels: Vec<String>,
 }
@@ -600,7 +598,6 @@ pub struct StrategicGestaltAction {
 pub struct StrategicActorMove {
     pub actor_id: String,
     pub destination_id: String,
-    pub summary: String,
     pub public_channels: Vec<String>,
 }
 
@@ -610,7 +607,6 @@ pub struct StrategicMemberMigration {
     pub source_gestalt_id: String,
     pub destination_gestalt_id: String,
     pub destination_location_id: String,
-    pub summary: String,
     pub public_channels: Vec<String>,
 }
 

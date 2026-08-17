@@ -5,8 +5,8 @@ use crate::{
     },
     model::{ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
     persona::{
-        CellConstituentSlice, CellMemberSlice, CellProjectionEngine, ExecutionPermit,
-        PermittedCellSlice,
+        CellConstituentSlice, CellMemberSlice, CellPerceivedEventSlice, CellProjectionEngine,
+        ExecutionPermit, PermittedCellSlice,
     },
     resolution::{
         cell_action_limit, default_demand, plan_cover, plan_receipt, validate_and_resolve_wave,
@@ -393,6 +393,7 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
             .collect(),
     );
     let member_exceptions = member_exceptions(campaign, cell)?;
+    let perceived_events = cell_perceived_events(campaign, &constituents, &member_exceptions);
     Ok(PermittedCellSlice {
         cell_id: cell.id.clone(),
         mode: cell.mode.clone(),
@@ -406,13 +407,7 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
         member_exceptions,
         shared_knowledge,
         shared_capabilities,
-        perceived_events: campaign
-            .events
-            .iter()
-            .rev()
-            .take(12)
-            .map(|event| event.summary.clone())
-            .collect(),
+        perceived_events,
         world_clock_pressure: campaign
             .clocks
             .values()
@@ -427,6 +422,55 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
         max_actions: cell_action_limit(cell),
         source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
     })
+}
+
+fn cell_perceived_events(
+    campaign: &Campaign,
+    constituents: &[CellConstituentSlice],
+    member_exceptions: &[CellMemberSlice],
+) -> Vec<CellPerceivedEventSlice> {
+    campaign
+        .events
+        .iter()
+        .rev()
+        .take(12)
+        .filter_map(|event| {
+            let mut perceived_by_subject_ids = constituents
+                .iter()
+                .filter(|subject| {
+                    event.actor_ids.contains(&subject.subject_id)
+                        || event.institution_ids.contains(&subject.subject_id)
+                        || !event
+                            .location_ids
+                            .iter()
+                            .all(|location_id| !subject.location_ids.contains(location_id))
+                        || !event
+                            .public_channels
+                            .iter()
+                            .all(|channel| !subject.information_channels.contains(channel))
+                })
+                .map(|subject| subject.subject_id.clone())
+                .collect::<BTreeSet<_>>();
+            perceived_by_subject_ids.extend(
+                member_exceptions
+                    .iter()
+                    .filter(|member| {
+                        event.actor_ids.contains(&member.subject_id)
+                            || event.location_ids.contains(&member.source_location_id)
+                            || !event
+                                .public_channels
+                                .iter()
+                                .all(|channel| !member.information_channels.contains(channel))
+                    })
+                    .map(|member| member.subject_id.clone()),
+            );
+            (!perceived_by_subject_ids.is_empty()).then(|| CellPerceivedEventSlice {
+                event_id: event.id.clone(),
+                summary: event.summary.clone(),
+                perceived_by_subject_ids,
+            })
+        })
+        .collect()
 }
 
 fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<CellMemberSlice>> {
@@ -878,6 +922,98 @@ mod tests {
                 .unwrap()
                 .contains("private dock code")
         );
+    }
+
+    #[test]
+    fn arena_event_projection_preserves_exact_viewers_including_named_members() {
+        use crate::domain::*;
+        let mut campaign = crate::resolution::tests::campaign(2, 1);
+        campaign
+            .agency_profiles
+            .get_mut("faction-0000")
+            .unwrap()
+            .location_ids = BTreeSet::from(["east".into()]);
+        let west = campaign.agency_profiles.get_mut("faction-0001").unwrap();
+        west.location_ids = BTreeSet::from(["west".into()]);
+        west.information_channels.insert("west-wire".into());
+        campaign.events = vec![
+            Event {
+                id: "direct-east".into(),
+                at: Utc::now(),
+                kind: "test".into(),
+                summary: "East receives a private order.".into(),
+                actor_ids: vec![],
+                institution_ids: vec!["faction-0000".into()],
+                location_ids: vec![],
+                public_channels: vec![],
+            },
+            Event {
+                id: "west-wire".into(),
+                at: Utc::now(),
+                kind: "test".into(),
+                summary: "A warning travels on the west wire.".into(),
+                actor_ids: vec![],
+                institution_ids: vec![],
+                location_ids: vec![],
+                public_channels: vec!["west-wire".into()],
+            },
+            Event {
+                id: "mira-witnessed".into(),
+                at: Utc::now(),
+                kind: "test".into(),
+                summary: "Mira witnesses the departure.".into(),
+                actor_ids: vec!["member:mira".into()],
+                institution_ids: vec![],
+                location_ids: vec![],
+                public_channels: vec![],
+            },
+            Event {
+                id: "unseen".into(),
+                at: Utc::now(),
+                kind: "test".into(),
+                summary: "Nobody in this arena can know this.".into(),
+                actor_ids: vec![],
+                institution_ids: vec![],
+                location_ids: vec!["far-away".into()],
+                public_channels: vec!["sealed-channel".into()],
+            },
+        ];
+        let constituents = ["faction-0000", "faction-0001"]
+            .iter()
+            .map(|id| constituent_slice(&campaign, id).unwrap())
+            .collect::<Vec<_>>();
+        let members = vec![CellMemberSlice {
+            subject_id: "member:mira".into(),
+            member_id: "mira".into(),
+            name: "Mira".into(),
+            source_gestalt_id: "refugees".into(),
+            source_location_id: "east".into(),
+            knowledge: BTreeSet::new(),
+            capabilities: BTreeSet::new(),
+            resources: BTreeSet::new(),
+            information_channels: BTreeSet::from(["refugee-wire".into()]),
+            permitted_state_references: BTreeSet::new(),
+            migration_destinations: BTreeMap::new(),
+            goals: vec![],
+            pressures: vec![],
+            relationships: BTreeMap::new(),
+            memories: vec![],
+        }];
+
+        let events = cell_perceived_events(&campaign, &constituents, &members)
+            .into_iter()
+            .map(|event| (event.event_id, event.perceived_by_subject_ids))
+            .collect::<BTreeMap<_, _>>();
+        assert_eq!(
+            events["direct-east"],
+            BTreeSet::from(["faction-0000".into()])
+        );
+        assert_eq!(events["west-wire"], BTreeSet::from(["faction-0001".into()]));
+        assert_eq!(
+            events["mira-witnessed"],
+            BTreeSet::from(["member:mira".into()])
+        );
+        assert!(!events.contains_key("unseen"));
     }
 
     #[tokio::test]

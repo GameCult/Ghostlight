@@ -226,6 +226,19 @@ caps committed consequences at `min(16, 2 × effective_budget)`, and commits the
 entire wave once. One missing appraisal, stale receipt, malformed stage,
 invalid cover, or invalid effect aborts the wave without partial mutation.
 
+Interpreter `intent` and `intended_effect` prose is proposal rationale only. It
+never becomes canonical event narration. The kernel derives each committed
+event summary from the exact admitted posture, pressure markers, route, or
+membership transition after applying it. Strategic plans therefore carry no
+model-authored summary field that can assert a consequence outside the typed
+effect.
+
+Recent events are projected per constituent. A cell receives an event only for
+subjects that participated in it, occupy one of its locations, or possess one
+of its public channels; arena streams retain those viewer attributions. There
+is no global recent-event recap that can quietly teach every population the
+same fact.
+
 ## Public state and controls
 
 The schema catalog and CultCache stores publish:

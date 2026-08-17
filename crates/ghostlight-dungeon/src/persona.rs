@@ -88,6 +88,13 @@ pub struct CellMemberSlice {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct CellPerceivedEventSlice {
+    pub event_id: String,
+    pub summary: String,
+    pub perceived_by_subject_ids: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct PermittedCellSlice {
     pub cell_id: String,
     pub mode: crate::domain::SimulationCellMode,
@@ -98,7 +105,7 @@ pub struct PermittedCellSlice {
     pub member_exceptions: Vec<CellMemberSlice>,
     pub shared_knowledge: BTreeSet<String>,
     pub shared_capabilities: BTreeSet<String>,
-    pub perceived_events: Vec<String>,
+    pub perceived_events: Vec<CellPerceivedEventSlice>,
     pub world_clock_pressure: Vec<String>,
     pub detail_focus_subject_id: Option<String>,
     pub max_actions: usize,
@@ -322,6 +329,7 @@ fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
         })).collect::<Vec<_>>(),
         "shared_knowledge": slice.shared_knowledge,
         "shared_capabilities": slice.shared_capabilities,
+        "perceived_events": slice.perceived_events,
         "world_clock_pressure": slice.world_clock_pressure,
         "detail_focus_subject_id": slice.detail_focus_subject_id,
         "max_actions": slice.max_actions,
@@ -372,7 +380,23 @@ impl CellProjectionEngine {
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_projector")
             .await?;
         let projector_context = serde_json::to_string(&cell_projector_context(&slice))?;
-        let visible_stimulus = slice.perceived_events.join("\n");
+        let visible_stimulus = slice
+            .perceived_events
+            .iter()
+            .map(|event| {
+                format!(
+                    "Perceived by [{}]: {}",
+                    event
+                        .perceived_by_subject_ids
+                        .iter()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                    event.summary
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
         let mode_guidance = match slice.mode {
             crate::domain::SimulationCellMode::Cohesive => {
                 "This cell has real collective authority. Render a plural lived perspective from genuinely shared knowledge and capability only; describe constituent and named-member exceptions as separately attributed exceptions. A population cannot decide for a named member."
@@ -382,7 +406,7 @@ impl CellProjectionEngine {
             }
         };
         let mode_guidance = format!(
-            "{mode_guidance} Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
+            "{mode_guidance} Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
         );
         let projected = run_validated_stage(
             self.model.as_ref(),
@@ -833,7 +857,11 @@ mod tests {
             member_exceptions: vec![],
             shared_knowledge: BTreeSet::new(),
             shared_capabilities: BTreeSet::new(),
-            perceived_events: vec!["The final vote is public.".into()],
+            perceived_events: vec![CellPerceivedEventSlice {
+                event_id: "event:vote".into(),
+                summary: "The final vote is public.".into(),
+                perceived_by_subject_ids: BTreeSet::from(["house-a".into(), "house-b".into()]),
+            }],
             world_clock_pressure: vec!["vote 5/6".into()],
             detail_focus_subject_id: Some("faction-06".into()),
             max_actions: 1,

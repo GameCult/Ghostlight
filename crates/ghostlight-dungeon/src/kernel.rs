@@ -1195,9 +1195,9 @@ fn apply_strategic_tick_plan(
                 "institution acts twice in one strategic tick".into(),
             ));
         }
-        if action.summary.trim().is_empty() || action.posture.trim().is_empty() {
+        if action.posture.trim().is_empty() {
             return Err(KernelError::Invalid(
-                "strategic institution action is empty".into(),
+                "strategic institution posture is empty".into(),
             ));
         }
         if action
@@ -1215,11 +1215,15 @@ fn apply_strategic_tick_plan(
             .get_mut(&action.institution_id)
             .ok_or_else(|| KernelError::Invalid("strategic plan invented an institution".into()))?;
         institution.posture = action.posture;
+        let summary = format!(
+            "{} adopts posture: {}",
+            institution.name, institution.posture
+        );
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:institution:{}", institution.id),
             at,
             kind: "institution_action".into(),
-            summary: action.summary,
+            summary,
             actor_ids: vec![],
             institution_ids: vec![institution.id.clone()],
             location_ids: action.location_ids,
@@ -1234,7 +1238,7 @@ fn apply_strategic_tick_plan(
                 "gestalt acts twice in one strategic tick".into(),
             ));
         }
-        if action.summary.trim().is_empty()
+        if action.pressure_additions.is_empty()
             || action.pressure_additions.len() > 4
             || action
                 .pressure_additions
@@ -1246,6 +1250,7 @@ fn apply_strategic_tick_plan(
             ));
         }
         validate_public_channels(&action.public_channels)?;
+        let pressure_summary = action.pressure_additions.join("; ");
         let gestalt = campaign
             .gestalts
             .get_mut(&action.gestalt_id)
@@ -1260,7 +1265,10 @@ fn apply_strategic_tick_plan(
             id: format!("strategic:{revision}:gestalt:{}", gestalt.id),
             at,
             kind: "gestalt_action".into(),
-            summary: action.summary,
+            summary: format!(
+                "{} changes its collective situation: {}",
+                gestalt.name, pressure_summary
+            ),
             actor_ids: vec![],
             institution_ids: vec![],
             location_ids: vec![gestalt.home_location_id.clone()],
@@ -1278,11 +1286,6 @@ fn apply_strategic_tick_plan(
         if action.actor_id == campaign.player_actor_id {
             return Err(KernelError::Invalid(
                 "strategic simulation cannot puppet the player".into(),
-            ));
-        }
-        if action.summary.trim().is_empty() {
-            return Err(KernelError::Invalid(
-                "strategic actor movement has no summary".into(),
             ));
         }
         validate_public_channels(&action.public_channels)?;
@@ -1308,6 +1311,7 @@ fn apply_strategic_tick_plan(
             ));
         }
         let origin = actor.location_id.clone();
+        let actor_name = actor.name.clone();
         campaign
             .actors
             .get_mut(&action.actor_id)
@@ -1317,7 +1321,10 @@ fn apply_strategic_tick_plan(
             id: format!("strategic:{revision}:actor:{}", action.actor_id),
             at,
             kind: "actor_movement".into(),
-            summary: action.summary,
+            summary: format!(
+                "{actor_name} moves from {origin} to {}.",
+                action.destination_id
+            ),
             actor_ids: vec![action.actor_id],
             institution_ids: vec![],
             location_ids: vec![origin, action.destination_id],
@@ -1330,11 +1337,6 @@ fn apply_strategic_tick_plan(
         if !seen_members.insert(action.member_id.clone()) {
             return Err(KernelError::Invalid(
                 "gestalt member migrates twice in one strategic tick".into(),
-            ));
-        }
-        if action.summary.trim().is_empty() {
-            return Err(KernelError::Invalid(
-                "strategic member migration has no summary".into(),
             ));
         }
         validate_public_channels(&action.public_channels)?;
@@ -1354,12 +1356,16 @@ fn apply_strategic_tick_plan(
                     .home_location_id
                     .clone()
             });
+        let member_name = campaign.gestalt_members[&action.member_id].name.clone();
         rebase_member_migration(campaign, &action)?;
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:member:{}", action.member_id),
             at,
             kind: "gestalt_member_migration".into(),
-            summary: action.summary,
+            summary: format!(
+                "{member_name} moves from {origin} to {} and joins {}.",
+                action.destination_location_id, action.destination_gestalt_id
+            ),
             actor_ids: vec![format!("member:{}", action.member_id)],
             institution_ids: vec![],
             location_ids: vec![origin, action.destination_location_id],
@@ -1922,9 +1928,6 @@ mod tests {
                     source_gestalt_id: "refugees-east".into(),
                     destination_gestalt_id: "dock-neighbors".into(),
                     destination_location_id: "docks".into(),
-                    summary:
-                        "Mira takes the resettlement ferry and joins the south-dock neighbors."
-                            .into(),
                     public_channels: vec![],
                 }],
                 ..Default::default()
@@ -1953,6 +1956,10 @@ mod tests {
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].kind, "gestalt_member_migration");
         assert_eq!(events[0].actor_ids, vec!["member:mira"]);
+        assert_eq!(
+            events[0].summary,
+            "Mira Venn moves from camp to docks and joins dock-neighbors."
+        );
 
         let actor = materialize_actor(
             &value.gestalts["dock-neighbors"],
@@ -1980,7 +1987,6 @@ mod tests {
                     source_gestalt_id: "refugees-east".into(),
                     destination_gestalt_id: "dock-neighbors".into(),
                     destination_location_id: "docks".into(),
-                    summary: "Mira relocates.".into(),
                     public_channels: vec![],
                 }],
                 ..Default::default()
@@ -2260,7 +2266,6 @@ mod tests {
             actor_moves: vec![crate::domain::StrategicActorMove {
                 actor_id: "player".into(),
                 destination_id: "yard".into(),
-                summary: "The absent player obeys.".into(),
                 public_channels: vec![],
             }],
             ..Default::default()
@@ -2288,7 +2293,6 @@ mod tests {
             actor_moves: vec![crate::domain::StrategicActorMove {
                 actor_id: "runner".into(),
                 destination_id: "yard".into(),
-                summary: "The runner carries the warning to the yard.".into(),
                 public_channels: vec!["courier-network".into()],
             }],
             ..Default::default()

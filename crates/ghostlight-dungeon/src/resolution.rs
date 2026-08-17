@@ -1630,7 +1630,6 @@ pub fn validate_and_resolve_wave(
             } => plan.institution_actions.push(StrategicInstitutionAction {
                 institution_id,
                 posture,
-                summary: proposal.intended_effect,
                 location_ids,
                 public_channels: proposal.public_channels,
             }),
@@ -1639,7 +1638,6 @@ pub fn validate_and_resolve_wave(
                 pressure_additions,
             } => plan.gestalt_actions.push(StrategicGestaltAction {
                 gestalt_id,
-                summary: proposal.intended_effect,
                 pressure_additions,
                 public_channels: proposal.public_channels,
             }),
@@ -1649,7 +1647,6 @@ pub fn validate_and_resolve_wave(
             } => plan.actor_moves.push(StrategicActorMove {
                 actor_id,
                 destination_id,
-                summary: proposal.intended_effect,
                 public_channels: proposal.public_channels,
             }),
             StrategicCellEffect::MemberMigration {
@@ -1669,7 +1666,6 @@ pub fn validate_and_resolve_wave(
                     source_gestalt_id,
                     destination_gestalt_id,
                     destination_location_id,
-                    summary: proposal.intended_effect,
                     public_channels: proposal.public_channels,
                 });
             }
@@ -1739,8 +1735,18 @@ fn validate_cell_proposal(
                 return Err(anyhow!("institution proposal exceeds constituent state"));
             }
         }
-        StrategicCellEffect::Gestalt { gestalt_id, .. } => {
-            if gestalt_id != &proposal.subject_id || !campaign.gestalts.contains_key(gestalt_id) {
+        StrategicCellEffect::Gestalt {
+            gestalt_id,
+            pressure_additions,
+        } => {
+            if gestalt_id != &proposal.subject_id
+                || !campaign.gestalts.contains_key(gestalt_id)
+                || pressure_additions.is_empty()
+                || pressure_additions.len() > 4
+                || pressure_additions
+                    .iter()
+                    .any(|pressure| pressure.trim().is_empty() || pressure.len() > 240)
+            {
                 return Err(anyhow!("gestalt proposal exceeds constituent state"));
             }
         }
