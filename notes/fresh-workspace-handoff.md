@@ -121,6 +121,14 @@ and the semantic verifier accepted it. The migration contract now states both
 directions explicitly. Chosen travel within the strategic horizon is
 `member_migration`; preparation is reserved for a still-unchosen departure.
 
+The next preflight found two structural weaknesses. A learned Projector omitted
+the relief crews' South Harbor label, allowing a remote supply table to drift
+into Mira's camp; and the Interpreter copied prefixed `subject_id` into a second
+raw `member_id` field. Ghostlight now prepends deterministic narrative scene
+boundaries from the permitted slice, and model-facing effects no longer carry
+duplicate owner IDs. `subject_id` is bound once into the canonical effect by
+the runtime, reducing both ambiguity and prompt/output tokens.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

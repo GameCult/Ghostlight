@@ -127,8 +127,55 @@ pub struct CellTerminalBundle {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct CellAppraisalProposal {
-    actions: Vec<crate::domain::CellActionProposal>,
+    actions: Vec<CellActionCandidate>,
     inaction_reason: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellActionCandidate {
+    subject_id: String,
+    intent: String,
+    intended_effect: String,
+    priority: i16,
+    state_references: Vec<String>,
+    public_channels: Vec<String>,
+    effect: CellEffectCandidate,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+enum CellEffectCandidate {
+    Institution {
+        posture: String,
+        location_ids: Vec<String>,
+    },
+    Gestalt {
+        #[serde(default)]
+        pressure_additions: Vec<String>,
+        #[serde(default)]
+        pressure_resolutions: Vec<String>,
+    },
+    GestaltActivity {
+        activity: crate::domain::StrategicActivityKind,
+        #[serde(default)]
+        target_subject_ids: Vec<String>,
+        #[serde(default)]
+        location_ids: Vec<String>,
+    },
+    ActorMove {
+        destination_id: String,
+    },
+    MemberActivity {
+        activity: crate::domain::StrategicActivityKind,
+        #[serde(default)]
+        target_subject_ids: Vec<String>,
+        #[serde(default)]
+        location_ids: Vec<String>,
+    },
+    MemberMigration {
+        destination_gestalt_id: String,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -147,11 +194,11 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
       "subject_id":{"type":"string"},"intent":{"type":"string"},"intended_effect":{"type":"string"},"priority":{"type":"integer"},
       "state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},
       "effect":{"oneOf":[
-        {"type":"object","required":["type","institution_id","posture","location_ids"],"properties":{"type":{"const":"institution"},"institution_id":{"type":"string"},"posture":{"type":"string"},"location_ids":{"type":"array","items":{"type":"string"}}}},
-        {"type":"object","required":["type","gestalt_id","pressure_additions","pressure_resolutions"],"properties":{"type":{"const":"gestalt"},"gestalt_id":{"type":"string"},"pressure_additions":{"type":"array","maxItems":4,"items":{"type":"string"}},"pressure_resolutions":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
-        {"type":"object","required":["type","gestalt_id","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"gestalt_activity"},"gestalt_id":{"type":"string"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
-        {"type":"object","required":["type","actor_id","destination_id"],"properties":{"type":{"const":"actor_move"},"actor_id":{"type":"string"},"destination_id":{"type":"string"}}},
-        {"type":"object","required":["type","member_id","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"member_activity"},"member_id":{"type":"string"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":1,"items":{"type":"string"}}}},
+        {"type":"object","required":["type","posture","location_ids"],"properties":{"type":{"const":"institution"},"posture":{"type":"string"},"location_ids":{"type":"array","items":{"type":"string"}}}},
+        {"type":"object","required":["type","pressure_additions","pressure_resolutions"],"properties":{"type":{"const":"gestalt"},"pressure_additions":{"type":"array","maxItems":4,"items":{"type":"string"}},"pressure_resolutions":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
+        {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"gestalt_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
+        {"type":"object","required":["type","destination_id"],"properties":{"type":{"const":"actor_move"},"destination_id":{"type":"string"}}},
+        {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"member_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":1,"items":{"type":"string"}}}},
         {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"member_migration"},"destination_gestalt_id":{"type":"string"}}}
       ]}
     }}},
@@ -406,6 +453,55 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
     })
 }
 
+fn cell_scene_boundaries(slice: &PermittedCellSlice) -> String {
+    let mut by_location = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut unlocated = BTreeSet::new();
+    let mut perspective_owners = BTreeSet::new();
+    for subject in &slice.constituents {
+        perspective_owners.insert(subject.name.clone());
+        if subject.location_ids.is_empty() {
+            unlocated.insert(subject.name.clone());
+        } else {
+            for location_id in &subject.location_ids {
+                by_location
+                    .entry(location_id.clone())
+                    .or_default()
+                    .insert(subject.name.clone());
+            }
+        }
+    }
+    for member in &slice.member_exceptions {
+        perspective_owners.insert(member.name.clone());
+        by_location
+            .entry(member.source_location_id.clone())
+            .or_default()
+            .insert(member.name.clone());
+    }
+    let mut lines = vec![
+        "Scene boundaries are reliable footing, not conjecture. Subjects listed at different locations are in simultaneous remote scenes and cannot directly see, hear, address, or answer one another without an explicitly perceived communication channel.".to_owned(),
+    ];
+    lines.extend(by_location.into_iter().map(|(location_id, names)| {
+        format!(
+            "At location {location_id}: {}.",
+            names.into_iter().collect::<Vec<_>>().join(", ")
+        )
+    }));
+    if !unlocated.is_empty() {
+        lines.push(format!(
+            "No co-presence is established for these distributed or unlocated perspectives: {}.",
+            unlocated.into_iter().collect::<Vec<_>>().join(", ")
+        ));
+    }
+    lines.push(format!(
+        "Only these cell-owned perspectives may make choices in this turn: {}.",
+        perspective_owners
+            .into_iter()
+            .collect::<Vec<_>>()
+            .join(", ")
+    ));
+    lines.join("\n")
+}
+
 fn allowed_effect_type(kind: &crate::domain::AgencySubjectKind) -> &'static str {
     match kind {
         crate::domain::AgencySubjectKind::Actor => "actor_move",
@@ -474,7 +570,11 @@ impl CellProjectionEngine {
             return Err(anyhow!("cell projector violated lived-narrative membrane"));
         }
         let lived = LivedNarrativeStream {
-            text: projected.narrative.clone(),
+            text: format!(
+                "{}\n\n{}",
+                cell_scene_boundaries(&slice),
+                projected.narrative
+            ),
             snapshot_binding: slice.snapshot_binding.clone(),
             projector_receipt: projected.receipt.clone(),
         };
@@ -507,7 +607,7 @@ impl CellProjectionEngine {
         constrain_cell_proposal_schema(&mut schema, &slice)?;
         let interpreter_context = serde_json::to_string(&cell_interpreter_context(&slice))?;
         let permission_guidance = format!(
-            "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first; never use ordinal list rank where 1 means first. Copy each subject's allowed_effect_type: institution -> institution, gestalt -> either gestalt pressure transition or gestalt_activity, actor -> actor_move, named member -> either member_migration or member_activity. Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map the natural attempt narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt, not merely offer one; prepare means the subject's own concrete work such as loading, gathering, fortifying, or rehearsing; investigate means seek information; recruit means invite someone to join; trade means offer an exchange; obstruct means attempt interference. target_subject_ids must come from that exact subject's activity_target_ids and location_ids from its exact location scope. A member_activity must copy the raw member_id and use exactly the member's source_location_id. Internal work by the subject alone is prepare with an empty target_subject_ids list. Coordinate, communicate, trade, recruit, investigate, or obstruct a target only when the Persona explicitly attempts to engage that exact target; permission is not evidence that contact occurred. Write intended_effect as the attempted act itself, not its hoped-for success: 'offer work to X' is valid, while 'integrate X', 'ensure departure', 'build goodwill', acceptance, and any target response are not. Institution posture must be a specific new commitment or withholding, never the current posture or a generic label. Gestalt pressure_resolutions must copy exact current_pressures that the attempted action resolves; pressure_additions are only new unresolved constraints, threats, obligations, or conditions, never completed actions. A pressure transition requires one to four total changes. Use only that subject's permitted_state_references and allowed_public_channels; facet labels are not public channels. A named member who chooses to board, depart, travel, or join one supplied destination within this strategic horizon emits member_migration; do not reduce that commitment to member_activity prepare merely because boarding or approach is the first physical step. Use prepare only when the member undertakes local preparation while departure remains unchosen. A population or arena cannot migrate a person. The runtime binds cell identity, revisions, membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
+            "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first; never use ordinal list rank where 1 means first. Copy each subject's allowed_effect_type: institution -> institution, gestalt -> either gestalt pressure transition or gestalt_activity, actor -> actor_move, named member -> either member_migration or member_activity. Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map the natural attempt narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt, not merely offer one; prepare means the subject's own concrete work such as loading, gathering, fortifying, or rehearsing; investigate means seek information; recruit means invite someone to join; trade means offer an exchange; obstruct means attempt interference. target_subject_ids must come from that exact subject's activity_target_ids and location_ids from its exact location scope. A member_activity uses exactly the member's source_location_id. Internal work by the subject alone is prepare with an empty target_subject_ids list. Coordinate, communicate, trade, recruit, investigate, or obstruct a target only when the Persona explicitly attempts to engage that exact target; permission is not evidence that contact occurred. Write intended_effect as the attempted act itself, not its hoped-for success: 'offer work to X' is valid, while 'integrate X', 'ensure departure', 'build goodwill', acceptance, and any target response are not. Institution posture must be a specific new commitment or withholding, never the current posture or a generic label. Gestalt pressure_resolutions must copy exact current_pressures that the attempted action resolves; pressure_additions are only new unresolved constraints, threats, obligations, or conditions, never completed actions. A pressure transition requires one to four total changes. Use only that subject's permitted_state_references and allowed_public_channels; facet labels are not public channels. A named member who chooses to board, depart, travel, or join one supplied destination within this strategic horizon emits member_migration; do not reduce that commitment to member_activity prepare merely because boarding or approach is the first physical step. Use prepare only when the member undertakes local preparation while departure remains unchosen. A population or arena cannot migrate a person. The runtime binds cell identity, revisions, membership, effect owner IDs, and effective state from subject_id. The cell id is not an actor id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect; those duplicated owners are intentionally absent from the output contract. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
             slice.max_actions
         );
         let mut request = ModelStageRequest {
@@ -536,7 +636,7 @@ impl CellProjectionEngine {
                 .ok_or_else(|| anyhow!("cell interpreter produced no typed proposal"))
                 .and_then(|value| serde_json::from_value(value).map_err(Into::into));
             match proposal.and_then(|proposal: CellAppraisalProposal| {
-                let appraisal = bind_cell_appraisal(&slice, proposal);
+                let appraisal = bind_cell_appraisal(&slice, proposal)?;
                 validate_cell_appraisal(&slice, &appraisal)?;
                 Ok(appraisal)
             }) {
@@ -713,8 +813,85 @@ pub fn cell_effect_verification_binding(
 fn bind_cell_appraisal(
     slice: &PermittedCellSlice,
     proposal: CellAppraisalProposal,
-) -> crate::domain::CellAppraisal {
-    crate::domain::CellAppraisal {
+) -> Result<crate::domain::CellAppraisal> {
+    let actions = proposal
+        .actions
+        .into_iter()
+        .map(|candidate| {
+            let effect = match candidate.effect {
+                CellEffectCandidate::Institution {
+                    posture,
+                    location_ids,
+                } => crate::domain::StrategicCellEffect::Institution {
+                    institution_id: candidate.subject_id.clone(),
+                    posture,
+                    location_ids,
+                },
+                CellEffectCandidate::Gestalt {
+                    pressure_additions,
+                    pressure_resolutions,
+                } => crate::domain::StrategicCellEffect::Gestalt {
+                    gestalt_id: candidate.subject_id.clone(),
+                    pressure_additions,
+                    pressure_resolutions,
+                },
+                CellEffectCandidate::GestaltActivity {
+                    activity,
+                    target_subject_ids,
+                    location_ids,
+                } => crate::domain::StrategicCellEffect::GestaltActivity {
+                    gestalt_id: candidate.subject_id.clone(),
+                    activity,
+                    target_subject_ids,
+                    location_ids,
+                },
+                CellEffectCandidate::ActorMove { destination_id } => {
+                    crate::domain::StrategicCellEffect::ActorMove {
+                        actor_id: candidate.subject_id.clone(),
+                        destination_id,
+                    }
+                }
+                CellEffectCandidate::MemberActivity {
+                    activity,
+                    target_subject_ids,
+                    location_ids,
+                } => {
+                    let member_id = slice
+                        .member_exceptions
+                        .iter()
+                        .find(|member| member.subject_id == candidate.subject_id)
+                        .map(|member| member.member_id.clone())
+                        .ok_or_else(|| {
+                            anyhow!(
+                                "member_activity subject {} is not a selected member exception",
+                                candidate.subject_id
+                            )
+                        })?;
+                    crate::domain::StrategicCellEffect::MemberActivity {
+                        member_id,
+                        activity,
+                        target_subject_ids,
+                        location_ids,
+                    }
+                }
+                CellEffectCandidate::MemberMigration {
+                    destination_gestalt_id,
+                } => crate::domain::StrategicCellEffect::MemberMigration {
+                    destination_gestalt_id,
+                },
+            };
+            Ok(crate::domain::CellActionProposal {
+                subject_id: candidate.subject_id,
+                intent: candidate.intent,
+                intended_effect: candidate.intended_effect,
+                priority: candidate.priority,
+                state_references: candidate.state_references,
+                public_channels: candidate.public_channels,
+                effect,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(crate::domain::CellAppraisal {
         schema: "ghostlight.cell_appraisal.v1".into(),
         cell_id: slice.cell_id.clone(),
         world_revision: slice.world_revision,
@@ -724,9 +901,9 @@ fn bind_cell_appraisal(
             .iter()
             .map(|subject| subject.subject_id.clone())
             .collect(),
-        actions: proposal.actions,
+        actions,
         inaction_reason: proposal.inaction_reason,
-    }
+    })
 }
 
 fn validate_cell_appraisal(
@@ -1044,7 +1221,7 @@ fn constrain_cell_proposal_schema(
         .ok_or_else(|| anyhow!("cell appraisal schema has no action array"))?;
     actions.insert("maxItems".into(), slice.max_actions.into());
     let proposal = schema
-        .pointer_mut("/$defs/CellActionProposal/properties")
+        .pointer_mut("/$defs/CellActionCandidate/properties")
         .and_then(serde_json::Value::as_object_mut)
         .ok_or_else(|| anyhow!("cell appraisal schema has no proposal properties"))?;
     let subject_ids = slice
@@ -1118,9 +1295,22 @@ mod tests {
                 "cell_projector" => {
                     Ok("Faction Six sees the public deadline and reviews its own mandate.".into())
                 }
-                "cell_persona" => Ok(
-                    "Faction Six will publish a bounded position using its bulletin access.".into(),
-                ),
+                "cell_persona" => {
+                    assert!(
+                        request
+                            .lived_stream
+                            .contains("At location forum: Faction Six.")
+                    );
+                    assert!(
+                        request
+                            .lived_stream
+                            .contains("Only these cell-owned perspectives may make choices")
+                    );
+                    Ok(
+                        "Faction Six will publish a bounded position using its bulletin access."
+                            .into(),
+                    )
+                }
                 "cell_interpreter" => {
                     let call = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
                     assert!(
@@ -1137,10 +1327,11 @@ mod tests {
                                 "priority":5,
                                 "state_references":["institution:faction-06"],
                                 "public_channels":["public bulletin"],
-                                "effect":{"type":"actor_move","actor_id":"faction-06","destination_id":"forum"}
+                                "effect":{"type":"actor_move","destination_id":"forum"}
                             }],
                             "inaction_reason":null
-                        }).to_string());
+                        })
+                        .to_string());
                     }
                     self.saw_rejected_appraisal.store(
                         request.lived_stream.contains("PREVIOUS_REJECTED_APPRAISAL")
@@ -1156,7 +1347,7 @@ mod tests {
                             "priority":5,
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
-                            "effect":{"type":"institution","institution_id":"faction-06","posture":"published a bounded position","location_ids":["forum"]}
+                            "effect":{"type":"institution","posture":"published a bounded position","location_ids":["forum"]}
                         }],
                         "inaction_reason":null
                     }).to_string())
@@ -1285,7 +1476,6 @@ mod tests {
                             "public_channels":["public bulletin"],
                             "effect":{
                                 "type":"institution",
-                                "institution_id":"faction-06",
                                 "posture":if correction {"withholding reserve commitment pending a verified public count"} else {"releases the reserve immediately"},
                                 "location_ids":["forum"]
                             }
@@ -1355,7 +1545,8 @@ mod tests {
                 actions: vec![],
                 inaction_reason: Some("   ".into()),
             },
-        );
+        )
+        .unwrap();
         let error = validate_cell_appraisal(&slice, &appraisal).unwrap_err();
         assert!(
             error
@@ -1367,6 +1558,10 @@ mod tests {
     #[test]
     fn compact_cell_prompt_contract_is_valid_json() {
         serde_json::from_str::<serde_json::Value>(CELL_APPRAISAL_OUTPUT_CONTRACT).unwrap();
+        assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"institution_id\""));
+        assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"gestalt_id\""));
+        assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"actor_id\""));
+        assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"member_id\""));
     }
 
     #[test]
@@ -1406,22 +1601,22 @@ mod tests {
         let appraisal = bind_cell_appraisal(
             &slice,
             CellAppraisalProposal {
-                actions: vec![crate::domain::CellActionProposal {
+                actions: vec![CellActionCandidate {
                     subject_id: "crowd".into(),
                     intent: "respond to the pressure".into(),
                     intended_effect: "change the collective situation".into(),
                     priority: 1,
                     state_references: vec!["gestalt:crowd".into()],
                     public_channels: vec![],
-                    effect: StrategicCellEffect::Gestalt {
-                        gestalt_id: "crowd".into(),
+                    effect: CellEffectCandidate::Gestalt {
                         pressure_additions: vec![],
                         pressure_resolutions: vec![],
                     },
                 }],
                 inaction_reason: None,
             },
-        );
+        )
+        .unwrap();
         assert!(
             validate_cell_appraisal(&slice, &appraisal)
                 .unwrap_err()
@@ -1506,15 +1701,14 @@ mod tests {
         let appraisal = bind_cell_appraisal(
             &slice,
             CellAppraisalProposal {
-                actions: vec![crate::domain::CellActionProposal {
+                actions: vec![CellActionCandidate {
                     subject_id: "member:mira".into(),
                     intent: "offer to help repair the shelter".into(),
                     intended_effect: "make the offer to the refugees".into(),
                     priority: 70,
                     state_references: vec!["member:mira".into()],
                     public_channels: vec![],
-                    effect: StrategicCellEffect::MemberActivity {
-                        member_id: "mira".into(),
+                    effect: CellEffectCandidate::MemberActivity {
                         activity: crate::domain::StrategicActivityKind::Communicate,
                         target_subject_ids: vec!["refugees".into()],
                         location_ids: vec!["forum".into()],
@@ -1522,7 +1716,8 @@ mod tests {
                 }],
                 inaction_reason: None,
             },
-        );
+        )
+        .unwrap();
         validate_cell_appraisal(&slice, &appraisal).unwrap();
 
         let mut stolen = appraisal;
@@ -1653,11 +1848,11 @@ mod tests {
         let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
         constrain_cell_proposal_schema(&mut schema, &fixture_cell_slice()).unwrap();
         assert_eq!(
-            schema.pointer("/$defs/CellActionProposal/properties/priority/minimum"),
+            schema.pointer("/$defs/CellActionCandidate/properties/priority/minimum"),
             Some(&serde_json::json!(0))
         );
         assert_eq!(
-            schema.pointer("/$defs/CellActionProposal/properties/priority/maximum"),
+            schema.pointer("/$defs/CellActionCandidate/properties/priority/maximum"),
             Some(&serde_json::json!(100))
         );
     }

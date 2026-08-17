@@ -249,6 +249,12 @@ the lived stream explicitly establishes an exact shared location or
 communication channel. Compression therefore cannot turn a regional arena
 into one impossible meeting room.
 
+The location partition is projected twice through one owner: the learned
+Projector renders lived detail, while Ghostlight prepends a deterministic
+narrative scene-boundary block derived from the same permitted slice. The block
+contains names and locations, not schemas or state fields. A poetic omission
+therefore cannot erase geometry before the Persona turn.
+
 Perspective ownership is equally strict. Only the cell's supplied constituents
 and selected member exceptions may receive an internal viewpoint or make a
 choice. A named person mentioned by a perceived event but owned by another cell
@@ -291,6 +297,13 @@ kernel still performs the authoritative canonical check. Named-member
 knowledge is never treated as an information channel; while dematerialized,
 the member can publish only through channels owned by their current leaf
 gestalt's agency profile.
+
+`subject_id` is the sole model-facing owner attribution. Nested effect owner
+IDs are absent from the model contract: Ghostlight derives `institution_id`,
+`gestalt_id`, `actor_id`, or the raw member ID during binding. The canonical
+`CellActionProposal` still carries those IDs for downstream validation and
+receipts, but a model cannot make two copies disagree. This also removes
+repeated tokens and one class of correction calls from every actionful cell.
 
 Institution rows distinguish `current_posture` from unresolved `pressures`.
 The committed posture is projected as already true and is the exact baseline

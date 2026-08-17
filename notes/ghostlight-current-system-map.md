@@ -74,6 +74,8 @@ reach, not co-presence. Persona turns cannot stage direct sight, speech, or
 response across locations unless the lived stream establishes a shared place
 or communication channel. Interpreter activity labels then describe the
 narrow attempted act, while hoped-for success remains outside the effect.
+Ghostlight deterministically prepends the exact name/location partition to the
+learned Projector's narrative, so model omission cannot erase those boundaries.
 Only supplied cell constituents and selected member exceptions may own a
 perspective. Event mentions do not transfer a person into another cell, and an
 unnamed or unsupplied entity cannot become an activity target merely because a
@@ -83,6 +85,12 @@ Institution slices carry committed `current_posture` separately from unresolved
 pressure. Projectors present the posture as existing state; Interpreters and
 validators compare any new commitment directly against it. The old overloaded
 `pressures[0]` convention is not an authority path.
+
+Model-facing actions contain one owner, `subject_id`. Nested effect owner IDs
+are runtime-derived during binding and exist only in the canonical downstream
+proposal. The model cannot disagree with itself about `member:mira-venn` versus
+raw `mira-venn`, and the prompt/output contract spends fewer tokens copying
+invariants Ghostlight already owns.
 
 Gestalt background choices use two distinct typed paths. Pressure transitions
 change exact unresolved markers. `gestalt_activity` records an attributed
