@@ -303,7 +303,7 @@ impl WorldCompiler {
             scoped_evidence
         );
         let base_prompt = format!(
-            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor or institution IDs declared in this candidate, never display names, roles, groups, or location IDs. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -1911,12 +1911,31 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
             "campaign agency skeleton has incomplete subject coverage"
         ));
     }
+    let relationship_targets = c
+        .actors
+        .keys()
+        .chain(c.institutions.keys())
+        .cloned()
+        .collect::<BTreeSet<_>>();
     for actor in c.actors.values() {
         if !c.locations.contains_key(&actor.location_id) {
             return Err(anyhow!(
                 "actor {} occupies unknown location {}",
                 actor.id,
                 actor.location_id
+            ));
+        }
+        let invalid_relationships = actor
+            .relationships
+            .iter()
+            .filter(|(target_id, description)| {
+                !relationship_targets.contains(*target_id) || description.trim().is_empty()
+            })
+            .map(|(target_id, _)| format!("{}->{target_id}", actor.id))
+            .collect::<Vec<_>>();
+        if !invalid_relationships.is_empty() {
+            return Err(anyhow!(
+                "actor relationships must use exact declared actor or institution IDs with non-empty descriptions; rejected relationships={invalid_relationships:?}; valid target IDs={relationship_targets:?}"
             ));
         }
     }
@@ -2161,6 +2180,28 @@ mod tests {
         fn provider_id(&self) -> &'static str {
             "fixture"
         }
+    }
+
+    #[test]
+    fn campaign_relationships_bind_to_canonical_subject_ids() {
+        let mut campaign = crate::resolution::tests::campaign(2, 1);
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .relationships
+            .insert("faction-0000".into(), "cautious contact".into());
+        validate_campaign_seed(&campaign).unwrap();
+
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .relationships
+            .insert("Faction Zero".into(), "display name, not identity".into());
+        let error = validate_campaign_seed(&campaign).unwrap_err().to_string();
+        assert!(error.contains("player->Faction Zero"));
+        assert!(error.contains("faction-0000"));
     }
 
     #[tokio::test]
