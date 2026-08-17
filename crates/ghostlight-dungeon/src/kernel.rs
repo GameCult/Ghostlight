@@ -136,13 +136,13 @@ fn execute(
                         .actors
                         .get(&assessment.intent.actor_id)
                         .ok_or_else(|| KernelError::Invalid("assessment actor vanished".into()))?;
-                    for effect in [
-                        &assessment.strong_effect,
-                        &assessment.success_effect,
-                        &assessment.mixed_effect,
-                        &assessment.failure_effect,
+                    for (effect, stake) in [
+                        (&assessment.strong_effect, &assessment.success_stake),
+                        (&assessment.success_effect, &assessment.success_stake),
+                        (&assessment.mixed_effect, &assessment.mixed_stake),
+                        (&assessment.failure_effect, &assessment.failure_stake),
                     ] {
-                        crate::assessor::validate_effect(&campaign, actor, effect)
+                        crate::assessor::validate_effect(&campaign, actor, effect, stake)
                             .map_err(|error| KernelError::Invalid(error.to_string()))?;
                     }
                     assessment
@@ -719,13 +719,13 @@ fn execute(
                     "NPC assessment is stale or invalid".into(),
                 ));
             }
-            for effect in [
-                &assessment.strong_effect,
-                &assessment.success_effect,
-                &assessment.mixed_effect,
-                &assessment.failure_effect,
+            for (effect, stake) in [
+                (&assessment.strong_effect, &assessment.success_stake),
+                (&assessment.success_effect, &assessment.success_stake),
+                (&assessment.mixed_effect, &assessment.mixed_stake),
+                (&assessment.failure_effect, &assessment.failure_stake),
             ] {
-                crate::assessor::validate_effect(&campaign, actor, effect)
+                crate::assessor::validate_effect(&campaign, actor, effect, stake)
                     .map_err(|error| KernelError::Invalid(error.to_string()))?;
             }
             let actor_name = actor.name.clone();
@@ -880,6 +880,25 @@ fn apply_world_effect(
         actor.conditions.extend(delta.add.clone());
         for value in &delta.remove {
             actor.conditions.remove(value);
+        }
+    }
+    for (actor_id, additions) in &effect.actor_knowledge_additions {
+        let actor = campaign
+            .actors
+            .get_mut(actor_id)
+            .ok_or_else(|| KernelError::Invalid("outcome actor vanished".into()))?;
+        actor.knowledge.extend(additions.clone());
+        for finding in additions {
+            let fact_id = format!(
+                "fact:outcome:{:x}",
+                Sha256::digest(format!("{}:{finding}", campaign.id).as_bytes())
+            );
+            campaign.facts.entry(fact_id.clone()).or_insert(WorldFact {
+                id: fact_id,
+                statement: finding.clone(),
+                scope: FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+            });
         }
     }
     for (actor_id, relationships) in &effect.actor_relationship_updates {
@@ -2551,6 +2570,25 @@ mod tests {
                 .await
                 .is_err()
         );
+        let mut hidden_finding = assess(&seed, intent.clone());
+        hidden_finding
+            .success_effect
+            .actor_knowledge_additions
+            .insert(
+                "player".into(),
+                BTreeSet::from(["The hidden latch is broken.".into()]),
+            );
+        hidden_finding.digest = crate::assessor::assessment_digest(&hidden_finding).unwrap();
+        assert!(
+            kernel
+                .command(WorldCommand::Assess {
+                    expected_revision: 0,
+                    intent: intent.clone(),
+                    proposal: Some(hidden_finding),
+                })
+                .await
+                .is_err()
+        );
         let delta = WorldEffectDelta {
             actor_conditions: BTreeMap::from([(
                 "player".into(),
@@ -2559,9 +2597,17 @@ mod tests {
                     remove: BTreeSet::new(),
                 },
             )]),
+            actor_knowledge_additions: BTreeMap::from([(
+                "player".into(),
+                BTreeSet::from(["The door brace is seated against the frame.".into()]),
+            )]),
             ..Default::default()
         };
         let mut valid = assess(&seed, intent.clone());
+        valid.success_stake =
+            "The door brace is seated against the frame. You become braced.".into();
+        valid.mixed_stake = valid.success_stake.clone();
+        valid.failure_stake = valid.success_stake.clone();
         valid.strong_effect = delta.clone();
         valid.success_effect = delta.clone();
         valid.mixed_effect = delta.clone();
@@ -2588,6 +2634,15 @@ mod tests {
             .1;
         assert_eq!(persisted.revision, 1);
         assert!(persisted.actors["player"].conditions.contains("braced"));
+        assert!(
+            persisted.actors["player"]
+                .knowledge
+                .contains("The door brace is seated against the frame.")
+        );
+        assert!(persisted.facts.values().any(|fact| {
+            fact.statement == "The door brace is seated against the frame."
+                && fact.scope == FactScope::BranchLocal
+        }));
     }
 
     fn resolution_stage(

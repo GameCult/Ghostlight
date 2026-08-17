@@ -1,9 +1,9 @@
 use crate::{
     domain::{
         ActorState, AgencyAxis, AgencyRelation, AgencyRelationKind, AgencySubjectKind,
-        BranchOrigin, Campaign, FactScope, GestaltMemberDelta, GestaltPersonaState,
-        InstitutionState, Location, VaultEvidenceReceipt, WorldClock, WorldCompilePreview,
-        WorldFact,
+        BranchOrigin, Campaign, EvidenceCoverage, EvidenceUseLane, FactScope, GestaltMemberDelta,
+        GestaltPersonaState, InstitutionState, Location, VaultEvidenceReceipt, WorldClock,
+        WorldCompilePreview, WorldFact,
     },
     model::{
         ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage,
@@ -101,6 +101,11 @@ struct RoleSet {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct RetrievalQueryPlan {
     queries: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct EvidenceUsePlan {
+    coverage: Vec<EvidenceCoverage>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -262,16 +267,19 @@ impl WorldCompiler {
             )
             .await?;
         let receipts = self.retrieve_all(&queries, &start.when, 8).await?;
+        let (evidence_coverage, relevance_receipts) =
+            self.classify_evidence(&start, &receipts).await?;
+        let scoped_evidence = scoped_evidence_text(&receipts, &evidence_coverage);
         let shared_prefix = format!(
-            "SOURCE-GROUNDED WORLD COMPILATION\nSTART:\n{}\nEVIDENCE:\n{}\n\n",
+            "SOURCE-GROUNDED WORLD COMPILATION\nSTART:\n{}\nSCOPED EVIDENCE:\n{}\n\n",
             serde_json::to_string(&start)?,
-            evidence_text(&receipts)
+            scoped_evidence
         );
         let base_prompt = format!(
-            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and enough remote institutions to represent every source-supported major power relevant to this era. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. A canon_baseline fact must cite one or more exact receipt_id values printed in EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. Evidence marked direct_seed may shape the local situation. Evidence marked setting_background may establish general history, mechanics, or institutions, but must not import its story-specific cast, incident, clock, location state, goals, or institutional posture into the current branch. A matching place name or era alone does not make another source episode current. When the evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
-        let sources = receipt_ids(&receipts);
+        let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
         let mut compiler_receipts = Vec::new();
         let mut correction = String::new();
         let (seed, campaign) = loop {
@@ -310,7 +318,7 @@ impl WorldCompiler {
         };
         let subject_briefs = agency_subject_briefs(&campaign);
         let agency_prompt = format!(
-            "{shared_prefix}Compile the multiresolution global agency skeleton for this exact, already validated subject roster:\n{}\n\nReturn exactly one agency profile for every supplied subject and no other subject. Copy every subject_id, subject_kind, and location_ids exactly. Every profile must contain exactly the six facet axes geography, ideology, authority, economy_role, species_body, and information. Use an explicit unknown value when evidence cannot support a sharper claim. collective_authority_id must be null or one supplied subject ID; it denotes real shared authority, never mere alliance or proximity. Relations may use only supplied subject IDs and strength must be an integer from 1 through 100. Cross-faction relations never imply shared speech, knowledge, or authority. Preserve source-supported geographic, ideological, institutional, economic, biological, and information boundaries that predict different behavior under pressure.",
+            "MULTIRESOLUTION AGENCY SKELETON\nCompile only this exact, already validated subject roster:\n{}\n\nReturn exactly one agency profile for every supplied subject and no other subject. Copy every subject_id, subject_kind, and location_ids exactly. Every profile must contain exactly the six facet axes geography, ideology, authority, economy_role, species_body, and information. Derive facets only from the supplied roster fields; use an explicit unknown value when they do not support a sharper claim. collective_authority_id must be null or one supplied subject ID; it denotes real shared authority, never mere alliance or proximity. Relations may use only supplied subject IDs and strength must be an integer from 1 through 100. Cross-faction relations never imply shared speech, knowledge, or authority. Preserve geographic, ideological, institutional, economic, biological, and information boundaries that predict different behavior under pressure.",
             serde_json::to_string(&subject_briefs)?
         );
         let agency_schema = serde_json::to_value(schema_for!(CompiledAgencySkeleton))?;
@@ -359,6 +367,7 @@ impl WorldCompiler {
             }
         }
         let mut model_receipts = vec![retrieval_receipt];
+        model_receipts.extend(relevance_receipts);
         model_receipts.extend(compiler_receipts);
         Ok((
             WorldCompilePreview {
@@ -366,6 +375,7 @@ impl WorldCompiler {
                 title: seed.title,
                 campaign,
                 evidence_receipts: receipts,
+                evidence_coverage,
                 gaps: seed.gaps,
                 branch_assumptions: seed.branch_assumptions,
                 requires_approval: true,
@@ -788,6 +798,96 @@ impl WorldCompiler {
         Ok((normalized, output.receipt))
     }
 
+    async fn classify_evidence(
+        &self,
+        start: &CustomStart,
+        receipts: &[VaultEvidenceReceipt],
+    ) -> Result<(Vec<EvidenceCoverage>, Vec<ModelStageReceipt>)> {
+        let mut source_briefs = BTreeMap::new();
+        for witness in receipts.iter().flat_map(|receipt| &receipt.witnesses) {
+            source_briefs
+                .entry(witness.source_id.clone())
+                .or_insert_with(|| {
+                    serde_json::json!({
+                        "source_id":witness.source_id,
+                        "authority_lane":witness.authority_lane,
+                        "temporal_scope":witness.temporal_scope,
+                        "excerpt":witness.excerpt.chars().take(1_200).collect::<String>(),
+                    })
+                });
+        }
+        let expected: BTreeSet<_> = source_briefs.keys().cloned().collect();
+        // Keep the provider schema stable across campaigns for prefix-cache reuse.
+        // Exact membership and cardinality belong to the local validator below.
+        let schema = serde_json::to_value(schema_for!(EvidenceUsePlan))?;
+        let base_prompt = format!(
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nClassify every supplied source exactly once for this requested custom start. direct_seed means the source directly supports this specific local place, era, role, goal, pressure, or a causal actor/institution that should actually be present. setting_background means the source supports general setting history, mechanics, geography, or institution identity, but its story-specific cast, incident, clocks, goals, and postures must not be imported into the new branch. excluded means it is merely nearby in search space. A shared place name or era alone does not make another story episode current. Keep each rationale to one short sentence.\nSTART:\n{}\nSOURCES:\n{}",
+            serde_json::to_string(&schema)?,
+            serde_json::to_string(start)?,
+            serde_json::to_string(&source_briefs.values().collect::<Vec<_>>())?,
+        );
+        let source_receipt_ids = receipt_ids(receipts);
+        let mut stage_receipts = Vec::new();
+        let mut correction = String::new();
+        for attempt in 0..2 {
+            let output = run_validated_stage(
+                self.model.as_ref(),
+                &ModelStageRequest {
+                    stage: "evidence_relevance".into(),
+                    model: self.retrieval_model.clone(),
+                    snapshot_binding: "custom-start".into(),
+                    lived_stream: format!("{base_prompt}{correction}"),
+                    output_schema: Some(schema.clone()),
+                    source_receipt_ids: source_receipt_ids.clone(),
+                    temperature: Some(0.0),
+                    max_output_tokens: Some(2_500),
+                },
+            )
+            .await?;
+            let candidate = output
+                .structured
+                .clone()
+                .ok_or_else(|| anyhow!("evidence classifier returned no structured output"))
+                .and_then(|value| serde_json::from_value::<EvidenceUsePlan>(value).map_err(Into::into))
+                .and_then(|plan| {
+                    let actual = plan
+                        .coverage
+                        .iter()
+                        .map(|item| item.source_id.clone())
+                        .collect::<BTreeSet<_>>();
+                    if plan.coverage.len() != expected.len()
+                        || actual != expected
+                        || plan.coverage.iter().any(|item| item.rationale.trim().is_empty())
+                    {
+                        return Err(anyhow!(
+                            "evidence classifier must cover every exact source once with a rationale"
+                        ));
+                    }
+                    Ok(plan.coverage)
+                });
+            let mut receipt = output.receipt;
+            match candidate {
+                Ok(coverage) => {
+                    stage_receipts.push(receipt);
+                    return Ok((coverage, stage_receipts));
+                }
+                Err(error) if attempt == 0 => {
+                    mark_semantic_invalid(&mut receipt, &error);
+                    stage_receipts.push(receipt);
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CLASSIFICATION: {error}\nReturn one corrected complete classification against the same START and SOURCES."
+                    );
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "evidence classifier failed local validation after one correction: {error}"
+                    ));
+                }
+            }
+        }
+        unreachable!()
+    }
+
     async fn structured(
         &self,
         stage: &str,
@@ -917,6 +1017,76 @@ fn evidence_text(receipts: &[VaultEvidenceReceipt]) -> String {
         .collect::<Vec<_>>()
         .join("\n\n")
 }
+
+fn scoped_evidence_text(
+    receipts: &[VaultEvidenceReceipt],
+    coverage: &[EvidenceCoverage],
+) -> String {
+    let coverage = coverage
+        .iter()
+        .map(|item| (item.source_id.as_str(), item))
+        .collect::<BTreeMap<_, _>>();
+    let mut seen = BTreeSet::new();
+    receipts
+        .iter()
+        .flat_map(|receipt| {
+            receipt
+                .witnesses
+                .iter()
+                .map(move |witness| (receipt.id.as_str(), witness))
+        })
+        .filter_map(|(receipt_id, witness)| {
+            let use_plan = coverage.get(witness.source_id.as_str())?;
+            if use_plan.lane == EvidenceUseLane::Excluded
+                || !seen.insert((
+                    witness.source_id.clone(),
+                    witness.exact_locator.clone(),
+                    witness.content_hash.clone(),
+                ))
+            {
+                return None;
+            }
+            let lane = match use_plan.lane {
+                EvidenceUseLane::DirectSeed => "direct_seed",
+                EvidenceUseLane::SettingBackground => "setting_background",
+                EvidenceUseLane::Excluded => unreachable!(),
+            };
+            Some(format!(
+                "[usage_lane={} | rationale={} | receipt_id={} | source={} | locator={} | content_hash={}] {}",
+                lane,
+                use_plan.rationale,
+                receipt_id,
+                witness.source_id,
+                witness.exact_locator,
+                witness.content_hash,
+                witness.excerpt
+            ))
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
+fn receipt_ids_for_coverage(
+    receipts: &[VaultEvidenceReceipt],
+    coverage: &[EvidenceCoverage],
+) -> Vec<String> {
+    let included_sources = coverage
+        .iter()
+        .filter(|item| item.lane != EvidenceUseLane::Excluded)
+        .map(|item| item.source_id.as_str())
+        .collect::<BTreeSet<_>>();
+    receipts
+        .iter()
+        .filter(|receipt| {
+            receipt
+                .witnesses
+                .iter()
+                .any(|witness| included_sources.contains(witness.source_id.as_str()))
+        })
+        .map(|receipt| receipt.id.clone())
+        .collect()
+}
+
 fn receipt_ids(receipts: &[VaultEvidenceReceipt]) -> Vec<String> {
     receipts.iter().map(|r| r.id.clone()).collect()
 }
@@ -1403,6 +1573,13 @@ mod tests {
                     };
                     serde_json::json!({"queries":(1..=count).map(|index|format!("fixture grounded query {index}")).collect::<Vec<_>>()}).to_string()
                 }
+                "evidence_relevance" => serde_json::json!({
+                    "coverage":[{
+                        "source_id":"AetheriaLore:test.md",
+                        "lane":"direct_seed",
+                        "rationale":"The fixture source directly grounds the requested place."
+                    }]
+                }).to_string(),
                 "world_openings" => serde_json::json!({"openings":[
                     {"id":"a","title":"Ash","era":"early","place":"ring","pressure":"strike","player_hook":"work","evidence_receipt_ids":[]},
                     {"id":"b","title":"Glass","era":"middle","place":"moon","pressure":"siege","player_hook":"survive","evidence_receipt_ids":[]},
@@ -1565,9 +1742,19 @@ mod tests {
                 .iter()
                 .map(|receipt| receipt.stage.as_str())
                 .collect::<Vec<_>>(),
-            vec!["custom_retrieval_plan", "world_compile", "agency_compile"]
+            vec![
+                "custom_retrieval_plan",
+                "evidence_relevance",
+                "world_compile",
+                "agency_compile"
+            ]
         );
         assert!(preview.requires_approval);
+        assert_eq!(preview.evidence_coverage.len(), 1);
+        assert_eq!(
+            preview.evidence_coverage[0].lane,
+            EvidenceUseLane::DirectSeed
+        );
         assert_eq!(preview.campaign.revision, 0);
         assert_eq!(preview.campaign.locations.len(), 1);
         assert_eq!(preview.campaign.canon_candidates.len(), 1);
@@ -1624,6 +1811,60 @@ mod tests {
         assert_eq!(text.matches("A stable witnessed place.").count(), 1);
         assert!(text.contains("receipt_id=vault:receipt-one"));
         assert!(!text.contains("receipt_id=vault:receipt-two"));
+    }
+
+    #[test]
+    fn scoped_evidence_excludes_nearby_story_incidents_from_world_context() {
+        let direct = VaultEvidenceReceipt {
+            schema: "ghostlight.vault_evidence_receipt.v1".into(),
+            id: "vault:direct".into(),
+            provider: "fixture".into(),
+            query_hash: "sha256:direct".into(),
+            witnesses: vec![SourceWitness {
+                source_id: "AetheriaLore:place.md".into(),
+                exact_locator: "place.md:1".into(),
+                content_hash: "sha256:place".into(),
+                excerpt: "The requested station exists.".into(),
+                authority_lane: "AetheriaLore".into(),
+                temporal_scope: "fixture".into(),
+            }],
+            retrieved_at: Utc::now(),
+        };
+        let nearby_story = VaultEvidenceReceipt {
+            schema: "ghostlight.vault_evidence_receipt.v1".into(),
+            id: "vault:story".into(),
+            provider: "fixture".into(),
+            query_hash: "sha256:story".into(),
+            witnesses: vec![SourceWitness {
+                source_id: "AetheriaLore:unrelated-story.md".into(),
+                exact_locator: "unrelated-story.md:1".into(),
+                content_hash: "sha256:story".into(),
+                excerpt: "An unrelated named cast has a crisis nearby.".into(),
+                authority_lane: "AetheriaLore".into(),
+                temporal_scope: "fixture".into(),
+            }],
+            retrieved_at: Utc::now(),
+        };
+        let receipts = vec![direct, nearby_story];
+        let coverage = vec![
+            EvidenceCoverage {
+                source_id: "AetheriaLore:place.md".into(),
+                lane: EvidenceUseLane::DirectSeed,
+                rationale: "Directly grounds the requested station.".into(),
+            },
+            EvidenceCoverage {
+                source_id: "AetheriaLore:unrelated-story.md".into(),
+                lane: EvidenceUseLane::Excluded,
+                rationale: "The incident is unrelated to the requested start.".into(),
+            },
+        ];
+        let text = scoped_evidence_text(&receipts, &coverage);
+        assert!(text.contains("The requested station exists."));
+        assert!(!text.contains("unrelated named cast"));
+        assert_eq!(
+            receipt_ids_for_coverage(&receipts, &coverage),
+            vec!["vault:direct"]
+        );
     }
 
     #[test]

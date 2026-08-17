@@ -37,6 +37,14 @@ stable prefixes precede dynamic context; world and agency compilation are
 separate stages; Projectors receive situation state while Interpreters receive
 exact permissions; deterministic cell bindings are attached by the runtime.
 
+The current browser/compiler hardening adds three ownership cuts before the
+next isolated acceptance run: compiler evidence is triaged into direct,
+background, and excluded lanes before generation; informational action effects
+must name the exact player-visible finding they commit; and player HTTP command
+responses are spoiler-safe projections rather than serialized campaigns. The
+browser renders these projections as labeled, escaped human-readable controls,
+and narration receives only the latest causal turn rather than a route dump.
+
 Live local evidence now covers grounded VoidBot compilation, a four-actor wave,
 impossible and receipted d20 actions, grounded narration, strategic cells, and a
 24-faction budget-4 wave. The first scale baseline used 37,327 prompt tokens and
@@ -46,6 +54,12 @@ their first attempt, two material institutional consequences, exact constituent
 authority, and no player mutation. Remaining work is authenticated surface and
 lifecycle acceptance, away/live concurrency, exact deployment, and final
 regression/provenance verification.
+
+Next, build the exact committed candidate and replay the authenticated Huygens
+campaign. Prove the literal HTTP response is spoiler-safe, the evidence lanes
+exclude adjacent story incidents, and a diagnostic roll commits its exact
+previewed finding. Then run away/live concurrency, persistence, fork, export,
+restart, deployment, LAN/firewall, CultMesh, and provenance acceptance.
 
 ## Prior research-program phase
 

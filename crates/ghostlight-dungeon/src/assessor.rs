@@ -81,7 +81,7 @@ impl ActionAssessor {
             "maximum":10
         });
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. Keep a delta empty when prose consequence has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. When an outcome directly reveals information to the acting actor, actor_knowledge_additions must contain the specific observed finding, not a vague claim that a reading or clue exists; copy each exact finding verbatim into that outcome's visible stake. Such findings become provisional branch facts on commit, so do not invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(&intent)?,
             serde_json::to_string(actor)?,
@@ -116,13 +116,13 @@ impl ActionAssessor {
                         .ok_or_else(|| anyhow!("assessor returned no typed proposal"))?,
                 )?;
                 validate_proposal(&proposal, &allowed_references)?;
-                for effect in [
-                    &proposal.strong_effect,
-                    &proposal.success_effect,
-                    &proposal.mixed_effect,
-                    &proposal.failure_effect,
+                for (effect, stake) in [
+                    (&proposal.strong_effect, &proposal.success_stake),
+                    (&proposal.success_effect, &proposal.success_stake),
+                    (&proposal.mixed_effect, &proposal.mixed_stake),
+                    (&proposal.failure_effect, &proposal.failure_stake),
                 ] {
-                    validate_effect(campaign, actor, effect)?;
+                    validate_effect(campaign, actor, effect, stake)?;
                 }
                 Ok(proposal)
             })();
@@ -130,7 +130,7 @@ impl ActionAssessor {
                 Ok(proposal) => break (proposal, out),
                 Err(error) if attempts == 1 => {
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ASSESSMENT: {error}\nReturn a corrected complete assessment against the same snapshot. Copy every actor and destination ID exactly from the supplied state; leave typed deltas empty when no legal mutation is needed."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ASSESSMENT: {error}\nReturn a corrected complete assessment against the same snapshot. Copy every actor and destination ID exactly from the supplied state. Bind specific directly observed findings to the acting actor and repeat them verbatim in the matching visible stake; otherwise leave the typed delta empty."
                     );
                 }
                 Err(error) => {
@@ -223,10 +223,12 @@ pub(crate) fn validate_effect(
     campaign: &Campaign,
     acting_actor: &crate::domain::ActorState,
     effect: &WorldEffectDelta,
+    stake: &str,
 ) -> Result<()> {
     let affected = effect
         .actor_conditions
         .keys()
+        .chain(effect.actor_knowledge_additions.keys())
         .chain(effect.actor_relationship_updates.keys());
     for id in affected {
         let target = campaign
@@ -243,6 +245,22 @@ pub(crate) fn validate_effect(
             || !delta.add.is_disjoint(&delta.remove)
         {
             return Err(anyhow!("outcome condition delta is contradictory"));
+        }
+    }
+    for (actor_id, additions) in &effect.actor_knowledge_additions {
+        if actor_id != &acting_actor.id
+            || additions.is_empty()
+            || additions.len() > 4
+            || additions.iter().any(|finding| {
+                finding.trim().is_empty()
+                    || finding.chars().count() > 500
+                    || acting_actor.knowledge.contains(finding)
+                    || !stake.contains(finding)
+            })
+        {
+            return Err(anyhow!(
+                "outcome knowledge must be new, bounded, directly observed by the acting actor, and visible verbatim in its stake"
+            ));
         }
     }
     for relationships in effect.actor_relationship_updates.values() {

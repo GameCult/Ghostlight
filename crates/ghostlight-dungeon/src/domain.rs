@@ -830,6 +830,8 @@ pub struct ConditionDelta {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
 pub struct WorldEffectDelta {
     pub actor_conditions: BTreeMap<String, ConditionDelta>,
+    #[serde(default)]
+    pub actor_knowledge_additions: BTreeMap<String, BTreeSet<String>>,
     pub actor_relationship_updates: BTreeMap<String, BTreeMap<String, String>>,
     pub actor_moves: BTreeMap<String, String>,
     pub clock_advances: BTreeMap<String, u8>,
@@ -921,7 +923,24 @@ pub struct WorldCompilePreview {
     pub title: String,
     pub campaign: Campaign,
     pub evidence_receipts: Vec<VaultEvidenceReceipt>,
+    #[serde(default)]
+    pub evidence_coverage: Vec<EvidenceCoverage>,
     pub gaps: Vec<String>,
     pub branch_assumptions: Vec<String>,
     pub requires_approval: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum EvidenceUseLane {
+    DirectSeed,
+    SettingBackground,
+    Excluded,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct EvidenceCoverage {
+    pub source_id: String,
+    pub lane: EvidenceUseLane,
+    pub rationale: String,
 }

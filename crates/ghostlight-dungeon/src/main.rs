@@ -1045,7 +1045,7 @@ async fn command(
                                         .await
                                     {
                                         Ok(reaction) => {
-                                            let initiative = match resolve_npc_initiative(
+                                            let _initiative = match resolve_npc_initiative(
                                                 &state, &runtime, &reaction,
                                             )
                                             .await
@@ -1069,7 +1069,10 @@ async fn command(
                                             if let Err(error) = refresh_mesh(&state).await {
                                                 tracing::warn!(%error, "post-command CultMesh publication failed");
                                             }
-                                            return Json(serde_json::json!({"primary":result,"presence":presence_result,"reaction_wave":reaction,"npc_initiative":initiative,"narration":narration})).into_response();
+                                            return Json(player_command_projection(
+                                                &result, narration,
+                                            ))
+                                            .into_response();
                                         }
                                         Err(error) => {
                                             return (
@@ -1102,10 +1105,8 @@ async fn command(
                             if let Err(error) = refresh_mesh(&state).await {
                                 tracing::warn!(%error, "post-command CultMesh publication failed");
                             }
-                            return Json(
-                                serde_json::json!({"primary":result,"presence":presence_result,"narration":narration}),
-                            )
-                            .into_response();
+                            return Json(player_command_projection(&result, narration))
+                                .into_response();
                         }
                     }
                 }
@@ -1121,9 +1122,9 @@ async fn command(
                 if let Err(error) = refresh_mesh(&state).await {
                     tracing::warn!(%error, "post-command CultMesh publication failed");
                 }
-                Json(serde_json::json!({"result":result,"narration":narration})).into_response()
+                Json(player_command_projection(&result, narration)).into_response()
             } else {
-                Json(result).into_response()
+                Json(player_command_projection(&result, None)).into_response()
             }
         }
         Err(error) => {
@@ -1166,7 +1167,9 @@ async fn command(
                             })
                             .await
                         {
-                            Ok(result) => Json(result).into_response(),
+                            Ok(result) => {
+                                Json(player_command_projection(&result, None)).into_response()
+                            }
                             Err(recompile_error) => (
                                 StatusCode::CONFLICT,
                                 Json(ErrorBody {
@@ -1212,6 +1215,31 @@ async fn command(
             )
                 .into_response()
         }
+    }
+}
+
+fn player_command_projection(
+    result: &CommandResult,
+    narration: Option<NarrationProjection>,
+) -> serde_json::Value {
+    match result {
+        CommandResult::Assessed { assessment } => serde_json::json!({
+            "kind":"assessed",
+            "assessment":assessment,
+        }),
+        CommandResult::Committed { receipt, .. } => serde_json::json!({
+            "kind":"committed",
+            "revision":receipt.revision,
+            "receipt":receipt,
+            "narration":narration,
+        }),
+        CommandResult::ResolutionUpdated { receipt, .. } => serde_json::json!({
+            "kind":"resolution_updated",
+            "receipt":receipt,
+        }),
+        CommandResult::Created { .. } => serde_json::json!({
+            "kind":"created",
+        }),
     }
 }
 
@@ -1995,5 +2023,29 @@ mod tests {
             },
             "player",
         ));
+    }
+
+    #[test]
+    fn player_command_projection_never_serializes_campaign_state() {
+        let campaign = seed("Private state");
+        let result = CommandResult::Committed {
+            receipt: ghostlight_dungeon::domain::WorldCommitReceipt {
+                schema: "ghostlight.world_commit_receipt.v1".into(),
+                campaign_id: campaign.id,
+                previous_revision: 0,
+                revision: 1,
+                command_kind: "attempt".into(),
+                committed_at: chrono::Utc::now(),
+                roll: None,
+            },
+            campaign,
+        };
+        let projection = player_command_projection(&result, None);
+        assert_eq!(projection["kind"], "committed");
+        assert_eq!(projection["revision"], 1);
+        let encoded = serde_json::to_string(&projection).unwrap();
+        assert!(!encoded.contains("Private state"));
+        assert!(!encoded.contains("actors"));
+        assert!(!encoded.contains("facts"));
     }
 }

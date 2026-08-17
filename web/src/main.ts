@@ -16,6 +16,66 @@ let resolutionEpoch = 0;
 let providerConfigurationEpoch = 0;
 let resolutionPins: any[] = [];
 
+function node<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  text?: string,
+  className?: string,
+): HTMLElementTagNameMap[K] {
+  const value = document.createElement(tag);
+  if (text !== undefined) value.textContent = text;
+  if (className) value.className = className;
+  return value;
+}
+
+function showSummary(title: string, lines: string[]) {
+  const children: HTMLElement[] = [node("h3", title)];
+  for (const line of lines.filter(Boolean)) children.push(node("p", line));
+  receipt.replaceChildren(...children);
+  receipt.hidden = false;
+}
+
+function renderCommandReceipt(body: any) {
+  if (body?.kind === "assessed") {
+    const assessment = body.assessment;
+    const children: HTMLElement[] = [node("h3", assessment.admissible ? "Action assessment" : "That attempt is not possible")];
+    if (assessment.admissible) {
+      children.push(node("p", `DC ${assessment.dc} · modifier ${assessment.modifier_total >= 0 ? "+" : ""}${assessment.modifier_total}`));
+      const modifiers = node("ul");
+      for (const modifier of assessment.modifiers ?? []) {
+        modifiers.append(node("li", `${modifier.label}: ${modifier.value >= 0 ? "+" : ""}${modifier.value}`));
+      }
+      children.push(modifiers);
+      children.push(node("p", `Strong/success: ${assessment.success_stake}`));
+      children.push(node("p", `Mixed: ${assessment.mixed_stake}`));
+      children.push(node("p", `Failure: ${assessment.failure_stake}`));
+      children.push(node("p", `Effect ceiling: ${assessment.effect_ceiling}`, "quiet"));
+    } else {
+      children.push(node("p", assessment.missing_permission ?? "The attempt has no admissible path from current state."));
+      for (const bargain of assessment.bargains ?? []) children.push(node("p", `Possible bargain: ${bargain}`));
+    }
+    receipt.replaceChildren(...children);
+    receipt.hidden = false;
+    return;
+  }
+  if (body?.kind === "committed") {
+    const roll = body.receipt?.roll;
+    if (roll) {
+      const outcome = String(roll.outcome).replaceAll("_", " ");
+      showSummary(outcome.charAt(0).toUpperCase() + outcome.slice(1), [
+        `d20 ${roll.d20} ${roll.modifier_total >= 0 ? "+" : "−"} ${Math.abs(roll.modifier_total)} = ${roll.total} against DC ${roll.dc}`,
+      ]);
+    } else {
+      showSummary("World advanced", [`Revision ${body.revision}`]);
+    }
+    return;
+  }
+  if (body?.kind === "resolution_updated") {
+    showSummary("World resolution updated", [`Resolution epoch ${body.receipt?.resolution_epoch ?? "advanced"}`]);
+    return;
+  }
+  showSummary("Command result", [body?.error ?? "The world returned no player-facing detail."]);
+}
+
 async function refresh() {
   const response = await fetch("/api/surface");
   if (response.status === 401) { status.textContent = "This laboratory requires an unused invite link."; return; }
@@ -36,17 +96,35 @@ async function refresh() {
   document.querySelector<HTMLInputElement>("#provider-parallelism")!.value = String(providerParallelism);
   document.querySelector<HTMLOutputElement>("#provider-parallelism-value")!.value = String(providerParallelism);
   const pinList = document.querySelector<HTMLElement>("#pin-list")!;
-  pinList.innerHTML = resolutionPins.map(pin => `<p><code>${pin.kind}</code> ${[...pin.subject_ids].join(", ")} — ${pin.reason} <button type="button" data-remove-pin="${pin.id}">Remove</button></p>`).join("") || "<p>No persistent pins.</p>";
-  pinList.querySelectorAll<HTMLButtonElement>("[data-remove-pin]").forEach(button => button.addEventListener("click", async () => {
-    await send({ type: "replace_resolution_pins", expected_revision: revision, expected_resolution_epoch: resolutionEpoch, pins: resolutionPins.filter(pin => pin.id !== button.dataset.removePin) });
-  }));
+  pinList.replaceChildren();
+  if (resolutionPins.length === 0) pinList.append(node("p", "No persistent pins."));
+  for (const pin of resolutionPins) {
+    const row = node("p");
+    row.append(node("code", String(pin.kind)), document.createTextNode(` ${[...pin.subject_ids].join(", ")} — ${pin.reason} `));
+    const remove = node("button", "Remove");
+    remove.type = "button";
+    remove.addEventListener("click", async () => {
+      await send({ type: "replace_resolution_pins", expected_revision: revision, expected_resolution_epoch: resolutionEpoch, pins: resolutionPins.filter(candidate => candidate.id !== pin.id) });
+    });
+    row.append(remove);
+    pinList.append(row);
+  }
   const fissionParent = document.querySelector<HTMLSelectElement>("#fission-parent")!;
-  fissionParent.innerHTML = (surface.resolution?.fission_targets ?? []).map((target: any) => `<option value="${target.id}">${target.name} · ${target.id}</option>`).join("");
+  fissionParent.replaceChildren(...(surface.resolution?.fission_targets ?? []).map((target: any) => {
+    const option = node("option", `${target.name} · ${target.id}`);
+    option.value = target.id;
+    return option;
+  }));
   document.querySelector<HTMLFormElement>("#fission-form")!.hidden = fissionParent.options.length === 0;
   renderEveSurface(surface, host, { body: document.body, clientId: "ghostlight.browser", statusElement: status });
   const campaigns = await fetch("/api/campaigns").then(response => response.json());
-  campaignList.innerHTML = campaigns.campaigns.map((item: any) => `<button data-campaign-id="${item.id}" ${item.selected ? "disabled" : ""}>${item.selected ? "●" : "○"} ${item.name} · revision ${item.revision}</button>`).join("");
-  campaignList.querySelectorAll<HTMLButtonElement>("button:not(:disabled)").forEach(button=>button.addEventListener("click",async()=>{await compilerPost(`/api/campaigns/select/${button.dataset.campaignId}`,{});await refresh();}));
+  campaignList.replaceChildren(...campaigns.campaigns.map((item: any) => {
+    const button = node("button", `${item.selected ? "●" : "○"} ${item.name} · revision ${item.revision}`);
+    button.type = "button";
+    button.disabled = Boolean(item.selected);
+    if (!item.selected) button.addEventListener("click", async () => { await compilerPost(`/api/campaigns/select/${item.id}`, {}); await refresh(); });
+    return button;
+  }));
 }
 
 async function compilerPost(path: string, body: unknown) {
@@ -58,8 +136,18 @@ async function compilerPost(path: string, body: unknown) {
 }
 
 function showCards(items: any[], action: string, choose: (item: any) => void) {
-  compilerResults.innerHTML = `<div class="cards">${items.map((item, index) => `<article class="card"><h3>${item.title ?? item.name}</h3><p>${item.player_hook ?? item.premise}</p><p>${item.era ? `${item.era} · ${item.place} · ${item.pressure}` : ""}</p><button data-index="${index}">${action}</button></article>`).join("")}</div>`;
-  compilerResults.querySelectorAll<HTMLButtonElement>("button").forEach(button => button.addEventListener("click", () => choose(items[Number(button.dataset.index)])));
+  const cards = node("div", undefined, "cards");
+  items.forEach((item, index) => {
+    const card = node("article", undefined, "card");
+    card.append(node("h3", item.title ?? item.name), node("p", item.player_hook ?? item.premise));
+    if (item.era) card.append(node("p", `${item.era} · ${item.place} · ${item.pressure}`));
+    const button = node("button", action);
+    button.type = "button";
+    button.addEventListener("click", () => choose(items[index]));
+    card.append(button);
+    cards.append(card);
+  });
+  compilerResults.replaceChildren(cards);
 }
 
 document.querySelector<HTMLFormElement>("#suggest-form")!.addEventListener("submit", async event => {
@@ -75,12 +163,32 @@ document.querySelector<HTMLFormElement>("#custom-form")!.addEventListener("submi
 
 async function showPreview(result: any) {
   const preview = result.preview;
-  compilerResults.innerHTML = `<article class="card"><h3>${preview.title}</h3><p>${preview.campaign.transcript?.[0]?.text ?? ""}</p><p>${Object.keys(preview.campaign.locations).length} locations · ${Object.keys(preview.campaign.actors).length} actors · ${Object.keys(preview.campaign.institutions).length} institutions</p><p class="warning">${preview.gaps.length ? `Material gaps: ${preview.gaps.join("; ")}` : "No declared material gaps."}</p><p>Branch assumptions: ${preview.branch_assumptions.join("; ") || "none"}</p><button id="approve-world">Approve and enter</button></article>`;
-  document.querySelector<HTMLButtonElement>("#approve-world")!.addEventListener("click", async () => { await compilerPost(`/api/compiler/approve/${result.preview_id}`, {}); await refresh(); });
+  const coverage = Array.isArray(preview.evidence_coverage) ? preview.evidence_coverage : [];
+  const evidenceCounts = coverage.reduce((counts: Record<string, number>, item: any) => {
+    const lane = String(item?.lane ?? "excluded");
+    counts[lane] = (counts[lane] ?? 0) + 1;
+    return counts;
+  }, {});
+  const card = node("article", undefined, "card");
+  card.append(
+    node("h3", preview.title),
+    node("p", preview.campaign.transcript?.[0]?.text ?? ""),
+    node("p", `${Object.keys(preview.campaign.locations).length} locations · ${Object.keys(preview.campaign.actors).length} actors · ${Object.keys(preview.campaign.institutions).length} institutions`),
+    node("p", preview.gaps.length ? `Material gaps: ${preview.gaps.join("; ")}` : "No declared material gaps.", "warning"),
+    node("p", `Branch assumptions: ${preview.branch_assumptions.join("; ") || "none"}`),
+    node("p", coverage.length
+      ? `Evidence use: ${evidenceCounts.direct_seed ?? 0} direct · ${evidenceCounts.setting_background ?? 0} background · ${evidenceCounts.excluded ?? 0} excluded`
+      : "Evidence use: no retrieved sources were admitted to this seed.", "quiet"),
+  );
+  const approve = node("button", "Approve and enter");
+  approve.type = "button";
+  approve.addEventListener("click", async () => { await compilerPost(`/api/compiler/approve/${result.preview_id}`, {}); await refresh(); });
+  card.append(approve);
+  compilerResults.replaceChildren(card);
   status.textContent = "Preview compiled. Nothing has entered world state yet.";
 }
 
-async function send(command: unknown) { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await response.json(); receipt.hidden = false; receipt.textContent = JSON.stringify(body, null, 2); if (!response.ok) { status.textContent = body.error ?? "The command was refused."; await refresh(); return body; } await refresh(); return body; }
+async function send(command: unknown) { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await response.json(); renderCommandReceipt(body); if (!response.ok) { status.textContent = body.error ?? "The command was refused."; await refresh(); return body; } await refresh(); return body; }
 function installAssessment(result: any) {
   if (result?.kind !== "assessed") return;
   const button = document.createElement("button");
@@ -133,8 +241,7 @@ document.querySelector<HTMLFormElement>("#provider-parallelism-form")!.addEventL
     }),
   });
   const body = await response.json();
-  receipt.hidden = false;
-  receipt.textContent = JSON.stringify(body, null, 2);
+  showSummary(response.ok ? "Provider concurrency updated" : "Provider concurrency refused", [response.ok ? `Parallel requests: ${body.receipt?.provider_parallelism ?? body.provider_parallelism ?? "updated"}` : body.error ?? "The operator limit was refused."]);
   if (!response.ok) status.textContent = body.error ?? "The operator limit was refused.";
   await refresh();
 });
@@ -152,7 +259,7 @@ document.querySelector<HTMLFormElement>("#pin-form")!.addEventListener("submit",
   };
   await send({ type: "replace_resolution_pins", expected_revision: revision, expected_resolution_epoch: resolutionEpoch, pins: [...resolutionPins, pin] });
 });
-destinationForm.addEventListener("submit",async event=>{event.preventDefault();const result=await compilerPost("/api/compiler/destination",Object.fromEntries(new FormData(destinationForm)));const preview=result.preview;receipt.hidden=false;receipt.textContent=JSON.stringify(preview,null,2);status.textContent="Destination preview compiled; topology is unchanged until approval.";const button=document.createElement("button");button.textContent="Approve destination";button.addEventListener("click",async()=>{await compilerPost(`/api/compiler/destination/approve/${result.preview_id}`,{});button.remove();await refresh();});destinationForm.append(button);});
+destinationForm.addEventListener("submit",async event=>{event.preventDefault();const result=await compilerPost("/api/compiler/destination",Object.fromEntries(new FormData(destinationForm)));const preview=result.preview;showSummary("Destination preview",[...(preview.locations ?? []).map((location:any)=>location.name),...(preview.gaps ?? []).map((gap:string)=>`Material gap: ${gap}`)]);status.textContent="Destination preview compiled; topology is unchanged until approval.";const button=node("button","Approve destination");button.type="button";button.addEventListener("click",async()=>{await compilerPost(`/api/compiler/destination/approve/${result.preview_id}`,{});button.remove();await refresh();});destinationForm.append(button);});
 document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("submit", async event => {
   event.preventDefault();
   const data = new FormData(event.currentTarget as HTMLFormElement);
@@ -162,8 +269,10 @@ document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("subm
     requested_partition_values: String(data.get("requested_partition_values") ?? "").split(",").map(value => value.trim()).filter(Boolean),
     reason: data.get("reason"),
   });
-  receipt.hidden = false;
-  receipt.textContent = JSON.stringify(result.preview, null, 2);
+  showSummary("Population fission preview", [
+    ...(result.preview?.children ?? []).map((child: any) => `${child.name} · ${child.id}`),
+    ...(result.preview?.gaps ?? []).map((gap: string) => `Material gap: ${gap}`),
+  ]);
   status.textContent = "Fission preview compiled. Canonical leaves are unchanged until approval.";
   const button = document.createElement("button");
   button.type = "button";

@@ -80,6 +80,15 @@ approval has its own route. Strategic ticks, region commits, gestalt presence,
 reaction waves, NPC initiative, and campaign creation are internal mailbox
 commands and cannot be invoked through `/api/command`.
 
+That boundary also projects less state outward than the kernel returns inward.
+Player HTTP responses contain only assessment, public commit/roll receipts, and
+narration. Canonical campaign state and spoiler-bearing actor or institution
+state are operator-only. Informational rolls add only their exact previewed
+finding to the acting character and a provisional branch fact. The compiler
+classifies each retrieved source as direct seed, setting background, or excluded
+before generation; excluded sources remain provenance but never become prompt
+context, and background sources cannot donate story incidents or cast.
+
 Relationship documents in the schema catalog are revision-bound projections
 of actor-owned relationship maps; they are not a second relationship writer.
 Vault manifests summarize the exact provider/source/authority/temporal lanes
@@ -97,6 +106,11 @@ baseline/member presence transition.
 4. Validate the seam that matters.
 5. Persist only belief-changing evidence.
 6. Commit and push completed work.
+
+Model acceptance also measures useful work per token. Stable contracts precede
+revision-bound context for cache reuse; each stage receives only the state it
+can legitimately judge; provider receipts expose cache, prompt, completion, and
+validation cost per attempt.
 
 ## Core Surfaces
 

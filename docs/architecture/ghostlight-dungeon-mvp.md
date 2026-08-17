@@ -26,6 +26,9 @@ The Rust runtime now contains the first honest world-compiler seam:
 - role generation requires exactly three grounded roles;
 - custom compilation emits a bounded typed campaign, evidence receipts, gaps,
   branch assumptions, and an approval-required preview;
+- custom compilation classifies every exact witness as direct seed, setting
+  background, or excluded before world generation, so a nearby story cannot
+  donate its cast, incident, clocks, or institutional posture to a new branch;
 - deterministic seed validation rejects missing occupancy, dangling or
   zero-time routes, invalid containment, invalid clocks, and missing players;
 - approval alone submits `CreateCampaign`, which atomically stores the campaign
@@ -547,6 +550,7 @@ Compilation is staged and approval-gated:
 opening request
   -> retrieval plan
   -> exact evidence receipts
+  -> source-use classification: direct seed / setting background / excluded
   -> three distinct openings or custom opening
   -> three grounded roles or custom role
   -> bounded region + institutional pressure graph
@@ -558,6 +562,11 @@ opening request
 Reversible local texture may enter as provisional branch fact. Material gaps in
 geography, mechanics, institutions, or extraordinary capability require
 approval. Canon candidates are review/export records and cannot edit the Vault.
+The approval preview exposes the source-use coverage. Direct evidence may shape
+the local seed; background evidence may constrain history, mechanics, or known
+institutions; excluded evidence remains receipted but never enters the world
+compiler prompt. This separation preserves provenance without making retrieved
+adjacency into fictional causality.
 
 ### Fiction-first resolution
 
@@ -571,6 +580,12 @@ server command path and atomically stores roll and transition. Impossible acts
 receive no roll. Natural 20 and 1 shift one band and cannot cross impossibility
 or the effect ceiling. Speech occurs as speech; persuasion, deception, and
 intimidation are separate intended effects.
+
+Informational attempts must preview the exact finding that becomes knowledge.
+On resolution, only the acting character may receive those bounded knowledge
+additions; the same statement is committed as a provisional branch fact. A
+vague promise such as “identify any faults” is not a valid informational
+outcome, and an unstated hidden finding cannot appear after the roll.
 
 ### Actor and world action loop
 
@@ -600,6 +615,13 @@ Ghostlight publishes `gamecult.eve.surface.v1` and accepts typed Eve commands.
 The TypeScript browser host pins Eve's browser lowering package and owns only
 transport, sessions, and local rendering. It does not invent a parallel UI
 state model.
+
+The player HTTP command boundary returns a dedicated spoiler-safe projection:
+assessments, public commit receipts, roll results, and narration. It never
+serializes the canonical campaign snapshot. Full actor, institution, evidence,
+and model-stage state belongs to the authenticated operator projection only.
+Player and model strings enter the DOM through text nodes rather than HTML
+insertion, and all laboratory inputs have programmatic labels.
 
 The player surface includes compilation, transcript, composer, Assess/Attempt,
 roll confirmation, Wait, character ledger, current place/time/pressure, news,
@@ -650,6 +672,13 @@ judgment and voice; the kernel spends deterministic work on identity, versions,
 coverage, references, and commit authority. A resolution-demand model may raise
 subject salience, but only pins and active relevance leases may force singleton
 cells or an effective-budget overage.
+
+Prompt quality is judged by useful decision work per token, not prompt brevity
+alone. Each stage receives one stable, cacheable contract followed by the
+smallest revision-bound context that can support its decision. Receipts make
+prompt, completion, cache-hit, and cache-miss tokens visible per attempt so
+acceptance can reject stages that spend heavily while producing no meaningful
+appraisal, state proposal, or player-facing consequence.
 
 Live model allocation:
 

@@ -367,11 +367,22 @@ focal hints from overruling the Persona-cell budget. Live proof under
 four-actor appraisal, impossible/rolled actions, grounded narration, strategic
 cells, and a 24-faction budget-4 wave.
 
-Next: commit this coherent pass, run the authenticated HTTP/browser campaign
-path in an isolated runtime, prove away catch-up/concurrency/persistence/fork/
-export/restart against the candidate, then deploy the exact commit and repeat
-LAN/firewall/CultMesh/provenance smokes. Do not describe the current Starfire
-process as running the candidate until the immutable release switch is proven.
+The authenticated browser rehearsal exposed three authority failures in the
+candidate: a player command response serialized the canonical campaign, a
+successful diagnostic promised a finding without committing specific
+knowledge, and a custom Huygens seed borrowed the Lucent fixture's cast and
+incident from merely adjacent retrieval evidence. The repaired candidate now
+projects spoiler-safe player responses, requires exact visible informational
+findings that become player knowledge plus branch fact, classifies retrieval
+evidence into direct/background/excluded lanes before compilation, and narrows
+narration to the latest causal turn. Browser strings use text nodes and the
+laboratory inputs have programmatic labels.
+
+Next: commit and build this repaired candidate, replay the same authenticated
+Huygens campaign in an isolated runtime, inspect both the visible surface and
+the literal HTTP response, then prove away catch-up/concurrency/persistence/
+fork/export/restart. Deploy only that exact accepted commit and repeat LAN,
+firewall, CultMesh, VoidBot, DeepSeek, scheduler, and provenance smokes.
 
 ## Warnings
 

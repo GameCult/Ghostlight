@@ -21,8 +21,8 @@ impl Narrator {
     ) -> Result<(NarrationProjection, ModelStageReceipt)> {
         let player = &campaign.actors[&campaign.player_actor_id];
         let location = &campaign.locations[&player.location_id];
-        let recent_events: Vec<_> = campaign.events.iter().rev().take(8).cloned().collect();
-        let recent_turns: Vec<_> = campaign.transcript.iter().rev().take(12).cloned().collect();
+        let recent_events: Vec<_> = campaign.events.iter().rev().take(4).cloned().collect();
+        let latest_turn = campaign.transcript.last().cloned();
         let visible_actors: Vec<_> = campaign
             .actors
             .values()
@@ -37,10 +37,14 @@ impl Narrator {
             .collect();
         let public_slice = serde_json::json!({
             "world_time": campaign.world_time,
-            "location": location,
+            "location": {
+                "id": location.id,
+                "name": location.name,
+                "persistent_features": location.persistent_features,
+            },
             "visible_actors": visible_actors,
-            "recent_events": recent_events,
-            "recent_explicit_speech_and_stakes": recent_turns,
+            "latest_events": recent_events,
+            "latest_committed_turn": latest_turn,
         });
         let output = run_validated_stage(
             self.model.as_ref(),
@@ -52,7 +56,7 @@ impl Narrator {
                     campaign.id, campaign.revision
                 ),
                 lived_stream: format!(
-                    "Narrate the latest committed change in concrete, concise second-person interactive-fiction prose. Integrate supplied facts into fluent prose; do not mention JSON, state, commits, revisions, or the source representation. Every environmental noun, sensory adjective, object state, action, and consequence must be traceable to the supplied JSON. Do not invent lighting, temperature, sound, motion, posture, dialogue, private thoughts, expertise, geography, or outcomes. It is better to be spare than to fabricate texture. Emit prose only.\n\n{}",
+                    "Narrate only latest_committed_turn and any latest_events it directly caused, in concrete, concise second-person interactive-fiction prose. Location, time, and visible actors are grounding constraints, not a request to restate every field. Do not repeat older setup, list routes, or recap unrelated world state. Do not mention JSON, state, commits, revisions, or the source representation. Every environmental noun, sensory adjective, object state, action, and consequence must be traceable to the supplied JSON. Do not invent lighting, temperature, sound, motion, posture, dialogue, private thoughts, expertise, geography, findings, or outcomes. It is better to be spare than to fabricate texture. Emit prose only.\n\n{}",
                     serde_json::to_string(&public_slice)?
                 ),
                 output_schema: None,
