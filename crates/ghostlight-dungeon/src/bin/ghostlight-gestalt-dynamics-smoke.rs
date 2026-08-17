@@ -127,7 +127,7 @@ async fn main() -> anyhow::Result<()> {
         calls: model_calls.clone(),
     });
     let started = Instant::now();
-    let output = propose_resolution_wave(
+    let output = match propose_resolution_wave(
         model.clone(),
         Arc::new(SnapshotPermit::new_resolution(
             store.clone(),
@@ -137,7 +137,14 @@ async fn main() -> anyhow::Result<()> {
         )),
         &campaign,
     )
-    .await?;
+    .await
+    {
+        Ok(output) => output,
+        Err(error) => {
+            write_wave_failure(&root, 0, 1, &error, &model_calls, 0)?;
+            return Err(error);
+        }
+    };
     let preflight = serde_json::json!({
         "schema":"ghostlight.gestalt_dynamics_preflight.v1",
         "scenario_id":scenario_id,
