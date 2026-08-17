@@ -434,10 +434,7 @@ pub enum StrategicCellEffect {
         destination_id: String,
     },
     MemberMigration {
-        member_id: String,
-        source_gestalt_id: String,
         destination_gestalt_id: String,
-        destination_location_id: String,
     },
 }
 

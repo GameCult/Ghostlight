@@ -631,18 +631,16 @@ fn validate_cell_appraisal(
             )?;
             match &action.effect {
                 crate::domain::StrategicCellEffect::MemberMigration {
-                    member_id,
-                    source_gestalt_id,
                     destination_gestalt_id,
-                    destination_location_id,
-                } if member_id == &member.member_id
-                    && source_gestalt_id == &member.source_gestalt_id
-                    && member.migration_destinations.get(destination_gestalt_id)
-                        == Some(destination_location_id) => {}
+                } if member
+                    .migration_destinations
+                    .contains_key(destination_gestalt_id) => {}
                 _ => {
                     return Err(anyhow!(
-                        "action for named member {} exceeds exact personal authority or supplied migration destinations",
-                        member.member_id
+                        "action for named member {} exceeds exact personal authority; effect={:?}; allowed destination gestalt IDs={:?}",
+                        member.member_id,
+                        action.effect,
+                        member.migration_destinations.keys().collect::<Vec<_>>()
                     ));
                 }
             }

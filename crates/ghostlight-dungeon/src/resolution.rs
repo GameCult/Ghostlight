@@ -1618,7 +1618,7 @@ pub fn validate_and_resolve_wave(
     let mut used = BTreeSet::new();
     let mut plan = StrategicTickPlan::default();
     for proposal in proposals {
-        let key = proposal_target_key(&proposal.effect);
+        let key = proposal_target_key(&proposal);
         if !used.insert(key) {
             continue;
         }
@@ -1653,18 +1653,26 @@ pub fn validate_and_resolve_wave(
                 public_channels: proposal.public_channels,
             }),
             StrategicCellEffect::MemberMigration {
-                member_id,
-                source_gestalt_id,
                 destination_gestalt_id,
-                destination_location_id,
-            } => plan.member_migrations.push(StrategicMemberMigration {
-                member_id,
-                source_gestalt_id,
-                destination_gestalt_id,
-                destination_location_id,
-                summary: proposal.intended_effect,
-                public_channels: proposal.public_channels,
-            }),
+            } => {
+                let member_id = proposal
+                    .subject_id
+                    .strip_prefix("member:")
+                    .expect("member migration authority was validated")
+                    .to_owned();
+                let source_gestalt_id = campaign.gestalt_members[&member_id].gestalt_id.clone();
+                let destination_location_id = campaign.gestalts[&destination_gestalt_id]
+                    .home_location_id
+                    .clone();
+                plan.member_migrations.push(StrategicMemberMigration {
+                    member_id,
+                    source_gestalt_id,
+                    destination_gestalt_id,
+                    destination_location_id,
+                    summary: proposal.intended_effect,
+                    public_channels: proposal.public_channels,
+                });
+            }
         }
         if plan.institution_actions.len()
             + plan.gestalt_actions.len()
@@ -1797,15 +1805,17 @@ fn validate_member_cell_proposal(
     }
     match &proposal.effect {
         StrategicCellEffect::MemberMigration {
-            member_id: effect_member_id,
-            source_gestalt_id,
             destination_gestalt_id,
-            destination_location_id,
-        } if effect_member_id == member_id && source_gestalt_id == &member.gestalt_id => {
+        } => {
+            let destination_location_id = campaign
+                .gestalts
+                .get(destination_gestalt_id)
+                .map(|gestalt| gestalt.home_location_id.as_str())
+                .ok_or_else(|| anyhow!("named member migration invented a destination gestalt"))?;
             validate_member_migration(
                 campaign,
                 member_id,
-                source_gestalt_id,
+                &member.gestalt_id,
                 destination_gestalt_id,
                 destination_location_id,
             )
@@ -2064,16 +2074,14 @@ pub fn subject_state_references(campaign: &Campaign, subject_id: &str) -> Result
     Ok(references)
 }
 
-fn proposal_target_key(effect: &StrategicCellEffect) -> String {
-    match effect {
+fn proposal_target_key(proposal: &CellActionProposal) -> String {
+    match &proposal.effect {
         StrategicCellEffect::Institution { institution_id, .. } => {
             format!("institution:{institution_id}")
         }
         StrategicCellEffect::Gestalt { gestalt_id, .. } => format!("gestalt:{gestalt_id}"),
         StrategicCellEffect::ActorMove { actor_id, .. } => format!("actor:{actor_id}"),
-        StrategicCellEffect::MemberMigration { member_id, .. } => {
-            format!("member:{member_id}")
-        }
+        StrategicCellEffect::MemberMigration { .. } => proposal.subject_id.clone(),
     }
 }
 
@@ -2671,10 +2679,7 @@ pub(crate) mod tests {
             ],
             public_channels: vec![],
             effect: StrategicCellEffect::MemberMigration {
-                member_id: "mira".into(),
-                source_gestalt_id: "refugees".into(),
                 destination_gestalt_id: "dockers".into(),
-                destination_location_id: "center".into(),
             },
         };
         let make_wave = |proposal: CellActionProposal| ResolutionWaveCommit {

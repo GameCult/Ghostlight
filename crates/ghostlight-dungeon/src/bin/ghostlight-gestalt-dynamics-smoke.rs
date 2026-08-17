@@ -61,7 +61,14 @@ async fn main() -> anyhow::Result<()> {
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "cover":&output.wave.cover,
         "appraisals":&output.wave.appraisals,
-        "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>()
+        "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
+        "private_model_stage_outputs":output.stages.iter().map(|stage|serde_json::json!({
+            "stage":stage.receipt.stage,
+            "validation_result":stage.receipt.validation_result,
+            "local_validation_error":stage.receipt.local_validation_error,
+            "narrative":stage.narrative,
+            "structured":stage.structured,
+        })).collect::<Vec<_>>()
     });
     std::fs::write(
         root.join("preflight.json"),
@@ -90,14 +97,8 @@ async fn main() -> anyhow::Result<()> {
                 && matches!(
                     &proposal.effect,
                     ghostlight_dungeon::domain::StrategicCellEffect::MemberMigration {
-                        member_id,
-                        source_gestalt_id,
                         destination_gestalt_id,
-                        destination_location_id,
-                    } if member_id == "mira-venn"
-                        && source_gestalt_id == "refugees-east"
-                        && destination_gestalt_id == "harbor-neighbors"
-                        && destination_location_id == "south-harbor"
+                    } if destination_gestalt_id == "harbor-neighbors"
                 )
         })
         .cloned()
