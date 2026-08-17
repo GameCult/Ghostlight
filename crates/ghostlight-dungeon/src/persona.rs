@@ -706,6 +706,7 @@ impl CellProjectionEngine {
             "{mode_guidance} Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Only supplied constituents and member_exceptions may own an internal perspective or choice. A person merely mentioned in an event is external observation when absent from those lists: never voice them. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
         );
         let word_budget = (120 + 45 * slice.constituents.len()).min(360);
+        let perspective_limit = slice.max_actions.max(1);
         let mut projection_schema = serde_json::to_value(schema_for!(CellProjectionProposal))?;
         constrain_cell_projection_schema(&mut projection_schema, &slice)?;
         let mut projection_request = ModelStageRequest {
@@ -713,13 +714,13 @@ impl CellProjectionEngine {
             model: self.projector_model.clone(),
             snapshot_binding: slice.snapshot_binding.clone(),
             lived_stream: format!(
-                "<!-- membrane:{MEMBRANE_SCHEMA}:cell-projector -->\nYou are a private cell Projector. Convert only the permitted typed context and visible stimulus into compact lived narrative segments. Each segment belongs to exactly one supplied subject_id and contains only that subject's perceptions, memories, wants, fears, knowledge, and explicit uncertainty. Mentioned outsiders remain external observations: never give them an internal viewpoint. Do not choose actions or claim world effects. Omit decorative recap.\n\nReturn exactly one JSON object matching this stable shape:\n{CELL_PROJECTION_OUTPUT_CONTRACT}\n\nDomain guidance:\n{mode_guidance}\n\nIdentity:\n{}\n\nPermitted typed context:\n{projector_context}\n\nVisible stimulus:\n{visible_stimulus}\n\nUse no more than {word_budget} narrative words across all segments.",
+                "<!-- membrane:{MEMBRANE_SCHEMA}:cell-projector -->\nYou are a private cell Projector. Convert only the permitted typed context and visible stimulus into compact lived narrative segments. Each segment belongs to exactly one supplied subject_id and contains only that subject's perceptions, memories, wants, fears, knowledge, and explicit uncertainty. Mentioned outsiders remain external observations: never give them an internal viewpoint. Do not choose actions or claim world effects. Omit decorative recap. Return between 1 and {perspective_limit} unique segments; do not narrate every supplied subject. If detail_focus_subject_id is present, include it first. Spend the remaining slots only on subjects facing a materially different decision in this horizon.\n\nReturn exactly one JSON object matching this stable shape:\n{CELL_PROJECTION_OUTPUT_CONTRACT}\n\nDomain guidance:\n{mode_guidance}\n\nIdentity:\n{}\n\nPermitted typed context:\n{projector_context}\n\nVisible stimulus:\n{visible_stimulus}\n\nUse no more than {word_budget} narrative words across all segments.",
                 slice.cell_id
             ),
             output_schema: Some(projection_schema),
             source_receipt_ids: slice.source_receipt_ids.clone(),
             temperature: Some(0.0),
-            max_output_tokens: Some(640),
+            max_output_tokens: Some(768),
         };
         let mut projector_receipts = Vec::new();
         let (projected_narrative, projector_receipt) = loop {
@@ -1514,6 +1515,12 @@ mod tests {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
                 "cell_projector" => {
+                    assert!(
+                        request
+                            .lived_stream
+                            .contains("between 1 and 1 unique segments")
+                    );
+                    assert!(request.lived_stream.contains("include it first"));
                     Ok(serde_json::json!({
                         "segments":[{
                             "subject_id":"faction-06",
