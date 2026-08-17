@@ -4,6 +4,82 @@ fn main() -> anyhow::Result<()> {
 }
 
 #[cfg(windows)]
+struct LiveFireModelRecorder {
+    inner: ghostlight_dungeon::model::DeepSeekPort,
+    calls: std::sync::Arc<std::sync::Mutex<Vec<serde_json::Value>>>,
+}
+
+#[cfg(windows)]
+#[async_trait::async_trait]
+impl ghostlight_dungeon::model::ModelPort for LiveFireModelRecorder {
+    async fn run(
+        &self,
+        request: &ghostlight_dungeon::model::ModelStageRequest,
+    ) -> anyhow::Result<String> {
+        Ok(self.run_observed(request).await?.content)
+    }
+
+    async fn run_observed(
+        &self,
+        request: &ghostlight_dungeon::model::ModelStageRequest,
+    ) -> anyhow::Result<ghostlight_dungeon::model::ModelProviderOutput> {
+        let started = std::time::Instant::now();
+        let result = self.inner.run_observed(request).await;
+        let trace = match &result {
+            Ok(output) => serde_json::json!({
+                "stage":request.stage,
+                "model":request.model,
+                "snapshot_binding":request.snapshot_binding,
+                "input":request.lived_stream,
+                "output":output.content,
+                "provider_request_id":output.provider_request_id,
+                "system_fingerprint":output.system_fingerprint,
+                "finish_reason":output.finish_reason,
+                "token_usage":output.token_usage,
+                "latency_ms":started.elapsed().as_millis(),
+            }),
+            Err(error) => serde_json::json!({
+                "stage":request.stage,
+                "model":request.model,
+                "snapshot_binding":request.snapshot_binding,
+                "input":request.lived_stream,
+                "error":error.to_string(),
+                "latency_ms":started.elapsed().as_millis(),
+            }),
+        };
+        self.calls.lock().expect("live-fire trace lock").push(trace);
+        result
+    }
+
+    fn provider(&self) -> &'static str {
+        self.inner.provider()
+    }
+}
+
+#[cfg(windows)]
+fn write_wave_failure(
+    root: &std::path::Path,
+    wave_index: usize,
+    budget: u8,
+    error: &anyhow::Error,
+    calls: &std::sync::Arc<std::sync::Mutex<Vec<serde_json::Value>>>,
+    trace_start: usize,
+) -> anyhow::Result<()> {
+    let calls = calls.lock().expect("live-fire trace lock");
+    std::fs::write(
+        root.join(format!("sustained-wave-{wave_index:02}-failure.json")),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "schema":"ghostlight.live_fire_model_failure.v1",
+            "wave_index":wave_index,
+            "budget":budget,
+            "error":error.to_string(),
+            "private_model_calls":&calls[trace_start..],
+        }))?,
+    )?;
+    Ok(())
+}
+
+#[cfg(windows)]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use chrono::Utc;
@@ -42,7 +118,11 @@ async fn main() -> anyhow::Result<()> {
     let knowledge_before = effective_member_knowledge(&campaign, "mira-venn")?;
     let store = CampaignStore::open(root.join("campaign.cc"))?;
     store.create_campaign(&campaign, &[], &[])?;
-    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_machine_dpapi(secret)?);
+    let model_calls = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let model: Arc<dyn ModelPort> = Arc::new(LiveFireModelRecorder {
+        inner: DeepSeekPort::from_machine_dpapi(secret)?,
+        calls: model_calls.clone(),
+    });
     let started = Instant::now();
     let output = propose_resolution_wave(
         model.clone(),
@@ -177,7 +257,8 @@ async fn main() -> anyhow::Result<()> {
             CommandResult::ResolutionUpdated { campaign, .. } => campaign,
             _ => anyhow::bail!("resolution budget change did not commit at a safe boundary"),
         };
-        let sustained_output = propose_resolution_wave(
+        let trace_start = model_calls.lock().expect("live-fire trace lock").len();
+        let sustained_output = match propose_resolution_wave(
             model.clone(),
             Arc::new(SnapshotPermit::new_resolution(
                 store.clone(),
@@ -187,7 +268,21 @@ async fn main() -> anyhow::Result<()> {
             )),
             &advanced,
         )
-        .await?;
+        .await
+        {
+            Ok(output) => output,
+            Err(error) => {
+                write_wave_failure(
+                    &root,
+                    wave_index + 1,
+                    budget,
+                    &error,
+                    &model_calls,
+                    trace_start,
+                )?;
+                return Err(error);
+            }
+        };
         std::fs::write(
             root.join(format!(
                 "sustained-wave-{:02}-preflight.json",
