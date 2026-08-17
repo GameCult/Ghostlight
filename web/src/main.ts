@@ -76,9 +76,27 @@ function renderCommandReceipt(body: any) {
   showSummary("Command result", [body?.error ?? "The world returned no player-facing detail."]);
 }
 
+function showAuthenticationGate() {
+  const message = "This laboratory requires an unused invite link.";
+  status.textContent = message;
+  compiler.hidden = true;
+  composer.hidden = true;
+  destinationForm.hidden = true;
+  campaignLab.hidden = true;
+  receipt.hidden = true;
+  host.hidden = false;
+  const gate = node("article", undefined, "card");
+  gate.append(
+    node("h2", "Private campaign laboratory"),
+    node("p", message),
+    node("p", "Open one of the two single-use tester invitations on this device. The resulting session stays separate from the other player's campaigns.", "quiet"),
+  );
+  host.replaceChildren(gate);
+}
+
 async function refresh() {
   const response = await fetch("/api/surface");
-  if (response.status === 401) { status.textContent = "This laboratory requires an unused invite link."; return; }
+  if (response.status === 401) { showAuthenticationGate(); return; }
   const surface = await response.json();
   const needsCompilation = surface.surface_id === "ghostlight.compiler";
   compiler.hidden = !needsCompilation; composer.hidden = needsCompilation; destinationForm.hidden = needsCompilation; host.hidden = needsCompilation; campaignLab.hidden = needsCompilation;
