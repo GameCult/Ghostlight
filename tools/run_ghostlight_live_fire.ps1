@@ -462,6 +462,8 @@ while ($processed -lt $scenarios.Count -and $currentBalance -gt $TargetBalance) 
         scenarios_available = $scenarios.Count
         scenario_start_index = $StartAt
         scenario_catalog_count = $scenarioCatalogCount
+        resume_run_roots = $resolvedResumeRoots
+        previously_succeeded_skipped = $resumedScenarioIds.Count
         failures = $failures
         totals = $totals
         updated_at_utc = [DateTimeOffset]::UtcNow.ToString('O')
@@ -483,6 +485,8 @@ $finalStatus = [ordered]@{
     scenarios_available = $scenarios.Count
     scenario_start_index = $StartAt
     scenario_catalog_count = $scenarioCatalogCount
+    resume_run_roots = $resolvedResumeRoots
+    previously_succeeded_skipped = $resumedScenarioIds.Count
     failures = $failures
     totals = $totals
     summary_path = $summaryPath
