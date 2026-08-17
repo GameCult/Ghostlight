@@ -152,6 +152,16 @@ rejects duplicates and omission of the debt-selected focus, then lowers the
 segments into stable natural name/location prose. Raw freeform Projector output
 no longer crosses into the Persona stream.
 
+The next live run reached the action verifier and exposed a split verdict: its
+global rejected-index list rejected all four arena actions while the rationale
+called two of them supported. The verifier contract now returns one ordered
+typed verdict per candidate. Runtime schema and validation own exact count,
+index range, order, and aggregate rejection; the model owns only each action's
+semantic recommendation. Correction guidance forbids returning a rejected
+action unchanged and explicitly drops chosen travel when no grounded
+destination transition exists. The fresh candidate still needs a strict live
+rerun before this is considered proven.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

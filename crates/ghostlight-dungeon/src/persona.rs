@@ -185,8 +185,14 @@ enum CellEffectCandidate {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct CellEffectVerification {
+    verdicts: Vec<CellActionEffectVerdict>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellActionEffectVerdict {
+    action_index: usize,
     supported: bool,
-    rejected_action_indices: Vec<usize>,
     rationale: String,
 }
 
@@ -859,6 +865,7 @@ impl CellProjectionEngine {
                             &slice.snapshot_binding,
                             &appraisal.actions,
                         )?;
+                        let verifier_schema = cell_effect_verifier_schema(appraisal.actions.len())?;
                         let mut verified = run_validated_stage(
                             self.model.as_ref(),
                             &ModelStageRequest {
@@ -866,12 +873,10 @@ impl CellProjectionEngine {
                                 model: self.interpreter_model.clone(),
                                 snapshot_binding: verifier_binding,
                                 lived_stream: format!(
-                                    "You are the private semantic verifier between an Interpreter and the world kernel. Decide whether every candidate typed effect and its intended_effect faithfully represent the exact attributed subject's own attempted consequence in the Persona turn. Structural permissions were already checked. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination; giving away a berth, sending somebody else, waiting, or merely considering travel does not entail it. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject any member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current location is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object with this shape and no other fields: {{\"supported\":true or false,\"rejected_action_indices\":[zero-based integer indices],\"rationale\":\"one concise reason\"}}. When supported is true, rejected_action_indices must be empty. When false, list every rejected action index.\n\nCONTEXT:\n{}",
+                                    "You are the private semantic verifier between an Interpreter and the world kernel. Judge each candidate typed effect independently against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Return exactly one verdict for every supplied action_index, in the same order, with no omissions or duplicates. Never reject one action merely because another action is wrong. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current location is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wishful outcomes, and effects that the Persona did not choose. Be concise. Output shape: {{\"verdicts\":[{{\"action_index\":0,\"supported\":true or false,\"rationale\":\"one concise reason about only this action\"}}]}}.\n\nCONTEXT:\n{}",
                                     serde_json::to_string(&verifier_context)?
                                 ),
-                                output_schema: Some(serde_json::to_value(schema_for!(
-                                    CellEffectVerification
-                                ))?),
+                                output_schema: Some(verifier_schema),
                                 source_receipt_ids: slice.source_receipt_ids.clone(),
                                 temperature: Some(0.0),
                                 max_output_tokens: Some(384),
@@ -882,14 +887,27 @@ impl CellProjectionEngine {
                             serde_json::from_value(verified.structured.clone().ok_or_else(
                                 || anyhow!("cell effect verifier produced no typed verdict"),
                             )?)?;
-                        validate_effect_verification(&verification, appraisal.actions.len())?;
-                        if verification.supported {
+                        let rejected_action_indices =
+                            validate_effect_verification(&verification, appraisal.actions.len())?;
+                        if rejected_action_indices.is_empty() {
                             stage_receipts.push(verified.receipt);
                         } else {
+                            let rejection_rationale = verification
+                                .verdicts
+                                .iter()
+                                .filter(|verdict| !verdict.supported)
+                                .map(|verdict| {
+                                    format!(
+                                        "action {}: {}",
+                                        verdict.action_index, verdict.rationale
+                                    )
+                                })
+                                .collect::<Vec<_>>()
+                                .join("; ");
                             let error = anyhow!(
                                 "effect verifier rejected action indices {:?}: {}",
-                                verification.rejected_action_indices,
-                                verification.rationale
+                                rejected_action_indices,
+                                rejection_rationale
                             );
                             verified.receipt.validation_result = "semantic_invalid".into();
                             verified.receipt.local_validation_error =
@@ -977,20 +995,49 @@ fn append_cell_correction(
 fn validate_effect_verification(
     verification: &CellEffectVerification,
     action_count: usize,
-) -> Result<()> {
-    if verification.rationale.trim().is_empty()
-        || (verification.supported && !verification.rejected_action_indices.is_empty())
-        || (!verification.supported && verification.rejected_action_indices.is_empty())
-        || verification
-            .rejected_action_indices
-            .iter()
-            .any(|index| *index >= action_count)
-    {
+) -> Result<Vec<usize>> {
+    if verification.verdicts.len() != action_count {
         return Err(anyhow!(
-            "cell effect verifier returned an incoherent verdict"
+            "cell effect verifier returned {} verdicts for {action_count} actions",
+            verification.verdicts.len()
         ));
     }
-    Ok(())
+    let mut rejected = Vec::new();
+    for (expected_index, verdict) in verification.verdicts.iter().enumerate() {
+        if verdict.action_index != expected_index || verdict.rationale.trim().is_empty() {
+            return Err(anyhow!(
+                "cell effect verifier returned an incoherent verdict for action {expected_index}"
+            ));
+        }
+        if !verdict.supported {
+            rejected.push(expected_index);
+        }
+    }
+    Ok(rejected)
+}
+
+fn cell_effect_verifier_schema(action_count: usize) -> Result<serde_json::Value> {
+    if action_count == 0 {
+        return Err(anyhow!(
+            "cell effect verifier schema requires at least one action"
+        ));
+    }
+    let mut schema = serde_json::to_value(schema_for!(CellEffectVerification))?;
+    let verdicts = schema
+        .pointer_mut("/properties/verdicts")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("cell effect verifier schema has no verdicts property"))?;
+    verdicts.insert("minItems".into(), serde_json::json!(action_count));
+    verdicts.insert("maxItems".into(), serde_json::json!(action_count));
+    let action_index = schema
+        .pointer_mut("/$defs/CellActionEffectVerdict/properties/action_index")
+        .ok_or_else(|| anyhow!("cell effect verifier schema has no action index property"))?;
+    *action_index = serde_json::json!({
+        "type":"integer",
+        "minimum":0,
+        "maximum":action_count - 1
+    });
+    Ok(schema)
 }
 
 pub fn cell_effect_verification_binding(
@@ -1595,12 +1642,14 @@ mod tests {
                     assert!(
                         request
                             .lived_stream
-                            .contains("reject any member_activity that reduces that commitment")
+                            .contains("reject member_activity that reduces that commitment")
                     );
                     Ok(serde_json::json!({
-                        "supported":true,
-                        "rejected_action_indices":[],
-                        "rationale":"The institution's typed posture matches its stated commitment."
+                        "verdicts":[{
+                            "action_index":0,
+                            "supported":true,
+                            "rationale":"The institution's typed posture matches its stated commitment."
+                        }]
                     })
                     .to_string())
                 }
@@ -1742,13 +1791,15 @@ mod tests {
                     assert!(request.lived_stream.contains("At location forum"));
                     let correction = self.verifier_calls.fetch_add(1, Ordering::SeqCst) > 0;
                     Ok(serde_json::json!({
-                        "supported":correction,
-                        "rejected_action_indices":if correction { vec![] } else { vec![0] },
-                        "rationale":if correction {
-                            "The corrected posture matches the institution's stated withholding."
-                        } else {
-                            "The Persona withheld the reserve, but the typed effect releases it."
-                        }
+                        "verdicts":[{
+                            "action_index":0,
+                            "supported":correction,
+                            "rationale":if correction {
+                                "The corrected posture matches the institution's stated withholding."
+                            } else {
+                                "The Persona withheld the reserve, but the typed effect releases it."
+                            }
+                        }]
                     })
                     .to_string())
                 }
@@ -1844,6 +1895,54 @@ mod tests {
         assert_ne!(
             cell_effect_verification_binding("snapshot", &[first]).unwrap(),
             cell_effect_verification_binding("snapshot", &[second]).unwrap()
+        );
+    }
+
+    #[test]
+    fn effect_verifier_requires_one_ordered_verdict_per_action() {
+        let verification = CellEffectVerification {
+            verdicts: vec![
+                CellActionEffectVerdict {
+                    action_index: 0,
+                    supported: true,
+                    rationale: "the preparation is stated exactly".into(),
+                },
+                CellActionEffectVerdict {
+                    action_index: 1,
+                    supported: false,
+                    rationale: "the typed effect swaps the target".into(),
+                },
+            ],
+        };
+        assert_eq!(
+            validate_effect_verification(&verification, 2).unwrap(),
+            vec![1]
+        );
+
+        let mut duplicate = verification;
+        duplicate.verdicts[1].action_index = 0;
+        assert!(
+            validate_effect_verification(&duplicate, 2)
+                .unwrap_err()
+                .to_string()
+                .contains("action 1")
+        );
+    }
+
+    #[test]
+    fn effect_verifier_schema_binds_the_exact_batch_size() {
+        let schema = cell_effect_verifier_schema(4).unwrap();
+        assert_eq!(
+            schema.pointer("/properties/verdicts/minItems"),
+            Some(&serde_json::json!(4))
+        );
+        assert_eq!(
+            schema.pointer("/properties/verdicts/maxItems"),
+            Some(&serde_json::json!(4))
+        );
+        assert_eq!(
+            schema.pointer("/$defs/CellActionEffectVerdict/properties/action_index/maximum"),
+            Some(&serde_json::json!(3))
         );
     }
 

@@ -425,6 +425,14 @@ snapshot binding includes a MessagePack content hash of the ordered action
 bundle. The kernel recomputes it, so a verdict for another proposal at the same
 world revision and cell cannot be replayed as authority.
 
+Verification is per action, not a batch opinion. The model returns exactly one
+ordered `action_index`, support decision, and rationale for every candidate.
+Ghostlight constrains the verdict count and index range in the stage schema,
+rejects omissions, duplicates, reordering, and empty rationales, and derives
+the rejected set locally. This keeps one bad arena action from contaminating
+independent constituents and prevents a global pass/fail field from
+contradicting its own rejected-index list.
+
 ## Public state and controls
 
 The schema catalog and CultCache stores publish:

@@ -135,6 +135,14 @@ motion is only entering a queue. `member_activity: prepare` is valid only while
 departure remains unchosen. The Interpreter and semantic verifier share this
 distinction.
 
+The semantic verifier emits one ordered verdict per candidate action.
+Ghostlight owns exact verdict coverage and derives the aggregate rejected set;
+the model cannot reject one arena constituent merely because another
+constituent's mapping failed, omit a candidate, duplicate an index, or publish
+a global decision that contradicts its per-action rationale. Rejected actions
+receive one same-snapshot Interpreter correction and may not be returned
+unchanged.
+
 Population scale uses reversible individuation:
 
 ```text
