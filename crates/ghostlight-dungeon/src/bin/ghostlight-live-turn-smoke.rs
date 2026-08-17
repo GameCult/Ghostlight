@@ -53,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
         store.insert(
             "persona_stage_receipt.v1",
             "ghostlight.persona_stage_receipt.v1",
-            &receipt.output_hash,
+            receipt.storage_key(),
             receipt,
         )?;
     }
@@ -187,5 +187,12 @@ fn four_actor_campaign() -> ghostlight_dungeon::domain::Campaign {
         gestalts: BTreeMap::new(),
         gestalt_members: BTreeMap::new(),
         pending_world_proposals: vec![],
+        agency_profiles: BTreeMap::new(),
+        agency_relations: BTreeMap::new(),
+        gestalt_lineages: BTreeMap::new(),
+        resolution_policy: Default::default(),
+        resolution_pins: BTreeMap::new(),
+        resolution_cover: None,
+        strategic_tick_count: 0,
     }
 }

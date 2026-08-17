@@ -36,6 +36,20 @@ pub struct Campaign {
     pub gestalt_members: BTreeMap<String, GestaltMemberDelta>,
     #[serde(default)]
     pub pending_world_proposals: Vec<WorldActionProposal>,
+    #[serde(default)]
+    pub agency_profiles: BTreeMap<String, AgencyProfile>,
+    #[serde(default)]
+    pub agency_relations: BTreeMap<String, AgencyRelation>,
+    #[serde(default)]
+    pub gestalt_lineages: BTreeMap<String, GestaltLineage>,
+    #[serde(default)]
+    pub resolution_policy: ResolutionPolicy,
+    #[serde(default)]
+    pub resolution_pins: BTreeMap<String, ResolutionPin>,
+    #[serde(default)]
+    pub resolution_cover: Option<ResolutionCover>,
+    #[serde(default)]
+    pub strategic_tick_count: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -193,6 +207,284 @@ pub struct GestaltPresenceChange {
     pub member_version: u64,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum AgencySubjectKind {
+    Actor,
+    Institution,
+    Gestalt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum AgencyAxis {
+    Geography,
+    Ideology,
+    Authority,
+    EconomyRole,
+    SpeciesBody,
+    Information,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct AgencyProfile {
+    pub schema: String,
+    pub id: String,
+    pub subject_id: String,
+    pub subject_kind: AgencySubjectKind,
+    pub profile_version: u64,
+    pub collective_authority_id: Option<String>,
+    pub parent_subject_id: Option<String>,
+    pub active_leaf: bool,
+    #[serde(default = "default_true")]
+    pub simulation_eligible: bool,
+    pub facets: BTreeMap<AgencyAxis, BTreeSet<String>>,
+    pub location_ids: BTreeSet<String>,
+    pub information_channels: BTreeSet<String>,
+    pub detail_debt: u64,
+    pub last_detail_tick: u64,
+    pub evidence_receipt_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AgencyRelationKind {
+    Containment,
+    Command,
+    Membership,
+    Alliance,
+    Rivalry,
+    Trade,
+    Migration,
+    Communication,
+    Coercion,
+    SharedLocation,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct AgencyRelation {
+    pub schema: String,
+    pub id: String,
+    pub from_subject_id: String,
+    pub to_subject_id: String,
+    pub kind: AgencyRelationKind,
+    pub strength: u8,
+    pub active: bool,
+    pub evidence_receipt_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltLineage {
+    pub schema: String,
+    pub parent_gestalt_id: String,
+    pub child_gestalt_ids: Vec<String>,
+    pub partition_axis: AgencyAxis,
+    pub partition_values: BTreeMap<String, String>,
+    pub residual_child_id: String,
+    pub source_revision: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ResolutionPolicy {
+    pub schema: String,
+    pub resolution_epoch: u64,
+    #[serde(default)]
+    pub provider_configuration_epoch: u64,
+    pub active_cell_budget: u8,
+    pub pending_active_cell_budget: Option<u8>,
+    pub provider_parallelism: u8,
+}
+
+impl Default for ResolutionPolicy {
+    fn default() -> Self {
+        Self {
+            schema: "ghostlight.resolution_policy.v1".into(),
+            resolution_epoch: 0,
+            provider_configuration_epoch: 0,
+            active_cell_budget: 8,
+            pending_active_cell_budget: None,
+            provider_parallelism: 8,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ResolutionPinKind {
+    KeepTogether,
+    KeepSeparate,
+    MinimumIndividualDetail,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ResolutionPin {
+    pub schema: String,
+    pub id: String,
+    pub kind: ResolutionPinKind,
+    pub subject_ids: BTreeSet<String>,
+    pub reason: String,
+    pub created_world_revision: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ResolutionDemand {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub world_revision: u64,
+    pub resolution_epoch: u64,
+    pub axis_weights: BTreeMap<AgencyAxis, f32>,
+    pub focal_subject_ids: BTreeSet<String>,
+    pub horizon_minutes: u32,
+    pub rationale: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SimulationCellMode {
+    Cohesive,
+    Arena,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+pub struct MergeLoss {
+    pub facet_divergence: f32,
+    pub hidden_boundary_mass: f32,
+    pub information_divergence: f32,
+    pub spatial_divergence: f32,
+    pub clock_obligation_divergence: f32,
+    pub salience_burial: f32,
+    pub partition_churn: f32,
+    pub total: f32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct SimulationCell {
+    pub schema: String,
+    pub id: String,
+    pub mode: SimulationCellMode,
+    pub subject_ids: BTreeSet<String>,
+    pub merge_loss: MergeLoss,
+    pub rationale: String,
+    pub lease_until_world_revision: u64,
+    pub lease_until_strategic_tick: u64,
+    pub detail_focus_subject_id: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ResolutionCover {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub world_revision: u64,
+    pub resolution_epoch: u64,
+    pub configured_budget: u8,
+    pub effective_budget: u8,
+    pub mandatory_overage: u8,
+    pub cells: Vec<SimulationCell>,
+    pub demand: ResolutionDemand,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ResolutionPlanReceipt {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub world_revision: u64,
+    pub resolution_epoch: u64,
+    pub configured_budget: u8,
+    pub effective_budget: u8,
+    pub cell_ids: Vec<String>,
+    pub mandatory_overage: u8,
+    pub preserved_cell_ids: Vec<String>,
+    pub collapsed_boundaries: Vec<String>,
+    pub merge_losses: BTreeMap<String, MergeLoss>,
+    pub rationale: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ResolutionControlReceipt {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub world_revision: u64,
+    pub previous_resolution_epoch: u64,
+    pub resolution_epoch: u64,
+    #[serde(default)]
+    pub provider_configuration_epoch: u64,
+    pub operation: String,
+    pub active_cell_budget: u8,
+    pub pin_ids: Vec<String>,
+    pub committed_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum StrategicCellEffect {
+    Institution {
+        institution_id: String,
+        posture: String,
+        location_ids: Vec<String>,
+    },
+    Gestalt {
+        gestalt_id: String,
+        pressure_additions: Vec<String>,
+    },
+    ActorMove {
+        actor_id: String,
+        destination_id: String,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct CellActionProposal {
+    pub subject_id: String,
+    pub intent: String,
+    pub intended_effect: String,
+    pub priority: i16,
+    pub state_references: Vec<String>,
+    pub public_channels: Vec<String>,
+    pub effect: StrategicCellEffect,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct CellAppraisal {
+    pub schema: String,
+    pub cell_id: String,
+    pub world_revision: u64,
+    pub resolution_epoch: u64,
+    pub considered_subject_ids: BTreeSet<String>,
+    pub actions: Vec<CellActionProposal>,
+    pub inaction_reason: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ResolutionWaveCommit {
+    pub schema: String,
+    pub world_revision: u64,
+    pub resolution_epoch: u64,
+    pub cover: ResolutionCover,
+    pub plan_receipt: ResolutionPlanReceipt,
+    pub appraisals: Vec<CellAppraisal>,
+    pub model_receipt_hashes: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltFissionPreview {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub expected_world_revision: u64,
+    pub parent_gestalt_id: String,
+    pub partition_axis: AgencyAxis,
+    pub children: Vec<GestaltPersonaState>,
+    pub child_partition_values: BTreeMap<String, String>,
+    pub residual_child_id: String,
+    #[serde(default)]
+    pub member_child_assignments: BTreeMap<String, String>,
+    pub evidence_receipt_ids: Vec<String>,
+    pub gaps: Vec<String>,
+    #[serde(default)]
+    pub canon_candidates: Vec<CanonCandidate>,
+    pub requires_approval: bool,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
 pub struct ActorStateDelta {
     pub memories_add: Vec<String>,
@@ -307,6 +599,12 @@ pub struct StrategicTickReceipt {
     pub revision: u64,
     pub source: TickSource,
     pub model_receipt_hash: Option<String>,
+    #[serde(default)]
+    pub model_receipt_hashes: Vec<String>,
+    #[serde(default)]
+    pub resolution_epoch: Option<u64>,
+    #[serde(default)]
+    pub resolution_cover_id: Option<String>,
     pub event_ids: Vec<String>,
     pub committed_at: DateTime<Utc>,
 }
@@ -415,6 +713,30 @@ pub enum WorldCommand {
         plan: Option<StrategicTickPlan>,
         #[serde(default)]
         model_receipt_hash: Option<String>,
+        #[serde(default)]
+        resolution_wave: Option<ResolutionWaveCommit>,
+    },
+    SetResolutionBudget {
+        expected_revision: u64,
+        expected_resolution_epoch: u64,
+        active_cell_budget: u8,
+    },
+    SetProviderParallelism {
+        expected_revision: u64,
+        expected_provider_configuration_epoch: u64,
+        provider_parallelism: u8,
+    },
+    ReplaceResolutionPins {
+        expected_revision: u64,
+        expected_resolution_epoch: u64,
+        pins: Vec<ResolutionPin>,
+    },
+    FissionGestalt {
+        expected_revision: u64,
+        preview: GestaltFissionPreview,
+        evidence_receipts: Vec<VaultEvidenceReceipt>,
+        #[serde(default)]
+        model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
     },
     ExpandRegion {
         expected_revision: u64,
@@ -456,6 +778,10 @@ pub enum WorldCommand {
         proposal: WorldActionProposal,
         assessment: ActionAssessment,
     },
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]

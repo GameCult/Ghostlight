@@ -27,10 +27,14 @@ Away-time agency follows a separate proposal/commit seam:
 
 ```text
 exact campaign revision
-  -> flash-model StrategicTickPlan proposal
-  -> WorldKernel validates IDs, non-player scope, topology, duration, and bounds
+  -> flash-model six-axis resolution demand
+  -> connected agency graph + budget/pins/leases/detail debt
+  -> cohesive or arena simulation-cell cover
+  -> one private Projector/Persona/Interpreter membrane per cell
+  -> exact constituent-attributed appraisals and proposals
+  -> WorldKernel validates cover, receipts, knowledge, scope, topology, and bounds
   -> AdvanceStrategicTick through the campaign mailbox
-  -> atomic campaign/event/news commit
+  -> one atomic campaign/event/news/cover/appraisal commit
 ```
 
 The model owns no tick mutation. A provider failure or invalid proposal leaves
@@ -52,6 +56,12 @@ gestalt baseline + existing member delta, or a first-relevance identity proposal
 
 The temporary actor slot is derived. It never owns identity, relationship,
 memory, equipment, injury, or obligation state.
+
+The active cell budget and provider concurrency limit are separate controls.
+Budget and pins increment `resolution_epoch` without advancing world revision or
+fictional time. Provider concurrency increments only
+`provider_configuration_epoch`; it batches the same cover and cannot repartition
+the world. See `docs/architecture/ghostlight-multiresolution-agency.md`.
 
 The browser command boundary is deliberately smaller than `WorldCommand`.
 Authenticated HTTP admits only player-owned Speak, unfilled Assess, Attempt,

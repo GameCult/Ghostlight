@@ -1,6 +1,7 @@
 use crate::{
     domain::{
-        ActorState, BranchOrigin, Campaign, FactScope, GestaltMemberDelta, GestaltPersonaState,
+        ActorState, AgencyAxis, AgencyRelation, AgencyRelationKind, AgencySubjectKind,
+        BranchOrigin, Campaign, FactScope, GestaltMemberDelta, GestaltPersonaState,
         InstitutionState, Location, VaultEvidenceReceipt, WorldClock, WorldCompilePreview,
         WorldFact,
     },
@@ -60,6 +61,14 @@ pub struct SelectedStart {
     pub role: RoleSuggestion,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltFissionRequest {
+    pub parent_gestalt_id: String,
+    pub partition_axis: AgencyAxis,
+    pub requested_partition_values: Vec<String>,
+    pub reason: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct SuggestedOpenings {
     pub openings: Vec<OpeningSuggestion>,
@@ -110,12 +119,44 @@ struct CompiledSeed {
     gaps: Vec<String>,
     branch_assumptions: Vec<String>,
     opening_narration: String,
+    #[serde(default)]
+    agency_profiles: Vec<CompiledAgencyProfile>,
+    #[serde(default)]
+    agency_relations: Vec<CompiledAgencyRelation>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledAgencyProfile {
+    subject_id: String,
+    subject_kind: AgencySubjectKind,
+    collective_authority_id: Option<String>,
+    facets: BTreeMap<AgencyAxis, BTreeSet<String>>,
+    location_ids: BTreeSet<String>,
+    information_channels: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledAgencyRelation {
+    id: String,
+    from_subject_id: String,
+    to_subject_id: String,
+    kind: AgencyRelationKind,
+    strength: u8,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CompiledExpansionSeed {
     locations: Vec<Location>,
     facts: Vec<WorldFact>,
+    gaps: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledFissionSeed {
+    children: Vec<GestaltPersonaState>,
+    child_partition_values: BTreeMap<String, String>,
+    #[serde(default)]
+    member_child_assignments: BTreeMap<String, String>,
     gaps: Vec<String>,
 }
 
@@ -201,9 +242,9 @@ impl WorldCompiler {
                 3,
             )
             .await?;
-        let receipts = self.retrieve_all(&queries, &start.when, 10).await?;
+        let receipts = self.retrieve_all(&queries, &start.when, 18).await?;
         let base_prompt = format!(
-            "Compile a bounded playable region and institutional pressure graph. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. START:\n{}\nEVIDENCE:\n{}",
+            "Compile two deliberately different scales. First, compile a bounded playable region with stable topology, local actors, populations, and clocks. Second, compile a global agency skeleton covering every source-supported major power, coarse region, institution, important relation, information channel, and strategic pressure relevant to this era. Major remote powers belong in institutions and agency profiles; do not eagerly invent their settlements, routes, or people. Agency profile facets use exactly geography, ideology, authority, economy_role, species_body, and information. Agency relations use exact supplied subject IDs. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Every non-player actor, institution, and gestalt must have exactly one agency profile; location IDs must already exist. Cross-faction relations never imply shared authority. START:\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(&start)?,
             evidence_text(&receipts)
         );
@@ -267,6 +308,165 @@ impl WorldCompiler {
             goal: format!("{}; {}", start.opening.player_hook, start.opening.pressure),
         })
         .await
+    }
+
+    pub async fn compile_fission(
+        &self,
+        campaign: &Campaign,
+        request: GestaltFissionRequest,
+    ) -> Result<(
+        crate::domain::GestaltFissionPreview,
+        Vec<VaultEvidenceReceipt>,
+        Vec<ModelStageReceipt>,
+    )> {
+        let parent = campaign
+            .gestalts
+            .get(&request.parent_gestalt_id)
+            .ok_or_else(|| anyhow!("fission parent is unknown"))?;
+        let requested: BTreeSet<_> = request
+            .requested_partition_values
+            .iter()
+            .map(|value| value.trim().to_ascii_lowercase())
+            .collect();
+        if request.reason.trim().is_empty()
+            || requested.is_empty()
+            || requested.len() != request.requested_partition_values.len()
+            || requested.contains("other/unknown")
+            || request
+                .requested_partition_values
+                .iter()
+                .any(|value| value.trim().is_empty())
+        {
+            return Err(anyhow!(
+                "fission request needs distinct named cuts and a reason"
+            ));
+        }
+        let subject = serde_json::json!({
+            "request":request,
+            "parent":parent,
+            "member_deltas":campaign.gestalt_members.values().filter(|member| member.gestalt_id == parent.id).collect::<Vec<_>>(),
+            "campaign_time":campaign.world_time,
+            "canon_cutoff":campaign.branch_origin.canon_cutoff
+        });
+        let (queries, retrieval_receipt) = self
+            .plan_queries(
+                "gestalt_fission_retrieval_plan",
+                &format!("fission:{}:{}", campaign.id, parent.id),
+                &serde_json::to_string(&subject)?,
+                3,
+            )
+            .await?;
+        let receipts = self
+            .retrieve_all(&queries, &campaign.branch_origin.canon_cutoff, 12)
+            .await?;
+        let base_prompt = format!(
+            "Refine one canonical leaf gestalt along exactly the requested facet. Produce one child per requested value plus one mandatory child whose value is exactly 'other/unknown'. Children inherit the parent baseline and contain only justified refinements; every child starts at version 0 and uses an existing campaign location. Do not erase or rewrite member deltas. Assign a member only when evidence or durable existing delta supports the cut; unassigned members will remain in other/unknown. List every material lore gap. This is an approval preview, not a commit. SUBJECT:\n{}\nEVIDENCE:\n{}",
+            serde_json::to_string(&subject)?,
+            evidence_text(&receipts),
+        );
+        let schema = serde_json::to_value(schema_for!(CompiledFissionSeed))?;
+        let mut stages = vec![retrieval_receipt];
+        let mut correction = String::new();
+        for attempt in 0..2 {
+            let (value, stage) = self
+                .structured(
+                    "gestalt_fission_compile",
+                    &format!(
+                        "campaign:{}:revision:{}:fission:{}",
+                        campaign.id, campaign.revision, parent.id
+                    ),
+                    &format!("{base_prompt}{correction}"),
+                    schema.clone(),
+                    receipt_ids(&receipts),
+                )
+                .await?;
+            stages.push(stage);
+            let compiled: CompiledFissionSeed = serde_json::from_value(value)?;
+            let residual_child_id = compiled
+                .child_partition_values
+                .iter()
+                .find(|(_, value)| value.trim().eq_ignore_ascii_case("other/unknown"))
+                .map(|(id, _)| id.clone());
+            let gaps = compiled.gaps.clone();
+            let evidence_receipt_ids = receipt_ids(&receipts);
+            let affected_sources: Vec<_> = receipts
+                .iter()
+                .flat_map(|receipt| {
+                    receipt
+                        .witnesses
+                        .iter()
+                        .map(|witness| witness.source_id.clone())
+                })
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect();
+            let canon_candidates = gaps
+                .iter()
+                .enumerate()
+                .map(|(index, gap)| crate::domain::CanonCandidate {
+                    schema: "ghostlight.canon_candidate.v1".into(),
+                    id: format!(
+                        "canon-candidate:{}:fission:{}:{}",
+                        campaign.id,
+                        parent.id,
+                        index + 1
+                    ),
+                    originating_campaign_id: campaign.id,
+                    gap: gap.clone(),
+                    evidence_receipt_ids: evidence_receipt_ids.clone(),
+                    conflicts: vec![],
+                    proposed_wording: format!(
+                        "Clarify population division for {}: {gap}",
+                        parent.name
+                    ),
+                    affected_vault_sources: affected_sources.clone(),
+                    status: "review".into(),
+                })
+                .collect();
+            let preview = crate::domain::GestaltFissionPreview {
+                schema: "ghostlight.gestalt_fission_preview.v1".into(),
+                campaign_id: campaign.id,
+                expected_world_revision: campaign.revision,
+                parent_gestalt_id: parent.id.clone(),
+                partition_axis: request.partition_axis.clone(),
+                children: compiled.children,
+                child_partition_values: compiled.child_partition_values,
+                residual_child_id: residual_child_id.unwrap_or_default(),
+                member_child_assignments: compiled.member_child_assignments,
+                evidence_receipt_ids,
+                gaps,
+                canon_candidates,
+                requires_approval: true,
+            };
+            let returned_values: BTreeSet<_> = preview
+                .child_partition_values
+                .values()
+                .map(|value| value.trim().to_ascii_lowercase())
+                .filter(|value| value != "other/unknown")
+                .collect();
+            match crate::resolution::validate_fission(campaign, &preview).and_then(|_| {
+                if returned_values == requested {
+                    Ok(())
+                } else {
+                    Err(anyhow!(
+                        "fission did not preserve the requested enumerated cut"
+                    ))
+                }
+            }) {
+                Ok(()) => return Ok((preview, receipts, stages)),
+                Err(error) if attempt == 0 => {
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS FISSION: {error}\nReturn one corrected complete preview against the same subject and evidence."
+                    );
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "gestalt fission failed local validation after one correction: {error}"
+                    ));
+                }
+            }
+        }
+        unreachable!()
     }
 
     pub async fn compile_destination(
@@ -613,6 +813,8 @@ fn ensure_distinct_openings(items: &[OpeningSuggestion]) -> Result<()> {
 
 fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Result<Campaign> {
     let id = Uuid::new_v4();
+    let compiled_agency_profiles = seed.agency_profiles.clone();
+    let compiled_agency_relations = seed.agency_relations.clone();
     let player_id = seed.player.id.clone();
     let now = Utc::now();
     let mut actors: BTreeMap<_, _> = seed.actors.into_iter().map(|x| (x.id.clone(), x)).collect();
@@ -645,7 +847,7 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
             (candidate.id.clone(), candidate)
         })
         .collect();
-    Ok(Campaign {
+    let mut campaign = Campaign {
         schema: "ghostlight.campaign.v1".into(),
         id,
         name: seed.title,
@@ -702,7 +904,107 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
             .map(|x| (x.id.clone(), x))
             .collect(),
         pending_world_proposals: vec![],
-    })
+        agency_profiles: BTreeMap::new(),
+        agency_relations: BTreeMap::new(),
+        gestalt_lineages: BTreeMap::new(),
+        resolution_policy: Default::default(),
+        resolution_pins: BTreeMap::new(),
+        resolution_cover: None,
+        strategic_tick_count: 0,
+    };
+    crate::resolution::ensure_agency_profiles(&mut campaign);
+    apply_compiled_agency_skeleton(
+        &mut campaign,
+        compiled_agency_profiles,
+        compiled_agency_relations,
+    )?;
+    Ok(campaign)
+}
+
+fn apply_compiled_agency_skeleton(
+    campaign: &mut Campaign,
+    profiles: Vec<CompiledAgencyProfile>,
+    relations: Vec<CompiledAgencyRelation>,
+) -> Result<()> {
+    let expected: BTreeSet<_> = campaign
+        .agency_profiles
+        .values()
+        .filter(|profile| profile.active_leaf && profile.simulation_eligible)
+        .map(|profile| profile.subject_id.clone())
+        .collect();
+    if expected.is_empty() && profiles.is_empty() && relations.is_empty() {
+        return Ok(());
+    }
+    let supplied: BTreeSet<_> = profiles
+        .iter()
+        .map(|profile| profile.subject_id.clone())
+        .collect();
+    let axes = BTreeSet::from([
+        AgencyAxis::Geography,
+        AgencyAxis::Ideology,
+        AgencyAxis::Authority,
+        AgencyAxis::EconomyRole,
+        AgencyAxis::SpeciesBody,
+        AgencyAxis::Information,
+    ]);
+    if supplied != expected || supplied.len() != profiles.len() {
+        return Err(anyhow!(
+            "global agency skeleton must profile every non-player actor, institution, and gestalt exactly once"
+        ));
+    }
+    for input in profiles {
+        let authority_known = input
+            .collective_authority_id
+            .as_ref()
+            .is_none_or(|id| campaign.agency_profiles.contains_key(id));
+        let profile = campaign
+            .agency_profiles
+            .get_mut(&input.subject_id)
+            .ok_or_else(|| anyhow!("agency profile references an unknown subject"))?;
+        let input_axes: BTreeSet<_> = input.facets.keys().cloned().collect();
+        if profile.subject_kind != input.subject_kind
+            || input_axes != axes
+            || input
+                .location_ids
+                .iter()
+                .any(|id| !campaign.locations.contains_key(id))
+            || !authority_known
+        {
+            return Err(anyhow!("compiled agency profile is malformed"));
+        }
+        profile.collective_authority_id = input.collective_authority_id;
+        profile.facets = input.facets;
+        profile.location_ids = input.location_ids;
+        profile.information_channels = input.information_channels;
+        profile.evidence_receipt_ids = campaign.branch_origin.evidence_receipt_ids.clone();
+    }
+    let mut relation_ids = BTreeSet::new();
+    for input in relations {
+        if !relation_ids.insert(input.id.clone())
+            || input.id.trim().is_empty()
+            || input.from_subject_id == input.to_subject_id
+            || !expected.contains(&input.from_subject_id)
+            || !expected.contains(&input.to_subject_id)
+            || input.strength == 0
+            || input.strength > 100
+        {
+            return Err(anyhow!("compiled agency relation is malformed"));
+        }
+        campaign.agency_relations.insert(
+            input.id.clone(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: input.id,
+                from_subject_id: input.from_subject_id,
+                to_subject_id: input.to_subject_id,
+                kind: input.kind,
+                strength: input.strength,
+                active: true,
+                evidence_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
+            },
+        );
+    }
+    Ok(())
 }
 
 pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
@@ -711,6 +1013,27 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
     }
     if !c.actors.contains_key(&c.player_actor_id) {
         return Err(anyhow!("player actor is missing"));
+    }
+    crate::resolution::validate_policy(&c.resolution_policy)?;
+    crate::resolution::validate_pins(c, &c.resolution_pins)?;
+    let expected_profiles: BTreeSet<_> = c
+        .actors
+        .keys()
+        .filter(|id| *id != &c.player_actor_id)
+        .chain(c.institutions.keys())
+        .chain(c.gestalts.keys())
+        .cloned()
+        .collect();
+    let actual_profiles: BTreeSet<_> = c
+        .agency_profiles
+        .values()
+        .filter(|profile| profile.active_leaf && profile.simulation_eligible)
+        .map(|profile| profile.subject_id.clone())
+        .collect();
+    if expected_profiles != actual_profiles {
+        return Err(anyhow!(
+            "campaign agency skeleton has incomplete subject coverage"
+        ));
     }
     for actor in c.actors.values() {
         if !c.locations.contains_key(&actor.location_id) {
@@ -746,10 +1069,10 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
         }
     }
     for location in c.locations.values() {
-        if let Some(parent) = &location.container_id {
-            if parent == &location.id || !c.locations.contains_key(parent) {
-                return Err(anyhow!("location {} has invalid container", location.id));
-            }
+        if let Some(parent) = &location.container_id
+            && (parent == &location.id || !c.locations.contains_key(parent))
+        {
+            return Err(anyhow!("location {} has invalid container", location.id));
         }
         for route in location.routes.values() {
             if route.travel_minutes == 0 || !c.locations.contains_key(&route.destination_id) {
@@ -816,7 +1139,9 @@ mod tests {
                         "gestalt_members":[{"schema":"ghostlight.gestalt_member_delta.v1","id":"john","gestalt_id":"yard-workers","version":0,"name":"John the smith","capability_additions":["forge hinges"],"capability_removals":[],"knowledge_additions":[],"knowledge_removals":[],"equipment":["hammer"],"conditions":[],"obligations":[],"relationships":{},"goals":[],"memories":[],"last_location_id":"yard","materialized_actor_id":null}],
                         "institutions":[],"clocks":[{"id":"shift","label":"Shift ends","progress":0,"threshold":4,"consequence":"night"}],
                         "facts":[{"id":"f","statement":"A witnessed fact","scope":"canon_baseline","evidence_receipt_ids":["fixture"]}],
-                        "gaps":["Who owns the outer gate?"],"branch_assumptions":[],"opening_narration":"The yard persists."
+                        "gaps":["Who owns the outer gate?"],"branch_assumptions":[],"opening_narration":"The yard persists.",
+                        "agency_profiles":[{"subject_id":"yard-workers","subject_kind":"gestalt","collective_authority_id":"yard-workers","facets":{"geography":["yard"],"ideology":["mutual aid"],"authority":["yard-workers"],"economy_role":["maintenance"],"species_body":["human"],"information":["yard routines"]},"location_ids":["yard"],"information_channels":["yard routines"]}],
+                        "agency_relations":[]
                     }).to_string()
                 }
                 _ => return Err(anyhow!("unexpected stage")),
@@ -958,6 +1283,11 @@ mod tests {
         assert_eq!(preview.campaign.locations.len(), 1);
         assert_eq!(preview.campaign.canon_candidates.len(), 1);
         assert_eq!(preview.campaign.gestalts.len(), 1);
+        assert_eq!(preview.campaign.agency_profiles.len(), 2);
+        assert_eq!(
+            preview.campaign.agency_profiles["yard-workers"].facets[&AgencyAxis::Ideology],
+            BTreeSet::from(["mutual aid".into()])
+        );
         assert_eq!(
             preview.campaign.gestalt_members["john"].name,
             "John the smith"

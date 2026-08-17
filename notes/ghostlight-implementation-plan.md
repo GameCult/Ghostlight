@@ -18,9 +18,16 @@ consequence authority.
 The hosted runtime owns compiler approval, exact VoidBot evidence, campaign
 mailboxes, fiction-first d20 resolution, parallel Persona appraisal, narration,
 reversible gestalt materialization, isolated sessions/campaigns, CultMesh/Eve
-publication, and away-time scheduling. Strategic ticks now use a flash-model
-typed proposal; the WorldKernel forbids player puppeting, invented IDs,
-unreachable movement, and unbounded information or population-pressure edits.
+publication, and away-time scheduling. Strategic ticks now project six-axis
+pressure, select a connected budgeted cover over the global agency skeleton,
+and run one private Ghostlight Persona membrane per cohesive or arena cell. The
+WorldKernel admits the whole cell wave atomically and forbids player puppeting,
+synthetic arena actors, borrowed secrets, invented IDs, unreachable movement,
+and unbounded information or population-pressure edits. The laboratory exposes
+a 1–32 player budget, persistent pins, approval-gated gestalt fission, graph and
+cover receipts, and a separate operator provider-concurrency limit. The
+specific authority map is
+`docs/architecture/ghostlight-multiresolution-agency.md`.
 The implementation cut is closed. Final acceptance evidence covers hosted
 VoidBot compilation, invite isolation, automatic gestalt presence, three NPC
 reactions, a 13.57-second four-actor parallel wave, model-driven institutional,

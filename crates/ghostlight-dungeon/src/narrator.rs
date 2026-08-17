@@ -78,7 +78,7 @@ impl Narrator {
             source_revision: campaign.revision,
             text: text.into(),
             event_ids: recent_events.into_iter().map(|event| event.id).collect(),
-            model_receipt_hash: output.receipt.output_hash.clone(),
+            model_receipt_hash: output.receipt.storage_key().to_owned(),
             published_at: Utc::now(),
         };
         Ok((projection, output.receipt))
@@ -144,6 +144,13 @@ mod tests {
             gestalts: BTreeMap::new(),
             gestalt_members: BTreeMap::new(),
             pending_world_proposals: vec![],
+            agency_profiles: BTreeMap::new(),
+            agency_relations: BTreeMap::new(),
+            gestalt_lineages: BTreeMap::new(),
+            resolution_policy: Default::default(),
+            resolution_pins: BTreeMap::new(),
+            resolution_cover: None,
+            strategic_tick_count: 0,
         }
     }
 

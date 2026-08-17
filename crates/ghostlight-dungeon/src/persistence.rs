@@ -1,6 +1,6 @@
 use crate::domain::{
-    Campaign, GestaltMaterializationReceipt, StrategicTickReceipt, VaultEvidenceReceipt,
-    VaultManifest, WorldCommitReceipt,
+    Campaign, GestaltMaterializationReceipt, ResolutionControlReceipt, ResolutionWaveCommit,
+    StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest, WorldCommitReceipt,
 };
 use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
@@ -111,7 +111,7 @@ impl CampaignStore {
             rows.push(envelope(
                 "persona_stage_receipt.v1",
                 "ghostlight.persona_stage_receipt.v1",
-                &receipt.output_hash,
+                receipt.storage_key(),
                 receipt,
             )?);
         }
@@ -240,7 +240,7 @@ impl CampaignStore {
             rows.push(envelope(
                 "persona_stage_receipt.v1",
                 "ghostlight.persona_stage_receipt.v1",
-                &item.output_hash,
+                item.storage_key(),
                 item,
             )?);
         }
@@ -261,6 +261,7 @@ impl CampaignStore {
         receipt_key: &str,
         world_receipt: &WorldCommitReceipt,
         strategic_receipt: &StrategicTickReceipt,
+        resolution_wave: Option<&ResolutionWaveCommit>,
     ) -> Result<CultCacheEnvelope> {
         let next_row = envelope(
             &expected.r#type,
@@ -268,7 +269,7 @@ impl CampaignStore {
             &expected.key,
             next,
         )?;
-        let rows = vec![
+        let mut rows = vec![
             next_row.clone(),
             envelope(
                 "world_commit_receipt.v1",
@@ -281,6 +282,65 @@ impl CampaignStore {
                 "ghostlight.strategic_tick.v1",
                 receipt_key,
                 strategic_receipt,
+            )?,
+        ];
+        if let Some(wave) = resolution_wave {
+            let key = format!(
+                "{}:{}:{}",
+                next.id, wave.world_revision, wave.resolution_epoch
+            );
+            rows.push(envelope(
+                "resolution_cover.v1",
+                "ghostlight.resolution_cover.v1",
+                &key,
+                &wave.cover,
+            )?);
+            rows.push(envelope(
+                "resolution_plan_receipt.v1",
+                "ghostlight.resolution_plan_receipt.v1",
+                &key,
+                &wave.plan_receipt,
+            )?);
+            for appraisal in &wave.appraisals {
+                rows.push(envelope(
+                    "cell_appraisal.v1",
+                    "ghostlight.cell_appraisal.v1",
+                    &format!(
+                        "{}:{}:{}",
+                        next.revision, wave.resolution_epoch, appraisal.cell_id
+                    ),
+                    appraisal,
+                )?);
+            }
+        }
+        if !self
+            .inner
+            .compare_and_swap_batch(std::slice::from_ref(expected), rows)?
+        {
+            return Err(anyhow!("stale CultCache snapshot"));
+        }
+        Ok(next_row)
+    }
+
+    pub fn append_resolution_control(
+        &self,
+        expected: &CultCacheEnvelope,
+        next: &Campaign,
+        receipt: &ResolutionControlReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        let next_row = envelope(
+            &expected.r#type,
+            "ghostlight.campaign.v1",
+            &expected.key,
+            next,
+        )?;
+        let rows = vec![
+            next_row.clone(),
+            envelope(
+                "resolution_control_receipt.v1",
+                "ghostlight.resolution_control_receipt.v1",
+                &format!("{}:{}", next.id, receipt.resolution_epoch),
+                receipt,
             )?,
         ];
         if !self

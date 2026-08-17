@@ -9,9 +9,12 @@ use axum::{
 use ghostlight_dungeon::windows_secret::unprotect_machine_utf8;
 use ghostlight_dungeon::{
     assessor::ActionAssessor,
-    compiler::{CustomStart, OpeningRequest, OpeningSuggestion, SelectedStart, WorldCompiler},
+    compiler::{
+        CustomStart, GestaltFissionRequest, OpeningRequest, OpeningSuggestion, SelectedStart,
+        WorldCompiler,
+    },
     domain::{
-        ActionIntent, Campaign, NarrationProjection, RegionExpansionPreview,
+        ActionIntent, Campaign, GestaltFissionPreview, NarrationProjection, RegionExpansionPreview,
         RejectedProposalReceipt, WorldCommand, WorldCompilePreview,
     },
     gestalt::GestaltPresencePlanner,
@@ -51,6 +54,7 @@ struct AppState {
     model: Option<Arc<dyn ModelPort>>,
     compile_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<WorldCompilePreview>>>>,
     expansion_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<RegionExpansionPreview>>>>,
+    fission_previews: Arc<Mutex<BTreeMap<String, OwnedFissionPreview>>>,
     live_turns: Arc<AtomicUsize>,
     mesh: MeshPublisher,
 }
@@ -73,6 +77,20 @@ struct OwnedPreview<T> {
     session_hash: String,
     value: T,
     model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+}
+
+#[derive(Clone)]
+struct OwnedFissionPreview {
+    session_hash: String,
+    value: GestaltFissionPreview,
+    evidence_receipts: Vec<ghostlight_dungeon::domain::VaultEvidenceReceipt>,
+    model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+}
+
+#[derive(Deserialize)]
+struct ProviderParallelismRequest {
+    expected_provider_configuration_epoch: u64,
+    provider_parallelism: u8,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -204,6 +222,7 @@ async fn main() -> anyhow::Result<()> {
         model: shared_model,
         compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
         expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
+        fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
         live_turns: Arc::new(AtomicUsize::new(0)),
         mesh,
     };
@@ -229,6 +248,11 @@ async fn main() -> anyhow::Result<()> {
             "/api/compiler/destination/approve/{preview_id}",
             post(approve_destination),
         )
+        .route("/api/compiler/gestalt/fission", post(compile_fission))
+        .route(
+            "/api/compiler/gestalt/fission/approve/{preview_id}",
+            post(approve_fission),
+        )
         .route("/api/command", post(command))
         .route("/api/campaigns", get(campaigns))
         .route(
@@ -243,6 +267,10 @@ async fn main() -> anyhow::Result<()> {
             get(export_canon_candidates_markdown),
         )
         .route("/api/operator", get(operator_inspector))
+        .route(
+            "/api/operator/provider-parallelism",
+            post(set_provider_parallelism),
+        )
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state);
     let address: SocketAddr = std::env::var("GHOSTLIGHT_DUNGEON_BIND")
@@ -620,6 +648,107 @@ async fn approve_destination(
     }
 }
 
+async fn compile_fission(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<GestaltFissionRequest>,
+) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let runtime = match session_runtime(&state, &session).await {
+        Ok(Some(value)) => value,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let campaign = match load_campaign(&runtime.store) {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    let Some(compiler) = &state.compiler else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "DeepSeek credential is unavailable",
+        )
+            .into_response();
+    };
+    match compiler.compile_fission(&campaign, request).await {
+        Ok((preview, evidence_receipts, model_receipts)) => {
+            let id = uuid::Uuid::new_v4().to_string();
+            state.fission_previews.lock().await.insert(
+                id.clone(),
+                OwnedFissionPreview {
+                    session_hash: session,
+                    value: preview.clone(),
+                    evidence_receipts,
+                    model_receipts: model_receipts.clone(),
+                },
+            );
+            Json(serde_json::json!({
+                "preview_id":id,
+                "preview":preview,
+                "model_receipts":model_receipts
+            }))
+            .into_response()
+        }
+        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
+    }
+}
+
+async fn approve_fission(
+    Path(preview_id): Path<String>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let mut previews = state.fission_previews.lock().await;
+    let Some(owned) = previews.get(&preview_id).cloned() else {
+        return (StatusCode::NOT_FOUND, "preview missing or already consumed").into_response();
+    };
+    if owned.session_hash != session {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    previews.remove(&preview_id);
+    drop(previews);
+    let runtime = match session_runtime(&state, &session).await {
+        Ok(Some(value)) => value,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    match runtime
+        .kernel
+        .command(WorldCommand::FissionGestalt {
+            expected_revision: owned.value.expected_world_revision,
+            preview: owned.value,
+            evidence_receipts: owned.evidence_receipts,
+            model_stage_receipts: owned.model_receipts,
+        })
+        .await
+    {
+        Ok(value) => {
+            if let Err(error) = refresh_mesh(&state).await {
+                tracing::warn!(%error, "gestalt fission CultMesh publication failed");
+            }
+            Json(value).into_response()
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
 async fn resolve_npc_initiative(
     state: &AppState,
     runtime: &CampaignRuntime,
@@ -645,7 +774,7 @@ async fn resolve_npc_initiative(
     let _ = runtime.store.insert(
         "persona_stage_receipt.v1",
         "ghostlight.persona_stage_receipt.v1",
-        &receipt.output_hash,
+        receipt.storage_key(),
         &receipt,
     );
     let resolved = runtime
@@ -689,7 +818,7 @@ async fn publish_latest_narration(
     let _ = runtime.store.insert(
         "persona_stage_receipt.v1",
         "ghostlight.persona_stage_receipt.v1",
-        &receipt.output_hash,
+        receipt.storage_key(),
         &receipt,
     );
     Ok(Some(projection))
@@ -794,7 +923,7 @@ async fn command(
                     let _ = runtime.store.insert(
                         "persona_stage_receipt.v1",
                         "ghostlight.persona_stage_receipt.v1",
-                        &receipt.output_hash,
+                        receipt.storage_key(),
                         &receipt,
                     );
                     *proposal = Some(assessment);
@@ -848,7 +977,7 @@ async fn command(
                                     let _ = runtime.store.insert(
                                         "persona_stage_receipt.v1",
                                         "ghostlight.persona_stage_receipt.v1",
-                                        &receipt.output_hash,
+                                        receipt.storage_key(),
                                         &receipt,
                                     );
                                     if !plan.individuations.is_empty()
@@ -900,7 +1029,7 @@ async fn command(
                                         let _ = runtime.store.insert(
                                             "persona_stage_receipt.v1",
                                             "ghostlight.persona_stage_receipt.v1",
-                                            &receipt.output_hash,
+                                            receipt.storage_key(),
                                             &receipt,
                                         );
                                     }
@@ -1023,7 +1152,7 @@ async fn command(
                         let _ = runtime.store.insert(
                             "persona_stage_receipt.v1",
                             "ghostlight.persona_stage_receipt.v1",
-                            &receipt.output_hash,
+                            receipt.storage_key(),
                             &receipt,
                         );
                         return match runtime
@@ -1090,7 +1219,10 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         WorldCommand::Assess {
             intent, proposal, ..
         } => intent.actor_id == player_actor_id && proposal.is_none(),
-        WorldCommand::Attempt { .. } | WorldCommand::Wait { .. } => true,
+        WorldCommand::Attempt { .. }
+        | WorldCommand::Wait { .. }
+        | WorldCommand::SetResolutionBudget { .. }
+        | WorldCommand::ReplaceResolutionPins { .. } => true,
         WorldCommand::CreateCampaign { .. }
         | WorldCommand::AdvanceStrategicTick { .. }
         | WorldCommand::ExpandRegion { .. }
@@ -1099,7 +1231,9 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::IndividuateGestaltMember { .. }
         | WorldCommand::ReconcileGestaltPresence { .. }
         | WorldCommand::ResolveReactionWave { .. }
-        | WorldCommand::ResolveNpcAction { .. } => false,
+        | WorldCommand::ResolveNpcAction { .. }
+        | WorldCommand::SetProviderParallelism { .. }
+        | WorldCommand::FissionGestalt { .. } => false,
     }
 }
 
@@ -1168,6 +1302,9 @@ async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
                 .store
                 .load_all("gestalt_materialization_receipt.v1")?,
             rejected: runtime.store.load_all("rejected_proposal_receipt.v1")?,
+            resolution_plans: runtime.store.load_all("resolution_plan_receipt.v1")?,
+            cell_appraisals: runtime.store.load_all("cell_appraisal.v1")?,
+            resolution_controls: runtime.store.load_all("resolution_control_receipt.v1")?,
         });
     }
     let publisher = state.mesh.clone();
@@ -1431,6 +1568,47 @@ async fn export_canon_candidates_markdown(
     response
 }
 
+async fn set_provider_parallelism(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<ProviderParallelismRequest>,
+) -> Response {
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match session_runtime(&state, &session).await {
+        Ok(Some(value)) => value,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let campaign = match load_campaign(&runtime.store) {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    match runtime
+        .kernel
+        .command(WorldCommand::SetProviderParallelism {
+            expected_revision: campaign.revision,
+            expected_provider_configuration_epoch: request.expected_provider_configuration_epoch,
+            provider_parallelism: request.provider_parallelism,
+        })
+        .await
+    {
+        Ok(value) => {
+            if let Err(error) = refresh_mesh(&state).await {
+                tracing::warn!(%error, "provider concurrency CultMesh publication failed");
+            }
+            Json(value).into_response()
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
 async fn operator_inspector(headers: HeaderMap, State(state): State<AppState>) -> Response {
     let session = match authenticated_session(&headers, &state).await {
         Some(value) => value,
@@ -1478,15 +1656,27 @@ async fn process_due_ticks(
         if campaign.away_ticks_processed >= target {
             return Ok(());
         }
-        let (plan, model_receipt_hash) = if let Some(model) = &state.model {
-            let (plan, stage) =
-                ghostlight_dungeon::scheduler::propose_strategic_tick(model.as_ref(), &campaign)
-                    .await?;
+        let Some(model) = &state.model else {
+            return Ok(());
+        };
+        let permit = Arc::new(SnapshotPermit::new_resolution(
+            runtime.store.clone(),
+            campaign.id,
+            campaign.revision,
+            campaign.resolution_policy.resolution_epoch,
+        ));
+        let output = ghostlight_dungeon::scheduler::propose_resolution_wave(
+            model.clone(),
+            permit,
+            &campaign,
+        )
+        .await?;
+        for stage in &output.stages {
             match runtime
                 .store
                 .load::<ghostlight_dungeon::model::ModelStageReceipt>(
                     "persona_stage_receipt.v1",
-                    &stage.receipt.output_hash,
+                    stage.receipt.storage_key(),
                 )? {
                 Some((_, existing)) if existing == stage.receipt => {}
                 Some(_) => anyhow::bail!("strategic model receipt hash collision"),
@@ -1494,15 +1684,12 @@ async fn process_due_ticks(
                     runtime.store.insert(
                         "persona_stage_receipt.v1",
                         "ghostlight.persona_stage_receipt.v1",
-                        &stage.receipt.output_hash,
+                        stage.receipt.storage_key(),
                         &stage.receipt,
                     )?;
                 }
             }
-            (Some(plan), Some(stage.receipt.output_hash))
-        } else {
-            (None, None)
-        };
+        }
         if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
             return Ok(());
         }
@@ -1511,8 +1698,9 @@ async fn process_due_ticks(
             .command(WorldCommand::AdvanceStrategicTick {
                 expected_revision: campaign.revision,
                 source: source.clone(),
-                plan,
-                model_receipt_hash,
+                plan: None,
+                model_receipt_hash: Some(output.aggregate_receipt_hash),
+                resolution_wave: Some(output.wave),
             })
             .await?;
     }
@@ -1688,6 +1876,13 @@ mod tests {
             gestalts: BTreeMap::new(),
             gestalt_members: BTreeMap::new(),
             pending_world_proposals: vec![],
+            agency_profiles: BTreeMap::new(),
+            agency_relations: BTreeMap::new(),
+            gestalt_lineages: BTreeMap::new(),
+            resolution_policy: Default::default(),
+            resolution_pins: BTreeMap::new(),
+            resolution_cover: None,
+            strategic_tick_count: 0,
         }
     }
 
@@ -1738,6 +1933,7 @@ mod tests {
             model: None,
             compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
             expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
+            fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
             live_turns: Arc::new(AtomicUsize::new(0)),
             mesh: MeshPublisher::open(dir.path().join("mesh.cc"), None).unwrap(),
         };
@@ -1785,6 +1981,7 @@ mod tests {
                 source: ghostlight_dungeon::domain::TickSource::Scheduler,
                 plan: None,
                 model_receipt_hash: None,
+                resolution_wave: None,
             },
             "player",
         ));

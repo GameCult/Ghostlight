@@ -11,6 +11,7 @@ pub mod narrator;
 pub mod persistence;
 pub mod persona;
 pub mod registry;
+pub mod resolution;
 pub mod scheduler;
 pub mod surface;
 pub mod turn;

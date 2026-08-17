@@ -225,6 +225,11 @@ implementation to make competing decisions after migration.
 
 ## Persona projection ownership
 
+The population-scale partition and cell-wave authority is specified in
+`ghostlight-multiresolution-agency.md`. It replaces a flat list of strategic
+gestalts with a dynamic, budget-aware connected cover while preserving the
+materialization rules below for named people.
+
 ### Gestalt population materialization
 
 Large low-focus populations use a gestalt Persona without sacrificing durable
@@ -584,7 +589,10 @@ Live play prevents new background model calls from launching. The absent player
 is not puppeted or directly harmed. Remote actors and institutions may move,
 prepare, recruit, investigate, bargain, obstruct, spend resources, and advance
 clocks. Information-channel-aware news is projected only if the player
-character can access its channel.
+character can access its channel. Each tick first projects current pressure,
+builds a connected budgeted agency cover, and runs one private Persona membrane
+per cell. Every appraisal and stage receipt must validate before the kernel
+commits the strategic wave atomically.
 
 ### Eve/CultMesh and browser
 
@@ -678,6 +686,19 @@ Ghostlight publishes JSON Schema for:
 - `ghostlight.strategic_tick.v1`
 - `ghostlight.news_issue.v1`
 - `ghostlight.canon_candidate.v1`
+- `ghostlight.agency_profile.v1`
+- `ghostlight.agency_relation.v1`
+- `ghostlight.gestalt_lineage.v1`
+- `ghostlight.resolution_policy.v1`
+- `ghostlight.resolution_pin.v1`
+- `ghostlight.resolution_demand.v1`
+- `ghostlight.simulation_cell.v1`
+- `ghostlight.resolution_cover.v1`
+- `ghostlight.resolution_plan_receipt.v1`
+- `ghostlight.resolution_control_receipt.v1`
+- `ghostlight.cell_appraisal.v1`
+- `ghostlight.cell_action_proposal.v1`
+- `ghostlight.gestalt_fission_preview.v1`
 
 The UI consumes existing `gamecult.eve.surface.v1` and
 `gamecult.eve.command.v1` contracts.

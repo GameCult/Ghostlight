@@ -1,11 +1,14 @@
 use crate::{
     domain::{
-        ActionAssessment, ActorState, ActorStateDelta, Campaign, CampaignLifecycleReceipt,
-        CanonCandidate, Event, GestaltMaterializationReceipt, GestaltMemberDelta,
+        ActionAssessment, ActorState, ActorStateDelta, AgencyProfile, AgencyRelation, Campaign,
+        CampaignLifecycleReceipt, CanonCandidate, CellActionProposal, CellAppraisal, Event,
+        GestaltFissionPreview, GestaltLineage, GestaltMaterializationReceipt, GestaltMemberDelta,
         GestaltPersonaState, InstitutionState, Location, NarrationProjection, NewsIssue,
-        RegionExpansionPreview, RejectedProposalReceipt, RelationshipState, RollReceipt,
-        StrategicTickPlan, StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest,
-        WorldActionProposal, WorldClock, WorldCommitReceipt, WorldCompilePreview, WorldFact,
+        RegionExpansionPreview, RejectedProposalReceipt, RelationshipState,
+        ResolutionControlReceipt, ResolutionCover, ResolutionDemand, ResolutionPin,
+        ResolutionPlanReceipt, ResolutionPolicy, RollReceipt, SimulationCell, StrategicTickPlan,
+        StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest, WorldActionProposal, WorldClock,
+        WorldCommitReceipt, WorldCompilePreview, WorldFact,
     },
     model::ModelStageReceipt,
     surface::{operator_surface, player_surface},
@@ -37,6 +40,9 @@ pub struct CampaignMeshSnapshot {
     pub strategic_ticks: Vec<StrategicTickReceipt>,
     pub gestalt_receipts: Vec<GestaltMaterializationReceipt>,
     pub rejected: Vec<RejectedProposalReceipt>,
+    pub resolution_plans: Vec<ResolutionPlanReceipt>,
+    pub cell_appraisals: Vec<CellAppraisal>,
+    pub resolution_controls: Vec<ResolutionControlReceipt>,
 }
 
 #[derive(Clone, Debug, PartialEq, DatabaseEntry)]
@@ -240,6 +246,17 @@ impl MeshPublisher {
         )?;
         for snapshot in campaigns {
             let campaign = &snapshot.campaign;
+            let interface_version = campaign
+                .revision
+                .saturating_mul(1_000_000_000_000)
+                .saturating_add(
+                    campaign
+                        .resolution_policy
+                        .resolution_epoch
+                        .saturating_mul(1_000_000),
+                )
+                .saturating_add(campaign.resolution_policy.provider_configuration_epoch)
+                as i64;
             let surface = player_surface(campaign, &snapshot.narrations);
             let key = format!("eve:surface:ghostlight.campaign.{}", campaign.id);
             self.put_and_publish(
@@ -257,6 +274,9 @@ impl MeshPublisher {
                 &snapshot.strategic_ticks,
                 &snapshot.gestalt_receipts,
                 &snapshot.rejected,
+                &snapshot.resolution_plans,
+                &snapshot.cell_appraisals,
+                &snapshot.resolution_controls,
                 live_turn_pressure,
             );
             self.put_and_publish(
@@ -272,7 +292,7 @@ impl MeshPublisher {
                 &EveSurfaceStateRecord {
                     provider_id: PROVIDER_ID.into(),
                     title: format!("{} operator", campaign.name),
-                    version: campaign.revision as i64,
+                    version: interface_version,
                     updated_at: updated_at.clone(),
                     surface: operator,
                 },
@@ -283,7 +303,7 @@ impl MeshPublisher {
                 &EveSurfaceStateRecord {
                     provider_id: PROVIDER_ID.into(),
                     title: campaign.name.clone(),
-                    version: campaign.revision as i64,
+                    version: interface_version,
                     updated_at: updated_at.clone(),
                     surface,
                 },
@@ -364,7 +384,20 @@ fn schema_catalog() -> Value {
         "ghostlight.canon_candidate.v1": schemars::schema_for!(CanonCandidate),
         "ghostlight.gestalt_persona_state.v1": schemars::schema_for!(GestaltPersonaState),
         "ghostlight.gestalt_member_delta.v1": schemars::schema_for!(GestaltMemberDelta)
-        ,"ghostlight.gestalt_materialization_receipt.v1": schemars::schema_for!(GestaltMaterializationReceipt)
+        ,"ghostlight.gestalt_materialization_receipt.v1": schemars::schema_for!(GestaltMaterializationReceipt),
+        "ghostlight.agency_profile.v1": schemars::schema_for!(AgencyProfile),
+        "ghostlight.agency_relation.v1": schemars::schema_for!(AgencyRelation),
+        "ghostlight.gestalt_lineage.v1": schemars::schema_for!(GestaltLineage),
+        "ghostlight.resolution_policy.v1": schemars::schema_for!(ResolutionPolicy),
+        "ghostlight.resolution_pin.v1": schemars::schema_for!(ResolutionPin),
+        "ghostlight.resolution_demand.v1": schemars::schema_for!(ResolutionDemand),
+        "ghostlight.simulation_cell.v1": schemars::schema_for!(SimulationCell),
+        "ghostlight.resolution_cover.v1": schemars::schema_for!(ResolutionCover),
+        "ghostlight.resolution_plan_receipt.v1": schemars::schema_for!(ResolutionPlanReceipt),
+        "ghostlight.resolution_control_receipt.v1": schemars::schema_for!(ResolutionControlReceipt),
+        "ghostlight.cell_appraisal.v1": schemars::schema_for!(CellAppraisal),
+        "ghostlight.cell_action_proposal.v1": schemars::schema_for!(CellActionProposal),
+        "ghostlight.gestalt_fission_preview.v1": schemars::schema_for!(GestaltFissionPreview)
     })
 }
 
@@ -392,6 +425,10 @@ mod tests {
             "ghostlight.relationship_state.v1",
             "ghostlight.strategic_tick.v1",
             "ghostlight.gestalt_materialization_receipt.v1",
+            "ghostlight.agency_profile.v1",
+            "ghostlight.resolution_cover.v1",
+            "ghostlight.cell_appraisal.v1",
+            "ghostlight.gestalt_fission_preview.v1",
         ] {
             assert!(catalog.value["schemas"][schema]["$schema"].is_string());
         }

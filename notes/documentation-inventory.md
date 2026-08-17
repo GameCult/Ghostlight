@@ -15,6 +15,11 @@ not slowly melt into one cursed binder.
 
 ## Core Architecture Contracts
 
+- `docs/architecture/ghostlight-dungeon-mvp.md`: hosted dungeon authority and
+  runtime map.
+- `docs/architecture/ghostlight-multiresolution-agency.md`: dynamic agency
+  graph, connected cohesive/arena covers, detail fairness, cell waves, fission,
+  controls, and atomicity.
 - `docs/architecture/canonical-agent-state-schema.md`: canonical state model.
 - `docs/architecture/agent-state-variable-glossary.md`: meanings for state
   axes, voice style, overlays, and emergent behaviors.

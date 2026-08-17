@@ -6,6 +6,12 @@ Build `GhostlightDungeon` inside `GameCult/Ghostlight`: a persistent, Vault-grou
 
 The runtime will be a Rust daemon on Starfire. It will own world compilation, typed CultCache state, d20 resolution, NPC Persona loops, offscreen simulation, narration, and Eve/CultUI publication. A thin TypeScript browser client will lower the Eve surface and submit typed commands.
 
+Population-scale agency is implemented by the dynamic connected cover in
+`docs/architecture/ghostlight-multiresolution-agency.md`. That authority map
+supersedes any reading of the gestalt materialization notes below as a flat
+strategic Persona list: materialization preserves named identity, while the
+agency graph decides the current simulation resolution.
+
 Ghostlight’s existing v0 schemas and training fixtures remain evidence and regression material; they do not become runtime authorities.
 
 ## Authority and invariants
@@ -162,6 +168,34 @@ stake prose alone never impersonates world mutation.
 - The scheduler and return-time catch-up invoke the same `AdvanceStrategicTick` command. Catch-up processes missed ticks before accepting the next player action.
 - Live play has inference priority; background work stops launching new calls while a player turn is active.
 - Offscreen events generate information-channel-aware news leads. On return, the player may receive newspapers, reports, messages, or rumors only when the character has access to them; the news layer cannot reveal omniscient state.
+
+### Multiresolution gestalt and institution agency
+
+- Campaign creation compiles a global agency skeleton across every non-player
+  actor, institution, and active gestalt leaf. All six partition facets are
+  explicit; remote powers do not require eager local geography.
+- `ActorState`, `InstitutionState`, gestalt baselines, member deltas,
+  relationships, possessions, and knowledge remain canonical. A
+  `simulation_cell.v1` is a derived connected cover and may be discarded.
+- The player chooses 1–32 active Persona cells, default 8. Foreground subjects,
+  active leases, initiative holders, explicit targets, and individual-detail
+  pins may create a reported temporary overage.
+- Adjacent cells merge by the weighted loss specified in
+  `ghostlight-multiresolution-agency.md`; cohesive cells require real common
+  authority, while opposed or cross-faction cells are arenas with no synthetic
+  actor or shared knowledge.
+- Every active cell receives one private Projector → Persona → Interpreter
+  pipeline. Arena output is constituent-attributed. All cells, receipts, and
+  effects validate against one world revision and resolution epoch before one
+  atomic strategic commit.
+- Persistent detail debt rotates direct attention through quiet subjects. All
+  clocks and deterministic obligations advance regardless of selected detail.
+- Population fission is a separate approval-gated canonical operation. It
+  creates enumerated child leaves plus `other/unknown`, preserves the parent as
+  lineage, and reassigns durable member deltas without rewriting identity.
+- Provider request parallelism is an operator control with its own epoch. It
+  batches the selected cell pipelines and cannot change the cover or fictional
+  state.
 
 ### Web laboratory and hosting
 

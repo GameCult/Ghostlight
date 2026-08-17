@@ -44,6 +44,10 @@ pub enum CommandResult {
         campaign: Campaign,
         receipt: WorldCommitReceipt,
     },
+    ResolutionUpdated {
+        campaign: Campaign,
+        receipt: ResolutionControlReceipt,
+    },
 }
 
 struct Request {
@@ -86,7 +90,7 @@ fn execute(
     command: WorldCommand,
 ) -> Result<CommandResult, KernelError> {
     if let WorldCommand::CreateCampaign {
-        campaign,
+        mut campaign,
         evidence_receipts,
         model_stage_receipts,
     } = command
@@ -94,6 +98,7 @@ fn execute(
         if !store.keys("campaign.v1").map_err(persist)?.is_empty() {
             return Err(KernelError::Invalid("campaign already exists".into()));
         }
+        crate::resolution::ensure_agency_profiles(&mut campaign);
         crate::compiler::validate_campaign_seed(&campaign)
             .map_err(|error| KernelError::Invalid(error.to_string()))?;
         store
@@ -249,14 +254,141 @@ fn execute(
             campaign.pending_ticks = 0;
             commit(store, row, campaign, "wait", None)
         }
+        WorldCommand::SetResolutionBudget {
+            expected_revision,
+            expected_resolution_epoch,
+            active_cell_budget,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            require_resolution_epoch(&campaign, expected_resolution_epoch)?;
+            let previous_epoch = campaign.resolution_policy.resolution_epoch;
+            campaign.resolution_policy.active_cell_budget = active_cell_budget;
+            campaign.resolution_policy.pending_active_cell_budget = None;
+            crate::resolution::validate_policy(&campaign.resolution_policy)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            campaign.resolution_policy.resolution_epoch = previous_epoch.saturating_add(1);
+            campaign.resolution_cover = None;
+            commit_resolution_control(
+                store,
+                row,
+                campaign,
+                previous_epoch,
+                "set_active_cell_budget",
+            )
+        }
+        WorldCommand::SetProviderParallelism {
+            expected_revision,
+            expected_provider_configuration_epoch,
+            provider_parallelism,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            if campaign.resolution_policy.provider_configuration_epoch
+                != expected_provider_configuration_epoch
+            {
+                return Err(KernelError::Stale {
+                    expected: expected_provider_configuration_epoch,
+                    actual: campaign.resolution_policy.provider_configuration_epoch,
+                });
+            }
+            campaign.resolution_policy.provider_parallelism = provider_parallelism;
+            crate::resolution::validate_policy(&campaign.resolution_policy)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let previous_epoch = campaign.resolution_policy.resolution_epoch;
+            campaign.resolution_policy.provider_configuration_epoch = campaign
+                .resolution_policy
+                .provider_configuration_epoch
+                .saturating_add(1);
+            commit_resolution_control(
+                store,
+                row,
+                campaign,
+                previous_epoch,
+                "set_provider_parallelism",
+            )
+        }
+        WorldCommand::ReplaceResolutionPins {
+            expected_revision,
+            expected_resolution_epoch,
+            pins,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            require_resolution_epoch(&campaign, expected_resolution_epoch)?;
+            let mut replacement = BTreeMap::new();
+            for pin in pins {
+                if replacement.insert(pin.id.clone(), pin).is_some() {
+                    return Err(KernelError::Invalid("duplicate resolution pin id".into()));
+                }
+            }
+            crate::resolution::validate_pins(&campaign, &replacement)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let previous_epoch = campaign.resolution_policy.resolution_epoch;
+            campaign.resolution_pins = replacement;
+            campaign.resolution_policy.resolution_epoch = previous_epoch.saturating_add(1);
+            campaign.resolution_cover = None;
+            commit_resolution_control(
+                store,
+                row,
+                campaign,
+                previous_epoch,
+                "replace_resolution_pins",
+            )
+        }
+        WorldCommand::FissionGestalt {
+            expected_revision,
+            preview,
+            evidence_receipts,
+            model_stage_receipts,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            let supplied_evidence: BTreeSet<_> = evidence_receipts
+                .iter()
+                .map(|receipt| receipt.id.clone())
+                .collect();
+            if preview
+                .evidence_receipt_ids
+                .iter()
+                .any(|id| !supplied_evidence.contains(id))
+            {
+                return Err(KernelError::Invalid(
+                    "fission preview evidence receipts were not supplied".into(),
+                ));
+            }
+            crate::resolution::apply_fission(&mut campaign, &preview)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            for candidate in &preview.canon_candidates {
+                campaign
+                    .canon_candidates
+                    .insert(candidate.id.clone(), candidate.clone());
+            }
+            commit_with_records(
+                store,
+                row,
+                campaign,
+                "fission_gestalt",
+                evidence_receipts,
+                preview.canon_candidates,
+                model_stage_receipts,
+            )
+        }
         WorldCommand::AdvanceStrategicTick {
             expected_revision,
             source,
             plan,
             model_receipt_hash,
+            resolution_wave,
         } => {
             require_revision(&campaign, expected_revision)?;
-            if plan.is_some()
+            if plan.is_some() && resolution_wave.is_some() {
+                return Err(KernelError::Invalid(
+                    "strategic tick has two competing plan authorities".into(),
+                ));
+            }
+            let resolved_plan = resolution_wave
+                .as_ref()
+                .map(|wave| crate::resolution::validate_and_resolve_wave(&campaign, wave))
+                .transpose()
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            if (plan.is_some() || resolution_wave.is_some())
                 && model_receipt_hash
                     .as_deref()
                     .is_none_or(|hash| !valid_sha256(hash))
@@ -265,15 +397,66 @@ fn execute(
                     "model-driven strategic tick lacks an exact model receipt hash".into(),
                 ));
             }
+            if let Some(wave) = &resolution_wave {
+                let unique_hashes: BTreeSet<_> = wave.model_receipt_hashes.iter().collect();
+                if unique_hashes.len() != wave.model_receipt_hashes.len()
+                    || wave.model_receipt_hashes.len() < wave.cover.cells.len().saturating_mul(3)
+                {
+                    return Err(KernelError::Invalid(
+                        "resolution wave does not carry one distinct stage receipt per cell stage"
+                            .into(),
+                    ));
+                }
+                let mut stage_bindings = BTreeSet::new();
+                for hash in &wave.model_receipt_hashes {
+                    let Some((_, receipt)) = store
+                        .load::<crate::model::ModelStageReceipt>("persona_stage_receipt.v1", hash)
+                        .map_err(persist)?
+                    else {
+                        return Err(KernelError::Invalid(
+                            "resolution wave references an unknown model receipt".into(),
+                        ));
+                    };
+                    if receipt.storage_key() != hash {
+                        return Err(KernelError::Invalid(
+                            "resolution wave contains a mismatched model receipt".into(),
+                        ));
+                    }
+                    stage_bindings
+                        .insert((receipt.stage.clone(), receipt.snapshot_binding.clone()));
+                }
+                for cell in &wave.cover.cells {
+                    let binding = format!(
+                        "campaign:{}:revision:{}:resolution:{}:cell:{}",
+                        campaign.id,
+                        campaign.revision,
+                        campaign.resolution_policy.resolution_epoch,
+                        cell.id
+                    );
+                    for stage in ["cell_projector", "cell_persona", "cell_interpreter"] {
+                        if !stage_bindings.contains(&(stage.into(), binding.clone())) {
+                            return Err(KernelError::Invalid(format!(
+                                "resolution wave lacks {stage} receipt for {}",
+                                cell.id
+                            )));
+                        }
+                    }
+                }
+            }
             campaign.world_time += Duration::hours(i64::from(campaign.tick_hours));
             for clock in campaign.clocks.values_mut() {
                 clock.progress = clock.progress.saturating_add(1).min(clock.threshold);
             }
             let tick_number = campaign.away_ticks_processed.saturating_add(1);
-            let tick_events = match plan {
+            let tick_events = match resolved_plan.or(plan) {
                 Some(plan) => apply_strategic_tick_plan(&mut campaign, plan)?,
                 None => deterministic_strategic_tick(&mut campaign, tick_number),
             };
+            if let Some(wave) = &resolution_wave {
+                crate::resolution::advance_detail_debt(&mut campaign, &wave.cover);
+                campaign.resolution_cover = Some(wave.cover.clone());
+            }
+            campaign.strategic_tick_count = campaign.strategic_tick_count.saturating_add(1);
             let player = campaign.actors.get(&campaign.player_actor_id);
             for event in &tick_events {
                 let accessible = event
@@ -295,7 +478,15 @@ fn execute(
             campaign.events.extend(tick_events);
             campaign.away_ticks_processed = tick_number.min(8);
             campaign.pending_ticks = campaign.pending_ticks.saturating_sub(1);
-            commit_strategic_tick(store, row, campaign, source, model_receipt_hash, event_ids)
+            commit_strategic_tick(
+                store,
+                row,
+                campaign,
+                source,
+                model_receipt_hash,
+                event_ids,
+                resolution_wave,
+            )
         }
         WorldCommand::ExpandRegion {
             expected_revision,
@@ -926,6 +1117,16 @@ fn require_revision(c: &Campaign, expected: u64) -> Result<(), KernelError> {
     }
 }
 
+fn require_resolution_epoch(c: &Campaign, expected: u64) -> Result<(), KernelError> {
+    if c.resolution_policy.resolution_epoch != expected {
+        return Err(KernelError::Invalid(format!(
+            "stale resolution epoch: expected {expected}, actual {}",
+            c.resolution_policy.resolution_epoch
+        )));
+    }
+    Ok(())
+}
+
 fn assess(c: &Campaign, intent: ActionIntent) -> ActionAssessment {
     let actor = c.actors.get(&intent.actor_id);
     let admissible = actor.is_some() && !intent.description.trim().is_empty();
@@ -1190,6 +1391,7 @@ fn commit_gestalt_presence(
     kind: &str,
     reason: &str,
 ) -> Result<CommandResult, KernelError> {
+    crate::resolution::ensure_agency_profiles(&mut campaign);
     let mut changes = Vec::new();
     for (member_id, member) in &campaign.gestalt_members {
         let previous_actor = before
@@ -1259,7 +1461,9 @@ fn commit_strategic_tick(
     source: TickSource,
     model_receipt_hash: Option<String>,
     event_ids: Vec<String>,
+    resolution_wave: Option<ResolutionWaveCommit>,
 ) -> Result<CommandResult, KernelError> {
+    crate::resolution::ensure_agency_profiles(&mut campaign);
     let previous_revision = campaign.revision;
     campaign.revision += 1;
     let committed_at = Utc::now();
@@ -1279,14 +1483,57 @@ fn commit_strategic_tick(
         revision: campaign.revision,
         source,
         model_receipt_hash,
+        model_receipt_hashes: resolution_wave
+            .as_ref()
+            .map(|wave| wave.model_receipt_hashes.clone())
+            .unwrap_or_default(),
+        resolution_epoch: resolution_wave.as_ref().map(|wave| wave.resolution_epoch),
+        resolution_cover_id: resolution_wave.as_ref().map(|wave| {
+            format!(
+                "{}:{}:{}",
+                campaign.id, wave.world_revision, wave.resolution_epoch
+            )
+        }),
         event_ids,
         committed_at,
     };
     let key = format!("{}-{}", campaign.id, campaign.revision);
     store
-        .append_strategic_tick(&row, &campaign, &key, &receipt, &strategic)
+        .append_strategic_tick(
+            &row,
+            &campaign,
+            &key,
+            &receipt,
+            &strategic,
+            resolution_wave.as_ref(),
+        )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
+}
+
+fn commit_resolution_control(
+    store: &CampaignStore,
+    row: cultcache_legacy::CultCacheEnvelope,
+    campaign: Campaign,
+    previous_resolution_epoch: u64,
+    operation: &str,
+) -> Result<CommandResult, KernelError> {
+    let receipt = ResolutionControlReceipt {
+        schema: "ghostlight.resolution_control_receipt.v1".into(),
+        campaign_id: campaign.id,
+        world_revision: campaign.revision,
+        previous_resolution_epoch,
+        resolution_epoch: campaign.resolution_policy.resolution_epoch,
+        provider_configuration_epoch: campaign.resolution_policy.provider_configuration_epoch,
+        operation: operation.into(),
+        active_cell_budget: campaign.resolution_policy.active_cell_budget,
+        pin_ids: campaign.resolution_pins.keys().cloned().collect(),
+        committed_at: Utc::now(),
+    };
+    store
+        .append_resolution_control(&row, &campaign, &receipt)
+        .map_err(persist)?;
+    Ok(CommandResult::ResolutionUpdated { campaign, receipt })
 }
 
 fn commit(
@@ -1296,6 +1543,7 @@ fn commit(
     kind: &str,
     roll: Option<RollReceipt>,
 ) -> Result<CommandResult, KernelError> {
+    crate::resolution::ensure_agency_profiles(&mut campaign);
     let previous_revision = campaign.revision;
     campaign.revision += 1;
     let receipt = WorldCommitReceipt {
@@ -1328,6 +1576,7 @@ fn commit_with_records(
     candidates: Vec<CanonCandidate>,
     model_receipts: Vec<crate::model::ModelStageReceipt>,
 ) -> Result<CommandResult, KernelError> {
+    crate::resolution::ensure_agency_profiles(&mut campaign);
     let previous_revision = campaign.revision;
     campaign.revision += 1;
     let receipt = WorldCommitReceipt {
@@ -1413,6 +1662,13 @@ mod tests {
             gestalts: BTreeMap::new(),
             gestalt_members: BTreeMap::new(),
             pending_world_proposals: vec![],
+            agency_profiles: BTreeMap::new(),
+            agency_relations: BTreeMap::new(),
+            gestalt_lineages: BTreeMap::new(),
+            resolution_policy: Default::default(),
+            resolution_pins: BTreeMap::new(),
+            resolution_cover: None,
+            strategic_tick_count: 0,
         }
     }
 
@@ -1624,6 +1880,7 @@ mod tests {
                 source: TickSource::Scheduler,
                 plan: None,
                 model_receipt_hash: None,
+                resolution_wave: None,
             })
             .await
             .unwrap();
@@ -1696,6 +1953,7 @@ mod tests {
                     source: TickSource::Scheduler,
                     plan: Some(puppet),
                     model_receipt_hash: Some(format!("sha256:{}", "a".repeat(64))),
+                    resolution_wave: None,
                 })
                 .await,
             Err(KernelError::Invalid(_))
@@ -1722,6 +1980,7 @@ mod tests {
                 source: TickSource::Scheduler,
                 plan: Some(valid),
                 model_receipt_hash: Some(format!("sha256:{}", "b".repeat(64))),
+                resolution_wave: None,
             })
             .await
             .unwrap();
@@ -2329,5 +2588,280 @@ mod tests {
             .1;
         assert_eq!(persisted.revision, 1);
         assert!(persisted.actors["player"].conditions.contains("braced"));
+    }
+
+    fn resolution_stage(
+        cell_id: &str,
+        campaign: &Campaign,
+        stage: &str,
+        marker: char,
+    ) -> crate::model::ModelStageReceipt {
+        let hash = format!("sha256:{}", marker.to_string().repeat(64));
+        crate::model::ModelStageReceipt {
+            schema: "ghostlight.persona_stage_receipt.v1".into(),
+            receipt_hash: hash.clone(),
+            provider: "fixture".into(),
+            model: "fixture".into(),
+            stage: stage.into(),
+            snapshot_binding: format!(
+                "campaign:{}:revision:{}:resolution:{}:cell:{}",
+                campaign.id,
+                campaign.revision,
+                campaign.resolution_policy.resolution_epoch,
+                cell_id
+            ),
+            request_hash: format!("sha256:{}", "e".repeat(64)),
+            output_hash: format!("sha256:{}", "f".repeat(64)),
+            source_receipt_ids: vec![],
+            latency_ms: 1,
+            validation_result: "valid".into(),
+        }
+    }
+
+    fn inaction_wave(
+        campaign: &Campaign,
+        store: &CampaignStore,
+    ) -> crate::domain::ResolutionWaveCommit {
+        let cover = crate::resolution::plan_cover(
+            campaign,
+            crate::resolution::default_demand(campaign, "kernel fixture"),
+        )
+        .unwrap();
+        let mut hashes = Vec::new();
+        for (cell_index, cell) in cover.cells.iter().enumerate() {
+            for (stage_index, stage) in ["cell_projector", "cell_persona", "cell_interpreter"]
+                .into_iter()
+                .enumerate()
+            {
+                let marker =
+                    char::from_u32(u32::from(b'a') + (cell_index * 3 + stage_index) as u32)
+                        .unwrap();
+                let receipt = resolution_stage(&cell.id, campaign, stage, marker);
+                store
+                    .insert(
+                        "persona_stage_receipt.v1",
+                        "ghostlight.persona_stage_receipt.v1",
+                        receipt.storage_key(),
+                        &receipt,
+                    )
+                    .unwrap();
+                hashes.push(receipt.storage_key().to_owned());
+            }
+        }
+        crate::domain::ResolutionWaveCommit {
+            schema: "ghostlight.resolution_wave_commit.v1".into(),
+            world_revision: campaign.revision,
+            resolution_epoch: campaign.resolution_policy.resolution_epoch,
+            plan_receipt: crate::resolution::plan_receipt(campaign, &cover),
+            appraisals: cover
+                .cells
+                .iter()
+                .map(|cell| CellAppraisal {
+                    schema: "ghostlight.cell_appraisal.v1".into(),
+                    cell_id: cell.id.clone(),
+                    world_revision: campaign.revision,
+                    resolution_epoch: campaign.resolution_policy.resolution_epoch,
+                    considered_subject_ids: cell.subject_ids.clone(),
+                    actions: vec![],
+                    inaction_reason: Some("No justified move.".into()),
+                })
+                .collect(),
+            cover,
+            model_receipt_hashes: hashes,
+        }
+    }
+
+    #[tokio::test]
+    async fn resolution_budget_commits_without_advancing_fictional_state() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = crate::resolution::tests::campaign(6, 8);
+        let world_time = seed.world_time;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let result = kernel
+            .command(WorldCommand::SetResolutionBudget {
+                expected_revision: 0,
+                expected_resolution_epoch: 0,
+                active_cell_budget: 3,
+            })
+            .await
+            .unwrap();
+        let CommandResult::ResolutionUpdated { campaign, receipt } = result else {
+            panic!("resolution command used the world commit path")
+        };
+        assert_eq!(campaign.revision, 0);
+        assert_eq!(campaign.world_time, world_time);
+        assert_eq!(campaign.resolution_policy.active_cell_budget, 3);
+        assert_eq!(campaign.resolution_policy.resolution_epoch, 1);
+        assert_eq!(receipt.previous_resolution_epoch, 0);
+        assert!(
+            kernel
+                .command(WorldCommand::SetResolutionBudget {
+                    expected_revision: 0,
+                    expected_resolution_epoch: 0,
+                    active_cell_budget: 4,
+                })
+                .await
+                .is_err()
+        );
+        assert_eq!(
+            store.keys("resolution_control_receipt.v1").unwrap().len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn provider_parallelism_changes_without_repartitioning_the_world() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store);
+        let mut seed = crate::resolution::tests::campaign(6, 3);
+        let cover = crate::resolution::plan_cover(
+            &seed,
+            crate::resolution::default_demand(&seed, "existing cover"),
+        )
+        .unwrap();
+        seed.resolution_cover = Some(cover.clone());
+        let world_time = seed.world_time;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let result = kernel
+            .command(WorldCommand::SetProviderParallelism {
+                expected_revision: 0,
+                expected_provider_configuration_epoch: 0,
+                provider_parallelism: 4,
+            })
+            .await
+            .unwrap();
+        let CommandResult::ResolutionUpdated { campaign, receipt } = result else {
+            panic!("operator control used the fictional world commit path")
+        };
+        assert_eq!(campaign.revision, 0);
+        assert_eq!(campaign.world_time, world_time);
+        assert_eq!(campaign.resolution_policy.resolution_epoch, 0);
+        assert_eq!(campaign.resolution_policy.provider_configuration_epoch, 1);
+        assert_eq!(campaign.resolution_policy.provider_parallelism, 4);
+        assert_eq!(campaign.resolution_cover, Some(cover));
+        assert_eq!(receipt.operation, "set_provider_parallelism");
+        assert!(
+            kernel
+                .command(WorldCommand::SetProviderParallelism {
+                    expected_revision: 0,
+                    expected_provider_configuration_epoch: 0,
+                    provider_parallelism: 2,
+                })
+                .await
+                .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn strategic_resolution_wave_commits_cover_and_all_appraisals_atomically() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = crate::resolution::tests::campaign(6, 2);
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        let wave = inaction_wave(&persisted, &store);
+        let cell_count = wave.cover.cells.len();
+        let result = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 0,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(format!("sha256:{}", "9".repeat(64))),
+                resolution_wave: Some(wave),
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!()
+        };
+        assert_eq!(campaign.revision, 1);
+        assert_eq!(campaign.strategic_tick_count, 1);
+        assert!(campaign.resolution_cover.is_some());
+        assert_eq!(store.keys("cell_appraisal.v1").unwrap().len(), cell_count);
+        assert_eq!(store.keys("resolution_plan_receipt.v1").unwrap().len(), 1);
+        assert_eq!(store.keys("strategic_tick.v1").unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn stale_resolution_wave_leaves_time_clocks_and_campaign_unmutated() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = crate::resolution::tests::campaign(4, 2);
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        let wave = inaction_wave(&persisted, &store);
+        kernel
+            .command(WorldCommand::SetResolutionBudget {
+                expected_revision: 0,
+                expected_resolution_epoch: 0,
+                active_cell_budget: 1,
+            })
+            .await
+            .unwrap();
+        let before = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert!(
+            kernel
+                .command(WorldCommand::AdvanceStrategicTick {
+                    expected_revision: 0,
+                    source: TickSource::Scheduler,
+                    plan: None,
+                    model_receipt_hash: Some(format!("sha256:{}", "8".repeat(64))),
+                    resolution_wave: Some(wave),
+                })
+                .await
+                .is_err()
+        );
+        let after = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(after, before);
+        assert!(store.keys("strategic_tick.v1").unwrap().is_empty());
     }
 }

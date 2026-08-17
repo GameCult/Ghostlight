@@ -11,6 +11,7 @@ pub struct SnapshotPermit {
     store: CampaignStore,
     campaign_id: uuid::Uuid,
     revision: u64,
+    resolution_epoch: Option<u64>,
 }
 impl SnapshotPermit {
     pub fn new(store: CampaignStore, campaign_id: uuid::Uuid, revision: u64) -> Self {
@@ -18,6 +19,20 @@ impl SnapshotPermit {
             store,
             campaign_id,
             revision,
+            resolution_epoch: None,
+        }
+    }
+    pub fn new_resolution(
+        store: CampaignStore,
+        campaign_id: uuid::Uuid,
+        revision: u64,
+        resolution_epoch: u64,
+    ) -> Self {
+        Self {
+            store,
+            campaign_id,
+            revision,
+            resolution_epoch: Some(resolution_epoch),
         }
     }
 }
@@ -29,7 +44,11 @@ impl ExecutionPermit for SnapshotPermit {
             .load::<Campaign>("campaign.v1", &self.campaign_id.to_string())?
             .map(|(_, c)| c)
             .ok_or_else(|| anyhow!("campaign vanished during Persona wave"))?;
-        if value.revision != self.revision {
+        if value.revision != self.revision
+            || self
+                .resolution_epoch
+                .is_some_and(|epoch| value.resolution_policy.resolution_epoch != epoch)
+        {
             return Err(anyhow!("Persona projection snapshot is stale"));
         }
         Ok(())
@@ -64,6 +83,9 @@ pub async fn appraise_present(
         .filter(|actor| actor.location_id == player.location_id)
         .map(|actor| (actor.id.clone(), actor.name.clone()))
         .collect::<std::collections::BTreeMap<_, _>>();
+    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(usize::from(
+        campaign.resolution_policy.provider_parallelism.max(1),
+    )));
     let mut jobs = tokio::task::JoinSet::new();
     for actor in actors {
         let engine = engine.clone();
@@ -71,7 +93,12 @@ pub async fn appraise_present(
         let event = event_summary.to_owned();
         let receipts = campaign.branch_origin.evidence_receipt_ids.clone();
         let perceived_actors = perceived_actors.clone();
+        let semaphore = semaphore.clone();
         jobs.spawn(async move {
+            let _provider_slot = semaphore
+                .acquire_owned()
+                .await
+                .map_err(|_| anyhow!("provider concurrency gate closed"))?;
             let slice = PermittedActorSlice {
                 actor_id: actor.id.clone(),
                 location_id: actor.location_id.clone(),

@@ -19,6 +19,8 @@ pub struct ModelStageRequest {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct ModelStageReceipt {
     pub schema: String,
+    #[serde(default)]
+    pub receipt_hash: String,
     pub provider: String,
     pub model: String,
     pub stage: String,
@@ -28,6 +30,16 @@ pub struct ModelStageReceipt {
     pub source_receipt_ids: Vec<String>,
     pub latency_ms: u64,
     pub validation_result: String,
+}
+
+impl ModelStageReceipt {
+    pub fn storage_key(&self) -> &str {
+        if self.receipt_hash.is_empty() {
+            &self.output_hash
+        } else {
+            &self.receipt_hash
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -102,17 +114,36 @@ pub async fn run_validated_stage_with_timeout(
             None => None,
         };
         let request_bytes = serde_json::to_vec(&attempt_request)?;
+        let provider = port.provider().to_owned();
+        let request_hash = format!("sha256:{:x}", Sha256::digest(&request_bytes));
+        let output_hash = format!("sha256:{:x}", Sha256::digest(output.as_bytes()));
+        let receipt_hash = format!(
+            "sha256:{:x}",
+            Sha256::digest(
+                format!(
+                    "{}|{}|{}|{}|{}|{}",
+                    provider,
+                    request.model,
+                    request.stage,
+                    request.snapshot_binding,
+                    request_hash,
+                    output_hash
+                )
+                .as_bytes()
+            )
+        );
         return Ok(ModelStageOutput {
             narrative: output.clone(),
             structured,
             receipt: ModelStageReceipt {
                 schema: "ghostlight.persona_stage_receipt.v1".into(),
-                provider: port.provider().into(),
+                receipt_hash,
+                provider,
                 model: request.model.clone(),
                 stage: request.stage.clone(),
                 snapshot_binding: request.snapshot_binding.clone(),
-                request_hash: format!("sha256:{:x}", Sha256::digest(&request_bytes)),
-                output_hash: format!("sha256:{:x}", Sha256::digest(output.as_bytes())),
+                request_hash,
+                output_hash,
                 source_receipt_ids: request.source_receipt_ids.clone(),
                 latency_ms: started.elapsed().as_millis() as u64,
                 validation_result: "valid".into(),
@@ -256,7 +287,7 @@ impl ModelPort for FixtureModel {
         Ok(if request.output_schema.is_some() {
             r#"{"private_delta":{"memories_add":[],"conditions_add":[],"conditions_remove":[],"goals_add":[],"relationship_updates":{}},"speech":null,"reaction_priority":0,"world_actions":[]}"#.into()
         } else {
-            format!("{}", request.lived_stream)
+            request.lived_stream.to_string()
         })
     }
     fn provider(&self) -> &'static str {

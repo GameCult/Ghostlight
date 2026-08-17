@@ -56,6 +56,35 @@ impl CampaignRegistry {
             if keys[0] != id.to_string() {
                 return Err(anyhow!("campaign directory and stored id disagree"));
             }
+            let (row, mut campaign) = store
+                .load::<Campaign>("campaign.v1", &keys[0])?
+                .ok_or_else(|| anyhow!("campaign row vanished during migration"))?;
+            let before = campaign.clone();
+            crate::resolution::ensure_agency_profiles(&mut campaign);
+            if campaign != before {
+                let previous_resolution_epoch = campaign.resolution_policy.resolution_epoch;
+                campaign.resolution_policy.resolution_epoch =
+                    previous_resolution_epoch.saturating_add(1);
+                campaign.resolution_cover = None;
+                store.append_resolution_control(
+                    &row,
+                    &campaign,
+                    &crate::domain::ResolutionControlReceipt {
+                        schema: "ghostlight.resolution_control_receipt.v1".into(),
+                        campaign_id: campaign.id,
+                        world_revision: campaign.revision,
+                        previous_resolution_epoch,
+                        resolution_epoch: campaign.resolution_policy.resolution_epoch,
+                        provider_configuration_epoch: campaign
+                            .resolution_policy
+                            .provider_configuration_epoch,
+                        operation: "migrate_flat_agency_state".into(),
+                        active_cell_budget: campaign.resolution_policy.active_cell_budget,
+                        pin_ids: campaign.resolution_pins.keys().cloned().collect(),
+                        committed_at: Utc::now(),
+                    },
+                )?;
+            }
             found.insert(
                 id,
                 CampaignRuntime {
@@ -83,10 +112,11 @@ impl CampaignRegistry {
 
     pub async fn create(
         &self,
-        campaign: Campaign,
+        mut campaign: Campaign,
         evidence: Vec<VaultEvidenceReceipt>,
         model_receipts: Vec<ModelStageReceipt>,
     ) -> Result<CampaignRuntime> {
+        crate::resolution::ensure_agency_profiles(&mut campaign);
         if self.runtimes.read().await.contains_key(&campaign.id) {
             return Err(anyhow!("campaign already exists"));
         }
@@ -147,6 +177,9 @@ impl CampaignRegistry {
         fork.name = name;
         fork.revision = 0;
         fork.pending_world_proposals.clear();
+        fork.resolution_policy.resolution_epoch =
+            fork.resolution_policy.resolution_epoch.saturating_add(1);
+        fork.resolution_cover = None;
         let runtime = self.create(fork.clone(), evidence, model_receipts).await?;
         runtime.store.insert(
             "campaign_lifecycle_receipt.v1",
@@ -282,6 +315,13 @@ mod tests {
             gestalts: BTreeMap::new(),
             gestalt_members: BTreeMap::new(),
             pending_world_proposals: vec![],
+            agency_profiles: BTreeMap::new(),
+            agency_relations: BTreeMap::new(),
+            gestalt_lineages: BTreeMap::new(),
+            resolution_policy: Default::default(),
+            resolution_pins: BTreeMap::new(),
+            resolution_cover: None,
+            strategic_tick_count: 0,
         }
     }
 
@@ -292,6 +332,7 @@ mod tests {
         let original = seed("Original");
         let model_receipt = ModelStageReceipt {
             schema: "ghostlight.persona_stage_receipt.v1".into(),
+            receipt_hash: "sha256:receipt".into(),
             provider: "fixture".into(),
             model: "fixture".into(),
             stage: "world_compile".into(),
@@ -341,6 +382,39 @@ mod tests {
                 .keys("campaign.v1")
                 .unwrap(),
             vec![original.id.to_string()]
+        );
+    }
+
+    #[tokio::test]
+    async fn load_existing_migrates_flat_campaign_without_advancing_world_revision() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("campaigns");
+        let flat = seed("Flat legacy");
+        let campaign_root = root.join(flat.id.to_string());
+        std::fs::create_dir_all(&campaign_root).unwrap();
+        let store = CampaignStore::open(campaign_root.join("campaign.cc")).unwrap();
+        store.create_campaign(&flat, &[], &[]).unwrap();
+        drop(store);
+        let registry = CampaignRegistry::new(&root).unwrap();
+        registry.load_existing().await.unwrap();
+        let runtime = registry.runtime(flat.id).await.unwrap();
+        let migrated = runtime
+            .store
+            .load::<Campaign>("campaign.v1", &flat.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(migrated.revision, flat.revision);
+        assert_eq!(migrated.world_time, flat.world_time);
+        assert!(migrated.agency_profiles.contains_key(&flat.player_actor_id));
+        assert_eq!(migrated.resolution_policy.resolution_epoch, 1);
+        assert_eq!(
+            runtime
+                .store
+                .keys("resolution_control_receipt.v1")
+                .unwrap()
+                .len(),
+            1
         );
     }
 }

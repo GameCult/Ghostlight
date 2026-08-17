@@ -12,7 +12,8 @@ async fn main() -> anyhow::Result<()> {
         kernel::{CommandResult, WorldKernel},
         model::{DeepSeekPort, ModelPort},
         persistence::CampaignStore,
-        scheduler::propose_strategic_tick,
+        scheduler::propose_resolution_wave,
+        turn::SnapshotPermit,
     };
     use std::{path::PathBuf, sync::Arc, time::Instant};
 
@@ -30,29 +31,43 @@ async fn main() -> anyhow::Result<()> {
     store.create_campaign(&campaign, &[], &[])?;
     let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_machine_dpapi(secret)?);
     let started = Instant::now();
-    let (plan, output) = propose_strategic_tick(model.as_ref(), &campaign).await?;
+    let output = propose_resolution_wave(
+        model,
+        Arc::new(SnapshotPermit::new_resolution(
+            store.clone(),
+            campaign.id,
+            campaign.revision,
+            campaign.resolution_policy.resolution_epoch,
+        )),
+        &campaign,
+    )
+    .await?;
+    let plan = ghostlight_dungeon::resolution::validate_and_resolve_wave(&campaign, &output.wave)?;
     if plan.institution_actions.is_empty()
         && plan.gestalt_actions.is_empty()
         && plan.actor_moves.is_empty()
     {
         anyhow::bail!(
             "strategic model proposed no material offscreen change: {}",
-            output.narrative
+            "all cells explicitly chose inaction"
         );
     }
-    store.insert(
-        "persona_stage_receipt.v1",
-        "ghostlight.persona_stage_receipt.v1",
-        &output.receipt.output_hash,
-        &output.receipt,
-    )?;
+    for stage in &output.stages {
+        store.insert(
+            "persona_stage_receipt.v1",
+            "ghostlight.persona_stage_receipt.v1",
+            stage.receipt.storage_key(),
+            &stage.receipt,
+        )?;
+    }
     let kernel = WorldKernel::start(store.clone());
     let committed = kernel
         .command(WorldCommand::AdvanceStrategicTick {
             expected_revision: 0,
             source: TickSource::Scheduler,
-            plan: Some(plan.clone()),
-            model_receipt_hash: Some(output.receipt.output_hash.clone()),
+            plan: None,
+            model_receipt_hash: Some(output.aggregate_receipt_hash.clone()),
+            resolution_wave: Some(output.wave.clone()),
         })
         .await?;
     let CommandResult::Committed {
@@ -71,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
         "schema":"ghostlight.live_strategic_smoke.v1",
         "campaign_id":campaign.id,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
-        "model_receipt_hash":output.receipt.output_hash,
+        "model_receipt_hash":output.aggregate_receipt_hash,
         "plan":plan,
         "event_count":advanced.events.len(),
         "news_count":advanced.news.len(),
@@ -111,7 +126,7 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
     let now = Utc::now();
     let mut player = actor("player", "Mediator", "room", "rest");
     player.knowledge.insert("station radio".into());
-    Campaign {
+    let mut campaign = Campaign {
         schema: "ghostlight.campaign.v1".into(),
         id: uuid::Uuid::new_v4(),
         name: "Strategic live acceptance".into(),
@@ -221,5 +236,25 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
         )]),
         gestalt_members: BTreeMap::new(),
         pending_world_proposals: vec![],
+        agency_profiles: BTreeMap::new(),
+        agency_relations: BTreeMap::new(),
+        gestalt_lineages: BTreeMap::new(),
+        resolution_policy: Default::default(),
+        resolution_pins: BTreeMap::new(),
+        resolution_cover: None,
+        strategic_tick_count: 0,
+    };
+    ghostlight_dungeon::resolution::ensure_agency_profiles(&mut campaign);
+    for profile in campaign.agency_profiles.values_mut() {
+        profile.information_channels.insert("station radio".into());
     }
+    if let Some(board) = campaign.agency_profiles.get_mut("board") {
+        board.location_ids.extend(["depot".into(), "yard".into()]);
+        board
+            .facets
+            .entry(AgencyAxis::Geography)
+            .or_default()
+            .extend(["depot".into(), "yard".into()]);
+    }
+    campaign
 }

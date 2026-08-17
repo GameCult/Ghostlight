@@ -38,7 +38,8 @@ generalized projection membrane; Epiphany consumes its pinned crate while
 retaining her own Mind and consequence authority. The Rust daemon now owns
 VoidBot-grounded compilation and approval, stable topology, campaign mailboxes,
 fiction-first d20 receipts, parallel Persona waves, automatic gestalt
-individuation and folding, model-driven strategic ticks, exact-channel news,
+individuation and folding, a multiresolution global agency graph, connected
+cohesive/arena cell covers, model-driven strategic cell waves, exact-channel news,
 CultMesh/Eve publication, invite-isolated campaigns, and `.cc` export. Live
 acceptance has proved two invite sessions, Vault compilation, three concurrent
 NPC reactions, a 13.57-second four-actor wave, and material offscreen agency
@@ -46,6 +47,12 @@ without player puppeting. Re-enter through the authoritative architecture and
 the latest exact deployment evidence; do not resume the superseded compiler
 foundation checklist below. Existing Ghostlight fixtures remain regression
 evidence.
+
+The multiresolution authority map is
+`docs/architecture/ghostlight-multiresolution-agency.md`. Canonical people and
+populations never merge; only the derived simulation cover does. Budget/pin
+changes use `resolution_epoch`, provider parallelism uses its own configuration
+epoch, and neither advances fictional time.
 
 ## Prior research pipeline focus
 
