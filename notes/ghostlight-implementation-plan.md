@@ -28,10 +28,12 @@ a 1–32 player budget, persistent pins, approval-gated gestalt fission, graph a
 cover receipts, and a separate operator provider-concurrency limit. The
 specific authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`.
-The implementation is in acceptance hardening. The currently deployed Starfire
-process is a known older immutable release; the working candidate is not live
-until its exact commit, binary hash, process, CultMesh projection, firewall, and
-restart evidence agree. This pass makes model work inspectable and cheaper:
+The accepted implementation is hosted on Starfire as immutable release
+`f1d55b181ad60ace8e8e92859c4d0b2f1a94fc87`. Exact checkout, embedded commit,
+release manifest, binary hash, process, typed health, CultMesh store, persisted
+campaign, DeepSeek startup inference, VoidBot retrieval, private-LAN access,
+WireGuard access, and unauthenticated rejection agree. This pass makes model
+work inspectable and cheaper:
 provider attempts expose prompt/completion/cache usage and exact local failures;
 stable prefixes precede dynamic context; world and agency compilation are
 separate stages; Projectors receive situation state while Interpreters receive
@@ -63,9 +65,11 @@ ownership, single-use invite rejection, fork/reset/export, four persisted
 campaigns, and exact-commit restart. Live priority cancels in-flight scheduler
 inference and excludes its commit gate.
 
-Next, commit the final compiler seam and restart the isolated candidate from
-that exact revision. Then deploy and verify LAN/firewall, CultMesh, persistence,
-VoidBot, DeepSeek, and release provenance before final balance/evidence review.
+Next, run the two-tester playtest. Treat player confusion, dramatic flatness,
+and token-heavy low-consequence stages as evidence about missing context or
+misplaced authority. Use model-stage cache usage, rejection receipts, cover
+plans, and world commits to improve satisfaction and cognitive efficiency
+without weakening state admission.
 
 ## Prior research-program phase
 

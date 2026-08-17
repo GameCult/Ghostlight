@@ -1,7 +1,7 @@
 experiment:
   name: Ghostlight
   status: active_mvp_build
-  phase: ghostlight_dungeon_final_acceptance
+  phase: ghostlight_dungeon_hosted_playtest
   premise: >
     Build a durable research and implementation home for socially persistent
     generative agents whose behavior emerges from personality, culture,
@@ -262,6 +262,6 @@ data_flow:
   - If state grows faster than understanding, cut it back.
 
 current_status:
-  summary: GhostlightDungeon is in final acceptance hardening. The candidate has spoiler-safe player projections, exact informational findings, direct-only causal world seeding, source-bound remote agency compilation, deterministic coarse remote profiles, authority-shaped Persona contexts, runtime-derived strategic bindings, and live-turn cancellation of background inference. Isolated HTTP/browser evidence covers invitation isolation, campaign lifecycle, export, restart persistence, and four campaigns; live strategic and 24-faction waves preserve player authority. The active Starfire daemon remains an older immutable release until the candidate is committed, deployed, and proven.
-  next_action: Commit and push the final compiler seam, restart the isolated runtime from that exact commit, then deploy it and verify LAN/firewall, CultMesh, persistence, VoidBot, DeepSeek, scheduler continuation, and release provenance.
+  summary: GhostlightDungeon is hosted on Starfire from immutable commit f1d55b181ad60ace8e8e92859c4d0b2f1a94fc87 with exact manifest, binary hash, process, typed health, CultMesh store, DeepSeek startup inference, and VoidBot retrieval evidence. Periwinkle proves private-LAN access and unauthenticated 401 isolation; Raven and Yggdrasil prove WireGuard access; Windows prompt rules are absent. The live body includes spoiler-safe player projections, exact informational findings, direct-only causal world seeding, source-bound remote agency compilation, deterministic coarse remote profiles, authority-shaped Persona contexts, runtime-derived strategic bindings, live-turn cancellation of background inference, and an explicit browser authentication gate. Isolated acceptance preserves four campaigns across restart while production preserves its existing campaign across promotion.
+  next_action: Begin the two-tester playtest. Use player reports plus model-stage, rejection, cache-token, resolution-cover, and commit receipts to find moments where invariant protection creates confusion or where prompts spend tokens without changing a decision; repair authority or context at the owning seam before adding behavioral rules.
   gestalt_population: Gestalt Personas own shared population baselines; persistent member deltas own named individuality; WorldKernel materialization and approval-gated fission preserve lineage and identity. Simulation cells are derived covers only.

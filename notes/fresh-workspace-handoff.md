@@ -33,7 +33,7 @@ per-campaign WorldKernel mailbox is the sole canonical writer. Ghostlight owns
 the generalized Projector → Persona → Interpreter organ; Epiphany retains her
 canonical Persona mind and will consume the shared organ through an adapter.
 
-The hosted MVP is implemented and in final acceptance. Ghostlight owns the
+The hosted MVP is implemented and live on Starfire. Ghostlight owns the
 generalized projection membrane; Epiphany consumes its pinned crate while
 retaining her own Mind and consequence authority. The Rust daemon now owns
 VoidBot-grounded compilation and approval, stable topology, campaign mailboxes,
@@ -47,6 +47,15 @@ without player puppeting. Re-enter through the authoritative architecture and
 the latest exact deployment evidence; do not resume the superseded compiler
 foundation checklist below. Existing Ghostlight fixtures remain regression
 evidence.
+
+The active immutable release is
+`f1d55b181ad60ace8e8e92859c4d0b2f1a94fc87`, binary SHA-256
+`119772af15859d8c26e7239d705a229ce01b24d6a7e70105b78e4df227ef0583`.
+Manifest, process, typed health, persisted campaign count, CultMesh store,
+DeepSeek startup inference, and VoidBot retrieval agree. Periwinkle proved the
+private-LAN route and unauthenticated 401; Raven and Yggdrasil independently
+proved WireGuard. Exact firewall and rollback truth remains owned by
+`gamecult-ops/runbooks/ghostlight-dungeon-starfire.md`.
 
 The multiresolution authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`. Canonical people and
@@ -411,17 +420,17 @@ short mandate string each. Deterministic code binds that mandate to a witness
 which also names the institution, omits unsupported candidates into approval
 coverage gaps, and builds explicit-unknown six-axis remote profiles. The Pro
 agency compiler sees only locally materialized subjects. Live witness
-`F:\GameCult\GhostlightDungeon\acceptance\compiler-20260817-164345\result.json`
-admitted 13 remote/local institutions with four local canon-candidate gaps and
-three non-canonical agency-coverage gaps; no unsupported remote candidate entered
-state.
+`F:\GameCult\GhostlightDungeon\acceptance\compiler-20260817-165127\result.json`
+completed in 43.35 seconds with five first-attempt-valid stages, admitted one
+local and 17 source-bound remote institutions, and omitted ten unsupported
+remote candidates into an approval-visible non-canonical coverage gap.
 
 Authenticated HTTP/browser, session isolation, lifecycle, export, persistence,
 restart, strategic agency, and live/background exclusion have isolated-runtime
-evidence. Next: commit and build this repaired candidate, restart the isolated
-runtime from that exact revision, then deploy only the accepted commit and
-repeat LAN, firewall, CultMesh, VoidBot, DeepSeek, scheduler, and provenance
-smokes.
+evidence. The deployment smoke is complete. Next: run the two-tester playtest
+and use player reports together with cache/model/rejection/commit receipts to
+locate missing context, dramatic friction, or expensive stages that rarely
+change a decision. Repair the owning context or authority seam first.
 
 ## Warnings
 
