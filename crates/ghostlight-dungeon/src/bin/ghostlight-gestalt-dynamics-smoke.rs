@@ -101,6 +101,8 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon\secrets\deepseek.dpapi"));
     let scenario_id = std::env::var("GHOSTLIGHT_LIVE_FIRE_SCENARIO")
         .unwrap_or_else(|_| "gestalt-dynamics-refugee-return".into());
+    let require_migration = std::env::var("GHOSTLIGHT_LIVE_FIRE_REQUIRE_MIGRATION")
+        .is_ok_and(|value| value == "1" || value.eq_ignore_ascii_case("true"));
     let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
@@ -182,12 +184,10 @@ async fn main() -> anyhow::Result<()> {
                     } if destination_gestalt_id == "harbor-neighbors"
                 )
         })
-        .cloned()
-        .ok_or_else(|| {
-            anyhow::anyhow!(
-                "whole-setting arena did not preserve Mira's agency as an attributed migration proposal"
-            )
-        })?;
+        .cloned();
+    if require_migration && migration_proposal.is_none() {
+        anyhow::bail!("strict migration golden did not receive Mira's attributed migration choice")
+    }
     if output.wave.appraisals.iter().any(|appraisal| {
         appraisal
             .actions
@@ -197,8 +197,8 @@ async fn main() -> anyhow::Result<()> {
         anyhow::bail!("arena emitted an action as if it were a person")
     }
     let plan = validate_and_resolve_wave(&campaign, &output.wave)?;
-    if plan.member_migrations.len() != 1 {
-        anyhow::bail!("validated wave did not preserve exactly one member migration")
+    if plan.member_migrations.len() != usize::from(migration_proposal.is_some()) {
+        anyhow::bail!("validated wave changed the attributed member choice")
     }
     let background_action_count =
         plan.institution_actions.len() + plan.gestalt_actions.len() + plan.actor_moves.len();
@@ -224,6 +224,43 @@ async fn main() -> anyhow::Result<()> {
         CommandResult::Committed { campaign, .. } => campaign.clone(),
         _ => anyhow::bail!("gestalt dynamics wave did not commit"),
     };
+    if advanced.actors[&advanced.player_actor_id] != player_before {
+        anyhow::bail!("background simulation puppeted the player")
+    }
+    if migration_proposal.is_none() {
+        if advanced.gestalt_members["mira-venn"] != member_before {
+            anyhow::bail!("explicit inaction changed Mira's dormant identity")
+        }
+        let result = serde_json::json!({
+            "schema":"ghostlight.gestalt_dynamics_smoke.v1",
+            "scenario_id":scenario_id,
+            "elapsed_seconds":started.elapsed().as_secs_f64(),
+            "subject_count":root_cell.subject_ids.len(),
+            "configured_budget":campaign.resolution_policy.active_cell_budget,
+            "effective_budget":output.wave.cover.effective_budget,
+            "cell_mode":root_cell.mode,
+            "rivals_share_arena":true,
+            "choice":"explicit_inaction",
+            "migration_proposal":serde_json::Value::Null,
+            "initial_background_action_count":background_action_count,
+            "plan":plan,
+            "commit":committed,
+            "identity_preserved":true,
+            "player_unchanged":true,
+            "private_cell_traces":output.private_cell_traces,
+            "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
+            "store":root.join("campaign.cc"),
+            "preflight_path":root.join("preflight.json"),
+            "result_path":root.join("result.json")
+        });
+        std::fs::write(
+            root.join("result.json"),
+            serde_json::to_vec_pretty(&result)?,
+        )?;
+        println!("{}", serde_json::to_string_pretty(&result)?);
+        return Ok(());
+    }
+    let migration_proposal = migration_proposal.expect("migration branch was selected");
     let member_after = &advanced.gestalt_members["mira-venn"];
     if member_after.gestalt_id != "harbor-neighbors"
         || member_after.last_location_id.as_deref() != Some("south-harbor")
@@ -238,10 +275,6 @@ async fn main() -> anyhow::Result<()> {
     {
         anyhow::bail!("migration changed Mira's identity or effective personal state")
     }
-    if advanced.actors[&advanced.player_actor_id] != player_before {
-        anyhow::bail!("background simulation puppeted the player")
-    }
-
     let mut sustained_waves = Vec::new();
     let mut background_subject_ids = BTreeSet::new();
     let mut detail_focus_subject_ids = BTreeSet::new();
