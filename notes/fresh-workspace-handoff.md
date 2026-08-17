@@ -374,9 +374,10 @@ knowledge, and a custom Huygens seed borrowed the Lucent fixture's cast and
 incident from merely adjacent retrieval evidence. The repaired candidate now
 projects spoiler-safe player responses, requires exact visible informational
 findings that become player knowledge plus branch fact, classifies retrieval
-evidence into direct/background/excluded lanes before compilation, and narrows
-narration to the latest causal turn. Browser strings use text nodes and the
-laboratory inputs have programmatic labels.
+evidence into direct/background/excluded lanes before compilation, admits only
+direct source text to the causal world seed, and narrows narration to the latest
+causal turn. Browser strings use text nodes and the laboratory inputs have
+programmatic labels.
 
 Next: commit and build this repaired candidate, replay the same authenticated
 Huygens campaign in an isolated runtime, inspect both the visible surface and

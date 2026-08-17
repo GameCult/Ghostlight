@@ -269,14 +269,14 @@ impl WorldCompiler {
         let receipts = self.retrieve_all(&queries, &start.when, 8).await?;
         let (evidence_coverage, relevance_receipts) =
             self.classify_evidence(&start, &receipts).await?;
-        let scoped_evidence = scoped_evidence_text(&receipts, &evidence_coverage);
+        let scoped_evidence = direct_seed_evidence_text(&receipts, &evidence_coverage);
         let shared_prefix = format!(
             "SOURCE-GROUNDED WORLD COMPILATION\nSTART:\n{}\nSCOPED EVIDENCE:\n{}\n\n",
             serde_json::to_string(&start)?,
             scoped_evidence
         );
         let base_prompt = format!(
-            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. Evidence marked direct_seed may shape the local situation. Evidence marked setting_background may establish general history, mechanics, or institutions, but must not import its story-specific cast, incident, clock, location state, goals, or institutional posture into the current branch. A matching place name or era alone does not make another source episode current. When the evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -1018,7 +1018,7 @@ fn evidence_text(receipts: &[VaultEvidenceReceipt]) -> String {
         .join("\n\n")
 }
 
-fn scoped_evidence_text(
+fn direct_seed_evidence_text(
     receipts: &[VaultEvidenceReceipt],
     coverage: &[EvidenceCoverage],
 ) -> String {
@@ -1037,7 +1037,7 @@ fn scoped_evidence_text(
         })
         .filter_map(|(receipt_id, witness)| {
             let use_plan = coverage.get(witness.source_id.as_str())?;
-            if use_plan.lane == EvidenceUseLane::Excluded
+            if use_plan.lane != EvidenceUseLane::DirectSeed
                 || !seen.insert((
                     witness.source_id.clone(),
                     witness.exact_locator.clone(),
@@ -1046,14 +1046,8 @@ fn scoped_evidence_text(
             {
                 return None;
             }
-            let lane = match use_plan.lane {
-                EvidenceUseLane::DirectSeed => "direct_seed",
-                EvidenceUseLane::SettingBackground => "setting_background",
-                EvidenceUseLane::Excluded => unreachable!(),
-            };
             Some(format!(
-                "[usage_lane={} | rationale={} | receipt_id={} | source={} | locator={} | content_hash={}] {}",
-                lane,
+                "[usage_lane=direct_seed | rationale={} | receipt_id={} | source={} | locator={} | content_hash={}] {}",
                 use_plan.rationale,
                 receipt_id,
                 witness.source_id,
@@ -1072,7 +1066,7 @@ fn receipt_ids_for_coverage(
 ) -> Vec<String> {
     let included_sources = coverage
         .iter()
-        .filter(|item| item.lane != EvidenceUseLane::Excluded)
+        .filter(|item| item.lane == EvidenceUseLane::DirectSeed)
         .map(|item| item.source_id.as_str())
         .collect::<BTreeSet<_>>();
     receipts
@@ -1814,7 +1808,7 @@ mod tests {
     }
 
     #[test]
-    fn scoped_evidence_excludes_nearby_story_incidents_from_world_context() {
+    fn world_seed_context_contains_only_direct_evidence() {
         let direct = VaultEvidenceReceipt {
             schema: "ghostlight.vault_evidence_receipt.v1".into(),
             id: "vault:direct".into(),
@@ -1854,11 +1848,11 @@ mod tests {
             },
             EvidenceCoverage {
                 source_id: "AetheriaLore:unrelated-story.md".into(),
-                lane: EvidenceUseLane::Excluded,
-                rationale: "The incident is unrelated to the requested start.".into(),
+                lane: EvidenceUseLane::SettingBackground,
+                rationale: "The incident offers setting color but is not current.".into(),
             },
         ];
-        let text = scoped_evidence_text(&receipts, &coverage);
+        let text = direct_seed_evidence_text(&receipts, &coverage);
         assert!(text.contains("The requested station exists."));
         assert!(!text.contains("unrelated named cast"));
         assert_eq!(

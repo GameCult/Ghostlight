@@ -86,8 +86,9 @@ narration. Canonical campaign state and spoiler-bearing actor or institution
 state are operator-only. Informational rolls add only their exact previewed
 finding to the acting character and a provisional branch fact. The compiler
 classifies each retrieved source as direct seed, setting background, or excluded
-before generation; excluded sources remain provenance but never become prompt
-context, and background sources cannot donate story incidents or cast.
+before generation. Only direct-seed source text enters causal world compilation;
+background and excluded sources remain coverage provenance and cannot donate
+story incidents or cast.
 
 Relationship documents in the schema catalog are revision-bound projections
 of actor-owned relationship maps; they are not a second relationship writer.

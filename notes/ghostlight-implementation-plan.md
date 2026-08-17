@@ -39,7 +39,8 @@ exact permissions; deterministic cell bindings are attached by the runtime.
 
 The current browser/compiler hardening adds three ownership cuts before the
 next isolated acceptance run: compiler evidence is triaged into direct,
-background, and excluded lanes before generation; informational action effects
+background, and excluded lanes before generation, with only direct source text
+admitted to the causal world seed; informational action effects
 must name the exact player-visible finding they commit; and player HTTP command
 responses are spoiler-safe projections rather than serialized campaigns. The
 browser renders these projections as labeled, escaped human-readable controls,

@@ -562,11 +562,12 @@ opening request
 Reversible local texture may enter as provisional branch fact. Material gaps in
 geography, mechanics, institutions, or extraordinary capability require
 approval. Canon candidates are review/export records and cannot edit the Vault.
-The approval preview exposes the source-use coverage. Direct evidence may shape
-the local seed; background evidence may constrain history, mechanics, or known
-institutions; excluded evidence remains receipted but never enters the world
-compiler prompt. This separation preserves provenance without making retrieved
-adjacency into fictional causality.
+The approval preview exposes the source-use coverage. Only direct evidence may
+shape the local seed. Background evidence remains receipted as setting coverage
+for the tester and future non-causal lore projections, but its source prose does
+not enter the world-seed prompt; excluded evidence is likewise absent. This
+separation preserves provenance without making retrieved adjacency into
+fictional causality.
 
 ### Fiction-first resolution
 
