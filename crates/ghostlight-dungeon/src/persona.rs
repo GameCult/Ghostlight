@@ -668,6 +668,7 @@ impl CellProjectionEngine {
                             )
                             .await?;
                         let verifier_context = serde_json::json!({
+                            "lived_stream":lived.text,
                             "persona_turn":persona.narrative,
                             "candidate_actions":appraisal.actions.iter().enumerate().map(|(index, action)| serde_json::json!({
                                 "index":index,
@@ -1540,6 +1541,7 @@ mod tests {
                             .lived_stream
                             .contains("reject any effect that substitutes a containing population")
                     );
+                    assert!(request.lived_stream.contains("At location forum"));
                     let correction = self.verifier_calls.fetch_add(1, Ordering::SeqCst) > 0;
                     Ok(serde_json::json!({
                         "supported":correction,
