@@ -25,6 +25,13 @@ struct DemandProjection {
     rationale: String,
 }
 
+#[derive(Clone, Debug, Default, Serialize)]
+struct RelationDemandSummary {
+    edges: u64,
+    total_strength: u64,
+    max_strength: u8,
+}
+
 pub struct StrategicResolutionOutput {
     pub wave: ResolutionWaveCommit,
     pub stages: Vec<ModelStageOutput>,
@@ -126,47 +133,12 @@ async fn project_resolution_demand(
             })
             .unwrap_or_else(|| default_demand(campaign, "default geography/authority demand"))
     };
-    let active_ids: Vec<_> = campaign
-        .agency_profiles
-        .values()
-        .filter(|profile| profile.active_leaf && profile.simulation_eligible)
-        .map(|profile| profile.subject_id.clone())
-        .collect();
-    let compact_profiles = campaign
-        .agency_profiles
-        .values()
-        .filter(|profile| profile.active_leaf && profile.simulation_eligible)
-        .map(|profile| {
-            serde_json::json!({
-                "subject_id":profile.subject_id,
-                "subject_kind":profile.subject_kind,
-                "collective_authority_id":profile.collective_authority_id,
-                "location_ids":profile.location_ids,
-                "facets":profile.facets,
-                "information_channels":profile.information_channels,
-                "detail_debt":profile.detail_debt,
-            })
-        })
-        .collect::<Vec<_>>();
-    let compact_relations = campaign
-        .agency_relations
-        .values()
-        .filter(|relation| relation.active)
-        .map(|relation| {
-            serde_json::json!({
-                "from_subject_id":relation.from_subject_id,
-                "to_subject_id":relation.to_subject_id,
-                "kind":relation.kind,
-                "strength":relation.strength,
-            })
-        })
-        .collect::<Vec<_>>();
+    let (active_ids, agency_summary) = resolution_demand_context(campaign);
     let context = serde_json::json!({
         "campaign_id": campaign.id,
         "world_revision": campaign.revision,
         "resolution_epoch": campaign.resolution_policy.resolution_epoch,
         "horizon_minutes": campaign.tick_hours.saturating_mul(60),
-        "allowed_subject_ids": &active_ids,
         "clocks": campaign.clocks.values().map(|clock| serde_json::json!({
             "id":clock.id,
             "label":clock.label,
@@ -174,16 +146,7 @@ async fn project_resolution_demand(
             "threshold":clock.threshold,
             "consequence":clock.consequence,
         })).collect::<Vec<_>>(),
-        "recent_events": campaign.events.iter().rev().take(12).map(|event| serde_json::json!({
-            "id":event.id,
-            "kind":event.kind,
-            "summary":event.summary,
-            "institution_ids":event.institution_ids,
-            "location_ids":event.location_ids,
-            "public_channels":event.public_channels,
-        })).collect::<Vec<_>>(),
-        "relations": compact_relations,
-        "profiles": compact_profiles,
+        "agency_summary": agency_summary,
     });
     let mut schema = match serde_json::to_value(schema_for!(DemandProjection)) {
         Ok(value) => value,
@@ -266,6 +229,119 @@ async fn project_resolution_demand(
         }
     }
     (fallback(), outputs)
+}
+
+fn resolution_demand_context(campaign: &Campaign) -> (Vec<String>, serde_json::Value) {
+    let profiles = campaign
+        .agency_profiles
+        .values()
+        .filter(|profile| profile.active_leaf && profile.simulation_eligible)
+        .collect::<Vec<_>>();
+    let active_ids = profiles
+        .iter()
+        .map(|profile| profile.subject_id.clone())
+        .collect::<Vec<_>>();
+    let axes = [
+        AgencyAxis::Geography,
+        AgencyAxis::Ideology,
+        AgencyAxis::Authority,
+        AgencyAxis::EconomyRole,
+        AgencyAxis::SpeciesBody,
+        AgencyAxis::Information,
+    ];
+    let mut facet_value_counts: BTreeMap<AgencyAxis, BTreeMap<String, u64>> = axes
+        .iter()
+        .cloned()
+        .map(|axis| (axis, BTreeMap::new()))
+        .collect();
+    let mut collective_authority_counts = BTreeMap::<String, u64>::new();
+    for profile in &profiles {
+        for axis in &axes {
+            let buckets = facet_value_counts
+                .get_mut(axis)
+                .expect("all six agency axes were initialized");
+            match profile.facets.get(axis).filter(|values| !values.is_empty()) {
+                Some(values) => {
+                    for value in values {
+                        *buckets.entry(value.clone()).or_default() += 1;
+                    }
+                }
+                None => {
+                    *buckets.entry("unknown".into()).or_default() += 1;
+                }
+            }
+        }
+        let authority = profile
+            .collective_authority_id
+            .clone()
+            .unwrap_or_else(|| "none".into());
+        *collective_authority_counts.entry(authority).or_default() += 1;
+    }
+    let mut relation_summary = BTreeMap::<String, RelationDemandSummary>::new();
+    for relation in campaign
+        .agency_relations
+        .values()
+        .filter(|relation| relation.active)
+    {
+        let kind = serde_json::to_value(&relation.kind)
+            .ok()
+            .and_then(|value| value.as_str().map(str::to_owned))
+            .unwrap_or_else(|| "unknown".into());
+        let summary = relation_summary.entry(kind).or_default();
+        summary.edges += 1;
+        summary.total_strength += u64::from(relation.strength);
+        summary.max_strength = summary.max_strength.max(relation.strength);
+    }
+    let recent_events = campaign
+        .events
+        .iter()
+        .rev()
+        .take(12)
+        .map(|event| {
+            serde_json::json!({
+                "id":event.id,
+                "kind":event.kind,
+                "summary":event.summary,
+                "actor_ids":event.actor_ids,
+                "institution_ids":event.institution_ids,
+                "location_ids":event.location_ids,
+                "public_channels":event.public_channels,
+            })
+        })
+        .collect::<Vec<_>>();
+    let recent_participant_ids = campaign
+        .events
+        .iter()
+        .rev()
+        .take(12)
+        .flat_map(|event| event.actor_ids.iter().chain(event.institution_ids.iter()))
+        .filter(|id| campaign.agency_profiles.contains_key(*id))
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let mut highest_detail_debt = profiles
+        .iter()
+        .filter(|profile| profile.detail_debt > 0)
+        .map(|profile| (profile.subject_id.clone(), profile.detail_debt))
+        .collect::<Vec<_>>();
+    highest_detail_debt
+        .sort_by(|left, right| right.1.cmp(&left.1).then_with(|| left.0.cmp(&right.0)));
+    highest_detail_debt
+        .truncate(usize::from(campaign.resolution_policy.active_cell_budget).max(4) * 2);
+    (
+        active_ids,
+        serde_json::json!({
+            "active_subject_count": profiles.len(),
+            "facet_value_counts": facet_value_counts,
+            "collective_authority_counts": collective_authority_counts,
+            "relation_summary": relation_summary,
+            "recent_events": recent_events,
+            "recent_participant_ids": recent_participant_ids,
+            "highest_detail_debt": highest_detail_debt.iter().map(|(subject_id, detail_debt)| serde_json::json!({
+                "subject_id":subject_id,
+                "detail_debt":detail_debt,
+            })).collect::<Vec<_>>(),
+        }),
+    )
 }
 
 fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCellSlice> {
@@ -477,6 +553,23 @@ mod tests {
         assert_eq!(due_tick_target(now, now - chrono::Duration::minutes(59)), 0);
         assert_eq!(due_tick_target(now, now - chrono::Duration::hours(1)), 1);
         assert_eq!(due_tick_target(now, now - chrono::Duration::hours(30)), 8);
+    }
+
+    #[test]
+    fn demand_projection_receives_aggregate_boundaries_not_full_subject_state() {
+        let campaign = crate::resolution::tests::campaign(1_000, 8);
+        let (active_ids, context) = resolution_demand_context(&campaign);
+        let encoded = serde_json::to_string(&context).unwrap();
+        assert_eq!(active_ids.len(), 1_000);
+        assert_eq!(context["facet_value_counts"].as_object().unwrap().len(), 6);
+        assert!(
+            encoded.len() < 100_000,
+            "aggregate context was {} chars",
+            encoded.len()
+        );
+        assert!(!encoded.contains("permitted_state_references"));
+        assert!(!encoded.contains("information_channels"));
+        assert!(!encoded.contains("evidence_receipt_ids"));
     }
 
     #[tokio::test]

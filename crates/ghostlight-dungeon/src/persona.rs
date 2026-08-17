@@ -502,15 +502,26 @@ fn validate_cell_appraisal(
         || appraisal.world_revision != slice.world_revision
         || appraisal.resolution_epoch != slice.resolution_epoch
         || appraisal.considered_subject_ids != expected
-        || appraisal.actions.len() > slice.max_actions
-        || (appraisal.actions.is_empty()
-            && appraisal
-                .inaction_reason
-                .as_deref()
-                .is_none_or(str::is_empty))
     {
         return Err(anyhow!(
-            "appraisal does not bind the complete permitted cell"
+            "appraisal has a stale or incomplete runtime binding"
+        ));
+    }
+    if appraisal.actions.len() > slice.max_actions {
+        return Err(anyhow!(
+            "appraisal emitted {} actions but this cell permits at most {}",
+            appraisal.actions.len(),
+            slice.max_actions
+        ));
+    }
+    if appraisal.actions.is_empty()
+        && appraisal
+            .inaction_reason
+            .as_deref()
+            .is_none_or(|reason| reason.trim().is_empty())
+    {
+        return Err(anyhow!(
+            "an appraisal with no actions requires one concrete non-empty inaction_reason"
         ));
     }
     for action in &appraisal.actions {
@@ -519,19 +530,28 @@ fn validate_cell_appraisal(
             .iter()
             .find(|value| value.subject_id == action.subject_id)
             .ok_or_else(|| anyhow!("action is attributed outside the cell"))?;
-        if action.intent.trim().is_empty()
-            || action.intended_effect.trim().is_empty()
-            || action
-                .state_references
-                .iter()
-                .any(|reference| !subject.permitted_state_references.contains(reference))
-            || action
-                .public_channels
-                .iter()
-                .any(|channel| !subject.information_channels.contains(channel))
-        {
+        if action.intent.trim().is_empty() || action.intended_effect.trim().is_empty() {
             return Err(anyhow!(
-                "action borrows state or information across constituents"
+                "action for subject {} requires non-empty intent and intended_effect",
+                subject.subject_id
+            ));
+        }
+        let invalid_references = action
+            .state_references
+            .iter()
+            .filter(|reference| !subject.permitted_state_references.contains(*reference))
+            .collect::<Vec<_>>();
+        let invalid_channels = action
+            .public_channels
+            .iter()
+            .filter(|channel| !subject.information_channels.contains(*channel))
+            .collect::<Vec<_>>();
+        if !invalid_references.is_empty() || !invalid_channels.is_empty() {
+            return Err(anyhow!(
+                "action for subject {} borrowed forbidden state references {:?} or information channels {:?}",
+                subject.subject_id,
+                invalid_references,
+                invalid_channels
             ));
         }
         match &action.effect {
@@ -688,6 +708,38 @@ mod tests {
         }
     }
 
+    fn fixture_cell_slice() -> PermittedCellSlice {
+        PermittedCellSlice {
+            cell_id: "cell:test".into(),
+            mode: SimulationCellMode::Arena,
+            world_revision: 4,
+            resolution_epoch: 2,
+            snapshot_binding: "campaign:4:2".into(),
+            constituents: vec![CellConstituentSlice {
+                subject_id: "faction-06".into(),
+                subject_kind: AgencySubjectKind::Institution,
+                name: "Faction Six".into(),
+                collective_authority_id: None,
+                location_ids: BTreeSet::from(["forum".into()]),
+                knowledge: BTreeSet::from(["the public deadline".into()]),
+                capabilities: BTreeSet::new(),
+                resources: BTreeSet::from(["bulletin access".into()]),
+                information_channels: BTreeSet::from(["public bulletin".into()]),
+                permitted_state_references: BTreeSet::from(["institution:faction-06".into()]),
+                reachable_destination_ids: BTreeSet::new(),
+                goals: vec!["publish a position".into()],
+                pressures: vec!["the vote is near".into()],
+            }],
+            shared_knowledge: BTreeSet::new(),
+            shared_capabilities: BTreeSet::new(),
+            perceived_events: vec!["The final vote is public.".into()],
+            world_clock_pressure: vec!["vote 5/6".into()],
+            detail_focus_subject_id: Some("faction-06".into()),
+            max_actions: 1,
+            source_receipt_ids: vec![],
+        }
+    }
+
     #[tokio::test]
     async fn cell_semantic_retry_receives_the_rejected_appraisal() {
         let model = Arc::new(CorrectingCellModel {
@@ -701,38 +753,7 @@ mod tests {
             persona_model: "flash".into(),
             interpreter_model: "flash".into(),
         };
-        let output = engine
-            .execute(PermittedCellSlice {
-                cell_id: "cell:test".into(),
-                mode: SimulationCellMode::Arena,
-                world_revision: 4,
-                resolution_epoch: 2,
-                snapshot_binding: "campaign:4:2".into(),
-                constituents: vec![CellConstituentSlice {
-                    subject_id: "faction-06".into(),
-                    subject_kind: AgencySubjectKind::Institution,
-                    name: "Faction Six".into(),
-                    collective_authority_id: None,
-                    location_ids: BTreeSet::from(["forum".into()]),
-                    knowledge: BTreeSet::from(["the public deadline".into()]),
-                    capabilities: BTreeSet::new(),
-                    resources: BTreeSet::from(["bulletin access".into()]),
-                    information_channels: BTreeSet::from(["public bulletin".into()]),
-                    permitted_state_references: BTreeSet::from(["institution:faction-06".into()]),
-                    reachable_destination_ids: BTreeSet::new(),
-                    goals: vec!["publish a position".into()],
-                    pressures: vec!["the vote is near".into()],
-                }],
-                shared_knowledge: BTreeSet::new(),
-                shared_capabilities: BTreeSet::new(),
-                perceived_events: vec!["The final vote is public.".into()],
-                world_clock_pressure: vec!["vote 5/6".into()],
-                detail_focus_subject_id: Some("faction-06".into()),
-                max_actions: 1,
-                source_receipt_ids: vec![],
-            })
-            .await
-            .unwrap();
+        let output = engine.execute(fixture_cell_slice()).await.unwrap();
         assert!(model.saw_rejected_appraisal.load(Ordering::SeqCst));
         assert_eq!(output.stage_receipts.len(), 4);
         assert_eq!(
@@ -743,6 +764,24 @@ mod tests {
             output.appraisal.actions[0].effect,
             StrategicCellEffect::Institution { .. }
         ));
+    }
+
+    #[test]
+    fn empty_cell_appraisal_names_the_missing_inaction_reason() {
+        let slice = fixture_cell_slice();
+        let appraisal = bind_cell_appraisal(
+            &slice,
+            CellAppraisalProposal {
+                actions: vec![],
+                inaction_reason: Some("   ".into()),
+            },
+        );
+        let error = validate_cell_appraisal(&slice, &appraisal).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("concrete non-empty inaction_reason")
+        );
     }
 
     #[tokio::test]

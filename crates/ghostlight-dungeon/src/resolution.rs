@@ -1594,7 +1594,7 @@ pub fn validate_and_resolve_wave(
                 && appraisal
                     .inaction_reason
                     .as_deref()
-                    .is_none_or(str::is_empty))
+                    .is_none_or(|reason| reason.trim().is_empty()))
         {
             return Err(anyhow!("cell appraisal is incomplete or stale"));
         }
