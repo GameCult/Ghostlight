@@ -18,8 +18,7 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
                 .saturating_mul(1_000_000),
         )
         .saturating_add(campaign.resolution_policy.provider_configuration_epoch);
-    let mut story = narrations.iter().map(|n| json!({"id":format!("narration-{}",n.source_revision),"kind":"text","props":{"value":n.text},"children":[]})).collect::<Vec<_>>();
-    story.extend(campaign.transcript.iter().map(|t| json!({"id":format!("turn-{}-{}",t.revision,t.speaker),"kind":"text","props":{"value":format!("{}: {}",t.speaker,t.text)},"children":[]})));
+    let story = story_nodes(campaign, narrations);
     let player = &campaign.actors[&campaign.player_actor_id];
     let location = &campaign.locations[&player.location_id];
     let ledger = format!(
@@ -75,6 +74,35 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
       ]},"styles":{"tokens":{"colorBackground":"#0c1110","colorPanel":"#17201d","colorText":"#e8e1cf","colorMuted":"#9aa69f","colorAccent":"#d49b58"}}},
       "commands":[{"id":"attempt.assess","schema":"gamecult.eve.command.v1","receiptSchema":"ghostlight.player_action_assessment.v1"}]
     })
+}
+
+fn story_nodes(campaign: &Campaign, narrations: &[NarrationProjection]) -> Vec<Value> {
+    let narrated_revisions = narrations
+        .iter()
+        .map(|narration| narration.source_revision)
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut entries = Vec::new();
+    for (index, turn) in campaign.transcript.iter().enumerate() {
+        if turn.speaker == "world" && narrated_revisions.contains(&turn.revision) {
+            continue;
+        }
+        entries.push((
+            turn.revision,
+            0_u8,
+            index,
+            json!({"id":format!("turn-{}-{}-{}",turn.revision,index,turn.speaker),"kind":"text","props":{"value":format!("{}: {}",turn.speaker,turn.text)},"children":[]}),
+        ));
+    }
+    for (index, narration) in narrations.iter().enumerate() {
+        entries.push((
+            narration.source_revision,
+            1_u8,
+            index,
+            json!({"id":format!("narration-{}",narration.source_revision),"kind":"text","props":{"value":narration.text},"children":[]}),
+        ));
+    }
+    entries.sort_by_key(|(revision, phase, index, _)| (*revision, *phase, *index));
+    entries.into_iter().map(|(_, _, _, node)| node).collect()
 }
 
 pub fn operator_surface(
@@ -206,5 +234,62 @@ fn join(values: &std::collections::BTreeSet<String>) -> String {
         "none".into()
     } else {
         values.iter().cloned().collect::<Vec<_>>().join(", ")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::NarrativeTurn;
+    use chrono::Utc;
+
+    #[test]
+    fn story_is_chronological_and_narration_replaces_same_revision_world_prose() {
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        campaign.transcript = vec![
+            NarrativeTurn {
+                revision: 1,
+                at: Utc::now(),
+                speaker: "player".into(),
+                text: "I ask the question.".into(),
+            },
+            NarrativeTurn {
+                revision: 2,
+                at: Utc::now(),
+                speaker: "world".into(),
+                text: "raw outcome".into(),
+            },
+            NarrativeTurn {
+                revision: 3,
+                at: Utc::now(),
+                speaker: "npc".into(),
+                text: "I answer directly.".into(),
+            },
+        ];
+        let narration = NarrationProjection {
+            schema: "ghostlight.narration_projection.v1".into(),
+            id: "narration-2".into(),
+            campaign_id: campaign.id,
+            source_revision: 2,
+            text: "The bounded outcome is visible.".into(),
+            event_ids: vec![],
+            model_receipt_hash: "sha256:test".into(),
+            published_at: Utc::now(),
+        };
+
+        let story = story_nodes(&campaign, &[narration]);
+        let values = story
+            .iter()
+            .map(|node| node["props"]["value"].as_str().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            values,
+            vec![
+                "player: I ask the question.",
+                "The bounded outcome is visible.",
+                "npc: I answer directly."
+            ]
+        );
+        assert!(!values.iter().any(|value| value.contains("raw outcome")));
     }
 }

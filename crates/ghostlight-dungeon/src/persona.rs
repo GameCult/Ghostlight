@@ -173,7 +173,7 @@ impl PersonaProjectionEngine {
                 lived_stream: build_persona_prompt(&PersonaPrompt {
                     identity: &slice.actor_id,
                     lived_stream: &lived.text,
-                    domain_guidance: "Respond as a situated character. Answer direct questions at human conversational length. Speech and attempted effects are distinct; the world kernel resolves consequences.",
+                    domain_guidance: "Respond as a situated character. Answer direct questions at human conversational length. Speech and attempted effects are distinct; the world kernel resolves consequences. Asking, inviting, persuading, threatening, or demanding completes only your own speech: never supply the other person's answer, choice, consent, belief, disclosure, or obedience.",
                     word_budget: 160,
                 }),
                 output_schema: None,
@@ -190,12 +190,7 @@ impl PersonaProjectionEngine {
         let prompt_schema = serde_json::to_value(schema_for!(PersonaProposalBundle))?;
         let mut schema = prompt_schema.clone();
         constrain_interpreter_schema(&mut schema, &slice)?;
-        let permission_guidance = format!(
-            "Record only private changes supported by the lived stream and typed context. World actions are attempts, not completed effects. actor_id must be {:?}. Exact allowed state references are {:?}. Relationship update keys may only be {:?}.",
-            slice.actor_id,
-            allowed_actor_references(&slice),
-            slice.perceived_actors.keys().collect::<Vec<_>>()
-        );
+        let permission_guidance = actor_interpreter_guidance(&slice);
         let interpreted = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -233,6 +228,15 @@ impl PersonaProjectionEngine {
             stage_receipts: vec![projected.receipt, persona.receipt, interpreted.receipt],
         })
     }
+}
+
+fn actor_interpreter_guidance(slice: &PermittedActorSlice) -> String {
+    format!(
+        "Record only private changes supported by the lived stream and typed context. World actions are attempts, not completed effects. Speech is extracted separately and is already complete. Do not emit a world action merely to make another actor answer, choose, consent, believe, disclose, feel, or obey; the other actor retains agency and any requested response remains unresolved. actor_id must be {:?}. Exact allowed state references are {:?}. Relationship update keys may only be {:?}.",
+        slice.actor_id,
+        allowed_actor_references(slice),
+        slice.perceived_actors.keys().collect::<Vec<_>>()
+    )
 }
 
 fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> String {
@@ -812,6 +816,9 @@ mod tests {
             affordances: vec![],
             source_receipt_ids: vec![],
         };
+        let guidance = actor_interpreter_guidance(&slice);
+        assert!(guidance.contains("other actor retains agency"));
+        assert!(guidance.contains("requested response remains unresolved"));
         let result = engine.execute(slice).await.unwrap();
         assert_eq!(result.stage_receipts.len(), 3);
         assert_eq!(result.proposals.reaction_priority, 0);

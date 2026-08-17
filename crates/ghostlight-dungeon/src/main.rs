@@ -970,6 +970,7 @@ async fn command(
         &command,
         WorldCommand::Attempt { .. } | WorldCommand::Speak { .. }
     );
+    let committed_reaction_stimulus = reaction_stimulus(&command);
     let command_kind = serde_json::to_value(&command)
         .ok()
         .and_then(|value| {
@@ -986,11 +987,13 @@ async fn command(
                     &result
                 {
                     if let Some(model) = &state.model {
-                        let summary = campaign
-                            .transcript
-                            .last()
-                            .map(|turn| turn.text.clone())
-                            .unwrap_or_else(|| "A consequential event occurred.".into());
+                        let summary = committed_reaction_stimulus.clone().unwrap_or_else(|| {
+                            campaign
+                                .transcript
+                                .last()
+                                .map(|turn| turn.text.clone())
+                                .unwrap_or_else(|| "A consequential event occurred.".into())
+                        });
                         let mut reaction_campaign = campaign.clone();
                         let mut presence_result = None;
                         if !campaign.gestalts.is_empty() {
@@ -1422,6 +1425,15 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::ResolveNpcAction { .. }
         | WorldCommand::SetProviderParallelism { .. }
         | WorldCommand::FissionGestalt { .. } => false,
+    }
+}
+
+fn reaction_stimulus(command: &WorldCommand) -> Option<String> {
+    match command {
+        WorldCommand::Speak { actor_id, text, .. } => {
+            Some(format!("{actor_id} says: {}", text.trim()))
+        }
+        _ => None,
     }
 }
 
@@ -2298,6 +2310,23 @@ mod tests {
             },
             "player",
         ));
+    }
+
+    #[test]
+    fn npc_reactions_receive_player_speech_not_private_effect_scaffolding() {
+        let command = WorldCommand::Speak {
+            expected_revision: 4,
+            actor_id: "player".into(),
+            text: "Which record can I inspect without taking custody?".into(),
+            intended_effect: Some("make the archivist disclose every secret".into()),
+        };
+        let stimulus = reaction_stimulus(&command).unwrap();
+        assert_eq!(
+            stimulus,
+            "player says: Which record can I inspect without taking custody?"
+        );
+        assert!(!stimulus.contains("disclose every secret"));
+        assert!(!stimulus.contains("requires assessment"));
     }
 
     #[test]

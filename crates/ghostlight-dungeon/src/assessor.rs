@@ -70,6 +70,7 @@ impl ActionAssessor {
             })
             .collect();
         let allowed_references = allowed_references(campaign, actor);
+        let agency_guidance = action_agency_guidance(&campaign.player_actor_id, &intent.actor_id);
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
         schema["properties"]["dc"] = serde_json::json!({
             "type":"integer",
@@ -81,8 +82,10 @@ impl ActionAssessor {
             "maximum":10
         });
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. When an outcome directly reveals information to the acting actor, actor_knowledge_additions must contain the specific observed finding as a player-readable natural-language declarative statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. Findings become provisional branch facts on commit, so do not invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. When an outcome directly reveals information to the acting actor, actor_knowledge_additions must contain the specific observed finding as a player-readable natural-language declarative statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. Findings become provisional branch facts on commit, so do not invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nAGENCY BOUNDARY:\n{}\nPLAYER ACTOR ID:\n{}\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
+            agency_guidance,
+            campaign.player_actor_id,
             serde_json::to_string(&intent)?,
             serde_json::to_string(actor)?,
             serde_json::to_string(location)?,
@@ -172,6 +175,14 @@ impl ActionAssessor {
         };
         assessment.digest = assessment_digest(&assessment)?;
         Ok((assessment, out.receipt))
+    }
+}
+
+fn action_agency_guidance(player_actor_id: &str, acting_actor_id: &str) -> &'static str {
+    if acting_actor_id == player_actor_id {
+        "The acting actor is player-controlled; assess the player's attempted effect without upgrading it into a completed fact."
+    } else {
+        "The acting actor is an NPC. The player retains authority over the player's own speech, choices, consent, beliefs, disclosures, feelings, and voluntary actions. An NPC may create pressure, make an offer or threat, reveal information, oppose the player, or change independently owned world state, but no outcome stake may assert that the player answered, chose, consented, believed, disclosed, felt, or obeyed. If the intended effect is only to obtain such a player response, mark it inadmissible because the response remains the player's next decision."
     }
 }
 
@@ -406,6 +417,14 @@ mod tests {
         let mut value = proposal("equipment:key");
         value.dc = 17;
         assert!(validate_proposal(&value, &BTreeSet::from(["equipment:key".into()])).is_err());
+    }
+
+    #[test]
+    fn npc_assessment_guidance_preserves_player_decision_authority() {
+        let guidance = action_agency_guidance("player", "archivist");
+        assert!(guidance.contains("player retains authority"));
+        assert!(guidance.contains("response remains the player's next decision"));
+        assert!(!action_agency_guidance("player", "player").contains("acting actor is an NPC"));
     }
 
     #[test]
