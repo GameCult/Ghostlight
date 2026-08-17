@@ -21,8 +21,20 @@ function Get-ScenarioKind([string]$ScenarioId) {
         'action' { 'action'; break }
         'strategic' { 'strategic'; break }
         'scale' { 'scale'; break }
+        'gestalt[-_]dynamics' { 'gestalt_dynamics'; break }
         default { 'unknown' }
     }
+}
+
+function Get-PlanActionCount($Plan) {
+    if (-not $Plan) { return 0 }
+    $count = 0
+    foreach ($property in @('institution_actions', 'gestalt_actions', 'actor_moves', 'member_migrations')) {
+        if ($Plan.PSObject.Properties.Name -contains $property) {
+            $count += @($Plan.$property).Count
+        }
+    }
+    $count
 }
 
 $scenarios = [Collections.Generic.List[object]]::new()
@@ -45,7 +57,12 @@ foreach ($rootValue in $RunRoot) {
         }
     }
 
-    $resultFiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'results') -Filter result.json -File -Recurse -ErrorAction SilentlyContinue)
+    $resultFiles = @()
+    $directResult = Join-Path $root 'result.json'
+    if (Test-Path -LiteralPath $directResult -PathType Leaf) {
+        $resultFiles += Get-Item -LiteralPath $directResult
+    }
+    $resultFiles += @(Get-ChildItem -LiteralPath (Join-Path $root 'results') -Filter result.json -File -Recurse -ErrorAction SilentlyContinue)
     foreach ($file in $resultFiles) {
         $resultKey = $file.FullName
         if (-not $seenResults.Add($resultKey)) { continue }
@@ -58,6 +75,12 @@ foreach ($rootValue in $RunRoot) {
         } elseif ($result.PSObject.Properties.Name -contains 'total_seconds') {
             [double]$result.total_seconds
         } else { 0 }
+        $actionCount = Get-PlanActionCount $result.plan
+        if ($result.PSObject.Properties.Name -contains 'sustained_waves') {
+            foreach ($wave in @($result.sustained_waves)) {
+                $actionCount += Get-PlanActionCount $wave.plan
+            }
+        }
         $scenarios.Add([pscustomobject]@{
             run_root = $root
             scenario_id = $scenarioId
@@ -67,6 +90,7 @@ foreach ($rootValue in $RunRoot) {
             verdict = if ($summary) { $summary.verdict } else { $null }
             result_path = $file.FullName
             stderr = $null
+            action_count = $actionCount
         })
 
         $receipts = @()
@@ -74,6 +98,13 @@ foreach ($rootValue in $RunRoot) {
             if ($result.PSObject.Properties.Name -contains $property) {
                 $receipts = @($result.$property)
                 break
+            }
+        }
+        if ($result.PSObject.Properties.Name -contains 'sustained_waves') {
+            foreach ($wave in @($result.sustained_waves)) {
+                if ($wave.PSObject.Properties.Name -contains 'model_stage_receipts') {
+                    $receipts += @($wave.model_stage_receipts)
+                }
             }
         }
         foreach ($receipt in $receipts) {
@@ -128,6 +159,7 @@ foreach ($rootValue in $RunRoot) {
             verdict = $summary.verdict
             result_path = $null
             stderr = $stderr
+            action_count = 0
         })
     }
 }
@@ -139,6 +171,7 @@ $scenarioGroups = @($scenarios | Group-Object kind | Sort-Object Name | ForEach-
         scenarios = $_.Count
         succeeded = @($_.Group | Where-Object succeeded).Count
         failed = @($_.Group | Where-Object { -not $_.succeeded }).Count
+        committed_actions = [long](($_.Group | Measure-Object action_count -Sum).Sum)
         p50_elapsed_seconds = [math]::Round((Get-Percentile $elapsed 0.50), 3)
         p95_elapsed_seconds = [math]::Round((Get-Percentile $elapsed 0.95), 3)
         max_elapsed_seconds = [math]::Round((Get-Percentile $elapsed 1.00), 3)
@@ -174,6 +207,7 @@ $stageGroups = @($stages | Group-Object stage, model | Sort-Object Name | ForEac
 $totalPrompt = [long](($stages | Measure-Object prompt_tokens -Sum).Sum)
 $totalHit = [long](($stages | Measure-Object cache_hit_tokens -Sum).Sum)
 $totalCompletion = [long](($stages | Measure-Object completion_tokens -Sum).Sum)
+$totalActions = [long](($scenarios | Measure-Object action_count -Sum).Sum)
 $invalidStages = @($stages | Where-Object { -not $_.accepted })
 $report = [ordered]@{
     schema = 'ghostlight.live_fire_profile.v1'
@@ -189,6 +223,9 @@ $report = [ordered]@{
         cache_hit_tokens = $totalHit
         cache_miss_tokens = [long](($stages | Measure-Object cache_miss_tokens -Sum).Sum)
         completion_tokens = $totalCompletion
+        committed_actions = $totalActions
+        prompt_tokens_per_committed_action = if ($totalActions -gt 0) { [math]::Round($totalPrompt / $totalActions, 1) } else { 0 }
+        completion_tokens_per_committed_action = if ($totalActions -gt 0) { [math]::Round($totalCompletion / $totalActions, 1) } else { 0 }
         cache_hit_ratio = if ($totalPrompt -gt 0) { [math]::Round($totalHit / $totalPrompt, 4) } else { 0 }
         semantic_invalid_receipts = @($stages | Where-Object { $_.validation -eq 'semantic_invalid' }).Count
         rejected_prompt_tokens = [long](($invalidStages | Measure-Object prompt_tokens -Sum).Sum)
