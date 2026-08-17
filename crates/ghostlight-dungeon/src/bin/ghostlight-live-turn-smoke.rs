@@ -20,8 +20,20 @@ async fn main() -> anyhow::Result<()> {
     let secret = std::env::var_os("GHOSTLIGHT_DEEPSEEK_BLOB")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon\secrets\deepseek.dpapi"));
-    let root = PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance")
-        .join(format!("four-actor-{}", Utc::now().format("%Y%m%d-%H%M%S")));
+    let scenario_id = std::env::var("GHOSTLIGHT_LIVE_FIRE_SCENARIO")
+        .unwrap_or_else(|_| "live-turn-default".into());
+    let event_summary = std::env::var("GHOSTLIGHT_LIVE_EVENT").unwrap_or_else(|_| {
+        "The player asks all three witnesses what they believe is at stake.".into()
+    });
+    let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance").join(format!(
+                "four-actor-{}-{}",
+                Utc::now().format("%Y%m%d-%H%M%S"),
+                uuid::Uuid::new_v4()
+            ))
+        });
     std::fs::create_dir_all(&root)?;
     let campaign = four_actor_campaign();
     let store = CampaignStore::open(root.join("campaign.cc"))?;
@@ -35,12 +47,7 @@ async fn main() -> anyhow::Result<()> {
         interpreter_model: "deepseek-v4-flash".into(),
     };
     let started = Instant::now();
-    let wave = appraise_present(
-        engine,
-        &campaign,
-        "The player asks all three witnesses what they believe is at stake.",
-    )
-    .await?;
+    let wave = appraise_present(engine, &campaign, &event_summary).await?;
     let inference_seconds = started.elapsed().as_secs_f64();
     if wave.reactions.len() != 3 || wave.receipts.len() != 9 {
         anyhow::bail!(
@@ -61,14 +68,15 @@ async fn main() -> anyhow::Result<()> {
     let committed = kernel
         .command(WorldCommand::ResolveReactionWave {
             expected_revision: 0,
-            event_summary: "The player asks all three witnesses what they believe is at stake."
-                .into(),
+            event_summary: event_summary.clone(),
             reactions: wave.reactions.clone(),
         })
         .await?;
     let total_seconds = started.elapsed().as_secs_f64();
     let result = serde_json::json!({
         "schema":"ghostlight.live_turn_smoke.v1",
+        "scenario_id":scenario_id,
+        "event_summary":event_summary,
         "campaign_id":campaign.id,
         "actor_count":campaign.actors.len(),
         "reaction_count":3,

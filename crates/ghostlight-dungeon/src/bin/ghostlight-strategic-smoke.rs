@@ -20,10 +20,34 @@ async fn main() -> anyhow::Result<()> {
     let secret = std::env::var_os("GHOSTLIGHT_DEEPSEEK_BLOB")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon\secrets\deepseek.dpapi"));
-    let root = PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance")
-        .join(format!("strategic-{}", Utc::now().format("%Y%m%d-%H%M%S")));
+    let scenario_id = std::env::var("GHOSTLIGHT_LIVE_FIRE_SCENARIO")
+        .unwrap_or_else(|_| "strategic-default".into());
+    let pressure = std::env::var("GHOSTLIGHT_STRATEGIC_PRESSURE").unwrap_or_else(|_| {
+        "Two reserve deliveries are missing and the next yard shift may refuse work.".into()
+    });
+    let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance").join(format!(
+                "strategic-{}-{}",
+                Utc::now().format("%Y%m%d-%H%M%S"),
+                uuid::Uuid::new_v4()
+            ))
+        });
     std::fs::create_dir_all(&root)?;
-    let campaign = strategic_campaign();
+    let mut campaign = strategic_campaign();
+    campaign.institutions.get_mut("board").unwrap().posture = pressure.clone();
+    campaign.gestalts.get_mut("workers").unwrap().pressures = vec![pressure.clone()];
+    campaign.events.push(ghostlight_dungeon::domain::Event {
+        id: format!("pressure-{}", uuid::Uuid::new_v4()),
+        at: campaign.world_time,
+        kind: "strategic_pressure".into(),
+        summary: pressure.clone(),
+        actor_ids: vec!["runner".into()],
+        institution_ids: vec!["board".into()],
+        location_ids: vec!["depot".into(), "yard".into()],
+        public_channels: vec!["station radio".into()],
+    });
     let player_location = campaign.actors[&campaign.player_actor_id]
         .location_id
         .clone();
@@ -84,6 +108,8 @@ async fn main() -> anyhow::Result<()> {
     }
     let result = serde_json::json!({
         "schema":"ghostlight.live_strategic_smoke.v1",
+        "scenario_id":scenario_id,
+        "pressure":pressure,
         "campaign_id":campaign.id,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "model_receipt_hash":output.aggregate_receipt_hash,

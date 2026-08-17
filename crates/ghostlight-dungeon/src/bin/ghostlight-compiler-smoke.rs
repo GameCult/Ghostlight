@@ -24,19 +24,41 @@ async fn main() -> anyhow::Result<()> {
         "deepseek-v4-flash",
         "deepseek-v4-pro",
     );
-    let root = PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance")
-        .join(format!("compiler-{}", Utc::now().format("%Y%m%d-%H%M%S")));
+    let scenario_id = std::env::var("GHOSTLIGHT_LIVE_FIRE_SCENARIO")
+        .unwrap_or_else(|_| "compiler-default".into());
+    let request = CustomStart {
+        campaign_name: std::env::var("GHOSTLIGHT_SMOKE_CAMPAIGN_NAME")
+            .unwrap_or_else(|_| "Compiler acceptance smoke".into()),
+        who: std::env::var("GHOSTLIGHT_SMOKE_WHO").unwrap_or_else(|_| {
+            "A low-status maintenance worker with local access but no institutional authority"
+                .into()
+        }),
+        where_: std::env::var("GHOSTLIGHT_SMOKE_WHERE").unwrap_or_else(|_| {
+            "an obscure inhabited Aetheria location supported by the retrieved sources".into()
+        }),
+        when: std::env::var("GHOSTLIGHT_SMOKE_WHEN")
+            .unwrap_or_else(|_| "a source-supported pre-Elysium period".into()),
+        goal: std::env::var("GHOSTLIGHT_SMOKE_GOAL").unwrap_or_else(|_| {
+            "prevent an approaching institutional failure without inventing expertise or geography"
+                .into()
+        }),
+    };
+    let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance").join(format!(
+                "compiler-{}-{}",
+                Utc::now().format("%Y%m%d-%H%M%S"),
+                uuid::Uuid::new_v4()
+            ))
+        });
     std::fs::create_dir_all(&root)?;
     let started = Instant::now();
-    let (preview, model_receipts) = compiler.compile_custom(CustomStart {
-        campaign_name: "Compiler acceptance smoke".into(),
-        who: "A low-status maintenance worker with local access but no institutional authority".into(),
-        where_: "an obscure inhabited Aetheria location supported by the retrieved sources".into(),
-        when: "a source-supported pre-Elysium period".into(),
-        goal: "prevent an approaching institutional failure without inventing expertise or geography".into(),
-    }).await?;
+    let (preview, model_receipts) = compiler.compile_custom(request.clone()).await?;
     let result = serde_json::json!({
             "schema":"ghostlight.world_compile_smoke.v1",
+            "scenario_id":scenario_id,
+            "request":request,
             "elapsed_seconds":started.elapsed().as_secs_f64(),
             "title":preview.title,
             "location_count":preview.campaign.locations.len(),

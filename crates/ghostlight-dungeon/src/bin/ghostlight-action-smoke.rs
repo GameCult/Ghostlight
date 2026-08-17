@@ -20,8 +20,17 @@ async fn main() -> anyhow::Result<()> {
     let secret = std::env::var_os("GHOSTLIGHT_DEEPSEEK_BLOB")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon\secrets\deepseek.dpapi"));
-    let root = PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance")
-        .join(format!("action-{}", Utc::now().format("%Y%m%d-%H%M%S")));
+    let scenario_id =
+        std::env::var("GHOSTLIGHT_LIVE_FIRE_SCENARIO").unwrap_or_else(|_| "action-default".into());
+    let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance").join(format!(
+                "action-{}-{}",
+                Utc::now().format("%Y%m%d-%H%M%S"),
+                uuid::Uuid::new_v4()
+            ))
+        });
     std::fs::create_dir_all(&root)?;
     let campaign = action_campaign();
     let store = CampaignStore::open(root.join("campaign.cc"))?;
@@ -33,8 +42,11 @@ async fn main() -> anyhow::Result<()> {
 
     let impossible_intent = ActionIntent {
         actor_id: "player".into(),
-        description: "I teleport the entire station into the sun by force of will.".into(),
-        intended_effect: "destroy the station instantly".into(),
+        description: std::env::var("GHOSTLIGHT_IMPOSSIBLE_DESCRIPTION").unwrap_or_else(|_| {
+            "I teleport the entire station into the sun by force of will.".into()
+        }),
+        intended_effect: std::env::var("GHOSTLIGHT_IMPOSSIBLE_EFFECT")
+            .unwrap_or_else(|_| "destroy the station instantly".into()),
     };
     let (impossible, impossible_receipt) = assessor
         .assess(&campaign, impossible_intent.clone())
@@ -73,11 +85,13 @@ async fn main() -> anyhow::Result<()> {
 
     let feasible_intent = ActionIntent {
         actor_id: "player".into(),
-        description:
+        description: std::env::var("GHOSTLIGHT_FEASIBLE_DESCRIPTION").unwrap_or_else(|_| {
             "I connect my multimeter to the accessible coolant panel and inspect its readings."
-                .into(),
-        intended_effect:
-            "identify whether the coolant fault is electrical without changing the machinery".into(),
+                .into()
+        }),
+        intended_effect: std::env::var("GHOSTLIGHT_FEASIBLE_EFFECT").unwrap_or_else(|_| {
+            "identify whether the coolant fault is electrical without changing the machinery".into()
+        }),
     };
     let (feasible, feasible_receipt) = assessor
         .assess(&after_impossible, feasible_intent.clone())
@@ -135,6 +149,7 @@ async fn main() -> anyhow::Result<()> {
 
     let result = serde_json::json!({
         "schema":"ghostlight.action_smoke.v1",
+        "scenario_id":scenario_id,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "impossible_assessment":impossible,
         "impossible_attempt_error":impossible_error.to_string(),

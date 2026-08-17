@@ -21,12 +21,27 @@ async fn main() -> anyhow::Result<()> {
     let secret = std::env::var_os("GHOSTLIGHT_DEEPSEEK_BLOB")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon\secrets\deepseek.dpapi"));
-    let root = PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance").join(format!(
-        "gestalt-scale-{}",
-        Utc::now().format("%Y%m%d-%H%M%S")
-    ));
+    let scenario_id = std::env::var("GHOSTLIGHT_LIVE_FIRE_SCENARIO")
+        .unwrap_or_else(|_| "gestalt-scale-default".into());
+    let budget = std::env::var("GHOSTLIGHT_SCALE_BUDGET")
+        .ok()
+        .and_then(|value| value.parse::<u8>().ok())
+        .filter(|value| (1..=32).contains(value))
+        .unwrap_or(4);
+    let pressure = std::env::var("GHOSTLIGHT_SCALE_PRESSURE").unwrap_or_else(|_| {
+        "The public bulletin announces that the final vote occurs in six hours; each faction has one last chance to publish a binding commitment.".into()
+    });
+    let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            PathBuf::from(r"F:\GameCult\GhostlightDungeon\acceptance").join(format!(
+                "gestalt-scale-{}-{}",
+                Utc::now().format("%Y%m%d-%H%M%S"),
+                uuid::Uuid::new_v4()
+            ))
+        });
     std::fs::create_dir_all(&root)?;
-    let campaign = scale_campaign();
+    let campaign = scale_campaign(budget, &pressure);
     let player_location = campaign.actors[&campaign.player_actor_id]
         .location_id
         .clone();
@@ -60,9 +75,10 @@ async fn main() -> anyhow::Result<()> {
     )?;
 
     let cover = &output.wave.cover;
-    if cover.cells.len() != 4 || cover.effective_budget != 4 {
+    let expected_cells = usize::min(budget as usize, 24);
+    if cover.cells.len() != expected_cells || cover.effective_budget != budget {
         anyhow::bail!(
-            "budget-4 cover produced {} cells at effective budget {}",
+            "budget-{budget} cover produced {} cells at effective budget {}",
             cover.cells.len(),
             cover.effective_budget
         )
@@ -116,9 +132,11 @@ async fn main() -> anyhow::Result<()> {
     }
     let result = serde_json::json!({
         "schema":"ghostlight.gestalt_scale_smoke.v1",
+        "scenario_id":scenario_id,
+        "pressure":pressure,
         "campaign_id":campaign.id,
         "subject_count":24,
-        "configured_budget":4,
+        "configured_budget":budget,
         "cell_count":cover.cells.len(),
         "arena_count":arena_count,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
@@ -141,7 +159,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 #[cfg(windows)]
-fn scale_campaign() -> ghostlight_dungeon::domain::Campaign {
+fn scale_campaign(budget: u8, pressure: &str) -> ghostlight_dungeon::domain::Campaign {
     use chrono::{Duration, Utc};
     use ghostlight_dungeon::domain::*;
     use std::collections::{BTreeMap, BTreeSet};
@@ -177,10 +195,7 @@ fn scale_campaign() -> ghostlight_dungeon::domain::Campaign {
                         format!("advance platform {}", index % 6),
                         "publish a concrete commitment before the final vote".into(),
                     ],
-                    posture: format!(
-                        "final vote in six hours; campaigning bloc {} must choose whether to commit its reserve",
-                        index % 3
-                    ),
+                    posture: format!("{} Bloc {} must choose its response.", pressure, index % 3),
                 },
             )
         })
@@ -228,7 +243,7 @@ fn scale_campaign() -> ghostlight_dungeon::domain::Campaign {
             id: "final-vote-notice".into(),
             at: now,
             kind: "public_notice".into(),
-            summary: "The public bulletin announces that the final vote occurs in six hours; each faction has one last chance to publish a binding commitment.".into(),
+            summary: pressure.into(),
             actor_ids: vec![],
             institution_ids: (0..24).map(|index| format!("faction-{index:02}")).collect(),
             location_ids: vec!["forum".into()],
@@ -243,7 +258,7 @@ fn scale_campaign() -> ghostlight_dungeon::domain::Campaign {
         agency_relations: BTreeMap::new(),
         gestalt_lineages: BTreeMap::new(),
         resolution_policy: ResolutionPolicy {
-            active_cell_budget: 4,
+            active_cell_budget: budget,
             provider_parallelism: 4,
             ..ResolutionPolicy::default()
         },
