@@ -7,7 +7,7 @@ use ghostlight_persona_projection::{
 };
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -69,6 +69,25 @@ pub struct CellConstituentSlice {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct CellMemberSlice {
+    pub subject_id: String,
+    pub member_id: String,
+    pub name: String,
+    pub source_gestalt_id: String,
+    pub source_location_id: String,
+    pub knowledge: BTreeSet<String>,
+    pub capabilities: BTreeSet<String>,
+    pub resources: BTreeSet<String>,
+    pub information_channels: BTreeSet<String>,
+    pub permitted_state_references: BTreeSet<String>,
+    pub migration_destinations: BTreeMap<String, String>,
+    pub goals: Vec<String>,
+    pub pressures: Vec<String>,
+    pub relationships: BTreeMap<String, String>,
+    pub memories: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct PermittedCellSlice {
     pub cell_id: String,
     pub mode: crate::domain::SimulationCellMode,
@@ -76,6 +95,7 @@ pub struct PermittedCellSlice {
     pub resolution_epoch: u64,
     pub snapshot_binding: String,
     pub constituents: Vec<CellConstituentSlice>,
+    pub member_exceptions: Vec<CellMemberSlice>,
     pub shared_knowledge: BTreeSet<String>,
     pub shared_capabilities: BTreeSet<String>,
     pub perceived_events: Vec<String>,
@@ -285,6 +305,21 @@ fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "goals": subject.goals,
             "pressures": subject.pressures,
         })).collect::<Vec<_>>(),
+        "member_exceptions": slice.member_exceptions.iter().map(|member| serde_json::json!({
+            "subject_id": member.subject_id,
+            "member_id": member.member_id,
+            "name": member.name,
+            "source_gestalt_id": member.source_gestalt_id,
+            "source_location_id": member.source_location_id,
+            "knowledge": member.knowledge,
+            "capabilities": member.capabilities,
+            "resources": member.resources,
+            "migration_destinations": member.migration_destinations,
+            "goals": member.goals,
+            "pressures": member.pressures,
+            "relationships": member.relationships,
+            "memories": member.memories,
+        })).collect::<Vec<_>>(),
         "shared_knowledge": slice.shared_knowledge,
         "shared_capabilities": slice.shared_capabilities,
         "world_clock_pressure": slice.world_clock_pressure,
@@ -310,6 +345,15 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "permitted_state_references": subject.permitted_state_references,
             "reachable_destination_ids": subject.reachable_destination_ids,
         })).collect::<Vec<_>>(),
+        "member_permissions": slice.member_exceptions.iter().map(|member| serde_json::json!({
+            "subject_id": member.subject_id,
+            "member_id": member.member_id,
+            "source_gestalt_id": member.source_gestalt_id,
+            "source_location_id": member.source_location_id,
+            "information_channels": member.information_channels,
+            "permitted_state_references": member.permitted_state_references,
+            "migration_destinations": member.migration_destinations,
+        })).collect::<Vec<_>>(),
     })
 }
 
@@ -331,12 +375,15 @@ impl CellProjectionEngine {
         let visible_stimulus = slice.perceived_events.join("\n");
         let mode_guidance = match slice.mode {
             crate::domain::SimulationCellMode::Cohesive => {
-                "This cell has real collective authority. Render a plural lived perspective from genuinely shared knowledge and capability only; describe constituent exceptions as exceptions."
+                "This cell has real collective authority. Render a plural lived perspective from genuinely shared knowledge and capability only; describe constituent and named-member exceptions as separately attributed exceptions. A population cannot decide for a named member."
             }
             crate::domain::SimulationCellMode::Arena => {
-                "This cell is an arena, never a person or faction. Render an attributed polyphonic situation. Never union secrets, knowledge, resources, intentions, authority, or voice between constituents."
+                "This cell is an arena, never a person or faction. Render an attributed polyphonic situation. Never union secrets, knowledge, resources, intentions, authority, or voice between constituents or named-member exceptions."
             }
         };
+        let mode_guidance = format!(
+            "{mode_guidance} Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
+        );
         let projected = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -347,7 +394,7 @@ impl CellProjectionEngine {
                     identity: &slice.cell_id,
                     typed_context: &projector_context,
                     visible_stimulus: &visible_stimulus,
-                    domain_guidance: mode_guidance,
+                    domain_guidance: &mode_guidance,
                     word_budget: (120 + 45 * slice.constituents.len()).min(360),
                 }),
                 output_schema: None,
@@ -402,7 +449,7 @@ impl CellProjectionEngine {
         constrain_cell_proposal_schema(&mut schema, &slice)?;
         let interpreter_context = serde_json::to_string(&cell_interpreter_context(&slice))?;
         let permission_guidance = format!(
-            "Emit at most {} exact constituent-attributed attempts supported by that constituent's permission references. The runtime, not you, binds cell identity, revisions, and complete membership. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
+            "Emit at most {} exact constituent- or named-member-attributed attempts supported by that exact subject's permission references. A named member may only emit member_migration, using one supplied destination mapping; a population or arena cannot migrate a person. The runtime, not you, binds cell identity, revisions, complete membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
             slice.max_actions
         );
         let mut request = ModelStageRequest {
@@ -529,65 +576,105 @@ fn validate_cell_appraisal(
         ));
     }
     for action in &appraisal.actions {
-        let subject = slice
-            .constituents
-            .iter()
-            .find(|value| value.subject_id == action.subject_id)
-            .ok_or_else(|| anyhow!("action is attributed outside the cell"))?;
         if action.intent.trim().is_empty() || action.intended_effect.trim().is_empty() {
             return Err(anyhow!(
                 "action for subject {} requires non-empty intent and intended_effect",
-                subject.subject_id
+                action.subject_id
             ));
         }
-        let invalid_references = action
-            .state_references
+        if let Some(subject) = slice
+            .constituents
             .iter()
-            .filter(|reference| !subject.permitted_state_references.contains(*reference))
-            .collect::<Vec<_>>();
-        let invalid_channels = action
-            .public_channels
-            .iter()
-            .filter(|channel| !subject.information_channels.contains(*channel))
-            .collect::<Vec<_>>();
-        if !invalid_references.is_empty() || !invalid_channels.is_empty() {
-            return Err(anyhow!(
-                "action for subject {} borrowed forbidden state references {:?} or information channels {:?}",
-                subject.subject_id,
-                invalid_references,
-                invalid_channels
-            ));
-        }
-        match &action.effect {
-            crate::domain::StrategicCellEffect::Institution {
-                institution_id,
-                location_ids,
-                ..
-            } if subject.subject_kind == crate::domain::AgencySubjectKind::Institution
-                && institution_id == &subject.subject_id
-                && location_ids
-                    .iter()
-                    .all(|location| subject.location_ids.contains(location)) => {}
-            crate::domain::StrategicCellEffect::Gestalt { gestalt_id, .. }
-                if subject.subject_kind == crate::domain::AgencySubjectKind::Gestalt
-                    && gestalt_id == &subject.subject_id => {}
-            crate::domain::StrategicCellEffect::ActorMove {
-                actor_id,
-                destination_id,
-            } if subject.subject_kind == crate::domain::AgencySubjectKind::Actor
-                && actor_id == &subject.subject_id
-                && subject.reachable_destination_ids.contains(destination_id) => {}
-            _ => {
-                return Err(anyhow!(
-                    "action for subject {} has effect {:?}, which exceeds exact authority for kind {:?}, locations {:?}, and reachable destinations {:?}",
-                    subject.subject_id,
-                    action.effect,
-                    subject.subject_kind,
-                    subject.location_ids,
-                    subject.reachable_destination_ids
-                ));
+            .find(|value| value.subject_id == action.subject_id)
+        {
+            validate_action_permissions(
+                action,
+                &subject.permitted_state_references,
+                &subject.information_channels,
+            )?;
+            match &action.effect {
+                crate::domain::StrategicCellEffect::Institution {
+                    institution_id,
+                    location_ids,
+                    ..
+                } if subject.subject_kind == crate::domain::AgencySubjectKind::Institution
+                    && institution_id == &subject.subject_id
+                    && location_ids
+                        .iter()
+                        .all(|location| subject.location_ids.contains(location)) => {}
+                crate::domain::StrategicCellEffect::Gestalt { gestalt_id, .. }
+                    if subject.subject_kind == crate::domain::AgencySubjectKind::Gestalt
+                        && gestalt_id == &subject.subject_id => {}
+                crate::domain::StrategicCellEffect::ActorMove {
+                    actor_id,
+                    destination_id,
+                } if subject.subject_kind == crate::domain::AgencySubjectKind::Actor
+                    && actor_id == &subject.subject_id
+                    && subject.reachable_destination_ids.contains(destination_id) => {}
+                _ => {
+                    return Err(anyhow!(
+                        "action for subject {} has effect {:?}, which exceeds exact constituent authority",
+                        subject.subject_id,
+                        action.effect,
+                    ));
+                }
             }
+        } else if let Some(member) = slice
+            .member_exceptions
+            .iter()
+            .find(|value| value.subject_id == action.subject_id)
+        {
+            validate_action_permissions(
+                action,
+                &member.permitted_state_references,
+                &member.information_channels,
+            )?;
+            match &action.effect {
+                crate::domain::StrategicCellEffect::MemberMigration {
+                    member_id,
+                    source_gestalt_id,
+                    destination_gestalt_id,
+                    destination_location_id,
+                } if member_id == &member.member_id
+                    && source_gestalt_id == &member.source_gestalt_id
+                    && member.migration_destinations.get(destination_gestalt_id)
+                        == Some(destination_location_id) => {}
+                _ => {
+                    return Err(anyhow!(
+                        "action for named member {} exceeds exact personal authority or supplied migration destinations",
+                        member.member_id
+                    ));
+                }
+            }
+        } else {
+            return Err(anyhow!("action is attributed outside the cell"));
         }
+    }
+    Ok(())
+}
+
+fn validate_action_permissions(
+    action: &crate::domain::CellActionProposal,
+    permitted_state_references: &BTreeSet<String>,
+    information_channels: &BTreeSet<String>,
+) -> Result<()> {
+    let invalid_references = action
+        .state_references
+        .iter()
+        .filter(|reference| !permitted_state_references.contains(*reference))
+        .collect::<Vec<_>>();
+    let invalid_channels = action
+        .public_channels
+        .iter()
+        .filter(|channel| !information_channels.contains(*channel))
+        .collect::<Vec<_>>();
+    if !invalid_references.is_empty() || !invalid_channels.is_empty() {
+        return Err(anyhow!(
+            "action for subject {} borrowed forbidden state references {:?} or information channels {:?}",
+            action.subject_id,
+            invalid_references,
+            invalid_channels
+        ));
     }
     Ok(())
 }
@@ -609,9 +696,20 @@ fn constrain_cell_proposal_schema(
         .pointer_mut("/$defs/CellActionProposal/properties")
         .and_then(serde_json::Value::as_object_mut)
         .ok_or_else(|| anyhow!("cell appraisal schema has no proposal properties"))?;
+    let subject_ids = slice
+        .constituents
+        .iter()
+        .map(|value| value.subject_id.as_str())
+        .chain(
+            slice
+                .member_exceptions
+                .iter()
+                .map(|value| value.subject_id.as_str()),
+        )
+        .collect::<Vec<_>>();
     proposal.insert(
         "subject_id".into(),
-        serde_json::json!({"type":"string","enum":slice.constituents.iter().map(|value| &value.subject_id).collect::<Vec<_>>() }),
+        serde_json::json!({"type":"string","enum":subject_ids}),
     );
     Ok(())
 }
@@ -734,6 +832,7 @@ mod tests {
                 goals: vec!["publish a position".into()],
                 pressures: vec!["the vote is near".into()],
             }],
+            member_exceptions: vec![],
             shared_knowledge: BTreeSet::new(),
             shared_capabilities: BTreeSet::new(),
             perceived_events: vec!["The final vote is public.".into()],

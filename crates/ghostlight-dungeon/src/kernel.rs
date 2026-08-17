@@ -1324,7 +1324,112 @@ fn apply_strategic_tick_plan(
             public_channels: action.public_channels,
         });
     }
+
+    let mut seen_members = BTreeSet::new();
+    for action in plan.member_migrations {
+        if !seen_members.insert(action.member_id.clone()) {
+            return Err(KernelError::Invalid(
+                "gestalt member migrates twice in one strategic tick".into(),
+            ));
+        }
+        if action.summary.trim().is_empty() {
+            return Err(KernelError::Invalid(
+                "strategic member migration has no summary".into(),
+            ));
+        }
+        validate_public_channels(&action.public_channels)?;
+        crate::resolution::validate_member_migration(
+            campaign,
+            &action.member_id,
+            &action.source_gestalt_id,
+            &action.destination_gestalt_id,
+            &action.destination_location_id,
+        )
+        .map_err(|error| KernelError::Invalid(error.to_string()))?;
+        let origin = campaign.gestalt_members[&action.member_id]
+            .last_location_id
+            .clone()
+            .unwrap_or_else(|| {
+                campaign.gestalts[&action.source_gestalt_id]
+                    .home_location_id
+                    .clone()
+            });
+        rebase_member_migration(campaign, &action)?;
+        events.push(crate::domain::Event {
+            id: format!("strategic:{revision}:member:{}", action.member_id),
+            at,
+            kind: "gestalt_member_migration".into(),
+            summary: action.summary,
+            actor_ids: vec![format!("member:{}", action.member_id)],
+            institution_ids: vec![],
+            location_ids: vec![origin, action.destination_location_id],
+            public_channels: action.public_channels,
+        });
+    }
     Ok(events)
+}
+
+fn rebase_member_migration(
+    campaign: &mut Campaign,
+    action: &crate::domain::StrategicMemberMigration,
+) -> Result<(), KernelError> {
+    let effective_capabilities =
+        crate::resolution::effective_member_capabilities(campaign, &action.member_id)
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    let effective_knowledge =
+        crate::resolution::effective_member_knowledge(campaign, &action.member_id)
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    let source_goals = campaign.gestalts[&action.source_gestalt_id].goals.clone();
+    let destination = campaign.gestalts[&action.destination_gestalt_id].clone();
+    let effective_goals = {
+        let member = &campaign.gestalt_members[&action.member_id];
+        if member.goals.is_empty() {
+            source_goals
+        } else {
+            member.goals.clone()
+        }
+    };
+    let member = campaign
+        .gestalt_members
+        .get_mut(&action.member_id)
+        .expect("member migration was validated");
+    member.capability_additions = effective_capabilities
+        .difference(&destination.shared_capabilities)
+        .cloned()
+        .collect();
+    member.capability_removals = destination
+        .shared_capabilities
+        .difference(&effective_capabilities)
+        .cloned()
+        .collect();
+    member.knowledge_additions = effective_knowledge
+        .difference(&destination.shared_knowledge)
+        .cloned()
+        .collect();
+    member.knowledge_removals = destination
+        .shared_knowledge
+        .difference(&effective_knowledge)
+        .cloned()
+        .collect();
+    member.goals = if effective_goals == destination.goals {
+        vec![]
+    } else {
+        effective_goals
+    };
+    member.gestalt_id = action.destination_gestalt_id.clone();
+    member.last_location_id = Some(action.destination_location_id.clone());
+    member.version = member.version.saturating_add(1);
+    campaign
+        .gestalts
+        .get_mut(&action.source_gestalt_id)
+        .expect("source gestalt was validated")
+        .version += 1;
+    campaign
+        .gestalts
+        .get_mut(&action.destination_gestalt_id)
+        .expect("destination gestalt was validated")
+        .version += 1;
+    Ok(())
 }
 
 fn deterministic_strategic_tick(
@@ -1677,6 +1782,213 @@ mod tests {
             resolution_cover: None,
             strategic_tick_count: 0,
         }
+    }
+
+    fn hierarchical_refugee_campaign() -> Campaign {
+        let mut value = campaign();
+        value.locations.insert(
+            "camp".into(),
+            Location {
+                id: "camp".into(),
+                name: "Transit camp".into(),
+                container_id: None,
+                routes: BTreeMap::from([(
+                    "to-docks".into(),
+                    Route {
+                        destination_id: "docks".into(),
+                        distance: "across the bay".into(),
+                        travel_minutes: 90,
+                    },
+                )]),
+                persistent_features: vec!["departure board".into()],
+            },
+        );
+        value.locations.insert(
+            "docks".into(),
+            Location {
+                id: "docks".into(),
+                name: "South docks".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec!["net lofts".into()],
+            },
+        );
+        let gestalt = |id: &str,
+                       name: &str,
+                       location: &str,
+                       capabilities: &[&str],
+                       knowledge: &[&str],
+                       goals: &[&str]| GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: id.into(),
+            name: name.into(),
+            version: 0,
+            home_location_id: location.into(),
+            shared_capabilities: capabilities.iter().map(|value| (*value).into()).collect(),
+            shared_knowledge: knowledge.iter().map(|value| (*value).into()).collect(),
+            resources: BTreeSet::new(),
+            goals: goals.iter().map(|value| (*value).into()).collect(),
+            pressures: vec![],
+        };
+        value.gestalts.insert(
+            "refugees-east".into(),
+            gestalt(
+                "refugees-east",
+                "Eastern transit refugees",
+                "camp",
+                &["survive transit", "speak old dialect"],
+                &["camp alarm", "old village"],
+                &["find safety"],
+            ),
+        );
+        value.gestalts.insert(
+            "dock-neighbors".into(),
+            gestalt(
+                "dock-neighbors",
+                "South dock neighbors",
+                "docks",
+                &["repair nets"],
+                &["harbor routines", "public bulletin"],
+                &["keep the docks running"],
+            ),
+        );
+        value.gestalt_members.insert(
+            "mira".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "mira".into(),
+                gestalt_id: "refugees-east".into(),
+                version: 3,
+                name: "Mira Venn".into(),
+                capability_additions: BTreeSet::from(["weave signal cord".into()]),
+                capability_removals: BTreeSet::from(["speak old dialect".into()]),
+                knowledge_additions: BTreeSet::from(["the player kept a promise".into()]),
+                knowledge_removals: BTreeSet::from(["camp alarm".into()]),
+                equipment: BTreeSet::from(["patched blue satchel".into()]),
+                conditions: BTreeSet::from(["healed burn scar".into()]),
+                obligations: BTreeSet::from(["repay the player's help".into()]),
+                relationships: BTreeMap::from([(
+                    "player".into(),
+                    "trusts them for opening the evacuation gate".into(),
+                )]),
+                goals: vec![],
+                memories: vec!["The player carried her brother through the smoke.".into()],
+                last_location_id: Some("camp".into()),
+                materialized_actor_id: None,
+                last_relevant_revision: 7,
+                relevance_lease_until_revision: 0,
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut value);
+        value
+            .agency_profiles
+            .get_mut("refugees-east")
+            .unwrap()
+            .parent_subject_id = Some("refugees-by-destination".into());
+        value
+            .agency_profiles
+            .get_mut("dock-neighbors")
+            .unwrap()
+            .parent_subject_id = Some("southport-populations".into());
+        value.agency_relations.insert(
+            "refugee-resettlement".into(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "refugee-resettlement".into(),
+                from_subject_id: "refugees-east".into(),
+                to_subject_id: "dock-neighbors".into(),
+                kind: AgencyRelationKind::Migration,
+                strength: 90,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+        value
+    }
+
+    #[test]
+    fn member_migration_rebases_across_unrelated_hierarchy_without_changing_the_person() {
+        let mut value = hierarchical_refugee_campaign();
+        let capabilities_before =
+            crate::resolution::effective_member_capabilities(&value, "mira").unwrap();
+        let knowledge_before =
+            crate::resolution::effective_member_knowledge(&value, "mira").unwrap();
+        let identity_before = value.gestalt_members["mira"].clone();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                member_migrations: vec![StrategicMemberMigration {
+                    member_id: "mira".into(),
+                    source_gestalt_id: "refugees-east".into(),
+                    destination_gestalt_id: "dock-neighbors".into(),
+                    destination_location_id: "docks".into(),
+                    summary:
+                        "Mira takes the resettlement ferry and joins the south-dock neighbors."
+                            .into(),
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let member = &value.gestalt_members["mira"];
+        assert_eq!(member.gestalt_id, "dock-neighbors");
+        assert_eq!(member.last_location_id.as_deref(), Some("docks"));
+        assert_eq!(member.version, identity_before.version + 1);
+        assert_eq!(member.name, identity_before.name);
+        assert_eq!(member.relationships, identity_before.relationships);
+        assert_eq!(member.memories, identity_before.memories);
+        assert_eq!(member.equipment, identity_before.equipment);
+        assert_eq!(member.conditions, identity_before.conditions);
+        assert_eq!(member.obligations, identity_before.obligations);
+        assert_eq!(member.goals, vec!["find safety"]);
+        assert_eq!(
+            crate::resolution::effective_member_capabilities(&value, "mira").unwrap(),
+            capabilities_before
+        );
+        assert_eq!(
+            crate::resolution::effective_member_knowledge(&value, "mira").unwrap(),
+            knowledge_before
+        );
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].kind, "gestalt_member_migration");
+        assert_eq!(events[0].actor_ids, vec!["member:mira"]);
+
+        let actor = materialize_actor(
+            &value.gestalts["dock-neighbors"],
+            member,
+            "member:mira",
+            "docks",
+        );
+        assert_eq!(actor.name, "Mira Venn");
+        assert_eq!(actor.capabilities, capabilities_before);
+        assert_eq!(actor.knowledge, knowledge_before);
+        assert_eq!(actor.relationships, identity_before.relationships);
+        assert_eq!(actor.memories, identity_before.memories);
+    }
+
+    #[test]
+    fn member_migration_requires_the_persons_route_and_typed_population_relation() {
+        let mut value = hierarchical_refugee_campaign();
+        value.agency_relations.clear();
+        let before = value.clone();
+        let error = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                member_migrations: vec![StrategicMemberMigration {
+                    member_id: "mira".into(),
+                    source_gestalt_id: "refugees-east".into(),
+                    destination_gestalt_id: "dock-neighbors".into(),
+                    destination_location_id: "docks".into(),
+                    summary: "Mira relocates.".into(),
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("migration relation"));
+        assert_eq!(value.gestalt_members, before.gestalt_members);
     }
 
     #[tokio::test]

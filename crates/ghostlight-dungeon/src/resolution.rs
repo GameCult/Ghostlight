@@ -1652,8 +1652,24 @@ pub fn validate_and_resolve_wave(
                 summary: proposal.intended_effect,
                 public_channels: proposal.public_channels,
             }),
+            StrategicCellEffect::MemberMigration {
+                member_id,
+                source_gestalt_id,
+                destination_gestalt_id,
+                destination_location_id,
+            } => plan.member_migrations.push(StrategicMemberMigration {
+                member_id,
+                source_gestalt_id,
+                destination_gestalt_id,
+                destination_location_id,
+                summary: proposal.intended_effect,
+                public_channels: proposal.public_channels,
+            }),
         }
-        if plan.institution_actions.len() + plan.gestalt_actions.len() + plan.actor_moves.len()
+        if plan.institution_actions.len()
+            + plan.gestalt_actions.len()
+            + plan.actor_moves.len()
+            + plan.member_migrations.len()
             >= consequence_limit
         {
             break;
@@ -1667,11 +1683,16 @@ fn validate_cell_proposal(
     cell: &SimulationCell,
     proposal: &CellActionProposal,
 ) -> Result<()> {
-    if !cell.subject_ids.contains(&proposal.subject_id)
-        || proposal.subject_id == campaign.player_actor_id
+    if proposal.subject_id == campaign.player_actor_id
         || proposal.intent.trim().is_empty()
         || proposal.intended_effect.trim().is_empty()
     {
+        return Err(anyhow!("cell proposal has no exact constituent authority"));
+    }
+    if let Some(member_id) = proposal.subject_id.strip_prefix("member:") {
+        return validate_member_cell_proposal(campaign, cell, member_id, proposal);
+    }
+    if !cell.subject_ids.contains(&proposal.subject_id) {
         return Err(anyhow!("cell proposal has no exact constituent authority"));
     }
     let profile = campaign
@@ -1737,8 +1758,230 @@ fn validate_cell_proposal(
                 return Err(anyhow!("actor proposal exceeds spatial reach"));
             }
         }
+        StrategicCellEffect::MemberMigration { .. } => {
+            return Err(anyhow!(
+                "a population, institution, actor, or arena cannot migrate a named member"
+            ));
+        }
     }
     Ok(())
+}
+
+fn validate_member_cell_proposal(
+    campaign: &Campaign,
+    cell: &SimulationCell,
+    member_id: &str,
+    proposal: &CellActionProposal,
+) -> Result<()> {
+    let member = campaign
+        .gestalt_members
+        .get(member_id)
+        .filter(|member| {
+            member.materialized_actor_id.is_none() && cell.subject_ids.contains(&member.gestalt_id)
+        })
+        .ok_or_else(|| anyhow!("named member is not a dematerialized exception of this cell"))?;
+    let permitted_references = member_state_references(campaign, member_id)?;
+    let information_channels = effective_member_knowledge(campaign, member_id)?;
+    if proposal
+        .state_references
+        .iter()
+        .any(|reference| !permitted_references.contains(reference))
+        || proposal
+            .public_channels
+            .iter()
+            .any(|channel| !information_channels.contains(channel))
+    {
+        return Err(anyhow!(
+            "named member proposal borrowed another subject's state or information channel"
+        ));
+    }
+    match &proposal.effect {
+        StrategicCellEffect::MemberMigration {
+            member_id: effect_member_id,
+            source_gestalt_id,
+            destination_gestalt_id,
+            destination_location_id,
+        } if effect_member_id == member_id && source_gestalt_id == &member.gestalt_id => {
+            validate_member_migration(
+                campaign,
+                member_id,
+                source_gestalt_id,
+                destination_gestalt_id,
+                destination_location_id,
+            )
+        }
+        _ => Err(anyhow!(
+            "named member exception may propose only its own validated migration"
+        )),
+    }
+}
+
+pub fn validate_member_migration(
+    campaign: &Campaign,
+    member_id: &str,
+    source_gestalt_id: &str,
+    destination_gestalt_id: &str,
+    destination_location_id: &str,
+) -> Result<()> {
+    let member = campaign
+        .gestalt_members
+        .get(member_id)
+        .filter(|member| {
+            member.materialized_actor_id.is_none() && member.gestalt_id == source_gestalt_id
+        })
+        .ok_or_else(|| anyhow!("member migration source is stale or individually active"))?;
+    if source_gestalt_id == destination_gestalt_id {
+        return Err(anyhow!(
+            "member migration must change active population leaf"
+        ));
+    }
+    let source = campaign
+        .gestalts
+        .get(source_gestalt_id)
+        .ok_or_else(|| anyhow!("member migration source gestalt is unknown"))?;
+    let destination = campaign
+        .gestalts
+        .get(destination_gestalt_id)
+        .filter(|destination| destination.home_location_id == destination_location_id)
+        .ok_or_else(|| anyhow!("member migration destination gestalt or location is unknown"))?;
+    for gestalt_id in [source_gestalt_id, destination_gestalt_id] {
+        let profile = campaign
+            .agency_profiles
+            .get(gestalt_id)
+            .filter(|profile| {
+                profile.subject_kind == AgencySubjectKind::Gestalt
+                    && profile.active_leaf
+                    && profile.simulation_eligible
+            })
+            .ok_or_else(|| anyhow!("member migration endpoint is not an active gestalt leaf"))?;
+        if !profile
+            .location_ids
+            .contains(if gestalt_id == source_gestalt_id {
+                &source.home_location_id
+            } else {
+                &destination.home_location_id
+            })
+        {
+            return Err(anyhow!(
+                "member migration endpoint has incoherent location state"
+            ));
+        }
+    }
+    let relation_exists = campaign.agency_relations.values().any(|relation| {
+        relation.active
+            && relation.kind == AgencyRelationKind::Migration
+            && relation.from_subject_id == source_gestalt_id
+            && relation.to_subject_id == destination_gestalt_id
+    });
+    if !relation_exists {
+        return Err(anyhow!(
+            "member migration lacks an explicit source-to-destination migration relation"
+        ));
+    }
+    let origin = member
+        .last_location_id
+        .as_deref()
+        .unwrap_or(&source.home_location_id);
+    let reachable = origin == destination_location_id
+        || campaign.locations.get(origin).is_some_and(|location| {
+            location.routes.values().any(|route| {
+                route.destination_id == destination_location_id
+                    && route.travel_minutes <= campaign.tick_hours.saturating_mul(60)
+            })
+        });
+    if !reachable {
+        return Err(anyhow!("member migration exceeds the strategic horizon"));
+    }
+    Ok(())
+}
+
+pub fn member_state_references(campaign: &Campaign, member_id: &str) -> Result<BTreeSet<String>> {
+    let member = campaign
+        .gestalt_members
+        .get(member_id)
+        .ok_or_else(|| anyhow!("gestalt member is unknown"))?;
+    let gestalt = campaign
+        .gestalts
+        .get(&member.gestalt_id)
+        .ok_or_else(|| anyhow!("gestalt member baseline is unknown"))?;
+    let mut references = BTreeSet::from([
+        format!("member:{member_id}"),
+        format!("gestalt:{}", member.gestalt_id),
+        format!(
+            "location:{}",
+            member
+                .last_location_id
+                .as_deref()
+                .unwrap_or(&gestalt.home_location_id)
+        ),
+    ]);
+    references.extend(
+        effective_member_capabilities(campaign, member_id)?
+            .into_iter()
+            .map(|value| format!("capability:{value}")),
+    );
+    references.extend(
+        effective_member_knowledge(campaign, member_id)?
+            .into_iter()
+            .map(|value| format!("knowledge:{value}")),
+    );
+    references.extend(
+        member
+            .equipment
+            .iter()
+            .map(|value| format!("resource:{value}")),
+    );
+    for relation in campaign.agency_relations.values().filter(|relation| {
+        relation.active
+            && relation.kind == AgencyRelationKind::Migration
+            && relation.from_subject_id == member.gestalt_id
+    }) {
+        if let Some(destination) = campaign.gestalts.get(&relation.to_subject_id) {
+            references.insert(format!("gestalt:{}", destination.id));
+            references.insert(format!("location:{}", destination.home_location_id));
+        }
+    }
+    Ok(references)
+}
+
+pub fn effective_member_capabilities(
+    campaign: &Campaign,
+    member_id: &str,
+) -> Result<BTreeSet<String>> {
+    let member = campaign
+        .gestalt_members
+        .get(member_id)
+        .ok_or_else(|| anyhow!("gestalt member is unknown"))?;
+    let gestalt = campaign
+        .gestalts
+        .get(&member.gestalt_id)
+        .ok_or_else(|| anyhow!("gestalt member baseline is unknown"))?;
+    Ok(gestalt
+        .shared_capabilities
+        .union(&member.capability_additions)
+        .filter(|value| !member.capability_removals.contains(*value))
+        .cloned()
+        .collect())
+}
+
+pub fn effective_member_knowledge(
+    campaign: &Campaign,
+    member_id: &str,
+) -> Result<BTreeSet<String>> {
+    let member = campaign
+        .gestalt_members
+        .get(member_id)
+        .ok_or_else(|| anyhow!("gestalt member is unknown"))?;
+    let gestalt = campaign
+        .gestalts
+        .get(&member.gestalt_id)
+        .ok_or_else(|| anyhow!("gestalt member baseline is unknown"))?;
+    Ok(gestalt
+        .shared_knowledge
+        .union(&member.knowledge_additions)
+        .filter(|value| !member.knowledge_removals.contains(*value))
+        .cloned()
+        .collect())
 }
 
 pub fn subject_state_references(campaign: &Campaign, subject_id: &str) -> Result<BTreeSet<String>> {
@@ -1828,6 +2071,9 @@ fn proposal_target_key(effect: &StrategicCellEffect) -> String {
         }
         StrategicCellEffect::Gestalt { gestalt_id, .. } => format!("gestalt:{gestalt_id}"),
         StrategicCellEffect::ActorMove { actor_id, .. } => format!("actor:{actor_id}"),
+        StrategicCellEffect::MemberMigration { member_id, .. } => {
+            format!("member:{member_id}")
+        }
     }
 }
 
@@ -2332,6 +2578,133 @@ pub(crate) mod tests {
                 location_ids: vec![],
             },
         };
+        assert!(validate_and_resolve_wave(&value, &make_wave(borrowed_secret)).is_err());
+    }
+
+    #[test]
+    fn rival_arena_preserves_named_member_agency_and_exact_private_state() {
+        let mut value = campaign(0, 1);
+        let gestalt = |id: &str, name: &str, knowledge: &[&str]| GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: id.into(),
+            name: name.into(),
+            version: 0,
+            home_location_id: "center".into(),
+            shared_capabilities: BTreeSet::new(),
+            shared_knowledge: knowledge.iter().map(|value| (*value).into()).collect(),
+            resources: BTreeSet::new(),
+            goals: vec![],
+            pressures: vec![],
+        };
+        value.gestalts.insert(
+            "refugees".into(),
+            gestalt("refugees", "Transit refugees", &["camp schedule"]),
+        );
+        value.gestalts.insert(
+            "dockers".into(),
+            gestalt("dockers", "Dock residents", &["private dock code"]),
+        );
+        value.gestalt_members.insert(
+            "mira".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "mira".into(),
+                gestalt_id: "refugees".into(),
+                version: 1,
+                name: "Mira".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::from(["the player helped me".into()]),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::from([("player".into(), "trusted rescuer".into())]),
+                goals: vec!["settle somewhere safe".into()],
+                memories: vec!["escaped the fire with the player's help".into()],
+                last_location_id: Some("center".into()),
+                materialized_actor_id: None,
+                last_relevant_revision: 1,
+                relevance_lease_until_revision: 0,
+            },
+        );
+        ensure_agency_profiles(&mut value);
+        value.agency_relations.insert(
+            "rivalry".into(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "rivalry".into(),
+                from_subject_id: "refugees".into(),
+                to_subject_id: "dockers".into(),
+                kind: AgencyRelationKind::Rivalry,
+                strength: 70,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+        value.agency_relations.insert(
+            "migration".into(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "migration".into(),
+                from_subject_id: "refugees".into(),
+                to_subject_id: "dockers".into(),
+                kind: AgencyRelationKind::Migration,
+                strength: 90,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+        let demand = default_demand(&value, "resettlement under hostile pressure");
+        let cover = plan_cover(&value, demand).unwrap();
+        assert_eq!(cover.cells.len(), 1);
+        assert_eq!(cover.cells[0].mode, SimulationCellMode::Arena);
+        let proposal = CellActionProposal {
+            subject_id: "member:mira".into(),
+            intent: "take the offered berth".into(),
+            intended_effect:
+                "Mira joins the dock residents without speaking for either population.".into(),
+            priority: 5,
+            state_references: vec![
+                "member:mira".into(),
+                "knowledge:the player helped me".into(),
+            ],
+            public_channels: vec![],
+            effect: StrategicCellEffect::MemberMigration {
+                member_id: "mira".into(),
+                source_gestalt_id: "refugees".into(),
+                destination_gestalt_id: "dockers".into(),
+                destination_location_id: "center".into(),
+            },
+        };
+        let make_wave = |proposal: CellActionProposal| ResolutionWaveCommit {
+            schema: "ghostlight.resolution_wave_commit.v1".into(),
+            world_revision: value.revision,
+            resolution_epoch: value.resolution_policy.resolution_epoch,
+            plan_receipt: plan_receipt(&value, &cover),
+            appraisals: vec![CellAppraisal {
+                schema: "ghostlight.cell_appraisal.v1".into(),
+                cell_id: cover.cells[0].id.clone(),
+                world_revision: value.revision,
+                resolution_epoch: value.resolution_policy.resolution_epoch,
+                considered_subject_ids: cover.cells[0].subject_ids.clone(),
+                actions: vec![proposal],
+                inaction_reason: None,
+            }],
+            cover: cover.clone(),
+            model_receipt_hashes: vec![],
+        };
+        let plan = validate_and_resolve_wave(&value, &make_wave(proposal.clone())).unwrap();
+        assert_eq!(plan.member_migrations.len(), 1);
+
+        let mut collective_theft = proposal.clone();
+        collective_theft.subject_id = "refugees".into();
+        assert!(validate_and_resolve_wave(&value, &make_wave(collective_theft)).is_err());
+
+        let mut borrowed_secret = proposal;
+        borrowed_secret
+            .state_references
+            .push("knowledge:private dock code".into());
         assert!(validate_and_resolve_wave(&value, &make_wave(borrowed_secret)).is_err());
     }
 

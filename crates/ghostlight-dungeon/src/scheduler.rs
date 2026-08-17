@@ -4,7 +4,10 @@ use crate::{
         SimulationCell,
     },
     model::{ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
-    persona::{CellConstituentSlice, CellProjectionEngine, ExecutionPermit, PermittedCellSlice},
+    persona::{
+        CellConstituentSlice, CellMemberSlice, CellProjectionEngine, ExecutionPermit,
+        PermittedCellSlice,
+    },
     resolution::{
         cell_action_limit, default_demand, plan_cover, plan_receipt, validate_and_resolve_wave,
         validate_demand,
@@ -372,6 +375,7 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
             .map(|subject| &subject.capabilities)
             .collect(),
     );
+    let member_exceptions = member_exceptions(campaign, cell)?;
     Ok(PermittedCellSlice {
         cell_id: cell.id.clone(),
         mode: cell.mode.clone(),
@@ -382,6 +386,7 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
             campaign.id, campaign.revision, campaign.resolution_policy.resolution_epoch, cell.id
         ),
         constituents,
+        member_exceptions,
         shared_knowledge,
         shared_capabilities,
         perceived_events: campaign
@@ -405,6 +410,161 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
         max_actions: cell_action_limit(cell),
         source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
     })
+}
+
+fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<CellMemberSlice>> {
+    let player_id = &campaign.player_actor_id;
+    let mut candidates = campaign
+        .gestalt_members
+        .values()
+        .filter(|member| {
+            member.materialized_actor_id.is_none() && cell.subject_ids.contains(&member.gestalt_id)
+        })
+        .filter_map(|member| {
+            let source = campaign.gestalts.get(&member.gestalt_id)?;
+            let origin = member
+                .last_location_id
+                .clone()
+                .unwrap_or_else(|| source.home_location_id.clone());
+            let destinations = migration_destinations(campaign, &member.gestalt_id, &origin);
+            if destinations.is_empty() {
+                return None;
+            }
+            let player_relationship = member.relationships.contains_key(player_id) as u8;
+            let personal_pressure = (!member.conditions.is_empty()
+                || !member.obligations.is_empty()
+                || !member.goals.is_empty()) as u8;
+            Some((
+                player_relationship,
+                personal_pressure,
+                member.last_relevant_revision,
+                member.id.clone(),
+                origin,
+                destinations,
+            ))
+        })
+        .collect::<Vec<_>>();
+    candidates.sort_by(|left, right| {
+        right
+            .0
+            .cmp(&left.0)
+            .then_with(|| right.1.cmp(&left.1))
+            .then_with(|| right.2.cmp(&left.2))
+            .then_with(|| left.3.cmp(&right.3))
+    });
+    candidates
+        .into_iter()
+        .take(cell_action_limit(cell).min(4))
+        .map(|(_, _, _, member_id, origin, destinations)| {
+            let member = &campaign.gestalt_members[&member_id];
+            let source = &campaign.gestalts[&member.gestalt_id];
+            let capabilities = overlay(
+                &source.shared_capabilities,
+                &member.capability_additions,
+                &member.capability_removals,
+            );
+            let knowledge = overlay(
+                &source.shared_knowledge,
+                &member.knowledge_additions,
+                &member.knowledge_removals,
+            );
+            let goals = if member.goals.is_empty() {
+                source.goals.clone()
+            } else {
+                member.goals.clone()
+            };
+            let mut permitted_state_references = BTreeSet::from([
+                format!("member:{}", member.id),
+                format!("gestalt:{}", member.gestalt_id),
+                format!("location:{origin}"),
+            ]);
+            permitted_state_references.extend(
+                capabilities
+                    .iter()
+                    .map(|value| format!("capability:{value}")),
+            );
+            permitted_state_references
+                .extend(knowledge.iter().map(|value| format!("knowledge:{value}")));
+            permitted_state_references.extend(
+                member
+                    .equipment
+                    .iter()
+                    .map(|value| format!("resource:{value}")),
+            );
+            for (gestalt_id, location_id) in &destinations {
+                permitted_state_references.insert(format!("gestalt:{gestalt_id}"));
+                permitted_state_references.insert(format!("location:{location_id}"));
+            }
+            Ok(CellMemberSlice {
+                subject_id: format!("member:{}", member.id),
+                member_id: member.id.clone(),
+                name: member.name.clone(),
+                source_gestalt_id: member.gestalt_id.clone(),
+                source_location_id: origin,
+                knowledge: knowledge.clone(),
+                capabilities,
+                resources: member.equipment.clone(),
+                information_channels: knowledge,
+                permitted_state_references,
+                migration_destinations: destinations,
+                goals,
+                pressures: member
+                    .conditions
+                    .iter()
+                    .chain(&member.obligations)
+                    .cloned()
+                    .collect(),
+                relationships: member.relationships.clone(),
+                memories: member.memories.clone(),
+            })
+        })
+        .collect()
+}
+
+fn migration_destinations(
+    campaign: &Campaign,
+    source_gestalt_id: &str,
+    origin_location_id: &str,
+) -> BTreeMap<String, String> {
+    campaign
+        .agency_relations
+        .values()
+        .filter(|relation| {
+            relation.active
+                && relation.kind == crate::domain::AgencyRelationKind::Migration
+                && relation.from_subject_id == source_gestalt_id
+        })
+        .filter_map(|relation| {
+            let destination = campaign.gestalts.get(&relation.to_subject_id)?;
+            let profile = campaign.agency_profiles.get(&destination.id)?;
+            if !profile.active_leaf || !profile.simulation_eligible {
+                return None;
+            }
+            let reachable = origin_location_id == destination.home_location_id
+                || campaign
+                    .locations
+                    .get(origin_location_id)
+                    .is_some_and(|location| {
+                        location.routes.values().any(|route| {
+                            route.destination_id == destination.home_location_id
+                                && route.travel_minutes <= campaign.tick_hours.saturating_mul(60)
+                        })
+                    });
+            reachable.then(|| (destination.id.clone(), destination.home_location_id.clone()))
+        })
+        .collect()
+}
+
+fn overlay(
+    baseline: &BTreeSet<String>,
+    additions: &BTreeSet<String>,
+    removals: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    baseline
+        .union(additions)
+        .filter(|value| !removals.contains(*value))
+        .cloned()
+        .collect()
 }
 
 fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSlice> {
@@ -606,6 +766,100 @@ mod tests {
                 .as_array()
                 .unwrap()
                 .is_empty()
+        );
+    }
+
+    #[test]
+    fn cell_slice_projects_only_actionable_salient_member_exceptions() {
+        use crate::domain::*;
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let gestalt = |id: &str, name: &str| GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: id.into(),
+            name: name.into(),
+            version: 0,
+            home_location_id: "center".into(),
+            shared_capabilities: BTreeSet::new(),
+            shared_knowledge: BTreeSet::new(),
+            resources: BTreeSet::new(),
+            goals: vec![],
+            pressures: vec![],
+        };
+        campaign
+            .gestalts
+            .insert("refugees".into(), gestalt("refugees", "Refugees"));
+        campaign
+            .gestalts
+            .insert("neighbors".into(), gestalt("neighbors", "Neighbors"));
+        let member = |id: &str, player_relationship: bool| GestaltMemberDelta {
+            schema: "ghostlight.gestalt_member_delta.v1".into(),
+            id: id.into(),
+            gestalt_id: "refugees".into(),
+            version: 1,
+            name: id.into(),
+            capability_additions: BTreeSet::new(),
+            capability_removals: BTreeSet::new(),
+            knowledge_additions: BTreeSet::new(),
+            knowledge_removals: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: if player_relationship {
+                BTreeMap::from([("player".into(), "trusted rescuer".into())])
+            } else {
+                BTreeMap::new()
+            },
+            goals: vec!["find a home".into()],
+            memories: vec![],
+            last_location_id: Some("center".into()),
+            materialized_actor_id: None,
+            last_relevant_revision: 1,
+            relevance_lease_until_revision: 0,
+        };
+        campaign
+            .gestalt_members
+            .insert("mira".into(), member("mira", true));
+        campaign
+            .gestalt_members
+            .insert("other".into(), member("other", false));
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        campaign.agency_relations.insert(
+            "migration".into(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "migration".into(),
+                from_subject_id: "refugees".into(),
+                to_subject_id: "neighbors".into(),
+                kind: AgencyRelationKind::Migration,
+                strength: 90,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+        let cover = crate::resolution::plan_cover(
+            &campaign,
+            crate::resolution::default_demand(&campaign, "resettlement"),
+        )
+        .unwrap();
+        let slice = cell_slice(&campaign, &cover.cells[0]).unwrap();
+        assert_eq!(slice.member_exceptions.len(), 2);
+        assert_eq!(slice.member_exceptions[0].member_id, "mira");
+        assert_eq!(
+            slice.member_exceptions[0]
+                .migration_destinations
+                .get("neighbors")
+                .map(String::as_str),
+            Some("center")
+        );
+        assert!(
+            slice.member_exceptions[0]
+                .permitted_state_references
+                .contains("member:mira")
+        );
+        assert!(
+            !serde_json::to_string(&slice)
+                .unwrap()
+                .contains("private dock code")
         );
     }
 
