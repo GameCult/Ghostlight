@@ -95,8 +95,12 @@ is capped so a large population does not dump its roster into the prompt. A
 member may migrate only along an explicit active `migration` relation to a
 reachable destination leaf. At any active leaf, the same member may instead
 emit a `member_activity` from their exact location toward their current
-population or a graph-adjacent subject. Migration and ordinary activity share
-one per-member strategic action slot. This lets a refugee who mattered during
+population, an explicitly related subject, or another selected named person or
+active subject at that exact location. Only the capped salient member
+exceptions exposed to the cell may appear as named targets in its prompt;
+canonical validation still checks the target's identity and current location.
+Migration and ordinary activity share one per-member strategic action slot.
+This lets a refugee who mattered during
 a crisis choose to travel, offer work after settling, and later rematerialize
 as the same person without forcing every refugee to consume an active Persona
 cell or giving their agency to the destination Gestalt.
@@ -275,8 +279,10 @@ prose is not a pressure.
 Populations may instead propose a bounded `gestalt_activity`: prepare,
 coordinate, investigate, recruit, obstruct, trade, or communicate. Its source
 is an exact active gestalt leaf; its targets must be adjacent canonical agency
-subjects; its locations and channels must belong to the source's permitted
-slice. The effect commits only an attributed attempted-activity event. It does
+subjects through an explicit active relation or exact shared location. A
+dormant named person is addressable as `member:<id>` without becoming gestalt
+state. Its locations and channels must belong to the source's permitted slice.
+The effect commits only an attributed attempted-activity event. It does
 not claim successful discovery, recruitment, persuasion, delivery, exchange,
 obstruction, preparation, or target response. Event records carry exact
 gestalt participant IDs so later demand and perception can attribute the

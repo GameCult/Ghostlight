@@ -71,16 +71,20 @@ bounded local validation failures.
 Gestalt background choices use two distinct typed paths. Pressure transitions
 change exact unresolved markers. `gestalt_activity` records an attributed
 preparation, coordination, investigation, recruitment, obstruction, trade, or
-communication attempt against graph-adjacent subjects without claiming the
-outcome. The kernel derives the event text and exact gestalt participant IDs;
-the arena and model prose own neither.
+communication attempt against subjects connected by an explicit agency
+relation or exact shared location without claiming the outcome. A selected
+dormant member can be addressed by their durable ID; this does not union them
+into the source population. The kernel derives the event text and exact
+participant IDs; the arena and model prose own neither.
 
 Salient dormant members have their own `member_activity` path for ordinary
 local attempts. It uses the same bounded verbs, the member's exact location,
-their current leaf plus graph-adjacent targets, and their own state/channel
-permissions. Migration and activity conflict on one member key. A destination
-population cannot inherit the person's offer, speech, or decision merely
-because the cover placed them in the same arena.
+their current leaf plus explicitly related or exactly co-located targets, and
+their own state/channel permissions. Only the capped salient member exceptions
+selected for the cell enter any prompt or can be named there. Migration and
+activity conflict on one member key. A destination population cannot inherit
+the person's offer, speech, or decision merely because the cover placed them
+in the same arena.
 
 Population scale uses reversible individuation:
 

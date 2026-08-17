@@ -382,11 +382,26 @@ fn resolution_demand_context(campaign: &Campaign) -> (Vec<String>, serde_json::V
 }
 
 fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCellSlice> {
-    let constituents = cell
+    let mut member_exceptions = member_exceptions(campaign, cell)?;
+    let selected_member_ids = member_exceptions
+        .iter()
+        .map(|member| member.subject_id.clone())
+        .collect::<BTreeSet<_>>();
+    let mut constituents = cell
         .subject_ids
         .iter()
         .map(|id| constituent_slice(campaign, id))
         .collect::<Result<Vec<_>>>()?;
+    for subject in &mut constituents {
+        subject.activity_target_ids.retain(|target| {
+            !target.starts_with("member:") || selected_member_ids.contains(target)
+        });
+    }
+    for member in &mut member_exceptions {
+        member.activity_target_ids.retain(|target| {
+            !target.starts_with("member:") || selected_member_ids.contains(target)
+        });
+    }
     let shared_knowledge = intersection(
         constituents
             .iter()
@@ -399,7 +414,6 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
             .map(|subject| &subject.capabilities)
             .collect(),
     );
-    let member_exceptions = member_exceptions(campaign, cell)?;
     let perceived_events = cell_perceived_events(campaign, &constituents, &member_exceptions);
     Ok(PermittedCellSlice {
         cell_id: cell.id.clone(),
@@ -934,6 +948,11 @@ mod tests {
         campaign
             .gestalt_members
             .insert("other".into(), member("other", false));
+        for member_id in ["third", "fourth", "fifth", "sixth", "seventh"] {
+            campaign
+                .gestalt_members
+                .insert(member_id.into(), member(member_id, false));
+        }
         crate::resolution::ensure_agency_profiles(&mut campaign);
         campaign.agency_relations.insert(
             "migration".into(),
@@ -972,6 +991,31 @@ mod tests {
             slice.member_exceptions[0]
                 .activity_target_ids
                 .contains("refugees")
+        );
+        let selected_member_ids = slice
+            .member_exceptions
+            .iter()
+            .map(|member| member.subject_id.clone())
+            .collect::<BTreeSet<_>>();
+        assert!(selected_member_ids.contains("member:mira"));
+        assert!(slice.constituents.iter().all(|constituent| {
+            constituent
+                .activity_target_ids
+                .iter()
+                .filter(|target| target.starts_with("member:"))
+                .all(|target| selected_member_ids.contains(target))
+        }));
+        assert!(slice.member_exceptions.iter().all(|member| {
+            member
+                .activity_target_ids
+                .iter()
+                .filter(|target| target.starts_with("member:"))
+                .all(|target| selected_member_ids.contains(target))
+        }));
+        assert!(
+            !serde_json::to_string(&slice)
+                .unwrap()
+                .contains("member:seventh")
         );
         assert!(
             !serde_json::to_string(&slice)

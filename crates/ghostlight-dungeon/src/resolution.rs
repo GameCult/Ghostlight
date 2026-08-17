@@ -2245,7 +2245,7 @@ pub fn subject_state_references(campaign: &Campaign, subject_id: &str) -> Result
 }
 
 pub fn strategic_activity_targets(campaign: &Campaign, subject_id: &str) -> BTreeSet<String> {
-    campaign
+    let mut targets = campaign
         .agency_relations
         .values()
         .filter(|relation| relation.active)
@@ -2259,7 +2259,32 @@ pub fn strategic_activity_targets(campaign: &Campaign, subject_id: &str) -> BTre
             }
         })
         .filter(|target| target != subject_id && campaign.agency_profiles.contains_key(target))
-        .collect()
+        .collect::<BTreeSet<_>>();
+    if let Some(source) = campaign.agency_profiles.get(subject_id) {
+        targets.extend(
+            campaign
+                .agency_profiles
+                .values()
+                .filter(|target| {
+                    target.subject_id != subject_id
+                        && target.active_leaf
+                        && target.simulation_eligible
+                        && !source.location_ids.is_disjoint(&target.location_ids)
+                })
+                .map(|target| target.subject_id.clone()),
+        );
+        targets.extend(campaign.gestalt_members.values().filter_map(|member| {
+            if member.materialized_actor_id.is_some() {
+                return None;
+            }
+            let location = dormant_member_location(campaign, &member.id).ok()?;
+            source
+                .location_ids
+                .contains(&location)
+                .then(|| format!("member:{}", member.id))
+        }));
+    }
+    targets
 }
 
 pub fn member_activity_targets(campaign: &Campaign, member_id: &str) -> Result<BTreeSet<String>> {
@@ -2271,6 +2296,7 @@ pub fn member_activity_targets(campaign: &Campaign, member_id: &str) -> Result<B
     dormant_member_location(campaign, member_id)?;
     let mut targets = strategic_activity_targets(campaign, &member.gestalt_id);
     targets.insert(member.gestalt_id.clone());
+    targets.remove(&format!("member:{member_id}"));
     Ok(targets)
 }
 
@@ -3116,8 +3142,31 @@ pub(crate) mod tests {
         else {
             unreachable!()
         };
-        *target_subject_ids = vec!["player".into()];
+        *target_subject_ids = vec!["unseen-stranger".into()];
         assert!(validate_and_resolve_wave(&value, &make_wave(invented_target)).is_err());
+
+        assert!(strategic_activity_targets(&value, "dockers").contains("member:mira"));
+        let address_mira = CellActionProposal {
+            subject_id: "dockers".into(),
+            intent: "offer Mira paid work unloading the next boat".into(),
+            intended_effect: "make the offer without deciding Mira's response".into(),
+            priority: 75,
+            state_references: vec!["subject:dockers".into()],
+            public_channels: vec![],
+            effect: StrategicCellEffect::GestaltActivity {
+                gestalt_id: "dockers".into(),
+                activity: StrategicActivityKind::Communicate,
+                target_subject_ids: vec!["member:mira".into()],
+                location_ids: vec!["center".into()],
+            },
+        };
+        let address_plan = validate_and_resolve_wave(&value, &make_wave(address_mira)).unwrap();
+        assert_eq!(address_plan.gestalt_activities.len(), 1);
+        assert_eq!(address_plan.gestalt_activities[0].gestalt_id, "dockers");
+        assert_eq!(
+            address_plan.gestalt_activities[0].target_subject_ids,
+            vec!["member:mira"]
+        );
     }
 
     #[test]

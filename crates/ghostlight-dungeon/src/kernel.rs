@@ -1421,6 +1421,17 @@ fn apply_strategic_tick_plan(
             .filter(|target| campaign.institutions.contains_key(*target))
             .cloned()
             .collect();
+        let actor_ids = action
+            .target_subject_ids
+            .iter()
+            .filter(|target| {
+                campaign.actors.contains_key(*target)
+                    || target
+                        .strip_prefix("member:")
+                        .is_some_and(|member_id| campaign.gestalt_members.contains_key(member_id))
+            })
+            .cloned()
+            .collect();
         let mut gestalt_ids = vec![action.gestalt_id.clone()];
         gestalt_ids.extend(
             action
@@ -1437,7 +1448,7 @@ fn apply_strategic_tick_plan(
             at,
             kind: "gestalt_activity".into(),
             summary: strategic_activity_summary(&gestalt.name, &action.activity, &target_names),
-            actor_ids: vec![],
+            actor_ids,
             institution_ids,
             gestalt_ids,
             location_ids: locations,
@@ -1553,6 +1564,21 @@ fn apply_strategic_tick_plan(
             .filter(|target| campaign.institutions.contains_key(*target))
             .cloned()
             .collect();
+        let mut actor_ids = vec![format!("member:{}", action.member_id)];
+        actor_ids.extend(
+            action
+                .target_subject_ids
+                .iter()
+                .filter(|target| {
+                    campaign.actors.contains_key(*target)
+                        || target.strip_prefix("member:").is_some_and(|member_id| {
+                            campaign.gestalt_members.contains_key(member_id)
+                        })
+                })
+                .cloned(),
+        );
+        actor_ids.sort();
+        actor_ids.dedup();
         let mut gestalt_ids = vec![action.source_gestalt_id.clone()];
         gestalt_ids.extend(
             action
@@ -1568,7 +1594,7 @@ fn apply_strategic_tick_plan(
             at,
             kind: "gestalt_member_activity".into(),
             summary: strategic_activity_summary(&member.name, &action.activity, &target_names),
-            actor_ids: vec![format!("member:{}", action.member_id)],
+            actor_ids,
             institution_ids,
             gestalt_ids,
             location_ids: action.location_ids,
@@ -1654,6 +1680,13 @@ fn strategic_activity_summary(
 }
 
 fn agency_subject_name(campaign: &Campaign, subject_id: &str) -> Result<String, KernelError> {
+    if let Some(member_id) = subject_id.strip_prefix("member:") {
+        return campaign
+            .gestalt_members
+            .get(member_id)
+            .map(|value| value.name.clone())
+            .ok_or_else(|| KernelError::Invalid("strategic activity target vanished".into()));
+    }
     campaign
         .actors
         .get(subject_id)
@@ -2357,6 +2390,62 @@ mod tests {
         );
         assert!(events[0].actor_ids.is_empty());
         assert!(events[0].institution_ids.is_empty());
+    }
+
+    #[test]
+    fn colocated_gestalt_can_address_a_dormant_member_without_absorbing_their_agency() {
+        let mut value = hierarchical_refugee_campaign();
+        value
+            .gestalt_members
+            .get_mut("mira")
+            .unwrap()
+            .last_location_id = Some("docks".into());
+        value.gestalt_members.get_mut("mira").unwrap().gestalt_id = "dock-neighbors".into();
+        let before = value.clone();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    gestalt_id: "dock-neighbors".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec!["member:mira".into()],
+                    location_ids: vec!["docks".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(value, before);
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].summary,
+            "South dock neighbors sends a communication to Mira Venn."
+        );
+        assert_eq!(events[0].actor_ids, vec!["member:mira"]);
+        assert_eq!(events[0].gestalt_ids, vec!["dock-neighbors"]);
+    }
+
+    #[test]
+    fn gestalt_cannot_address_a_dormant_member_at_another_location() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let error = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    gestalt_id: "dock-neighbors".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec!["member:mira".into()],
+                    location_ids: vec!["docks".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("exact graph or location scope"));
+        assert_eq!(value, before);
     }
 
     #[test]

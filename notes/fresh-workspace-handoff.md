@@ -81,6 +81,15 @@ knowledge, and channel scope. It shares the person's resolution key with
 migration and emits an attempt event without mutating the member delta or
 letting a containing arena or destination Gestalt steal the choice.
 
+The next live failure exposed a reciprocal reach gap rather than a Persona
+problem: South Harbor residents could perceive settled Mira but their typed
+target list contained only explicit agency relations. Strategic activity reach
+now includes exact shared location as well as explicit relations. Dormant named
+people remain exact `member:<id>` targets, and the scheduler filters every cell
+slice to its capped salient member exceptions so a crowded location cannot dump
+its roster into a prompt. Resolver and WorldKernel independently revalidate
+identity, location, attribution, and attempt-only semantics.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without
