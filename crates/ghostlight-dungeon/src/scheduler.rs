@@ -411,17 +411,30 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
         world_clock_pressure: campaign
             .clocks
             .values()
-            .map(|clock| {
-                format!(
-                    "{}: {}/{}; consequence {}",
-                    clock.label, clock.progress, clock.threshold, clock.consequence
-                )
-            })
+            .map(project_world_clock_pressure)
             .collect(),
         detail_focus_subject_id: cell.detail_focus_subject_id.clone(),
         max_actions: cell_action_limit(cell),
         source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
     })
+}
+
+fn project_world_clock_pressure(clock: &crate::domain::WorldClock) -> String {
+    if clock.progress >= clock.threshold {
+        format!(
+            "{}: threshold reached ({}/{}); declared consequence: {}",
+            clock.label, clock.progress, clock.threshold, clock.consequence
+        )
+    } else {
+        format!(
+            "{}: progress {} of {}; {} step(s) remain before declared consequence: {}",
+            clock.label,
+            clock.progress,
+            clock.threshold,
+            clock.threshold.saturating_sub(clock.progress),
+            clock.consequence
+        )
+    }
 }
 
 fn cell_perceived_events(
@@ -726,6 +739,26 @@ mod tests {
         active: AtomicUsize,
         maximum: AtomicUsize,
         malformed_cell: bool,
+    }
+
+    #[test]
+    fn clock_projection_distinguishes_remaining_time_from_reached_consequence() {
+        let mut clock = crate::domain::WorldClock {
+            id: "ferry".into(),
+            label: "Last protected ferry".into(),
+            progress: 3,
+            threshold: 4,
+            consequence: "the camp is cut off by the storm".into(),
+        };
+        assert_eq!(
+            project_world_clock_pressure(&clock),
+            "Last protected ferry: progress 3 of 4; 1 step(s) remain before declared consequence: the camp is cut off by the storm"
+        );
+        clock.progress = 4;
+        assert_eq!(
+            project_world_clock_pressure(&clock),
+            "Last protected ferry: threshold reached (4/4); declared consequence: the camp is cut off by the storm"
+        );
     }
 
     impl CellFixtureModel {

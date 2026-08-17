@@ -657,7 +657,7 @@ fn append_cell_correction(
     rejected_appraisal: &str,
 ) {
     request.lived_stream.push_str(&format!(
-        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS APPRAISAL: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. Change or remove every action that is unsupported or exceeds its attributed subject's permissions; explicit inaction is valid."
+        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS APPRAISAL: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. Change or remove every action that is unsupported or exceeds its attributed subject's permissions. Every retained action must still carry a valid non-empty typed transition under the original contract. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and use explicit inaction; never emit an empty transition or upgrade consideration into a completed consequence."
     ));
 }
 
@@ -1354,6 +1354,36 @@ mod tests {
         let result = engine.execute(slice).await.unwrap();
         assert_eq!(result.stage_receipts.len(), 3);
         assert_eq!(result.proposals.reaction_priority, 0);
+    }
+
+    #[test]
+    fn semantic_correction_restates_non_empty_effect_contract() {
+        let mut request = ModelStageRequest {
+            stage: "cell_interpreter".into(),
+            model: "flash".into(),
+            snapshot_binding: "campaign:one:revision:2".into(),
+            lived_stream: "original contract".into(),
+            output_schema: None,
+            source_receipt_ids: vec![],
+            temperature: Some(0.0),
+            max_output_tokens: Some(100),
+        };
+        append_cell_correction(
+            &mut request,
+            &anyhow::anyhow!("the typed effect was unsupported"),
+            r#"{"actions":[{"effect":{"type":"gestalt"}}]}"#,
+        );
+        assert!(
+            request
+                .lived_stream
+                .contains("valid non-empty typed transition")
+        );
+        assert!(
+            request
+                .lived_stream
+                .contains("preparation, inspection, request, or deliberation")
+        );
+        assert!(request.lived_stream.contains("use explicit inaction"));
     }
 }
 
