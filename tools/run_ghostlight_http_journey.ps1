@@ -48,6 +48,7 @@ $tokens = 1..2 | ForEach-Object {
 }
 $inviteMaterial = $tokens -join ','
 $daemonGeneration = 0
+$journeyStartedAt = [DateTimeOffset]::UtcNow
 
 function Save-Json([string]$Name, $Value) {
     $path = Join-Path $resolvedRoot "boundary\$Name.json"
@@ -269,6 +270,13 @@ try {
     $beforeFork = Get-SelectedCampaign $testerOne
     $surfaceAfter = Invoke-JourneyRequest -Method GET -Path '/api/surface' -Session $testerOne
     Save-Json 'surface-after-turns' $surfaceAfter | Out-Null
+    $operatorAfter = Invoke-JourneyRequest -Method GET -Path '/api/operator' -Session $testerOne
+    Save-Json 'operator-after-turns' $operatorAfter | Out-Null
+    $operatorTypedNode = Find-EveNode $operatorAfter.surface.root 'dungeon.operator.typed'
+    if (-not $operatorTypedNode) {
+        throw 'Operator surface omitted its typed inspector projection'
+    }
+    $operatorTyped = [string]$operatorTypedNode.props.value | ConvertFrom-Json -Depth 100
 
     $fork = Invoke-JourneyRequest -Method POST -Path '/api/campaigns/fork' -Session $testerOne -Body @{ name = 'The Embargo Ledger — Fork' }
     Save-Json 'fork' $fork | Out-Null
@@ -305,12 +313,40 @@ try {
     $story = Find-EveNode $reloadedSurface.surface.root 'dungeon.transcript'
     $narrations = @($story.children | Where-Object id -like 'narration-*')
     $transcript = @($story.children | Where-Object id -like 'turn-*')
+    $storyRevisions = @($story.children | ForEach-Object {
+        if ([string]$_.id -match '^(?:narration|turn)-(\d+)') { [uint64]$Matches[1] }
+    })
+    for ($index = 1; $index -lt $storyRevisions.Count; $index++) {
+        if ($storyRevisions[$index] -lt $storyRevisions[$index - 1]) {
+            throw 'Player story projection is not chronological by campaign revision'
+        }
+    }
+    $stageReceipts = @($operatorTyped.model_stage_receipts)
+    $providerAttempts = @($stageReceipts | ForEach-Object { @($_.provider_attempts) })
+    $tokenUsage = @($providerAttempts | ForEach-Object { $_.token_usage } | Where-Object { $null -ne $_ })
+    $promptTokens = [uint64](($tokenUsage | Measure-Object prompt_tokens -Sum).Sum ?? 0)
+    $cacheHitTokens = [uint64](($tokenUsage | Measure-Object prompt_cache_hit_tokens -Sum).Sum ?? 0)
+    $completionTokens = [uint64](($tokenUsage | Measure-Object completion_tokens -Sum).Sum ?? 0)
+    $stageRollup = @($stageReceipts | Group-Object stage | ForEach-Object {
+        $groupAttempts = @($_.Group | ForEach-Object { @($_.provider_attempts) })
+        $groupUsage = @($groupAttempts | ForEach-Object { $_.token_usage } | Where-Object { $null -ne $_ })
+        [ordered]@{
+            stage = $_.Name
+            receipts = $_.Count
+            attempts = $groupAttempts.Count
+            invalid_receipts = @($_.Group | Where-Object validation_result -ne 'valid').Count
+            prompt_tokens = [uint64](($groupUsage | Measure-Object prompt_tokens -Sum).Sum ?? 0)
+            cache_hit_tokens = [uint64](($groupUsage | Measure-Object prompt_cache_hit_tokens -Sum).Sum ?? 0)
+            completion_tokens = [uint64](($groupUsage | Measure-Object completion_tokens -Sum).Sum ?? 0)
+        }
+    })
     $commit = (& git -C $SourceRoot rev-parse HEAD).Trim()
     $summary = [ordered]@{
         schema = 'ghostlight.http_journey_smoke.v1'
         source_commit = $commit
         production_runtime_touched = $false
         listener = "127.0.0.1:$Port"
+        elapsed_seconds = ([DateTimeOffset]::UtcNow - $journeyStartedAt).TotalSeconds
         startup_health = $healthBefore.status
         restart_health = $healthAfter.status
         unauthenticated_status = [int]$unauthorized.StatusCode
@@ -332,6 +368,15 @@ try {
         roll = $attempt.receipt.roll
         narration_count = $narrations.Count
         transcript_count = $transcript.Count
+        story_revisions = $storyRevisions
+        world_commit_count = @($operatorTyped.commit_receipts).Count
+        model_stage_count = $stageReceipts.Count
+        provider_attempt_count = $providerAttempts.Count
+        prompt_tokens = $promptTokens
+        cache_hit_tokens = $cacheHitTokens
+        cache_hit_ratio = if ($promptTokens -gt 0) { $cacheHitTokens / $promptTokens } else { 0 }
+        completion_tokens = $completionTokens
+        stage_rollup = $stageRollup
         export_bytes = (Get-Item -LiteralPath $exportPath).Length
         evidence_paths = Get-ChildItem -LiteralPath (Join-Path $resolvedRoot 'boundary') -File | Select-Object -ExpandProperty FullName
     }
