@@ -233,6 +233,14 @@ Projector → Persona → Interpreter membrane:
 - Interpreters emit a typed appraisal and exact constituent effects;
 - malformed or semantically invalid output gets one same-snapshot correction.
 
+An arena may contain simultaneous views from distant locations. The Projector
+names each subject's actual location and keeps those views as separate scenes;
+a graph relation or activity target grants permission to attempt contact, not
+fictional co-presence. The Persona preserves those spatial boundaries unless
+the lived stream explicitly establishes an exact shared location or
+communication channel. Compression therefore cannot turn a regional arena
+into one impossible meeting room.
+
 Physical provider concurrency batches these pipelines behind a separate
 operator limit, default 8. Changing that limit increments only
 `provider_configuration_epoch`; it preserves the selected cover, resolution
@@ -301,6 +309,14 @@ An arena cannot translate the person's attempt into a collective action, and
 the destination population cannot claim the person's voice. `member_activity`
 and `member_migration` resolve under one exact member key, so only the
 higher-priority compatible choice can commit in a wave.
+
+The Interpreter maps natural attempts narrowly: speech, offers, requests, and
+notices are communication; coordination requires an actual attempt to arrange
+joint work; preparation is the source's own concrete work; investigation seeks
+information; recruitment invites participation; trade offers exchange; and
+obstruction attempts interference. `intended_effect` repeats the attempted act,
+not the hoped-for outcome. This keeps the semantic verifier focused on agency
+and consequence rather than guessing what a broad activity label meant.
 
 Semantic correction feedback names the exact failed boundary and current
 value. A repeated institution posture receives its present posture; an invalid

@@ -68,6 +68,13 @@ the planner already owns. Stable prompt prefixes are deliberately placed before
 dynamic state, and provider receipts expose per-attempt token/cache usage plus
 bounded local validation failures.
 
+Arena projection preserves spatial partitions as well as identity partitions.
+Each remote view carries its actual location; a relation grants potential
+reach, not co-presence. Persona turns cannot stage direct sight, speech, or
+response across locations unless the lived stream establishes a shared place
+or communication channel. Interpreter activity labels then describe the
+narrow attempted act, while hoped-for success remains outside the effect.
+
 Gestalt background choices use two distinct typed paths. Pressure transitions
 change exact unresolved markers. `gestalt_activity` records an attributed
 preparation, coordination, investigation, recruitment, obstruction, trade, or

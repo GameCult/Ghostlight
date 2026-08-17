@@ -90,6 +90,15 @@ slice to its capped salient member exceptions so a crowded location cannot dump
 its roster into a prompt. Resolver and WorldKernel independently revalidate
 identity, location, attribution, and attempt-only semantics.
 
+The first run after that repair failed safely for a different reason. The
+budget-one arena Projector showed the transit camp and South Harbor as parallel
+views, but the Persona staged a direct conversation across the bay. The
+Interpreter also widened offers and ongoing loading into successful integration
+and ensured departure. Arena projection now states and preserves remote scene
+boundaries, and Interpreter guidance defines the activity vocabulary as narrow
+attempts with attempt-only `intended_effect`. No kernel rule or world-state
+compensator was added.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without
