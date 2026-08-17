@@ -399,8 +399,19 @@ fn execute(
             }
             if let Some(wave) = &resolution_wave {
                 let unique_hashes: BTreeSet<_> = wave.model_receipt_hashes.iter().collect();
+                let actionful_cell_count = wave
+                    .appraisals
+                    .iter()
+                    .filter(|appraisal| !appraisal.actions.is_empty())
+                    .count();
                 if unique_hashes.len() != wave.model_receipt_hashes.len()
-                    || wave.model_receipt_hashes.len() < wave.cover.cells.len().saturating_mul(3)
+                    || wave.model_receipt_hashes.len()
+                        < wave
+                            .cover
+                            .cells
+                            .len()
+                            .saturating_mul(3)
+                            .saturating_add(actionful_cell_count)
                 {
                     return Err(KernelError::Invalid(
                         "resolution wave does not carry one distinct stage receipt per cell stage"
@@ -422,8 +433,10 @@ fn execute(
                             "resolution wave contains a mismatched model receipt".into(),
                         ));
                     }
-                    stage_bindings
-                        .insert((receipt.stage.clone(), receipt.snapshot_binding.clone()));
+                    if receipt.validation_result == "valid" {
+                        stage_bindings
+                            .insert((receipt.stage.clone(), receipt.snapshot_binding.clone()));
+                    }
                 }
                 for cell in &wave.cover.cells {
                     let binding = format!(
@@ -440,6 +453,20 @@ fn execute(
                                 cell.id
                             )));
                         }
+                    }
+                    let actionful = wave
+                        .appraisals
+                        .iter()
+                        .find(|appraisal| appraisal.cell_id == cell.id)
+                        .is_some_and(|appraisal| !appraisal.actions.is_empty());
+                    if actionful
+                        && !stage_bindings
+                            .contains(&("cell_effect_verifier".into(), binding.clone()))
+                    {
+                        return Err(KernelError::Invalid(format!(
+                            "resolution wave lacks cell_effect_verifier receipt for {}",
+                            cell.id
+                        )));
                     }
                 }
             }
@@ -3297,6 +3324,89 @@ mod tests {
         assert_eq!(store.keys("cell_appraisal.v1").unwrap().len(), cell_count);
         assert_eq!(store.keys("resolution_plan_receipt.v1").unwrap().len(), 1);
         assert_eq!(store.keys("strategic_tick.v1").unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn invalid_effect_verifier_receipt_cannot_authorize_an_actionful_cell() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = crate::resolution::tests::campaign(3, 1);
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        let mut wave = inaction_wave(&persisted, &store);
+        let subject_id = wave.cover.cells[0]
+            .subject_ids
+            .iter()
+            .next()
+            .unwrap()
+            .clone();
+        wave.appraisals[0].actions = vec![CellActionProposal {
+            subject_id: subject_id.clone(),
+            intent: "adopt a new position".into(),
+            intended_effect: "publish a different commitment".into(),
+            priority: 1,
+            state_references: vec![],
+            public_channels: vec![],
+            effect: StrategicCellEffect::Institution {
+                institution_id: subject_id,
+                posture: "publishing a bounded new commitment".into(),
+                location_ids: vec![],
+            },
+        }];
+        wave.appraisals[0].inaction_reason = None;
+        let mut rejected_verifier = resolution_stage(
+            &wave.cover.cells[0].id,
+            &persisted,
+            "cell_effect_verifier",
+            'd',
+        );
+        rejected_verifier.validation_result = "semantic_invalid".into();
+        rejected_verifier.local_validation_error =
+            Some("typed effect reverses the decision".into());
+        store
+            .insert(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                rejected_verifier.storage_key(),
+                &rejected_verifier,
+            )
+            .unwrap();
+        wave.model_receipt_hashes
+            .push(rejected_verifier.storage_key().to_owned());
+
+        let error = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 0,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(format!("sha256:{}", "9".repeat(64))),
+                resolution_wave: Some(wave),
+            })
+            .await
+            .unwrap_err();
+        assert!(
+            error.to_string().contains("lacks cell_effect_verifier"),
+            "unexpected kernel rejection: {error}"
+        );
+        let stored = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(stored.revision, 0);
+        assert_eq!(stored.world_time, seed.world_time);
     }
 
     #[tokio::test]

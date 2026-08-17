@@ -127,6 +127,14 @@ struct CellAppraisalProposal {
     inaction_reason: Option<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellEffectVerification {
+    supported: bool,
+    rejected_action_indices: Vec<usize>,
+    rationale: String,
+}
+
 const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
   "type":"object",
   "required":["actions","inaction_reason"],
@@ -536,6 +544,74 @@ impl CellProjectionEngine {
             }) {
                 Ok(appraisal) => {
                     stage_receipts.push(interpreted.receipt);
+                    if !appraisal.actions.is_empty() {
+                        self.permit
+                            .require(
+                                &slice.cell_id,
+                                &slice.snapshot_binding,
+                                "cell_effect_verifier",
+                            )
+                            .await?;
+                        let verifier_context = serde_json::json!({
+                            "persona_turn":persona.narrative,
+                            "candidate_actions":appraisal.actions.iter().enumerate().map(|(index, action)| serde_json::json!({
+                                "index":index,
+                                "subject_id":action.subject_id,
+                                "intent":action.intent,
+                                "intended_effect":action.intended_effect,
+                                "typed_effect":action.effect,
+                            })).collect::<Vec<_>>(),
+                            "subject_names":slice.constituents.iter().map(|subject|(&subject.subject_id, &subject.name)).chain(slice.member_exceptions.iter().map(|member|(&member.subject_id, &member.name))).collect::<BTreeMap<_,_>>(),
+                        });
+                        let mut verified = run_validated_stage(
+                            self.model.as_ref(),
+                            &ModelStageRequest {
+                                stage: "cell_effect_verifier".into(),
+                                model: self.interpreter_model.clone(),
+                                snapshot_binding: slice.snapshot_binding.clone(),
+                                lived_stream: format!(
+                                    "You are the private semantic verifier between an Interpreter and the world kernel. Decide whether every candidate typed effect faithfully represents the exact attributed subject's own attempted consequence in the Persona turn. Structural permissions were already checked. A member_migration means that named member personally chooses to travel to the destination; giving away a berth, sending somebody else, waiting, or merely considering travel does not entail it. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. Reject omissions, reversals, subject swaps, wishful outcomes, and effects that the Persona did not choose. Be concise. Return JSON only.\n\nCONTEXT:\n{}",
+                                    serde_json::to_string(&verifier_context)?
+                                ),
+                                output_schema: Some(serde_json::to_value(schema_for!(
+                                    CellEffectVerification
+                                ))?),
+                                source_receipt_ids: slice.source_receipt_ids.clone(),
+                                temperature: Some(0.0),
+                                max_output_tokens: Some(384),
+                            },
+                        )
+                        .await?;
+                        let verification: CellEffectVerification =
+                            serde_json::from_value(verified.structured.clone().ok_or_else(
+                                || anyhow!("cell effect verifier produced no typed verdict"),
+                            )?)?;
+                        validate_effect_verification(&verification, appraisal.actions.len())?;
+                        if verification.supported {
+                            stage_receipts.push(verified.receipt);
+                        } else {
+                            let error = anyhow!(
+                                "effect verifier rejected action indices {:?}: {}",
+                                verification.rejected_action_indices,
+                                verification.rationale
+                            );
+                            verified.receipt.validation_result = "semantic_invalid".into();
+                            verified.receipt.local_validation_error =
+                                Some(error.to_string().chars().take(1_000).collect());
+                            stage_receipts.push(verified.receipt);
+                            if attempt == 0 {
+                                append_cell_correction(
+                                    &mut request,
+                                    &error,
+                                    &serde_json::to_string(&appraisal.actions)?,
+                                );
+                                continue;
+                            }
+                            return Err(anyhow!(
+                                "cell effect verifier rejected the corrected appraisal: {error}"
+                            ));
+                        }
+                    }
                     self.permit
                         .require(&slice.cell_id, &slice.snapshot_binding, "cell_terminal")
                         .await?;
@@ -557,9 +633,7 @@ impl CellProjectionEngine {
                     interpreted.receipt.local_validation_error =
                         Some(error.to_string().chars().take(1_000).collect());
                     stage_receipts.push(interpreted.receipt);
-                    request.lived_stream.push_str(&format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS APPRAISAL: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. Change or remove every action that exceeds its attributed constituent's permissions; explicit inaction is valid."
-                    ));
+                    append_cell_correction(&mut request, &error, &rejected_appraisal);
                 }
                 Err(error) => {
                     return Err(anyhow!(
@@ -570,6 +644,35 @@ impl CellProjectionEngine {
         }
         unreachable!()
     }
+}
+
+fn append_cell_correction(
+    request: &mut ModelStageRequest,
+    error: &anyhow::Error,
+    rejected_appraisal: &str,
+) {
+    request.lived_stream.push_str(&format!(
+        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS APPRAISAL: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. Change or remove every action that is unsupported or exceeds its attributed subject's permissions; explicit inaction is valid."
+    ));
+}
+
+fn validate_effect_verification(
+    verification: &CellEffectVerification,
+    action_count: usize,
+) -> Result<()> {
+    if verification.rationale.trim().is_empty()
+        || (verification.supported && !verification.rejected_action_indices.is_empty())
+        || (!verification.supported && verification.rejected_action_indices.is_empty())
+        || verification
+            .rejected_action_indices
+            .iter()
+            .any(|index| *index >= action_count)
+    {
+        return Err(anyhow!(
+            "cell effect verifier returned an incoherent verdict"
+        ));
+    }
+    Ok(())
 }
 
 fn bind_cell_appraisal(
@@ -925,6 +1028,12 @@ mod tests {
                         "inaction_reason":null
                     }).to_string())
                 }
+                "cell_effect_verifier" => Ok(serde_json::json!({
+                    "supported":true,
+                    "rejected_action_indices":[],
+                    "rationale":"The institution's typed posture matches its stated commitment."
+                })
+                .to_string()),
                 stage => Err(anyhow!("unexpected fixture stage {stage}")),
             }
         }
@@ -986,7 +1095,7 @@ mod tests {
         };
         let output = engine.execute(fixture_cell_slice()).await.unwrap();
         assert!(model.saw_rejected_appraisal.load(Ordering::SeqCst));
-        assert_eq!(output.stage_receipts.len(), 4);
+        assert_eq!(output.stage_receipts.len(), 5);
         assert_eq!(
             output.stage_receipts[2].validation_result,
             "semantic_invalid"
@@ -995,6 +1104,104 @@ mod tests {
             output.appraisal.actions[0].effect,
             StrategicCellEffect::Institution { .. }
         ));
+    }
+
+    struct SemanticallyCorrectingCellModel {
+        interpreter_calls: AtomicUsize,
+        verifier_calls: AtomicUsize,
+        saw_verifier_rejection: AtomicBool,
+    }
+
+    #[async_trait]
+    impl ModelPort for SemanticallyCorrectingCellModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "cell_projector" => Ok(
+                    "Faction Six sees the deadline but lacks evidence for an immediate release."
+                        .into(),
+                ),
+                "cell_persona" => Ok(
+                    "We will withhold the reserve commitment until the public count is verified."
+                        .into(),
+                ),
+                "cell_interpreter" => {
+                    let correction = self.interpreter_calls.fetch_add(1, Ordering::SeqCst) > 0;
+                    if correction {
+                        self.saw_verifier_rejection.store(
+                            request.lived_stream.contains("effect verifier rejected")
+                                && request.lived_stream.contains("releases the reserve"),
+                            Ordering::SeqCst,
+                        );
+                    }
+                    Ok(serde_json::json!({
+                        "actions":[{
+                            "subject_id":"faction-06",
+                            "intent":"state the reserve decision",
+                            "intended_effect":if correction {"withhold release pending a verified count"} else {"release the reserve immediately"},
+                            "priority":5,
+                            "state_references":["institution:faction-06"],
+                            "public_channels":["public bulletin"],
+                            "effect":{
+                                "type":"institution",
+                                "institution_id":"faction-06",
+                                "posture":if correction {"withholding reserve commitment pending a verified public count"} else {"releases the reserve immediately"},
+                                "location_ids":["forum"]
+                            }
+                        }],
+                        "inaction_reason":null
+                    }).to_string())
+                }
+                "cell_effect_verifier" => {
+                    let correction = self.verifier_calls.fetch_add(1, Ordering::SeqCst) > 0;
+                    Ok(serde_json::json!({
+                        "supported":correction,
+                        "rejected_action_indices":if correction { vec![] } else { vec![0] },
+                        "rationale":if correction {
+                            "The corrected posture matches the institution's stated withholding."
+                        } else {
+                            "The Persona withheld the reserve, but the typed effect releases it."
+                        }
+                    })
+                    .to_string())
+                }
+                stage => Err(anyhow!("unexpected fixture stage {stage}")),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "semantic-correction-fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn effect_verifier_rejects_a_reversed_decision_before_terminal_output() {
+        let model = Arc::new(SemanticallyCorrectingCellModel {
+            interpreter_calls: AtomicUsize::new(0),
+            verifier_calls: AtomicUsize::new(0),
+            saw_verifier_rejection: AtomicBool::new(false),
+        });
+        let output = CellProjectionEngine {
+            model: model.clone(),
+            permit: Arc::new(AllowAllPermit),
+            projector_model: "flash".into(),
+            persona_model: "flash".into(),
+            interpreter_model: "flash".into(),
+        }
+        .execute(fixture_cell_slice())
+        .await
+        .unwrap();
+        assert!(model.saw_verifier_rejection.load(Ordering::SeqCst));
+        assert_eq!(output.stage_receipts.len(), 6);
+        assert_eq!(output.stage_receipts[3].stage, "cell_effect_verifier");
+        assert_eq!(
+            output.stage_receipts[3].validation_result,
+            "semantic_invalid"
+        );
+        let StrategicCellEffect::Institution { posture, .. } = &output.appraisal.actions[0].effect
+        else {
+            panic!("corrected effect changed type")
+        };
+        assert!(posture.contains("withholding reserve"));
     }
 
     #[test]

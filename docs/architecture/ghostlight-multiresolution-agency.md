@@ -266,6 +266,16 @@ population transition receives its exact current pressure set and the failed
 transition reason. The correction model is not expected to reconstruct a
 validator from a generic rejection.
 
+An actionful cell has a fourth private stage after the Interpreter: the
+`cell_effect_verifier`. This cheap structured reader compares the natural
+Persona decision with each attributed typed effect. It rejects reversals,
+subject swaps, omissions, wishful outcomes, or lossy mappings—for example,
+mapping “Mira gives her berth to somebody else” into a migration of Mira
+herself. The rejected appraisal and concise rationale return to one
+same-snapshot Interpreter correction. Inaction cells skip the call. The kernel
+requires a valid verifier receipt for every actionful cell; an invalid or
+missing verifier cannot satisfy the wave receipt gate.
+
 ## Public state and controls
 
 The schema catalog and CultCache stores publish:

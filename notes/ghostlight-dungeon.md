@@ -188,9 +188,11 @@ stake prose alone never impersonates world mutation.
   authority, while opposed or cross-faction cells are arenas with no synthetic
   actor or shared knowledge.
 - Every active cell receives one private Projector → Persona → Interpreter
-  pipeline. Arena output is constituent-attributed. All cells, receipts, and
-  effects validate against one world revision and resolution epoch before one
-  atomic strategic commit.
+  pipeline, followed by a semantic effect verifier when the cell proposes an
+  action. Arena output is constituent-attributed. The verifier proves that the
+  typed effect represents the Persona's actual choice rather than a reversed or
+  lossy interpretation. All cells, receipts, and effects validate against one
+  world revision and resolution epoch before one atomic strategic commit.
 - Persistent detail debt rotates direct attention through quiet subjects. All
   clocks and deterministic obligations advance regardless of selected detail.
 - Population fission is a separate approval-gated canonical operation. It
