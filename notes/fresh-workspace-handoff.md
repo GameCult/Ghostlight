@@ -99,6 +99,14 @@ boundaries, and Interpreter guidance defines the activity vocabulary as narrow
 attempts with attempt-only `intended_effect`. No kernel rule or world-state
 compensator was added.
 
+The next strict run migrated Mira and completed two sustained waves. Its third
+wave then failed atomically because a camp-only cell voiced Mira from another
+cell and invented a reachable camp coordinator; the Interpreter repeated an
+impossible targetless coordination after correction. Projectors now reserve
+internal perspective for actual cell constituents/member exceptions, Personas
+cannot conjure absent entities into contact, and empty target errors explicitly
+tell the correction stage that anonymous targets cannot be encoded.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

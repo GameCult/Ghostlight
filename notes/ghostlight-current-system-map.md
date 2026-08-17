@@ -74,6 +74,10 @@ reach, not co-presence. Persona turns cannot stage direct sight, speech, or
 response across locations unless the lived stream establishes a shared place
 or communication channel. Interpreter activity labels then describe the
 narrow attempted act, while hoped-for success remains outside the effect.
+Only supplied cell constituents and selected member exceptions may own a
+perspective. Event mentions do not transfer a person into another cell, and an
+unnamed or unsupplied entity cannot become an activity target merely because a
+Persona found it plausible.
 
 Gestalt background choices use two distinct typed paths. Pressure transitions
 change exact unresolved markers. `gestalt_activity` records an attributed

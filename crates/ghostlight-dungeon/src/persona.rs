@@ -445,7 +445,7 @@ impl CellProjectionEngine {
             .join("\n");
         let mode_guidance = cell_projector_mode_guidance(&slice.mode);
         let mode_guidance = format!(
-            "{mode_guidance} Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
+            "{mode_guidance} Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Only supplied constituents and member_exceptions may own an internal perspective or choice. A person merely mentioned in an event is external observation when absent from those lists: never voice them. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
         );
         let projected = run_validated_stage(
             self.model.as_ref(),
@@ -662,7 +662,7 @@ fn cell_persona_mode_guidance(mode: &crate::domain::SimulationCellMode) -> &'sta
             "Appraise the strategic horizon as a real collective. End this turn with a present-tense choice: describe the concrete attempt the collective now makes, or explicitly choose to hold or wait. Deliberating, asking for a future decision, considering an option, or saying what could be done is intentional inaction unless the choice to act is actually made. Do not invent completed consequences."
         }
         crate::domain::SimulationCellMode::Arena => {
-            "Appraise the strategic horizon polyphonically. Name the constituent responsible for every perspective and decision; never speak as the arena or use an unmarked first-person voice. The lived stream may contain simultaneous remote scenes: preserve every stated location boundary, and never make one constituent see, hear, address, or answer another unless the stream explicitly establishes co-presence or a communication channel. For each voiced constituent, end with a present-tense choice: a concrete attempt now, or an explicit choice to hold or wait. Deliberating, asking for a future decision, considering an option, or saying what could be done is inaction unless that constituent actually chooses to act."
+            "Appraise the strategic horizon polyphonically. Name the constituent responsible for every perspective and decision; never speak as the arena or use an unmarked first-person voice. Only subjects already given an attributed internal perspective in the lived stream may choose; people merely observed or mentioned remain external. The lived stream may contain simultaneous remote scenes: preserve every stated location boundary, and never make one constituent see, hear, address, or answer another unless the stream explicitly establishes co-presence or a communication channel. Do not invent an available person, office, route, resource, or response absent from the lived stream. A constituent may choose to seek something unknown, but cannot claim contact with it. For each voiced constituent, end with a present-tense choice: a concrete attempt now, or an explicit choice to hold or wait. Deliberating, asking for a future decision, considering an option, or saying what could be done is inaction unless that constituent actually chooses to act."
         }
     }
 }
@@ -800,13 +800,20 @@ fn validate_cell_appraisal(
                     let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
                     let needs_target =
                         !matches!(activity, crate::domain::StrategicActivityKind::Prepare);
+                    if needs_target && target_subject_ids.is_empty() {
+                        return Err(anyhow!(
+                            "named member {} activity {:?} requires one or more exact target IDs; no anonymous or unsupplied target can be encoded. Remove the action unless the Persona explicitly attempted one of {:?}",
+                            member.member_id,
+                            activity,
+                            member.activity_target_ids
+                        ));
+                    }
                     if member_id != &member.member_id
                         || target_subject_ids.len() > 4
                         || unique_targets.len() != target_subject_ids.len()
                         || target_subject_ids
                             .iter()
                             .any(|target| !member.activity_target_ids.contains(target))
-                        || (needs_target && target_subject_ids.is_empty())
                         || location_ids.len() != 1
                         || location_ids[0] != member.source_location_id
                     {
@@ -923,6 +930,14 @@ fn validate_constituent_effect(
             let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
             let unique_locations = location_ids.iter().collect::<BTreeSet<_>>();
             let needs_target = !matches!(activity, crate::domain::StrategicActivityKind::Prepare);
+            if needs_target && target_subject_ids.is_empty() {
+                return Err(anyhow!(
+                    "gestalt {} activity {:?} requires one or more exact target IDs; no anonymous or unsupplied target can be encoded. Remove the action unless the Persona explicitly attempted one of {:?}",
+                    subject.subject_id,
+                    activity,
+                    subject.activity_target_ids
+                ));
+            }
             if subject.subject_kind != crate::domain::AgencySubjectKind::Gestalt
                 || gestalt_id != &subject.subject_id
                 || target_subject_ids.len() > 4
@@ -930,7 +945,6 @@ fn validate_constituent_effect(
                 || target_subject_ids
                     .iter()
                     .any(|target| !subject.activity_target_ids.contains(target))
-                || (needs_target && target_subject_ids.is_empty())
                 || location_ids.len() > 4
                 || unique_locations.len() != location_ids.len()
                 || location_ids
@@ -1430,7 +1444,13 @@ mod tests {
             target_subject_ids: vec![],
             location_ids: vec!["forum".into()],
         };
-        assert!(validate_constituent_effect(subject, &targetless_obstruction).is_err());
+        let error = validate_constituent_effect(subject, &targetless_obstruction).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("no anonymous or unsupplied target")
+        );
+        assert!(error.to_string().contains("Remove the action"));
 
         let internal_preparation = StrategicCellEffect::GestaltActivity {
             gestalt_id: "refugees".into(),
@@ -1588,6 +1608,8 @@ mod tests {
         assert!(arena_persona.contains("present-tense choice"));
         assert!(arena_persona.contains("simultaneous remote scenes"));
         assert!(arena_persona.contains("preserve every stated location boundary"));
+        assert!(arena_persona.contains("merely observed or mentioned remain external"));
+        assert!(arena_persona.contains("cannot claim contact"));
         assert!(cohesive_persona.contains("present-tense choice"));
         assert!(cohesive_persona.contains("asking for a future decision"));
     }

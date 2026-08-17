@@ -241,6 +241,13 @@ the lived stream explicitly establishes an exact shared location or
 communication channel. Compression therefore cannot turn a regional arena
 into one impossible meeting room.
 
+Perspective ownership is equally strict. Only the cell's supplied constituents
+and selected member exceptions may receive an internal viewpoint or make a
+choice. A named person mentioned by a perceived event but owned by another cell
+remains an external observation. Personas may seek an unknown role or office,
+but cannot conjure it into available contact; target-requiring effects need one
+of the exact supplied subject IDs.
+
 Physical provider concurrency batches these pipelines behind a separate
 operator limit, default 8. Changing that limit increments only
 `provider_configuration_epoch`; it preserves the selected cover, resolution
