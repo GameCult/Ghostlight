@@ -65,6 +65,12 @@ not slowly melt into one cursed binder.
 - `notes/architecture-rationale.md`: rationale notes for major design
   boundaries.
 
+## Accessible Explanations
+
+- `docs/articles/multiresolution-gestalts.md`: reader-facing explanation of
+  Ghostlight Dungeon's dynamic agency graph, cohesive and arena cells, detail
+  fairness, Persona waves, and named-character continuity.
+
 ## Raw Imported Source
 
 - `docs/aetheria/call-of-the-void-brainstorm.md`: raw imported brainstorming
