@@ -74,6 +74,13 @@ WorldKernel rejects inactive-leaf or teleported promotions. The refugee-return
 live-fire harness requires the presence planner, rather than a direct
 materialization command, to surface the same migrated member.
 
+Live pressure then exposed that dormant named members could migrate but could
+not take ordinary local action. The candidate now has `member_activity`, using
+the same bounded activity vocabulary with exact member, location, target,
+knowledge, and channel scope. It shares the person's resolution key with
+migration and emits an attempt event without mutating the member delta or
+letting a containing arena or destination Gestalt steal the choice.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

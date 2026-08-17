@@ -170,8 +170,10 @@ stake prose alone never impersonates world mutation.
   investigation, recruitment, obstruction, trade, or communication attempts
   against exact graph-adjacent subjects. These commit only an attributed
   attempted-activity event; success and target response require later admitted
-  effects. Invalid, stale, timed-out, or malformed waves leave world state
-  unchanged.
+  effects. Durable dematerialized members use the same bounded activity
+  vocabulary with exact personal attribution; ordinary action and migration
+  share one per-person slot. Invalid, stale, timed-out, or malformed waves
+  leave world state unchanged.
 - The scheduler and return-time catch-up invoke the same `AdvanceStrategicTick` command. Catch-up processes missed ticks before accepting the next player action.
 - Live play has inference priority; background work stops launching new calls while a player turn is active.
 - Offscreen events generate information-channel-aware news leads. On return, the player may receive newspapers, reports, messages, or rumors only when the character has access to them; the news layer cannot reveal omniscient state.

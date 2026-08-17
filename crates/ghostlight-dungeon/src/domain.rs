@@ -444,6 +444,14 @@ pub enum StrategicCellEffect {
         actor_id: String,
         destination_id: String,
     },
+    MemberActivity {
+        member_id: String,
+        activity: StrategicActivityKind,
+        #[serde(default)]
+        target_subject_ids: Vec<String>,
+        #[serde(default)]
+        location_ids: Vec<String>,
+    },
     MemberMigration {
         destination_gestalt_id: String,
     },
@@ -604,6 +612,8 @@ pub struct StrategicTickPlan {
     pub actor_moves: Vec<StrategicActorMove>,
     #[serde(default)]
     pub member_migrations: Vec<StrategicMemberMigration>,
+    #[serde(default)]
+    pub member_activities: Vec<StrategicMemberActivity>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -644,6 +654,16 @@ pub struct StrategicMemberMigration {
     pub source_gestalt_id: String,
     pub destination_gestalt_id: String,
     pub destination_location_id: String,
+    pub public_channels: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct StrategicMemberActivity {
+    pub member_id: String,
+    pub source_gestalt_id: String,
+    pub activity: StrategicActivityKind,
+    pub target_subject_ids: Vec<String>,
+    pub location_ids: Vec<String>,
     pub public_channels: Vec<String>,
 }
 

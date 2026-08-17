@@ -75,6 +75,13 @@ communication attempt against graph-adjacent subjects without claiming the
 outcome. The kernel derives the event text and exact gestalt participant IDs;
 the arena and model prose own neither.
 
+Salient dormant members have their own `member_activity` path for ordinary
+local attempts. It uses the same bounded verbs, the member's exact location,
+their current leaf plus graph-adjacent targets, and their own state/channel
+permissions. Migration and activity conflict on one member key. A destination
+population cannot inherit the person's offer, speech, or decision merely
+because the cover placed them in the same arena.
+
 Population scale uses reversible individuation:
 
 ```text

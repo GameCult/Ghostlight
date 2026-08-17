@@ -509,7 +509,9 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                 .clone()
                 .unwrap_or_else(|| source.home_location_id.clone());
             let destinations = migration_destinations(campaign, &member.gestalt_id, &origin);
-            if destinations.is_empty() {
+            let activity_targets =
+                crate::resolution::member_activity_targets(campaign, &member.id).ok()?;
+            if destinations.is_empty() && activity_targets.is_empty() {
                 return None;
             }
             let player_relationship = member.relationships.contains_key(player_id) as u8;
@@ -523,6 +525,7 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                 member.id.clone(),
                 origin,
                 destinations,
+                activity_targets,
             ))
         })
         .collect::<Vec<_>>();
@@ -537,71 +540,74 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
     candidates
         .into_iter()
         .take(cell_action_limit(cell).min(4))
-        .map(|(_, _, _, member_id, origin, destinations)| {
-            let member = &campaign.gestalt_members[&member_id];
-            let source = &campaign.gestalts[&member.gestalt_id];
-            let capabilities = overlay(
-                &source.shared_capabilities,
-                &member.capability_additions,
-                &member.capability_removals,
-            );
-            let knowledge = overlay(
-                &source.shared_knowledge,
-                &member.knowledge_additions,
-                &member.knowledge_removals,
-            );
-            let information_channels =
-                crate::resolution::effective_member_information_channels(campaign, &member.id)?;
-            let goals = if member.goals.is_empty() {
-                source.goals.clone()
-            } else {
-                member.goals.clone()
-            };
-            let mut permitted_state_references = BTreeSet::from([
-                format!("member:{}", member.id),
-                format!("gestalt:{}", member.gestalt_id),
-                format!("location:{origin}"),
-            ]);
-            permitted_state_references.extend(
-                capabilities
-                    .iter()
-                    .map(|value| format!("capability:{value}")),
-            );
-            permitted_state_references
-                .extend(knowledge.iter().map(|value| format!("knowledge:{value}")));
-            permitted_state_references.extend(
-                member
-                    .equipment
-                    .iter()
-                    .map(|value| format!("resource:{value}")),
-            );
-            for (gestalt_id, location_id) in &destinations {
-                permitted_state_references.insert(format!("gestalt:{gestalt_id}"));
-                permitted_state_references.insert(format!("location:{location_id}"));
-            }
-            Ok(CellMemberSlice {
-                subject_id: format!("member:{}", member.id),
-                member_id: member.id.clone(),
-                name: member.name.clone(),
-                source_gestalt_id: member.gestalt_id.clone(),
-                source_location_id: origin,
-                knowledge: knowledge.clone(),
-                capabilities,
-                resources: member.equipment.clone(),
-                information_channels,
-                permitted_state_references,
-                migration_destinations: destinations,
-                goals,
-                pressures: member
-                    .conditions
-                    .iter()
-                    .chain(&member.obligations)
-                    .cloned()
-                    .collect(),
-                relationships: member.relationships.clone(),
-                memories: member.memories.clone(),
-            })
-        })
+        .map(
+            |(_, _, _, member_id, origin, destinations, activity_target_ids)| {
+                let member = &campaign.gestalt_members[&member_id];
+                let source = &campaign.gestalts[&member.gestalt_id];
+                let capabilities = overlay(
+                    &source.shared_capabilities,
+                    &member.capability_additions,
+                    &member.capability_removals,
+                );
+                let knowledge = overlay(
+                    &source.shared_knowledge,
+                    &member.knowledge_additions,
+                    &member.knowledge_removals,
+                );
+                let information_channels =
+                    crate::resolution::effective_member_information_channels(campaign, &member.id)?;
+                let goals = if member.goals.is_empty() {
+                    source.goals.clone()
+                } else {
+                    member.goals.clone()
+                };
+                let mut permitted_state_references = BTreeSet::from([
+                    format!("member:{}", member.id),
+                    format!("gestalt:{}", member.gestalt_id),
+                    format!("location:{origin}"),
+                ]);
+                permitted_state_references.extend(
+                    capabilities
+                        .iter()
+                        .map(|value| format!("capability:{value}")),
+                );
+                permitted_state_references
+                    .extend(knowledge.iter().map(|value| format!("knowledge:{value}")));
+                permitted_state_references.extend(
+                    member
+                        .equipment
+                        .iter()
+                        .map(|value| format!("resource:{value}")),
+                );
+                for (gestalt_id, location_id) in &destinations {
+                    permitted_state_references.insert(format!("gestalt:{gestalt_id}"));
+                    permitted_state_references.insert(format!("location:{location_id}"));
+                }
+                Ok(CellMemberSlice {
+                    subject_id: format!("member:{}", member.id),
+                    member_id: member.id.clone(),
+                    name: member.name.clone(),
+                    source_gestalt_id: member.gestalt_id.clone(),
+                    source_location_id: origin,
+                    knowledge: knowledge.clone(),
+                    capabilities,
+                    resources: member.equipment.clone(),
+                    information_channels,
+                    permitted_state_references,
+                    migration_destinations: destinations,
+                    activity_target_ids,
+                    goals,
+                    pressures: member
+                        .conditions
+                        .iter()
+                        .chain(&member.obligations)
+                        .cloned()
+                        .collect(),
+                    relationships: member.relationships.clone(),
+                    memories: member.memories.clone(),
+                })
+            },
+        )
         .collect()
 }
 
@@ -963,9 +969,30 @@ mod tests {
                 .contains("member:mira")
         );
         assert!(
+            slice.member_exceptions[0]
+                .activity_target_ids
+                .contains("refugees")
+        );
+        assert!(
             !serde_json::to_string(&slice)
                 .unwrap()
                 .contains("private dock code")
+        );
+
+        campaign.agency_relations.clear();
+        let local_only_cover = crate::resolution::plan_cover(
+            &campaign,
+            crate::resolution::default_demand(&campaign, "ordinary local work"),
+        )
+        .unwrap();
+        let local_only = cell_slice(&campaign, &local_only_cover.cells[0]).unwrap();
+        assert!(
+            local_only
+                .member_exceptions
+                .iter()
+                .any(|member| member.member_id == "mira"
+                    && member.migration_destinations.is_empty()
+                    && member.activity_target_ids.contains("refugees"))
         );
     }
 
@@ -1043,6 +1070,7 @@ mod tests {
             information_channels: BTreeSet::from(["refugee-wire".into()]),
             permitted_state_references: BTreeSet::new(),
             migration_destinations: BTreeMap::new(),
+            activity_target_ids: BTreeSet::new(),
             goals: vec![],
             pressures: vec![],
             relationships: BTreeMap::new(),

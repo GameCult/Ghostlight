@@ -70,6 +70,7 @@ async fn main() -> anyhow::Result<()> {
         && plan.gestalt_actions.is_empty()
         && plan.gestalt_activities.is_empty()
         && plan.actor_moves.is_empty()
+        && plan.member_activities.is_empty()
     {
         anyhow::bail!(
             "strategic model proposed no material offscreen change: {}",

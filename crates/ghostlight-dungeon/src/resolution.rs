@@ -1664,6 +1664,22 @@ pub fn validate_and_resolve_wave(
                 destination_id,
                 public_channels: proposal.public_channels,
             }),
+            StrategicCellEffect::MemberActivity {
+                member_id,
+                activity,
+                target_subject_ids,
+                location_ids,
+            } => {
+                let source_gestalt_id = campaign.gestalt_members[&member_id].gestalt_id.clone();
+                plan.member_activities.push(StrategicMemberActivity {
+                    member_id,
+                    source_gestalt_id,
+                    activity,
+                    target_subject_ids,
+                    location_ids,
+                    public_channels: proposal.public_channels,
+                });
+            }
             StrategicCellEffect::MemberMigration {
                 destination_gestalt_id,
             } => {
@@ -1689,6 +1705,7 @@ pub fn validate_and_resolve_wave(
             + plan.gestalt_actions.len()
             + plan.gestalt_activities.len()
             + plan.actor_moves.len()
+            + plan.member_activities.len()
             + plan.member_migrations.len()
             >= consequence_limit
         {
@@ -1828,6 +1845,11 @@ fn validate_cell_proposal(
                 "a population, institution, actor, or arena cannot migrate a named member"
             ));
         }
+        StrategicCellEffect::MemberActivity { .. } => {
+            return Err(anyhow!(
+                "a population, institution, actor, or arena cannot act as a named member"
+            ));
+        }
     }
     Ok(())
 }
@@ -1911,6 +1933,32 @@ fn validate_member_cell_proposal(
         ));
     }
     match &proposal.effect {
+        StrategicCellEffect::MemberActivity {
+            member_id: effect_member_id,
+            activity,
+            target_subject_ids,
+            location_ids,
+        } => {
+            let allowed_targets = member_activity_targets(campaign, member_id)?;
+            let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
+            let exact_location = dormant_member_location(campaign, member_id)?;
+            let needs_target = !matches!(activity, StrategicActivityKind::Prepare);
+            if effect_member_id != member_id
+                || target_subject_ids.len() > 4
+                || unique_targets.len() != target_subject_ids.len()
+                || target_subject_ids
+                    .iter()
+                    .any(|target| !allowed_targets.contains(target))
+                || (needs_target && target_subject_ids.is_empty())
+                || location_ids.len() != 1
+                || location_ids[0] != exact_location
+            {
+                return Err(anyhow!(
+                    "named member activity exceeds exact personal, graph, or location scope"
+                ));
+            }
+            Ok(())
+        }
         StrategicCellEffect::MemberMigration {
             destination_gestalt_id,
         } => {
@@ -1928,7 +1976,7 @@ fn validate_member_cell_proposal(
             )
         }
         _ => Err(anyhow!(
-            "named member exception may propose only its own validated migration"
+            "named member exception may propose only its own validated activity or migration"
         )),
     }
 }
@@ -2214,6 +2262,18 @@ pub fn strategic_activity_targets(campaign: &Campaign, subject_id: &str) -> BTre
         .collect()
 }
 
+pub fn member_activity_targets(campaign: &Campaign, member_id: &str) -> Result<BTreeSet<String>> {
+    let member = campaign
+        .gestalt_members
+        .get(member_id)
+        .filter(|member| member.materialized_actor_id.is_none())
+        .ok_or_else(|| anyhow!("gestalt member is not dormant"))?;
+    dormant_member_location(campaign, member_id)?;
+    let mut targets = strategic_activity_targets(campaign, &member.gestalt_id);
+    targets.insert(member.gestalt_id.clone());
+    Ok(targets)
+}
+
 pub fn validate_active_gestalt_presence_location(
     campaign: &Campaign,
     gestalt_id: &str,
@@ -2266,6 +2326,9 @@ fn proposal_target_key(proposal: &CellActionProposal) -> String {
             format!("gestalt:{gestalt_id}")
         }
         StrategicCellEffect::ActorMove { actor_id, .. } => format!("actor:{actor_id}"),
+        StrategicCellEffect::MemberActivity { member_id, .. } => {
+            format!("member:{member_id}")
+        }
         StrategicCellEffect::MemberMigration { .. } => proposal.subject_id.clone(),
     }
 }
@@ -2930,6 +2993,46 @@ pub(crate) mod tests {
         };
         let plan = validate_and_resolve_wave(&value, &make_wave(proposal.clone())).unwrap();
         assert_eq!(plan.member_migrations.len(), 1);
+
+        let member_activity = CellActionProposal {
+            subject_id: "member:mira".into(),
+            intent: "offer help to the refugee organizers".into(),
+            intended_effect: "make the offer without deciding their response".into(),
+            priority: 90,
+            state_references: vec!["member:mira".into()],
+            public_channels: vec!["camp-bulletin".into()],
+            effect: StrategicCellEffect::MemberActivity {
+                member_id: "mira".into(),
+                activity: StrategicActivityKind::Communicate,
+                target_subject_ids: vec!["refugees".into()],
+                location_ids: vec!["center".into()],
+            },
+        };
+        let activity_plan =
+            validate_and_resolve_wave(&value, &make_wave(member_activity.clone())).unwrap();
+        assert_eq!(activity_plan.member_activities.len(), 1);
+        assert!(activity_plan.member_migrations.is_empty());
+
+        let same_member_wave = ResolutionWaveCommit {
+            schema: "ghostlight.resolution_wave_commit.v1".into(),
+            world_revision: value.revision,
+            resolution_epoch: value.resolution_policy.resolution_epoch,
+            plan_receipt: plan_receipt(&value, &cover),
+            appraisals: vec![CellAppraisal {
+                schema: "ghostlight.cell_appraisal.v1".into(),
+                cell_id: cover.cells[0].id.clone(),
+                world_revision: value.revision,
+                resolution_epoch: value.resolution_policy.resolution_epoch,
+                considered_subject_ids: cover.cells[0].subject_ids.clone(),
+                actions: vec![member_activity.clone(), proposal.clone()],
+                inaction_reason: None,
+            }],
+            cover: cover.clone(),
+            model_receipt_hashes: vec![],
+        };
+        let same_member_plan = validate_and_resolve_wave(&value, &same_member_wave).unwrap();
+        assert_eq!(same_member_plan.member_activities.len(), 1);
+        assert!(same_member_plan.member_migrations.is_empty());
 
         let mut announced = proposal.clone();
         announced.public_channels = vec!["camp-bulletin".into()];

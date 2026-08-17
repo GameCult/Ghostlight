@@ -93,9 +93,13 @@ attributed people, not shared gestalt state. Selection favors unresolved
 personal conditions, obligations, goals, and relationships to the player and
 is capped so a large population does not dump its roster into the prompt. A
 member may migrate only along an explicit active `migration` relation to a
-reachable destination leaf. This lets a refugee who mattered during a crisis
-make an offscreen choice, settle elsewhere, and later rematerialize as the same
-person without forcing every refugee to consume an active Persona cell.
+reachable destination leaf. At any active leaf, the same member may instead
+emit a `member_activity` from their exact location toward their current
+population or a graph-adjacent subject. Migration and ordinary activity share
+one per-member strategic action slot. This lets a refugee who mattered during
+a crisis choose to travel, offer work after settling, and later rematerialize
+as the same person without forcing every refugee to consume an active Persona
+cell or giving their agency to the destination Gestalt.
 
 Presence projection is location- and lineage-bounded. The planner sees only
 active gestalt leaves at the player's location, dormant members whose exact
@@ -283,6 +287,14 @@ The shared validators run in the Interpreter membrane, wave resolver, and
 kernel. One gestalt can contribute at most one selected pressure transition or
 activity per tick; deterministic priority resolution cannot let two effect
 forms bypass that limit.
+
+Named member exceptions use the same activity vocabulary through
+`member_activity`. The event is attributed to `member:<id>` and the current
+leaf; the member's delta, the source Gestalt, and any target remain unchanged.
+An arena cannot translate the person's attempt into a collective action, and
+the destination population cannot claim the person's voice. `member_activity`
+and `member_migration` resolve under one exact member key, so only the
+higher-priority compatible choice can commit in a wave.
 
 Semantic correction feedback names the exact failed boundary and current
 value. A repeated institution posture receives its present posture; an invalid

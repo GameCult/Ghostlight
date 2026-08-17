@@ -1503,6 +1503,78 @@ fn apply_strategic_tick_plan(
     }
 
     let mut seen_members = BTreeSet::new();
+    for action in plan.member_activities {
+        if !seen_members.insert(action.member_id.clone()) {
+            return Err(KernelError::Invalid(
+                "gestalt member acts twice in one strategic tick".into(),
+            ));
+        }
+        validate_public_channels(&action.public_channels)?;
+        let member = campaign
+            .gestalt_members
+            .get(&action.member_id)
+            .filter(|member| {
+                member.materialized_actor_id.is_none()
+                    && member.gestalt_id == action.source_gestalt_id
+            })
+            .ok_or_else(|| {
+                KernelError::Invalid("strategic member activity has stale identity scope".into())
+            })?;
+        let allowed_targets =
+            crate::resolution::member_activity_targets(campaign, &action.member_id)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+        let exact_location =
+            crate::resolution::dormant_member_location(campaign, &action.member_id)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+        let unique_targets = action.target_subject_ids.iter().collect::<BTreeSet<_>>();
+        let needs_target = !matches!(action.activity, StrategicActivityKind::Prepare);
+        if action.target_subject_ids.len() > 4
+            || unique_targets.len() != action.target_subject_ids.len()
+            || action
+                .target_subject_ids
+                .iter()
+                .any(|target| !allowed_targets.contains(target))
+            || (needs_target && action.target_subject_ids.is_empty())
+            || action.location_ids.len() != 1
+            || action.location_ids[0] != exact_location
+        {
+            return Err(KernelError::Invalid(
+                "strategic member activity exceeds exact graph or location scope".into(),
+            ));
+        }
+        let target_names = action
+            .target_subject_ids
+            .iter()
+            .map(|target| agency_subject_name(campaign, target))
+            .collect::<Result<Vec<_>, _>>()?;
+        let institution_ids = action
+            .target_subject_ids
+            .iter()
+            .filter(|target| campaign.institutions.contains_key(*target))
+            .cloned()
+            .collect();
+        let mut gestalt_ids = vec![action.source_gestalt_id.clone()];
+        gestalt_ids.extend(
+            action
+                .target_subject_ids
+                .iter()
+                .filter(|target| campaign.gestalts.contains_key(*target))
+                .cloned(),
+        );
+        gestalt_ids.sort();
+        gestalt_ids.dedup();
+        events.push(Event {
+            id: format!("strategic:{revision}:member-activity:{}", action.member_id),
+            at,
+            kind: "gestalt_member_activity".into(),
+            summary: strategic_activity_summary(&member.name, &action.activity, &target_names),
+            actor_ids: vec![format!("member:{}", action.member_id)],
+            institution_ids,
+            gestalt_ids,
+            location_ids: action.location_ids,
+            public_channels: action.public_channels,
+        });
+    }
     for action in plan.member_migrations {
         if !seen_members.insert(action.member_id.clone()) {
             return Err(KernelError::Invalid(
@@ -2323,6 +2395,36 @@ mod tests {
         .unwrap_err();
         assert!(error.to_string().contains("exact graph or location scope"));
         assert_eq!(value, before);
+    }
+
+    #[test]
+    fn dormant_member_activity_preserves_identity_and_population_state() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                member_activities: vec![StrategicMemberActivity {
+                    member_id: "mira".into(),
+                    source_gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec!["refugees-east".into()],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(value, before);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].kind, "gestalt_member_activity");
+        assert_eq!(
+            events[0].summary,
+            "Mira Venn sends a communication to Eastern transit refugees."
+        );
+        assert_eq!(events[0].actor_ids, vec!["member:mira"]);
+        assert_eq!(events[0].gestalt_ids, vec!["refugees-east"]);
     }
 
     #[tokio::test]
