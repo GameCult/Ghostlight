@@ -36,6 +36,10 @@ provider attempts expose prompt/completion/cache usage and exact local failures;
 stable prefixes precede dynamic context; world and agency compilation are
 separate stages; Projectors receive situation state while Interpreters receive
 exact permissions; deterministic cell bindings are attached by the runtime.
+Remote agency compilation is a separate non-causal Flash lane: exact mandate
+strings are bound to witnesses locally, rejected candidates become coverage
+gaps, and deterministic coarse profiles keep unknown facets unknown. The Pro
+agency stage no longer spends output tokens restating remote profiles.
 
 The current browser/compiler hardening adds three ownership cuts before the
 next isolated acceptance run: compiler evidence is triaged into direct,
@@ -53,15 +57,15 @@ impossible and receipted d20 actions, grounded narration, strategic cells, and a
 17.81 seconds. After the authority/context cuts, the same complete four-cell
 cover used 20,760 prompt tokens and 14.38 seconds, with 13 of 13 stages valid on
 their first attempt, two material institutional consequences, exact constituent
-authority, and no player mutation. Remaining work is authenticated surface and
-lifecycle acceptance, away/live concurrency, exact deployment, and final
-regression/provenance verification.
+authority, and no player mutation. Authenticated surface and lifecycle
+acceptance now cover spoiler-safe literal HTTP responses, separate invite
+ownership, single-use invite rejection, fork/reset/export, four persisted
+campaigns, and exact-commit restart. Live priority cancels in-flight scheduler
+inference and excludes its commit gate.
 
-Next, build the exact committed candidate and replay the authenticated Huygens
-campaign. Prove the literal HTTP response is spoiler-safe, the evidence lanes
-exclude adjacent story incidents, and a diagnostic roll commits its exact
-previewed finding. Then run away/live concurrency, persistence, fork, export,
-restart, deployment, LAN/firewall, CultMesh, and provenance acceptance.
+Next, commit the final compiler seam and restart the isolated candidate from
+that exact revision. Then deploy and verify LAN/firewall, CultMesh, persistence,
+VoidBot, DeepSeek, and release provenance before final balance/evidence review.
 
 ## Prior research-program phase
 

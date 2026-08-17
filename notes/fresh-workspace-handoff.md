@@ -404,11 +404,24 @@ scheduler tick must acquire exclusively. A test proves both cancellation and
 commit exclusion. Return catch-up remains on the live path and may commit its
 required ticks before the player's next action.
 
-Next: commit and build this repaired candidate, replay the same authenticated
-Huygens campaign in an isolated runtime, inspect both the visible surface and
-the literal HTTP response, then prove away catch-up/concurrency/persistence/
-fork/export/restart. Deploy only that exact accepted commit and repeat LAN,
-firewall, CultMesh, VoidBot, DeepSeek, scheduler, and provenance smokes.
+The compiler no longer confuses a local roster with a global agency skeleton.
+Local and remote retrieval run concurrently. Only direct evidence enters the
+local seed; a separate Flash lane proposes coarse remote institutions with one
+short mandate string each. Deterministic code binds that mandate to a witness
+which also names the institution, omits unsupported candidates into approval
+coverage gaps, and builds explicit-unknown six-axis remote profiles. The Pro
+agency compiler sees only locally materialized subjects. Live witness
+`F:\GameCult\GhostlightDungeon\acceptance\compiler-20260817-164345\result.json`
+admitted 13 remote/local institutions with four local canon-candidate gaps and
+three non-canonical agency-coverage gaps; no unsupported remote candidate entered
+state.
+
+Authenticated HTTP/browser, session isolation, lifecycle, export, persistence,
+restart, strategic agency, and live/background exclusion have isolated-runtime
+evidence. Next: commit and build this repaired candidate, restart the isolated
+runtime from that exact revision, then deploy only the accepted commit and
+repeat LAN, firewall, CultMesh, VoidBot, DeepSeek, scheduler, and provenance
+smokes.
 
 ## Warnings
 

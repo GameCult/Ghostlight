@@ -29,6 +29,14 @@ The Rust runtime now contains the first honest world-compiler seam:
 - custom compilation classifies every exact witness as direct seed, setting
   background, or excluded before world generation, so a nearby story cannot
   donate its cast, incident, clocks, or institutional posture to a new branch;
+- a separate Flash-model lane uses two stable broad retrieval queries to
+  compile a coarse remote agency catalog in parallel with local evidence
+  classification. It admits only a proper name plus one short mandate that
+  deterministic code can bind verbatim to a witness naming that institution;
+- remote institutions begin with deterministic six-axis profiles: their own
+  authority boundary and explicit unknown geography, ideology, economic role,
+  body, and information scope. Fine resources, channels, relations, and current
+  posture compile only when causal relevance supplies evidence for them;
 - deterministic seed validation rejects missing occupancy, dangling or
   zero-time routes, invalid containment, invalid clocks, and missing players;
 - approval alone submits `CreateCampaign`, which atomically stores the campaign
@@ -549,11 +557,12 @@ Compilation is staged and approval-gated:
 ```text
 opening request
   -> retrieval plan
-  -> exact evidence receipts
-  -> source-use classification: direct seed / setting background / excluded
+  -> local exact evidence receipts || stable remote-agency retrieval
+  -> source-use classification || witnessed remote mandate extraction
   -> three distinct openings or custom opening
   -> three grounded roles or custom role
-  -> bounded region + institutional pressure graph
+  -> direct-evidence bounded region + deterministic coarse remote profiles
+  -> semantic agency profiles only for locally materialized subjects
   -> coverage/gap/assumption preview
   -> explicit approval
   -> CreateCampaign commit
@@ -568,6 +577,22 @@ for the tester and future non-causal lore projections, but its source prose does
 not enter the world-seed prompt; excluded evidence is likewise absent. This
 separation preserves provenance without making retrieved adjacency into
 fictional causality.
+
+The remote catalog is not a back door into the local seed. Its model output may
+propose at most 32 institutions and one short mandate string for each. Local
+code locates that string in the supplied witnesses and requires the same source
+to name the institution. Unsupported entries are omitted and summarized as
+approval-preview coverage gaps; their exact rejection reasons remain in the
+private model-stage receipt. They do not become campaign canon candidates.
+This lets the campaign represent distant powers without importing another
+story's current cast or incident.
+
+The coarse profile is intentionally sparse. Asking the Pro agency compiler to
+repeat six semantic axes for every remote power exhausted output tokens while
+adding no authority. Ghostlight now derives those remote profiles locally and
+asks the model only about locally materialized subjects whose behavioral cuts
+need semantic judgment. This is both cheaper and stricter: unknown remote state
+stays unknown until on-demand compilation earns a sharper claim.
 
 ### Fiction-first resolution
 
@@ -687,6 +712,9 @@ state packet to every stage:
 - deterministic bindings already owned by the runtime—cell membership, cell id,
   world revision, and resolution epoch—are attached locally after interpretation
   rather than copied by a model.
+- remote institution IDs, coarse unknown facets, and evidence bindings are also
+  derived locally; the model spends completion tokens only on witnessed mandate
+  selection and behaviorally meaningful local profiles.
 
 This is both a safety and cognitive-efficiency rule. Models spend tokens on
 judgment and voice; the kernel spends deterministic work on identity, versions,

@@ -98,6 +98,16 @@ before generation. Only direct-seed source text enters causal world compilation;
 background and excluded sources remain coverage provenance and cannot donate
 story incidents or cast.
 
+Global strategic context has a separate non-causal lane. Two stable broad Vault
+queries run alongside local retrieval, and a Flash extraction stage proposes at
+most 32 remote institution names with one short durable mandate each. Local code
+binds each mandate string to an exact witness that also names the institution.
+Unsupported entries become summarized approval gaps and private receipt detail;
+they do not become canonical institutions or canon-candidate records. Admitted
+remote institutions receive deterministic coarse profiles with distinct
+authority and explicit unknown facets. The Pro agency stage profiles only local
+actors, populations, and institutions where semantic subdivision is useful.
+
 Compiler, expansion, fission, fork, and reset routes follow the same projection
 rule. Approval previews expose the public decision surface—topology, cast,
 pressures, player role, source-use coverage, gaps, and assumptions—without raw
