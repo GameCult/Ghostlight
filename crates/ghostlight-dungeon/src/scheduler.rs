@@ -38,7 +38,15 @@ struct RelationDemandSummary {
 pub struct StrategicResolutionOutput {
     pub wave: ResolutionWaveCommit,
     pub stages: Vec<ModelStageOutput>,
+    pub private_cell_traces: Vec<PrivateCellTrace>,
     pub aggregate_receipt_hash: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PrivateCellTrace {
+    pub cell_id: String,
+    pub lived_stream: String,
+    pub persona_output: String,
 }
 
 pub async fn propose_resolution_wave(
@@ -82,6 +90,14 @@ pub async fn propose_resolution_wave(
         .iter()
         .map(|(_, terminal)| terminal.appraisal.clone())
         .collect();
+    let private_cell_traces = terminals
+        .iter()
+        .map(|(cell_id, terminal)| PrivateCellTrace {
+            cell_id: cell_id.clone(),
+            lived_stream: terminal.lived_stream.text.clone(),
+            persona_output: terminal.persona_output.clone(),
+        })
+        .collect();
     for (_, terminal) in terminals {
         stages.extend(
             terminal
@@ -115,6 +131,7 @@ pub async fn propose_resolution_wave(
     Ok(StrategicResolutionOutput {
         wave,
         stages,
+        private_cell_traces,
         aggregate_receipt_hash,
     })
 }

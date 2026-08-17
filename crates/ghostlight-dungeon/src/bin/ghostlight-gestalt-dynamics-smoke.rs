@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
         scheduler::propose_resolution_wave,
         turn::SnapshotPermit,
     };
-    use std::{path::PathBuf, sync::Arc, time::Instant};
+    use std::{collections::BTreeSet, path::PathBuf, sync::Arc, time::Instant};
 
     let secret = std::env::var_os("GHOSTLIGHT_DEEPSEEK_BLOB")
         .map(PathBuf::from)
@@ -45,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
     let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_machine_dpapi(secret)?);
     let started = Instant::now();
     let output = propose_resolution_wave(
-        model,
+        model.clone(),
         Arc::new(SnapshotPermit::new_resolution(
             store.clone(),
             campaign.id,
@@ -62,6 +62,7 @@ async fn main() -> anyhow::Result<()> {
         "cover":&output.wave.cover,
         "appraisals":&output.wave.appraisals,
         "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
+        "private_cell_traces":&output.private_cell_traces,
         "private_model_stage_outputs":output.stages.iter().map(|stage|serde_json::json!({
             "stage":stage.receipt.stage,
             "validation_result":stage.receipt.validation_result,
@@ -139,11 +140,9 @@ async fn main() -> anyhow::Result<()> {
             resolution_wave: Some(output.wave.clone()),
         })
         .await?;
-    let CommandResult::Committed {
-        campaign: advanced, ..
-    } = &committed
-    else {
-        anyhow::bail!("gestalt dynamics wave did not commit")
+    let mut advanced = match &committed {
+        CommandResult::Committed { campaign, .. } => campaign.clone(),
+        _ => anyhow::bail!("gestalt dynamics wave did not commit"),
     };
     let member_after = &advanced.gestalt_members["mira-venn"];
     if member_after.gestalt_id != "harbor-neighbors"
@@ -154,13 +153,110 @@ async fn main() -> anyhow::Result<()> {
         || member_after.equipment != member_before.equipment
         || member_after.conditions != member_before.conditions
         || member_after.obligations != member_before.obligations
-        || effective_member_capabilities(advanced, "mira-venn")? != capabilities_before
-        || effective_member_knowledge(advanced, "mira-venn")? != knowledge_before
+        || effective_member_capabilities(&advanced, "mira-venn")? != capabilities_before
+        || effective_member_knowledge(&advanced, "mira-venn")? != knowledge_before
     {
         anyhow::bail!("migration changed Mira's identity or effective personal state")
     }
     if advanced.actors[&advanced.player_actor_id] != player_before {
         anyhow::bail!("background simulation puppeted the player")
+    }
+
+    let mut sustained_waves = Vec::new();
+    let mut background_subject_ids = BTreeSet::new();
+    let mut detail_focus_subject_ids = BTreeSet::new();
+    for (wave_index, budget) in [4_u8, 8, 4].into_iter().enumerate() {
+        let control = kernel
+            .command(WorldCommand::SetResolutionBudget {
+                expected_revision: advanced.revision,
+                expected_resolution_epoch: advanced.resolution_policy.resolution_epoch,
+                active_cell_budget: budget,
+            })
+            .await?;
+        advanced = match control {
+            CommandResult::ResolutionUpdated { campaign, .. } => campaign,
+            _ => anyhow::bail!("resolution budget change did not commit at a safe boundary"),
+        };
+        let sustained_output = propose_resolution_wave(
+            model.clone(),
+            Arc::new(SnapshotPermit::new_resolution(
+                store.clone(),
+                advanced.id,
+                advanced.revision,
+                advanced.resolution_policy.resolution_epoch,
+            )),
+            &advanced,
+        )
+        .await?;
+        let sustained_plan = validate_and_resolve_wave(&advanced, &sustained_output.wave)?;
+        for appraisal in &sustained_output.wave.appraisals {
+            for proposal in &appraisal.actions {
+                if proposal.subject_id != "member:mira-venn" {
+                    background_subject_ids.insert(proposal.subject_id.clone());
+                }
+            }
+        }
+        detail_focus_subject_ids.extend(
+            sustained_output
+                .wave
+                .cover
+                .cells
+                .iter()
+                .filter_map(|cell| cell.detail_focus_subject_id.clone()),
+        );
+        for stage in &sustained_output.stages {
+            store.insert(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                stage.receipt.storage_key(),
+                &stage.receipt,
+            )?;
+        }
+        let sustained_commit = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: advanced.revision,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(sustained_output.aggregate_receipt_hash.clone()),
+                resolution_wave: Some(sustained_output.wave.clone()),
+            })
+            .await?;
+        advanced = match &sustained_commit {
+            CommandResult::Committed { campaign, .. } => campaign.clone(),
+            _ => anyhow::bail!("sustained background wave did not commit"),
+        };
+        if advanced.actors[&advanced.player_actor_id] != player_before {
+            anyhow::bail!("sustained background simulation puppeted the player")
+        }
+        sustained_waves.push(serde_json::json!({
+            "wave_index":wave_index + 1,
+            "budget":budget,
+            "cover":sustained_output.wave.cover,
+            "appraisals":sustained_output.wave.appraisals,
+            "plan":sustained_plan,
+            "commit":sustained_commit,
+            "private_cell_traces":sustained_output.private_cell_traces,
+            "model_stage_receipts":sustained_output.stages.into_iter().map(|stage|stage.receipt).collect::<Vec<_>>(),
+        }));
+        std::fs::write(
+            root.join("sustained-preflight.json"),
+            serde_json::to_vec_pretty(&sustained_waves)?,
+        )?;
+    }
+    if background_subject_ids.len() < 3 {
+        anyhow::bail!(
+            "sustained multiresolution waves produced only {} distinct background actors",
+            background_subject_ids.len()
+        )
+    }
+    let member_after_sustained = &advanced.gestalt_members["mira-venn"];
+    if member_after_sustained.gestalt_id != "harbor-neighbors"
+        || member_after_sustained.relationships != member_before.relationships
+        || member_after_sustained.memories != member_before.memories
+        || effective_member_capabilities(&advanced, "mira-venn")? != capabilities_before
+        || effective_member_knowledge(&advanced, "mira-venn")? != knowledge_before
+    {
+        anyhow::bail!("sustained population simulation damaged Mira's dormant identity")
     }
 
     let materialized = kernel
@@ -169,7 +265,7 @@ async fn main() -> anyhow::Result<()> {
             gestalt_id: "harbor-neighbors".into(),
             expected_gestalt_version: advanced.gestalts["harbor-neighbors"].version,
             member_id: "mira-venn".into(),
-            expected_member_version: member_after.version,
+            expected_member_version: member_after_sustained.version,
             location_id: "south-harbor".into(),
         })
         .await?;
@@ -209,7 +305,10 @@ async fn main() -> anyhow::Result<()> {
         "cell_mode":root_cell.mode,
         "rivals_share_arena":true,
         "migration_proposal":migration_proposal,
-        "background_action_count":background_action_count,
+        "initial_background_action_count":background_action_count,
+        "sustained_background_subject_ids":background_subject_ids,
+        "sustained_detail_focus_subject_ids":detail_focus_subject_ids,
+        "sustained_waves":sustained_waves,
         "plan":plan,
         "commit":committed,
         "materialization":materialized,
