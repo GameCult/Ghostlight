@@ -435,14 +435,7 @@ impl CellProjectionEngine {
             })
             .collect::<Vec<_>>()
             .join("\n");
-        let mode_guidance = match slice.mode {
-            crate::domain::SimulationCellMode::Cohesive => {
-                "This cell has real collective authority. Render a plural lived perspective from genuinely shared knowledge and capability only; describe constituent and named-member exceptions as separately attributed exceptions. A population cannot decide for a named member."
-            }
-            crate::domain::SimulationCellMode::Arena => {
-                "This cell is an arena, never a person or faction. Render an attributed polyphonic situation. Never union secrets, knowledge, resources, intentions, authority, or voice between constituents or named-member exceptions."
-            }
-        };
+        let mode_guidance = cell_projector_mode_guidance(&slice.mode);
         let mode_guidance = format!(
             "{mode_guidance} Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
         );
@@ -486,14 +479,7 @@ impl CellProjectionEngine {
                 lived_stream: build_persona_prompt(&PersonaPrompt {
                     identity: &slice.cell_id,
                     lived_stream: &lived.text,
-                    domain_guidance: match slice.mode {
-                        crate::domain::SimulationCellMode::Cohesive => {
-                            "Appraise the strategic horizon as a real collective. Action is optional, but inaction must be intentional. Do not invent completed consequences."
-                        }
-                        crate::domain::SimulationCellMode::Arena => {
-                            "Appraise the strategic horizon polyphonically. Attribute every intention to a constituent. The arena itself cannot speak, know, decide, or act. Action is optional, but inaction must be explicit."
-                        }
-                    },
+                    domain_guidance: cell_persona_mode_guidance(&slice.mode),
                     word_budget: (160 + 30 * slice.constituents.len()).min(320),
                 }),
                 output_schema: None,
@@ -648,6 +634,28 @@ impl CellProjectionEngine {
             }
         }
         unreachable!()
+    }
+}
+
+fn cell_projector_mode_guidance(mode: &crate::domain::SimulationCellMode) -> &'static str {
+    match mode {
+        crate::domain::SimulationCellMode::Cohesive => {
+            "This cell has real collective authority. Render a plural lived perspective from genuinely shared knowledge and capability only; describe constituent and named-member exceptions as separately attributed exceptions. A population cannot decide for a named member."
+        }
+        crate::domain::SimulationCellMode::Arena => {
+            "This cell is an arena, never a person or faction. Render an attributed polyphonic situation. Name each subject before its perspective; never use an unmarked first-person voice or a narrator that belongs to no constituent. Never union secrets, knowledge, resources, intentions, authority, or voice between constituents or named-member exceptions."
+        }
+    }
+}
+
+fn cell_persona_mode_guidance(mode: &crate::domain::SimulationCellMode) -> &'static str {
+    match mode {
+        crate::domain::SimulationCellMode::Cohesive => {
+            "Appraise the strategic horizon as a real collective. End this turn with a present-tense choice: describe the concrete attempt the collective now makes, or explicitly choose to hold or wait. Deliberating, asking for a future decision, considering an option, or saying what could be done is intentional inaction unless the choice to act is actually made. Do not invent completed consequences."
+        }
+        crate::domain::SimulationCellMode::Arena => {
+            "Appraise the strategic horizon polyphonically. Name the constituent responsible for every perspective and decision; never speak as the arena or use an unmarked first-person voice. For each voiced constituent, end with a present-tense choice: a concrete attempt now, or an explicit choice to hold or wait. Deliberating, asking for a future decision, considering an option, or saying what could be done is inaction unless that constituent actually chooses to act."
+        }
     }
 }
 
@@ -1384,6 +1392,19 @@ mod tests {
                 .contains("preparation, inspection, request, or deliberation")
         );
         assert!(request.lived_stream.contains("use explicit inaction"));
+    }
+
+    #[test]
+    fn cell_guidance_preserves_attribution_and_ends_on_a_decision() {
+        let arena_projector = cell_projector_mode_guidance(&SimulationCellMode::Arena);
+        let arena_persona = cell_persona_mode_guidance(&SimulationCellMode::Arena);
+        let cohesive_persona = cell_persona_mode_guidance(&SimulationCellMode::Cohesive);
+        assert!(arena_projector.contains("Name each subject"));
+        assert!(arena_projector.contains("never use an unmarked first-person voice"));
+        assert!(arena_persona.contains("Name the constituent"));
+        assert!(arena_persona.contains("present-tense choice"));
+        assert!(cohesive_persona.contains("present-tense choice"));
+        assert!(cohesive_persona.contains("asking for a future decision"));
     }
 }
 
