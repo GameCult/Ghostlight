@@ -36,8 +36,6 @@ async fn main() -> anyhow::Result<()> {
         });
     std::fs::create_dir_all(&root)?;
     let mut campaign = strategic_campaign();
-    campaign.institutions.get_mut("board").unwrap().posture = pressure.clone();
-    campaign.gestalts.get_mut("workers").unwrap().pressures = vec![pressure.clone()];
     campaign.events.push(ghostlight_dungeon::domain::Event {
         id: format!("pressure-{}", uuid::Uuid::new_v4()),
         at: campaign.world_time,

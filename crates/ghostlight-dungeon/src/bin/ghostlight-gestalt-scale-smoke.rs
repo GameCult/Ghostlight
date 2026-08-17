@@ -152,7 +152,7 @@ async fn main() -> anyhow::Result<()> {
         "cover":cover,
         "appraisals":output.wave.appraisals,
         "plan":plan,
-        "material_action_count":plan.institution_actions.len(),
+        "material_action_count":plan.institution_actions.len() + plan.gestalt_actions.len() + plan.actor_moves.len() + plan.member_migrations.len(),
         "explicit_inaction_count":explicit_inaction_count,
         "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
         "commit":committed,
@@ -206,7 +206,10 @@ fn scale_campaign(budget: u8, pressure: &str) -> ghostlight_dungeon::domain::Cam
                         format!("advance platform {}", index % 6),
                         "publish a concrete commitment before the final vote".into(),
                     ],
-                    posture: format!("{} Bloc {} must choose its response.", pressure, index % 3),
+                    posture: format!(
+                        "Bloc {} is withholding a binding commitment pending the final notice.",
+                        index % 3
+                    ),
                 },
             )
         })

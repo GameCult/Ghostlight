@@ -644,45 +644,7 @@ fn validate_cell_appraisal(
                 &subject.permitted_state_references,
                 &subject.information_channels,
             )?;
-            match &action.effect {
-                crate::domain::StrategicCellEffect::Institution {
-                    institution_id,
-                    posture,
-                    location_ids,
-                } if subject.subject_kind == crate::domain::AgencySubjectKind::Institution
-                    && institution_id == &subject.subject_id
-                    && subject.pressures.first().is_some_and(|current| {
-                        crate::resolution::substantive_text_change(current, posture)
-                    })
-                    && location_ids
-                        .iter()
-                        .all(|location| subject.location_ids.contains(location)) => {}
-                crate::domain::StrategicCellEffect::Gestalt {
-                    gestalt_id,
-                    pressure_additions,
-                    pressure_resolutions,
-                } if subject.subject_kind == crate::domain::AgencySubjectKind::Gestalt
-                    && gestalt_id == &subject.subject_id
-                    && crate::resolution::validate_gestalt_pressure_transition(
-                        &subject.pressures,
-                        pressure_additions,
-                        pressure_resolutions,
-                    )
-                    .is_ok() => {}
-                crate::domain::StrategicCellEffect::ActorMove {
-                    actor_id,
-                    destination_id,
-                } if subject.subject_kind == crate::domain::AgencySubjectKind::Actor
-                    && actor_id == &subject.subject_id
-                    && subject.reachable_destination_ids.contains(destination_id) => {}
-                _ => {
-                    return Err(anyhow!(
-                        "action for subject {} has effect {:?}, which exceeds exact constituent authority",
-                        subject.subject_id,
-                        action.effect,
-                    ));
-                }
-            }
+            validate_constituent_effect(subject, &action.effect)?;
         } else if let Some(member) = slice
             .member_exceptions
             .iter()
@@ -710,6 +672,106 @@ fn validate_cell_appraisal(
             }
         } else {
             return Err(anyhow!("action is attributed outside the cell"));
+        }
+    }
+    Ok(())
+}
+
+fn validate_constituent_effect(
+    subject: &CellConstituentSlice,
+    effect: &crate::domain::StrategicCellEffect,
+) -> Result<()> {
+    match effect {
+        crate::domain::StrategicCellEffect::Institution {
+            institution_id,
+            posture,
+            location_ids,
+        } => {
+            if subject.subject_kind != crate::domain::AgencySubjectKind::Institution
+                || institution_id != &subject.subject_id
+            {
+                return Err(anyhow!(
+                    "subject {} has kind {:?} and may not emit an institution effect for {}",
+                    subject.subject_id,
+                    subject.subject_kind,
+                    institution_id
+                ));
+            }
+            if location_ids
+                .iter()
+                .any(|location| !subject.location_ids.contains(location))
+            {
+                return Err(anyhow!(
+                    "institution {} used locations {:?}; exact allowed locations are {:?}",
+                    subject.subject_id,
+                    location_ids,
+                    subject.location_ids
+                ));
+            }
+            let current = subject.pressures.first().map(String::as_str).unwrap_or("");
+            if !crate::resolution::substantive_text_change(current, posture) {
+                return Err(anyhow!(
+                    "institution {} proposed posture {:?}, but its exact current posture is {:?}; emit a specific different commitment or choose inaction",
+                    subject.subject_id,
+                    posture,
+                    current
+                ));
+            }
+        }
+        crate::domain::StrategicCellEffect::Gestalt {
+            gestalt_id,
+            pressure_additions,
+            pressure_resolutions,
+        } => {
+            if subject.subject_kind != crate::domain::AgencySubjectKind::Gestalt
+                || gestalt_id != &subject.subject_id
+            {
+                return Err(anyhow!(
+                    "subject {} has kind {:?} and may not emit a gestalt effect for {}",
+                    subject.subject_id,
+                    subject.subject_kind,
+                    gestalt_id
+                ));
+            }
+            crate::resolution::validate_gestalt_pressure_transition(
+                &subject.pressures,
+                pressure_additions,
+                pressure_resolutions,
+            )
+            .map_err(|error| {
+                anyhow!(
+                    "gestalt {} proposed additions {:?} and resolutions {:?} against exact current pressures {:?}: {}",
+                    subject.subject_id,
+                    pressure_additions,
+                    pressure_resolutions,
+                    subject.pressures,
+                    error
+                )
+            })?;
+        }
+        crate::domain::StrategicCellEffect::ActorMove {
+            actor_id,
+            destination_id,
+        } => {
+            if subject.subject_kind != crate::domain::AgencySubjectKind::Actor
+                || actor_id != &subject.subject_id
+                || !subject.reachable_destination_ids.contains(destination_id)
+            {
+                return Err(anyhow!(
+                    "subject {} has kind {:?}; actor movement requested for {} to {:?}, while exact reachable destinations are {:?}",
+                    subject.subject_id,
+                    subject.subject_kind,
+                    actor_id,
+                    destination_id,
+                    subject.reachable_destination_ids
+                ));
+            }
+        }
+        crate::domain::StrategicCellEffect::MemberMigration { .. } => {
+            return Err(anyhow!(
+                "constituent {} is not a named member and may not emit member_migration",
+                subject.subject_id
+            ));
         }
     }
     Ok(())
@@ -988,8 +1050,24 @@ mod tests {
             validate_cell_appraisal(&slice, &appraisal)
                 .unwrap_err()
                 .to_string()
-                .contains("exceeds exact constituent authority")
+                .contains("must change one to four markers")
         );
+    }
+
+    #[test]
+    fn repeated_institution_posture_reports_the_exact_missing_change() {
+        let slice = fixture_cell_slice();
+        let error = validate_constituent_effect(
+            &slice.constituents[0],
+            &StrategicCellEffect::Institution {
+                institution_id: "faction-06".into(),
+                posture: "the vote is near".into(),
+                location_ids: vec!["forum".into()],
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("exact current posture"));
+        assert!(error.to_string().contains("the vote is near"));
     }
 
     #[tokio::test]

@@ -260,6 +260,12 @@ resolver, and kernel; repeated busywork and invented resolutions therefore
 fail before mutation rather than generating another event that says nothing
 happened.
 
+Semantic correction feedback names the exact failed boundary and current
+value. A repeated institution posture receives its present posture; an invalid
+population transition receives its exact current pressure set and the failed
+transition reason. The correction model is not expected to reconstruct a
+validator from a generic rejection.
+
 ## Public state and controls
 
 The schema catalog and CultCache stores publish:
