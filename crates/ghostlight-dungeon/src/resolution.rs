@@ -2162,6 +2162,40 @@ pub fn validate_member_migration(
     Ok(())
 }
 
+pub fn gestalt_migration_destinations(
+    campaign: &Campaign,
+    source_gestalt_id: &str,
+    origin_location_id: &str,
+) -> BTreeMap<String, String> {
+    campaign
+        .agency_relations
+        .values()
+        .filter(|relation| {
+            relation.active
+                && relation.kind == AgencyRelationKind::Migration
+                && relation.from_subject_id == source_gestalt_id
+        })
+        .filter_map(|relation| {
+            let destination = campaign.gestalts.get(&relation.to_subject_id)?;
+            let profile = campaign.agency_profiles.get(&destination.id)?;
+            if !profile.active_leaf || !profile.simulation_eligible {
+                return None;
+            }
+            let reachable = origin_location_id == destination.home_location_id
+                || campaign
+                    .locations
+                    .get(origin_location_id)
+                    .is_some_and(|location| {
+                        location.routes.values().any(|route| {
+                            route.destination_id == destination.home_location_id
+                                && route.travel_minutes <= campaign.tick_hours.saturating_mul(60)
+                        })
+                    });
+            reachable.then(|| (destination.id.clone(), destination.home_location_id.clone()))
+        })
+        .collect()
+}
+
 pub fn member_state_references(campaign: &Campaign, member_id: &str) -> Result<BTreeSet<String>> {
     let member = campaign
         .gestalt_members
@@ -2342,6 +2376,12 @@ pub fn subject_state_references(campaign: &Campaign, subject_id: &str) -> Result
                         .map(|value| format!("resource:{value}")),
                 ),
         );
+        for (destination_id, location_id) in
+            gestalt_migration_destinations(campaign, subject_id, &gestalt.home_location_id)
+        {
+            references.insert(format!("gestalt:{destination_id}"));
+            references.insert(format!("location:{location_id}"));
+        }
     }
     Ok(references)
 }

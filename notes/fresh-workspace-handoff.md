@@ -179,6 +179,13 @@ current location. It never creates the ordinary role, a reply, acceptance, or
 an outcome. One domain method owns which activity kinds allow this shape, and
 the Interpreter membrane, wave resolver, and kernel all use it.
 
+The following run produced semantically clean Mira and population migrations,
+but the wave resolver rejected destination references that the scheduler had
+shown to the Interpreter. `resolution::subject_state_references` now owns the
+canonical constituent reference set, including active reachable migration
+destinations. Scheduler slicing and wave admission consume that same
+derivation; the scheduler's private migration-destination helper was deleted.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

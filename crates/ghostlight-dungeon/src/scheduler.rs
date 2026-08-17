@@ -522,8 +522,11 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                 .last_location_id
                 .clone()
                 .unwrap_or_else(|| source.home_location_id.clone());
-            let destinations =
-                gestalt_migration_destinations(campaign, &member.gestalt_id, &origin);
+            let destinations = crate::resolution::gestalt_migration_destinations(
+                campaign,
+                &member.gestalt_id,
+                &origin,
+            );
             let activity_targets =
                 crate::resolution::member_activity_targets(campaign, &member.id).ok()?;
             if destinations.is_empty() && activity_targets.is_empty() {
@@ -626,40 +629,6 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
         .collect()
 }
 
-fn gestalt_migration_destinations(
-    campaign: &Campaign,
-    source_gestalt_id: &str,
-    origin_location_id: &str,
-) -> BTreeMap<String, String> {
-    campaign
-        .agency_relations
-        .values()
-        .filter(|relation| {
-            relation.active
-                && relation.kind == crate::domain::AgencyRelationKind::Migration
-                && relation.from_subject_id == source_gestalt_id
-        })
-        .filter_map(|relation| {
-            let destination = campaign.gestalts.get(&relation.to_subject_id)?;
-            let profile = campaign.agency_profiles.get(&destination.id)?;
-            if !profile.active_leaf || !profile.simulation_eligible {
-                return None;
-            }
-            let reachable = origin_location_id == destination.home_location_id
-                || campaign
-                    .locations
-                    .get(origin_location_id)
-                    .is_some_and(|location| {
-                        location.routes.values().any(|route| {
-                            route.destination_id == destination.home_location_id
-                                && route.travel_minutes <= campaign.tick_hours.saturating_mul(60)
-                        })
-                    });
-            reachable.then(|| (destination.id.clone(), destination.home_location_id.clone()))
-        })
-        .collect()
-}
-
 fn overlay(
     baseline: &BTreeSet<String>,
     additions: &BTreeSet<String>,
@@ -736,8 +705,11 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
             value.resources = gestalt.resources.clone();
             value.goals = gestalt.goals.clone();
             value.pressures = gestalt.pressures.clone();
-            value.migration_destinations =
-                gestalt_migration_destinations(campaign, id, &gestalt.home_location_id);
+            value.migration_destinations = crate::resolution::gestalt_migration_destinations(
+                campaign,
+                id,
+                &gestalt.home_location_id,
+            );
             value
                 .migration_destinations
                 .retain(|_, location_id| location_id != &gestalt.home_location_id);

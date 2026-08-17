@@ -92,6 +92,12 @@ proposal. The model cannot disagree with itself about `member:mira-venn` versus
 raw `mira-venn`, and the prompt/output contract spends fewer tokens copying
 invariants Ghostlight already owns.
 
+Canonical constituent references have one owner:
+`resolution::subject_state_references`. Scheduler slices consume that set
+directly, including active reachable migration destinations, and wave
+validation recomputes the same set. Prompt construction cannot append
+references the resolver does not recognize.
+
 Cell perspective attribution is runtime-bound too. The Projector returns one
 to the cell action limit `subject_id → narrative` segments; the schema admits
 only exact constituents and selected member exceptions. Ghostlight rejects

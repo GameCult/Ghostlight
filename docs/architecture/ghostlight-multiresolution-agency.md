@@ -352,6 +352,14 @@ knowledge is never treated as an information channel; while dematerialized,
 the member can publish only through channels owned by their current leaf
 gestalt's agency profile.
 
+`subject_state_references` is the single derivation path for canonical
+constituent references used by both prompt slicing and wave admission. For a
+Gestalt it includes reachable destinations produced by active migration
+relations, along with the destination population and location references. The
+scheduler does not append a second opinion after the fact, so a reference
+shown to the Interpreter cannot become invalid merely by reaching the wave
+resolver.
+
 `subject_id` is the sole model-facing owner attribution. Nested effect owner
 IDs are absent from the model contract: Ghostlight derives `institution_id`,
 `gestalt_id`, `actor_id`, or the raw member ID during binding. The canonical
