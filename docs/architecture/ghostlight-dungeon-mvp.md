@@ -758,6 +758,14 @@ atomic pointer switch, recorded in CultCache, and the rollback runbook lives in
 Task Scheduler may be added when tester availability makes that useful; native
 Windows service machinery is outside the MVP.
 
+The binary owns its build provenance. Release tooling injects the clean-tree
+commit through `GHOSTLIGHT_BUILD_COMMIT`; local builds derive it from Git while
+the build script watches `HEAD`, its symbolic branch ref, the HEAD reflog, and
+packed refs. The health projection only publishes that compile-time value.
+Launchers and manifests may verify it but may not rewrite it. Activation is
+rejected unless checkout HEAD, embedded commit, immutable manifest, binary
+hash, and the running health projection agree.
+
 Live VoidBot integration uses the independently verified Yggdrasil host and the
 restored Starfire loopback crossing at `127.0.0.1:17875/mcp`. The repaired
 tunnel task uses the live `F:\Projects` body. Retired local VoidBot/Qdrant

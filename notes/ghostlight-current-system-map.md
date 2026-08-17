@@ -23,6 +23,16 @@ Vault evidence receipts + typed campaign snapshot
 Ghostlight owns the generalized projection organ. Epiphany and other consumers
 own their canonical Persona state and consequence commits.
 
+Build provenance has one owner: `crates/ghostlight-dungeon/build.rs` binds the
+exact source commit into the binary. Its inputs are either the release tool's
+explicit clean-tree commit or Git HEAD; it watches the actual symbolic ref,
+HEAD reflog, and packed refs so an ordinary commit invalidates Cargo's cached
+value. Health derives its commit from that embedded value. Release manifests,
+launch scripts, and CultCache deployment receipts are verifiers and records,
+not alternate writers. Local runs and immutable releases use this same binding,
+and the regression test compares it to the checkout's live `git rev-parse
+HEAD`. A mismatch blocks activation rather than being repaired after launch.
+
 Away-time agency follows a separate proposal/commit seam:
 
 ```text
