@@ -14,8 +14,8 @@ use ghostlight_dungeon::{
         SuggestedOpenings, SuggestedRoles, WorldCompiler,
     },
     domain::{
-        ActionIntent, Campaign, GestaltFissionPreview, NarrationProjection, RegionExpansionPreview,
-        RejectedProposalReceipt, WorldCommand, WorldCompilePreview,
+        ActionIntent, Campaign, FactScope, GestaltFissionPreview, NarrationProjection,
+        RegionExpansionPreview, RejectedProposalReceipt, WorldCommand, WorldCompilePreview,
     },
     gestalt::GestaltPresencePlanner,
     kernel::{CommandResult, KernelError},
@@ -1315,6 +1315,19 @@ fn world_compile_preview_projection(preview: &WorldCompilePreview) -> serde_json
             })
         })
         .collect::<Vec<_>>();
+    let branch_facts = campaign
+        .facts
+        .values()
+        .filter(|fact| fact.scope != FactScope::CanonBaseline)
+        .map(|fact| {
+            serde_json::json!({
+                "id":fact.id,
+                "scope":fact.scope,
+                "statement":fact.statement,
+                "discoverable_at_location_ids":fact.discoverable_at_location_ids,
+            })
+        })
+        .collect::<Vec<_>>();
     serde_json::json!({
         "schema":preview.schema,
         "title":preview.title,
@@ -1335,6 +1348,7 @@ fn world_compile_preview_projection(preview: &WorldCompilePreview) -> serde_json
         "evidence_coverage":preview.evidence_coverage,
         "gaps":preview.gaps,
         "branch_assumptions":preview.branch_assumptions,
+        "branch_facts":branch_facts,
         "requires_approval":preview.requires_approval,
     })
 }

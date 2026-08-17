@@ -888,18 +888,6 @@ fn apply_world_effect(
             .get_mut(actor_id)
             .ok_or_else(|| KernelError::Invalid("outcome actor vanished".into()))?;
         actor.knowledge.extend(additions.clone());
-        for finding in additions {
-            let fact_id = format!(
-                "fact:outcome:{:x}",
-                Sha256::digest(format!("{}:{finding}", campaign.id).as_bytes())
-            );
-            campaign.facts.entry(fact_id.clone()).or_insert(WorldFact {
-                id: fact_id,
-                statement: finding.clone(),
-                scope: FactScope::BranchLocal,
-                evidence_receipt_ids: vec![],
-            });
-        }
     }
     for (actor_id, relationships) in &effect.actor_relationship_updates {
         campaign
@@ -2539,7 +2527,18 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let kernel = WorldKernel::start(store.clone());
-        let seed = campaign();
+        let mut seed = campaign();
+        let player_location = seed.actors["player"].location_id.clone();
+        seed.facts.insert(
+            "fact:door-brace-seated".into(),
+            WorldFact {
+                id: "fact:door-brace-seated".into(),
+                statement: "The door brace is seated against the frame.".into(),
+                scope: FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from([player_location]),
+            },
+        );
         let campaign_id = seed.id;
         kernel
             .command(WorldCommand::CreateCampaign {
@@ -2578,6 +2577,7 @@ mod tests {
                 "player".into(),
                 BTreeSet::from(["The hidden latch is broken.".into()]),
             );
+        hidden_finding.success_stake = "The hidden latch is broken.".into();
         hidden_finding.digest = crate::assessor::assessment_digest(&hidden_finding).unwrap();
         assert!(
             kernel
@@ -2643,6 +2643,79 @@ mod tests {
             fact.statement == "The door brace is seated against the frame."
                 && fact.scope == FactScope::BranchLocal
         }));
+        assert_eq!(persisted.facts.len(), 1);
+    }
+
+    #[test]
+    fn information_effects_reveal_existing_accessible_facts_only() {
+        let statement = "The maintenance panel records a seven-minute interruption.";
+        let mut seed = campaign();
+        seed.facts.insert(
+            "fact:panel-interruption".into(),
+            WorldFact {
+                id: "fact:panel-interruption".into(),
+                statement: statement.into(),
+                scope: FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from(["room".into()]),
+            },
+        );
+        let effect = WorldEffectDelta {
+            actor_knowledge_additions: BTreeMap::from([(
+                "player".into(),
+                BTreeSet::from([statement.into()]),
+            )]),
+            ..Default::default()
+        };
+        assert!(
+            crate::assessor::validate_effect(&seed, &seed.actors["player"], &effect, statement,)
+                .is_ok()
+        );
+
+        let mut absent = seed.clone();
+        absent.facts.clear();
+        assert!(
+            crate::assessor::validate_effect(
+                &absent,
+                &absent.actors["player"],
+                &effect,
+                statement,
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("existing accessible WorldFact")
+        );
+
+        let mut wrong_place = seed.clone();
+        wrong_place
+            .facts
+            .get_mut("fact:panel-interruption")
+            .unwrap()
+            .discoverable_at_location_ids = BTreeSet::from(["elsewhere".into()]);
+        assert!(
+            crate::assessor::validate_effect(
+                &wrong_place,
+                &wrong_place.actors["player"],
+                &effect,
+                statement,
+            )
+            .is_err()
+        );
+
+        let mut speaker = seed.actors["player"].clone();
+        speaker.id = "speaker".into();
+        speaker.name = "Speaker".into();
+        speaker.knowledge.insert(statement.into());
+        seed.actors.insert(speaker.id.clone(), speaker.clone());
+        seed.facts
+            .get_mut("fact:panel-interruption")
+            .unwrap()
+            .discoverable_at_location_ids
+            .clear();
+        assert!(
+            crate::assessor::validate_effect(&seed, &speaker, &effect, statement).is_ok(),
+            "an actor may communicate an existing fact they know to another present actor"
+        );
     }
 
     fn resolution_stage(

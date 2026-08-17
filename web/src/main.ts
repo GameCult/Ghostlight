@@ -198,6 +198,22 @@ async function showPreview(result: any) {
       ? `Evidence use: ${evidenceCounts.direct_seed ?? 0} direct · ${evidenceCounts.setting_background ?? 0} background · ${evidenceCounts.excluded ?? 0} excluded`
       : "Evidence use: no retrieved sources were admitted to this seed.", "quiet"),
   );
+  const branchFacts = Array.isArray(preview.branch_facts) ? preview.branch_facts : [];
+  const factDisclosure = node("details");
+  factDisclosure.append(node("summary", `Branch-local world facts (${branchFacts.length}) · contains operator spoilers`));
+  if (branchFacts.length) {
+    const list = node("ul");
+    for (const fact of branchFacts) {
+      const locations = Array.isArray(fact.discoverable_at_location_ids) && fact.discoverable_at_location_ids.length
+        ? ` · discoverable at ${fact.discoverable_at_location_ids.join(", ")}`
+        : " · not directly discoverable";
+      list.append(node("li", `${fact.statement}${locations}`));
+    }
+    factDisclosure.append(list);
+  } else {
+    factDisclosure.append(node("p", "No branch-local facts are proposed."));
+  }
+  card.append(factDisclosure);
   const approve = node("button", "Approve and enter");
   approve.type = "button";
   approve.addEventListener("click", async () => { await compilerPost(`/api/compiler/approve/${result.preview_id}`, {}); await refresh(); });

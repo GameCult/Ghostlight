@@ -303,7 +303,7 @@ impl WorldCompiler {
             scoped_evidence
         );
         let base_prompt = format!(
-            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor or institution IDs declared in this candidate, never display names, roles, groups, or location IDs. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; the later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor or institution IDs declared in this candidate, never display names, roles, groups, or location IDs. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -637,7 +637,7 @@ impl WorldCompiler {
             .await?;
         let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
         let base_prompt = format!(
-            "Compile only the requested bounded destination region. Every new location id must be new. At least one new location must route back to origin id {} with a positive travel time. Do not rewrite existing geography. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            "Compile only the requested bounded destination region. Every new location id must be new. At least one new location must route back to origin id {} with a positive travel time. Do not rewrite existing geography. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
             origin_location_id,
             serde_json::to_string(&campaign.locations)?,
             destination_request,
@@ -1398,6 +1398,35 @@ pub fn validate_region_expansion(
     if !attached {
         return Err(anyhow!("destination expansion is not attached to origin"));
     }
+    let existing_fact_ids = campaign.facts.keys().collect::<BTreeSet<_>>();
+    let mut new_fact_ids = BTreeSet::new();
+    let mut fact_statements = campaign
+        .facts
+        .values()
+        .map(|fact| fact.statement.clone())
+        .collect::<BTreeSet<_>>();
+    for fact in &expansion.facts {
+        if fact.id.trim().is_empty()
+            || existing_fact_ids.contains(&fact.id)
+            || !new_fact_ids.insert(fact.id.clone())
+            || fact.statement.trim().is_empty()
+            || !fact_statements.insert(fact.statement.clone())
+        {
+            return Err(anyhow!(
+                "destination expansion facts must have new IDs and non-empty unique statements"
+            ));
+        }
+        if fact
+            .discoverable_at_location_ids
+            .iter()
+            .any(|id| !known(id))
+        {
+            return Err(anyhow!(
+                "destination expansion fact {} has an unknown discovery location",
+                fact.id
+            ));
+        }
+    }
     Ok(())
 }
 
@@ -1991,6 +2020,29 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
                     c.locations.keys().collect::<Vec<_>>()
                 ));
             }
+        }
+    }
+    let mut fact_statements = BTreeSet::new();
+    for fact in c.facts.values() {
+        if fact.statement.trim().is_empty() || !fact_statements.insert(fact.statement.clone()) {
+            return Err(anyhow!(
+                "world facts must have non-empty unique statements; rejected fact {}",
+                fact.id
+            ));
+        }
+        let invalid_locations = fact
+            .discoverable_at_location_ids
+            .iter()
+            .filter(|id| !c.locations.contains_key(*id))
+            .cloned()
+            .collect::<Vec<_>>();
+        if !invalid_locations.is_empty() {
+            return Err(anyhow!(
+                "fact {} is discoverable at unknown locations {:?}; valid location IDs={:?}",
+                fact.id,
+                invalid_locations,
+                c.locations.keys().collect::<Vec<_>>()
+            ));
         }
     }
     for clock in c.clocks.values() {

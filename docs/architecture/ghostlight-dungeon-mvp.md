@@ -607,16 +607,45 @@ receive no roll. Natural 20 and 1 shift one band and cannot cross impossibility
 or the effect ceiling. Speech occurs as speech; persuasion, deception, and
 intimidation are separate intended effects.
 
-Informational attempts must preview the exact finding that becomes knowledge.
-On resolution, only the acting character may receive those bounded knowledge
-additions; the same statement is committed as a provisional branch fact. A
-vague promise such as “identify any faults” is not a valid informational
-outcome, and an unstated hidden finding cannot appear after the roll.
-The assessor normalizes each bounded typed finding into its visible stake before
-validation and digesting. Exact visibility is therefore deterministic; a model
-retry is reserved for semantic or authority failure, not punctuation mismatch.
-The schema names these values as player-readable declarative statements, and a
-fact ID, key, or slug cannot enter the character ledger as knowledge.
+Informational attempts may reveal an existing `WorldFact`; they may not author
+one. `WorldFact` owns branch truth and the location boundaries at which a fact
+can be discovered. `ActorState.knowledge` owns only which exact statements that
+actor has learned. The compiler or an approval-gated region expansion must
+therefore establish a clue before a roll can expose it.
+
+The assessor receives only facts already known by the acting actor or marked
+discoverable at that actor's current location. Every proposed knowledge
+addition must exactly match one of those statements. A fact known by the acting
+actor may be communicated to another present actor; a location-bound fact may
+be discovered only by the acting actor. Player attempts and NPC initiative use
+the same validator. The kernel atomically updates actor knowledge but never
+creates a fact from model prose.
+
+This ownership makes the negative invariant structural: an invented protocol
+number, hidden culprit, remote event, or clue cannot become true because an
+assessor wrote it into a successful stake. Unsupported information causes one
+same-snapshot correction and then aborts without mutation. A vague promise such
+as “identify any faults” is not a valid informational outcome, and an unstated
+hidden finding cannot appear after the roll. Player-readable stakes still carry
+the exact declarative statement; fact IDs, keys, and slugs remain private typed
+references.
+
+Authority map:
+
+- Owner: `WorldFact` owns truth and discovery locations; `ActorState` owns
+  learned access.
+- Inputs: approved compiler or region-expansion facts, current occupancy,
+  actor knowledge, and the attempted effect.
+- Output: an assessment whose information deltas are a subset of existing
+  accessible facts.
+- Derived state: the visible stake and narration are projections of that exact
+  assessment and committed revision.
+- Forbidden writers: Personas, Interpreters, assessors, narrators, and
+  `apply_world_effect` cannot create facts.
+- Shared path: player `Attempt` and `ResolveNpcAction` call the same fact-access
+  validator and atomic commit primitive.
+- Cut line: the former promotion of arbitrary knowledge prose into a new
+  branch-local `WorldFact` is deleted.
 
 ### Actor and world action loop
 

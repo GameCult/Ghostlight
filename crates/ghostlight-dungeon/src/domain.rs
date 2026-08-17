@@ -538,6 +538,11 @@ pub struct WorldFact {
     pub statement: String,
     pub scope: FactScope,
     pub evidence_receipt_ids: Vec<String>,
+    /// Locations whose immediate environment can expose this fact through an
+    /// admitted informational attempt. Empty means the fact is not directly
+    /// discoverable from occupancy alone.
+    #[serde(default)]
+    pub discoverable_at_location_ids: BTreeSet<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
