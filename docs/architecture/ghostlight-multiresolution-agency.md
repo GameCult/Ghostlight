@@ -55,6 +55,48 @@ leaves. A material split uses approval-gated `FissionGestalt`:
 Reversible simulation aggregation never invokes fission and never deletes or
 reverses this lineage.
 
+## Canonical individual migration
+
+Resolution aggregation and population membership are separate authorities. A
+cell may temporarily contain many populations, but that never changes which
+population baseline a durable person is composed from. `WorldKernel` owns one
+explicit membership transition for that purpose.
+
+- **Owner:** `WorldKernel` owns a durable member's current active-leaf
+  `gestalt_id`. The member delta owns their identity, memories, relationships,
+  possessions, injuries, obligations, and personal departures from the current
+  baseline. `GestaltLineage` owns immutable fission ancestry.
+- **Inputs:** one exact member-attributed proposal, the source and destination
+  active gestalt leaves, a typed migration relation, a reachable destination,
+  and the campaign/resolution snapshot already bound to the strategic wave.
+- **Outputs:** the same member identity attached to the destination leaf, with
+  capability and knowledge deltas rebased so their effective personal state is
+  bit-for-bit unchanged; one attributed migration event is emitted.
+- **Derived state:** simulation cells, arena membership, member prompt
+  selection, and rematerialized `ActorState` projections do not own population
+  membership.
+- **Forbidden writers:** a source gestalt, destination gestalt, arena, demand
+  model, Projector, Persona prose, or migration relation cannot move a person.
+  Only an action attributed to that exact durable member may propose the
+  transition, and the kernel validates it.
+- **Shared paths:** source and destination may be leaves at any depth under
+  unrelated lineage trees. The same rebase primitive handles crisis camps,
+  neighborhoods, departments, corporations, species populations, and later
+  refinements.
+- **Cut line:** changing `GestaltMemberDelta.gestalt_id` directly is forbidden.
+  It would reinterpret the old delta against a different baseline and silently
+  alter the person's knowledge, capability, or default goals.
+
+A bounded set of salient dematerialized member exceptions may be projected
+inside the cell containing their current gestalt. They remain separately
+attributed people, not shared gestalt state. Selection favors unresolved
+personal conditions, obligations, goals, and relationships to the player and
+is capped so a large population does not dump its roster into the prompt. A
+member may migrate only along an explicit active `migration` relation to a
+reachable destination leaf. This lets a refugee who mattered during a crisis
+make an offscreen choice, settle elsewhere, and later rematerialize as the same
+person without forcing every refugee to consume an active Persona cell.
+
 ## Demand projection
 
 A flash-model structured stage converts the committed event or strategic
