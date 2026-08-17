@@ -127,6 +127,24 @@ struct CellAppraisalProposal {
     inaction_reason: Option<String>,
 }
 
+const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
+  "type":"object",
+  "required":["actions","inaction_reason"],
+  "properties":{
+    "actions":{"type":"array","items":{"type":"object","required":["subject_id","intent","intended_effect","priority","state_references","public_channels","effect"],"properties":{
+      "subject_id":{"type":"string"},"intent":{"type":"string"},"intended_effect":{"type":"string"},"priority":{"type":"integer"},
+      "state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},
+      "effect":{"oneOf":[
+        {"type":"object","required":["type","institution_id","posture","location_ids"],"properties":{"type":{"const":"institution"},"institution_id":{"type":"string"},"posture":{"type":"string"},"location_ids":{"type":"array","items":{"type":"string"}}}},
+        {"type":"object","required":["type","gestalt_id","pressure_additions"],"properties":{"type":{"const":"gestalt"},"gestalt_id":{"type":"string"},"pressure_additions":{"type":"array","minItems":1,"maxItems":4,"items":{"type":"string"}}}},
+        {"type":"object","required":["type","actor_id","destination_id"],"properties":{"type":{"const":"actor_move"},"actor_id":{"type":"string"},"destination_id":{"type":"string"}}},
+        {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"member_migration"},"destination_gestalt_id":{"type":"string"}}}
+      ]}
+    }}},
+    "inaction_reason":{"type":["string","null"]}
+  }
+}"#;
+
 #[async_trait]
 pub trait ExecutionPermit: Send + Sync {
     async fn require(&self, actor_id: &str, snapshot_binding: &str, stage: &str) -> Result<()>;
@@ -347,22 +365,32 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
         "exact_permissions": slice.constituents.iter().map(|subject| serde_json::json!({
             "subject_id": subject.subject_id,
             "subject_kind": subject.subject_kind,
+            "allowed_effect_type": allowed_effect_type(&subject.subject_kind),
             "collective_authority_id": subject.collective_authority_id,
             "location_ids": subject.location_ids,
-            "information_channels": subject.information_channels,
+            "allowed_public_channels": subject.information_channels,
             "permitted_state_references": subject.permitted_state_references,
             "reachable_destination_ids": subject.reachable_destination_ids,
         })).collect::<Vec<_>>(),
         "member_permissions": slice.member_exceptions.iter().map(|member| serde_json::json!({
             "subject_id": member.subject_id,
             "member_id": member.member_id,
+            "allowed_effect_type": "member_migration",
             "source_gestalt_id": member.source_gestalt_id,
             "source_location_id": member.source_location_id,
-            "information_channels": member.information_channels,
+            "allowed_public_channels": member.information_channels,
             "permitted_state_references": member.permitted_state_references,
             "migration_destinations": member.migration_destinations,
         })).collect::<Vec<_>>(),
     })
+}
+
+fn allowed_effect_type(kind: &crate::domain::AgencySubjectKind) -> &'static str {
+    match kind {
+        crate::domain::AgencySubjectKind::Actor => "actor_move",
+        crate::domain::AgencySubjectKind::Institution => "institution",
+        crate::domain::AgencySubjectKind::Gestalt => "gestalt",
+    }
 }
 
 #[derive(Clone)]
@@ -468,12 +496,11 @@ impl CellProjectionEngine {
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_interpreter")
             .await?;
-        let prompt_schema = serde_json::to_value(schema_for!(CellAppraisalProposal))?;
-        let mut schema = prompt_schema.clone();
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal))?;
         constrain_cell_proposal_schema(&mut schema, &slice)?;
         let interpreter_context = serde_json::to_string(&cell_interpreter_context(&slice))?;
         let permission_guidance = format!(
-            "Emit at most {} exact constituent- or named-member-attributed attempts supported by that exact subject's permission references. A named member may only emit member_migration, using one supplied destination mapping; a population or arena cannot migrate a person. The runtime, not you, binds cell identity, revisions, complete membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
+            "Emit at most {} exact constituent- or named-member-attributed attempts. Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt, actor -> actor_move, named member -> member_migration. Use only that subject's permitted_state_references and allowed_public_channels; facet labels are not public channels. A named member uses one supplied migration destination; a population or arena cannot migrate a person. The runtime binds cell identity, revisions, membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
             slice.max_actions
         );
         let mut request = ModelStageRequest {
@@ -485,7 +512,7 @@ impl CellProjectionEngine {
                 typed_context: &interpreter_context,
                 lived_stream: &lived.text,
                 persona_output: &persona.narrative,
-                output_schema: &serde_json::to_string(&prompt_schema)?,
+                output_schema: CELL_APPRAISAL_OUTPUT_CONTRACT,
                 domain_guidance: &permission_guidance,
             }),
             output_schema: Some(schema),
@@ -619,16 +646,24 @@ fn validate_cell_appraisal(
             match &action.effect {
                 crate::domain::StrategicCellEffect::Institution {
                     institution_id,
+                    posture,
                     location_ids,
-                    ..
                 } if subject.subject_kind == crate::domain::AgencySubjectKind::Institution
                     && institution_id == &subject.subject_id
+                    && !posture.trim().is_empty()
                     && location_ids
                         .iter()
                         .all(|location| subject.location_ids.contains(location)) => {}
-                crate::domain::StrategicCellEffect::Gestalt { gestalt_id, .. }
-                    if subject.subject_kind == crate::domain::AgencySubjectKind::Gestalt
-                        && gestalt_id == &subject.subject_id => {}
+                crate::domain::StrategicCellEffect::Gestalt {
+                    gestalt_id,
+                    pressure_additions,
+                } if subject.subject_kind == crate::domain::AgencySubjectKind::Gestalt
+                    && gestalt_id == &subject.subject_id
+                    && !pressure_additions.is_empty()
+                    && pressure_additions.len() <= 4
+                    && pressure_additions
+                        .iter()
+                        .all(|pressure| !pressure.trim().is_empty() && pressure.len() <= 240) => {}
                 crate::domain::StrategicCellEffect::ActorMove {
                     actor_id,
                     destination_id,
@@ -910,6 +945,44 @@ mod tests {
             error
                 .to_string()
                 .contains("concrete non-empty inaction_reason")
+        );
+    }
+
+    #[test]
+    fn compact_cell_prompt_contract_is_valid_json() {
+        serde_json::from_str::<serde_json::Value>(CELL_APPRAISAL_OUTPUT_CONTRACT).unwrap();
+    }
+
+    #[test]
+    fn gestalt_pressure_shape_is_rejected_before_the_world_wave() {
+        let mut slice = fixture_cell_slice();
+        let subject = &mut slice.constituents[0];
+        subject.subject_id = "crowd".into();
+        subject.subject_kind = AgencySubjectKind::Gestalt;
+        subject.permitted_state_references = BTreeSet::from(["gestalt:crowd".into()]);
+        let appraisal = bind_cell_appraisal(
+            &slice,
+            CellAppraisalProposal {
+                actions: vec![crate::domain::CellActionProposal {
+                    subject_id: "crowd".into(),
+                    intent: "respond to the pressure".into(),
+                    intended_effect: "change the collective situation".into(),
+                    priority: 1,
+                    state_references: vec!["gestalt:crowd".into()],
+                    public_channels: vec![],
+                    effect: StrategicCellEffect::Gestalt {
+                        gestalt_id: "crowd".into(),
+                        pressure_additions: vec![],
+                    },
+                }],
+                inaction_reason: None,
+            },
+        );
+        assert!(
+            validate_cell_appraisal(&slice, &appraisal)
+                .unwrap_err()
+                .to_string()
+                .contains("exceeds exact constituent authority")
         );
     }
 

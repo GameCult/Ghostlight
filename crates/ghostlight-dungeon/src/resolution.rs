@@ -1795,7 +1795,7 @@ fn validate_member_cell_proposal(
         })
         .ok_or_else(|| anyhow!("named member is not a dematerialized exception of this cell"))?;
     let permitted_references = member_state_references(campaign, member_id)?;
-    let information_channels = effective_member_knowledge(campaign, member_id)?;
+    let information_channels = effective_member_information_channels(campaign, member_id)?;
     if proposal
         .state_references
         .iter()
@@ -1958,6 +1958,21 @@ pub fn member_state_references(campaign: &Campaign, member_id: &str) -> Result<B
         }
     }
     Ok(references)
+}
+
+pub fn effective_member_information_channels(
+    campaign: &Campaign,
+    member_id: &str,
+) -> Result<BTreeSet<String>> {
+    let member = campaign
+        .gestalt_members
+        .get(member_id)
+        .ok_or_else(|| anyhow!("gestalt member is unknown"))?;
+    campaign
+        .agency_profiles
+        .get(&member.gestalt_id)
+        .map(|profile| profile.information_channels.clone())
+        .ok_or_else(|| anyhow!("gestalt member agency profile is unknown"))
 }
 
 pub fn effective_member_capabilities(
@@ -2643,6 +2658,12 @@ pub(crate) mod tests {
             },
         );
         ensure_agency_profiles(&mut value);
+        value
+            .agency_profiles
+            .get_mut("refugees")
+            .unwrap()
+            .information_channels
+            .insert("camp-bulletin".into());
         value.agency_relations.insert(
             "rivalry".into(),
             AgencyRelation {
@@ -2707,6 +2728,14 @@ pub(crate) mod tests {
         };
         let plan = validate_and_resolve_wave(&value, &make_wave(proposal.clone())).unwrap();
         assert_eq!(plan.member_migrations.len(), 1);
+
+        let mut announced = proposal.clone();
+        announced.public_channels = vec!["camp-bulletin".into()];
+        assert!(validate_and_resolve_wave(&value, &make_wave(announced)).is_ok());
+
+        let mut knowledge_as_channel = proposal.clone();
+        knowledge_as_channel.public_channels = vec!["the player helped me".into()];
+        assert!(validate_and_resolve_wave(&value, &make_wave(knowledge_as_channel)).is_err());
 
         let mut collective_theft = proposal.clone();
         collective_theft.subject_id = "refugees".into();

@@ -188,6 +188,20 @@ async fn main() -> anyhow::Result<()> {
             &advanced,
         )
         .await?;
+        std::fs::write(
+            root.join(format!(
+                "sustained-wave-{:02}-preflight.json",
+                wave_index + 1
+            )),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "wave_index":wave_index + 1,
+                "budget":budget,
+                "cover":&sustained_output.wave.cover,
+                "appraisals":&sustained_output.wave.appraisals,
+                "private_cell_traces":&sustained_output.private_cell_traces,
+                "model_stage_receipts":sustained_output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
+            }))?,
+        )?;
         let sustained_plan = validate_and_resolve_wave(&advanced, &sustained_output.wave)?;
         for appraisal in &sustained_output.wave.appraisals {
             for proposal in &appraisal.actions {

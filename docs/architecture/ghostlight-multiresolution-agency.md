@@ -239,6 +239,17 @@ of its public channels; arena streams retain those viewer attributions. There
 is no global recent-event recap that can quietly teach every population the
 same fact.
 
+Interpreter prompts use a compact stable output contract plus an exact
+per-subject permission table. The table names the only allowed effect kind,
+state references, public channels, and destinations for each constituent or
+member exception. Local validation repeats every slice-expressible constraint
+before accepting the terminal appraisal, so a malformed pressure marker or
+wrong subject/effect pairing receives the same-snapshot correction while the
+kernel still performs the authoritative canonical check. Named-member
+knowledge is never treated as an information channel; while dematerialized,
+the member can publish only through channels owned by their current leaf
+gestalt's agency profile.
+
 ## Public state and controls
 
 The schema catalog and CultCache stores publish:

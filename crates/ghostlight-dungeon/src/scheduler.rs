@@ -529,6 +529,8 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                 &member.knowledge_additions,
                 &member.knowledge_removals,
             );
+            let information_channels =
+                crate::resolution::effective_member_information_channels(campaign, &member.id)?;
             let goals = if member.goals.is_empty() {
                 source.goals.clone()
             } else {
@@ -565,7 +567,7 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                 knowledge: knowledge.clone(),
                 capabilities,
                 resources: member.equipment.clone(),
-                information_channels: knowledge,
+                information_channels,
                 permitted_state_references,
                 migration_destinations: destinations,
                 goals,
