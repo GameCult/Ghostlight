@@ -6,7 +6,8 @@ use crate::{
         GestaltPersonaState, InstitutionState, Location, NarrationProjection, NewsIssue,
         RegionExpansionPreview, RejectedProposalReceipt, RelationshipState,
         ResolutionControlReceipt, ResolutionCover, ResolutionDemand, ResolutionPin,
-        ResolutionPlanReceipt, ResolutionPolicy, RollReceipt, SimulationCell, StrategicTickPlan,
+        ResolutionPlanReceipt, ResolutionPolicy, RollReceipt, SimulationCell,
+        StrategicGestaltMigration, StrategicMemberMigration, StrategicTickPlan,
         StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest, WorldActionProposal, WorldClock,
         WorldCommitReceipt, WorldCompilePreview, WorldFact,
     },
@@ -164,6 +165,8 @@ impl MeshPublisher {
             "ghostlight.actor_state_delta.v1",
             "ghostlight.world_action_proposal.v1",
             "ghostlight.strategic_tick.v1",
+            "ghostlight.gestalt_migration.v1",
+            "ghostlight.member_migration.v1",
             "ghostlight.news_issue.v1",
             "ghostlight.canon_candidate.v1",
         ];
@@ -356,7 +359,7 @@ impl MeshPublisher {
 }
 
 fn schema_catalog() -> Value {
-    json!({
+    let mut catalog = json!({
         "ghostlight.vault_manifest.v1": schemars::schema_for!(VaultManifest),
         "ghostlight.vault_evidence_receipt.v1": schemars::schema_for!(VaultEvidenceReceipt),
         "ghostlight.world_compile_preview.v1": schemars::schema_for!(WorldCompilePreview),
@@ -398,7 +401,21 @@ fn schema_catalog() -> Value {
         "ghostlight.cell_appraisal.v1": schemars::schema_for!(CellAppraisal),
         "ghostlight.cell_action_proposal.v1": schemars::schema_for!(CellActionProposal),
         "ghostlight.gestalt_fission_preview.v1": schemars::schema_for!(GestaltFissionPreview)
-    })
+    });
+    let schemas = catalog
+        .as_object_mut()
+        .expect("schema catalog literal is an object");
+    schemas.insert(
+        "ghostlight.gestalt_migration.v1".into(),
+        serde_json::to_value(schemars::schema_for!(StrategicGestaltMigration))
+            .expect("gestalt migration schema serializes"),
+    );
+    schemas.insert(
+        "ghostlight.member_migration.v1".into(),
+        serde_json::to_value(schemars::schema_for!(StrategicMemberMigration))
+            .expect("member migration schema serializes"),
+    );
+    catalog
 }
 
 #[cfg(test)]

@@ -1364,6 +1364,60 @@ fn apply_strategic_tick_plan(
         });
     }
 
+    for action in &plan.gestalt_migrations {
+        if !seen_gestalts.insert(action.gestalt_id.clone()) {
+            return Err(KernelError::Invalid(
+                "gestalt acts twice in one strategic tick".into(),
+            ));
+        }
+        validate_public_channels(&action.public_channels)?;
+        crate::resolution::validate_gestalt_migration(
+            campaign,
+            &action.gestalt_id,
+            &action.destination_gestalt_id,
+            &action.destination_location_id,
+        )
+        .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    }
+    for action in plan.gestalt_migrations {
+        let origin = campaign.gestalts[&action.gestalt_id]
+            .home_location_id
+            .clone();
+        let gestalt_name = campaign.gestalts[&action.gestalt_id].name.clone();
+        let destination_name = campaign.gestalts[&action.destination_gestalt_id]
+            .name
+            .clone();
+        let gestalt = campaign
+            .gestalts
+            .get_mut(&action.gestalt_id)
+            .expect("gestalt migration source was validated");
+        gestalt.home_location_id = action.destination_location_id.clone();
+        gestalt.version = gestalt.version.saturating_add(1);
+        let profile = campaign
+            .agency_profiles
+            .get_mut(&action.gestalt_id)
+            .expect("gestalt migration profile was validated");
+        profile.location_ids = BTreeSet::from([action.destination_location_id.clone()]);
+        profile.profile_version = profile.profile_version.saturating_add(1);
+        events.push(crate::domain::Event {
+            id: format!(
+                "strategic:{revision}:gestalt-migration:{}",
+                action.gestalt_id
+            ),
+            at,
+            kind: "gestalt_migration".into(),
+            summary: format!(
+                "{gestalt_name} moves from {origin} to {} near {destination_name}.",
+                action.destination_location_id
+            ),
+            actor_ids: vec![],
+            institution_ids: vec![],
+            gestalt_ids: vec![action.gestalt_id, action.destination_gestalt_id],
+            location_ids: vec![origin, action.destination_location_id],
+            public_channels: action.public_channels,
+        });
+    }
+
     for action in plan.gestalt_activities {
         if !seen_gestalts.insert(action.gestalt_id.clone()) {
             return Err(KernelError::Invalid(
@@ -1386,6 +1440,7 @@ fn apply_strategic_tick_plan(
         let needs_target = !matches!(
             action.activity,
             crate::domain::StrategicActivityKind::Prepare
+                | crate::domain::StrategicActivityKind::Investigate
         );
         if action.target_subject_ids.len() > 4
             || unique_targets.len() != action.target_subject_ids.len()
@@ -1538,7 +1593,10 @@ fn apply_strategic_tick_plan(
             crate::resolution::dormant_member_location(campaign, &action.member_id)
                 .map_err(|error| KernelError::Invalid(error.to_string()))?;
         let unique_targets = action.target_subject_ids.iter().collect::<BTreeSet<_>>();
-        let needs_target = !matches!(action.activity, StrategicActivityKind::Prepare);
+        let needs_target = !matches!(
+            action.activity,
+            StrategicActivityKind::Prepare | StrategicActivityKind::Investigate
+        );
         if action.target_subject_ids.len() > 4
             || unique_targets.len() != action.target_subject_ids.len()
             || action
@@ -1659,6 +1717,9 @@ fn strategic_activity_summary(
         }
         (StrategicActivityKind::Coordinate, false) => {
             format!("{source_name} attempts to coordinate with {targets}.")
+        }
+        (StrategicActivityKind::Investigate, true) => {
+            format!("{source_name} begins a local investigation.")
         }
         (StrategicActivityKind::Investigate, false) => {
             format!("{source_name} begins investigating {targets}.")
@@ -2308,6 +2369,86 @@ mod tests {
     }
 
     #[test]
+    fn gestalt_migration_moves_only_the_population_leaf() {
+        let mut value = hierarchical_refugee_campaign();
+        let member_before = value.gestalt_members["mira"].clone();
+        let destination_before = value.gestalts["dock-neighbors"].clone();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_migrations: vec![StrategicGestaltMigration {
+                    gestalt_id: "refugees-east".into(),
+                    destination_gestalt_id: "dock-neighbors".into(),
+                    destination_location_id: "docks".into(),
+                    public_channels: vec!["camp-bulletin".into()],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(value.gestalts["refugees-east"].home_location_id, "docks");
+        assert_eq!(value.gestalts["refugees-east"].version, 1);
+        assert_eq!(
+            value.agency_profiles["refugees-east"].location_ids,
+            BTreeSet::from(["docks".into()])
+        );
+        assert_eq!(value.gestalt_members["mira"], member_before);
+        assert_eq!(value.gestalts["dock-neighbors"], destination_before);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].kind, "gestalt_migration");
+        assert_eq!(events[0].location_ids, vec!["camp", "docks"]);
+        assert_eq!(
+            events[0].gestalt_ids,
+            vec!["refugees-east", "dock-neighbors"]
+        );
+    }
+
+    #[test]
+    fn population_cannot_move_without_its_exact_migration_relation() {
+        let mut value = hierarchical_refugee_campaign();
+        value.agency_relations.clear();
+        let before = value.clone();
+        let error = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_migrations: vec![StrategicGestaltMigration {
+                    gestalt_id: "refugees-east".into(),
+                    destination_gestalt_id: "dock-neighbors".into(),
+                    destination_location_id: "docks".into(),
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("source-to-destination relation"));
+        assert_eq!(value, before);
+    }
+
+    #[test]
+    fn invalid_population_migration_batch_has_no_partial_move() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let action = StrategicGestaltMigration {
+            gestalt_id: "refugees-east".into(),
+            destination_gestalt_id: "dock-neighbors".into(),
+            destination_location_id: "docks".into(),
+            public_channels: vec![],
+        };
+        let error = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_migrations: vec![action.clone(), action],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("acts twice"));
+        assert_eq!(value, before);
+    }
+
+    #[test]
     fn member_migration_requires_the_persons_route_and_typed_population_relation() {
         let mut value = hierarchical_refugee_campaign();
         value.agency_relations.clear();
@@ -2387,6 +2528,33 @@ mod tests {
         assert_eq!(
             events[0].gestalt_ids,
             vec!["refugees-east", "dock-neighbors"]
+        );
+        assert!(events[0].actor_ids.is_empty());
+        assert!(events[0].institution_ids.is_empty());
+    }
+
+    #[test]
+    fn local_investigation_needs_a_location_but_not_an_invented_actor() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Investigate,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(value, before);
+        assert_eq!(
+            events[0].summary,
+            "Eastern transit refugees begins a local investigation."
         );
         assert!(events[0].actor_ids.is_empty());
         assert!(events[0].institution_ids.is_empty());

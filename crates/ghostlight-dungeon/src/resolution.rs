@@ -1656,6 +1656,20 @@ pub fn validate_and_resolve_wave(
                 location_ids,
                 public_channels: proposal.public_channels,
             }),
+            StrategicCellEffect::GestaltMigration {
+                destination_gestalt_id,
+            } => {
+                let gestalt_id = proposal.subject_id.clone();
+                let destination_location_id = campaign.gestalts[&destination_gestalt_id]
+                    .home_location_id
+                    .clone();
+                plan.gestalt_migrations.push(StrategicGestaltMigration {
+                    gestalt_id,
+                    destination_gestalt_id,
+                    destination_location_id,
+                    public_channels: proposal.public_channels,
+                });
+            }
             StrategicCellEffect::ActorMove {
                 actor_id,
                 destination_id,
@@ -1704,6 +1718,7 @@ pub fn validate_and_resolve_wave(
         if plan.institution_actions.len()
             + plan.gestalt_actions.len()
             + plan.gestalt_activities.len()
+            + plan.gestalt_migrations.len()
             + plan.actor_moves.len()
             + plan.member_activities.len()
             + plan.member_migrations.len()
@@ -1798,7 +1813,10 @@ fn validate_cell_proposal(
             let allowed_targets = strategic_activity_targets(campaign, gestalt_id);
             let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
             let unique_locations = location_ids.iter().collect::<BTreeSet<_>>();
-            let needs_target = !matches!(activity, StrategicActivityKind::Prepare);
+            let needs_target = !matches!(
+                activity,
+                StrategicActivityKind::Prepare | StrategicActivityKind::Investigate
+            );
             if gestalt_id != &proposal.subject_id
                 || !campaign.gestalts.contains_key(gestalt_id)
                 || target_subject_ids.len() > 4
@@ -1817,6 +1835,21 @@ fn validate_cell_proposal(
                     "gestalt activity exceeds exact subject, graph, or location scope"
                 ));
             }
+        }
+        StrategicCellEffect::GestaltMigration {
+            destination_gestalt_id,
+        } => {
+            let destination_location_id = campaign
+                .gestalts
+                .get(destination_gestalt_id)
+                .map(|gestalt| gestalt.home_location_id.as_str())
+                .ok_or_else(|| anyhow!("gestalt migration invented a destination population"))?;
+            validate_gestalt_migration(
+                campaign,
+                &proposal.subject_id,
+                destination_gestalt_id,
+                destination_location_id,
+            )?;
         }
         StrategicCellEffect::ActorMove {
             actor_id,
@@ -1942,7 +1975,10 @@ fn validate_member_cell_proposal(
             let allowed_targets = member_activity_targets(campaign, member_id)?;
             let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
             let exact_location = dormant_member_location(campaign, member_id)?;
-            let needs_target = !matches!(activity, StrategicActivityKind::Prepare);
+            let needs_target = !matches!(
+                activity,
+                StrategicActivityKind::Prepare | StrategicActivityKind::Investigate
+            );
             if effect_member_id != member_id
                 || target_subject_ids.len() > 4
                 || unique_targets.len() != target_subject_ids.len()
@@ -1979,6 +2015,78 @@ fn validate_member_cell_proposal(
             "named member exception may propose only its own validated activity or migration"
         )),
     }
+}
+
+pub fn validate_gestalt_migration(
+    campaign: &Campaign,
+    source_gestalt_id: &str,
+    destination_gestalt_id: &str,
+    destination_location_id: &str,
+) -> Result<()> {
+    if source_gestalt_id == destination_gestalt_id {
+        return Err(anyhow!(
+            "gestalt migration must name a different destination population"
+        ));
+    }
+    let source = campaign
+        .gestalts
+        .get(source_gestalt_id)
+        .ok_or_else(|| anyhow!("gestalt migration source is unknown"))?;
+    let destination = campaign
+        .gestalts
+        .get(destination_gestalt_id)
+        .filter(|destination| destination.home_location_id == destination_location_id)
+        .ok_or_else(|| anyhow!("gestalt migration destination or location is unknown"))?;
+    if source.home_location_id == destination_location_id {
+        return Err(anyhow!(
+            "gestalt migration must change the source population location"
+        ));
+    }
+    for (gestalt_id, gestalt) in [
+        (source_gestalt_id, source),
+        (destination_gestalt_id, destination),
+    ] {
+        let profile = campaign
+            .agency_profiles
+            .get(gestalt_id)
+            .filter(|profile| {
+                profile.subject_kind == AgencySubjectKind::Gestalt
+                    && profile.active_leaf
+                    && profile.simulation_eligible
+            })
+            .ok_or_else(|| anyhow!("gestalt migration endpoint is not an active leaf"))?;
+        if !profile.location_ids.contains(&gestalt.home_location_id) {
+            return Err(anyhow!(
+                "gestalt migration endpoint has incoherent location state"
+            ));
+        }
+    }
+    let relation_exists = campaign.agency_relations.values().any(|relation| {
+        relation.active
+            && relation.kind == AgencyRelationKind::Migration
+            && relation.from_subject_id == source_gestalt_id
+            && relation.to_subject_id == destination_gestalt_id
+    });
+    if !relation_exists {
+        return Err(anyhow!(
+            "gestalt migration lacks an explicit source-to-destination relation"
+        ));
+    }
+    let reachable = campaign
+        .locations
+        .get(&source.home_location_id)
+        .is_some_and(|location| {
+            location.routes.values().any(|route| {
+                route.destination_id == destination_location_id
+                    && route.travel_minutes <= campaign.tick_hours.saturating_mul(60)
+            })
+        });
+    if !reachable {
+        return Err(anyhow!(
+            "gestalt migration destination is not reachable within the strategic horizon"
+        ));
+    }
+    Ok(())
 }
 
 pub fn validate_member_migration(
@@ -2350,6 +2458,9 @@ fn proposal_target_key(proposal: &CellActionProposal) -> String {
         StrategicCellEffect::Gestalt { gestalt_id, .. } => format!("gestalt:{gestalt_id}"),
         StrategicCellEffect::GestaltActivity { gestalt_id, .. } => {
             format!("gestalt:{gestalt_id}")
+        }
+        StrategicCellEffect::GestaltMigration { .. } => {
+            format!("gestalt:{}", proposal.subject_id)
         }
         StrategicCellEffect::ActorMove { actor_id, .. } => format!("actor:{actor_id}"),
         StrategicCellEffect::MemberActivity { member_id, .. } => {

@@ -124,6 +124,38 @@ named offscreen actor, but model-driven presence reconciliation cannot teleport
 one into view. Existing member deltas are preferred when their relationship,
 memory, obligation, or goal makes an ordinary encounter a meaningful callback.
 
+## Canonical population migration
+
+Population fission and population movement are separate decisions. Fission
+answers which non-overlapping cohort exists. Migration answers where one active
+cohort goes. Simulation aggregation answers how much inference attention that
+cohort receives after arrival. None of those operations is a canonical merge.
+
+- **Owner:** `WorldKernel` exclusively owns an active gestalt leaf's
+  `home_location_id` and the matching agency-profile location set.
+- **Inputs:** one exact gestalt-attributed proposal, an active source leaf, an
+  explicit migration relation to an active destination population leaf, a
+  reachable destination, and the unchanged world and resolution revisions.
+- **Outputs:** the source leaf and its agency profile move atomically, their
+  versions advance, and one attributed population-migration event records the
+  source and destination locations and populations.
+- **Derived state:** the resolution cover may later place the migrant cohort
+  and destination population in one cohesive or arena cell. That cover does
+  not change either population's identity, knowledge, authority, or lineage.
+- **Forbidden writers:** an arena, destination population, Projector, Persona,
+  Interpreter, scheduler, or relation cannot move a population. A population
+  move never carries named member deltas by implication; each named person's
+  exact location and membership remain unchanged until that person acts.
+- **Shared paths:** every active leaf uses the same transition, whether it is a
+  root population or a child many levels below it. Approval-gated fission may
+  first create destination, stayer, and `other/unknown` cohorts; each resulting
+  leaf can then migrate independently.
+- **Cut line:** collective departure is neither `prepare` nor
+  `member_migration`. The former loses the chosen journey; the latter gives a
+  population authority over a person. Canonical population merging remains
+  absent: arrival changes geography, while derived covers provide cheap local
+  aggregation.
+
 ## Demand projection
 
 A flash-model structured stage converts the committed event or strategic
@@ -381,6 +413,8 @@ The schema catalog and CultCache stores publish:
   `resolution_plan_receipt.v1`, and `resolution_control_receipt.v1`;
 - `cell_appraisal.v1`, `cell_action_proposal.v1`, and the internal atomic
   `resolution_wave_commit.v1` bundle;
+- `gestalt_migration.v1` and `member_migration.v1` as distinct collective and
+  individual movement contracts inside strategic plans;
 - `gestalt_fission_preview.v1` and approval-gated `FissionGestalt`.
 
 The authenticated campaign laboratory exposes budget, effective overage, pins,

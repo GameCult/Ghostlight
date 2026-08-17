@@ -522,7 +522,8 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                 .last_location_id
                 .clone()
                 .unwrap_or_else(|| source.home_location_id.clone());
-            let destinations = migration_destinations(campaign, &member.gestalt_id, &origin);
+            let destinations =
+                gestalt_migration_destinations(campaign, &member.gestalt_id, &origin);
             let activity_targets =
                 crate::resolution::member_activity_targets(campaign, &member.id).ok()?;
             if destinations.is_empty() && activity_targets.is_empty() {
@@ -625,7 +626,7 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
         .collect()
 }
 
-fn migration_destinations(
+fn gestalt_migration_destinations(
     campaign: &Campaign,
     source_gestalt_id: &str,
     origin_location_id: &str,
@@ -688,6 +689,7 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
         information_channels: profile.information_channels.clone(),
         permitted_state_references: crate::resolution::subject_state_references(campaign, id)?,
         reachable_destination_ids: BTreeSet::new(),
+        migration_destinations: BTreeMap::new(),
         activity_target_ids: crate::resolution::strategic_activity_targets(campaign, id),
         goals: vec![],
         current_posture: None,
@@ -734,6 +736,19 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
             value.resources = gestalt.resources.clone();
             value.goals = gestalt.goals.clone();
             value.pressures = gestalt.pressures.clone();
+            value.migration_destinations =
+                gestalt_migration_destinations(campaign, id, &gestalt.home_location_id);
+            value
+                .migration_destinations
+                .retain(|_, location_id| location_id != &gestalt.home_location_id);
+            for (destination_id, location_id) in &value.migration_destinations {
+                value
+                    .permitted_state_references
+                    .insert(format!("gestalt:{destination_id}"));
+                value
+                    .permitted_state_references
+                    .insert(format!("location:{location_id}"));
+            }
         }
     }
     Ok(value)

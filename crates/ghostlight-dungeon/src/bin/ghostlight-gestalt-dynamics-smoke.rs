@@ -211,6 +211,7 @@ async fn main() -> anyhow::Result<()> {
     let background_action_count = plan.institution_actions.len()
         + plan.gestalt_actions.len()
         + plan.gestalt_activities.len()
+        + plan.gestalt_migrations.len()
         + plan.actor_moves.len()
         + plan.member_activities.len();
     for stage in &output.stages {

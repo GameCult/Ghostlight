@@ -129,6 +129,19 @@ boundaries from the permitted slice, and model-facing effects no longer carry
 duplicate owner IDs. `subject_id` is bound once into the canonical effect by
 the runtime, reducing both ambiguity and prompt/output tokens.
 
+The following sustained wave reached a missing typed capability rather than a
+prompt defect. An entire refugee leaf chose to board, but only named-member
+migration existed, so the Interpreter could preserve the journey only by
+lying. `gestalt_migration` now lets an exact active leaf move along a typed
+migration relation and reachable route. WorldKernel atomically updates the
+Gestalt and its agency-profile location while leaving every named member delta
+untouched. Fission still owns cohort subdivision and remains approval-gated;
+derived covers still own only simulation resolution. The same wave also
+exposed an unnamed manifest clerk. Targetless local investigation is now a
+typed attempt against the current environment, never an invented actor,
+response, or discovered fact. Interpreter guidance was split into shorter
+stable clauses while adding these effects, reducing repeated prompt bulk.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

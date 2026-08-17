@@ -29,7 +29,7 @@ function Get-ScenarioKind([string]$ScenarioId) {
 function Get-PlanActionCount($Plan) {
     if (-not $Plan) { return 0 }
     $count = 0
-    foreach ($property in @('institution_actions', 'gestalt_actions', 'gestalt_activities', 'actor_moves', 'member_activities', 'member_migrations')) {
+    foreach ($property in @('institution_actions', 'gestalt_actions', 'gestalt_activities', 'gestalt_migrations', 'actor_moves', 'member_activities', 'member_migrations')) {
         if ($Plan.PSObject.Properties.Name -contains $property) {
             $count += @($Plan.$property).Count
         }

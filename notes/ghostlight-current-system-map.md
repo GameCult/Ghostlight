@@ -92,7 +92,7 @@ proposal. The model cannot disagree with itself about `member:mira-venn` versus
 raw `mira-venn`, and the prompt/output contract spends fewer tokens copying
 invariants Ghostlight already owns.
 
-Gestalt background choices use two distinct typed paths. Pressure transitions
+Gestalt background choices use three distinct typed paths. Pressure transitions
 change exact unresolved markers. `gestalt_activity` records an attributed
 preparation, coordination, investigation, recruitment, obstruction, trade, or
 communication attempt against subjects connected by an explicit agency
@@ -100,6 +100,17 @@ relation or exact shared location without claiming the outcome. A selected
 dormant member can be addressed by their durable ID; this does not union them
 into the source population. The kernel derives the event text and exact
 participant IDs; the arena and model prose own neither.
+
+`gestalt_migration` records a collective decision by one exact active leaf to
+move along an explicit migration relation and reachable route. WorldKernel
+changes the leaf's home location and agency-profile location together. The
+destination population remains a separate canonical subject, and named member
+deltas are not carried by implication. Approval-gated fission creates
+destination/stayer cohorts; the same migration primitive moves any resulting
+leaf regardless of lineage depth. A local `investigate` activity may omit a
+target when it examines the exact current environment; this admits ordinary
+roles such as an unnamed clerk without inventing an actor or claiming an
+answer.
 
 Salient dormant members have their own `member_activity` path for ordinary
 local attempts. It uses the same bounded verbs, the member's exact location,
