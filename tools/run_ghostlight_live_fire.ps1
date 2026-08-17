@@ -5,6 +5,8 @@ param(
     [int]$MaxParallel = 4,
     [ValidateRange(1, 260)]
     [int]$MaxScenarios = 240,
+    [ValidateRange(0, 259)]
+    [int]$StartAt = 0,
     [string]$RunRoot = (Join-Path 'F:\GameCult\GhostlightDungeon\acceptance' ("live-fire-matrix-{0}-{1}" -f [DateTimeOffset]::UtcNow.ToString('yyyyMMdd-HHmmss'), [guid]::NewGuid().ToString('N'))),
     [string]$SourceRoot = 'F:\Projects\Ghostlight',
     [string]$BalanceScript = 'F:\Projects\gamecult-ops\scripts\get-deepseek-balance.ps1'
@@ -269,7 +271,11 @@ for ($index = 0; $index -lt $largestGroup; $index++) {
     if ($index -lt $strategicScenarios.Count) { $scenarios.Add($strategicScenarios[$index]) }
     if ($index -lt $scaleScenarios.Count) { $scenarios.Add($scaleScenarios[$index]) }
 }
-$scenarios = @($scenarios | Select-Object -First $MaxScenarios)
+$scenarioCatalogCount = $scenarios.Count
+$scenarios = @($scenarios | Select-Object -Skip $StartAt -First $MaxScenarios)
+if ($scenarios.Count -eq 0) {
+    throw "Live-fire scenario offset $StartAt is outside the $scenarioCatalogCount-scenario catalog."
+}
 
 function Start-LiveFireScenario($Scenario) {
     $resultRoot = Join-Path $resultsRoot $Scenario.Id
@@ -385,6 +391,8 @@ $initialStatus = [ordered]@{
     spent = 0
     scenarios_processed = $processed
     scenarios_available = $scenarios.Count
+    scenario_start_index = $StartAt
+    scenario_catalog_count = $scenarioCatalogCount
     failures = $failures
     totals = $totals
     updated_at_utc = [DateTimeOffset]::UtcNow.ToString('O')
@@ -424,6 +432,8 @@ while ($processed -lt $scenarios.Count -and $currentBalance -gt $TargetBalance) 
         spent = $startingBalance - $currentBalance
         scenarios_processed = $processed
         scenarios_available = $scenarios.Count
+        scenario_start_index = $StartAt
+        scenario_catalog_count = $scenarioCatalogCount
         failures = $failures
         totals = $totals
         updated_at_utc = [DateTimeOffset]::UtcNow.ToString('O')
@@ -443,6 +453,8 @@ $finalStatus = [ordered]@{
     spent = $startingBalance - $currentBalance
     scenarios_processed = $processed
     scenarios_available = $scenarios.Count
+    scenario_start_index = $StartAt
+    scenario_catalog_count = $scenarioCatalogCount
     failures = $failures
     totals = $totals
     summary_path = $summaryPath
