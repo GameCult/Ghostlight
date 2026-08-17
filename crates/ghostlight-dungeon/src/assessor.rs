@@ -81,7 +81,7 @@ impl ActionAssessor {
             "maximum":10
         });
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. When an outcome directly reveals information to the acting actor, actor_knowledge_additions must contain the specific observed finding, not a vague claim that a reading or clue exists. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. Findings become provisional branch facts on commit, so do not invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. When an outcome directly reveals information to the acting actor, actor_knowledge_additions must contain the specific observed finding as a player-readable natural-language declarative statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. Findings become provisional branch facts on commit, so do not invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(&intent)?,
             serde_json::to_string(actor)?,
@@ -285,12 +285,13 @@ pub(crate) fn validate_effect(
             || additions.iter().any(|finding| {
                 finding.trim().is_empty()
                     || finding.chars().count() > 500
+                    || looks_like_identifier(finding)
                     || acting_actor.knowledge.contains(finding)
                     || !stake.contains(finding)
             })
         {
             return Err(anyhow!(
-                "outcome knowledge must be new, bounded, directly observed by the acting actor, and visible verbatim in its stake"
+                "outcome knowledge must be a new bounded natural-language finding, directly observed by the acting actor and visible verbatim in its stake"
             ));
         }
     }
@@ -323,6 +324,15 @@ pub(crate) fn validate_effect(
         return Err(anyhow!("outcome delta cites unknown world state"));
     }
     Ok(())
+}
+
+fn looks_like_identifier(value: &str) -> bool {
+    let value = value.trim();
+    !value.chars().any(char::is_whitespace)
+        && (value.contains('_')
+            || value.contains("::")
+            || value.starts_with("fact:")
+            || value.starts_with("fact-"))
 }
 pub fn assessment_digest(assessment: &ActionAssessment) -> Result<String> {
     let mut value = assessment.clone();
@@ -389,5 +399,13 @@ mod tests {
 
         assert!(value.success_stake.contains(&finding));
         assert_eq!(value.success_stake.matches(&finding).count(), 1);
+    }
+
+    #[test]
+    fn fact_identifier_cannot_masquerade_as_character_knowledge() {
+        assert!(looks_like_identifier("fact_distress_relay_antenna_damaged"));
+        assert!(!looks_like_identifier(
+            "The distress relay's antenna array is damaged."
+        ));
     }
 }

@@ -385,6 +385,11 @@ bounded typed finding to the corresponding visible stake before validation and
 digesting. Semantic or authority errors may retry; punctuation no longer gets a
 second provider call.
 
+The next replay exposed that an unannotated string set invited an ID-shaped
+finding (`fact_distress_relay_antenna_damaged`). The schema now describes
+knowledge additions as player-readable declarative statements, and the local
+boundary rejects unambiguous fact-ID/key syntax before it can become memory.
+
 Next: commit and build this repaired candidate, replay the same authenticated
 Huygens campaign in an isolated runtime, inspect both the visible surface and
 the literal HTTP response, then prove away catch-up/concurrency/persistence/

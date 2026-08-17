@@ -590,6 +590,8 @@ outcome, and an unstated hidden finding cannot appear after the roll.
 The assessor normalizes each bounded typed finding into its visible stake before
 validation and digesting. Exact visibility is therefore deterministic; a model
 retry is reserved for semantic or authority failure, not punctuation mismatch.
+The schema names these values as player-readable declarative statements, and a
+fact ID, key, or slug cannot enter the character ledger as knowledge.
 
 ### Actor and world action loop
 
