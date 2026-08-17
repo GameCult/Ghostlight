@@ -92,6 +92,11 @@ before generation. Only direct-seed source text enters causal world compilation;
 background and excluded sources remain coverage provenance and cannot donate
 story incidents or cast.
 
+Compiler, expansion, fission, fork, and reset routes follow the same projection
+rule. Approval previews expose the public decision surface—topology, cast,
+pressures, player role, source-use coverage, gaps, and assumptions—without raw
+campaign, evidence, model receipts, private goals, memories, or relationships.
+
 Relationship documents in the schema catalog are revision-bound projections
 of actor-owned relationship maps; they are not a second relationship writer.
 Vault manifests summarize the exact provider/source/authority/temporal lanes

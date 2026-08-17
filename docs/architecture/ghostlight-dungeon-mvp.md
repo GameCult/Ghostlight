@@ -629,6 +629,14 @@ and model-stage state belongs to the authenticated operator projection only.
 Player and model strings enter the DOM through text nodes rather than HTML
 insertion, and all laboratory inputs have programmatic labels.
 
+The same rule covers compiler and campaign-management routes. Opening and role
+responses contain selectable suggestions, not retrieval/model receipts. An
+approval preview contains the promised topology, public cast, institutions,
+populations, clocks, player-role ledger, evidence-use coverage, gaps, and branch
+assumptions without private goals, memories, relationships, raw evidence, or a
+serialized campaign. Approval, expansion, fission, fork, and reset return small
+public receipts; their internal command results remain inside the daemon.
+
 The player surface includes compilation, transcript, composer, Assess/Attempt,
 roll confirmation, Wait, character ledger, current place/time/pressure, news,
 campaign management, fork/reset/export, and optional operator inspection.

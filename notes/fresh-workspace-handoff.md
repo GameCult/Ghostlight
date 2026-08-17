@@ -390,6 +390,13 @@ finding (`fact_distress_relay_antenna_damaged`). The schema now describes
 knowledge additions as player-readable declarative statements, and the local
 boundary rejects unambiguous fact-ID/key syntax before it can become memory.
 
+A route audit then found that approval, destination/fission approval, fork, and
+reset still serialized internal campaign-bearing values even though the browser
+ignored them. Every player route now returns a purpose-built public projection.
+Compiler approval retains topology/cast/pressure/player-role/coverage/gap data,
+while raw campaign state, evidence, model receipts, private goals, memories, and
+relationships remain operator-only.
+
 Next: commit and build this repaired candidate, replay the same authenticated
 Huygens campaign in an isolated runtime, inspect both the visible surface and
 the literal HTTP response, then prove away catch-up/concurrency/persistence/

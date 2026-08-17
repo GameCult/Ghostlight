@@ -11,7 +11,7 @@ use ghostlight_dungeon::{
     assessor::ActionAssessor,
     compiler::{
         CustomStart, GestaltFissionRequest, OpeningRequest, OpeningSuggestion, SelectedStart,
-        WorldCompiler,
+        SuggestedOpenings, SuggestedRoles, WorldCompiler,
     },
     domain::{
         ActionIntent, Campaign, GestaltFissionPreview, NarrationProjection, RegionExpansionPreview,
@@ -371,7 +371,7 @@ async fn compile_openings(
             .into_response();
     };
     match compiler.suggest_openings(request).await {
-        Ok(value) => Json(value).into_response(),
+        Ok(value) => Json(opening_suggestions_projection(&value)).into_response(),
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
@@ -416,8 +416,11 @@ async fn compile_custom(
                     model_receipts: model_receipts.clone(),
                 },
             );
-            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipts":model_receipts}))
-                .into_response()
+            Json(serde_json::json!({
+                "preview_id":id,
+                "preview":world_compile_preview_projection(&preview),
+            }))
+            .into_response()
         }
         Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
     }
@@ -440,7 +443,7 @@ async fn compile_roles(
             .into_response();
     };
     match compiler.suggest_roles(&opening).await {
-        Ok(value) => Json(value).into_response(),
+        Ok(value) => Json(role_suggestions_projection(&value)).into_response(),
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
@@ -496,8 +499,11 @@ async fn store_preview(
                     model_receipts: model_receipts.clone(),
                 },
             );
-            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipts":model_receipts}))
-                .into_response()
+            Json(serde_json::json!({
+                "preview_id":id,
+                "preview":world_compile_preview_projection(&preview),
+            }))
+            .into_response()
         }
         Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
     }
@@ -536,7 +542,11 @@ async fn approve_preview(
                     if let Err(error) = refresh_mesh(&state).await {
                         tracing::warn!(%error, "campaign approval CultMesh publication failed");
                     }
-                    Json(CommandResult::Created { campaign }).into_response()
+                    Json(player_command_projection(
+                        &CommandResult::Created { campaign },
+                        None,
+                    ))
+                    .into_response()
                 }
                 Err(error) => {
                     (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
@@ -598,8 +608,11 @@ async fn compile_destination(
                     model_receipts: model_receipts.clone(),
                 },
             );
-            Json(serde_json::json!({"preview_id":id,"preview":preview,"model_receipts":model_receipts}))
-                .into_response()
+            Json(serde_json::json!({
+                "preview_id":id,
+                "preview":region_expansion_preview_projection(&preview),
+            }))
+            .into_response()
         }
         Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
     }
@@ -645,7 +658,7 @@ async fn approve_destination(
         })
         .await
     {
-        Ok(value) => Json(value).into_response(),
+        Ok(value) => Json(player_command_projection(&value, None)).into_response(),
         Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
     }
 }
@@ -694,8 +707,7 @@ async fn compile_fission(
             );
             Json(serde_json::json!({
                 "preview_id":id,
-                "preview":preview,
-                "model_receipts":model_receipts
+                "preview":gestalt_fission_preview_projection(&preview),
             }))
             .into_response()
         }
@@ -745,7 +757,7 @@ async fn approve_fission(
             if let Err(error) = refresh_mesh(&state).await {
                 tracing::warn!(%error, "gestalt fission CultMesh publication failed");
             }
-            Json(value).into_response()
+            Json(player_command_projection(&value, None)).into_response()
         }
         Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
     }
@@ -1218,6 +1230,140 @@ async fn command(
     }
 }
 
+fn opening_suggestions_projection(value: &SuggestedOpenings) -> serde_json::Value {
+    serde_json::json!({"openings":value.openings})
+}
+
+fn role_suggestions_projection(value: &SuggestedRoles) -> serde_json::Value {
+    serde_json::json!({"roles":value.roles})
+}
+
+fn world_compile_preview_projection(preview: &WorldCompilePreview) -> serde_json::Value {
+    let campaign = &preview.campaign;
+    let player = &campaign.actors[&campaign.player_actor_id];
+    let locations = campaign
+        .locations
+        .values()
+        .map(|location| {
+            serde_json::json!({
+                "id":location.id,
+                "name":location.name,
+                "container_id":location.container_id,
+                "routes":location.routes,
+                "persistent_features":location.persistent_features,
+            })
+        })
+        .collect::<Vec<_>>();
+    let cast = campaign
+        .actors
+        .values()
+        .filter(|actor| actor.id != campaign.player_actor_id)
+        .map(|actor| {
+            serde_json::json!({
+                "id":actor.id,
+                "name":actor.name,
+                "location_id":actor.location_id,
+            })
+        })
+        .collect::<Vec<_>>();
+    let institutions = campaign
+        .institutions
+        .values()
+        .map(|institution| {
+            serde_json::json!({
+                "id":institution.id,
+                "name":institution.name,
+            })
+        })
+        .collect::<Vec<_>>();
+    let populations = campaign
+        .gestalts
+        .values()
+        .map(|gestalt| {
+            serde_json::json!({
+                "id":gestalt.id,
+                "name":gestalt.name,
+                "home_location_id":gestalt.home_location_id,
+            })
+        })
+        .collect::<Vec<_>>();
+    let clocks = campaign
+        .clocks
+        .values()
+        .map(|clock| {
+            serde_json::json!({
+                "id":clock.id,
+            "name":clock.label,
+                "progress":clock.progress,
+                "threshold":clock.threshold,
+            "trigger":clock.consequence,
+            })
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "schema":preview.schema,
+        "title":preview.title,
+        "opening":campaign.transcript.first().map(|turn| turn.text.as_str()),
+        "locations":locations,
+        "cast":cast,
+        "institutions":institutions,
+        "populations":populations,
+        "clocks":clocks,
+        "player_role":{
+            "name":player.name,
+            "location_id":player.location_id,
+            "capabilities":player.capabilities,
+            "equipment":player.equipment,
+            "conditions":player.conditions,
+            "obligations":player.obligations,
+        },
+        "evidence_coverage":preview.evidence_coverage,
+        "gaps":preview.gaps,
+        "branch_assumptions":preview.branch_assumptions,
+        "requires_approval":preview.requires_approval,
+    })
+}
+
+fn region_expansion_preview_projection(preview: &RegionExpansionPreview) -> serde_json::Value {
+    serde_json::json!({
+        "origin_location_id":preview.expansion.origin_location_id,
+        "locations":preview.expansion.locations,
+        "gaps":preview.gaps,
+        "requires_approval":preview.requires_approval,
+    })
+}
+
+fn gestalt_fission_preview_projection(preview: &GestaltFissionPreview) -> serde_json::Value {
+    let children = preview
+        .children
+        .iter()
+        .map(|child| {
+            serde_json::json!({
+                "id":child.id,
+                "name":child.name,
+                "home_location_id":child.home_location_id,
+                "partition_value":preview.child_partition_values.get(&child.id),
+            })
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "parent_gestalt_id":preview.parent_gestalt_id,
+        "partition_axis":preview.partition_axis,
+        "children":children,
+        "gaps":preview.gaps,
+        "requires_approval":preview.requires_approval,
+    })
+}
+
+fn campaign_branch_projection(kind: &str, campaign: &Campaign) -> serde_json::Value {
+    serde_json::json!({
+        "kind":kind,
+        "campaign_id":campaign.id,
+        "name":campaign.name,
+        "revision":campaign.revision,
+    })
+}
+
 fn player_command_projection(
     result: &CommandResult,
     narration: Option<NarrationProjection>,
@@ -1443,7 +1589,7 @@ async fn fork_campaign(
                     if let Err(error) = refresh_mesh(&state).await {
                         tracing::warn!(%error, "campaign fork CultMesh publication failed");
                     }
-                    Json(campaign).into_response()
+                    Json(campaign_branch_projection("forked", &campaign)).into_response()
                 }
                 Err(error) => {
                     (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
@@ -1488,7 +1634,7 @@ async fn reset_campaign(
                     if let Err(error) = refresh_mesh(&state).await {
                         tracing::warn!(%error, "campaign reset CultMesh publication failed");
                     }
-                    Json(campaign).into_response()
+                    Json(campaign_branch_projection("reset", &campaign)).into_response()
                 }
                 Err(error) => {
                     (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
@@ -2047,5 +2193,49 @@ mod tests {
         assert!(!encoded.contains("Private state"));
         assert!(!encoded.contains("actors"));
         assert!(!encoded.contains("facts"));
+
+        let created = player_command_projection(
+            &CommandResult::Created {
+                campaign: seed("Hidden seed"),
+            },
+            None,
+        );
+        assert_eq!(created, serde_json::json!({"kind":"created"}));
+    }
+
+    #[test]
+    fn compiler_preview_projection_exposes_approval_shape_not_private_state() {
+        let mut campaign = seed("Approval preview");
+        let player = campaign.actors.get_mut("player").unwrap();
+        player.goals = vec!["private goal".into()];
+        player.memories = vec!["private memory".into()];
+        player
+            .relationships
+            .insert("hidden".into(), "distrust".into());
+        let preview = WorldCompilePreview {
+            schema: "ghostlight.world_compile_preview.v1".into(),
+            title: "Approval preview".into(),
+            campaign,
+            evidence_receipts: vec![],
+            evidence_coverage: vec![],
+            gaps: vec!["a visible gap".into()],
+            branch_assumptions: vec!["a visible assumption".into()],
+            requires_approval: true,
+        };
+
+        let projection = world_compile_preview_projection(&preview);
+        let encoded = serde_json::to_string(&projection).unwrap();
+        assert!(encoded.contains("player_role"));
+        assert!(encoded.contains("locations"));
+        for private_key in [
+            "\"campaign\":",
+            "\"evidence_receipts\":",
+            "\"goals\":",
+            "\"memories\":",
+            "\"relationships\":",
+            "\"model_receipts\":",
+        ] {
+            assert!(!encoded.contains(private_key), "leaked {private_key}");
+        }
     }
 }

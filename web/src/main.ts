@@ -172,8 +172,8 @@ async function showPreview(result: any) {
   const card = node("article", undefined, "card");
   card.append(
     node("h3", preview.title),
-    node("p", preview.campaign.transcript?.[0]?.text ?? ""),
-    node("p", `${Object.keys(preview.campaign.locations).length} locations · ${Object.keys(preview.campaign.actors).length} actors · ${Object.keys(preview.campaign.institutions).length} institutions`),
+    node("p", preview.opening ?? ""),
+    node("p", `${preview.locations?.length ?? 0} locations · ${(preview.cast?.length ?? 0) + 1} actors · ${preview.institutions?.length ?? 0} institutions`),
     node("p", preview.gaps.length ? `Material gaps: ${preview.gaps.join("; ")}` : "No declared material gaps.", "warning"),
     node("p", `Branch assumptions: ${preview.branch_assumptions.join("; ") || "none"}`),
     node("p", coverage.length
