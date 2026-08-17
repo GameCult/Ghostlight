@@ -67,6 +67,7 @@ pub struct CellConstituentSlice {
     pub reachable_destination_ids: BTreeSet<String>,
     pub activity_target_ids: BTreeSet<String>,
     pub goals: Vec<String>,
+    pub current_posture: Option<String>,
     pub pressures: Vec<String>,
 }
 
@@ -342,6 +343,7 @@ fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "reachable_destination_ids": subject.reachable_destination_ids,
             "activity_target_ids": subject.activity_target_ids,
             "goals": subject.goals,
+            "current_posture": subject.current_posture,
             "pressures": subject.pressures,
         })).collect::<Vec<_>>(),
         "member_exceptions": slice.member_exceptions.iter().map(|member| serde_json::json!({
@@ -387,6 +389,7 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "permitted_state_references": subject.permitted_state_references,
             "reachable_destination_ids": subject.reachable_destination_ids,
             "activity_target_ids": subject.activity_target_ids,
+            "current_posture": subject.current_posture,
             "current_pressures": subject.pressures,
         })).collect::<Vec<_>>(),
         "member_permissions": slice.member_exceptions.iter().map(|member| serde_json::json!({
@@ -880,7 +883,12 @@ fn validate_constituent_effect(
                     subject.location_ids
                 ));
             }
-            let current = subject.pressures.first().map(String::as_str).unwrap_or("");
+            let current = subject.current_posture.as_deref().ok_or_else(|| {
+                anyhow!(
+                    "institution {} is missing its exact current posture",
+                    subject.subject_id
+                )
+            })?;
             if !crate::resolution::substantive_text_change(current, posture) {
                 return Err(anyhow!(
                     "institution {} proposed posture {:?}, but its exact current posture is {:?}; emit a specific different commitment or choose inaction",
@@ -1184,6 +1192,7 @@ mod tests {
                 reachable_destination_ids: BTreeSet::new(),
                 activity_target_ids: BTreeSet::new(),
                 goals: vec!["publish a position".into()],
+                current_posture: Some("weighing whether to publish a position".into()),
                 pressures: vec!["the vote is near".into()],
             }],
             member_exceptions: vec![],
@@ -1520,13 +1529,26 @@ mod tests {
             &slice.constituents[0],
             &StrategicCellEffect::Institution {
                 institution_id: "faction-06".into(),
-                posture: "the vote is near".into(),
+                posture: "weighing whether to publish a position".into(),
                 location_ids: vec!["forum".into()],
             },
         )
         .unwrap_err();
         assert!(error.to_string().contains("exact current posture"));
-        assert!(error.to_string().contains("the vote is near"));
+        assert!(
+            error
+                .to_string()
+                .contains("weighing whether to publish a position")
+        );
+        let projector_context = cell_projector_context(&slice);
+        assert_eq!(
+            projector_context["constituents"][0]["current_posture"],
+            "weighing whether to publish a position"
+        );
+        assert_eq!(
+            projector_context["constituents"][0]["pressures"][0],
+            "the vote is near"
+        );
     }
 
     #[tokio::test]

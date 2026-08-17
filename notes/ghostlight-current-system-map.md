@@ -79,6 +79,11 @@ perspective. Event mentions do not transfer a person into another cell, and an
 unnamed or unsupplied entity cannot become an activity target merely because a
 Persona found it plausible.
 
+Institution slices carry committed `current_posture` separately from unresolved
+pressure. Projectors present the posture as existing state; Interpreters and
+validators compare any new commitment directly against it. The old overloaded
+`pressures[0]` convention is not an authority path.
+
 Gestalt background choices use two distinct typed paths. Pressure transitions
 change exact unresolved markers. `gestalt_activity` records an attributed
 preparation, coordination, investigation, recruitment, obstruction, trade, or

@@ -107,6 +107,14 @@ internal perspective for actual cell constituents/member exceptions, Personas
 cannot conjure absent entities into contact, and empty target errors explicitly
 tell the correction stage that anonymous targets cannot be encoded.
 
+The following run migrated Mira and completed two sustained waves before a
+third safe abort. An institution's committed posture had been stored in the
+generic cell `pressures` list; its Projector treated that already-made decision
+as a live dilemma and the Persona repeated it. `CellConstituentSlice` now has an
+explicit `current_posture`; institution pressure is no longer smuggled through
+`pressures[0]`. Projector, Interpreter, and local validation share the same
+unambiguous baseline.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

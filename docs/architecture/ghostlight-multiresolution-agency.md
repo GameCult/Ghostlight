@@ -284,6 +284,12 @@ knowledge is never treated as an information channel; while dematerialized,
 the member can publish only through channels owned by their current leaf
 gestalt's agency profile.
 
+Institution rows distinguish `current_posture` from unresolved `pressures`.
+The committed posture is projected as already true and is the exact baseline
+against which a new institutional commitment is validated. It is never hidden
+in a generic pressure list, where a Projector could mistake a completed choice
+for a dilemma still awaiting action.
+
 A committed strategic effect must produce an exact canonical consequence.
 Institutions cannot re-adopt their current posture. Population pressure effects
 carry an explicit lifecycle: `pressure_resolutions` must name exact current

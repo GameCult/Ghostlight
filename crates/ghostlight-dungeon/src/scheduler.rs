@@ -690,6 +690,7 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
         reachable_destination_ids: BTreeSet::new(),
         activity_target_ids: crate::resolution::strategic_activity_targets(campaign, id),
         goals: vec![],
+        current_posture: None,
         pressures: vec![],
     };
     match profile.subject_kind {
@@ -723,7 +724,7 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
             value.name = institution.name.clone();
             value.resources = institution.resources.iter().cloned().collect();
             value.goals = institution.goals.clone();
-            value.pressures = vec![institution.posture.clone()];
+            value.current_posture = Some(institution.posture.clone());
         }
         AgencySubjectKind::Gestalt => {
             let gestalt = campaign.gestalts.get(id).context("cell gestalt vanished")?;
@@ -1038,6 +1039,18 @@ mod tests {
                     && member.migration_destinations.is_empty()
                     && member.activity_target_ids.contains("refugees"))
         );
+    }
+
+    #[test]
+    fn institution_slice_does_not_disguise_committed_posture_as_pressure() {
+        let campaign = crate::resolution::tests::campaign(1, 1);
+        let institution = &campaign.institutions["faction-0000"];
+        let slice = constituent_slice(&campaign, "faction-0000").unwrap();
+        assert_eq!(
+            slice.current_posture.as_deref(),
+            Some(institution.posture.as_str())
+        );
+        assert!(slice.pressures.is_empty());
     }
 
     #[test]
