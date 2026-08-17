@@ -87,6 +87,7 @@ async fn main() -> anyhow::Result<()> {
         "campaign_id":campaign.id,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "model_receipt_hash":output.aggregate_receipt_hash,
+        "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
         "plan":plan,
         "event_count":advanced.events.len(),
         "news_count":advanced.news.len(),

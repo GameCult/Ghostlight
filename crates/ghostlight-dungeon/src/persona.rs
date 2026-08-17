@@ -93,6 +93,13 @@ pub struct CellTerminalBundle {
     pub stage_receipts: Vec<crate::model::ModelStageReceipt>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellAppraisalProposal {
+    actions: Vec<crate::domain::CellActionProposal>,
+    inaction_reason: Option<String>,
+}
+
 #[async_trait]
 pub trait ExecutionPermit: Send + Sync {
     async fn require(&self, actor_id: &str, snapshot_binding: &str, stage: &str) -> Result<()>;
@@ -128,6 +135,7 @@ impl PersonaProjectionEngine {
             typed_context: &typed_context,
             visible_stimulus: &visible_stimulus,
             domain_guidance: "The runtime is a persistent fictional world. Distances, knowledge, capabilities, relationships, and custody remain bounded by the supplied slice.",
+            word_budget: 140,
         });
         let projected = run_validated_stage(
             self.model.as_ref(),
@@ -138,6 +146,8 @@ impl PersonaProjectionEngine {
                 lived_stream: projector_prompt,
                 output_schema: None,
                 source_receipt_ids: slice.source_receipt_ids.clone(),
+                temperature: Some(0.0),
+                max_output_tokens: Some(256),
             },
         )
         .await?;
@@ -145,7 +155,7 @@ impl PersonaProjectionEngine {
             return Err(anyhow!("projector violated lived-narrative membrane"));
         }
         let lived = LivedNarrativeStream {
-            text: projected.narrative.clone(),
+            text: ground_actor_lived_stream(&slice, &projected.narrative),
             snapshot_binding: slice.snapshot_binding.clone(),
             projector_receipt: projected.receipt.clone(),
         };
@@ -163,10 +173,13 @@ impl PersonaProjectionEngine {
                 lived_stream: build_persona_prompt(&PersonaPrompt {
                     identity: &slice.actor_id,
                     lived_stream: &lived.text,
-                    domain_guidance: "Respond as a situated character. Speech and attempted effects are distinct; the world kernel resolves consequences.",
+                    domain_guidance: "Respond as a situated character. Answer direct questions at human conversational length. Speech and attempted effects are distinct; the world kernel resolves consequences.",
+                    word_budget: 160,
                 }),
                 output_schema: None,
                 source_receipt_ids: vec![],
+                temperature: Some(0.7),
+                max_output_tokens: Some(256),
             },
         )
         .await?;
@@ -174,8 +187,15 @@ impl PersonaProjectionEngine {
         self.permit
             .require(&slice.actor_id, &slice.snapshot_binding, "interpreter")
             .await?;
-        let mut schema = serde_json::to_value(schema_for!(PersonaProposalBundle))?;
+        let prompt_schema = serde_json::to_value(schema_for!(PersonaProposalBundle))?;
+        let mut schema = prompt_schema.clone();
         constrain_interpreter_schema(&mut schema, &slice)?;
+        let permission_guidance = format!(
+            "Record only private changes supported by the lived stream and typed context. World actions are attempts, not completed effects. actor_id must be {:?}. Exact allowed state references are {:?}. Relationship update keys may only be {:?}.",
+            slice.actor_id,
+            allowed_actor_references(&slice),
+            slice.perceived_actors.keys().collect::<Vec<_>>()
+        );
         let interpreted = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -187,11 +207,13 @@ impl PersonaProjectionEngine {
                     typed_context: &typed_context,
                     lived_stream: &lived.text,
                     persona_output: &persona.narrative,
-                    output_schema: &serde_json::to_string_pretty(&schema)?,
-                    domain_guidance: "Record only private changes supported by the lived stream and typed context. World actions are attempts, not completed effects. Use only exact actor ids and state-reference tokens admitted by the output schema.",
+                    output_schema: &serde_json::to_string(&prompt_schema)?,
+                    domain_guidance: &permission_guidance,
                 }),
                 output_schema: Some(schema),
                 source_receipt_ids: slice.source_receipt_ids,
+                temperature: Some(0.0),
+                max_output_tokens: Some(768),
             },
         )
         .await?;
@@ -213,6 +235,80 @@ impl PersonaProjectionEngine {
     }
 }
 
+fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> String {
+    let reliable_knowledge = if slice.knowledge.is_empty() {
+        "no additional external fact beyond what is happening in front of you".to_owned()
+    } else {
+        slice.knowledge.join("; ")
+    };
+    let visible_now = if slice.perceived_events.is_empty() {
+        "nothing new beyond the immediate situation".to_owned()
+    } else {
+        slice.perceived_events.join("; ")
+    };
+    let people_now = if slice.perceived_actors.is_empty() {
+        "no one else clearly perceived".to_owned()
+    } else {
+        slice
+            .perceived_actors
+            .values()
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    format!(
+        "{projection}\n\nYour reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
+    )
+}
+
+fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
+    serde_json::json!({
+        "cell_id": slice.cell_id,
+        "mode": slice.mode,
+        "world_revision": slice.world_revision,
+        "resolution_epoch": slice.resolution_epoch,
+        "constituents": slice.constituents.iter().map(|subject| serde_json::json!({
+            "subject_id": subject.subject_id,
+            "subject_kind": subject.subject_kind,
+            "name": subject.name,
+            "collective_authority_id": subject.collective_authority_id,
+            "location_ids": subject.location_ids,
+            "knowledge": subject.knowledge,
+            "capabilities": subject.capabilities,
+            "resources": subject.resources,
+            "information_channels": subject.information_channels,
+            "reachable_destination_ids": subject.reachable_destination_ids,
+            "goals": subject.goals,
+            "pressures": subject.pressures,
+        })).collect::<Vec<_>>(),
+        "shared_knowledge": slice.shared_knowledge,
+        "shared_capabilities": slice.shared_capabilities,
+        "world_clock_pressure": slice.world_clock_pressure,
+        "detail_focus_subject_id": slice.detail_focus_subject_id,
+        "max_actions": slice.max_actions,
+    })
+}
+
+fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
+    serde_json::json!({
+        "cell_id": slice.cell_id,
+        "mode": slice.mode,
+        "world_revision": slice.world_revision,
+        "resolution_epoch": slice.resolution_epoch,
+        "detail_focus_subject_id": slice.detail_focus_subject_id,
+        "max_actions": slice.max_actions,
+        "exact_permissions": slice.constituents.iter().map(|subject| serde_json::json!({
+            "subject_id": subject.subject_id,
+            "subject_kind": subject.subject_kind,
+            "collective_authority_id": subject.collective_authority_id,
+            "location_ids": subject.location_ids,
+            "information_channels": subject.information_channels,
+            "permitted_state_references": subject.permitted_state_references,
+            "reachable_destination_ids": subject.reachable_destination_ids,
+        })).collect::<Vec<_>>(),
+    })
+}
+
 #[derive(Clone)]
 pub struct CellProjectionEngine {
     pub model: Arc<dyn ModelPort>,
@@ -227,7 +323,7 @@ impl CellProjectionEngine {
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_projector")
             .await?;
-        let typed_context = serde_json::to_string(&slice)?;
+        let projector_context = serde_json::to_string(&cell_projector_context(&slice))?;
         let visible_stimulus = slice.perceived_events.join("\n");
         let mode_guidance = match slice.mode {
             crate::domain::SimulationCellMode::Cohesive => {
@@ -245,12 +341,15 @@ impl CellProjectionEngine {
                 snapshot_binding: slice.snapshot_binding.clone(),
                 lived_stream: build_projector_prompt(&ProjectorPrompt {
                     identity: &slice.cell_id,
-                    typed_context: &typed_context,
+                    typed_context: &projector_context,
                     visible_stimulus: &visible_stimulus,
                     domain_guidance: mode_guidance,
+                    word_budget: (120 + 45 * slice.constituents.len()).min(360),
                 }),
                 output_schema: None,
                 source_receipt_ids: slice.source_receipt_ids.clone(),
+                temperature: Some(0.0),
+                max_output_tokens: Some(640),
             },
         )
         .await?;
@@ -282,41 +381,53 @@ impl CellProjectionEngine {
                             "Appraise the strategic horizon polyphonically. Attribute every intention to a constituent. The arena itself cannot speak, know, decide, or act. Action is optional, but inaction must be explicit."
                         }
                     },
+                    word_budget: (160 + 30 * slice.constituents.len()).min(320),
                 }),
                 output_schema: None,
                 source_receipt_ids: vec![],
+                temperature: Some(0.7),
+                max_output_tokens: Some(512),
             },
         )
         .await?;
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_interpreter")
             .await?;
-        let mut schema = serde_json::to_value(schema_for!(crate::domain::CellAppraisal))?;
-        constrain_cell_schema(&mut schema, &slice)?;
+        let prompt_schema = serde_json::to_value(schema_for!(CellAppraisalProposal))?;
+        let mut schema = prompt_schema.clone();
+        constrain_cell_proposal_schema(&mut schema, &slice)?;
+        let interpreter_context = serde_json::to_string(&cell_interpreter_context(&slice))?;
+        let permission_guidance = format!(
+            "Emit at most {} exact constituent-attributed attempts supported by that constituent's permission references. The runtime, not you, binds cell identity, revisions, and complete membership. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
+            slice.max_actions
+        );
         let mut request = ModelStageRequest {
             stage: "cell_interpreter".into(),
             model: self.interpreter_model.clone(),
             snapshot_binding: slice.snapshot_binding.clone(),
             lived_stream: build_interpreter_prompt(&InterpreterPrompt {
                 identity: &slice.cell_id,
-                typed_context: &typed_context,
+                typed_context: &interpreter_context,
                 lived_stream: &lived.text,
                 persona_output: &persona.narrative,
-                output_schema: &serde_json::to_string_pretty(&schema)?,
-                domain_guidance: "Emit only exact constituent-attributed attempts supported by that constituent's typed state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
+                output_schema: &serde_json::to_string(&prompt_schema)?,
+                domain_guidance: &permission_guidance,
             }),
             output_schema: Some(schema),
             source_receipt_ids: slice.source_receipt_ids.clone(),
+            temperature: Some(0.0),
+            max_output_tokens: Some(1_600),
         };
         let mut stage_receipts = vec![projected.receipt, persona.receipt];
         for attempt in 0..2 {
             let mut interpreted = run_validated_stage(self.model.as_ref(), &request).await?;
-            let appraisal = interpreted
+            let proposal = interpreted
                 .structured
                 .clone()
-                .ok_or_else(|| anyhow!("cell interpreter produced no typed appraisal"))
+                .ok_or_else(|| anyhow!("cell interpreter produced no typed proposal"))
                 .and_then(|value| serde_json::from_value(value).map_err(Into::into));
-            match appraisal.and_then(|appraisal| {
+            match proposal.and_then(|proposal: CellAppraisalProposal| {
+                let appraisal = bind_cell_appraisal(&slice, proposal);
                 validate_cell_appraisal(&slice, &appraisal)?;
                 Ok(appraisal)
             }) {
@@ -334,6 +445,8 @@ impl CellProjectionEngine {
                 }
                 Err(error) if attempt == 0 => {
                     interpreted.receipt.validation_result = "semantic_invalid".into();
+                    interpreted.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
                     stage_receipts.push(interpreted.receipt);
                     request.lived_stream.push_str(&format!(
                         "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS APPRAISAL: {error}\nReturn one corrected complete appraisal against the same snapshot, lived stream, and Persona turn."
@@ -347,6 +460,25 @@ impl CellProjectionEngine {
             }
         }
         unreachable!()
+    }
+}
+
+fn bind_cell_appraisal(
+    slice: &PermittedCellSlice,
+    proposal: CellAppraisalProposal,
+) -> crate::domain::CellAppraisal {
+    crate::domain::CellAppraisal {
+        schema: "ghostlight.cell_appraisal.v1".into(),
+        cell_id: slice.cell_id.clone(),
+        world_revision: slice.world_revision,
+        resolution_epoch: slice.resolution_epoch,
+        considered_subject_ids: slice
+            .constituents
+            .iter()
+            .map(|subject| subject.subject_id.clone())
+            .collect(),
+        actions: proposal.actions,
+        inaction_reason: proposal.inaction_reason,
     }
 }
 
@@ -425,34 +557,14 @@ fn validate_cell_appraisal(
     Ok(())
 }
 
-fn constrain_cell_schema(schema: &mut serde_json::Value, slice: &PermittedCellSlice) -> Result<()> {
+fn constrain_cell_proposal_schema(
+    schema: &mut serde_json::Value,
+    slice: &PermittedCellSlice,
+) -> Result<()> {
     let properties = schema
         .pointer_mut("/properties")
         .and_then(serde_json::Value::as_object_mut)
-        .ok_or_else(|| anyhow!("cell appraisal schema has no properties"))?;
-    properties.insert(
-        "schema".into(),
-        serde_json::json!({"const":"ghostlight.cell_appraisal.v1"}),
-    );
-    properties.insert("cell_id".into(), serde_json::json!({"const":slice.cell_id}));
-    properties.insert(
-        "world_revision".into(),
-        serde_json::json!({"const":slice.world_revision}),
-    );
-    properties.insert(
-        "resolution_epoch".into(),
-        serde_json::json!({"const":slice.resolution_epoch}),
-    );
-    properties.insert(
-        "considered_subject_ids".into(),
-        serde_json::json!({
-            "type":"array",
-            "uniqueItems":true,
-            "minItems":slice.constituents.len(),
-            "maxItems":slice.constituents.len(),
-            "items":{"type":"string","enum":slice.constituents.iter().map(|value| &value.subject_id).collect::<Vec<_>>()}
-        }),
-    );
+        .ok_or_else(|| anyhow!("cell proposal schema has no properties"))?;
     let actions = properties
         .get_mut("actions")
         .and_then(serde_json::Value::as_object_mut)
@@ -473,24 +585,7 @@ fn constrain_interpreter_schema(
     schema: &mut serde_json::Value,
     slice: &PermittedActorSlice,
 ) -> Result<()> {
-    let allowed_references = slice
-        .capabilities
-        .iter()
-        .map(|value| format!("capability:{value}"))
-        .chain(
-            slice
-                .knowledge
-                .iter()
-                .map(|value| format!("knowledge:{value}")),
-        )
-        .chain(
-            slice
-                .affordances
-                .iter()
-                .map(|value| format!("equipment:{value}")),
-        )
-        .chain(std::iter::once(format!("location:{}", slice.location_id)))
-        .collect::<Vec<_>>();
+    let allowed_references = allowed_actor_references(slice);
     let world_action = schema
         .pointer_mut("/$defs/WorldActionProposal/properties")
         .and_then(|value| value.as_object_mut())
@@ -512,6 +607,27 @@ fn constrain_interpreter_schema(
         serde_json::json!({"enum":slice.perceived_actors.keys().collect::<Vec<_>>()}),
     );
     Ok(())
+}
+
+fn allowed_actor_references(slice: &PermittedActorSlice) -> Vec<String> {
+    slice
+        .capabilities
+        .iter()
+        .map(|value| format!("capability:{value}"))
+        .chain(
+            slice
+                .knowledge
+                .iter()
+                .map(|value| format!("knowledge:{value}")),
+        )
+        .chain(
+            slice
+                .affordances
+                .iter()
+                .map(|value| format!("equipment:{value}")),
+        )
+        .chain(std::iter::once(format!("location:{}", slice.location_id)))
+        .collect()
 }
 
 #[cfg(test)]

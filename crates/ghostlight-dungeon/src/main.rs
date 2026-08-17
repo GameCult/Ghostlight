@@ -183,6 +183,8 @@ async fn main() -> anyhow::Result<()> {
                 lived_stream: "Reply with the single word ready.".into(),
                 output_schema: None,
                 source_receipt_ids: vec![],
+                temperature: Some(0.0),
+                max_output_tokens: Some(16),
             },
         )
         .await?;

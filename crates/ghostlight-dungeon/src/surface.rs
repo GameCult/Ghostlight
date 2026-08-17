@@ -138,24 +138,61 @@ pub fn operator_surface(
         })
         .collect::<Vec<_>>()
         .join("\n");
+    let provider_attempt_count = stages
+        .iter()
+        .map(|stage| stage.provider_attempts.len())
+        .sum::<usize>();
+    let retry_count = provider_attempt_count.saturating_sub(stages.len());
+    let token_usage = stages
+        .iter()
+        .flat_map(|stage| &stage.provider_attempts)
+        .filter_map(|attempt| attempt.token_usage.as_ref())
+        .fold(
+            crate::model::ModelTokenUsage::default(),
+            |mut total, usage| {
+                total.prompt_tokens = total.prompt_tokens.saturating_add(usage.prompt_tokens);
+                total.completion_tokens = total
+                    .completion_tokens
+                    .saturating_add(usage.completion_tokens);
+                total.total_tokens = total.total_tokens.saturating_add(usage.total_tokens);
+                total.prompt_cache_hit_tokens = total
+                    .prompt_cache_hit_tokens
+                    .saturating_add(usage.prompt_cache_hit_tokens);
+                total.prompt_cache_miss_tokens = total
+                    .prompt_cache_miss_tokens
+                    .saturating_add(usage.prompt_cache_miss_tokens);
+                total.reasoning_tokens = total
+                    .reasoning_tokens
+                    .saturating_add(usage.reasoning_tokens);
+                total
+            },
+        );
     let typed = json!({
-        "campaign": campaign,
-        "evidence": evidence,
-        "commit_receipts": commits,
-        "model_stage_receipts": stages,
-        "strategic_ticks": strategic_ticks,
-        "gestalt_materialization_receipts": gestalt_receipts,
-        "rejected_proposals": rejected,
-        "resolution_plan_receipts": resolution_plans,
-        "cell_appraisals": cell_appraisals,
-        "resolution_control_receipts": resolution_controls,
-        "scheduler": {"live_turn_pressure": live_turn_pressure}
+    "campaign": campaign,
+    "evidence": evidence,
+    "commit_receipts": commits,
+    "model_stage_receipts": stages,
+    "strategic_ticks": strategic_ticks,
+    "gestalt_materialization_receipts": gestalt_receipts,
+    "rejected_proposals": rejected,
+    "resolution_plan_receipts": resolution_plans,
+    "cell_appraisals": cell_appraisals,
+    "resolution_control_receipts": resolution_controls,
+    "scheduler": {"live_turn_pressure": live_turn_pressure}
     });
+    let cache_observed_tokens = token_usage
+        .prompt_cache_hit_tokens
+        .saturating_add(token_usage.prompt_cache_miss_tokens);
+    let cache_hit_percent = if cache_observed_tokens == 0 {
+        0
+    } else {
+        token_usage.prompt_cache_hit_tokens.saturating_mul(100) / cache_observed_tokens
+    };
     json!({
       "type":"surface-state", "schema":"gamecult.eve.surface.v1", "providerId":"gamecult.ghostlight.dungeon",
       "providerKind":"narrative.simulation.operator", "title":format!("{} operator",campaign.name), "version":interface_version,
       "surface":{"id":format!("ghostlight.operator.{}",campaign.id),"root":{"id":"dungeon.operator.root","kind":"surface","props":{},"children":[
-        {"id":"dungeon.operator.status","kind":"card","props":{"title":format!("Revision {} · {} model stages · {} rejected proposals",campaign.revision,stages.len(),rejected.len())},"children":[]},
+        {"id":"dungeon.operator.status","kind":"card","props":{"title":format!("Revision {} · {} model stages / {} provider attempts · {} tokens · {} rejected proposals",campaign.revision,stages.len(),provider_attempt_count,token_usage.total_tokens,rejected.len())},"children":[{"id":"dungeon.operator.usage","kind":"text","props":{"value":format!("Prompt {} (cache hit {}, miss {}, {}%) · completion {} · reasoning {} · retries {}",token_usage.prompt_tokens,token_usage.prompt_cache_hit_tokens,token_usage.prompt_cache_miss_tokens,cache_hit_percent,token_usage.completion_tokens,token_usage.reasoning_tokens,retry_count)},"children":[]}]},
         {"id":"dungeon.operator.cover","kind":"card","props":{"title":format!("Agency cover · epoch {} · budget {}",campaign.resolution_policy.resolution_epoch,campaign.resolution_policy.active_cell_budget)},"children":[{"id":"dungeon.operator.cover.text","kind":"text","props":{"value":cover_text},"children":[]}]},
         {"id":"dungeon.operator.graph","kind":"card","props":{"title":format!("Agency graph · {} profiles · {} relations",campaign.agency_profiles.len(),campaign.agency_relations.len())},"children":[{"id":"dungeon.operator.graph.text","kind":"text","props":{"value":graph_text},"children":[]}]},
         {"id":"dungeon.operator.typed","kind":"code","props":{"language":"json","value":serde_json::to_string_pretty(&typed).unwrap_or_else(|_| "operator projection failed".into())},"children":[]}

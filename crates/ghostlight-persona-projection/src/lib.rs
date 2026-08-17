@@ -9,6 +9,7 @@ pub struct ProjectorPrompt<'a> {
     pub typed_context: &'a str,
     pub visible_stimulus: &'a str,
     pub domain_guidance: &'a str,
+    pub word_budget: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -16,6 +17,7 @@ pub struct PersonaPrompt<'a> {
     pub identity: &'a str,
     pub lived_stream: &'a str,
     pub domain_guidance: &'a str,
+    pub word_budget: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -30,26 +32,28 @@ pub struct InterpreterPrompt<'a> {
 
 pub fn build_projector_prompt(input: &ProjectorPrompt<'_>) -> String {
     format!(
-        "<!-- membrane:{MEMBRANE_SCHEMA}:projector -->\nYou are the private Projector for {identity}. Convert the permitted typed context and visible stimulus into one lived narrative stream. Project what this person perceives, remembers, wants, fears, knows, and does not know. Do not choose actions, emit schemas, expose field names, or claim world effects.\n\nDomain guidance:\n{guidance}\n\nPermitted typed context:\n{context}\n\nVisible stimulus:\n{stimulus}\n\nReturn only the lived narrative stream.",
+        "<!-- membrane:{MEMBRANE_SCHEMA}:projector -->\nYou are a private Projector. Convert only the permitted typed context and visible stimulus into one compact lived narrative stream. Project what this person perceives, remembers, wants, fears, knows, and explicitly does not know. Anything absent from the permitted context is unavailable: render imagination, suspicion, or speculation as uncertainty, never as remembered or perceived fact. Do not choose actions, emit schemas, expose field names, or claim world effects. Use at most {word_budget} words; omit decorative recap that does not change the decision.\n\nDomain guidance:\n{guidance}\n\nIdentity:\n{identity}\n\nPermitted typed context:\n{context}\n\nVisible stimulus:\n{stimulus}\n\nReturn only the lived narrative stream.",
         identity = input.identity,
         guidance = input.domain_guidance,
         context = input.typed_context,
         stimulus = input.visible_stimulus,
+        word_budget = input.word_budget,
     )
 }
 
 pub fn build_persona_prompt(input: &PersonaPrompt<'_>) -> String {
     format!(
-        "<!-- membrane:{MEMBRANE_SCHEMA}:persona -->\nYou are {identity}. The text below is your complete lived stream for this turn. Respond naturally from inside it. You may speak, remain silent, wonder, decide, or attempt something, but do not emit JSON, schemas, action DSL, tool calls, state patches, or claims that an external consequence already occurred.\n\nDomain guidance:\n{guidance}\n\nLived stream:\n{stream}\n\nReturn only the natural Persona turn.",
+        "<!-- membrane:{MEMBRANE_SCHEMA}:persona -->\nThe text below is the character's complete lived stream for this turn. Respond naturally from inside it. Treat only asserted perceptions and memories in that stream as known. New external details may appear only as explicit conjecture, imagination, or deliberate invention by the character. You may speak, remain silent, wonder, decide, or attempt something, but do not emit JSON, schemas, action DSL, tool calls, state patches, or claims that an external consequence already occurred. Use at most {word_budget} words and spend them in proportion to the moment.\n\nDomain guidance:\n{guidance}\n\nIdentity:\n{identity}\n\nLived stream:\n{stream}\n\nReturn only the natural Persona turn.",
         identity = input.identity,
         guidance = input.domain_guidance,
         stream = input.lived_stream,
+        word_budget = input.word_budget,
     )
 }
 
 pub fn build_interpreter_prompt(input: &InterpreterPrompt<'_>) -> String {
     format!(
-        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are the private Interpreter for {identity}. Convert the natural Persona turn into typed candidate effects supported by the lived stream and permissioned typed context. Candidates are proposals only; the owning runtime validates and commits them. Do not invent knowledge, capability, custody, perception, identifiers, state references, or completed consequences.\n\nDomain guidance:\n{guidance}\n\nPermissioned typed context:\n{context}\n\nLived stream:\n{stream}\n\nPersona turn:\n{output}\n\nReturn exactly one JSON object matching this schema:\n{schema}",
+        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are a private Interpreter. Convert a natural Persona turn into typed candidate effects supported by the lived stream and permissioned typed context. Candidates are proposals only; the owning runtime validates and commits them. Do not invent knowledge, capability, custody, perception, identifiers, state references, or completed consequences.\n\nReturn exactly one JSON object matching this stable shape:\n{schema}\n\nDomain guidance and exact permissions:\n{guidance}\n\nIdentity:\n{identity}\n\nPermissioned typed context:\n{context}\n\nLived stream:\n{stream}\n\nPersona turn:\n{output}",
         identity = input.identity,
         guidance = input.domain_guidance,
         context = input.typed_context,
@@ -83,6 +87,7 @@ mod tests {
             identity: "John",
             lived_stream: "The forge is hot and the traveler looks worried.",
             domain_guidance: "Speak as a villager.",
+            word_budget: 140,
         });
         assert!(prompt.contains("The forge is hot"));
         assert!(!prompt.contains("typed context"));

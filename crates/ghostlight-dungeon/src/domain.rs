@@ -80,6 +80,7 @@ pub struct Location {
 pub struct Route {
     pub destination_id: String,
     pub distance: String,
+    #[schemars(range(min = 1))]
     pub travel_minutes: u32,
 }
 
@@ -268,6 +269,7 @@ pub struct AgencyRelation {
     pub from_subject_id: String,
     pub to_subject_id: String,
     pub kind: AgencyRelationKind,
+    #[schemars(range(min = 1, max = 100))]
     pub strength: u8,
     pub active: bool,
     pub evidence_receipt_ids: Vec<String>,
@@ -525,6 +527,7 @@ pub struct WorldClock {
     pub id: String,
     pub label: String,
     pub progress: u8,
+    #[schemars(range(min = 1))]
     pub threshold: u8,
     pub consequence: String,
 }

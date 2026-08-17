@@ -14,6 +14,8 @@ pub struct ModelStageRequest {
     pub lived_stream: String,
     pub output_schema: Option<serde_json::Value>,
     pub source_receipt_ids: Vec<String>,
+    pub temperature: Option<f64>,
+    pub max_output_tokens: Option<u32>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -30,6 +32,37 @@ pub struct ModelStageReceipt {
     pub source_receipt_ids: Vec<String>,
     pub latency_ms: u64,
     pub validation_result: String,
+    #[serde(default)]
+    pub local_validation_error: Option<String>,
+    #[serde(default)]
+    pub input_chars: usize,
+    #[serde(default)]
+    pub output_chars: usize,
+    #[serde(default)]
+    pub provider_attempts: Vec<ModelProviderAttemptReceipt>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ModelTokenUsage {
+    pub prompt_tokens: u64,
+    pub completion_tokens: u64,
+    pub total_tokens: u64,
+    pub prompt_cache_hit_tokens: u64,
+    pub prompt_cache_miss_tokens: u64,
+    pub reasoning_tokens: u64,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ModelProviderAttemptReceipt {
+    pub provider_request_id: Option<String>,
+    pub system_fingerprint: Option<String>,
+    pub finish_reason: Option<String>,
+    pub latency_ms: u64,
+    pub token_usage: Option<ModelTokenUsage>,
+    #[serde(default)]
+    pub local_validation_result: String,
+    #[serde(default)]
+    pub local_validation_error: Option<String>,
 }
 
 impl ModelStageReceipt {
@@ -49,9 +82,24 @@ pub struct ModelStageOutput {
     pub receipt: ModelStageReceipt,
 }
 
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ModelProviderOutput {
+    pub content: String,
+    pub provider_request_id: Option<String>,
+    pub system_fingerprint: Option<String>,
+    pub finish_reason: Option<String>,
+    pub token_usage: Option<ModelTokenUsage>,
+}
+
 #[async_trait]
 pub trait ModelPort: Send + Sync {
     async fn run(&self, request: &ModelStageRequest) -> Result<String>;
+    async fn run_observed(&self, request: &ModelStageRequest) -> Result<ModelProviderOutput> {
+        Ok(ModelProviderOutput {
+            content: self.run(request).await?,
+            ..Default::default()
+        })
+    }
     fn provider(&self) -> &'static str;
 }
 
@@ -74,12 +122,45 @@ pub async fn run_validated_stage_with_timeout(
         .transpose()
         .map_err(|error| anyhow!("invalid local output schema: {error}"))?;
     let mut attempt_request = request.clone();
+    let stage_started = Instant::now();
+    let mut provider_attempts = Vec::new();
     for attempt in 0..2 {
         let started = Instant::now();
-        let output = tokio::time::timeout(timeout, port.run(&attempt_request))
+        let provider_output = tokio::time::timeout(timeout, port.run_observed(&attempt_request))
             .await
-            .map_err(|_| anyhow!("model stage {} timed out", request.stage))??;
+            .map_err(|_| {
+                anyhow!(
+                    "model stage {} timed out after {} seconds with {} input characters",
+                    request.stage,
+                    timeout.as_secs(),
+                    attempt_request.lived_stream.chars().count()
+                )
+            })??;
+        let ModelProviderOutput {
+            content: output,
+            provider_request_id,
+            system_fingerprint,
+            finish_reason,
+            token_usage,
+        } = provider_output;
+        provider_attempts.push(ModelProviderAttemptReceipt {
+            provider_request_id,
+            system_fingerprint,
+            finish_reason,
+            latency_ms: started.elapsed().as_millis() as u64,
+            token_usage,
+            local_validation_result: "pending".into(),
+            local_validation_error: None,
+        });
         if output.trim().is_empty() {
+            provider_attempts
+                .last_mut()
+                .expect("attempt was just recorded")
+                .local_validation_result = "empty".into();
+            provider_attempts
+                .last_mut()
+                .expect("attempt was just recorded")
+                .local_validation_error = Some("provider returned an empty response".into());
             if attempt == 0 {
                 attempt_request.lived_stream.push_str(
                     "\n\nLOCAL VALIDATOR: The previous response was empty. Return one complete response against the same snapshot and output contract.",
@@ -93,6 +174,14 @@ pub async fn run_validated_stage_with_timeout(
                 Ok(value) => {
                     let validation = validator.as_ref().expect("structured validator");
                     if let Err(error) = validation.validate(&value) {
+                        provider_attempts
+                            .last_mut()
+                            .expect("attempt was just recorded")
+                            .local_validation_result = "schema_invalid".into();
+                        provider_attempts
+                            .last_mut()
+                            .expect("attempt was just recorded")
+                            .local_validation_error = Some(bounded_validation_error(&error));
                         if attempt == 0 {
                             attempt_request.lived_stream.push_str(&format!(
                                 "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS JSON: {error}\nReturn one corrected complete JSON object against the same snapshot and schema."
@@ -104,15 +193,37 @@ pub async fn run_validated_stage_with_timeout(
                     Some(value)
                 }
                 Err(error) if attempt == 0 => {
+                    provider_attempts
+                        .last_mut()
+                        .expect("attempt was just recorded")
+                        .local_validation_result = "malformed_json".into();
+                    provider_attempts
+                        .last_mut()
+                        .expect("attempt was just recorded")
+                        .local_validation_error = Some(bounded_validation_error(&error));
                     attempt_request.lived_stream.push_str(&format!(
                         "\n\nLOCAL VALIDATOR COULD NOT PARSE THE PREVIOUS RESPONSE AS JSON: {error}\nReturn one corrected complete JSON object against the same snapshot and schema."
                     ));
                     continue;
                 }
-                Err(error) => return Err(anyhow!("model returned malformed JSON twice: {error}")),
+                Err(error) => {
+                    provider_attempts
+                        .last_mut()
+                        .expect("attempt was just recorded")
+                        .local_validation_result = "malformed_json".into();
+                    provider_attempts
+                        .last_mut()
+                        .expect("attempt was just recorded")
+                        .local_validation_error = Some(bounded_validation_error(&error));
+                    return Err(anyhow!("model returned malformed JSON twice: {error}"));
+                }
             },
             None => None,
         };
+        provider_attempts
+            .last_mut()
+            .expect("attempt was just recorded")
+            .local_validation_result = "valid".into();
         let request_bytes = serde_json::to_vec(&attempt_request)?;
         let provider = port.provider().to_owned();
         let request_hash = format!("sha256:{:x}", Sha256::digest(&request_bytes));
@@ -145,12 +256,20 @@ pub async fn run_validated_stage_with_timeout(
                 request_hash,
                 output_hash,
                 source_receipt_ids: request.source_receipt_ids.clone(),
-                latency_ms: started.elapsed().as_millis() as u64,
+                latency_ms: stage_started.elapsed().as_millis() as u64,
                 validation_result: "valid".into(),
+                local_validation_error: None,
+                input_chars: attempt_request.lived_stream.chars().count(),
+                output_chars: output.chars().count(),
+                provider_attempts,
             },
         });
     }
     unreachable!()
+}
+
+fn bounded_validation_error(error: &impl std::fmt::Display) -> String {
+    error.to_string().chars().take(1_000).collect()
 }
 
 #[cfg(test)]
@@ -227,10 +346,13 @@ mod tests {
                 "properties":{"answer":{"type":"string"}}
             })),
             source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: None,
         };
         let output = run_validated_stage(&port, &request).await.unwrap();
         assert_eq!(port.calls.load(Ordering::SeqCst), 2);
         assert_eq!(output.structured.unwrap()["answer"], "ready");
+        assert_eq!(output.receipt.provider_attempts.len(), 2);
         assert_eq!(output.receipt.snapshot_binding, request.snapshot_binding);
     }
 
@@ -251,6 +373,8 @@ mod tests {
                 "properties":{"answer":{"type":"string"}}
             })),
             source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: None,
         };
         let output = run_validated_stage(&port, &request).await.unwrap();
         assert_eq!(port.calls.load(Ordering::SeqCst), 2);
@@ -267,6 +391,8 @@ mod tests {
             lived_stream: "fixture".into(),
             output_schema: None,
             source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: None,
         };
         let error = run_validated_stage_with_timeout(
             &NeverReturns,
@@ -276,6 +402,72 @@ mod tests {
         .await
         .unwrap_err();
         assert!(error.to_string().contains("timed out"));
+    }
+
+    #[test]
+    fn deepseek_response_preserves_usage_metadata_without_reasoning_content() {
+        let output = decode_deepseek_response(&serde_json::json!({
+            "id":"request-7",
+            "system_fingerprint":"fp-live",
+            "choices":[{
+                "finish_reason":"stop",
+                "message":{
+                    "content":"ready",
+                    "reasoning_content":"must never enter the receipt"
+                }
+            }],
+            "usage":{
+                "prompt_tokens":120,
+                "completion_tokens":30,
+                "total_tokens":150,
+                "prompt_cache_hit_tokens":80,
+                "prompt_cache_miss_tokens":40,
+                "completion_tokens_details":{"reasoning_tokens":0}
+            }
+        }))
+        .unwrap();
+        assert_eq!(output.content, "ready");
+        assert_eq!(output.provider_request_id.as_deref(), Some("request-7"));
+        assert_eq!(output.finish_reason.as_deref(), Some("stop"));
+        assert_eq!(output.token_usage.as_ref().unwrap().total_tokens, 150);
+        let receipt_shape = serde_json::to_value(ModelProviderAttemptReceipt {
+            provider_request_id: output.provider_request_id,
+            system_fingerprint: output.system_fingerprint,
+            finish_reason: output.finish_reason,
+            latency_ms: 1,
+            token_usage: output.token_usage,
+            local_validation_result: "valid".into(),
+            local_validation_error: None,
+        })
+        .unwrap();
+        assert!(
+            !serde_json::to_string(&receipt_shape)
+                .unwrap()
+                .contains("reasoning_content")
+        );
+    }
+
+    #[test]
+    fn deepseek_structured_requests_are_deterministic_but_narrative_requests_are_not_forced() {
+        let mut request = ModelStageRequest {
+            stage: "interpreter".into(),
+            model: "deepseek-v4-flash".into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "fixture".into(),
+            output_schema: Some(serde_json::json!({"type":"object"})),
+            source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: Some(321),
+        };
+        let structured = deepseek_request_body(&request);
+        assert_eq!(structured["temperature"].as_f64(), Some(0.0));
+        assert_eq!(structured["response_format"]["type"], "json_object");
+        assert_eq!(structured["max_tokens"], 321);
+
+        request.output_schema = None;
+        let narrative = deepseek_request_body(&request);
+        assert!(narrative.get("temperature").is_none());
+        assert!(narrative.get("response_format").is_none());
     }
 }
 
@@ -304,7 +496,7 @@ impl DeepSeekPort {
     pub fn new(api_key: String) -> Self {
         Self {
             client: reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(45))
+                .connect_timeout(std::time::Duration::from_secs(10))
                 .build()
                 .expect("static DeepSeek client configuration is valid"),
             api_key: Zeroizing::new(api_key),
@@ -318,14 +510,12 @@ impl DeepSeekPort {
             path,
         )?))
     }
-}
-#[async_trait]
-impl ModelPort for DeepSeekPort {
-    async fn run(&self, request: &ModelStageRequest) -> Result<String> {
-        let mut body = serde_json::json!({"model":request.model,"messages":[{"role":"user","content":request.lived_stream}],"stream":false,"thinking":{"type":"disabled"}});
-        if request.output_schema.is_some() {
-            body["response_format"] = serde_json::json!({"type":"json_object"});
-        }
+
+    async fn run_with_observation(
+        &self,
+        request: &ModelStageRequest,
+    ) -> Result<ModelProviderOutput> {
+        let body = deepseek_request_body(request);
         let value: serde_json::Value = self
             .client
             .post(&self.endpoint)
@@ -336,13 +526,71 @@ impl ModelPort for DeepSeekPort {
             .error_for_status()?
             .json()
             .await?;
-        value
-            .pointer("/choices/0/message/content")
-            .and_then(|v| v.as_str())
-            .map(str::to_owned)
-            .ok_or_else(|| anyhow!("DeepSeek response contained no assistant content"))
+        decode_deepseek_response(&value)
+    }
+}
+
+fn deepseek_request_body(request: &ModelStageRequest) -> serde_json::Value {
+    let mut body = serde_json::json!({
+        "model": request.model,
+        "messages": [{"role": "user", "content": request.lived_stream}],
+        "stream": false,
+        "thinking": {"type": "disabled"}
+    });
+    if request.output_schema.is_some() {
+        body["response_format"] = serde_json::json!({"type":"json_object"});
+        body["temperature"] = serde_json::json!(request.temperature.unwrap_or(0.0));
+    } else if let Some(temperature) = request.temperature {
+        body["temperature"] = serde_json::json!(temperature);
+    }
+    if let Some(max_tokens) = request.max_output_tokens {
+        body["max_tokens"] = serde_json::json!(max_tokens);
+    }
+    body
+}
+#[async_trait]
+impl ModelPort for DeepSeekPort {
+    async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+        Ok(self.run_with_observation(request).await?.content)
+    }
+    async fn run_observed(&self, request: &ModelStageRequest) -> Result<ModelProviderOutput> {
+        self.run_with_observation(request).await
     }
     fn provider(&self) -> &'static str {
         "deepseek"
     }
+}
+
+fn decode_deepseek_response(value: &serde_json::Value) -> Result<ModelProviderOutput> {
+    let content = value
+        .pointer("/choices/0/message/content")
+        .and_then(|v| v.as_str())
+        .map(str::to_owned)
+        .ok_or_else(|| anyhow!("DeepSeek response contained no assistant content"))?;
+    let token_usage = value
+        .get("usage")
+        .filter(|usage| !usage.is_null())
+        .map(|usage| ModelTokenUsage {
+            prompt_tokens: usage["prompt_tokens"].as_u64().unwrap_or_default(),
+            completion_tokens: usage["completion_tokens"].as_u64().unwrap_or_default(),
+            total_tokens: usage["total_tokens"].as_u64().unwrap_or_default(),
+            prompt_cache_hit_tokens: usage["prompt_cache_hit_tokens"]
+                .as_u64()
+                .unwrap_or_default(),
+            prompt_cache_miss_tokens: usage["prompt_cache_miss_tokens"]
+                .as_u64()
+                .unwrap_or_default(),
+            reasoning_tokens: usage["completion_tokens_details"]["reasoning_tokens"]
+                .as_u64()
+                .unwrap_or_default(),
+        });
+    Ok(ModelProviderOutput {
+        content,
+        provider_request_id: value["id"].as_str().map(str::to_owned),
+        system_fingerprint: value["system_fingerprint"].as_str().map(str::to_owned),
+        finish_reason: value["choices"][0]["finish_reason"]
+            .as_str()
+            .map(str::to_owned),
+        token_usage,
+    })
 }

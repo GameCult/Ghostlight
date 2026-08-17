@@ -400,7 +400,7 @@ pub fn plan_cover(campaign: &Campaign, demand: ResolutionDemand) -> Result<Resol
         return Err(anyhow!("agency graph has no active subjects"));
     }
     let scoring = ScoringCache::new(campaign, &profiles);
-    let mandatory = mandatory_subjects(campaign, &demand);
+    let mandatory = mandatory_subjects(campaign);
     let graph = DerivedAgencyGraph::build(campaign, profiles.keys().cloned().collect());
     if trace {
         eprintln!("partition graph: {:?}", trace_started.elapsed());
@@ -861,8 +861,8 @@ pub fn cell_action_limit(cell: &SimulationCell) -> usize {
     }
 }
 
-fn mandatory_subjects(campaign: &Campaign, demand: &ResolutionDemand) -> BTreeSet<String> {
-    let mut mandatory = demand.focal_subject_ids.clone();
+fn mandatory_subjects(campaign: &Campaign) -> BTreeSet<String> {
+    let mut mandatory = BTreeSet::new();
     for pin in campaign.resolution_pins.values() {
         if pin.kind == ResolutionPinKind::MinimumIndividualDetail {
             mandatory.extend(pin.subject_ids.iter().cloned());
@@ -2150,13 +2150,21 @@ pub(crate) mod tests {
 
     #[test]
     fn foreground_subjects_create_reported_temporary_overage() {
-        let value = campaign(5, 1);
-        let mut demand = default_demand(&value, "foreground");
-        demand.focal_subject_ids = BTreeSet::from([
-            "faction-0000".into(),
-            "faction-0001".into(),
-            "faction-0002".into(),
-        ]);
+        let mut value = campaign(5, 1);
+        for id in ["faction-0000", "faction-0001", "faction-0002"] {
+            value.resolution_pins.insert(
+                format!("foreground:{id}"),
+                ResolutionPin {
+                    schema: "ghostlight.resolution_pin.v1".into(),
+                    id: format!("foreground:{id}"),
+                    kind: ResolutionPinKind::MinimumIndividualDetail,
+                    subject_ids: BTreeSet::from([id.into()]),
+                    reason: "directly engaged foreground subject".into(),
+                    created_world_revision: value.revision,
+                },
+            );
+        }
+        let demand = default_demand(&value, "foreground");
         let cover = plan_cover(&value, demand).unwrap();
         assert_eq!(cover.effective_budget, 4);
         assert_eq!(cover.mandatory_overage, 3);
@@ -2168,6 +2176,22 @@ pub(crate) mod tests {
                     .any(|cell| { cell.subject_ids == BTreeSet::from([id.to_owned()]) })
             );
         }
+    }
+
+    #[test]
+    fn model_focal_subjects_raise_salience_without_overriding_the_budget() {
+        let value = campaign(5, 1);
+        let mut demand = default_demand(&value, "broad pressure");
+        demand.focal_subject_ids = value
+            .agency_profiles
+            .values()
+            .filter(|profile| profile.simulation_eligible)
+            .map(|profile| profile.subject_id.clone())
+            .collect();
+        let cover = plan_cover(&value, demand).unwrap();
+        assert_eq!(cover.effective_budget, 1);
+        assert_eq!(cover.mandatory_overage, 0);
+        assert_eq!(cover.cells[0].subject_ids.len(), 5);
     }
 
     #[test]

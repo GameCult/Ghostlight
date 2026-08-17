@@ -63,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
             expected_revision: 0,
             event_summary: "The player asks all three witnesses what they believe is at stake."
                 .into(),
-            reactions: wave.reactions,
+            reactions: wave.reactions.clone(),
         })
         .await?;
     let total_seconds = started.elapsed().as_secs_f64();
@@ -77,6 +77,8 @@ async fn main() -> anyhow::Result<()> {
         "total_seconds":total_seconds,
         "target_seconds":20,
         "within_target":total_seconds <= 20.0,
+        "reactions":wave.reactions,
+        "model_stage_receipts":wave.receipts,
         "commit":committed,
         "store":root.join("campaign.cc")
     });

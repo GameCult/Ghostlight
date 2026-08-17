@@ -39,6 +39,8 @@ impl GestaltPresencePlanner {
                 ),
                 output_schema: Some(schema),
                 source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
+                temperature: Some(0.0),
+                max_output_tokens: Some(1_500),
             },
         )
         .await?;

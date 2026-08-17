@@ -357,13 +357,21 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-The Persona extraction and Epiphany handback are complete. Continue the hosted
-MVP acceptance pass: prove live strategic scheduling and return catch-up use the
-flash-model `StrategicTickPlan`, malformed or forbidden plans do not mutate the
-campaign, gestalt individuals survive dematerialization and later population
-ticks, four-actor live latency meets target, remote CultMesh publication works,
-and the normal-process Starfire release has exact restart/firewall/provenance
-evidence.
+The Persona extraction and Epiphany handback are complete. The current local
+candidate is an acceptance-hardening pass, not the older deployed release. It
+adds per-attempt DeepSeek usage/cache/error receipts, splits world and agency
+compilation, minimizes Projector/Persona/Interpreter context by authority, makes
+cell identity/membership/revisions runtime-derived, and prevents demand-model
+focal hints from overruling the Persona-cell budget. Live proof under
+`F:\GameCult\GhostlightDungeon\acceptance` includes grounded compilation,
+four-actor appraisal, impossible/rolled actions, grounded narration, strategic
+cells, and a 24-faction budget-4 wave.
+
+Next: commit this coherent pass, run the authenticated HTTP/browser campaign
+path in an isolated runtime, prove away catch-up/concurrency/persistence/fork/
+export/restart against the candidate, then deploy the exact commit and repeat
+LAN/firewall/CultMesh/provenance smokes. Do not describe the current Starfire
+process as running the candidate until the immutable release switch is proven.
 
 ## Warnings
 

@@ -6,6 +6,8 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+const VOIDBOT_SEARCH_RESULT_LIMIT: u8 = 12;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct VaultQuery {
     pub query: String,
@@ -128,6 +130,44 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn voidbot_search_caps_requests_to_the_provider_contract() {
+        let app = Router::new().route(
+            "/mcp",
+            post(|axum::Json(body): axum::Json<serde_json::Value>| async move {
+                assert_eq!(
+                    body.pointer("/params/arguments/limit")
+                        .and_then(|value| value.as_u64()),
+                    Some(VOIDBOT_SEARCH_RESULT_LIMIT as u64)
+                );
+                ([
+                    ("content-type", "text/event-stream"),
+                ], "event: message\ndata: {\"result\":{\"structuredContent\":{\"results\":[{\"sourceId\":\"AetheriaLore:place.md\",\"path\":\"place.md\",\"lineStart\":7,\"lineEnd\":9,\"text\":\"The route takes six hours.\"}]}}}\n\n").into_response()
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        let requested = VaultQuery {
+            query: "route".into(),
+            authority_lanes: vec!["AetheriaLore".into()],
+            temporal_scope: "era".into(),
+            limit: 18,
+        };
+        let result = VoidBotMcpVault::new(format!("http://{address}/mcp"))
+            .search(&requested)
+            .await
+            .unwrap();
+        let mut effective = requested;
+        effective.limit = VOIDBOT_SEARCH_RESULT_LIMIT;
+        assert_eq!(
+            result.query_hash,
+            receipt("voidbot.aetheria", &effective, vec![]).query_hash
+        );
+    }
+
+    #[tokio::test]
     async fn voidbot_exact_document_is_hashed_as_the_complete_archive_witness() {
         let app=Router::new().route("/mcp",post(||async { ([ ("content-type","text/event-stream") ], "event: message\ndata: {\"result\":{\"structuredContent\":{\"found\":true,\"sourceId\":\"AetheriaLore:forge.md\",\"repoName\":\"AetheriaLore\",\"path\":\"forge.md\",\"content\":\"John keeps the forge.\\nThe road takes six hours.\",\"lastModifiedAt\":\"2026-01-01T00:00:00Z\"}}}\n\n").into_response() }));
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -170,13 +210,15 @@ mod tests {
 #[async_trait]
 impl VaultProvider for VoidBotMcpVault {
     async fn search(&self, query: &VaultQuery) -> Result<VaultEvidenceReceipt> {
+        let mut effective_query = query.clone();
+        effective_query.limit = effective_query.limit.min(VOIDBOT_SEARCH_RESULT_LIMIT);
         let response = self
             .call_tool(
                 "search_sources",
                 serde_json::json!({
-                    "query":query.query,
-                    "limit":query.limit,
-                    "repoName": if query.authority_lanes.iter().any(|lane| lane == "AetheriaLore") {
+                    "query":effective_query.query,
+                    "limit":effective_query.limit,
+                    "repoName": if effective_query.authority_lanes.iter().any(|lane| lane == "AetheriaLore") {
                         Some("AetheriaLore")
                     } else {
                         None
@@ -190,9 +232,9 @@ impl VaultProvider for VoidBotMcpVault {
             .ok_or_else(|| anyhow!("VoidBot MCP returned no typed search results"))?;
         let witnesses = results
             .iter()
-            .map(|item| witness_from_result(item, query))
+            .map(|item| witness_from_result(item, &effective_query))
             .collect::<Result<Vec<_>>>()?;
-        Ok(receipt(self.provider_id(), query, witnesses))
+        Ok(receipt(self.provider_id(), &effective_query, witnesses))
     }
     async fn surrounding_context(
         &self,

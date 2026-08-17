@@ -2615,6 +2615,10 @@ mod tests {
             source_receipt_ids: vec![],
             latency_ms: 1,
             validation_result: "valid".into(),
+            local_validation_error: None,
+            input_chars: 7,
+            output_chars: 7,
+            provider_attempts: vec![],
         }
     }
 

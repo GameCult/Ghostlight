@@ -31,7 +31,8 @@ exact campaign revision
   -> connected agency graph + budget/pins/leases/detail debt
   -> cohesive or arena simulation-cell cover
   -> one private Projector/Persona/Interpreter membrane per cell
-  -> exact constituent-attributed appraisals and proposals
+  -> model proposes exact constituent-attributed actions or explicit inaction
+  -> runtime binds complete cell membership + world/resolution revisions
   -> WorldKernel validates cover, receipts, knowledge, scope, topology, and bounds
   -> AdvanceStrategicTick through the campaign mailbox
   -> one atomic campaign/event/news/cover/appraisal commit
@@ -41,6 +42,15 @@ The model owns no tick mutation. A provider failure or invalid proposal leaves
 the campaign revision and world time untouched. Background inference checks
 live-turn pressure before launch and again before commit; return catch-up uses
 the same command path with player-turn priority.
+
+Resolution-demand focal IDs are salience hints, not partition commands. They
+cannot create mandatory singleton cells or exceed the configured budget. Cell
+Projectors receive decision-relevant situation state; cell Interpreters receive
+exact permissions and the narrative products. Membership and revision bindings
+are derived by the runtime, so a model is never asked to copy an invariant that
+the planner already owns. Stable prompt prefixes are deliberately placed before
+dynamic state, and provider receipts expose per-attempt token/cache usage plus
+bounded local validation failures.
 
 Population scale uses reversible individuation:
 

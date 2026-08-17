@@ -28,20 +28,24 @@ a 1–32 player budget, persistent pins, approval-gated gestalt fission, graph a
 cover receipts, and a separate operator provider-concurrency limit. The
 specific authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`.
-The implementation cut is closed. Final acceptance evidence covers hosted
-VoidBot compilation, invite isolation, automatic gestalt presence, three NPC
-reactions, a 13.57-second four-actor parallel wave, model-driven institutional,
-gestalt, and remote-actor away simulation, exact-channel news, full workspace
-tests, legacy Pallas/Lucent/Corvid validation, CultMesh publication, explicit
-process restart, and exact release provenance. Future work belongs in a new
-post-MVP plan rather than silently extending this one.
+The implementation is in acceptance hardening. The currently deployed Starfire
+process is a known older immutable release; the working candidate is not live
+until its exact commit, binary hash, process, CultMesh projection, firewall, and
+restart evidence agree. This pass makes model work inspectable and cheaper:
+provider attempts expose prompt/completion/cache usage and exact local failures;
+stable prefixes precede dynamic context; world and agency compilation are
+separate stages; Projectors receive situation state while Interpreters receive
+exact permissions; deterministic cell bindings are attached by the runtime.
 
-The multiresolution release is live on Starfire. Its deployment smoke selected
-three isolated cells, committed three material offscreen events and three
-accessible news items in one wave, preserved the player, and wrote a disposable
-CultCache witness under `acceptance/strategic-20260817-073632`. The fixture's
-default budget did not force aggregation; the 20-plus-faction budget matrix is
-the aggregation proof.
+Live local evidence now covers grounded VoidBot compilation, a four-actor wave,
+impossible and receipted d20 actions, grounded narration, strategic cells, and a
+24-faction budget-4 wave. The first scale baseline used 37,327 prompt tokens and
+17.81 seconds. After the authority/context cuts, the same complete four-cell
+cover used 20,760 prompt tokens and 14.38 seconds, with 13 of 13 stages valid on
+their first attempt, two material institutional consequences, exact constituent
+authority, and no player mutation. Remaining work is authenticated surface and
+lifecycle acceptance, away/live concurrency, exact deployment, and final
+regression/provenance verification.
 
 ## Prior research-program phase
 

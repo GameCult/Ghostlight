@@ -52,11 +52,13 @@ impl Narrator {
                     campaign.id, campaign.revision
                 ),
                 lived_stream: format!(
-                    "Narrate the latest committed change in vivid, concise second-person interactive-fiction prose. Describe only the supplied committed state, speech, and accessible sensory consequences. Do not add actions, facts, private thoughts, expertise, geography, outcomes, or dialogue. Emit prose only.\n\n{}",
+                    "Narrate the latest committed change in concrete, concise second-person interactive-fiction prose. Integrate supplied facts into fluent prose; do not mention JSON, state, commits, revisions, or the source representation. Every environmental noun, sensory adjective, object state, action, and consequence must be traceable to the supplied JSON. Do not invent lighting, temperature, sound, motion, posture, dialogue, private thoughts, expertise, geography, or outcomes. It is better to be spare than to fabricate texture. Emit prose only.\n\n{}",
                     serde_json::to_string(&public_slice)?
                 ),
                 output_schema: None,
                 source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
+                temperature: Some(0.2),
+                max_output_tokens: Some(256),
             },
         )
         .await?;

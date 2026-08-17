@@ -132,16 +132,58 @@ async fn project_resolution_demand(
         .filter(|profile| profile.active_leaf && profile.simulation_eligible)
         .map(|profile| profile.subject_id.clone())
         .collect();
+    let compact_profiles = campaign
+        .agency_profiles
+        .values()
+        .filter(|profile| profile.active_leaf && profile.simulation_eligible)
+        .map(|profile| {
+            serde_json::json!({
+                "subject_id":profile.subject_id,
+                "subject_kind":profile.subject_kind,
+                "collective_authority_id":profile.collective_authority_id,
+                "location_ids":profile.location_ids,
+                "facets":profile.facets,
+                "information_channels":profile.information_channels,
+                "detail_debt":profile.detail_debt,
+            })
+        })
+        .collect::<Vec<_>>();
+    let compact_relations = campaign
+        .agency_relations
+        .values()
+        .filter(|relation| relation.active)
+        .map(|relation| {
+            serde_json::json!({
+                "from_subject_id":relation.from_subject_id,
+                "to_subject_id":relation.to_subject_id,
+                "kind":relation.kind,
+                "strength":relation.strength,
+            })
+        })
+        .collect::<Vec<_>>();
     let context = serde_json::json!({
         "campaign_id": campaign.id,
         "world_revision": campaign.revision,
         "resolution_epoch": campaign.resolution_policy.resolution_epoch,
         "horizon_minutes": campaign.tick_hours.saturating_mul(60),
-        "allowed_subject_ids": active_ids,
-        "clocks": campaign.clocks,
-        "recent_events": campaign.events.iter().rev().take(12).collect::<Vec<_>>(),
-        "relations": campaign.agency_relations.values().filter(|relation| relation.active).collect::<Vec<_>>(),
-        "profiles": campaign.agency_profiles.values().filter(|profile| profile.active_leaf && profile.simulation_eligible).collect::<Vec<_>>()
+        "allowed_subject_ids": &active_ids,
+        "clocks": campaign.clocks.values().map(|clock| serde_json::json!({
+            "id":clock.id,
+            "label":clock.label,
+            "progress":clock.progress,
+            "threshold":clock.threshold,
+            "consequence":clock.consequence,
+        })).collect::<Vec<_>>(),
+        "recent_events": campaign.events.iter().rev().take(12).map(|event| serde_json::json!({
+            "id":event.id,
+            "kind":event.kind,
+            "summary":event.summary,
+            "institution_ids":event.institution_ids,
+            "location_ids":event.location_ids,
+            "public_channels":event.public_channels,
+        })).collect::<Vec<_>>(),
+        "relations": compact_relations,
+        "profiles": compact_profiles,
     });
     let mut schema = match serde_json::to_value(schema_for!(DemandProjection)) {
         Ok(value) => value,
@@ -150,10 +192,22 @@ async fn project_resolution_demand(
     if let Some(items) = schema.pointer_mut("/properties/focal_subject_ids/items") {
         *items = serde_json::json!({"type":"string","enum":active_ids});
     }
+    if let Some(focal) = schema
+        .pointer_mut("/properties/focal_subject_ids")
+        .and_then(serde_json::Value::as_object_mut)
+    {
+        focal.insert("uniqueItems".into(), true.into());
+        focal.insert(
+            "maxItems".into(),
+            usize::from(campaign.resolution_policy.active_cell_budget)
+                .min(active_ids.len())
+                .into(),
+        );
+    }
     let base_prompt = format!(
-        "Project which boundaries best predict different strategic behavior for the next horizon. Return all six axis weights (geography, ideology, authority, economy_role, species_body, information), each from 0 to 1 and summing to 1. Focal subjects may only use supplied IDs. This stage proposes relevance and cannot change world state. Return one JSON object matching the schema.\nSTATE:\n{}\nOUTPUT JSON SCHEMA:\n{}",
+        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nProject which boundaries best predict different strategic behavior for the next horizon. Return all six axis weights (geography, ideology, authority, economy_role, species_body, information), each from 0 to 1 and summing to 1. Focal subjects are exceptional salience hints only, may use only supplied IDs, and cannot force partition boundaries or budget overage. This stage proposes relevance and cannot change world state.\nSTATE:\n{}",
+        serde_json::to_string(&schema).unwrap_or_default(),
         serde_json::to_string(&context).unwrap_or_default(),
-        serde_json::to_string_pretty(&schema).unwrap_or_default(),
     );
     let mut request = ModelStageRequest {
         stage: "resolution_demand".into(),
@@ -165,6 +219,8 @@ async fn project_resolution_demand(
         lived_stream: base_prompt,
         output_schema: Some(schema),
         source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
+        temperature: Some(0.0),
+        max_output_tokens: Some(512),
     };
     let mut outputs = Vec::new();
     for attempt in 0..2 {
@@ -186,12 +242,22 @@ async fn project_resolution_demand(
                 horizon_minutes: campaign.tick_hours.saturating_mul(60),
                 rationale: projection.rationale,
             };
-            if validate_demand(campaign, &demand).is_ok() {
-                outputs.push(output);
-                return (demand, outputs);
+            match validate_demand(campaign, &demand) {
+                Ok(()) => {
+                    outputs.push(output);
+                    return (demand, outputs);
+                }
+                Err(error) => {
+                    output.receipt.validation_result = "semantic_invalid".into();
+                    output.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                }
             }
+        } else {
+            output.receipt.validation_result = "semantic_invalid".into();
+            output.receipt.local_validation_error =
+                Some("resolution demand could not be decoded".into());
         }
-        output.receipt.validation_result = "semantic_invalid".into();
         outputs.push(output);
         if attempt == 0 {
             request.lived_stream.push_str(
@@ -390,30 +456,11 @@ mod tests {
                 "cell_projector" => Ok("Several powers feel the horizon tightening.".into()),
                 "cell_persona" => Ok("Each constituent watches and deliberately holds.".into()),
                 "cell_interpreter" if self.malformed_cell => Ok("not-json".into()),
-                "cell_interpreter" => {
-                    let context = request
-                        .lived_stream
-                        .split("Permissioned typed context:\n")
-                        .nth(1)
-                        .and_then(|value| value.split("\n\nLived stream:").next())
-                        .context("fixture could not locate typed cell context")?;
-                    let slice: PermittedCellSlice = serde_json::from_str(context)?;
-                    Ok(serde_json::to_string(&crate::domain::CellAppraisal {
-                        schema: "ghostlight.cell_appraisal.v1".into(),
-                        cell_id: slice.cell_id,
-                        world_revision: slice.world_revision,
-                        resolution_epoch: slice.resolution_epoch,
-                        considered_subject_ids: slice
-                            .constituents
-                            .into_iter()
-                            .map(|value| value.subject_id)
-                            .collect(),
-                        actions: vec![],
-                        inaction_reason: Some(
-                            "No constituent has a justified move this horizon.".into(),
-                        ),
-                    })?)
-                }
+                "cell_interpreter" => Ok(serde_json::json!({
+                    "actions": [],
+                    "inaction_reason": "No constituent has a justified move this horizon."
+                })
+                .to_string()),
                 stage => Err(anyhow!("unexpected fixture stage {stage}")),
             }
         }

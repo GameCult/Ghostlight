@@ -623,10 +623,33 @@ scheduler pulse or return catch-up uses the same strategic-tick command.
 ## Model boundary
 
 The provider-neutral model port records provider, model, request hash, source
-receipt ids, latency, output hash, validation result, and state version.
+receipt ids, latency, output hash, validation result, state version, provider
+request id/fingerprint/finish reason, and prompt/completion/cache-hit/cache-miss
+token counts for every provider attempt. Local schema and semantic failures carry
+a bounded exact error. The runtime never records provider reasoning content.
 Structured stages request JSON Output and then validate locally. Empty or
 malformed output gets one retry against the same snapshot. A second failure,
 timeout, retrieval outage, or stale result produces no mutation.
+
+Prompt projection follows the authority boundary instead of shipping one large
+state packet to every stage:
+
+- stable instructions and schemas precede changing campaign context so provider
+  prefix caches can do useful work;
+- Projectors receive only the typed facts needed to form the actor or cell's
+  lived situation;
+- Personas receive only the resulting narrative stream;
+- Interpreters receive the narrative output plus exact action permissions, not
+  a second copy of the entire state slice;
+- deterministic bindings already owned by the runtime—cell membership, cell id,
+  world revision, and resolution epoch—are attached locally after interpretation
+  rather than copied by a model.
+
+This is both a safety and cognitive-efficiency rule. Models spend tokens on
+judgment and voice; the kernel spends deterministic work on identity, versions,
+coverage, references, and commit authority. A resolution-demand model may raise
+subject salience, but only pins and active relevance leases may force singleton
+cells or an effective-budget overage.
 
 Live model allocation:
 

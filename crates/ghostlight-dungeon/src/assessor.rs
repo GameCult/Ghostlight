@@ -70,16 +70,25 @@ impl ActionAssessor {
             })
             .collect();
         let allowed_references = allowed_references(campaign, actor);
-        let schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
+        let mut schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
+        schema["properties"]["dc"] = serde_json::json!({
+            "type":"integer",
+            "enum":[5,10,15,20,25,30]
+        });
+        schema["$defs"]["ContextModifier"]["properties"]["value"] = serde_json::json!({
+            "type":"integer",
+            "minimum":-10,
+            "maximum":10
+        });
         let base_prompt = format!(
-            "Assess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. Keep a delta empty when prose consequence has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}\nOUTPUT JSON SCHEMA:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. Keep a delta empty when prose consequence has no canonical state change.\nINTENT:\n{}\nACTOR:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nALLOWED REFERENCES:\n{}",
+            serde_json::to_string(&schema)?,
             serde_json::to_string(&intent)?,
             serde_json::to_string(actor)?,
             serde_json::to_string(location)?,
             serde_json::to_string(&present_actors)?,
             serde_json::to_string(&visible_institutions)?,
-            serde_json::to_string(&allowed_references)?,
-            serde_json::to_string_pretty(&schema)?
+            serde_json::to_string(&allowed_references)?
         );
         let snapshot_binding = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
         let mut correction = String::new();
@@ -95,6 +104,8 @@ impl ActionAssessor {
                     lived_stream: format!("{base_prompt}{correction}"),
                     output_schema: Some(schema.clone()),
                     source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
+                    temperature: Some(0.0),
+                    max_output_tokens: Some(1_800),
                 },
             )
             .await?;

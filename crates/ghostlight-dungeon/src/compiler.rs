@@ -5,7 +5,10 @@ use crate::{
         InstitutionState, Location, VaultEvidenceReceipt, WorldClock, WorldCompilePreview,
         WorldFact,
     },
-    model::{ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage},
+    model::{
+        ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage,
+        run_validated_stage_with_timeout,
+    },
     vault::{VaultProvider, VaultQuery},
 };
 use anyhow::{Result, anyhow};
@@ -105,6 +108,7 @@ struct CompiledSeed {
     title: String,
     canon_cutoff: String,
     world_time: DateTime<Utc>,
+    #[schemars(range(min = 1))]
     tick_hours: u32,
     player: ActorState,
     locations: Vec<Location>,
@@ -119,10 +123,24 @@ struct CompiledSeed {
     gaps: Vec<String>,
     branch_assumptions: Vec<String>,
     opening_narration: String,
-    #[serde(default)]
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledAgencySkeleton {
     agency_profiles: Vec<CompiledAgencyProfile>,
-    #[serde(default)]
     agency_relations: Vec<CompiledAgencyRelation>,
+}
+
+#[derive(Clone, Debug, Serialize, JsonSchema, PartialEq)]
+struct AgencySubjectBrief {
+    subject_id: String,
+    subject_kind: AgencySubjectKind,
+    name: String,
+    location_ids: BTreeSet<String>,
+    capabilities_or_resources: Vec<String>,
+    knowledge_or_posture: Vec<String>,
+    goals: Vec<String>,
+    pressures_or_obligations: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -141,6 +159,7 @@ struct CompiledAgencyRelation {
     from_subject_id: String,
     to_subject_id: String,
     kind: AgencyRelationKind,
+    #[schemars(range(min = 1, max = 100))]
     strength: u8,
 }
 
@@ -242,11 +261,14 @@ impl WorldCompiler {
                 3,
             )
             .await?;
-        let receipts = self.retrieve_all(&queries, &start.when, 18).await?;
-        let base_prompt = format!(
-            "Compile two deliberately different scales. First, compile a bounded playable region with stable topology, local actors, populations, and clocks. Second, compile a global agency skeleton covering every source-supported major power, coarse region, institution, important relation, information channel, and strategic pressure relevant to this era. Major remote powers belong in institutions and agency profiles; do not eagerly invent their settlements, routes, or people. Agency profile facets use exactly geography, ideology, authority, economy_role, species_body, and information. Agency relations use exact supplied subject IDs. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Every non-player actor, institution, and gestalt must have exactly one agency profile; location IDs must already exist. Cross-faction relations never imply shared authority. START:\n{}\nEVIDENCE:\n{}",
+        let receipts = self.retrieve_all(&queries, &start.when, 8).await?;
+        let shared_prefix = format!(
+            "SOURCE-GROUNDED WORLD COMPILATION\nSTART:\n{}\nEVIDENCE:\n{}\n\n",
             serde_json::to_string(&start)?,
             evidence_text(&receipts)
+        );
+        let base_prompt = format!(
+            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and enough remote institutions to represent every source-supported major power relevant to this era. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts; mark reversible texture provisional_local and list material gaps. A canon_baseline fact must cite one or more exact receipt_id values printed in EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. The player location and every actor location must exist. Every route destination must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids(&receipts);
@@ -269,6 +291,12 @@ impl WorldCompiler {
             {
                 Ok(campaign) => break (seed, campaign),
                 Err(error) if compiler_receipts.len() == 1 => {
+                    mark_semantic_invalid(
+                        compiler_receipts
+                            .last_mut()
+                            .expect("receipt was just stored"),
+                        &error,
+                    );
                     correction = format!(
                         "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nReturn a corrected complete candidate against the same START and EVIDENCE."
                     );
@@ -280,6 +308,56 @@ impl WorldCompiler {
                 }
             }
         };
+        let subject_briefs = agency_subject_briefs(&campaign);
+        let agency_prompt = format!(
+            "{shared_prefix}Compile the multiresolution global agency skeleton for this exact, already validated subject roster:\n{}\n\nReturn exactly one agency profile for every supplied subject and no other subject. Copy every subject_id, subject_kind, and location_ids exactly. Every profile must contain exactly the six facet axes geography, ideology, authority, economy_role, species_body, and information. Use an explicit unknown value when evidence cannot support a sharper claim. collective_authority_id must be null or one supplied subject ID; it denotes real shared authority, never mere alliance or proximity. Relations may use only supplied subject IDs and strength must be an integer from 1 through 100. Cross-faction relations never imply shared speech, knowledge, or authority. Preserve source-supported geographic, ideological, institutional, economic, biological, and information boundaries that predict different behavior under pressure.",
+            serde_json::to_string(&subject_briefs)?
+        );
+        let agency_schema = serde_json::to_value(schema_for!(CompiledAgencySkeleton))?;
+        let mut agency_correction = String::new();
+        let mut campaign = campaign;
+        loop {
+            let output = self
+                .structured(
+                    "agency_compile",
+                    "custom-start",
+                    &format!("{agency_prompt}{agency_correction}"),
+                    agency_schema.clone(),
+                    sources.clone(),
+                )
+                .await?;
+            compiler_receipts.push(output.1);
+            let skeleton: CompiledAgencySkeleton = serde_json::from_value(output.0)?;
+            let mut candidate = campaign.clone();
+            match apply_compiled_agency_skeleton(
+                &mut candidate,
+                skeleton.agency_profiles,
+                skeleton.agency_relations,
+            )
+            .and_then(|_| validate_campaign_seed(&candidate))
+            {
+                Ok(()) => {
+                    campaign = candidate;
+                    break;
+                }
+                Err(error) if agency_correction.is_empty() => {
+                    mark_semantic_invalid(
+                        compiler_receipts
+                            .last_mut()
+                            .expect("receipt was just stored"),
+                        &error,
+                    );
+                    agency_correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS AGENCY SKELETON: {error}\nReturn one corrected complete agency skeleton for the same exact roster."
+                    );
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "agency compiler failed local validation after one correction: {error}"
+                    ));
+                }
+            }
+        }
         let mut model_receipts = vec![retrieval_receipt];
         model_receipts.extend(compiler_receipts);
         Ok((
@@ -455,6 +533,10 @@ impl WorldCompiler {
             }) {
                 Ok(()) => return Ok((preview, receipts, stages)),
                 Err(error) if attempt == 0 => {
+                    mark_semantic_invalid(
+                        stages.last_mut().expect("receipt was just stored"),
+                        &error,
+                    );
                     correction = format!(
                         "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS FISSION: {error}\nReturn one corrected complete preview against the same subject and evidence."
                     );
@@ -529,6 +611,12 @@ impl WorldCompiler {
             match validate_region_expansion(campaign, &expansion) {
                 Ok(()) => break (seed, expansion),
                 Err(error) if compiler_receipts.len() == 1 => {
+                    mark_semantic_invalid(
+                        compiler_receipts
+                            .last_mut()
+                            .expect("receipt was just stored"),
+                        &error,
+                    );
                     correction = format!(
                         "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nReturn a corrected complete candidate against the same CAMPAIGN, REQUEST, and EVIDENCE."
                     );
@@ -656,8 +744,8 @@ impl WorldCompiler {
     ) -> Result<(Vec<String>, ModelStageReceipt)> {
         let schema = serde_json::to_value(schema_for!(RetrievalQueryPlan))?;
         let prompt = format!(
-            "Plan exactly {count} distinct source-search queries for the supplied subject. Each query must be a concise natural-language search string of 1 to 240 Unicode characters. Preserve proper nouns, era, place, institutions, mechanics, geography, and pressure when relevant. Do not answer the subject. SUBJECT:\n{subject}\n\nOUTPUT JSON SCHEMA (follow exactly):\n{}",
-            serde_json::to_string_pretty(&schema)?
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nPlan exactly {count} distinct source-search queries for the supplied subject. Each query must be a concise natural-language search string of 1 to 240 Unicode characters. Preserve proper nouns, era, place, institutions, mechanics, geography, and pressure when relevant. Do not answer the subject. SUBJECT:\n{subject}",
+            serde_json::to_string(&schema)?
         );
         let output = run_validated_stage(
             self.model.as_ref(),
@@ -668,6 +756,8 @@ impl WorldCompiler {
                 lived_stream: prompt,
                 output_schema: Some(schema),
                 source_receipt_ids: vec![],
+                temperature: Some(0.0),
+                max_output_tokens: Some(512),
             },
         )
         .await?;
@@ -707,21 +797,37 @@ impl WorldCompiler {
         sources: Vec<String>,
     ) -> Result<(serde_json::Value, ModelStageReceipt)> {
         let prompt = format!(
-            "{prompt}\n\nOUTPUT JSON SCHEMA (follow exactly):\n{}",
-            serde_json::to_string_pretty(&schema)?
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nTASK CONTEXT:\n{prompt}",
+            serde_json::to_string(&schema)?
         );
-        let out = run_validated_stage(
-            self.model.as_ref(),
-            &ModelStageRequest {
-                stage: stage.into(),
-                model: self.compiler_model.clone(),
-                snapshot_binding: binding.into(),
-                lived_stream: prompt,
-                output_schema: Some(schema),
-                source_receipt_ids: sources,
-            },
-        )
-        .await?;
+        let request = ModelStageRequest {
+            stage: stage.into(),
+            model: self.compiler_model.clone(),
+            snapshot_binding: binding.into(),
+            lived_stream: prompt,
+            output_schema: Some(schema),
+            source_receipt_ids: sources,
+            temperature: Some(0.0),
+            max_output_tokens: Some(match stage {
+                "world_compile" => 6_000,
+                "agency_compile" => 3_500,
+                "world_openings" => 1_800,
+                "world_roles" => 1_200,
+                "destination_compile" => 3_000,
+                "gestalt_fission" => 2_500,
+                _ => 2_500,
+            }),
+        };
+        let out = if stage == "world_compile" {
+            run_validated_stage_with_timeout(
+                self.model.as_ref(),
+                &request,
+                std::time::Duration::from_secs(120),
+            )
+            .await?
+        } else {
+            run_validated_stage(self.model.as_ref(), &request).await?
+        };
         Ok((
             out.structured
                 .ok_or_else(|| anyhow!("compiler returned no structured output"))?,
@@ -734,6 +840,11 @@ fn normalized_contains(document: &str, excerpt: &str) -> bool {
     let document = document.split_whitespace().collect::<Vec<_>>().join(" ");
     let excerpt = excerpt.split_whitespace().collect::<Vec<_>>().join(" ");
     !excerpt.is_empty() && document.contains(&excerpt)
+}
+
+fn mark_semantic_invalid(receipt: &mut ModelStageReceipt, error: &impl std::fmt::Display) {
+    receipt.validation_result = "semantic_invalid".into();
+    receipt.local_validation_error = Some(error.to_string().chars().take(1_000).collect());
 }
 
 pub fn validate_region_expansion(
@@ -777,13 +888,30 @@ pub fn validate_region_expansion(
 }
 
 fn evidence_text(receipts: &[VaultEvidenceReceipt]) -> String {
+    let mut seen = BTreeSet::new();
     receipts
         .iter()
-        .flat_map(|r| r.witnesses.iter())
-        .map(|w| {
+        .flat_map(|receipt| {
+            receipt
+                .witnesses
+                .iter()
+                .map(move |witness| (receipt.id.as_str(), witness))
+        })
+        .filter(|(_, witness)| {
+            seen.insert((
+                witness.source_id.clone(),
+                witness.exact_locator.clone(),
+                witness.content_hash.clone(),
+            ))
+        })
+        .map(|(receipt_id, witness)| {
             format!(
-                "[{} | {} | {}] {}",
-                w.source_id, w.exact_locator, w.content_hash, w.excerpt
+                "[receipt_id={} | source={} | locator={} | content_hash={}] {}",
+                receipt_id,
+                witness.source_id,
+                witness.exact_locator,
+                witness.content_hash,
+                witness.excerpt
             )
         })
         .collect::<Vec<_>>()
@@ -812,9 +940,36 @@ fn ensure_distinct_openings(items: &[OpeningSuggestion]) -> Result<()> {
 }
 
 fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Result<Campaign> {
+    require_unique_ids(
+        "location",
+        seed.locations.iter().map(|item| item.id.as_str()),
+    )?;
+    require_unique_ids("actor", seed.actors.iter().map(|item| item.id.as_str()))?;
+    require_unique_ids(
+        "institution",
+        seed.institutions.iter().map(|item| item.id.as_str()),
+    )?;
+    require_unique_ids("clock", seed.clocks.iter().map(|item| item.id.as_str()))?;
+    require_unique_ids("fact", seed.facts.iter().map(|item| item.id.as_str()))?;
+    require_unique_ids("gestalt", seed.gestalts.iter().map(|item| item.id.as_str()))?;
+    require_unique_ids(
+        "gestalt member",
+        seed.gestalt_members.iter().map(|item| item.id.as_str()),
+    )?;
+    require_unique_ids(
+        "canonical subject",
+        std::iter::once(seed.player.id.as_str())
+            .chain(seed.actors.iter().map(|item| item.id.as_str()))
+            .chain(seed.institutions.iter().map(|item| item.id.as_str()))
+            .chain(seed.gestalts.iter().map(|item| item.id.as_str())),
+    )?;
+    require_unique_ids(
+        "actor or gestalt member",
+        std::iter::once(seed.player.id.as_str())
+            .chain(seed.actors.iter().map(|item| item.id.as_str()))
+            .chain(seed.gestalt_members.iter().map(|item| item.id.as_str())),
+    )?;
     let id = Uuid::new_v4();
-    let compiled_agency_profiles = seed.agency_profiles.clone();
-    let compiled_agency_relations = seed.agency_relations.clone();
     let player_id = seed.player.id.clone();
     let now = Utc::now();
     let mut actors: BTreeMap<_, _> = seed.actors.into_iter().map(|x| (x.id.clone(), x)).collect();
@@ -822,6 +977,10 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
         return Err(anyhow!("player id duplicates an NPC"));
     }
     let evidence_receipt_ids = receipt_ids(receipts);
+    let valid_evidence_receipt_ids = evidence_receipt_ids
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
     let affected_sources: Vec<String> = receipts
         .iter()
         .flat_map(|r| r.witnesses.iter().map(|w| w.source_id.clone()))
@@ -875,8 +1034,14 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
             .facts
             .into_iter()
             .map(|mut x| {
-                if x.scope == FactScope::CanonBaseline && x.evidence_receipt_ids.is_empty() {
-                    x.scope = FactScope::ProvisionalLocal
+                let supplied_reference_count = x.evidence_receipt_ids.len();
+                x.evidence_receipt_ids
+                    .retain(|id| valid_evidence_receipt_ids.contains(id));
+                if x.scope == FactScope::CanonBaseline
+                    && (supplied_reference_count == 0
+                        || x.evidence_receipt_ids.len() != supplied_reference_count)
+                {
+                    x.scope = FactScope::ProvisionalLocal;
                 };
                 (x.id.clone(), x)
             })
@@ -913,12 +1078,85 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
         strategic_tick_count: 0,
     };
     crate::resolution::ensure_agency_profiles(&mut campaign);
-    apply_compiled_agency_skeleton(
-        &mut campaign,
-        compiled_agency_profiles,
-        compiled_agency_relations,
-    )?;
     Ok(campaign)
+}
+
+fn require_unique_ids<'a>(label: &str, ids: impl IntoIterator<Item = &'a str>) -> Result<()> {
+    let mut seen = BTreeSet::new();
+    let mut duplicates = BTreeSet::new();
+    for id in ids {
+        if id.trim().is_empty() || !seen.insert(id.to_owned()) {
+            duplicates.insert(id.to_owned());
+        }
+    }
+    if duplicates.is_empty() {
+        Ok(())
+    } else {
+        Err(anyhow!(
+            "{label} IDs must be non-empty and unique; rejected IDs={duplicates:?}"
+        ))
+    }
+}
+
+fn agency_subject_briefs(campaign: &Campaign) -> Vec<AgencySubjectBrief> {
+    let mut briefs = Vec::new();
+    for actor in campaign
+        .actors
+        .values()
+        .filter(|actor| actor.id != campaign.player_actor_id)
+    {
+        briefs.push(AgencySubjectBrief {
+            subject_id: actor.id.clone(),
+            subject_kind: AgencySubjectKind::Actor,
+            name: actor.name.clone(),
+            location_ids: BTreeSet::from([actor.location_id.clone()]),
+            capabilities_or_resources: actor
+                .capabilities
+                .iter()
+                .chain(actor.equipment.iter())
+                .cloned()
+                .collect(),
+            knowledge_or_posture: actor.knowledge.iter().cloned().collect(),
+            goals: actor.goals.clone(),
+            pressures_or_obligations: actor
+                .obligations
+                .iter()
+                .chain(actor.conditions.iter())
+                .cloned()
+                .collect(),
+        });
+    }
+    for institution in campaign.institutions.values() {
+        briefs.push(AgencySubjectBrief {
+            subject_id: institution.id.clone(),
+            subject_kind: AgencySubjectKind::Institution,
+            name: institution.name.clone(),
+            location_ids: BTreeSet::new(),
+            capabilities_or_resources: institution.resources.clone(),
+            knowledge_or_posture: vec![institution.posture.clone()],
+            goals: institution.goals.clone(),
+            pressures_or_obligations: Vec::new(),
+        });
+    }
+    for gestalt in campaign.gestalts.values() {
+        briefs.push(AgencySubjectBrief {
+            subject_id: gestalt.id.clone(),
+            subject_kind: AgencySubjectKind::Gestalt,
+            name: gestalt.name.clone(),
+            location_ids: BTreeSet::from([gestalt.home_location_id.clone()]),
+            capabilities_or_resources: gestalt
+                .shared_capabilities
+                .iter()
+                .chain(gestalt.resources.iter())
+                .cloned()
+                .collect(),
+            knowledge_or_posture: gestalt.shared_knowledge.iter().cloned().collect(),
+            goals: gestalt.goals.clone(),
+            pressures_or_obligations: gestalt.pressures.clone(),
+        });
+    }
+    briefs.sort_by(|left, right| left.subject_id.cmp(&right.subject_id));
+    briefs
 }
 
 fn apply_compiled_agency_skeleton(
@@ -948,8 +1186,12 @@ fn apply_compiled_agency_skeleton(
         AgencyAxis::Information,
     ]);
     if supplied != expected || supplied.len() != profiles.len() {
+        let missing = expected.difference(&supplied).cloned().collect::<Vec<_>>();
+        let unexpected = supplied.difference(&expected).cloned().collect::<Vec<_>>();
+        let duplicate_count = profiles.len().saturating_sub(supplied.len());
         return Err(anyhow!(
-            "global agency skeleton must profile every non-player actor, institution, and gestalt exactly once"
+            "global agency skeleton coverage mismatch: missing={missing:?}; unexpected={unexpected:?}; duplicate_profile_count={duplicate_count}; expected_subject_ids={:?}",
+            expected
         ));
     }
     for input in profiles {
@@ -962,15 +1204,29 @@ fn apply_compiled_agency_skeleton(
             .get_mut(&input.subject_id)
             .ok_or_else(|| anyhow!("agency profile references an unknown subject"))?;
         let input_axes: BTreeSet<_> = input.facets.keys().cloned().collect();
+        let unknown_locations = input
+            .location_ids
+            .iter()
+            .filter(|id| !campaign.locations.contains_key(*id))
+            .cloned()
+            .collect::<Vec<_>>();
         if profile.subject_kind != input.subject_kind
             || input_axes != axes
-            || input
-                .location_ids
-                .iter()
-                .any(|id| !campaign.locations.contains_key(id))
+            || input.location_ids != profile.location_ids
+            || !unknown_locations.is_empty()
             || !authority_known
         {
-            return Err(anyhow!("compiled agency profile is malformed"));
+            let missing_axes = axes.difference(&input_axes).cloned().collect::<Vec<_>>();
+            let unexpected_axes = input_axes.difference(&axes).cloned().collect::<Vec<_>>();
+            return Err(anyhow!(
+                "agency profile {} malformed: expected_kind={:?}; supplied_kind={:?}; expected_location_ids={:?}; supplied_location_ids={:?}; missing_axes={missing_axes:?}; unexpected_axes={unexpected_axes:?}; unknown_locations={unknown_locations:?}; unknown_collective_authority={:?}",
+                input.subject_id,
+                profile.subject_kind,
+                input.subject_kind,
+                profile.location_ids,
+                input.location_ids,
+                input.collective_authority_id.filter(|_| !authority_known)
+            ));
         }
         profile.collective_authority_id = input.collective_authority_id;
         profile.facets = input.facets;
@@ -980,15 +1236,21 @@ fn apply_compiled_agency_skeleton(
     }
     let mut relation_ids = BTreeSet::new();
     for input in relations {
-        if !relation_ids.insert(input.id.clone())
-            || input.id.trim().is_empty()
-            || input.from_subject_id == input.to_subject_id
-            || !expected.contains(&input.from_subject_id)
-            || !expected.contains(&input.to_subject_id)
-            || input.strength == 0
-            || input.strength > 100
-        {
-            return Err(anyhow!("compiled agency relation is malformed"));
+        let duplicate_id = !relation_ids.insert(input.id.clone());
+        let empty_id = input.id.trim().is_empty();
+        let self_edge = input.from_subject_id == input.to_subject_id;
+        let unknown_from = !expected.contains(&input.from_subject_id);
+        let unknown_to = !expected.contains(&input.to_subject_id);
+        let invalid_strength = input.strength == 0 || input.strength > 100;
+        if duplicate_id || empty_id || self_edge || unknown_from || unknown_to || invalid_strength {
+            return Err(anyhow!(
+                "agency relation {:?} malformed: duplicate_id={duplicate_id}; empty_id={empty_id}; self_edge={self_edge}; unknown_from_subject={unknown_from} ({:?}); unknown_to_subject={unknown_to} ({:?}); invalid_strength={invalid_strength} ({}) ; supplied_subject_ids={:?}",
+                input.id,
+                input.from_subject_id,
+                input.to_subject_id,
+                input.strength,
+                expected
+            ));
         }
         campaign.agency_relations.insert(
             input.id.clone(),
@@ -1072,11 +1334,29 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
         if let Some(parent) = &location.container_id
             && (parent == &location.id || !c.locations.contains_key(parent))
         {
-            return Err(anyhow!("location {} has invalid container", location.id));
+            return Err(anyhow!(
+                "location {} has invalid container_id {:?}; it must name a different supplied location or be null",
+                location.id,
+                location.container_id
+            ));
         }
-        for route in location.routes.values() {
-            if route.travel_minutes == 0 || !c.locations.contains_key(&route.destination_id) {
-                return Err(anyhow!("location {} has invalid route", location.id));
+        for (route_id, route) in &location.routes {
+            if route.travel_minutes == 0 {
+                return Err(anyhow!(
+                    "location {} route {} to {} has zero travel_minutes",
+                    location.id,
+                    route_id,
+                    route.destination_id
+                ));
+            }
+            if !c.locations.contains_key(&route.destination_id) {
+                return Err(anyhow!(
+                    "location {} route {} references missing destination_id {}; supplied location IDs={:?}",
+                    location.id,
+                    route_id,
+                    route.destination_id,
+                    c.locations.keys().collect::<Vec<_>>()
+                ));
             }
         }
     }
@@ -1139,11 +1419,13 @@ mod tests {
                         "gestalt_members":[{"schema":"ghostlight.gestalt_member_delta.v1","id":"john","gestalt_id":"yard-workers","version":0,"name":"John the smith","capability_additions":["forge hinges"],"capability_removals":[],"knowledge_additions":[],"knowledge_removals":[],"equipment":["hammer"],"conditions":[],"obligations":[],"relationships":{},"goals":[],"memories":[],"last_location_id":"yard","materialized_actor_id":null}],
                         "institutions":[],"clocks":[{"id":"shift","label":"Shift ends","progress":0,"threshold":4,"consequence":"night"}],
                         "facts":[{"id":"f","statement":"A witnessed fact","scope":"canon_baseline","evidence_receipt_ids":["fixture"]}],
-                        "gaps":["Who owns the outer gate?"],"branch_assumptions":[],"opening_narration":"The yard persists.",
-                        "agency_profiles":[{"subject_id":"yard-workers","subject_kind":"gestalt","collective_authority_id":"yard-workers","facets":{"geography":["yard"],"ideology":["mutual aid"],"authority":["yard-workers"],"economy_role":["maintenance"],"species_body":["human"],"information":["yard routines"]},"location_ids":["yard"],"information_channels":["yard routines"]}],
-                        "agency_relations":[]
+                        "gaps":["Who owns the outer gate?"],"branch_assumptions":[],"opening_narration":"The yard persists."
                     }).to_string()
                 }
+                "agency_compile" => serde_json::json!({
+                        "agency_profiles":[{"subject_id":"yard-workers","subject_kind":"gestalt","collective_authority_id":"yard-workers","facets":{"geography":["yard"],"ideology":["mutual aid"],"authority":["yard-workers"],"economy_role":["maintenance"],"species_body":["human"],"information":["yard routines"]},"location_ids":["yard"],"information_channels":["yard routines"]}],
+                        "agency_relations":[]
+                    }).to_string(),
                 _ => return Err(anyhow!("unexpected stage")),
             })
         }
@@ -1268,7 +1550,7 @@ mod tests {
             "flash",
             "pro",
         );
-        let (preview, _) = compiler
+        let (preview, receipts) = compiler
             .compile_custom(CustomStart {
                 campaign_name: "Test".into(),
                 who: "worker".into(),
@@ -1278,12 +1560,24 @@ mod tests {
             })
             .await
             .unwrap();
+        assert_eq!(
+            receipts
+                .iter()
+                .map(|receipt| receipt.stage.as_str())
+                .collect::<Vec<_>>(),
+            vec!["custom_retrieval_plan", "world_compile", "agency_compile"]
+        );
         assert!(preview.requires_approval);
         assert_eq!(preview.campaign.revision, 0);
         assert_eq!(preview.campaign.locations.len(), 1);
         assert_eq!(preview.campaign.canon_candidates.len(), 1);
         assert_eq!(preview.campaign.gestalts.len(), 1);
         assert_eq!(preview.campaign.agency_profiles.len(), 2);
+        assert_eq!(
+            preview.campaign.facts["f"].scope,
+            FactScope::ProvisionalLocal
+        );
+        assert!(preview.campaign.facts["f"].evidence_receipt_ids.is_empty());
         assert_eq!(
             preview.campaign.agency_profiles["yard-workers"].facets[&AgencyAxis::Ideology],
             BTreeSet::from(["mutual aid".into()])
@@ -1297,6 +1591,47 @@ mod tests {
                 .materialized_actor_id
                 .is_none()
         );
+    }
+
+    #[test]
+    fn evidence_projection_carries_exact_receipt_ids_and_deduplicates_witnesses() {
+        let witness = SourceWitness {
+            source_id: "AetheriaLore:test.md".into(),
+            exact_locator: "test.md:1-2".into(),
+            content_hash: "sha256:test".into(),
+            excerpt: "A stable witnessed place.".into(),
+            authority_lane: "AetheriaLore".into(),
+            temporal_scope: "fixture".into(),
+        };
+        let text = evidence_text(&[
+            VaultEvidenceReceipt {
+                schema: "ghostlight.vault_evidence_receipt.v1".into(),
+                id: "vault:receipt-one".into(),
+                provider: "fixture".into(),
+                query_hash: "sha256:one".into(),
+                witnesses: vec![witness.clone()],
+                retrieved_at: Utc::now(),
+            },
+            VaultEvidenceReceipt {
+                schema: "ghostlight.vault_evidence_receipt.v1".into(),
+                id: "vault:receipt-two".into(),
+                provider: "fixture".into(),
+                query_hash: "sha256:two".into(),
+                witnesses: vec![witness],
+                retrieved_at: Utc::now(),
+            },
+        ]);
+        assert_eq!(text.matches("A stable witnessed place.").count(), 1);
+        assert!(text.contains("receipt_id=vault:receipt-one"));
+        assert!(!text.contains("receipt_id=vault:receipt-two"));
+    }
+
+    #[test]
+    fn agency_compile_schema_exposes_relation_strength_domain() {
+        let schema = serde_json::to_value(schema_for!(CompiledAgencySkeleton)).unwrap();
+        let serialized = serde_json::to_string(&schema).unwrap();
+        assert!(serialized.contains("\"minimum\":1"));
+        assert!(serialized.contains("\"maximum\":100"));
     }
 
     #[tokio::test]
@@ -1318,6 +1653,11 @@ mod tests {
                 goal: "learn".into(),
             })
             .await;
-        assert!(result.unwrap_err().to_string().contains("invalid route"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("references missing destination_id missing")
+        );
     }
 }
