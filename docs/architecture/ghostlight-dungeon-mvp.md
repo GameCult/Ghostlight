@@ -615,6 +615,13 @@ builds a connected budgeted agency cover, and runs one private Persona membrane
 per cell. Every appraisal and stage receipt must validate before the kernel
 commits the strategic wave atomically.
 
+Live priority is an interrupt, not a polling promise. A live request publishes a
+notification that drops the in-flight background wave future, aborting its cell
+tasks and provider requests before further stages launch. Live requests hold a
+shared commit gate; scheduler commits require the exclusive side and therefore
+cannot cross a live request. Return catch-up deliberately uses the live command
+path and completes required ticks before admitting the player's next action.
+
 ### Eve/CultMesh and browser
 
 Ghostlight publishes `gamecult.eve.surface.v1` and accepts typed Eve commands.

@@ -397,6 +397,13 @@ Compiler approval retains topology/cast/pressure/player-role/coverage/gap data,
 while raw campaign state, evidence, model receipts, private goals, memories, and
 relationships remain operator-only.
 
+Scheduler priority is now structural rather than a pair of atomic checks. Live
+requests notify and cancel an in-flight background wave, which drops its cell
+tasks/provider futures; they also hold the shared side of a commit gate that a
+scheduler tick must acquire exclusively. A test proves both cancellation and
+commit exclusion. Return catch-up remains on the live path and may commit its
+required ticks before the player's next action.
+
 Next: commit and build this repaired candidate, replay the same authenticated
 Huygens campaign in an isolated runtime, inspect both the visible surface and
 the literal HTTP response, then prove away catch-up/concurrency/persistence/

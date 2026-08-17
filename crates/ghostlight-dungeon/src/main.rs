@@ -39,7 +39,7 @@ use std::{
     sync::Arc,
     sync::atomic::{AtomicUsize, Ordering},
 };
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Notify, OwnedRwLockReadGuard, RwLock};
 use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
@@ -56,19 +56,29 @@ struct AppState {
     expansion_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<RegionExpansionPreview>>>>,
     fission_previews: Arc<Mutex<BTreeMap<String, OwnedFissionPreview>>>,
     live_turns: Arc<AtomicUsize>,
+    live_turn_started: Arc<Notify>,
+    live_commit_gate: Arc<RwLock<()>>,
     mesh: MeshPublisher,
 }
 
-struct LiveTurnGuard(Arc<AtomicUsize>);
+struct LiveTurnGuard {
+    counter: Arc<AtomicUsize>,
+    _commit_read: OwnedRwLockReadGuard<()>,
+}
 impl LiveTurnGuard {
-    fn enter(counter: &Arc<AtomicUsize>) -> Self {
-        counter.fetch_add(1, Ordering::SeqCst);
-        Self(counter.clone())
+    async fn enter(state: &AppState) -> Self {
+        let commit_read = state.live_commit_gate.clone().read_owned().await;
+        state.live_turns.fetch_add(1, Ordering::SeqCst);
+        state.live_turn_started.notify_waiters();
+        Self {
+            counter: state.live_turns.clone(),
+            _commit_read: commit_read,
+        }
     }
 }
 impl Drop for LiveTurnGuard {
     fn drop(&mut self) {
-        self.0.fetch_sub(1, Ordering::SeqCst);
+        self.counter.fetch_sub(1, Ordering::SeqCst);
     }
 }
 
@@ -226,6 +236,8 @@ async fn main() -> anyhow::Result<()> {
         expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
         fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
         live_turns: Arc::new(AtomicUsize::new(0)),
+        live_turn_started: Arc::new(Notify::new()),
+        live_commit_gate: Arc::new(RwLock::new(())),
         mesh,
     };
     refresh_mesh(&state).await?;
@@ -362,7 +374,7 @@ async fn compile_openings(
     if !authorized(&headers, &state).await {
         return StatusCode::UNAUTHORIZED.into_response();
     }
-    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let _live = LiveTurnGuard::enter(&state).await;
     let Some(compiler) = &state.compiler else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -385,7 +397,7 @@ async fn compile_custom(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let _live = LiveTurnGuard::enter(&state).await;
     if session_runtime(&state, &session)
         .await
         .ok()
@@ -434,7 +446,7 @@ async fn compile_roles(
     if !authorized(&headers, &state).await {
         return StatusCode::UNAUTHORIZED.into_response();
     }
-    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let _live = LiveTurnGuard::enter(&state).await;
     let Some(compiler) = &state.compiler else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -457,7 +469,7 @@ async fn compile_selected(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let _live = LiveTurnGuard::enter(&state).await;
     if session_runtime(&state, &session)
         .await
         .ok()
@@ -518,7 +530,7 @@ async fn approve_preview(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let _live = LiveTurnGuard::enter(&state).await;
     let mut previews = state.compile_previews.lock().await;
     let Some(owned) = previews.get(&preview_id).cloned() else {
         return (StatusCode::NOT_FOUND, "preview missing or already consumed").into_response();
@@ -573,7 +585,7 @@ async fn compile_destination(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let _live = LiveTurnGuard::enter(&state).await;
     let runtime = match session_runtime(&state, &session).await {
         Ok(Some(value)) => value,
         Ok(None) => {
@@ -672,7 +684,7 @@ async fn compile_fission(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let _live = LiveTurnGuard::enter(&state).await;
     let runtime = match session_runtime(&state, &session).await {
         Ok(Some(value)) => value,
         Ok(None) => {
@@ -724,7 +736,7 @@ async fn approve_fission(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let _live = LiveTurnGuard::enter(&state).await;
     let mut previews = state.fission_previews.lock().await;
     let Some(owned) = previews.get(&preview_id).cloned() else {
         return (StatusCode::NOT_FOUND, "preview missing or already consumed").into_response();
@@ -847,7 +859,7 @@ async fn command(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let _live = LiveTurnGuard::enter(&state.live_turns);
+    let _live = LiveTurnGuard::enter(&state).await;
     let runtime = match session_runtime(&state, &session).await {
         Ok(Some(value)) => value,
         Ok(None) => {
@@ -1841,12 +1853,22 @@ async fn process_due_ticks(
             campaign.revision,
             campaign.resolution_policy.resolution_epoch,
         ));
-        let output = ghostlight_dungeon::scheduler::propose_resolution_wave(
-            model.clone(),
-            permit,
-            &campaign,
+        let Some(output) = await_background_work(
+            state,
+            yield_to_live_turns,
+            ghostlight_dungeon::scheduler::propose_resolution_wave(
+                model.clone(),
+                permit,
+                &campaign,
+            ),
         )
-        .await?;
+        .await?
+        else {
+            return Ok(());
+        };
+        if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
+            return Ok(());
+        }
         for stage in &output.stages {
             match runtime
                 .store
@@ -1869,6 +1891,17 @@ async fn process_due_ticks(
         if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
             return Ok(());
         }
+        let _background_commit = if yield_to_live_turns {
+            match state.live_commit_gate.clone().try_write_owned() {
+                Ok(guard) => Some(guard),
+                Err(_) => return Ok(()),
+            }
+        } else {
+            None
+        };
+        if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
+            return Ok(());
+        }
         runtime
             .kernel
             .command(WorldCommand::AdvanceStrategicTick {
@@ -1879,6 +1912,28 @@ async fn process_due_ticks(
                 resolution_wave: Some(output.wave),
             })
             .await?;
+    }
+}
+
+async fn await_background_work<T>(
+    state: &AppState,
+    yield_to_live_turns: bool,
+    work: impl std::future::Future<Output = anyhow::Result<T>>,
+) -> anyhow::Result<Option<T>> {
+    if !yield_to_live_turns {
+        return work.await.map(Some);
+    }
+    let live_started = state.live_turn_started.notified();
+    tokio::pin!(live_started);
+    live_started.as_mut().enable();
+    if state.live_turns.load(Ordering::SeqCst) > 0 {
+        return Ok(None);
+    }
+    tokio::pin!(work);
+    tokio::select! {
+        biased;
+        _ = &mut live_started => Ok(None),
+        result = &mut work => result.map(Some),
     }
 }
 
@@ -2062,6 +2117,78 @@ mod tests {
         }
     }
 
+    fn empty_app_state(root: &std::path::Path) -> AppState {
+        let registry = CampaignRegistry::new(root.join("campaigns")).unwrap();
+        let auth_store = CampaignStore::open(root.join("auth.cc")).unwrap();
+        let auth_state = AuthState {
+            schema: "ghostlight.auth_state.v1".into(),
+            unused_invite_hashes: BTreeSet::new(),
+            session_hashes: BTreeSet::new(),
+            session_campaigns: BTreeMap::new(),
+            session_campaign_ids: BTreeMap::new(),
+        };
+        let row = auth_store
+            .insert(
+                "auth_state.v1",
+                "ghostlight.auth_state.v1",
+                "primary",
+                &auth_state,
+            )
+            .unwrap();
+        AppState {
+            registry,
+            runtime_root: root.into(),
+            auth: Arc::new(Mutex::new(AuthOwner {
+                store: auth_store,
+                row,
+                state: auth_state,
+            })),
+            deepseek_status: "fixture".into(),
+            compiler: None,
+            assessor: None,
+            model: None,
+            compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
+            expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
+            fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
+            live_turns: Arc::new(AtomicUsize::new(0)),
+            live_turn_started: Arc::new(Notify::new()),
+            live_commit_gate: Arc::new(RwLock::new(())),
+            mesh: MeshPublisher::open(root.join("mesh.cc"), None).unwrap(),
+        }
+    }
+
+    #[tokio::test]
+    async fn live_turn_cancels_background_inference_and_excludes_its_commit_gate() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let trigger_state = state.clone();
+        let (entered_tx, entered_rx) = tokio::sync::oneshot::channel();
+        let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+        let trigger = tokio::spawn(async move {
+            let guard = LiveTurnGuard::enter(&trigger_state).await;
+            let _ = entered_tx.send(());
+            let _ = release_rx.await;
+            drop(guard);
+        });
+
+        let result = tokio::time::timeout(
+            std::time::Duration::from_millis(100),
+            await_background_work(&state, true, std::future::pending::<anyhow::Result<()>>()),
+        )
+        .await
+        .expect("background work did not yield")
+        .unwrap();
+        assert!(result.is_none());
+        entered_rx.await.unwrap();
+        assert_eq!(state.live_turns.load(Ordering::SeqCst), 1);
+        assert!(state.live_commit_gate.clone().try_write_owned().is_err());
+
+        let _ = release_tx.send(());
+        trigger.await.unwrap();
+        assert_eq!(state.live_turns.load(Ordering::SeqCst), 0);
+        assert!(state.live_commit_gate.clone().try_write_owned().is_ok());
+    }
+
     #[tokio::test]
     async fn sessions_resolve_only_their_selected_campaign_runtime() {
         let dir = tempfile::tempdir().unwrap();
@@ -2111,6 +2238,8 @@ mod tests {
             expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
             fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
             live_turns: Arc::new(AtomicUsize::new(0)),
+            live_turn_started: Arc::new(Notify::new()),
+            live_commit_gate: Arc::new(RwLock::new(())),
             mesh: MeshPublisher::open(dir.path().join("mesh.cc"), None).unwrap(),
         };
         let left_runtime = session_runtime(&state, "left").await.unwrap().unwrap();
