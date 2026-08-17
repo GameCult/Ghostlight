@@ -115,6 +115,12 @@ explicit `current_posture`; institution pressure is no longer smuggled through
 `pressures[0]`. Projector, Interpreter, and local validation share the same
 unambiguous baseline.
 
+A subsequent strict preflight revealed a lossy Interpreter mapping: Mira chose
+to board for South Harbor, but the typed effect recorded only local preparation
+and the semantic verifier accepted it. The migration contract now states both
+directions explicitly. Chosen travel within the strategic horizon is
+`member_migration`; preparation is reserved for a still-unchosen departure.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

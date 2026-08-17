@@ -102,6 +102,12 @@ activity conflict on one member key. A destination population cannot inherit
 the person's offer, speech, or decision merely because the cover placed them
 in the same arena.
 
+A named member's explicit commitment to board, depart, travel, or join a
+supplied destination maps to `member_migration`, even when the first narrated
+motion is only entering a queue. `member_activity: prepare` is valid only while
+departure remains unchosen. The Interpreter and semantic verifier share this
+distinction.
+
 Population scale uses reversible individuation:
 
 ```text

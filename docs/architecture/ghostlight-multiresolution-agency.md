@@ -105,6 +105,14 @@ a crisis choose to travel, offer work after settling, and later rematerialize
 as the same person without forcing every refugee to consume an active Persona
 cell or giving their agency to the destination Gestalt.
 
+The membrane distinguishes a chosen journey from preparation for one. When a
+member commits to board, depart, travel, or join a supplied destination within
+the strategic horizon, the Interpreter must emit `member_migration`; approaching
+the queue is not allowed to erase that commitment into `member_activity`.
+Preparing applies only while departure remains unchosen. The semantic verifier
+checks both directions so neither consideration becomes travel nor chosen
+travel disappears into local activity.
+
 Presence projection is location- and lineage-bounded. The planner sees only
 active gestalt leaves at the player's location, dormant members whose exact
 current location is there, and materialized members that might be eligible to
