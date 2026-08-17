@@ -133,7 +133,7 @@ async fn project_resolution_demand(
             })
             .unwrap_or_else(|| default_demand(campaign, "default geography/authority demand"))
     };
-    let (active_ids, agency_summary) = resolution_demand_context(campaign);
+    let (focal_candidate_ids, agency_summary) = resolution_demand_context(campaign);
     let context = serde_json::json!({
         "campaign_id": campaign.id,
         "world_revision": campaign.revision,
@@ -153,7 +153,7 @@ async fn project_resolution_demand(
         Err(_) => return (fallback(), vec![]),
     };
     if let Some(items) = schema.pointer_mut("/properties/focal_subject_ids/items") {
-        *items = serde_json::json!({"type":"string","enum":active_ids});
+        *items = serde_json::json!({"type":"string","enum":focal_candidate_ids});
     }
     if let Some(focal) = schema
         .pointer_mut("/properties/focal_subject_ids")
@@ -163,12 +163,12 @@ async fn project_resolution_demand(
         focal.insert(
             "maxItems".into(),
             usize::from(campaign.resolution_policy.active_cell_budget)
-                .min(active_ids.len())
+                .min(focal_candidate_ids.len())
                 .into(),
         );
     }
     let base_prompt = format!(
-        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nProject which boundaries best predict different strategic behavior for the next horizon. Return all six axis weights (geography, ideology, authority, economy_role, species_body, information), each from 0 to 1 and summing to 1. Focal subjects are exceptional salience hints only, may use only supplied IDs, and cannot force partition boundaries or budget overage. This stage proposes relevance and cannot change world state.\nSTATE:\n{}",
+        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nProject which boundaries best predict different strategic behavior for the next horizon. Return all six axis weights (geography, ideology, authority, economy_role, species_body, information), each from 0 to 1 and summing to 1. The focal-subject enum contains only candidates that committed state has locally distinguished. Choose only genuinely exceptional candidates and return an empty list when the enum is empty. Focal hints cannot force partition boundaries or budget overage. This stage proposes relevance and cannot change world state.\nSTATE:\n{}",
         serde_json::to_string(&schema).unwrap_or_default(),
         serde_json::to_string(&context).unwrap_or_default(),
     );
@@ -241,6 +241,7 @@ fn resolution_demand_context(campaign: &Campaign) -> (Vec<String>, serde_json::V
         .iter()
         .map(|profile| profile.subject_id.clone())
         .collect::<Vec<_>>();
+    let active_id_set = active_ids.iter().cloned().collect::<BTreeSet<_>>();
     let axes = [
         AgencyAxis::Geography,
         AgencyAxis::Ideology,
@@ -327,8 +328,16 @@ fn resolution_demand_context(campaign: &Campaign) -> (Vec<String>, serde_json::V
         .sort_by(|left, right| right.1.cmp(&left.1).then_with(|| left.0.cmp(&right.0)));
     highest_detail_debt
         .truncate(usize::from(campaign.resolution_policy.active_cell_budget).max(4) * 2);
+    let mut focal_candidate_ids = highest_detail_debt
+        .iter()
+        .map(|(subject_id, _)| subject_id.clone())
+        .collect::<BTreeSet<_>>();
+    if !recent_participant_ids.is_empty() && recent_participant_ids.len() < active_id_set.len() {
+        focal_candidate_ids.extend(recent_participant_ids.iter().cloned());
+    }
+    let focal_candidate_ids = focal_candidate_ids.into_iter().collect::<Vec<_>>();
     (
-        active_ids,
+        focal_candidate_ids.clone(),
         serde_json::json!({
             "active_subject_count": profiles.len(),
             "facet_value_counts": facet_value_counts,
@@ -336,6 +345,7 @@ fn resolution_demand_context(campaign: &Campaign) -> (Vec<String>, serde_json::V
             "relation_summary": relation_summary,
             "recent_events": recent_events,
             "recent_participant_ids": recent_participant_ids,
+            "focal_candidate_ids": focal_candidate_ids,
             "highest_detail_debt": highest_detail_debt.iter().map(|(subject_id, detail_debt)| serde_json::json!({
                 "subject_id":subject_id,
                 "detail_debt":detail_debt,
@@ -557,10 +567,11 @@ mod tests {
 
     #[test]
     fn demand_projection_receives_aggregate_boundaries_not_full_subject_state() {
-        let campaign = crate::resolution::tests::campaign(1_000, 8);
-        let (active_ids, context) = resolution_demand_context(&campaign);
+        let mut campaign = crate::resolution::tests::campaign(1_000, 8);
+        let (focal_candidates, context) = resolution_demand_context(&campaign);
         let encoded = serde_json::to_string(&context).unwrap();
-        assert_eq!(active_ids.len(), 1_000);
+        assert_eq!(context["active_subject_count"], 1_000);
+        assert!(focal_candidates.is_empty());
         assert_eq!(context["facet_value_counts"].as_object().unwrap().len(), 6);
         assert!(
             encoded.len() < 100_000,
@@ -570,6 +581,32 @@ mod tests {
         assert!(!encoded.contains("permitted_state_references"));
         assert!(!encoded.contains("information_channels"));
         assert!(!encoded.contains("evidence_receipt_ids"));
+
+        campaign.events.push(crate::domain::Event {
+            id: "exceptional-pressure".into(),
+            at: Utc::now(),
+            kind: "test".into(),
+            summary: "One faction receives an exceptional warning.".into(),
+            actor_ids: vec![],
+            institution_ids: vec!["faction-0007".into()],
+            location_ids: vec![],
+            public_channels: vec![],
+        });
+        let (focal_candidates, context) = resolution_demand_context(&campaign);
+        assert_eq!(focal_candidates, vec!["faction-0007"]);
+        assert_eq!(context["focal_candidate_ids"][0], "faction-0007");
+
+        campaign.events[0].institution_ids = (0..1_000)
+            .map(|index| format!("faction-{index:04}"))
+            .collect();
+        let (focal_candidates, context) = resolution_demand_context(&campaign);
+        assert!(focal_candidates.is_empty());
+        assert!(
+            context["focal_candidate_ids"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[tokio::test]
