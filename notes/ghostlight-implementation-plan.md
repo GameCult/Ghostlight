@@ -36,6 +36,13 @@ tests, legacy Pallas/Lucent/Corvid validation, CultMesh publication, explicit
 process restart, and exact release provenance. Future work belongs in a new
 post-MVP plan rather than silently extending this one.
 
+The multiresolution release is live on Starfire. Its deployment smoke selected
+three isolated cells, committed three material offscreen events and three
+accessible news items in one wave, preserved the player, and wrote a disposable
+CultCache witness under `acceptance/strategic-20260817-073632`. The fixture's
+default budget did not force aggregation; the 20-plus-faction budget matrix is
+the aggregation proof.
+
 ## Prior research-program phase
 
 Build a reliable data-generation loop for socially persistent Aetheria agents.

@@ -54,6 +54,12 @@ populations never merge; only the derived simulation cover does. Budget/pin
 changes use `resolution_epoch`, provider parallelism uses its own configuration
 epoch, and neither advances fictional time.
 
+The multiresolution body is deployed on Starfire. Typed health matched the
+immutable release, DeepSeek was ready, and the disposable live strategic-cell
+smoke committed three offscreen events plus three accessible news items without
+moving the player. The exact release and rollback witnesses are owned by
+`gamecult-ops/runbooks/ghostlight-dungeon-starfire.md`.
+
 ## Prior research pipeline focus
 
 The active path is a source-grounded branching-scene data loop:

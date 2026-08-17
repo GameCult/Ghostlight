@@ -213,3 +213,8 @@ the 1,000-subject target. Pressure goldens preserve geography under blockade,
 ideology under schism, workplace/economic role under strike, species/body and
 transport under epidemic, and information boundaries under espionage.
 
+The Starfire deployment smoke ran a live provider-backed wave over three
+eligible singleton cells, committed three offscreen events and three
+channel-accessible news items in 19.55 seconds, and preserved the absent player.
+That fixture proves deployed cell isolation and atomic admission. The
+20-plus-faction budget matrix, not the singleton smoke, proves aggregation.
