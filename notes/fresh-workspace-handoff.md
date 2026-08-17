@@ -162,6 +162,14 @@ action unchanged and explicitly drops chosen travel when no grounded
 destination transition exists. The fresh candidate still needs a strict live
 rerun before this is considered proven.
 
+That rerun passed the strict budget-one preflight and reached the sustained
+waves, but a one-action verdict then emitted `supported: false` alongside a
+rationale saying the typed effect matched exactly. The boolean and free prose
+are replaced by a discriminated `match`, or `mismatch` plus an enumerated
+mismatch class. Supported actions carry no explanatory prose. Runtime rejects
+missing, reordered, or incoherent discriminators before they can authorize a
+wave.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without
