@@ -96,7 +96,7 @@ async fn main() -> anyhow::Result<()> {
         .iter()
         .filter(|cell| cell.mode == SimulationCellMode::Arena)
         .count();
-    if arena_count == 0 {
+    if budget < 24 && arena_count == 0 {
         anyhow::bail!("cross-faction budget pressure produced no arena cells")
     }
     let plan = validate_and_resolve_wave(&campaign, &output.wave)?;

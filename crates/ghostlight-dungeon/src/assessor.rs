@@ -130,8 +130,13 @@ impl ActionAssessor {
             match candidate {
                 Ok(proposal) => break (proposal, out),
                 Err(error) if attempts == 1 => {
+                    let rejected = out
+                        .structured
+                        .as_ref()
+                        .and_then(|value| serde_json::to_string(value).ok())
+                        .unwrap_or_else(|| "unavailable".into());
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ASSESSMENT: {error}\nReturn a corrected complete assessment against the same snapshot. Copy every actor and destination ID exactly from the supplied state. Bind specific directly observed findings only to the acting actor; strong and ordinary success must use identical knowledge additions. Otherwise leave the typed delta empty."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ASSESSMENT: {error}\nPREVIOUS ASSESSMENT:\n{rejected}\nReturn a corrected complete assessment against the same snapshot. Copy every modifier reference from ALLOWED REFERENCES exactly; omit a modifier rather than paraphrasing or inventing its reference. Copy every actor and destination ID exactly from the supplied state. Bind specific directly observed findings only to the acting actor; strong and ordinary success must use identical knowledge additions. Otherwise leave the typed delta empty."
                     );
                 }
                 Err(error) => {
@@ -231,12 +236,27 @@ fn validate_proposal(p: &AssessmentProposal, allowed: &BTreeSet<String>) -> Resu
     if ![5, 10, 15, 20, 25, 30].contains(&p.dc) {
         return Err(anyhow!("assessor chose invalid DC"));
     }
-    if p.modifiers
+    let invalid_values = p
+        .modifiers
         .iter()
-        .any(|m| m.value < -10 || m.value > 10 || m.references.iter().any(|r| !allowed.contains(r)))
-    {
+        .filter(|modifier| modifier.value < -10 || modifier.value > 10)
+        .map(|modifier| format!("{}={}", modifier.label, modifier.value))
+        .collect::<Vec<_>>();
+    let invalid_references = p
+        .modifiers
+        .iter()
+        .flat_map(|modifier| modifier.references.iter())
+        .filter(|reference| !allowed.contains(*reference))
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    if !invalid_values.is_empty() || !invalid_references.is_empty() {
         return Err(anyhow!(
-            "assessor used an invalid modifier or unearned reference"
+            "assessor modifier validation failed; out-of-range values [{}]; references absent from ALLOWED REFERENCES [{}]",
+            invalid_values.join(", "),
+            invalid_references
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join(", ")
         ));
     }
     if p.admissible && p.missing_permission.is_some() {
@@ -373,7 +393,11 @@ mod tests {
     #[test]
     fn assessment_rejects_unearned_state_reference() {
         let allowed = BTreeSet::from(["equipment:key".into()]);
-        assert!(validate_proposal(&proposal("capability:telepathy"), &allowed).is_err());
+        let error = validate_proposal(&proposal("capability:telepathy"), &allowed)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("capability:telepathy"));
+        assert!(error.contains("ALLOWED REFERENCES"));
         assert!(validate_proposal(&proposal("equipment:key"), &allowed).is_ok());
     }
 
