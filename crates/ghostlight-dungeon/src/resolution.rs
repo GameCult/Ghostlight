@@ -1692,6 +1692,7 @@ fn validate_cell_proposal(
     if proposal.subject_id == campaign.player_actor_id
         || proposal.intent.trim().is_empty()
         || proposal.intended_effect.trim().is_empty()
+        || !(0..=100).contains(&proposal.priority)
     {
         return Err(anyhow!("cell proposal has no exact constituent authority"));
     }
@@ -2841,6 +2842,52 @@ pub(crate) mod tests {
             .state_references
             .push("knowledge:private dock code".into());
         assert!(validate_and_resolve_wave(&value, &make_wave(borrowed_secret)).is_err());
+    }
+
+    #[test]
+    fn consequence_cap_keeps_the_highest_numeric_priorities() {
+        let value = campaign(3, 1);
+        let cover = plan_cover(&value, default_demand(&value, "urgent choices")).unwrap();
+        assert_eq!(cover.cells.len(), 1);
+        let cell = &cover.cells[0];
+        let action = |subject_id: &str, priority: i16| CellActionProposal {
+            subject_id: subject_id.into(),
+            intent: format!("{subject_id} commits"),
+            intended_effect: format!("{subject_id} adopts an urgent posture"),
+            priority,
+            state_references: vec![],
+            public_channels: vec![],
+            effect: StrategicCellEffect::Institution {
+                institution_id: subject_id.into(),
+                posture: format!("urgent posture {priority}"),
+                location_ids: vec![],
+            },
+        };
+        let wave = ResolutionWaveCommit {
+            schema: "ghostlight.resolution_wave_commit.v1".into(),
+            world_revision: value.revision,
+            resolution_epoch: value.resolution_policy.resolution_epoch,
+            plan_receipt: plan_receipt(&value, &cover),
+            appraisals: vec![CellAppraisal {
+                schema: "ghostlight.cell_appraisal.v1".into(),
+                cell_id: cell.id.clone(),
+                world_revision: value.revision,
+                resolution_epoch: value.resolution_policy.resolution_epoch,
+                considered_subject_ids: cell.subject_ids.clone(),
+                actions: vec![
+                    action("faction-0000", 1),
+                    action("faction-0001", 100),
+                    action("faction-0002", 50),
+                ],
+                inaction_reason: None,
+            }],
+            cover,
+            model_receipt_hashes: vec![],
+        };
+        let plan = validate_and_resolve_wave(&value, &wave).unwrap();
+        assert_eq!(plan.institution_actions.len(), 2);
+        assert_eq!(plan.institution_actions[0].institution_id, "faction-0001");
+        assert_eq!(plan.institution_actions[1].institution_id, "faction-0002");
     }
 
     #[test]

@@ -496,7 +496,7 @@ impl CellProjectionEngine {
         constrain_cell_proposal_schema(&mut schema, &slice)?;
         let interpreter_context = serde_json::to_string(&cell_interpreter_context(&slice))?;
         let permission_guidance = format!(
-            "Emit at most {} exact constituent- or named-member-attributed attempts. Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt, actor -> actor_move, named member -> member_migration. Institution posture must be a specific new commitment or withholding, never the current posture or a generic label. Gestalt pressure_resolutions must copy exact current_pressures that the attempted action resolves; pressure_additions are only new unresolved constraints, threats, obligations, or conditions, never completed actions. At least one and at most four total pressure changes are required. Use only that subject's permitted_state_references and allowed_public_channels; facet labels are not public channels. A named member uses one supplied migration destination; a population or arena cannot migrate a person. The runtime binds cell identity, revisions, membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
+            "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first; never use ordinal list rank where 1 means first. Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt, actor -> actor_move, named member -> member_migration. Institution posture must be a specific new commitment or withholding, never the current posture or a generic label. Gestalt pressure_resolutions must copy exact current_pressures that the attempted action resolves; pressure_additions are only new unresolved constraints, threats, obligations, or conditions, never completed actions. At least one and at most four total pressure changes are required. Use only that subject's permitted_state_references and allowed_public_channels; facet labels are not public channels. A named member uses one supplied migration destination; a population or arena cannot migrate a person. The runtime binds cell identity, revisions, membership, and effective state. The cell id is not an actor id. Use an empty actions array plus a concrete inaction_reason when nobody acts.",
             slice.max_actions
         );
         let mut request = ModelStageRequest {
@@ -962,6 +962,10 @@ fn constrain_cell_proposal_schema(
         "subject_id".into(),
         serde_json::json!({"type":"string","enum":subject_ids}),
     );
+    proposal.insert(
+        "priority".into(),
+        serde_json::json!({"type":"integer","minimum":0,"maximum":100}),
+    );
     Ok(())
 }
 
@@ -1405,6 +1409,20 @@ mod tests {
         assert!(arena_persona.contains("present-tense choice"));
         assert!(cohesive_persona.contains("present-tense choice"));
         assert!(cohesive_persona.contains("asking for a future decision"));
+    }
+
+    #[test]
+    fn cell_priority_schema_uses_a_bounded_higher_wins_score() {
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(&mut schema, &fixture_cell_slice()).unwrap();
+        assert_eq!(
+            schema.pointer("/$defs/CellActionProposal/properties/priority/minimum"),
+            Some(&serde_json::json!(0))
+        );
+        assert_eq!(
+            schema.pointer("/$defs/CellActionProposal/properties/priority/maximum"),
+            Some(&serde_json::json!(100))
+        );
     }
 }
 
