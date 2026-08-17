@@ -2,7 +2,7 @@ use crate::model::{ModelPort, ModelStageRequest, run_validated_stage};
 use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 use ghostlight_persona_projection::{
-    InterpreterPrompt, PersonaPrompt, ProjectorPrompt, build_interpreter_prompt,
+    InterpreterPrompt, MEMBRANE_SCHEMA, PersonaPrompt, ProjectorPrompt, build_interpreter_prompt,
     build_persona_prompt, build_projector_prompt, narrative_stream_is_clean,
 };
 use schemars::{JsonSchema, schema_for};
@@ -189,6 +189,25 @@ struct CellEffectVerification {
     rejected_action_indices: Vec<usize>,
     rationale: String,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellProjectionProposal {
+    segments: Vec<CellPerspectiveSegment>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellPerspectiveSegment {
+    subject_id: String,
+    narrative: String,
+}
+
+const CELL_PROJECTION_OUTPUT_CONTRACT: &str = r#"{
+  "segments":[
+    {"subject_id":"one exact supplied perspective owner","narrative":"private lived prose for only that subject"}
+  ]
+}"#;
 
 const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
   "type":"object",
@@ -509,6 +528,137 @@ fn cell_scene_boundaries(slice: &PermittedCellSlice) -> String {
     lines.join("\n")
 }
 
+fn constrain_cell_projection_schema(
+    schema: &mut serde_json::Value,
+    slice: &PermittedCellSlice,
+) -> Result<()> {
+    let segments = schema
+        .pointer_mut("/properties/segments")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("cell projection schema has no segment array"))?;
+    segments.insert("minItems".into(), 1.into());
+    segments.insert("maxItems".into(), slice.max_actions.max(1).into());
+    let segment = schema
+        .pointer_mut("/$defs/CellPerspectiveSegment/properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("cell projection schema has no segment properties"))?;
+    let mut subject_ids = slice
+        .constituents
+        .iter()
+        .map(|subject| subject.subject_id.as_str())
+        .chain(
+            slice
+                .member_exceptions
+                .iter()
+                .map(|member| member.subject_id.as_str()),
+        )
+        .collect::<Vec<_>>();
+    if let Some(focus) = slice.detail_focus_subject_id.as_deref()
+        && let Some(index) = subject_ids
+            .iter()
+            .position(|subject_id| *subject_id == focus)
+    {
+        subject_ids.swap(0, index);
+    }
+    segment.insert(
+        "subject_id".into(),
+        serde_json::json!({"type":"string","enum":subject_ids}),
+    );
+    Ok(())
+}
+
+fn bind_cell_projection(
+    slice: &PermittedCellSlice,
+    proposal: CellProjectionProposal,
+) -> Result<String> {
+    if proposal.segments.is_empty() || proposal.segments.len() > slice.max_actions.max(1) {
+        return Err(anyhow!(
+            "cell Projector emitted an invalid perspective count"
+        ));
+    }
+    let mut segments = BTreeMap::new();
+    for segment in proposal.segments {
+        if segment.narrative.trim().is_empty() || !narrative_stream_is_clean(&segment.narrative) {
+            return Err(anyhow!(
+                "cell Projector emitted an empty or non-narrative perspective"
+            ));
+        }
+        let owner_exists = slice
+            .constituents
+            .iter()
+            .any(|subject| subject.subject_id == segment.subject_id)
+            || slice
+                .member_exceptions
+                .iter()
+                .any(|member| member.subject_id == segment.subject_id);
+        if !owner_exists
+            || segments
+                .insert(segment.subject_id, segment.narrative)
+                .is_some()
+        {
+            return Err(anyhow!(
+                "cell Projector invented or duplicated a perspective owner"
+            ));
+        }
+    }
+    if let Some(focus) = slice.detail_focus_subject_id.as_deref()
+        && (slice
+            .constituents
+            .iter()
+            .any(|subject| subject.subject_id == focus)
+            || slice
+                .member_exceptions
+                .iter()
+                .any(|member| member.subject_id == focus))
+        && !segments.contains_key(focus)
+    {
+        return Err(anyhow!(
+            "cell Projector omitted the debt-selected perspective owner"
+        ));
+    }
+    let mut lowered = Vec::with_capacity(segments.len());
+    for (subject_id, narrative) in segments {
+        if let Some(subject) = slice
+            .constituents
+            .iter()
+            .find(|subject| subject.subject_id == subject_id)
+        {
+            let footing = if subject.location_ids.is_empty() {
+                "at an established but undisclosed location".to_owned()
+            } else {
+                format!(
+                    "at {}",
+                    subject
+                        .location_ids
+                        .iter()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            };
+            lowered.push(format!(
+                "{} — {}:\n{}",
+                subject.name,
+                footing,
+                narrative.trim()
+            ));
+        } else {
+            let member = slice
+                .member_exceptions
+                .iter()
+                .find(|member| member.subject_id == subject_id)
+                .expect("projection owner was validated");
+            lowered.push(format!(
+                "{} — at {}:\n{}",
+                member.name,
+                member.source_location_id,
+                narrative.trim()
+            ));
+        }
+    }
+    Ok(lowered.join("\n\n"))
+}
+
 fn allowed_effect_type(kind: &crate::domain::AgencySubjectKind) -> &'static str {
     match kind {
         crate::domain::AgencySubjectKind::Actor => "actor_move",
@@ -555,37 +705,61 @@ impl CellProjectionEngine {
         let mode_guidance = format!(
             "{mode_guidance} Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Only supplied constituents and member_exceptions may own an internal perspective or choice. A person merely mentioned in an event is external observation when absent from those lists: never voice them. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
         );
-        let projected = run_validated_stage(
-            self.model.as_ref(),
-            &ModelStageRequest {
-                stage: "cell_projector".into(),
-                model: self.projector_model.clone(),
-                snapshot_binding: slice.snapshot_binding.clone(),
-                lived_stream: build_projector_prompt(&ProjectorPrompt {
-                    identity: &slice.cell_id,
-                    typed_context: &projector_context,
-                    visible_stimulus: &visible_stimulus,
-                    domain_guidance: &mode_guidance,
-                    word_budget: (120 + 45 * slice.constituents.len()).min(360),
-                }),
-                output_schema: None,
-                source_receipt_ids: slice.source_receipt_ids.clone(),
-                temperature: Some(0.0),
-                max_output_tokens: Some(640),
-            },
-        )
-        .await?;
-        if !narrative_stream_is_clean(&projected.narrative) {
-            return Err(anyhow!("cell projector violated lived-narrative membrane"));
-        }
+        let word_budget = (120 + 45 * slice.constituents.len()).min(360);
+        let mut projection_schema = serde_json::to_value(schema_for!(CellProjectionProposal))?;
+        constrain_cell_projection_schema(&mut projection_schema, &slice)?;
+        let mut projection_request = ModelStageRequest {
+            stage: "cell_projector".into(),
+            model: self.projector_model.clone(),
+            snapshot_binding: slice.snapshot_binding.clone(),
+            lived_stream: format!(
+                "<!-- membrane:{MEMBRANE_SCHEMA}:cell-projector -->\nYou are a private cell Projector. Convert only the permitted typed context and visible stimulus into compact lived narrative segments. Each segment belongs to exactly one supplied subject_id and contains only that subject's perceptions, memories, wants, fears, knowledge, and explicit uncertainty. Mentioned outsiders remain external observations: never give them an internal viewpoint. Do not choose actions or claim world effects. Omit decorative recap.\n\nReturn exactly one JSON object matching this stable shape:\n{CELL_PROJECTION_OUTPUT_CONTRACT}\n\nDomain guidance:\n{mode_guidance}\n\nIdentity:\n{}\n\nPermitted typed context:\n{projector_context}\n\nVisible stimulus:\n{visible_stimulus}\n\nUse no more than {word_budget} narrative words across all segments.",
+                slice.cell_id
+            ),
+            output_schema: Some(projection_schema),
+            source_receipt_ids: slice.source_receipt_ids.clone(),
+            temperature: Some(0.0),
+            max_output_tokens: Some(640),
+        };
+        let mut projector_receipts = Vec::new();
+        let (projected_narrative, projector_receipt) = loop {
+            let mut projected =
+                run_validated_stage(self.model.as_ref(), &projection_request).await?;
+            let proposal = projected
+                .structured
+                .clone()
+                .ok_or_else(|| anyhow!("cell Projector produced no typed segments"))
+                .and_then(|value| serde_json::from_value(value).map_err(Into::into));
+            match proposal.and_then(|proposal| bind_cell_projection(&slice, proposal)) {
+                Ok(narrative) => {
+                    let receipt = projected.receipt.clone();
+                    projector_receipts.push(projected.receipt);
+                    break (narrative, receipt);
+                }
+                Err(error) if projector_receipts.is_empty() => {
+                    projected.receipt.validation_result = "semantic_invalid".into();
+                    projected.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                    projector_receipts.push(projected.receipt);
+                    projection_request.lived_stream.push_str(&format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS SEGMENTS: {error}\nReturn one corrected complete JSON object against the same snapshot and contract."
+                    ));
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "cell Projector failed perspective binding after one correction: {error}"
+                    ));
+                }
+            }
+        };
         let lived = LivedNarrativeStream {
             text: format!(
                 "{}\n\n{}",
                 cell_scene_boundaries(&slice),
-                projected.narrative
+                projected_narrative
             ),
             snapshot_binding: slice.snapshot_binding.clone(),
-            projector_receipt: projected.receipt.clone(),
+            projector_receipt,
         };
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_persona")
@@ -644,7 +818,8 @@ impl CellProjectionEngine {
             temperature: Some(0.0),
             max_output_tokens: Some(1_600),
         };
-        let mut stage_receipts = vec![projected.receipt, persona.receipt];
+        let mut stage_receipts = projector_receipts;
+        stage_receipts.push(persona.receipt);
         for attempt in 0..2 {
             let mut interpreted = run_validated_stage(self.model.as_ref(), &request).await?;
             let proposal = interpreted
@@ -1339,7 +1514,13 @@ mod tests {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
                 "cell_projector" => {
-                    Ok("Faction Six sees the public deadline and reviews its own mandate.".into())
+                    Ok(serde_json::json!({
+                        "segments":[{
+                            "subject_id":"faction-06",
+                            "narrative":"The public deadline is visible, and the mandate remains ours to review."
+                        }]
+                    })
+                    .to_string())
                 }
                 "cell_persona" => {
                     assert!(
@@ -1501,10 +1682,13 @@ mod tests {
     impl ModelPort for SemanticallyCorrectingCellModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
-                "cell_projector" => Ok(
-                    "Faction Six sees the deadline but lacks evidence for an immediate release."
-                        .into(),
-                ),
+                "cell_projector" => Ok(serde_json::json!({
+                    "segments":[{
+                        "subject_id":"faction-06",
+                        "narrative":"The deadline is visible, but evidence for an immediate release is absent."
+                    }]
+                })
+                .to_string()),
                 "cell_persona" => Ok(
                     "We will withhold the reserve commitment until the public count is verified."
                         .into(),
@@ -1945,6 +2129,76 @@ mod tests {
             schema.pointer("/$defs/CellActionCandidate/properties/priority/maximum"),
             Some(&serde_json::json!(100))
         );
+    }
+
+    #[test]
+    fn cell_projection_binds_exact_unique_perspective_owners_into_prose() {
+        let slice = fixture_cell_slice();
+        let narrative = bind_cell_projection(
+            &slice,
+            CellProjectionProposal {
+                segments: vec![CellPerspectiveSegment {
+                    subject_id: "faction-06".into(),
+                    narrative: "The deadline presses against our undecided mandate.".into(),
+                }],
+            },
+        )
+        .unwrap();
+        assert!(narrative.contains("Faction Six — at forum"));
+        assert!(!narrative.contains("faction-06"));
+
+        let invented = bind_cell_projection(
+            &slice,
+            CellProjectionProposal {
+                segments: vec![CellPerspectiveSegment {
+                    subject_id: "mentioned-outsider".into(),
+                    narrative: "I take over the scene.".into(),
+                }],
+            },
+        )
+        .unwrap_err();
+        assert!(invented.to_string().contains("invented or duplicated"));
+
+        let mut duplicate_slice = slice.clone();
+        duplicate_slice.max_actions = 2;
+        let duplicate = bind_cell_projection(
+            &duplicate_slice,
+            CellProjectionProposal {
+                segments: vec![
+                    CellPerspectiveSegment {
+                        subject_id: "faction-06".into(),
+                        narrative: "First voice.".into(),
+                    },
+                    CellPerspectiveSegment {
+                        subject_id: "faction-06".into(),
+                        narrative: "Second voice.".into(),
+                    },
+                ],
+            },
+        )
+        .unwrap_err();
+        assert!(duplicate.to_string().contains("invented or duplicated"));
+    }
+
+    #[test]
+    fn cell_projection_must_include_the_debt_selected_subject() {
+        let mut slice = fixture_cell_slice();
+        let mut other = slice.constituents[0].clone();
+        other.subject_id = "faction-07".into();
+        other.name = "Faction Seven".into();
+        slice.constituents.push(other);
+        slice.detail_focus_subject_id = Some("faction-06".into());
+        let error = bind_cell_projection(
+            &slice,
+            CellProjectionProposal {
+                segments: vec![CellPerspectiveSegment {
+                    subject_id: "faction-07".into(),
+                    narrative: "Our own horizon remains quiet.".into(),
+                }],
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("debt-selected"));
     }
 }
 

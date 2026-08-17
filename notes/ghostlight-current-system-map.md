@@ -92,6 +92,14 @@ proposal. The model cannot disagree with itself about `member:mira-venn` versus
 raw `mira-venn`, and the prompt/output contract spends fewer tokens copying
 invariants Ghostlight already owns.
 
+Cell perspective attribution is runtime-bound too. The Projector returns one
+to the cell action limit `subject_id → narrative` segments; the schema admits
+only exact constituents and selected member exceptions. Ghostlight rejects
+duplicates, requires the debt-selected focus, sorts segments stably, and
+lowers them to natural name/location headings before the Persona sees them.
+The Persona receives prose only. An invented Markdown section can no longer
+turn a mentioned outsider into a decision-making perspective.
+
 Gestalt background choices use three distinct typed paths. Pressure transitions
 change exact unresolved markers. `gestalt_activity` records an attributed
 preparation, coordination, investigation, recruitment, obstruction, trade, or

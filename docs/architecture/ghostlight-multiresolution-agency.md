@@ -281,11 +281,33 @@ the lived stream explicitly establishes an exact shared location or
 communication channel. Compression therefore cannot turn a regional arena
 into one impossible meeting room.
 
-The location partition is projected twice through one owner: the learned
-Projector renders lived detail, while Ghostlight prepends a deterministic
-narrative scene-boundary block derived from the same permitted slice. The block
-contains names and locations, not schemas or state fields. A poetic omission
-therefore cannot erase geometry before the Persona turn.
+Perspective attribution is runtime-owned. The learned Projector emits bounded
+`subject_id → narrative` segments, where the subject ID must be one exact
+constituent or selected member exception from the permitted slice. Ghostlight
+then lowers those private structured segments into one natural lived stream,
+adding exact names and locations plus a deterministic scene-boundary block. The
+Persona receives only that lowered prose. It never sees IDs or schemas.
+
+- **Owner:** the permitted cell slice owns which subjects may have an internal
+  perspective; the Projector owns only the lived language inside one bound
+  segment.
+- **Inputs:** exact cell constituents, selected member exceptions, perceived
+  events, locations, private state slices, and the shared snapshot binding.
+- **Outputs:** one to the cell action limit unique, non-empty narrative
+  segments, lowered in stable order with runtime-owned perspective labels.
+- **Derived state:** headings, scene labels, and the combined lived stream are
+  disposable projections and own no canonical fact or decision.
+- **Forbidden writers:** Projector prose cannot add a perspective owner by
+  inventing a heading, voicing a mentioned outsider, or speaking as an arena.
+- **Shared paths:** cohesive and arena cells use the same segment binding;
+  their mode changes narration guidance, never perspective authority.
+- **Cut line:** raw freeform cell Projector output is no longer appended
+  directly to the Persona stream. Only runtime-bound segments cross the
+  membrane.
+
+The deterministic block contains names and locations, not schemas or state
+fields. A poetic omission therefore cannot erase geometry, and an invented
+Markdown section cannot grant a subject agency before the Persona turn.
 
 Perspective ownership is equally strict. Only the cell's supplied constituents
 and selected member exceptions may receive an internal viewpoint or make a

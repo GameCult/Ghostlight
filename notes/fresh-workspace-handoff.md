@@ -142,6 +142,16 @@ typed attempt against the current environment, never an invented actor,
 response, or discovered fact. Interpreter guidance was split into shorter
 stable clauses while adding these effects, reducing repeated prompt bulk.
 
+Two later pressure specimens exposed an upstream perspective leak. An arena
+Projector rendered internal Mira and harbor-neighbor sections inside a cell
+that owned only a transit population and remote institutions. The Persona
+followed the vivid illegal voice, and the effect verifier could not reliably
+recover attribution afterward. Cell Projectors now emit schema-bound
+`subject_id → narrative` segments. Ghostlight admits only exact cell owners,
+rejects duplicates and omission of the debt-selected focus, then lowers the
+segments into stable natural name/location prose. Raw freeform Projector output
+no longer crosses into the Persona stream.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

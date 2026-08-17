@@ -840,7 +840,25 @@ mod tests {
                     "rationale":"fixture pressure"
                 })
                 .to_string()),
-                "cell_projector" => Ok("Several powers feel the horizon tightening.".into()),
+                "cell_projector" => {
+                    let subject_id = request
+                        .output_schema
+                        .as_ref()
+                        .and_then(|schema| {
+                            schema.pointer(
+                                "/$defs/CellPerspectiveSegment/properties/subject_id/enum/0",
+                            )
+                        })
+                        .and_then(serde_json::Value::as_str)
+                        .ok_or_else(|| anyhow!("fixture projector lacks a bound subject"))?;
+                    Ok(serde_json::json!({
+                        "segments":[{
+                            "subject_id":subject_id,
+                            "narrative":"The horizon tightens around our own unresolved choice."
+                        }]
+                    })
+                    .to_string())
+                }
                 "cell_persona" => Ok("Each constituent watches and deliberately holds.".into()),
                 "cell_interpreter" if self.malformed_cell => Ok("not-json".into()),
                 "cell_interpreter" => Ok(serde_json::json!({
