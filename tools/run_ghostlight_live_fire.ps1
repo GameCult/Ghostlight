@@ -7,6 +7,7 @@ param(
     [int]$MaxScenarios = 240,
     [ValidateRange(0, 259)]
     [int]$StartAt = 0,
+    [string[]]$ResumeFromRun = @(),
     [string]$RunRoot = (Join-Path 'F:\GameCult\GhostlightDungeon\acceptance' ("live-fire-matrix-{0}-{1}" -f [DateTimeOffset]::UtcNow.ToString('yyyyMMdd-HHmmss'), [guid]::NewGuid().ToString('N'))),
     [string]$SourceRoot = 'F:\Projects\Ghostlight',
     [string]$BalanceScript = 'F:\Projects\gamecult-ops\scripts\get-deepseek-balance.ps1'
@@ -272,9 +273,34 @@ for ($index = 0; $index -lt $largestGroup; $index++) {
     if ($index -lt $scaleScenarios.Count) { $scenarios.Add($scaleScenarios[$index]) }
 }
 $scenarioCatalogCount = $scenarios.Count
-$scenarios = @($scenarios | Select-Object -Skip $StartAt -First $MaxScenarios)
+$resumedScenarioIds = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+$resolvedResumeRoots = @()
+foreach ($resumeRoot in $ResumeFromRun) {
+    $resolvedResumeRoot = [IO.Path]::GetFullPath($resumeRoot)
+    if (-not $resolvedResumeRoot.StartsWith($acceptanceBase + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Resume evidence must remain below $acceptanceBase"
+    }
+    $resumeSummary = Join-Path $resolvedResumeRoot 'summary.jsonl'
+    if (-not (Test-Path -LiteralPath $resumeSummary -PathType Leaf)) {
+        throw "Resume evidence has no scenario summary: $resumeSummary"
+    }
+    $resolvedResumeRoots += $resolvedResumeRoot
+    foreach ($line in Get-Content -LiteralPath $resumeSummary) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        $prior = $line | ConvertFrom-Json
+        if ($prior.succeeded -and -not [string]::IsNullOrWhiteSpace([string]$prior.scenario_id)) {
+            [void]$resumedScenarioIds.Add([string]$prior.scenario_id)
+        }
+    }
+}
+$scenarios = @(
+    $scenarios |
+        Select-Object -Skip $StartAt |
+        Where-Object { -not $resumedScenarioIds.Contains([string]$_.Id) } |
+        Select-Object -First $MaxScenarios
+)
 if ($scenarios.Count -eq 0) {
-    throw "Live-fire scenario offset $StartAt is outside the $scenarioCatalogCount-scenario catalog."
+    throw "No uncompleted live-fire scenarios remain at offset $StartAt."
 }
 
 function Start-LiveFireScenario($Scenario) {
@@ -393,6 +419,8 @@ $initialStatus = [ordered]@{
     scenarios_available = $scenarios.Count
     scenario_start_index = $StartAt
     scenario_catalog_count = $scenarioCatalogCount
+    resume_run_roots = $resolvedResumeRoots
+    previously_succeeded_skipped = $resumedScenarioIds.Count
     failures = $failures
     totals = $totals
     updated_at_utc = [DateTimeOffset]::UtcNow.ToString('O')
