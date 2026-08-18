@@ -916,6 +916,9 @@ async fn command(
         )
             .into_response();
     }
+    if let Err(error) = validate_player_http_command(&command) {
+        return (StatusCode::UNPROCESSABLE_ENTITY, Json(ErrorBody { error })).into_response();
+    }
     if let Err(error) = process_due_ticks(
         &state,
         &runtime,
@@ -1439,6 +1442,47 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::SetProviderParallelism { .. }
         | WorldCommand::ReplaceResolutionPins { .. }
         | WorldCommand::FissionGestalt { .. } => false,
+    }
+}
+
+fn validate_player_http_command(command: &WorldCommand) -> Result<(), String> {
+    let bounded = |label: &str, value: &str, max: usize| {
+        if value.trim().is_empty() || value.chars().count() > max {
+            Err(format!("{label} must contain 1 to {max} characters"))
+        } else {
+            Ok(())
+        }
+    };
+    match command {
+        WorldCommand::Speak {
+            text,
+            intended_effect,
+            ..
+        } => {
+            bounded("speech", text, 4_000)?;
+            if intended_effect.is_some() {
+                return Err(
+                    "speech and uncertain intended effects use separate player commands".into(),
+                );
+            }
+            Ok(())
+        }
+        WorldCommand::Assess { intent, .. } => {
+            bounded("action description", &intent.description, 4_000)?;
+            bounded("intended effect", &intent.intended_effect, 1_000)
+        }
+        WorldCommand::Attempt { assessment_digest } => {
+            bounded("assessment digest", assessment_digest, 160)
+        }
+        WorldCommand::Wait { minutes, .. } if *minutes == 0 || *minutes > 1_440 => {
+            Err("wait duration must be between 1 and 1440 minutes".into())
+        }
+        WorldCommand::SetResolutionBudget {
+            active_cell_budget, ..
+        } if !(1..=32).contains(active_cell_budget) => {
+            Err("active Persona-cell budget must be between 1 and 32".into())
+        }
+        _ => Ok(()),
     }
 }
 
@@ -2472,6 +2516,53 @@ mod tests {
             },
             "player",
         ));
+    }
+
+    #[test]
+    fn player_http_command_admission_bounds_cost_and_fictional_time() {
+        assert!(
+            validate_player_http_command(&WorldCommand::Wait {
+                expected_revision: 0,
+                minutes: 0,
+            })
+            .is_err()
+        );
+        assert!(
+            validate_player_http_command(&WorldCommand::Wait {
+                expected_revision: 0,
+                minutes: 1_441,
+            })
+            .is_err()
+        );
+        assert!(
+            validate_player_http_command(&WorldCommand::SetResolutionBudget {
+                expected_revision: 0,
+                expected_resolution_epoch: 0,
+                active_cell_budget: 33,
+            })
+            .is_err()
+        );
+        assert!(
+            validate_player_http_command(&WorldCommand::Speak {
+                expected_revision: 0,
+                actor_id: "player".into(),
+                text: "Hello".into(),
+                intended_effect: Some("obey me".into()),
+            })
+            .is_err()
+        );
+        assert!(
+            validate_player_http_command(&WorldCommand::Assess {
+                expected_revision: 0,
+                intent: ActionIntent {
+                    actor_id: "player".into(),
+                    description: "x".repeat(4_001),
+                    intended_effect: "cross the room".into(),
+                },
+                proposal: None,
+            })
+            .is_err()
+        );
     }
 
     #[test]

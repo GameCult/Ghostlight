@@ -118,6 +118,7 @@ fn execute(
             proposal,
         } => {
             require_revision(&campaign, expected_revision)?;
+            validate_intent_text(&intent)?;
             let assessment = match proposal {
                 Some(assessment) => {
                     if assessment.campaign_id != campaign.id
@@ -215,6 +216,10 @@ fn execute(
             intended_effect,
         } => {
             require_revision(&campaign, expected_revision)?;
+            validate_bounded_text("speech", &text, 4_000)?;
+            if let Some(effect) = &intended_effect {
+                validate_bounded_text("intended effect", effect, 1_000)?;
+            }
             if !campaign.actors.contains_key(&actor_id) {
                 return Err(KernelError::Invalid("unknown actor".into()));
             }
@@ -248,6 +253,11 @@ fn execute(
             minutes,
         } => {
             require_revision(&campaign, expected_revision)?;
+            if minutes == 0 || minutes > 1_440 {
+                return Err(KernelError::Invalid(
+                    "wait duration must be between 1 and 1440 minutes".into(),
+                ));
+            }
             campaign.world_time += Duration::minutes(i64::from(minutes));
             campaign.last_player_activity = Utc::now();
             campaign.away_ticks_processed = 0;
@@ -864,6 +874,25 @@ fn execute(
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
     }
+}
+
+fn validate_intent_text(intent: &ActionIntent) -> Result<(), KernelError> {
+    validate_bounded_text("action description", &intent.description, 4_000)?;
+    validate_bounded_text("intended effect", &intent.intended_effect, 1_000)
+}
+
+fn validate_bounded_text(label: &str, value: &str, max_chars: usize) -> Result<(), KernelError> {
+    if value.trim().is_empty()
+        || value.chars().count() > max_chars
+        || value
+            .chars()
+            .any(|character| character.is_control() && !matches!(character, '\n' | '\r' | '\t'))
+    {
+        return Err(KernelError::Invalid(format!(
+            "{label} must contain 1 to {max_chars} readable characters"
+        )));
+    }
+    Ok(())
 }
 
 fn apply_individuation(
@@ -3705,6 +3734,55 @@ mod tests {
             .unwrap();
         assert_eq!(stored.revision, 1);
         assert_eq!(stored.world_time, seed.world_time + Duration::minutes(30));
+    }
+
+    #[tokio::test]
+    async fn invalid_wait_and_oversized_speech_cannot_mutate_campaign() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = campaign();
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let baseline = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+
+        assert!(
+            kernel
+                .command(WorldCommand::Wait {
+                    expected_revision: 0,
+                    minutes: 1_441,
+                })
+                .await
+                .is_err()
+        );
+        assert!(
+            kernel
+                .command(WorldCommand::Speak {
+                    expected_revision: 0,
+                    actor_id: "player".into(),
+                    text: "x".repeat(4_001),
+                    intended_effect: None,
+                })
+                .await
+                .is_err()
+        );
+        let stored = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(stored, baseline);
+        assert!(store.keys("world_commit_receipt.v1").unwrap().is_empty());
     }
 
     #[tokio::test]
