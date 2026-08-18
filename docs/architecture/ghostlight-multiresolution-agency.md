@@ -399,6 +399,10 @@ environment or an unnamed ordinary role. Targetless `communicate` records the
 source speaking, offering, requesting permission, or notifying such a role.
 Neither form creates a listener, reply, acceptance, discovery, or target
 agency. All other target-bearing activity uses exact canonical subject IDs.
+Activities may include incidental motion around unnamed local features while
+remaining inside the source's canonical location. This does not create
+topology or establish arrival. Only a clear commitment to a different supplied
+canonical location or population destination requires a movement effect.
 
 The shared validators run in the Interpreter membrane, wave resolver, and
 kernel. One gestalt can contribute at most one selected pressure transition or

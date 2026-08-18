@@ -186,6 +186,14 @@ canonical constituent reference set, including active reachable migration
 destinations. Scheduler slicing and wave admission consume that same
 derivation; the scheduler's private migration-destination helper was deleted.
 
+That fix let the next strict run commit its preflight. In a sustained wave the
+effect verifier then called two faithful local activities reversals because
+their prose included walking to an embankment or nearby cove. The verifier now
+receives the missing spatial contract: incidental motion within the supplied
+canonical location belongs to the activity and creates no topology or arrival;
+only movement to a different supplied canonical location requires a movement
+effect.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

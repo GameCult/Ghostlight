@@ -869,6 +869,7 @@ impl CellProjectionEngine {
                             .await?;
                         let verifier_context = serde_json::json!({
                             "local_attempt_contract":"A targetless local communicate at the source's exact current location faithfully records speech, an offer, a permission request, or a notice directed to an unnamed ordinary role. It records no listener, reply, acceptance, or outcome and must not be rejected merely because target_subject_ids is empty.",
+                            "spatial_effect_contract":"A prepare, investigate, or other activity may include incidental walking, approaching, queuing, carrying, or repositioning around an unnamed local feature while the source remains inside the effect's supplied canonical location. The activity records the attempt and need not serialize every footstep. Reject omitted movement only when the Persona clearly commits the subject to a different supplied canonical location or population destination; local texture does not create topology or establish arrival.",
                             "lived_stream":lived.text,
                             "persona_turn":persona.narrative,
                             "candidate_actions":appraisal.actions.iter().enumerate().map(|(index, action)| serde_json::json!({
@@ -1671,6 +1672,7 @@ mod tests {
                             .lived_stream
                             .contains("targetless local communicate")
                     );
+                    assert!(request.lived_stream.contains("incidental walking"));
                     assert!(
                         request
                             .lived_stream

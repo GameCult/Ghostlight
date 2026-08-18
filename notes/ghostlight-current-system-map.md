@@ -128,6 +128,11 @@ permission, or notifies an unnamed ordinary role. Both admit ordinary texture
 without inventing a listener, response, acceptance, discovered fact, or target
 agency.
 
+Activity effects operate at canonical-location granularity. Incidental motion
+around unnamed local features remains part of the source-attributed attempt
+and does not create topology or assert arrival. A different supplied canonical
+location or population destination still requires the exact movement path.
+
 Salient dormant members have their own `member_activity` path for ordinary
 local attempts. It uses the same bounded verbs, the member's exact location,
 their current leaf plus explicitly related or exactly co-located targets, and
