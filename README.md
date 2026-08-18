@@ -18,6 +18,9 @@ multiresolution agency graph for keeping large settings active at finite cost.
   enters the same validated campaign mailbox and atomic CultCache commit path.
 - Vault evidence grounds world compilation; branch-local invention remains
   distinct from canon.
+- Hosted lore Vaults are planned as Git-synchronized, Obsidian-compatible
+  Markdown hierarchies. The Vault service owns their indexes; campaigns retain
+  only manifest bindings and exact evidence receipts.
 - Projector → Persona → Interpreter turns produce proposals. Models never
   commit world state.
 - Knowledge, perception, capability, location, custody, and authority are
@@ -71,6 +74,16 @@ contradictory copies of the world.
 The durable intention and unresolved social-policy questions are recorded in
 [`docs/architecture/ghostlight-dungeon-multiplayer-intention.md`](docs/architecture/ghostlight-dungeon-multiplayer-intention.md).
 It does not expand the current MVP acceptance promise.
+
+## Lore Vault Product Intention
+
+The hosted product will accept ordinary Obsidian-compatible lore Vaults synced
+through Git. Contributor and Private plans provision one active custom Vault;
+their Plus variants provision three, subject to combined indexed-source and
+import allowances. The entitlement, accounting rules, authority boundary, and
+security gates are recorded in
+[`docs/product/lore-vault-entitlements.md`](docs/product/lore-vault-entitlements.md).
+Custom tenant import is not yet part of the deployed tester harness.
 
 ## Architecture
 

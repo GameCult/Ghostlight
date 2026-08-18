@@ -44,6 +44,7 @@ Ghostlight’s existing v0 schemas and training fixtures remain evidence and reg
 
 - Define a generic `VaultProvider` contract for source search, surrounding context, source witnesses, authority lanes, temporal scope, and exact-document retrieval.
 - Implement the bundled Aetheria adapter against VoidBot’s streamable MCP endpoint at Starfire loopback.
+- Add a hosted custom-Vault path for Git-synchronized, Obsidian-compatible Markdown hierarchies after tenant-isolation and import-security gates are met. The Vault service owns indexing; campaigns store only manifest bindings and exact evidence receipts. Provisional plans include one active Vault and 10 million indexed source tokens for Contributor/Private, or three active Vaults and 30 million combined tokens for Plus, with two or six full imports per month respectively.
 - At campaign creation:
   1. Retrieve broad Aetheria evidence and generate three distinct suggested openings across different eras, places, and pressures.
   2. For the selected opening, generate three source-grounded player roles plus a custom-role path.
@@ -288,5 +289,5 @@ Publish JSON Schema only as the schema catalog. Runtime documents and exports us
 - Aetheria is the only bundled Vault adapter, but no compiler logic is Aetheria-specific.
 - Generated suggestions plus unrestricted custom compilation replace fixed featured openings.
 - No D&D classes, spell slots, six-ability statistics, or 5e sheet are canonical in the MVP. The typed character ledger remains sufficient for later D&D-shaped projections.
-- No arbitrary Vault upload/import UI, multiplayer campaign, voice, image generation, direct canon mutation, or public internet exposure in the MVP. Multiplayer is an intended extension of the existing one-kernel/many-actors authority model and is documented separately; it does not expand this acceptance plan.
+- No arbitrary Vault upload/import UI in the current MVP; Git-synchronized Obsidian-compatible tenant Vaults are a documented post-gate product intention. No multiplayer campaign, voice, image generation, or direct canon mutation in the MVP. Multiplayer is an intended extension of the existing one-kernel/many-actors authority model and is documented separately; it does not expand this acceptance plan.
 - The live deployment requires a DeepSeek key and restoration of the trusted VoidBot retrieval crossing; fixture-backed development may proceed before those two setup gates.
