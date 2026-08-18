@@ -318,6 +318,17 @@ approval has its own route. Strategic ticks, region commits, gestalt presence,
 reaction waves, NPC initiative, and campaign creation are internal mailbox
 commands and cannot be invoked through `/api/command`.
 
+Authentication owns entry to the complete `/api` router before request-body
+extraction. Axum's protected-route middleware reads only headers and durable
+session authority; an invalid session receives `401` before JSON parsing,
+schema rejection, campaign lookup, inference, or mutation. Handlers repeat the
+session lookup where they need the session identity, so revocation between the
+perimeter check and a handler cannot leave stale authority alive. Public
+`/health`, single-use `/invite/{token}`, and static browser assets remain
+outside this middleware. Regressions prove malformed anonymous JSON is refused
+at the perimeter while the same malformed body under a valid session reaches
+the ordinary `400` extractor response.
+
 That boundary also projects less state outward than the kernel returns inward.
 Player HTTP responses contain only assessment, public commit/roll receipts, and
 narration. Canonical campaign state and spoiler-bearing actor or institution

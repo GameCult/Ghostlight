@@ -835,6 +835,16 @@ peers receive `403`, and the browser hides the operator panel away from
 loopback. Do not replace this with trusted forwarded headers unless a named
 reverse proxy becomes the actual connection owner.
 
+The subsequent perimeter audit found that protected handler JSON extractors
+ran before their handler-local session checks. All `/api` routes now share one
+authentication middleware which rejects invalid sessions before reading or
+deserializing the body. Handler checks remain as the session-identity and
+revocation guard, not the perimeter owner. Release
+`f905376a2278c48bf474ab3b665fe12a241d69de` proves malformed and three-megabyte
+anonymous command bodies receive `401`; authenticated malformed JSON still
+reaches the normal `400` extractor path. The full workspace passed 137 core
+tests and 13 daemon tests. Invitations were neither rotated nor consumed.
+
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.
