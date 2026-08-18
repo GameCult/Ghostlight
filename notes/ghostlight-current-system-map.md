@@ -108,13 +108,16 @@ directly, including active reachable migration destinations, and wave
 validation recomputes the same set. Prompt construction cannot append
 references the resolver does not recognize.
 
-Cell perspective attribution is runtime-bound too. The Projector returns one
-to the cell action limit `subject_id → narrative` segments; the schema admits
-only exact constituents and selected member exceptions. Ghostlight rejects
-duplicates, requires the debt-selected focus, sorts segments stably, and
-lowers them to natural name/location headings before the Persona sees them.
-The Persona receives prose only. An invented Markdown section can no longer
-turn a mentioned outsider into a decision-making perspective.
+Cell perspective attribution is runtime-bound too. The schema admits only
+exact constituents and selected member exceptions. Ghostlight rejects
+duplicates and requires both the debt-selected focus and every selected named
+member exception to receive their own perspective segment; an actionable
+individual can no longer disappear inside the aggregate before the Persona
+turn. The perspective count may exceed the action limit only by the number of
+mandatory owners; action consequences remain separately capped. Segments are
+sorted and lowered to natural name/location headings before the Persona sees
+prose only. An invented Markdown section cannot turn a mentioned outsider into
+a decision-making perspective.
 
 Gestalt background choices use three distinct typed paths. Pressure transitions
 change exact unresolved markers. `gestalt_activity` records an attributed
@@ -156,10 +159,12 @@ replication, not daemon-liveness authority: a failed publish is logged with its
 key and target while the complete local snapshot persists and HTTP serves that
 same typed health and Eve state.
 
-Opening suggestions receive one same-evidence semantic correction when the
-local distinctness invariant rejects the first typed set. Both the rejected
-and accepted stage receipts remain in the private compiler result; the browser
-still receives only the three public suggestions. Invite rotation is owned by
+Opening retrieval deliberately covers early, transitional, and late historical
+frames. Suggestions receive one same-evidence semantic correction with exact
+collided values when the local distinctness invariant rejects the first typed
+set; roles use the same bounded correction for duplicate names or premises.
+Both rejected and accepted receipts remain private while the browser receives
+only public suggestions. Invite rotation is owned by
 the deployment boundary: it replaces the protected token set and clears the
 persisted auth authority together while the daemon is stopped. Campaign stores
 survive; old sessions deliberately do not.
@@ -178,6 +183,27 @@ player-role capabilities, evidence coverage, gaps, and branch assumptions. It
 does not project branch-local or provisional fact statements—even when they are
 discoverable later. Those facts remain canonical inputs to knowledge-gated play
 and operator inspection; the browser cannot reveal them before discovery.
+
+## Current acceptance body
+
+Starfire currently serves immutable release
+`7916ab04936ba962720cfbf4af1b83f9aa8d8b24`, executable SHA-256
+`c05b5854be83262067ed417edf1722bb3f79d2981c8292fccb7d7a9695d36d78`,
+with rollback `a92fb7a4a09b2ee2d80b8e3f8ecff3ab71b9ea06`.
+
+Authenticated acceptance against the exact release has proved generated
+opening/role/approval compilation, a nonliteral canonical player actor ID,
+private assessment, confirmed server roll, wait, daemon restart continuity,
+fork isolation, original re-selection, reset, and a MessagePack-backed `.cc`
+export. The multiresolution matrix covered 24 factions exactly once at budgets
+1, 4, 8, and 32. The strict nested refugee golden placed all 24 subjects in one
+rival arena, preserved Mira Venn as a named decision owner, migrated her into a
+different depth-two population lineage, produced material activity across six
+other background subjects, preserved her delta and the player, and later
+promoted the same Mira for a return encounter. Witnesses live under
+`F:\GameCult\GhostlightDungeon\acceptance\player-journey-a92fb7a-20260818`,
+`gestalt-scale-a92fb7a-b{1,4,8,32}`, and
+`gestalt-dynamics-7916ab0-strict`.
 
 `gestalt_migration` records a collective decision by one exact active leaf to
 move along an explicit migration relation and reachable route. WorldKernel

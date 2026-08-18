@@ -49,13 +49,25 @@ foundation checklist below. Existing Ghostlight fixtures remain regression
 evidence.
 
 The active immutable release is
-`f1d55b181ad60ace8e8e92859c4d0b2f1a94fc87`, binary SHA-256
-`119772af15859d8c26e7239d705a229ce01b24d6a7e70105b78e4df227ef0583`.
+`7916ab04936ba962720cfbf4af1b83f9aa8d8b24`, binary SHA-256
+`c05b5854be83262067ed417edf1722bb3f79d2981c8292fccb7d7a9695d36d78`.
 Manifest, process, typed health, persisted campaign count, CultMesh store,
 DeepSeek startup inference, and VoidBot retrieval agree. Periwinkle proved the
 private-LAN route and unauthenticated 401; Raven and Yggdrasil independently
 proved WireGuard. Exact firewall and rollback truth remains owned by
 `gamecult-ops/runbooks/ghostlight-dungeon-starfire.md`.
+
+The exact release passes the authenticated generated-start and committed
+player journey: canonical nonliteral player identity, private assessment,
+confirmed d20 roll, wait, restart, fork, export, original re-selection, and
+reset. The current 24-subject budget matrix passes at 1, 4, 8, and 32 cells.
+The strict nested refugee golden now passes without a retry: Mira retains an
+individual perspective inside a budget-one rival arena, migrates across two
+depth-two population lineages, survives three further background waves with
+her exact delta intact, and is automatically promoted as the same person when
+the player later returns. The remaining human-test gate is rendered browser
+inspection using a temporary invite, which requires explicit approval to send
+that credential through the in-app browser; rotate invitations afterward.
 
 The multiresolution authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`. Canonical people and

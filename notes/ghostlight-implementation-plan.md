@@ -29,7 +29,7 @@ cover receipts, and a separate operator provider-concurrency limit. The
 specific authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`.
 The accepted implementation is hosted on Starfire as immutable release
-`f1d55b181ad60ace8e8e92859c4d0b2f1a94fc87`. Exact checkout, embedded commit,
+`7916ab04936ba962720cfbf4af1b83f9aa8d8b24`. Exact checkout, embedded commit,
 release manifest, binary hash, process, typed health, CultMesh store, persisted
 campaign, DeepSeek startup inference, VoidBot retrieval, private-LAN access,
 WireGuard access, and unauthenticated rejection agree. This pass makes model
@@ -83,11 +83,13 @@ pulses committed without retry. The run used 126,826 prompt tokens with a
 typed material outcome; unrelated direct consequences can no longer hide an
 inert outcome resolver.
 
-The next gate is release truth: commit and publish this exact candidate, deploy
-an immutable optimized build to Starfire, and repeat authenticated browser and
-restart checks against the served commit. Then begin the two-tester playtest.
-Treat player confusion, dramatic flatness, composite consequences, and
-token-heavy low-consequence stages as evidence about missing context or
+Release truth, authenticated compiler/player HTTP journeys, restart continuity,
+and the strict multiresolution refugee-return golden now pass against immutable
+builds. The next gate is visual browser inspection of the served interface with
+a temporary invite, followed by supervised human play. Browser credential
+transmission requires explicit operator approval and must end with invitation
+rotation. Treat player confusion, dramatic flatness, composite consequences,
+and token-heavy low-consequence stages as evidence about missing context or
 misplaced authority. Keep the independent semantic outcome verifier selective:
 it checks custody transfers, relation shifts, and named-member private deltas,
 while deterministic local validation owns ordinary bounded preparations and
