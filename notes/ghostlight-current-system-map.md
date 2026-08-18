@@ -205,6 +205,16 @@ promoted the same Mira for a return encounter. Witnesses live under
 `gestalt-scale-a92fb7a-b{1,4,8,32}`, and
 `gestalt-dynamics-7916ab0-strict`.
 
+Cell budget and physical provider parallelism are independent controls. The
+scale executable accepts `GHOSTLIGHT_SCALE_PROVIDER_PARALLELISM`, defaults it
+to the runtime default of eight, and records it in every witness. The corrected
+24-subject budget-8 / parallelism-8 wave completed in 18.35 seconds, covered all
+subjects exactly once, committed ten material actions plus one attributed
+inaction, did not move the player, and required no model retry. Its witness is
+`F:\GameCult\GhostlightDungeon\acceptance\gestalt-scale-shakedown-b8-p8`.
+The earlier 25.64-second budget-8 witness used four provider slots and must not
+be cited as an eight-concurrency performance result.
+
 `gestalt_migration` records a collective decision by one exact active leaf to
 move along an explicit migration relation and reachable route. WorldKernel
 changes the leaf's home location and agency-profile location together. The

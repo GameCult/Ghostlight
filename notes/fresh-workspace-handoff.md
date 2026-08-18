@@ -272,6 +272,14 @@ atomically on one overlong posture, demonstrating its higher tail risk. Budget
 4 is fastest; budget 8 is the best action-per-token point and reaches the global
 consequence cap.
 
+Those historical scale figures used provider parallelism 4. The scale harness
+now exposes `GHOSTLIGHT_SCALE_PROVIDER_PARALLELISM`, defaults it to 8, and
+records the value separately from active-cell budget. A corrected budget-8 /
+parallelism-8 run completed in 18.35 seconds with ten material actions, one
+explicit attributed inaction, zero retries, exact 24-subject coverage, and no
+player movement. Witness:
+`F:\GameCult\GhostlightDungeon\acceptance\gestalt-scale-shakedown-b8-p8`.
+
 The first fairness profile accidentally sent `SetResolutionBudget(1)` before
 every tick. The kernel accepted the redundant command, incremented
 `resolution_epoch`, and discarded cover leases each time. The runtime now

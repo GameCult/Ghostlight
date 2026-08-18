@@ -3,6 +3,8 @@ param(
     [decimal]$TargetBalance = 4.25,
     [ValidateRange(1, 4)]
     [int]$MaxParallel = 4,
+    [ValidateRange(1, 32)]
+    [int]$ProviderParallelism = 8,
     [ValidateRange(1, 260)]
     [int]$MaxScenarios = 240,
     [ValidateRange(0, 259)]
@@ -258,6 +260,7 @@ foreach ($budget in @(1, 4, 8, 16, 24)) {
         $id = 'scale-b{0:d2}-p{1:d2}' -f $budget, $pressureIndex
         $scaleScenarios += New-LiveFireScenario 'scale' $id @{
             GHOSTLIGHT_SCALE_BUDGET = [string]$budget
+            GHOSTLIGHT_SCALE_PROVIDER_PARALLELISM = [string]$ProviderParallelism
             GHOSTLIGHT_SCALE_PRESSURE = $scalePressures[$pressureIndex]
         }
     }

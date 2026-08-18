@@ -28,6 +28,11 @@ async fn main() -> anyhow::Result<()> {
         .and_then(|value| value.parse::<u8>().ok())
         .filter(|value| (1..=32).contains(value))
         .unwrap_or(4);
+    let provider_parallelism = std::env::var("GHOSTLIGHT_SCALE_PROVIDER_PARALLELISM")
+        .ok()
+        .and_then(|value| value.parse::<u8>().ok())
+        .filter(|value| (1..=32).contains(value))
+        .unwrap_or(8);
     let pressure = std::env::var("GHOSTLIGHT_SCALE_PRESSURE").unwrap_or_else(|_| {
         "The public bulletin announces that the final vote occurs in six hours; each faction has one last chance to publish a binding commitment.".into()
     });
@@ -41,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
             ))
         });
     std::fs::create_dir_all(&root)?;
-    let campaign = scale_campaign(budget, &pressure);
+    let campaign = scale_campaign(budget, provider_parallelism, &pressure);
     let player_location = campaign.actors[&campaign.player_actor_id]
         .location_id
         .clone();
@@ -149,6 +154,7 @@ async fn main() -> anyhow::Result<()> {
         "campaign_id":campaign.id,
         "subject_count":24,
         "configured_budget":budget,
+        "provider_parallelism":provider_parallelism,
         "cell_count":cover.cells.len(),
         "arena_count":arena_count,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
@@ -173,7 +179,11 @@ async fn main() -> anyhow::Result<()> {
 }
 
 #[cfg(windows)]
-fn scale_campaign(budget: u8, pressure: &str) -> ghostlight_dungeon::domain::Campaign {
+fn scale_campaign(
+    budget: u8,
+    provider_parallelism: u8,
+    pressure: &str,
+) -> ghostlight_dungeon::domain::Campaign {
     use chrono::{Duration, Utc};
     use ghostlight_dungeon::domain::*;
     use std::collections::{BTreeMap, BTreeSet};
@@ -277,7 +287,7 @@ fn scale_campaign(budget: u8, pressure: &str) -> ghostlight_dungeon::domain::Cam
         gestalt_lineages: BTreeMap::new(),
         resolution_policy: ResolutionPolicy {
             active_cell_budget: budget,
-            provider_parallelism: 4,
+            provider_parallelism,
             ..ResolutionPolicy::default()
         },
         resolution_pins: BTreeMap::new(),
