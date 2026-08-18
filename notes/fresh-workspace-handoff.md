@@ -854,6 +854,18 @@ the canonical surface refresh completes. Starfire serves
 `b17dcfad6d4cbd442153f1e5b3c834c795614fdd08253cb7e8f0ca2527af65b4`
 agree. Invitations remain untouched.
 
+Release `90e7ca38a2b4b1a2ca36228d7d248ee2fe6cae2f` makes campaign creation
+discoverability atomic. New stores are completely initialized in a non-UUID
+staging directory; campaign state, seed, provenance, candidates, and creation
+lifecycle receipt enter one CultCache batch before an atomic rename publishes
+the UUID directory. Failed initialization leaves neither a registry entry nor
+a directory that can break reload. Failed approval retains its preview, and a
+retry can recover only the exact already-published seed. The full workspace
+passed 140 core and 15 daemon tests. Starfire health, manifest, four campaign
+directories, zero `.creating-*` directories, and executable SHA-256
+`ad2964c05fed28fa54ab4a5619406eeecd43bb37c96713085f18ec1cbf8c44c1`
+agree. Invitations remain untouched.
+
 Release `4995f261f68809857dbed620561e53b80198bd0f` closes two compiler admission
 seams. Fission text is bounded before retrieval or inference. Generated
 opening/role selection is now server-owned per session: the browser sends only

@@ -384,6 +384,18 @@ evidence and model receipts are carried into the approval preview. Candidate
 IDs, text, list sizes, and evidence references receive local validation before
 they can become selectable. Restart may expire these noncanonical suggestions;
 it cannot silently reconstruct or substitute them.
+
+Campaign publication has a separate discoverability boundary. Registry create,
+fork, reset, and compiler approval initialize a new `.cc` store under a
+non-UUID `.creating-*` directory. The CreateCampaign command validates the
+seed, then atomically commits campaign state, approved seed, Vault manifest,
+evidence, model receipts, canon candidates, and the creation lifecycle receipt
+in one CultCache batch. Only that complete store is renamed into the UUID
+namespace and admitted to the live registry. Failed initialization removes its
+exact staging directory and cannot poison daemon reload. Approval previews are
+retained until campaign publication, session selection, and reload all succeed;
+a retry may recover only an already-published store whose exact seed equals the
+preview. It cannot adopt a colliding campaign ID with different state.
 The browser composer preserves the assessment contract's distinction between
 the character's described act or speech and the effect the player wants it to
 cause. The receipt panel is the sole owner of the current assessment,
