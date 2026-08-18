@@ -85,7 +85,7 @@ pub struct SuggestedOpenings {
 pub struct SuggestedRoles {
     pub roles: Vec<RoleSuggestion>,
     pub evidence_receipts: Vec<VaultEvidenceReceipt>,
-    pub model_receipt: ModelStageReceipt,
+    pub model_receipts: Vec<ModelStageReceipt>,
     pub retrieval_receipt: ModelStageReceipt,
 }
 
@@ -228,14 +228,17 @@ impl WorldCompiler {
             .plan_queries(
                 "opening_retrieval_plan",
                 "opening-suggestions",
-                &serde_json::to_string(&request)?,
+                &format!(
+                    "Retrieve evidence for three opening candidates in genuinely different source-supported eras, places, and pressures. Include historical chronology and geographic anchors rather than three variations on the most prominent period. REQUEST: {}",
+                    serde_json::to_string(&request)?
+                ),
                 3,
             )
             .await?;
         let receipts = self.retrieve_all(&queries, "all", 8).await?;
         let evidence = evidence_text(&receipts);
         let base_prompt = format!(
-            "Generate exactly three source-grounded openings. They must use distinct eras, places, and pressures. Do not fill material evidence gaps with invention. REQUEST:\n{}\nEVIDENCE:\n{}",
+            "Generate exactly three source-grounded openings. The three literal `era` values must be pairwise distinct after trimming and case-folding; the three `place` values and three `pressure` values must independently satisfy the same rule. Do not return aliases for the same era or place merely to satisfy spelling-level diversity. Do not fill material evidence gaps with invention. Before returning, verify the nine axis values yourself. REQUEST:\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(&request)?,
             evidence
         );
@@ -277,7 +280,7 @@ impl WorldCompiler {
                         &error,
                     );
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS OPENINGS: {error}\nPREVIOUS_REJECTED_OPENINGS:\n{}\nReturn one complete corrected set. Change every duplicated era, place, or pressure so all three values on each axis are pairwise distinct. Preserve source grounding and use only supplied evidence.",
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS OPENINGS: {error}\nPREVIOUS_REJECTED_OPENINGS:\n{}\nReturn one complete corrected set. Replace the specifically collided values named by the validator with different source-supported values. All three literal values on each axis must be pairwise distinct after trimming and case-folding. Preserve source grounding and use only supplied evidence.",
                         serde_json::to_string(&value)?
                     );
                 }
@@ -301,17 +304,61 @@ impl WorldCompiler {
             )
             .await?;
         let receipts = self.retrieve_all(&queries, &opening.era, 8).await?;
-        let output = self.structured("world_roles", &format!("roles:{}", opening.id), &format!("Generate exactly three materially distinct player roles grounded in this opening and evidence. OPENING:\n{}\nEVIDENCE:\n{}", serde_json::to_string(opening)?, evidence_text(&receipts)), serde_json::to_value(schema_for!(RoleSet))?, receipt_ids(&receipts)).await?;
-        let parsed: RoleSet = serde_json::from_value(output.0)?;
-        if parsed.roles.len() != 3 {
-            return Err(anyhow!("world compiler must return exactly three roles"));
+        let base_prompt = format!(
+            "Generate exactly three materially distinct player roles grounded in this opening and evidence. Names and premises must each be pairwise distinct after trimming and case-folding. The roles must differ in social position, capabilities, and obligations rather than being cosmetic aliases. OPENING:\n{}\nEVIDENCE:\n{}",
+            serde_json::to_string(opening)?,
+            evidence_text(&receipts)
+        );
+        let schema = serde_json::to_value(schema_for!(RoleSet))?;
+        let source_receipts = receipt_ids(&receipts);
+        let mut correction = String::new();
+        let mut model_receipts = Vec::new();
+        for attempt in 0..2 {
+            let (value, stage) = self
+                .structured(
+                    "world_roles",
+                    &format!("roles:{}", opening.id),
+                    &format!("{base_prompt}{correction}"),
+                    schema.clone(),
+                    source_receipts.clone(),
+                )
+                .await?;
+            model_receipts.push(stage);
+            let parsed: RoleSet = serde_json::from_value(value.clone())?;
+            let validation = if parsed.roles.len() != 3 {
+                Err(anyhow!("world compiler must return exactly three roles"))
+            } else {
+                ensure_distinct_roles(&parsed.roles)
+            };
+            match validation {
+                Ok(()) => {
+                    return Ok(SuggestedRoles {
+                        roles: parsed.roles,
+                        evidence_receipts: receipts,
+                        model_receipts,
+                        retrieval_receipt,
+                    });
+                }
+                Err(error) if attempt == 0 => {
+                    mark_semantic_invalid(
+                        model_receipts
+                            .last_mut()
+                            .expect("role receipt was just stored"),
+                        &error,
+                    );
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ROLES: {error}\nPREVIOUS_REJECTED_ROLES:\n{}\nReturn one complete corrected set. Replace the specifically collided names or premises named by the validator and make the roles materially different while preserving source grounding.",
+                        serde_json::to_string(&value)?
+                    );
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "world role compiler failed local validation after one correction: {error}"
+                    ));
+                }
+            }
         }
-        Ok(SuggestedRoles {
-            roles: parsed.roles,
-            evidence_receipts: receipts,
-            model_receipt: output.1,
-            retrieval_receipt,
-        })
+        unreachable!()
     }
 
     pub async fn compile_custom(
@@ -1574,21 +1621,55 @@ fn receipt_ids(receipts: &[VaultEvidenceReceipt]) -> Vec<String> {
     receipts.iter().map(|r| r.id.clone()).collect()
 }
 fn ensure_distinct_openings(items: &[OpeningSuggestion]) -> Result<()> {
-    let eras: BTreeSet<_> = items.iter().map(|x| x.era.trim().to_lowercase()).collect();
-    let places: BTreeSet<_> = items
-        .iter()
-        .map(|x| x.place.trim().to_lowercase())
-        .collect();
-    let pressures: BTreeSet<_> = items
-        .iter()
-        .map(|x| x.pressure.trim().to_lowercase())
-        .collect();
-    if eras.len() != 3 || places.len() != 3 || pressures.len() != 3 {
-        Err(anyhow!(
-            "openings are not distinct across era, place, and pressure"
-        ))
-    } else {
+    ensure_distinct_fields(
+        "openings",
+        [
+            ("era", items.iter().map(|x| x.era.as_str()).collect()),
+            ("place", items.iter().map(|x| x.place.as_str()).collect()),
+            (
+                "pressure",
+                items.iter().map(|x| x.pressure.as_str()).collect(),
+            ),
+        ],
+    )
+}
+
+fn ensure_distinct_roles(items: &[RoleSuggestion]) -> Result<()> {
+    ensure_distinct_fields(
+        "roles",
+        [
+            ("name", items.iter().map(|x| x.name.as_str()).collect()),
+            (
+                "premise",
+                items.iter().map(|x| x.premise.as_str()).collect(),
+            ),
+        ],
+    )
+}
+
+fn ensure_distinct_fields<const N: usize>(
+    subject: &str,
+    axes: [(&str, Vec<&str>); N],
+) -> Result<()> {
+    let mut collisions = Vec::new();
+    for (axis, values) in axes {
+        let mut counts = BTreeMap::new();
+        for value in values {
+            *counts.entry(value.trim().to_lowercase()).or_insert(0usize) += 1;
+        }
+        for (value, count) in counts {
+            if count > 1 {
+                collisions.push(format!("{axis}={value:?} repeated {count} times"));
+            }
+        }
+    }
+    if collisions.is_empty() {
         Ok(())
+    } else {
+        Err(anyhow!(
+            "{subject} contain duplicate axes: {}",
+            collisions.join("; ")
+        ))
     }
 }
 
@@ -2137,6 +2218,11 @@ mod tests {
         saw_exact_correction: AtomicBool,
     }
 
+    struct CorrectionAwareRoleModel {
+        role_calls: AtomicUsize,
+        saw_exact_correction: AtomicBool,
+    }
+
     #[async_trait]
     impl ModelPort for CorrectionAwareOpeningModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
@@ -2160,7 +2246,7 @@ mod tests {
                     .contains("LOCAL VALIDATOR REJECTED THE PREVIOUS OPENINGS")
                     && request
                         .lived_stream
-                        .contains("openings are not distinct across era, place, and pressure")
+                        .contains("era=\"early\" repeated 2 times")
                     && request.lived_stream.contains("\"era\":\"early\""),
                 Ordering::SeqCst,
             );
@@ -2169,6 +2255,41 @@ mod tests {
 
         fn provider(&self) -> &'static str {
             "correction-aware-opening-fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for CorrectionAwareRoleModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            let output = CompilerModel {
+                invalid_route: false,
+            }
+            .run(request)
+            .await?;
+            if request.stage != "world_roles" {
+                return Ok(output);
+            }
+            let call = self.role_calls.fetch_add(1, Ordering::SeqCst);
+            if call == 0 {
+                let mut candidate: serde_json::Value = serde_json::from_str(&output)?;
+                candidate["roles"][1]["name"] = serde_json::json!("Courier");
+                return Ok(candidate.to_string());
+            }
+            self.saw_exact_correction.store(
+                request
+                    .lived_stream
+                    .contains("LOCAL VALIDATOR REJECTED THE PREVIOUS ROLES")
+                    && request
+                        .lived_stream
+                        .contains("name=\"courier\" repeated 2 times")
+                    && request.lived_stream.contains("\"name\":\"Courier\""),
+                Ordering::SeqCst,
+            );
+            Ok(output)
+        }
+
+        fn provider(&self) -> &'static str {
+            "correction-aware-role-fixture"
         }
     }
 
@@ -2249,6 +2370,11 @@ mod tests {
                     {"id":"a","title":"Ash","era":"early","place":"ring","pressure":"strike","player_hook":"work","evidence_receipt_ids":[]},
                     {"id":"b","title":"Glass","era":"middle","place":"moon","pressure":"siege","player_hook":"survive","evidence_receipt_ids":[]},
                     {"id":"c","title":"Rain","era":"late","place":"station","pressure":"election","player_hook":"choose","evidence_receipt_ids":[]}
+                ]}).to_string(),
+                "world_roles" => serde_json::json!({"roles":[
+                    {"id":"courier","name":"Courier","premise":"Carry a disputed manifest through the blockade.","capabilities":["route knowledge"],"obligations":["deliver the manifest"],"evidence_receipt_ids":[]},
+                    {"id":"organizer","name":"Dock Organizer","premise":"Keep the strike coalition together under pressure.","capabilities":["labor trust"],"obligations":["protect the picket"],"evidence_receipt_ids":[]},
+                    {"id":"auditor","name":"Contract Auditor","premise":"Trace the institution hiding the missing supplies.","capabilities":["ledger access"],"obligations":["report material fraud"],"evidence_receipt_ids":[]}
                 ]}).to_string(),
                 "world_compile" => {
                     let destination = if self.invalid_route { "missing" } else { "yard" };
@@ -2398,6 +2524,34 @@ mod tests {
             .unwrap();
 
         assert_eq!(output.openings.len(), 3);
+        assert_eq!(output.model_receipts.len(), 2);
+        assert!(output.model_receipts[0].local_validation_error.is_some());
+        assert!(output.model_receipts[1].local_validation_error.is_none());
+        assert!(model.saw_exact_correction.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn role_stage_corrects_a_semantically_duplicate_axis_once() {
+        let model = Arc::new(CorrectionAwareRoleModel {
+            role_calls: AtomicUsize::new(0),
+            saw_exact_correction: AtomicBool::new(false),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+
+        let output = compiler
+            .suggest_roles(&OpeningSuggestion {
+                id: "blockade".into(),
+                title: "The Blockade".into(),
+                era: "late".into(),
+                place: "ring".into(),
+                pressure: "blockade".into(),
+                player_hook: "choose a route".into(),
+                evidence_receipt_ids: vec![],
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(output.roles.len(), 3);
         assert_eq!(output.model_receipts.len(), 2);
         assert!(output.model_receipts[0].local_validation_error.is_some());
         assert!(output.model_receipts[1].local_validation_error.is_none());
