@@ -21,31 +21,50 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
     let story = story_nodes(campaign, narrations);
     let player = &campaign.actors[&campaign.player_actor_id];
     let location = &campaign.locations[&player.location_id];
+    let relationships = if player.relationships.is_empty() {
+        "none".into()
+    } else {
+        player
+            .relationships
+            .iter()
+            .map(|(subject_id, relationship)| {
+                let display_name = campaign
+                    .actors
+                    .get(subject_id)
+                    .map(|actor| actor.name.as_str())
+                    .or_else(|| {
+                        campaign
+                            .institutions
+                            .get(subject_id)
+                            .map(|institution| institution.name.as_str())
+                    })
+                    .or_else(|| {
+                        campaign
+                            .gestalts
+                            .get(subject_id)
+                            .map(|gestalt| gestalt.name.as_str())
+                    })
+                    .or_else(|| {
+                        subject_id
+                            .strip_prefix("member:")
+                            .and_then(|member_id| campaign.gestalt_members.get(member_id))
+                            .map(|member| member.name.as_str())
+                    })
+                    .unwrap_or(subject_id);
+                format!("{display_name}: {relationship}")
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
     let ledger = format!(
-        "Capabilities: {}\nEquipment: {}\nConditions: {}\nObligations: {}\nKnown facts: {}",
+        "Capabilities: {}\nEquipment: {}\nConditions: {}\nObligations: {}\nRelationships: {}\nKnown facts: {}",
         join(&player.capabilities),
         join(&player.equipment),
         join(&player.conditions),
         join(&player.obligations),
+        relationships,
         join(&player.knowledge)
     );
-    let pressures = campaign
-        .clocks
-        .values()
-        .map(|clock| {
-            format!(
-                "{} {}/{} — {}",
-                clock.label, clock.progress, clock.threshold, clock.consequence
-            )
-        })
-        .chain(
-            campaign
-                .institutions
-                .values()
-                .map(|x| format!("{} — {}", x.name, x.posture)),
-        )
-        .collect::<Vec<_>>()
-        .join("\n");
     let news=campaign.news.iter().map(|item|json!({"id":item.id,"kind":"text","props":{"value":format!("[{}] {}",item.channel,item.headline)},"children":[]})).collect::<Vec<_>>();
     let effective_budget = campaign
         .resolution_cover
@@ -67,7 +86,7 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
       },
       "surface":{"id":format!("ghostlight.campaign.{}",campaign.id),"root":{"id":"dungeon.root","kind":"surface","props":{},"children":[
         {"id":"dungeon.status","kind":"card","props":{"title":format!("{} · revision {} · {}",campaign.name,campaign.revision,campaign.world_time)},"children":[]},
-        {"id":"dungeon.location","kind":"card","props":{"title":format!("{} · {}",location.name,player.name)},"children":[{"id":"dungeon.pressures","kind":"text","props":{"value":pressures},"children":[]}]},
+        {"id":"dungeon.location","kind":"card","props":{"title":format!("{} · {}",location.name,player.name)},"children":[]},
         {"id":"dungeon.ledger","kind":"card","props":{"title":"Character ledger"},"children":[{"id":"dungeon.ledger.text","kind":"text","props":{"value":ledger},"children":[]}]},
         {"id":"dungeon.resolution","kind":"card","props":{"title":format!("World resolution · {} configured / {} effective",campaign.resolution_policy.active_cell_budget,effective_budget)},"children":[{"id":"dungeon.resolution.text","kind":"text","props":{"value":format!("Resolution epoch {} · {} pins · {} temporary overage",campaign.resolution_policy.resolution_epoch,campaign.resolution_pins.len(),campaign.resolution_cover.as_ref().map(|cover| cover.mandatory_overage).unwrap_or(0))},"children":[]}]},
         {"id":"dungeon.news","kind":"card","props":{"title":"Accessible news and rumors"},"children":news},
@@ -303,6 +322,9 @@ mod tests {
         let mut campaign = crate::resolution::tests::campaign(1, 1);
         let mut player = campaign.actors.remove("player").unwrap();
         player.id = "pilot-nyx".into();
+        player
+            .relationships
+            .insert("faction-0000".into(), "owes me safe passage".into());
         campaign.player_actor_id = player.id.clone();
         campaign.actors.insert(player.id.clone(), player);
 
@@ -310,5 +332,45 @@ mod tests {
 
         assert_eq!(surface["player_actor_id"], "pilot-nyx");
         assert_eq!(surface["player_location_id"], "center");
+        assert!(
+            serde_json::to_string(&surface)
+                .unwrap()
+                .contains("Relationships: Faction 0: owes me safe passage")
+        );
+    }
+
+    #[test]
+    fn player_surface_cannot_leak_canonical_remote_pressure() {
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        campaign
+            .institutions
+            .get_mut("faction-0000")
+            .unwrap()
+            .posture = "SECRET_REMOTE_COUP_POSTURE".into();
+        campaign.clocks.insert(
+            "sealed-investigation".into(),
+            crate::domain::WorldClock {
+                id: "sealed-investigation".into(),
+                label: "SECRET_INVESTIGATION_CLOCK".into(),
+                progress: 3,
+                threshold: 4,
+                consequence: "SECRET_ARREST_PLAN".into(),
+            },
+        );
+        campaign.news.push(crate::domain::NewsIssue {
+            id: "news:public".into(),
+            at: Utc::now(),
+            channel: "public bulletin".into(),
+            headline: "The public ferry is delayed.".into(),
+            event_ids: vec!["event:public".into()],
+            reliability: "direct institutional channel".into(),
+        });
+
+        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+
+        assert!(!encoded.contains("SECRET_REMOTE_COUP_POSTURE"));
+        assert!(!encoded.contains("SECRET_INVESTIGATION_CLOCK"));
+        assert!(!encoded.contains("SECRET_ARREST_PLAN"));
+        assert!(encoded.contains("The public ferry is delayed."));
     }
 }

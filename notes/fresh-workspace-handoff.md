@@ -813,6 +813,14 @@ transcribe an internal location ID: the canonical current ID is projected by
 the server and bound read-only, while destination and fission receipts expose
 the topology or child leaves being approved.
 
+The next surface audit found canonical institution postures and every raw world
+clock concatenated into the player location card. That bypassed the otherwise
+channel-aware news path. The omniscient aggregation is deleted: world time and
+location remain public, developments arrive through player-local narration or
+admitted news, and raw pressures remain in the operator surface. The character
+ledger now includes the player actor's own relationships, which it had promised
+but omitted.
+
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.

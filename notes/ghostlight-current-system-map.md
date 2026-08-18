@@ -324,6 +324,14 @@ before generation. Only direct-seed source text enters causal world compilation;
 background and excluded sources remain coverage provenance and cannot donate
 story incidents or cast.
 
+The player Eve surface follows the same membrane. It renders the player-owned
+ledger—including that actor's own relationships—and already filtered news, but
+does not enumerate canonical institution postures or raw world clocks. Those
+remain operator state until narration or an exact information channel makes a
+development available to the character. A negative regression plants a remote
+coup posture and sealed investigation clock, proves all three secret strings
+absent from the player surface, and proves an admitted public headline remains.
+
 Global strategic context has a separate non-causal lane. Two stable broad Vault
 queries run alongside local retrieval, and a Flash extraction stage proposes at
 most 32 remote institution names with one short durable mandate each. Local code
