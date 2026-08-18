@@ -15,7 +15,6 @@ let revision = 0;
 let playerActorId = "";
 let resolutionEpoch = 0;
 let providerConfigurationEpoch = 0;
-let resolutionPins: any[] = [];
 let requestInFlight = false;
 const controlsDisabledByRequest = new Set<HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>();
 
@@ -132,7 +131,6 @@ async function refresh() {
   document.querySelector<HTMLInputElement>("#destination-origin")!.value = playerLocationId;
   resolutionEpoch = Number(surface.resolution?.policy?.resolution_epoch ?? 0);
   providerConfigurationEpoch = Number(surface.resolution?.policy?.provider_configuration_epoch ?? 0);
-  resolutionPins = surface.resolution?.pins ?? [];
   const budget = Number(surface.resolution?.policy?.active_cell_budget ?? 8);
   const budgetInput = document.querySelector<HTMLInputElement>("#active-cell-budget")!;
   budgetInput.value = String(budget);
@@ -141,20 +139,6 @@ async function refresh() {
   const providerParallelism = Number(surface.resolution?.policy?.provider_parallelism ?? 8);
   document.querySelector<HTMLInputElement>("#provider-parallelism")!.value = String(providerParallelism);
   document.querySelector<HTMLOutputElement>("#provider-parallelism-value")!.value = String(providerParallelism);
-  const pinList = document.querySelector<HTMLElement>("#pin-list")!;
-  pinList.replaceChildren();
-  if (resolutionPins.length === 0) pinList.append(node("p", "No persistent pins."));
-  for (const pin of resolutionPins) {
-    const row = node("p");
-    row.append(node("code", String(pin.kind)), document.createTextNode(` ${[...pin.subject_ids].join(", ")} — ${pin.reason} `));
-    const remove = node("button", "Remove");
-    remove.type = "button";
-    remove.addEventListener("click", async () => {
-      await send({ type: "replace_resolution_pins", expected_revision: revision, expected_resolution_epoch: resolutionEpoch, pins: resolutionPins.filter(candidate => candidate.id !== pin.id) });
-    });
-    row.append(remove);
-    pinList.append(row);
-  }
   const fissionParent = document.querySelector<HTMLSelectElement>("#fission-parent")!;
   fissionParent.replaceChildren(...(surface.resolution?.fission_targets ?? []).map((target: any) => {
     const option = node("option", `${target.name} · ${target.id}`);
@@ -331,20 +315,6 @@ document.querySelector<HTMLFormElement>("#provider-parallelism-form")!.addEventL
     if (!response.ok) status.textContent = body.error ?? "The operator limit was refused.";
     await refresh();
   });
-});
-document.querySelector<HTMLFormElement>("#pin-form")!.addEventListener("submit", async event => {
-  event.preventDefault();
-  const data = new FormData(event.currentTarget as HTMLFormElement);
-  const subjectIds = String(data.get("subject_ids") ?? "").split(",").map(value => value.trim()).filter(Boolean);
-  const pin = {
-    schema: "ghostlight.resolution_pin.v1",
-    id: `pin:${crypto.randomUUID()}`,
-    kind: String(data.get("kind")),
-    subject_ids: subjectIds,
-    reason: String(data.get("reason") ?? "").trim(),
-    created_world_revision: revision,
-  };
-  await send({ type: "replace_resolution_pins", expected_revision: revision, expected_resolution_epoch: resolutionEpoch, pins: [...resolutionPins, pin] });
 });
 destinationForm.addEventListener("submit", async event => {
   event.preventDefault();

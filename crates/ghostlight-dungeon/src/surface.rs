@@ -81,8 +81,8 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
         "policy":campaign.resolution_policy,
         "effective_budget":effective_budget,
         "mandatory_overage":campaign.resolution_cover.as_ref().map(|cover| cover.mandatory_overage).unwrap_or(0),
-        "pins":campaign.resolution_pins.values().collect::<Vec<_>>(),
-        "fission_targets":campaign.agency_profiles.values().filter(|profile| profile.active_leaf && profile.subject_kind == crate::domain::AgencySubjectKind::Gestalt).filter_map(|profile| campaign.gestalts.get(&profile.subject_id).map(|gestalt| json!({"id":gestalt.id,"name":gestalt.name}))).collect::<Vec<_>>()
+        "pin_count":campaign.resolution_pins.len(),
+        "fission_targets":campaign.agency_profiles.values().filter(|profile| profile.active_leaf && profile.subject_kind == crate::domain::AgencySubjectKind::Gestalt).filter_map(|profile| campaign.gestalts.get(&profile.subject_id)).filter(|gestalt|gestalt.home_location_id==player.location_id).map(|gestalt| json!({"id":gestalt.id,"name":gestalt.name})).collect::<Vec<_>>()
       },
       "surface":{"id":format!("ghostlight.campaign.{}",campaign.id),"root":{"id":"dungeon.root","kind":"surface","props":{},"children":[
         {"id":"dungeon.status","kind":"card","props":{"title":format!("{} · revision {} · {}",campaign.name,campaign.revision,campaign.world_time)},"children":[]},
@@ -365,12 +365,58 @@ mod tests {
             event_ids: vec!["event:public".into()],
             reliability: "direct institutional channel".into(),
         });
+        campaign.resolution_pins.insert(
+            "secret-pin".into(),
+            crate::domain::ResolutionPin {
+                schema: "ghostlight.resolution_pin.v1".into(),
+                id: "secret-pin".into(),
+                kind: crate::domain::ResolutionPinKind::KeepSeparate,
+                subject_ids: std::collections::BTreeSet::from(["SECRET_REMOTE_SUBJECT".into()]),
+                reason: "SECRET_OPERATOR_REASON".into(),
+                created_world_revision: 0,
+            },
+        );
 
-        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+        let surface = player_surface(&campaign, &[]);
+        let encoded = serde_json::to_string(&surface).unwrap();
 
         assert!(!encoded.contains("SECRET_REMOTE_COUP_POSTURE"));
         assert!(!encoded.contains("SECRET_INVESTIGATION_CLOCK"));
         assert!(!encoded.contains("SECRET_ARREST_PLAN"));
+        assert!(!encoded.contains("SECRET_REMOTE_SUBJECT"));
+        assert!(!encoded.contains("SECRET_OPERATOR_REASON"));
+        assert_eq!(surface["resolution"]["pin_count"], 1);
         assert!(encoded.contains("The public ferry is delayed."));
+    }
+
+    #[test]
+    fn player_surface_offers_only_local_population_fission_targets() {
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        for (id, name, location) in [
+            ("local-neighbors", "Local neighbors", "center"),
+            ("remote-cell", "SECRET_REMOTE_POPULATION", "far-district"),
+        ] {
+            campaign.gestalts.insert(
+                id.into(),
+                crate::domain::GestaltPersonaState {
+                    schema: "ghostlight.gestalt_persona_state.v1".into(),
+                    id: id.into(),
+                    name: name.into(),
+                    version: 0,
+                    home_location_id: location.into(),
+                    shared_capabilities: Default::default(),
+                    shared_knowledge: Default::default(),
+                    resources: Default::default(),
+                    goals: vec![],
+                    pressures: vec![],
+                },
+            );
+        }
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+
+        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+
+        assert!(encoded.contains("Local neighbors"));
+        assert!(!encoded.contains("SECRET_REMOTE_POPULATION"));
     }
 }

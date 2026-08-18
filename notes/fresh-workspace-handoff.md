@@ -821,6 +821,13 @@ admitted news, and raw pressures remain in the operator surface. The character
 ledger now includes the player actor's own relationships, which it had promised
 but omitted.
 
+The adjacent pin/fission surface had the same authority smell. Player HTTP now
+owns only active-cell budget, not resolution pins. The browser pin editor is
+deleted, the surface publishes only `pin_count`, and the command boundary
+rejects `ReplaceResolutionPins`. Fission candidates are restricted to active
+population leaves at the player's canonical current location; remote population
+names remain in the operator surface.
+
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.

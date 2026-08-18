@@ -299,15 +299,15 @@ order is no longer a fictional owner: a migration earlier in the apply loop
 cannot invalidate another subject's same-snapshot communication, and a late
 invalid action cannot leave earlier in-memory mutations behind.
 
-The active cell budget and provider concurrency limit are separate controls.
-Budget and pins increment `resolution_epoch` without advancing world revision or
-fictional time. Provider concurrency increments only
+The active cell budget, operator-owned pins, and provider concurrency limit are
+separate controls. Budget and pins increment `resolution_epoch` without
+advancing world revision or fictional time. Provider concurrency increments only
 `provider_configuration_epoch`; it batches the same cover and cannot repartition
 the world. See `docs/architecture/ghostlight-multiresolution-agency.md`.
 
 The browser command boundary is deliberately smaller than `WorldCommand`.
 Authenticated HTTP admits only player-owned Speak, unfilled Assess, Attempt,
-and Wait requests. Actor identity must match the campaign player. Compiler
+Wait, and active-cell-budget requests. Actor identity must match the campaign player. Compiler
 approval has its own route. Strategic ticks, region commits, gestalt presence,
 reaction waves, NPC initiative, and campaign creation are internal mailbox
 commands and cannot be invoked through `/api/command`.
@@ -331,6 +331,9 @@ remain operator state until narration or an exact information channel makes a
 development available to the character. A negative regression plants a remote
 coup posture and sealed investigation clock, proves all three secret strings
 absent from the player surface, and proves an admitted public headline remains.
+It likewise exposes only the number of operator pins and local active
+population leaves eligible for a fission preview. Pin bodies, remote population
+names, and `ReplaceResolutionPins` remain outside the player boundary.
 
 Global strategic context has a separate non-causal lane. Two stable broad Vault
 queries run alongside local retrieval, and a Flash extraction stage proposes at

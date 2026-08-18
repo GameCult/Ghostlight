@@ -1412,8 +1412,7 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         } => intent.actor_id == player_actor_id && proposal.is_none(),
         WorldCommand::Attempt { .. }
         | WorldCommand::Wait { .. }
-        | WorldCommand::SetResolutionBudget { .. }
-        | WorldCommand::ReplaceResolutionPins { .. } => true,
+        | WorldCommand::SetResolutionBudget { .. } => true,
         WorldCommand::CreateCampaign { .. }
         | WorldCommand::AdvanceStrategicTick { .. }
         | WorldCommand::ExpandRegion { .. }
@@ -1424,6 +1423,7 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::ResolveReactionWave { .. }
         | WorldCommand::ResolveNpcAction { .. }
         | WorldCommand::SetProviderParallelism { .. }
+        | WorldCommand::ReplaceResolutionPins { .. }
         | WorldCommand::FissionGestalt { .. } => false,
     }
 }
@@ -2383,6 +2383,22 @@ mod tests {
                 expected_revision: 4,
                 reason: "browser says so".into(),
                 plan: Default::default(),
+            },
+            "player",
+        ));
+        assert!(player_http_command_allowed(
+            &WorldCommand::SetResolutionBudget {
+                expected_revision: 4,
+                expected_resolution_epoch: 2,
+                active_cell_budget: 8,
+            },
+            "player",
+        ));
+        assert!(!player_http_command_allowed(
+            &WorldCommand::ReplaceResolutionPins {
+                expected_revision: 4,
+                expected_resolution_epoch: 2,
+                pins: vec![],
             },
             "player",
         ));
