@@ -151,6 +151,16 @@ impl AuthOwner {
         self.state = next_state;
         Ok(())
     }
+
+    fn reload(&mut self) -> anyhow::Result<()> {
+        let (row, state) = self
+            .store
+            .load::<AuthState>("auth_state.v1", "primary")?
+            .ok_or_else(|| anyhow::anyhow!("canonical auth state is missing"))?;
+        self.row = row;
+        self.state = state;
+        Ok(())
+    }
 }
 
 #[tokio::main]
@@ -2328,16 +2338,29 @@ async fn select_campaign(
     if !auth.state.session_hashes.contains(session_hash) {
         return Err(anyhow::anyhow!("session is no longer authorized"));
     }
-    let mut next_state = auth.state.clone();
-    next_state
-        .session_campaigns
-        .insert(session_hash.to_owned(), campaign_id);
-    next_state
-        .session_campaign_ids
-        .entry(session_hash.to_owned())
-        .or_default()
-        .insert(campaign_id);
-    auth.commit(next_state)
+    let selection = |current: &AuthState| {
+        let mut next_state = current.clone();
+        next_state
+            .session_campaigns
+            .insert(session_hash.to_owned(), campaign_id);
+        next_state
+            .session_campaign_ids
+            .entry(session_hash.to_owned())
+            .or_default()
+            .insert(campaign_id);
+        next_state
+    };
+    let current = auth.state.clone();
+    if auth.commit(selection(&current)).is_ok() {
+        return Ok(());
+    }
+
+    auth.reload()?;
+    if !auth.state.session_hashes.contains(session_hash) {
+        return Err(anyhow::anyhow!("session is no longer authorized"));
+    }
+    let current = auth.state.clone();
+    auth.commit(selection(&current))
 }
 
 fn secret_hash(value: &str) -> String {
@@ -2847,6 +2870,39 @@ mod tests {
         );
         assert_eq!(owner.state.session_hashes, original.session_hashes);
         assert_eq!(owner.row, row);
+    }
+
+    #[tokio::test]
+    async fn campaign_selection_reloads_stale_auth_without_losing_concurrent_state() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let campaign = seed("Fresh branch");
+        state
+            .registry
+            .create(campaign.clone(), vec![], vec![])
+            .await
+            .unwrap();
+
+        let (store, row, mut externally_committed) = {
+            let mut auth = state.auth.lock().await;
+            let mut authorized = auth.state.clone();
+            authorized.session_hashes.insert("owner".into());
+            auth.commit(authorized).unwrap();
+            (auth.store.clone(), auth.row.clone(), auth.state.clone())
+        };
+        externally_committed
+            .session_hashes
+            .insert("concurrent".into());
+        store
+            .replace(&row, "ghostlight.auth_state.v1", &externally_committed)
+            .unwrap();
+
+        select_campaign(&state, "owner", campaign.id).await.unwrap();
+
+        let auth = state.auth.lock().await;
+        assert!(auth.state.session_hashes.contains("concurrent"));
+        assert_eq!(auth.state.session_campaigns["owner"], campaign.id);
+        assert!(auth.state.session_campaign_ids["owner"].contains(&campaign.id));
     }
 
     #[test]
