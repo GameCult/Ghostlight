@@ -1,7 +1,9 @@
 use axum::{
     Json, Router,
-    extract::{ConnectInfo, Path, State},
+    extract::{ConnectInfo, Path, Request, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
+    middleware,
+    middleware::Next,
     response::{IntoResponse, Redirect, Response},
     routing::{get, post},
 };
@@ -259,9 +261,22 @@ async fn main() -> anyhow::Result<()> {
     let web_root = release_web_root
         .filter(|path| path.join("index.html").is_file())
         .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/dist"));
-    let app = Router::new()
-        .route("/health", get(health))
-        .route("/invite/{token}", get(invite))
+    let app = app_router(state, web_root);
+    let address: SocketAddr = std::env::var("GHOSTLIGHT_DUNGEON_BIND")
+        .unwrap_or_else(|_| "0.0.0.0:8831".into())
+        .parse()?;
+    let listener = tokio::net::TcpListener::bind(address).await?;
+    tracing::info!(%address, "GhostlightDungeon listening");
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
+    Ok(())
+}
+
+fn app_router(state: AppState, web_root: PathBuf) -> Router {
+    let protected_api = Router::new()
         .route("/api/surface", get(surface))
         .route("/api/compiler/openings", post(compile_openings))
         .route("/api/compiler/roles", post(compile_roles))
@@ -296,19 +311,29 @@ async fn main() -> anyhow::Result<()> {
             "/api/operator/provider-parallelism",
             post(set_provider_parallelism),
         )
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            require_api_authentication,
+        ));
+
+    Router::new()
+        .route("/health", get(health))
+        .route("/invite/{token}", get(invite))
+        .merge(protected_api)
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
-        .with_state(state);
-    let address: SocketAddr = std::env::var("GHOSTLIGHT_DUNGEON_BIND")
-        .unwrap_or_else(|_| "0.0.0.0:8831".into())
-        .parse()?;
-    let listener = tokio::net::TcpListener::bind(address).await?;
-    tracing::info!(%address, "GhostlightDungeon listening");
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .await?;
-    Ok(())
+        .with_state(state)
+}
+
+async fn require_api_authentication(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    request: Request,
+    next: Next,
+) -> Response {
+    if !authorized(&headers, &state).await {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    next.run(request).await
 }
 
 async fn health(State(state): State<AppState>) -> Response {
@@ -2158,7 +2183,9 @@ struct ErrorBody {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::{body::Body, http::Request};
     use ghostlight_dungeon::domain::{ActorState, BranchOrigin, Location};
+    use tower::ServiceExt;
 
     fn seed(name: &str) -> Campaign {
         let actor = ActorState {
@@ -2258,6 +2285,52 @@ mod tests {
             live_commit_gate: Arc::new(RwLock::new(())),
             mesh: MeshPublisher::open(root.join("mesh.cc"), None).unwrap(),
         }
+    }
+
+    #[tokio::test]
+    async fn api_authentication_precedes_json_extraction() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let app = app_router(state, dir.path().join("web"));
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/command")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from("not-json"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn authenticated_api_requests_reach_json_extraction() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        state
+            .auth
+            .lock()
+            .await
+            .state
+            .session_hashes
+            .insert(secret_hash("valid-session"));
+        let app = app_router(state, dir.path().join("web"));
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/command")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .header(header::COOKIE, "ghostlight_session=valid-session")
+                    .body(Body::from("not-json"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
 
     #[tokio::test]
