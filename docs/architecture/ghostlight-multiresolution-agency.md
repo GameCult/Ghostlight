@@ -454,6 +454,16 @@ population transition receives its exact current pressure set and the failed
 transition reason. The correction model is not expected to reconstruct a
 validator from a generic rejection.
 
+The WorldKernel resolves every strategic batch against one immutable campaign
+snapshot. It applies validated transitions to a private working copy and swaps
+that copy into the campaign only after the whole batch succeeds. Earlier
+actions in the batch therefore cannot rewrite the spatial, relationship, or
+knowledge permissions used by later actions. This matters when, for example, a
+camp population signals refugees during the same strategic horizon in which
+those refugees depart: both choices are judged from the shared starting world,
+while the committed result still contains the migration. A late invalid action
+discards the working copy and leaves the campaign untouched.
+
 An actionful cell has a fourth private stage after the Interpreter: the
 `cell_effect_verifier`. This cheap structured reader compares the natural
 Persona decision with each attributed typed effect. It rejects reversals,

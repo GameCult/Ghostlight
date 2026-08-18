@@ -1270,6 +1270,11 @@ fn apply_strategic_tick_plan(
     campaign: &mut Campaign,
     plan: crate::domain::StrategicTickPlan,
 ) -> Result<Vec<crate::domain::Event>, KernelError> {
+    // Every action in a strategic wave was chosen against the same committed
+    // snapshot. Keep that snapshot immutable while applying to a private copy
+    // so action ordering cannot rewrite another action's permissions and an
+    // invalid late action cannot leave this primitive partially mutated.
+    let mut next = campaign.clone();
     let revision = campaign.revision + 1;
     let at = campaign.world_time;
     let mut events = Vec::new();
@@ -1295,7 +1300,7 @@ fn apply_strategic_tick_plan(
             ));
         }
         validate_public_channels(&action.public_channels)?;
-        let institution = campaign
+        let institution = next
             .institutions
             .get_mut(&action.institution_id)
             .ok_or_else(|| KernelError::Invalid("strategic plan invented an institution".into()))?;
@@ -1330,7 +1335,7 @@ fn apply_strategic_tick_plan(
             ));
         }
         validate_public_channels(&action.public_channels)?;
-        let gestalt = campaign
+        let gestalt = next
             .gestalts
             .get_mut(&action.gestalt_id)
             .ok_or_else(|| KernelError::Invalid("strategic plan invented a gestalt".into()))?;
@@ -1397,13 +1402,13 @@ fn apply_strategic_tick_plan(
         let destination_name = campaign.gestalts[&action.destination_gestalt_id]
             .name
             .clone();
-        let gestalt = campaign
+        let gestalt = next
             .gestalts
             .get_mut(&action.gestalt_id)
             .expect("gestalt migration source was validated");
         gestalt.home_location_id = action.destination_location_id.clone();
         gestalt.version = gestalt.version.saturating_add(1);
-        let profile = campaign
+        let profile = next
             .agency_profiles
             .get_mut(&action.gestalt_id)
             .expect("gestalt migration profile was validated");
@@ -1553,8 +1558,7 @@ fn apply_strategic_tick_plan(
         }
         let origin = actor.location_id.clone();
         let actor_name = actor.name.clone();
-        campaign
-            .actors
+        next.actors
             .get_mut(&action.actor_id)
             .expect("actor was validated")
             .location_id = action.destination_id.clone();
@@ -1686,7 +1690,7 @@ fn apply_strategic_tick_plan(
                     .clone()
             });
         let member_name = campaign.gestalt_members[&action.member_id].name.clone();
-        rebase_member_migration(campaign, &action)?;
+        rebase_member_migration(&mut next, &action)?;
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:member:{}", action.member_id),
             at,
@@ -1702,6 +1706,7 @@ fn apply_strategic_tick_plan(
             public_channels: action.public_channels,
         });
     }
+    *campaign = next;
     Ok(events)
 }
 
@@ -2712,6 +2717,86 @@ mod tests {
             events[0].gestalt_ids,
             vec!["refugees-east", "dock-neighbors"]
         );
+    }
+
+    #[test]
+    fn simultaneous_migration_preserves_snapshot_scoped_activity() {
+        let mut value = hierarchical_refugee_campaign();
+        value.gestalts.insert(
+            "camp-neighbors".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "camp-neighbors".into(),
+                name: "Camp neighbors".into(),
+                version: 0,
+                home_location_id: "camp".into(),
+                shared_capabilities: BTreeSet::from(["raise signal fires".into()]),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec!["keep departures visible".into()],
+                pressures: vec![],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut value);
+
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_migrations: vec![StrategicGestaltMigration {
+                    gestalt_id: "refugees-east".into(),
+                    destination_gestalt_id: "dock-neighbors".into(),
+                    destination_location_id: "docks".into(),
+                    public_channels: vec![],
+                }],
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    gestalt_id: "camp-neighbors".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec!["refugees-east".into()],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(value.gestalts["refugees-east"].home_location_id, "docks");
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[1].kind, "gestalt_activity");
+        assert_eq!(events[1].location_ids, vec!["camp"]);
+        assert_eq!(
+            events[1].summary,
+            "Camp neighbors sends a communication to Eastern transit refugees."
+        );
+    }
+
+    #[test]
+    fn invalid_late_strategic_action_cannot_partially_apply_an_earlier_action() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let error = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_migrations: vec![StrategicGestaltMigration {
+                    gestalt_id: "refugees-east".into(),
+                    destination_gestalt_id: "dock-neighbors".into(),
+                    destination_location_id: "docks".into(),
+                    public_channels: vec![],
+                }],
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Prepare,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+
+        assert!(error.to_string().contains("acts twice"));
+        assert_eq!(value, before);
     }
 
     #[test]

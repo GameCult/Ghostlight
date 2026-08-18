@@ -192,6 +192,13 @@ cannot duplicate, cross cell authority, or coexist with an action from the same
 subject. They are non-mutating audit/fairness evidence. The former global
 inaction string is no longer an owner or runtime path.
 
+Strategic plan application reads authority and permissions from one immutable
+command snapshot. All writes land in a private working campaign which replaces
+the command-local campaign only after every action validates. Sequential loop
+order is no longer a fictional owner: a migration earlier in the apply loop
+cannot invalidate another subject's same-snapshot communication, and a late
+invalid action cannot leave earlier in-memory mutations behind.
+
 The active cell budget and provider concurrency limit are separate controls.
 Budget and pins increment `resolution_epoch` without advancing world revision or
 fictional time. Provider concurrency increments only

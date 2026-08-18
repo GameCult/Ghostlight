@@ -332,6 +332,17 @@ or waits from the Persona turn, forbids absence-as-inaction, and requests
 reasons within 160 characters. Rerun a 23-wave fairness-length budget-8 profile
 at provider parallelism 8 from the same committed migration baseline.
 
+The next exact-build profile passed the original Mira action/inaction conflict
+after local validation began returning the exact failed condition instead of a
+four-way generic error. It then exposed a deeper kernel seam: one camp Gestalt
+communicated with `refugees-east` in the same wave that the refugees migrated.
+The proposal was valid against the shared snapshot, but the apply loop moved
+the refugees before rechecking the later communication. Strategic application
+now reads the original snapshot, mutates a private working campaign, and swaps
+it in only on total success. Regressions cover the simultaneous
+migration/communication case and prove that an invalid late action cannot
+partially apply an earlier migration.
+
 Do not call setting-wide material agency finished yet. Most population output
 is still an attributed `gestalt_activity` attempt stored as history. The long
 run became repetitive around ferry loading and shelter requests because no
