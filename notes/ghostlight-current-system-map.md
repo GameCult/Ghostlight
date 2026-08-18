@@ -187,9 +187,9 @@ and operator inspection; the browser cannot reveal them before discovery.
 ## Current acceptance body
 
 Starfire currently serves immutable release
-`e55984c22703539f72157da652d670c54ff76580`, executable SHA-256
-`22c096f5bbb2f49353be482d3fae017907c30dba247e5bae5c2988a87bb493ee`,
-with rollback `73b748e183d4c05e6e0ce5442a860394ab25cd0a`.
+`0815776fa883dd5aefc1ba18c9aa7d1e4a048beb`, executable SHA-256
+`9f0707591d4ec31d15787b7b4bffe14fc046eb2ccdebb5c7abf6d409100cfc81`,
+with rollback `e55984c22703539f72157da652d670c54ff76580`.
 
 Authenticated acceptance against the exact release has proved generated
 opening/role/approval compilation, a nonliteral canonical player actor ID,
