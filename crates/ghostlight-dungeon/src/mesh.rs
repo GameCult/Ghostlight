@@ -14,7 +14,7 @@ use crate::{
     model::ModelStageReceipt,
     surface::{operator_surface, player_surface},
 };
-use anyhow::{Context, Result};
+use anyhow::Result;
 use chrono::Utc;
 use cultcache_rs::DatabaseEntry;
 use cultmesh_rs::{
@@ -353,8 +353,14 @@ impl MeshPublisher {
             options.source_agent_id = Some(PROVIDER_ID.into());
             options.source_role = Some("narrative-simulation".into());
             options.tags = vec!["ghostlight".into(), "eve".into(), "private".into()];
-            node.publish_document_to_rudp_catalog(&key, value, options)
-                .with_context(|| format!("publish {key} to Odin RUDP catalog"))?;
+            if let Err(error) = node.publish_document_to_rudp_catalog(&key, value, options) {
+                tracing::warn!(
+                    %key,
+                    %target,
+                    %error,
+                    "Odin RUDP publication failed; retained canonical local CultMesh projection"
+                );
+            }
         }
         Ok(())
     }
@@ -460,5 +466,27 @@ mod tests {
         drop(publisher);
         let reopened = MeshPublisher::open(temp.path().join("mesh.cc"), None).unwrap();
         assert_eq!(reopened.health().unwrap(), written);
+    }
+
+    #[test]
+    fn unavailable_odin_cannot_take_away_the_local_projection() {
+        let temp = tempdir().unwrap();
+        let unavailable = "127.0.0.1:1".parse().unwrap();
+        let publisher =
+            MeshPublisher::open(temp.path().join("mesh.cc"), Some(unavailable)).unwrap();
+
+        let written = publisher
+            .publish_snapshot(&[], "fixture-ready", 0)
+            .expect("local projection remains writable while rendezvous is unavailable");
+
+        assert_eq!(publisher.health().unwrap(), written);
+        assert!(
+            publisher
+                .node
+                .lock()
+                .unwrap()
+                .get_required::<SchemaCatalogRecord>("ghostlight:schema-catalog")
+                .is_ok()
+        );
     }
 }

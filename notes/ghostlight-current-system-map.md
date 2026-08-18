@@ -150,6 +150,12 @@ commit. The latest provider-backed four-wave golden produced seven typed
 material activity outcomes, ten durable consequences, and zero rejected pulses
 while leaving the player unchanged and returning the same Mira.
 
+The service-owned CultMesh store remains the canonical projection body when
+Odin rendezvous is temporarily unavailable. RUDP publication is outbound
+replication, not daemon-liveness authority: a failed publish is logged with its
+key and target while the complete local snapshot persists and HTTP serves that
+same typed health and Eve state.
+
 `gestalt_migration` records a collective decision by one exact active leaf to
 move along an explicit migration relation and reachable route. WorldKernel
 changes the leaf's home location and agency-profile location together. The
