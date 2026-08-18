@@ -468,7 +468,10 @@ fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
     })
 }
 
-fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
+fn cell_interpreter_context(
+    slice: &PermittedCellSlice,
+    active_subject_ids: &BTreeSet<String>,
+) -> serde_json::Value {
     serde_json::json!({
         "cell_id": slice.cell_id,
         "mode": slice.mode,
@@ -476,7 +479,7 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
         "resolution_epoch": slice.resolution_epoch,
         "detail_focus_subject_id": slice.detail_focus_subject_id,
         "max_actions": slice.max_actions,
-        "exact_permissions": slice.constituents.iter().map(|subject| serde_json::json!({
+        "exact_permissions": slice.constituents.iter().filter(|subject| active_subject_ids.contains(&subject.subject_id)).map(|subject| serde_json::json!({
             "subject_id": subject.subject_id,
             "subject_kind": subject.subject_kind,
             "allowed_effect_type": allowed_effect_type(&subject.subject_kind),
@@ -490,7 +493,7 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "already_committed_posture": subject.current_posture,
             "current_pressures": subject.pressures,
         })).collect::<Vec<_>>(),
-        "member_permissions": slice.member_exceptions.iter().map(|member| serde_json::json!({
+        "member_permissions": slice.member_exceptions.iter().filter(|member| active_subject_ids.contains(&member.subject_id)).map(|member| serde_json::json!({
             "subject_id": member.subject_id,
             "member_id": member.member_id,
             "allowed_effect_type": "member_migration_or_member_activity",
@@ -504,11 +507,18 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
     })
 }
 
-fn cell_scene_boundaries(slice: &PermittedCellSlice) -> String {
+fn cell_scene_boundaries(
+    slice: &PermittedCellSlice,
+    active_subject_ids: &BTreeSet<String>,
+) -> String {
     let mut by_location = BTreeMap::<String, BTreeSet<String>>::new();
     let mut unlocated = BTreeSet::new();
     let mut perspective_owners = BTreeSet::new();
-    for subject in &slice.constituents {
+    for subject in slice
+        .constituents
+        .iter()
+        .filter(|subject| active_subject_ids.contains(&subject.subject_id))
+    {
         perspective_owners.insert(subject.name.clone());
         if subject.location_ids.is_empty() {
             unlocated.insert(subject.name.clone());
@@ -521,7 +531,11 @@ fn cell_scene_boundaries(slice: &PermittedCellSlice) -> String {
             }
         }
     }
-    for member in &slice.member_exceptions {
+    for member in slice
+        .member_exceptions
+        .iter()
+        .filter(|member| active_subject_ids.contains(&member.subject_id))
+    {
         perspective_owners.insert(member.name.clone());
         by_location
             .entry(member.source_location_id.clone())
@@ -544,7 +558,7 @@ fn cell_scene_boundaries(slice: &PermittedCellSlice) -> String {
         ));
     }
     lines.push(format!(
-        "Only these cell-owned perspectives may make choices in this turn: {}.",
+        "Only these projected perspectives may speak, choose, or receive an action or inaction record in this turn: {}. Every other constituent remains canonically represented by the cell but is inactive in this inference wave.",
         perspective_owners
             .into_iter()
             .collect::<Vec<_>>()
@@ -595,7 +609,7 @@ fn constrain_cell_projection_schema(
 fn bind_cell_projection(
     slice: &PermittedCellSlice,
     proposal: CellProjectionProposal,
-) -> Result<String> {
+) -> Result<(String, BTreeSet<String>)> {
     if proposal.segments.is_empty() || proposal.segments.len() > slice.max_actions.max(1) {
         return Err(anyhow!(
             "cell Projector emitted an invalid perspective count"
@@ -641,6 +655,7 @@ fn bind_cell_projection(
             "cell Projector omitted the debt-selected perspective owner"
         ));
     }
+    let active_subject_ids = segments.keys().cloned().collect::<BTreeSet<_>>();
     let mut lowered = Vec::with_capacity(segments.len());
     for (subject_id, narrative) in segments {
         if let Some(subject) = slice
@@ -681,7 +696,7 @@ fn bind_cell_projection(
             ));
         }
     }
-    Ok(lowered.join("\n\n"))
+    Ok((lowered.join("\n\n"), active_subject_ids))
 }
 
 fn allowed_effect_type(kind: &crate::domain::AgencySubjectKind) -> &'static str {
@@ -748,7 +763,7 @@ impl CellProjectionEngine {
             max_output_tokens: Some(768),
         };
         let mut projector_receipts = Vec::new();
-        let (projected_narrative, projector_receipt) = loop {
+        let (projected_narrative, active_subject_ids, projector_receipt) = loop {
             let mut projected =
                 run_validated_stage(self.model.as_ref(), &projection_request).await?;
             let proposal = projected
@@ -757,10 +772,10 @@ impl CellProjectionEngine {
                 .ok_or_else(|| anyhow!("cell Projector produced no typed segments"))
                 .and_then(|value| serde_json::from_value(value).map_err(Into::into));
             match proposal.and_then(|proposal| bind_cell_projection(&slice, proposal)) {
-                Ok(narrative) => {
+                Ok((narrative, active_subject_ids)) => {
                     let receipt = projected.receipt.clone();
                     projector_receipts.push(projected.receipt);
-                    break (narrative, receipt);
+                    break (narrative, active_subject_ids, receipt);
                 }
                 Err(error) if projector_receipts.is_empty() => {
                     projected.receipt.validation_result = "semantic_invalid".into();
@@ -781,7 +796,7 @@ impl CellProjectionEngine {
         let lived = LivedNarrativeStream {
             text: format!(
                 "{}\n\n{}",
-                cell_scene_boundaries(&slice),
+                cell_scene_boundaries(&slice, &active_subject_ids),
                 projected_narrative
             ),
             snapshot_binding: slice.snapshot_binding.clone(),
@@ -813,8 +828,9 @@ impl CellProjectionEngine {
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_interpreter")
             .await?;
         let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal))?;
-        constrain_cell_proposal_schema(&mut schema, &slice)?;
-        let interpreter_context = serde_json::to_string(&cell_interpreter_context(&slice))?;
+        constrain_cell_proposal_schema(&mut schema, &slice, &active_subject_ids)?;
+        let interpreter_context =
+            serde_json::to_string(&cell_interpreter_context(&slice, &active_subject_ids))?;
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
@@ -856,6 +872,7 @@ impl CellProjectionEngine {
             match proposal.and_then(|proposal: CellAppraisalProposal| {
                 let appraisal = bind_cell_appraisal(&slice, proposal)?;
                 validate_cell_appraisal(&slice, &appraisal)?;
+                validate_active_decision_owners(&active_subject_ids, &appraisal)?;
                 Ok(appraisal)
             }) {
                 Ok(appraisal) => {
@@ -1362,6 +1379,30 @@ fn validate_cell_appraisal(
     Ok(())
 }
 
+fn validate_active_decision_owners(
+    active_subject_ids: &BTreeSet<String>,
+    appraisal: &crate::domain::CellAppraisal,
+) -> Result<()> {
+    let inactive = appraisal
+        .actions
+        .iter()
+        .map(|action| action.subject_id.as_str())
+        .chain(
+            appraisal
+                .inactions
+                .iter()
+                .map(|inaction| inaction.subject_id.as_str()),
+        )
+        .filter(|subject_id| !active_subject_ids.contains(*subject_id))
+        .collect::<BTreeSet<_>>();
+    if !inactive.is_empty() {
+        return Err(anyhow!(
+            "appraisal assigned decisions to inactive unprojected subjects {inactive:?}"
+        ));
+    }
+    Ok(())
+}
+
 fn validate_constituent_effect(
     subject: &CellConstituentSlice,
     effect: &crate::domain::StrategicCellEffect,
@@ -1559,6 +1600,7 @@ fn validate_action_permissions(
 fn constrain_cell_proposal_schema(
     schema: &mut serde_json::Value,
     slice: &PermittedCellSlice,
+    active_subject_ids: &BTreeSet<String>,
 ) -> Result<()> {
     let properties = schema
         .pointer_mut("/properties")
@@ -1581,11 +1623,13 @@ fn constrain_cell_proposal_schema(
     let subject_ids = slice
         .constituents
         .iter()
+        .filter(|value| active_subject_ids.contains(&value.subject_id))
         .map(|value| value.subject_id.as_str())
         .chain(
             slice
                 .member_exceptions
                 .iter()
+                .filter(|value| active_subject_ids.contains(&value.subject_id))
                 .map(|value| value.subject_id.as_str()),
         )
         .collect::<Vec<_>>();
@@ -1678,7 +1722,7 @@ mod tests {
                     assert!(
                         request
                             .lived_stream
-                            .contains("Only these cell-owned perspectives may make choices")
+                            .contains("Only these projected perspectives may speak, choose")
                     );
                     Ok(
                         "Faction Six will publish a bounded position using its bulletin access."
@@ -2391,7 +2435,12 @@ mod tests {
     #[test]
     fn cell_priority_schema_uses_a_bounded_higher_wins_score() {
         let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
-        constrain_cell_proposal_schema(&mut schema, &fixture_cell_slice()).unwrap();
+        constrain_cell_proposal_schema(
+            &mut schema,
+            &fixture_cell_slice(),
+            &BTreeSet::from(["faction-06".into()]),
+        )
+        .unwrap();
         assert_eq!(
             schema.pointer("/$defs/CellActionCandidate/properties/priority/minimum"),
             Some(&serde_json::json!(0))
@@ -2405,7 +2454,7 @@ mod tests {
     #[test]
     fn cell_projection_binds_exact_unique_perspective_owners_into_prose() {
         let slice = fixture_cell_slice();
-        let narrative = bind_cell_projection(
+        let (narrative, active_subject_ids) = bind_cell_projection(
             &slice,
             CellProjectionProposal {
                 segments: vec![CellPerspectiveSegment {
@@ -2417,6 +2466,7 @@ mod tests {
         .unwrap();
         assert!(narrative.contains("Faction Six — at forum"));
         assert!(!narrative.contains("faction-06"));
+        assert_eq!(active_subject_ids, BTreeSet::from(["faction-06".into()]));
 
         let invented = bind_cell_projection(
             &slice,
@@ -2449,6 +2499,33 @@ mod tests {
         )
         .unwrap_err();
         assert!(duplicate.to_string().contains("invented or duplicated"));
+    }
+
+    #[test]
+    fn projected_subjects_are_the_only_persona_and_interpreter_decision_owners() {
+        let mut slice = fixture_cell_slice();
+        let mut inactive = slice.constituents[0].clone();
+        inactive.subject_id = "faction-07".into();
+        inactive.name = "Faction Seven".into();
+        slice.constituents.push(inactive);
+        slice.max_actions = 2;
+        let active = BTreeSet::from(["faction-06".into()]);
+
+        let boundaries = cell_scene_boundaries(&slice, &active);
+        assert!(boundaries.contains("Faction Six"));
+        assert!(!boundaries.contains("Faction Seven"));
+        let context = cell_interpreter_context(&slice, &active);
+        assert_eq!(context["exact_permissions"].as_array().unwrap().len(), 1);
+        assert_eq!(context["exact_permissions"][0]["subject_id"], "faction-06");
+
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
+        assert_eq!(
+            schema
+                .pointer("/$defs/CellActionCandidate/properties/subject_id/enum")
+                .unwrap(),
+            &serde_json::json!(["faction-06"])
+        );
     }
 
     #[test]
