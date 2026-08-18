@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
-const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), summary, effect_kind, and supporting_state_references. The remaining permitted fields are owner_subject_id, other_subject_id, relation_id, strength_delta, resource, pressure_additions, pressure_resolutions, member_id, memory, obligation, relationship_description, fact_id, and reason. Omit every optional field not used by the chosen effect_kind. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","summary":"A bounded resolved consequence.","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
+const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. The remaining permitted fields are owner_subject_id, other_subject_id, relation_id, strength_delta, resource, pressure_additions, pressure_resolutions, member_id, memory, obligation, relationship_description, fact_id, and reason. Omit every optional field not used by the chosen effect_kind. Do not emit summary; Ghostlight derives it from the validated typed effect. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
 
 #[derive(Clone, Debug, Serialize)]
 struct OutcomeContext {
@@ -68,7 +68,6 @@ enum OutcomeEffectKind {
 struct OutcomeProposal {
     action_digest: String,
     band: StrategicOutcomeBand,
-    summary: String,
     effect_kind: OutcomeEffectKind,
     #[serde(default)]
     supporting_state_references: Vec<String>,
@@ -128,7 +127,7 @@ pub async fn resolve_activity_outcomes(
         .into_iter()
         .collect();
     let static_contract = format!(
-        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. A success may still have no durable material change when the attempt was speech, preparation, or inquiry whose response is not established. A failure may create a pressure or spend a committed resource when causally supported. Summary describes the resolved consequence, not a new attempt. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one supplied resource_recipient_id; it cannot take from a target. Every resource effect's owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure uses one supplied pressure_owner_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
+        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. A success may still have no durable material change when the attempt was speech, preparation, or inquiry whose response is not established. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one supplied resource_recipient_id; it cannot take from a target. Every resource effect's owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure uses one supplied pressure_owner_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
     );
     let mut request = ModelStageRequest {
         stage: "strategic_outcome_resolver".into(),
@@ -361,12 +360,13 @@ fn bind_outcomes(
                 .cloned()
                 .ok_or_else(|| anyhow!("outcome used an unknown action digest"))?;
             let effect = bind_effect(&proposal)?;
+            let summary = resolved_outcome_summary(campaign, &source_subject_id, &effect)?;
             Ok(StrategicActivityOutcome {
                 schema: "ghostlight.strategic_activity_outcome.v1".into(),
                 action_digest: proposal.action_digest,
                 source_subject_id,
                 band: proposal.band,
-                summary: proposal.summary,
+                summary,
                 supporting_state_references: proposal.supporting_state_references,
                 effect,
             })
@@ -470,6 +470,90 @@ fn bind_effect(proposal: &OutcomeProposal) -> Result<StrategicOutcomeEffect> {
             }
         }
     })
+}
+
+fn resolved_outcome_summary(
+    campaign: &Campaign,
+    source_subject_id: &str,
+    effect: &StrategicOutcomeEffect,
+) -> Result<String> {
+    let source_name = subject_name(campaign, source_subject_id)?;
+    let summary = match effect {
+        StrategicOutcomeEffect::NoMaterialChange { .. } => {
+            format!("{source_name}'s attempt produces no durable state change.")
+        }
+        StrategicOutcomeEffect::ResourceCreated { resource, .. } => {
+            format!("{source_name} creates and retains {resource}.")
+        }
+        StrategicOutcomeEffect::ResourceConsumed { resource, .. } => {
+            format!("{source_name} expends {resource}.")
+        }
+        StrategicOutcomeEffect::ResourceTransferred {
+            to_subject_id,
+            resource,
+            ..
+        } => format!(
+            "{source_name} transfers {resource} to {}.",
+            subject_name(campaign, to_subject_id)?
+        ),
+        StrategicOutcomeEffect::GestaltPressure {
+            gestalt_id,
+            pressure_additions,
+            pressure_resolutions,
+        } => {
+            let owner = subject_name(campaign, gestalt_id)?;
+            if let Some(pressure) = pressure_additions.first() {
+                format!("{owner} acquires pressure: {pressure}.")
+            } else if let Some(pressure) = pressure_resolutions.first() {
+                format!("{owner} resolves pressure: {pressure}.")
+            } else {
+                return Err(anyhow!("pressure outcome has no state transition"));
+            }
+        }
+        StrategicOutcomeEffect::AgencyRelationShift {
+            relation_id,
+            strength_delta,
+        } => {
+            format!("{source_name}'s attempt shifts relation {relation_id} by {strength_delta:+}.")
+        }
+        StrategicOutcomeEffect::MemberMemory { member_id, memory } => format!(
+            "{} retains a new memory: {memory}.",
+            subject_name(campaign, &format!("member:{member_id}"))?
+        ),
+        StrategicOutcomeEffect::MemberObligation {
+            member_id,
+            obligation,
+        } => format!(
+            "{} accepts an obligation: {obligation}.",
+            subject_name(campaign, &format!("member:{member_id}"))?
+        ),
+        StrategicOutcomeEffect::MemberRelationship {
+            member_id,
+            other_subject_id,
+            description,
+        } => format!(
+            "{}'s relationship with {} becomes: {description}.",
+            subject_name(campaign, &format!("member:{member_id}"))?,
+            subject_name(campaign, other_subject_id)?
+        ),
+        StrategicOutcomeEffect::KnowledgeLearned {
+            owner_subject_id,
+            fact_id,
+        } => format!(
+            "{} learns: {}.",
+            subject_name(campaign, owner_subject_id)?,
+            campaign
+                .facts
+                .get(fact_id)
+                .ok_or_else(|| anyhow!("knowledge outcome fact vanished"))?
+                .statement
+        ),
+    };
+    let summary = summary.chars().take(240).collect::<String>();
+    if !bounded_text(&summary, 240) {
+        return Err(anyhow!("derived strategic outcome summary is empty"));
+    }
+    Ok(summary)
 }
 
 impl OutcomeProposal {
@@ -1167,7 +1251,6 @@ mod tests {
                 "outcomes":[{
                     "action_digest":self.action_digest,
                     "band":"success",
-                    "summary":"The inspection confirms the western causeway remains open.",
                     "effect_kind":"knowledge_learned",
                     "supporting_state_references":["fact:fact:safe-route"],
                     "owner_subject_id":"dockers",
@@ -1382,6 +1465,10 @@ mod tests {
             outcomes[0].effect,
             StrategicOutcomeEffect::KnowledgeLearned { .. }
         ));
+        assert_eq!(
+            outcomes[0].summary,
+            "Dockers learns: the western causeway remains open."
+        );
         assert_eq!(stages.len(), 1);
         let requests = model.requests.lock().unwrap();
         assert_eq!(requests.len(), 1);
@@ -1396,6 +1483,7 @@ mod tests {
                 .lived_stream
                 .contains("never action_resolutions")
         );
+        assert!(requests[0].lived_stream.contains("Do not emit summary"));
         assert_eq!(
             requests[0].snapshot_binding,
             activity_outcome_binding(
