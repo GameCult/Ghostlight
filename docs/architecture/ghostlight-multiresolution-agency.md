@@ -488,6 +488,15 @@ the 1,000-subject target. Pressure goldens preserve geography under blockade,
 ideology under schism, workplace/economic role under strike, species/body and
 transport under epidemic, and information boundaries under espionage.
 
+The live Gestalt-dynamics harness has two modes. Its golden mode traverses
+budgets 1 → 4 → 8 → 4 and proves independent population/member migration plus
+automatic rematerialization of the same durable person. Its fairness mode keeps
+the whole 24-subject setting in one arena for 24 total strategic ticks. It
+requires every runtime-selected detail focus within the bound, rejects inactive
+lineage parents as simulation subjects, and repeats the identity/callback check
+after sustained compression. Both migration endpoints must be active leaves at
+lineage depth two or greater.
+
 The Starfire deployment smoke ran a live provider-backed wave over three
 eligible singleton cells, committed three offscreen events and three
 channel-accessible news items in 19.55 seconds, and preserved the absent player.

@@ -200,6 +200,17 @@ genuinely new but over-240-character posture twice. The existing canonical
 bound is now present in both the compact Interpreter contract and generated
 JSON Schema, and prompt guidance names it before generation.
 
+`gestalt-posture-bea5d6c-2` is the first complete strict golden. One budget-1
+rival arena covered 24 subjects; budgets then changed 4 → 8 → 4. The run
+committed 26 actions across 11 distinct background subjects, preserved Mira's
+identity through independent member and population journeys, and automatically
+rematerialized the same person at South Harbor. It completed in 90.345 seconds
+with 146,509 prompt tokens, a 40.97% cache-hit ratio, and 5,635 prompt tokens per
+committed action. Projector cache hit was 53.82%. The new stress mode can keep
+budget 1 for 23 additional waves, require all 24 debt-selected foci across the
+initial plus sustained ticks, reject inactive lineage parents, and repeat the
+callback after compression.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

@@ -104,6 +104,11 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or_else(|_| "gestalt-dynamics-refugee-return".into());
     let require_migration = std::env::var("GHOSTLIGHT_LIVE_FIRE_REQUIRE_MIGRATION")
         .is_ok_and(|value| value == "1" || value.eq_ignore_ascii_case("true"));
+    let fairness_stress_waves = std::env::var("GHOSTLIGHT_LIVE_FIRE_FAIRNESS_WAVES")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|value| (1..=31).contains(value))
+        .unwrap_or_default();
     let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
@@ -115,6 +120,11 @@ async fn main() -> anyhow::Result<()> {
         });
     std::fs::create_dir_all(&root)?;
     let campaign = dynamics_campaign();
+    let source_lineage_depth = lineage_depth(&campaign, "refugees-east")?;
+    let destination_lineage_depth = lineage_depth(&campaign, "harbor-neighbors")?;
+    if source_lineage_depth < 2 || destination_lineage_depth < 2 {
+        anyhow::bail!("refugee callback fixture lost its nested lineage depth")
+    }
     let player_before = campaign.actors[&campaign.player_actor_id].clone();
     let member_before = campaign.gestalt_members["mira-venn"].clone();
     let capabilities_before = effective_member_capabilities(&campaign, "mira-venn")?;
@@ -177,6 +187,14 @@ async fn main() -> anyhow::Result<()> {
         || root_cell.subject_ids.len() != 24
     {
         anyhow::bail!("whole-setting arena lost a rival population or canonical subject")
+    }
+    if root_cell.subject_ids.iter().any(|subject_id| {
+        campaign
+            .agency_profiles
+            .get(subject_id)
+            .is_none_or(|profile| !profile.active_leaf || !profile.simulation_eligible)
+    }) {
+        anyhow::bail!("whole-setting arena simulated an inactive lineage parent")
     }
     let migration_proposal = output
         .wave
@@ -252,6 +270,8 @@ async fn main() -> anyhow::Result<()> {
             "effective_budget":output.wave.cover.effective_budget,
             "cell_mode":root_cell.mode,
             "rivals_share_arena":true,
+            "source_lineage_depth":source_lineage_depth,
+            "destination_lineage_depth":destination_lineage_depth,
             "choice":"explicit_inaction",
             "migration_proposal":serde_json::Value::Null,
             "initial_background_action_count":background_action_count,
@@ -290,7 +310,13 @@ async fn main() -> anyhow::Result<()> {
     let mut sustained_waves = Vec::new();
     let mut background_subject_ids = BTreeSet::new();
     let mut detail_focus_subject_ids = BTreeSet::new();
-    for (wave_index, budget) in [4_u8, 8, 4].into_iter().enumerate() {
+    detail_focus_subject_ids.extend(root_cell.detail_focus_subject_id.clone());
+    let sustained_budgets = if fairness_stress_waves == 0 {
+        vec![4_u8, 8, 4]
+    } else {
+        vec![1_u8; fairness_stress_waves]
+    };
+    for (wave_index, budget) in sustained_budgets.into_iter().enumerate() {
         let control = kernel
             .command(WorldCommand::SetResolutionBudget {
                 expected_revision: advanced.revision,
@@ -403,6 +429,21 @@ async fn main() -> anyhow::Result<()> {
             background_subject_ids.len()
         )
     }
+    let fairness_missing_subject_ids = if fairness_stress_waves == 0 {
+        BTreeSet::new()
+    } else {
+        root_cell
+            .subject_ids
+            .difference(&detail_focus_subject_ids)
+            .cloned()
+            .collect::<BTreeSet<_>>()
+    };
+    if !fairness_missing_subject_ids.is_empty() {
+        anyhow::bail!(
+            "budget-one fairness stress omitted debt focus for {:?}",
+            fairness_missing_subject_ids
+        )
+    }
     let member_after_sustained = &advanced.gestalt_members["mira-venn"];
     if member_after_sustained.gestalt_id != "harbor-neighbors"
         || member_after_sustained.relationships != member_before.relationships
@@ -482,6 +523,10 @@ async fn main() -> anyhow::Result<()> {
         "initial_background_action_count":background_action_count,
         "sustained_background_subject_ids":background_subject_ids,
         "sustained_detail_focus_subject_ids":detail_focus_subject_ids,
+        "fairness_stress_waves":fairness_stress_waves,
+        "fairness_missing_subject_ids":fairness_missing_subject_ids,
+        "source_lineage_depth":source_lineage_depth,
+        "destination_lineage_depth":destination_lineage_depth,
         "sustained_waves":sustained_waves,
         "plan":plan,
         "commit":committed,
@@ -504,6 +549,31 @@ async fn main() -> anyhow::Result<()> {
     )?;
     println!("{}", serde_json::to_string_pretty(&result)?);
     Ok(())
+}
+
+#[cfg(windows)]
+fn lineage_depth(
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    leaf_id: &str,
+) -> anyhow::Result<usize> {
+    use std::collections::BTreeSet;
+
+    let mut current = leaf_id;
+    let mut depth = 0;
+    let mut seen = BTreeSet::new();
+    while let Some(lineage) = campaign.gestalt_lineages.values().find(|lineage| {
+        lineage
+            .child_gestalt_ids
+            .iter()
+            .any(|child| child == current)
+    }) {
+        if !seen.insert(lineage.parent_gestalt_id.as_str()) {
+            anyhow::bail!("gestalt lineage contains a cycle at {current}")
+        }
+        depth += 1;
+        current = &lineage.parent_gestalt_id;
+    }
+    Ok(depth)
 }
 
 #[cfg(windows)]
