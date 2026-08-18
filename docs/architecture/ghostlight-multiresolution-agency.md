@@ -569,6 +569,11 @@ graph. Migration, relation changes, fission, or activation can therefore break
 a leased cell and force replanning immediately. Cover validation reports empty,
 duplicate, disconnected, content-ID, and false-cohesion failures separately.
 
+Fairness accounting uses the same definition as canonical detail debt: an
+explicit aggregate `detail_focus_subject_id` and every singleton cell both
+receive direct resolution attention. A named focus is not required for a
+subject already receiving its own complete Persona pipeline.
+
 The run also exposes the next authority gap. Institution postures, population
 migration, clocks, and history changed canonically, but most Gestalt activities
 remain attributed attempts recorded as events. Over many ticks this can repeat

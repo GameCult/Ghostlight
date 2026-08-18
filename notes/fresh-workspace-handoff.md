@@ -271,6 +271,12 @@ A regression constructs a still-leased formerly connected cover whose groups
 are disconnected under the current graph. Validation now names the exact cover
 fault instead of returning one generic invalid-cell message.
 
+The fixed budget-4 run then completed all 24 ticks but the harness falsely
+reported `relief-union` missing: that institution was a singleton in every
+cover, so `advance_detail_debt` correctly treated it as directly resolved while
+the harness counted only explicit aggregate focus labels. Acceptance now uses
+the canonical union of explicit focus plus singleton subjects.
+
 Do not call setting-wide material agency finished yet. Most population output
 is still an attributed `gestalt_activity` attempt stored as history. The long
 run became repetitive around ferry loading and shelter requests because no

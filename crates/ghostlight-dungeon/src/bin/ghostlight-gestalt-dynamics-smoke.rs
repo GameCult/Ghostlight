@@ -375,7 +375,7 @@ async fn main() -> anyhow::Result<()> {
     let mut rejected_wave_pulses = Vec::new();
     let mut background_subject_ids = BTreeSet::new();
     let mut detail_focus_subject_ids = BTreeSet::new();
-    detail_focus_subject_ids.extend(root_cell.detail_focus_subject_id.clone());
+    detail_focus_subject_ids.extend(direct_resolution_subject_ids(&output.wave.cover.cells));
     let sustained_budgets = if fairness_stress_waves == 0 {
         vec![4_u8, 8, 4]
     } else {
@@ -474,14 +474,9 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        detail_focus_subject_ids.extend(
-            sustained_output
-                .wave
-                .cover
-                .cells
-                .iter()
-                .filter_map(|cell| cell.detail_focus_subject_id.clone()),
-        );
+        detail_focus_subject_ids.extend(direct_resolution_subject_ids(
+            &sustained_output.wave.cover.cells,
+        ));
         for stage in &sustained_output.stages {
             store.insert(
                 "persona_stage_receipt.v1",
@@ -677,6 +672,22 @@ fn lineage_depth(
         current = &lineage.parent_gestalt_id;
     }
     Ok(depth)
+}
+
+#[cfg(windows)]
+fn direct_resolution_subject_ids(
+    cells: &[ghostlight_dungeon::domain::SimulationCell],
+) -> std::collections::BTreeSet<String> {
+    cells
+        .iter()
+        .filter_map(|cell| cell.detail_focus_subject_id.clone())
+        .chain(
+            cells
+                .iter()
+                .filter(|cell| cell.subject_ids.len() == 1)
+                .flat_map(|cell| cell.subject_ids.iter().cloned()),
+        )
+        .collect()
 }
 
 #[cfg(windows)]
