@@ -107,6 +107,13 @@ through a deterministic kernel tick without a model call or fabricated Persona
 cell. A regression proves two missed ticks advance time and the clock while
 leaving the player byte-identical.
 
+The compiler approval boundary no longer publishes branch-local or provisional
+fact statements. Those are knowledge-gated world state, including facts that
+may later be discovered at a visible location; showing them under an operator-
+spoiler disclosure let the player bypass discovery before approving the seed.
+The approval surface retains topology, cast, institutions, populations, clocks,
+role capabilities, evidence coverage, gaps, and branch assumptions.
+
 Multiplayer remains outside the current paid-alpha gate but is now an explicit
 architectural intention. Do not fork the simulation into a multiplayer room
 model. After the solo product and Gestalt agency are proven, extend campaign

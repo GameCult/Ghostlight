@@ -172,6 +172,13 @@ advance atomically while the player remains untouched. The scheduler does not
 call the partitioner merely to discover an empty graph, and it retains the same
 live-turn commit exclusion as model-backed waves.
 
+Compiler approval is a player decision surface, not an operator spoiler
+surface. It exposes topology, public cast, institutions, populations, clocks,
+player-role capabilities, evidence coverage, gaps, and branch assumptions. It
+does not project branch-local or provisional fact statements—even when they are
+discoverable later. Those facts remain canonical inputs to knowledge-gated play
+and operator inspection; the browser cannot reveal them before discovery.
+
 `gestalt_migration` records a collective decision by one exact active leaf to
 move along an explicit migration relation and reachable route. WorldKernel
 changes the leaf's home location and agency-profile location together. The

@@ -14,8 +14,8 @@ use ghostlight_dungeon::{
         SuggestedOpenings, SuggestedRoles, WorldCompiler,
     },
     domain::{
-        ActionIntent, Campaign, FactScope, GestaltFissionPreview, NarrationProjection,
-        RegionExpansionPreview, RejectedProposalReceipt, WorldCommand, WorldCompilePreview,
+        ActionIntent, Campaign, GestaltFissionPreview, NarrationProjection, RegionExpansionPreview,
+        RejectedProposalReceipt, WorldCommand, WorldCompilePreview,
     },
     gestalt::GestaltPresencePlanner,
     kernel::{CommandResult, KernelError},
@@ -1315,19 +1315,6 @@ fn world_compile_preview_projection(preview: &WorldCompilePreview) -> serde_json
             })
         })
         .collect::<Vec<_>>();
-    let branch_facts = campaign
-        .facts
-        .values()
-        .filter(|fact| fact.scope != FactScope::CanonBaseline)
-        .map(|fact| {
-            serde_json::json!({
-                "id":fact.id,
-                "scope":fact.scope,
-                "statement":fact.statement,
-                "discoverable_at_location_ids":fact.discoverable_at_location_ids,
-            })
-        })
-        .collect::<Vec<_>>();
     serde_json::json!({
         "schema":preview.schema,
         "title":preview.title,
@@ -1348,7 +1335,6 @@ fn world_compile_preview_projection(preview: &WorldCompilePreview) -> serde_json
         "evidence_coverage":preview.evidence_coverage,
         "gaps":preview.gaps,
         "branch_assumptions":preview.branch_assumptions,
-        "branch_facts":branch_facts,
         "requires_approval":preview.requires_approval,
     })
 }
@@ -2460,6 +2446,16 @@ mod tests {
         player
             .relationships
             .insert("hidden".into(), "distrust".into());
+        campaign.facts.insert(
+            "branch-secret".into(),
+            ghostlight_dungeon::domain::WorldFact {
+                id: "branch-secret".into(),
+                statement: "The apparent ally caused the disaster.".into(),
+                scope: ghostlight_dungeon::domain::FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from(["room".into()]),
+            },
+        );
         let preview = WorldCompilePreview {
             schema: "ghostlight.world_compile_preview.v1".into(),
             title: "Approval preview".into(),
@@ -2482,6 +2478,9 @@ mod tests {
             "\"memories\":",
             "\"relationships\":",
             "\"model_receipts\":",
+            "\"branch_facts\":",
+            "branch-secret",
+            "The apparent ally caused the disaster.",
         ] {
             assert!(!encoded.contains(private_key), "leaked {private_key}");
         }
