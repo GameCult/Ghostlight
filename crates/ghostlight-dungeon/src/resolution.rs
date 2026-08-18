@@ -576,7 +576,7 @@ pub fn plan_cover(campaign: &Campaign, demand: ResolutionDemand) -> Result<Resol
         eprintln!("partition cells: {:?}", trace_started.elapsed());
     }
     cells = preserve_previous_cover(
-        campaign, &profiles, &scoring, &demand, &mandatory, target, cells,
+        campaign, &profiles, &graph, &scoring, &demand, &mandatory, target, cells,
     );
     validate_cover_with_graph(campaign, &demand, &cells, &graph)?;
     if trace {
@@ -716,6 +716,7 @@ fn breaks_together_pin(
 fn preserve_previous_cover(
     campaign: &Campaign,
     profiles: &BTreeMap<String, AgencyProfile>,
+    graph: &DerivedAgencyGraph,
     scoring: &ScoringCache,
     demand: &ResolutionDemand,
     mandatory: &BTreeSet<String>,
@@ -729,11 +730,10 @@ fn preserve_previous_cover(
     }) else {
         return candidate;
     };
-    if previous
-        .cells
-        .iter()
-        .any(|cell| cell.subject_ids.len() > 1 && !cell.subject_ids.is_disjoint(mandatory))
-    {
+    if previous.cells.iter().any(|cell| {
+        cell.subject_ids.len() > 1
+            && (!cell.subject_ids.is_disjoint(mandatory) || !connected(graph, &cell.subject_ids))
+    }) {
         return candidate;
     }
     let expected: BTreeSet<_> = profiles.keys().cloned().collect();
@@ -1414,21 +1414,44 @@ fn validate_cover_with_graph(
         .collect();
     let mut actual = BTreeSet::new();
     for cell in cells {
-        if cell.subject_ids.is_empty()
-            || cell.subject_ids.iter().any(|id| !actual.insert(id.clone()))
-            || (cell.subject_ids.len() > 1 && !connected(graph, &cell.subject_ids))
-            || cell.id != cell_id(&cell.subject_ids, &cell.mode)
-            || (cell.mode == SimulationCellMode::Cohesive
-                && classify_and_score(
-                    campaign,
-                    &campaign.agency_profiles,
-                    &scoring,
-                    &cell.subject_ids,
-                    demand,
-                )
-                .0 != SimulationCellMode::Cohesive)
+        if cell.subject_ids.is_empty() {
+            return Err(anyhow!("resolution cell {} is empty", cell.id));
+        }
+        if let Some(duplicate) = cell
+            .subject_ids
+            .iter()
+            .find(|id| !actual.insert((*id).clone()))
         {
-            return Err(anyhow!("resolution cover contains an invalid cell"));
+            return Err(anyhow!(
+                "resolution subject {duplicate} appears in more than one cell"
+            ));
+        }
+        if cell.subject_ids.len() > 1 && !connected(graph, &cell.subject_ids) {
+            return Err(anyhow!(
+                "resolution cell {} is disconnected in the current agency graph",
+                cell.id
+            ));
+        }
+        if cell.id != cell_id(&cell.subject_ids, &cell.mode) {
+            return Err(anyhow!(
+                "resolution cell {} does not match its subjects and mode",
+                cell.id
+            ));
+        }
+        if cell.mode == SimulationCellMode::Cohesive
+            && classify_and_score(
+                campaign,
+                &campaign.agency_profiles,
+                &scoring,
+                &cell.subject_ids,
+                demand,
+            )
+            .0 != SimulationCellMode::Cohesive
+        {
+            return Err(anyhow!(
+                "resolution cell {} claims collective agency without current cohesive authority",
+                cell.id
+            ));
         }
     }
     if actual != expected {
@@ -2798,6 +2821,51 @@ pub(crate) mod tests {
             plan_cover(&value, demand.clone()).unwrap(),
             plan_cover(&value, demand).unwrap()
         );
+    }
+
+    #[test]
+    fn lease_cannot_preserve_a_cell_disconnected_by_current_topology() {
+        let mut value = campaign(4, 2);
+        let demand = default_demand(&value, "topology changed beneath the lease");
+        let profiles = value.agency_profiles.clone();
+        let scoring = ScoringCache::new(&value, &profiles);
+        let stale_groups = [
+            BTreeSet::from(["faction-0000".into(), "faction-0002".into()]),
+            BTreeSet::from(["faction-0001".into(), "faction-0003".into()]),
+        ];
+        let stale_cells = stale_groups
+            .into_iter()
+            .map(|subject_ids| {
+                let (mode, merge_loss) =
+                    classify_and_score(&value, &profiles, &scoring, &subject_ids, &demand);
+                SimulationCell {
+                    schema: "ghostlight.simulation_cell.v1".into(),
+                    id: cell_id(&subject_ids, &mode),
+                    mode,
+                    subject_ids,
+                    merge_loss,
+                    rationale: "previously connected partition".into(),
+                    lease_until_world_revision: value.revision + 5,
+                    lease_until_strategic_tick: value.strategic_tick_count + 2,
+                    detail_focus_subject_id: None,
+                }
+            })
+            .collect::<Vec<_>>();
+        value.resolution_cover = Some(ResolutionCover {
+            schema: "ghostlight.resolution_cover.v1".into(),
+            campaign_id: value.id,
+            world_revision: value.revision,
+            resolution_epoch: value.resolution_policy.resolution_epoch,
+            configured_budget: 2,
+            effective_budget: 2,
+            mandatory_overage: 0,
+            cells: stale_cells.clone(),
+            demand: demand.clone(),
+        });
+
+        let cover = plan_cover(&value, demand).unwrap();
+        validate_cover(&value, &cover.demand, &cover.cells).unwrap();
+        assert_ne!(cover.cells, stale_cells);
     }
 
     #[test]

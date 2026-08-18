@@ -563,6 +563,12 @@ either control only when its value actually differs, so repeated strategic
 ticks preserve the previous cover, leases, and churn history. Stress runs may
 select cell budget and provider parallelism independently.
 
+A lease preserves a cut, not invalid topology. Before reusing a previous cover,
+the partitioner revalidates every multi-subject cell against the current agency
+graph. Migration, relation changes, fission, or activation can therefore break
+a leased cell and force replanning immediately. Cover validation reports empty,
+duplicate, disconnected, content-ID, and false-cohesion failures separately.
+
 The run also exposes the next authority gap. Institution postures, population
 migration, clocks, and history changed canonically, but most Gestalt activities
 remain attributed attempts recorded as events. Over many ticks this can repeat

@@ -262,6 +262,15 @@ profiles. Rerun the long budget-one case before treating its cache or churn
 numbers as the lease-preserving baseline; its agency/fairness result remains
 valid.
 
+The first lease-preserving budget-4 run committed two waves, then deterministically
+failed every pulse because migration had changed graph adjacency while an old
+leased cell remained. The old harness's redundant epoch churn had hidden this.
+`preserve_previous_cover` now rejects any previous multi-subject cell that is
+disconnected in the current derived graph and falls back to the fresh candidate.
+A regression constructs a still-leased formerly connected cover whose groups
+are disconnected under the current graph. Validation now names the exact cover
+fault instead of returning one generic invalid-cell message.
+
 Do not call setting-wide material agency finished yet. Most population output
 is still an attributed `gestalt_activity` attempt stored as history. The long
 run became repetitive around ferry loading and shelter requests because no
