@@ -56,6 +56,7 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
       "type":"surface-state", "schema":"gamecult.eve.surface.v1", "providerId":"gamecult.ghostlight.dungeon",
       "providerKind":"narrative.simulation", "title":campaign.name, "version":interface_version,
       "world_revision":campaign.revision,
+      "player_actor_id":campaign.player_actor_id,
       "resolution":{
         "policy":campaign.resolution_policy,
         "effective_budget":effective_budget,
@@ -294,5 +295,18 @@ mod tests {
             ]
         );
         assert!(!values.iter().any(|value| value.contains("raw outcome")));
+    }
+
+    #[test]
+    fn player_surface_projects_the_canonical_player_actor_id() {
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        let mut player = campaign.actors.remove("player").unwrap();
+        player.id = "pilot-nyx".into();
+        campaign.player_actor_id = player.id.clone();
+        campaign.actors.insert(player.id.clone(), player);
+
+        let surface = player_surface(&campaign, &[]);
+
+        assert_eq!(surface["player_actor_id"], "pilot-nyx");
     }
 }

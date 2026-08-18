@@ -12,6 +12,7 @@ const compilerResults = document.querySelector<HTMLElement>("#compiler-results")
 const campaignLab = document.querySelector<HTMLElement>("#campaign-lab")!;
 const campaignList = document.querySelector<HTMLElement>("#campaign-list")!;
 let revision = 0;
+let playerActorId = "";
 let resolutionEpoch = 0;
 let providerConfigurationEpoch = 0;
 let resolutionPins: any[] = [];
@@ -102,6 +103,8 @@ async function refresh() {
   compiler.hidden = !needsCompilation; composer.hidden = needsCompilation; destinationForm.hidden = needsCompilation; host.hidden = needsCompilation; campaignLab.hidden = needsCompilation;
   if (needsCompilation) { status.textContent = "No campaign exists. Retrieve the Vault and approve a world seed."; return; }
   revision = Number(surface.world_revision ?? surface.version ?? 0);
+  playerActorId = String(surface.player_actor_id ?? "");
+  if (!playerActorId) throw new Error("Campaign surface omitted its canonical player actor ID.");
   resolutionEpoch = Number(surface.resolution?.policy?.resolution_epoch ?? 0);
   providerConfigurationEpoch = Number(surface.resolution?.policy?.provider_configuration_epoch ?? 0);
   resolutionPins = surface.resolution?.pins ?? [];
@@ -229,7 +232,7 @@ composer.addEventListener("submit", async event => {
   event.preventDefault();
   const text = document.querySelector<HTMLTextAreaElement>("#attempt")!.value.trim();
   if (!text) return;
-  installAssessment(await send({ type: "assess", expected_revision: revision, intent: { actor_id: "player", description: text, intended_effect: text } }));
+  installAssessment(await send({ type: "assess", expected_revision: revision, intent: { actor_id: playerActorId, description: text, intended_effect: text } }));
 });
 document.querySelector<HTMLButtonElement>("#wait")!.addEventListener("click", () => void send({ type: "wait", expected_revision: revision, minutes: 60 }));
 document.querySelector<HTMLInputElement>("#active-cell-budget")!.addEventListener("input", event => {
