@@ -49,8 +49,8 @@ foundation checklist below. Existing Ghostlight fixtures remain regression
 evidence.
 
 The active immutable release is
-`73b748e183d4c05e6e0ce5442a860394ab25cd0a`, binary SHA-256
-`48a3ffa00e24cf23ac5c82e23af0c7f5e5b0be37a08de5ccec468a97637587df`.
+`e55984c22703539f72157da652d670c54ff76580`, binary SHA-256
+`22c096f5bbb2f49353be482d3fae017907c30dba247e5bae5c2988a87bb493ee`.
 Manifest, process, typed health, persisted campaign count, CultMesh store,
 DeepSeek startup inference, and VoidBot retrieval agree. Periwinkle proved the
 private-LAN route and unauthenticated 401; Raven and Yggdrasil independently
