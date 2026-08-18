@@ -23,6 +23,14 @@ Vault evidence receipts + typed campaign snapshot
 Ghostlight owns the generalized projection organ. Epiphany and other consumers
 own their canonical Persona state and consequence commits.
 
+The current player surface assigns one human session to one single-player
+campaign. That is product scope, not kernel identity. The intended multiplayer
+extension maps authenticated campaign members to distinct canonical actors and
+routes every human command through this same mailbox and WorldKernel. Each
+player receives an actor-permitted narrative projection; no party prompt or
+shared client state becomes a second world authority. The bounded intention is
+mapped in `docs/architecture/ghostlight-dungeon-multiplayer-intention.md`.
+
 Build provenance has one owner: `crates/ghostlight-dungeon/build.rs` binds the
 exact source commit into the binary. Its inputs are either the release tool's
 explicit clean-tree commit or Git HEAD; it watches the actual symbolic ref,

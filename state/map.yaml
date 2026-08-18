@@ -10,10 +10,12 @@ experiment:
 
 mission:
   ghostlight_dungeon: >
-    Build a persistent, Vault-grounded single-player narrative simulation whose
-    WorldKernel exclusively owns revisioned world state, while generalized
+    Build a persistent, Vault-grounded narrative simulation whose WorldKernel
+    exclusively owns revisioned world state, while generalized
     Projector-Persona-Interpreter machinery produces bounded proposals for the
-    kernel to validate.
+    kernel to validate. The paid-alpha surface is single-player; the durable
+    authority model intentionally admits multiple authenticated humans as
+    controllers of distinct canonical actors later.
   primary: >
     Generate psychologically grounded branching scenes, dialogue, actions,
     social consequences, and eventually storylines, consumer behavior,
@@ -84,6 +86,7 @@ live_architecture:
     - Budget and pins own `resolution_epoch`; provider concurrency owns a separate configuration epoch and cannot repartition or advance fiction.
     - Approval-gated gestalt fission creates explicit child leaves plus `other/unknown`, preserves inactive parent lineage, and never erases member deltas.
     - Existing v0 training fixtures are regression evidence and have no runtime write authority.
+    - Multiplayer is a post-solo extension of the same campaign mailbox and WorldKernel, not a parallel room-state or party-prompt authority. The intention and unresolved governance policy live in `docs/architecture/ghostlight-dungeon-multiplayer-intention.md`.
   persistence_spine:
     - The hosted runtime uses Rust CultCache/redb `.cc` stores: one store per campaign plus service auth and CultMesh stores.
     - `state/ghostlight-state.cultcache.jsonl`, `state/branches.json`, and `state/evidence.jsonl` belong to the older research pipeline and have no hosted runtime authority.

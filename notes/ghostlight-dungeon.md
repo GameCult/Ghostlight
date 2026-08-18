@@ -288,5 +288,5 @@ Publish JSON Schema only as the schema catalog. Runtime documents and exports us
 - Aetheria is the only bundled Vault adapter, but no compiler logic is Aetheria-specific.
 - Generated suggestions plus unrestricted custom compilation replace fixed featured openings.
 - No D&D classes, spell slots, six-ability statistics, or 5e sheet are canonical in the MVP. The typed character ledger remains sufficient for later D&D-shaped projections.
-- No arbitrary Vault upload/import UI, multiplayer campaign, voice, image generation, direct canon mutation, or public internet exposure.
+- No arbitrary Vault upload/import UI, multiplayer campaign, voice, image generation, direct canon mutation, or public internet exposure in the MVP. Multiplayer is an intended extension of the existing one-kernel/many-actors authority model and is documented separately; it does not expand this acceptance plan.
 - The live deployment requires a DeepSeek key and restoration of the trusted VoidBot retrieval crossing; fixture-backed development may proceed before those two setup gates.

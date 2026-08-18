@@ -1,149 +1,113 @@
 # Ghostlight
 
-Ghostlight is a research and implementation home for socially persistent
-generative agents.
+Ghostlight builds persistent generative people and worlds. Its active product is
+[Ghostlight Dungeon](https://ghostlight.gamecult.org): a Vault-grounded narrative
+simulation in which places, knowledge, relationships, institutions, clocks, and
+consequences survive beyond the model's current context.
 
-The project is about characters and simulated people who remain coherent across
-time, routine, pressure, memory, culture, misreading, masks, incentives, and
-changing relationships. The aim is not to make a language model sound charming
-for one scene. The aim is to build machinery that can track who someone is,
-what they believe, what they hide, how they see other people, how they live when
-nothing is exploding, and how their behavior changes when the world leans on
-them.
+The project began as a research and fixture pipeline for socially persistent
+Aetheria agents. That material remains useful regression evidence. The live
+machine is now a Rust runtime with typed campaign state, one canonical world
+authority, bounded Persona projection, fiction-first action resolution, and a
+multiresolution agency graph for keeping large settings active at finite cost.
 
-In practical terms, Ghostlight is building the state and projection layer for
-character-driven generation:
+## What Ghostlight Owns
 
-- durable canonical character state
-- observer-specific perceived state
-- directional relationship stance
-- cultural and institutional pressure
-- memory and goal selection
-- speaker-local prompt projection
-- evaluation targets for emergent verbal behavior
-- a future path for training smaller specialist projection models
-
-The first concrete consumer is Aetheria authoring support, especially Call of
-the Void content generation, dialogue scaffolding, and procedural drama for
-narrated stories in the Aetheria timeline.
-
-## Core Idea
-
-Ghostlight separates three things that are easy to blur together:
-
-1. **Canonical state**
-   What is true about a character, relationship, event, memory, or scene.
-
-2. **Perceived state**
-   What a particular observer thinks is true, including misreadings,
-   attribution bias, suspicion, trust, projection, and partial knowledge.
-
-3. **Prompt projection**
-   A temporary speaker-local prompt surface for one scene or turn.
-
-The prompt is not the character. The prompt is a rendered slice of state.
-
-That distinction matters because believable dialogue should come from character
-circumstance, not vibes. Sometimes that circumstance is acute pressure. Often it
-is habit, boredom, affection, work rhythm, class embarrassment, ritual memory,
-professional competence, petty irritation, or ordinary warmth trying to survive
-inside a bleak system. Cat being sarcastic should fall out of shame sensitivity,
-distance seeking, suspicion, relationship tension, scene stakes, and voice.
-Oz withholding information should fall out of mask rigidity, privacy pressure,
-relationship fear, and the need to stay useful. A quiet joke, a domestic aside,
-or a moment of tenderness should be just as explainable in state terms as a
-threat. The system should be able to show its work without making every scene
-sound like Greg Egan having a panic attack in a server closet.
+- `WorldKernel` is the sole owner of committed campaign state and revisions.
+- Every player command, NPC action, strategic tick, wait, import, and reload
+  enters the same validated campaign mailbox and atomic CultCache commit path.
+- Vault evidence grounds world compilation; branch-local invention remains
+  distinct from canon.
+- Projector → Persona → Interpreter turns produce proposals. Models never
+  commit world state.
+- Knowledge, perception, capability, location, custody, and authority are
+  validated against the exact actor proposing an action.
+- Fiction-first d20 resolution treats player text as an attempt rather than an
+  accomplished fact.
+- Multiresolution Gestalts keep people, institutions, and factions active under
+  a bounded Persona-cell budget without merging rivals into one mind or erasing
+  named individuals.
+- Away-time simulation advances clocks and remote agency without puppeting or
+  directly harming an absent player character.
+- CultMesh publishes typed service and Eve/CultUI state; the browser lowers that
+  surface and does not become a second state authority.
 
 ## Current Status
 
-Ghostlight is early architecture plus executable schema seams.
+Ghostlight Dungeon is implemented and deployed as a private Starfire-hosted
+playtest harness. The current acceptance surface covers:
 
-Currently present:
+- source-grounded world compilation with approval previews;
+- persistent campaigns, forks, resets, exports, and isolated invite sessions;
+- parallel affected-character Projector/Persona/Interpreter waves;
+- impossible-action refusal, assessed stakes, server-side rolls, and receipted
+  commits;
+- strategic clocks, away-time catch-up, institution activity, migration, and
+  information-channel-aware news;
+- connected cohesive and arena simulation covers at budgets from 1 to 32;
+- Gestalt materialisation, folding, member deltas, migration, and later
+  rematerialisation of the same person;
+- atomic rejection of malformed, stale, or semantically invalid model waves;
+- provider, token, cache, latency, validation, state-version, and build receipts;
+- exact-build deployment and restart verification on Starfire.
 
-- v0 canonical agent-state schema
-- required variable lists for state families and relationship stance
-- Call of the Void-flavored Cat/Oz fixture
-- dependency-free fixture validator
-- prompt projection contract
-- projection distillation plan for teacher/student projector training
-- persistence surfaces for re-entry, evidence, planning, and compaction hygiene
+The immediate forge work is pressure-testing whether multiresolution Gestalts
+produce satisfying setting-wide activity, callbacks, and surprises per token,
+then running the two-tester paid-alpha path. The public site is provisional;
+checkout is not live.
 
-Not present yet:
+## Multiplayer Intention
 
-- runtime prompt renderer
-- projection training dataset
-- student projection model
-- event/classifier pipeline
-- simulation loop
-- relationship update engine
-- culture prior engine
+The first paid alpha remains single-player. Multiplayer is an intended extension
+of the existing authority model, not a separate chat mode.
 
-## How Projection Is Supposed To Work
+A campaign will continue to have one `WorldKernel`. Authenticated human sessions
+will control distinct canonical actors, and every human or Persona proposal will
+enter the same campaign mailbox. Each player receives a perception-specific
+narrative projection; private knowledge is never unioned into a party prompt.
+Splitting the party therefore changes occupancy and perception without creating
+contradictory copies of the world.
 
-For one speaker in one scene, Ghostlight should gather speaker-local state:
+The durable intention and unresolved social-policy questions are recorded in
+[`docs/architecture/ghostlight-dungeon-multiplayer-intention.md`](docs/architecture/ghostlight-dungeon-multiplayer-intention.md).
+It does not expand the current MVP acceptance promise.
 
-- what the speaker knows
-- what they believe
-- what they want
-- what they are protecting
-- what memories are active
-- how they read the listener
-- what the relationship currently feels like
-- what circumstance the scene creates: routine, desire, scarcity, humor,
-  tenderness, danger, institutional friction, or open crisis
-- what voice surface is active
+## Architecture
 
-The projection layer turns that into compact character-local prose and prompt
-sections. The dialogue model then writes from the active circumstance and tonal
-mode, not from a universal crisis register.
+The shortest reliable re-entry path is:
 
-Longer term, a frontier model can act as a teacher projector that generates
-reviewed projection artifacts. Those artifacts can train a smaller student
-projector once the projection schema, deterministic input slicer, and evaluator
-are stable.
+- [`docs/architecture/ghostlight-dungeon-mvp.md`](docs/architecture/ghostlight-dungeon-mvp.md): runtime authority, compiler, action loop, persistence, hosting, and security;
+- [`docs/architecture/ghostlight-multiresolution-agency.md`](docs/architecture/ghostlight-multiresolution-agency.md): dynamic Gestalt partitioning, cohesive and arena cells, fairness, and atomic strategic waves;
+- [`notes/ghostlight-current-system-map.md`](notes/ghostlight-current-system-map.md): current implemented pipeline;
+- [`notes/ghostlight-implementation-plan.md`](notes/ghostlight-implementation-plan.md): live sequence and next pressure tests;
+- [`state/map.yaml`](state/map.yaml): canonical human-readable project state.
 
-## Repo Tour
+## Repository Shape
 
-- `AGENTS.md`: operating discipline for humans and agents
-- `state/map.yaml`: canonical project map and current next action
-- `state/scratch.md`: disposable working memory for one bounded subgoal
-- `state/evidence.jsonl`: distilled belief-changing evidence
-- `notes/fresh-workspace-handoff.md`: compact re-entry packet
-- `notes/ghostlight-current-system-map.md`: current repo machinery
-- `notes/ghostlight-implementation-plan.md`: larger implementation sequence
-- `notes/architecture-rationale.md`: why the persistence and state split exists
-- `docs/research/`: research backlog and modeling notes
-- `docs/aetheria/`: Aetheria source material used by Ghostlight
-- `docs/architecture/`: state, projection, and authoring architecture
-- `schemas/`: JSON schema contracts and required field lists
-- `examples/`: schema fixtures and future projection examples
-- `tools/ghostlight_state.py`: state inspection and evidence helper
-- `tools/ghostlight_prepare_compaction.py`: pre-compaction audit helper
-- `tools/validate_agent_state.py`: focused fixture validator
+- `crates/ghostlight-dungeon/`: Rust daemon, kernel, compiler, persistence,
+  provider stages, web lowerer, and acceptance harnesses;
+- `crates/ghostlight-persona-projection/`: generalized projection membrane owned
+  by Ghostlight and consumed by Epiphany;
+- `docs/architecture/`: durable contracts and authority maps;
+- `docs/articles/`: accessible public explanations;
+- `notes/`: implementation planning, handoff, and current-system maps;
+- `schemas/`: published JSON Schemas for typed boundary documents;
+- `examples/`: earlier fixtures and regression material;
+- `state/`: human-readable project memory plus older research-pipeline state;
+- `tools/`: state, validation, and fixture helpers.
+
+Runtime documents and campaign exports use MessagePack-backed CultCache `.cc`.
+JSON exists at schema publication, browser, MCP, model-provider, and diagnostic
+boundaries; it is not the canonical hosted state store.
 
 ## Useful Commands
 
 ```powershell
+cargo test --workspace
 npm run state:status
 npm run state:prepare-compaction
 npm run schema:validate
 ```
 
-To add distilled evidence:
-
-```powershell
-& 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' '.\tools\ghostlight_state.py' add-evidence --type design --status accepted --note '...'
-```
-
-## Best Starting Points
-
-- `docs/architecture/canonical-agent-state-schema.md`
-- `docs/architecture/cultnet-shared-agent-state-contract.md`
-- `docs/architecture/agent-state-variable-glossary.md`
-- `docs/architecture/prompt-projection-contract.md`
-- `docs/architecture/projection-distillation-plan.md`
-- `examples/agent-state.call-of-the-void.json`
-
-For Codex-driven work, read `AGENTS.md` before changing the repo. It contains
-the working rules that keep the project state coherent between sessions.
+For Codex-driven work, read `AGENTS.md` before changing the repository. It owns
+the persistence, grounding, verification, and handoff discipline.

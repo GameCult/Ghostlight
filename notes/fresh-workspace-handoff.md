@@ -63,6 +63,14 @@ populations never merge; only the derived simulation cover does. Budget/pin
 changes use `resolution_epoch`, provider parallelism uses its own configuration
 epoch, and neither advances fictional time.
 
+The paid-alpha scope remains single-player, but single-player is not a kernel
+invariant. `docs/architecture/ghostlight-dungeon-multiplayer-intention.md`
+records the intended later extension: multiple authenticated humans control
+distinct actors through the same mailbox, perception gates, initiative, and
+atomic WorldKernel commit path. It introduces no party prompt, room-state
+authority, or current implementation work. The forge remains focused on proving
+that multiresolution Gestalts preserve agency and produce satisfying surprises.
+
 The current acceptance candidate adds a bounded population activity vocabulary
 for preparation, coordination, investigation, recruitment, obstruction,
 trade, and communication. Each action is constituent-attributed, graph- and

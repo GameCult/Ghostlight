@@ -84,6 +84,14 @@ misplaced authority. Use model-stage cache usage, rejection receipts, cover
 plans, outcomes, and world commits to improve satisfaction and cognitive
 efficiency without weakening state admission.
 
+Multiplayer remains outside the current paid-alpha gate but is now an explicit
+architectural intention. Do not fork the simulation into a multiplayer room
+model. After the solo product and Gestalt agency are proven, extend campaign
+membership so authenticated humans control distinct canonical actors through
+the existing mailbox, perception gates, initiative, and atomic commit path. The
+authority map and unresolved consent/governance questions live in
+`docs/architecture/ghostlight-dungeon-multiplayer-intention.md`.
+
 ## Prior research-program phase
 
 Build a reliable data-generation loop for socially persistent Aetheria agents.

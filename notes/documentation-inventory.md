@@ -20,6 +20,9 @@ not slowly melt into one cursed binder.
 - `docs/architecture/ghostlight-multiresolution-agency.md`: dynamic agency
   graph, connected cohesive/arena covers, detail fairness, cell waves, fission,
   controls, and atomicity.
+- `docs/architecture/ghostlight-dungeon-multiplayer-intention.md`: bounded
+  post-MVP extension of the campaign kernel to multiple human-controlled actors,
+  including authority, privacy, concurrency, and unresolved social policy.
 - `docs/architecture/canonical-agent-state-schema.md`: canonical state model.
 - `docs/architecture/agent-state-variable-glossary.md`: meanings for state
   axes, voice style, overlays, and emergent behaviors.
