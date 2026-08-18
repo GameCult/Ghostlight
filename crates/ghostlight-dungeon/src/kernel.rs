@@ -61,6 +61,18 @@ pub struct WorldKernel {
 }
 
 impl WorldKernel {
+    pub fn initialize_campaign(
+        store: &CampaignStore,
+        command: WorldCommand,
+    ) -> Result<CommandResult, KernelError> {
+        if !matches!(command, WorldCommand::CreateCampaign { .. }) {
+            return Err(KernelError::Invalid(
+                "campaign initialization accepts only CreateCampaign".into(),
+            ));
+        }
+        execute(store, &mut BTreeMap::new(), command)
+    }
+
     pub fn start(store: CampaignStore) -> Self {
         let (tx, mut rx) = mpsc::channel::<Request>(64);
         tokio::spawn(async move {

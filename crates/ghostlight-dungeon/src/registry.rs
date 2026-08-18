@@ -121,29 +121,41 @@ impl CampaignRegistry {
             return Err(anyhow!("campaign already exists"));
         }
         let directory = self.root.join(campaign.id.to_string());
-        fs::create_dir(&directory)?;
-        let store = CampaignStore::open(directory.join("campaign.cc"))?;
+        if directory.exists() {
+            return Err(anyhow!("campaign directory already exists"));
+        }
+        let staging = self
+            .root
+            .join(format!(".creating-{}-{}", campaign.id, Uuid::new_v4()));
+        fs::create_dir(&staging)?;
+        let prepared = (|| -> Result<()> {
+            let store = CampaignStore::open(staging.join("campaign.cc"))?;
+            WorldKernel::initialize_campaign(
+                &store,
+                crate::domain::WorldCommand::CreateCampaign {
+                    campaign: campaign.clone(),
+                    evidence_receipts: evidence,
+                    model_stage_receipts: model_receipts,
+                },
+            )
+            .map_err(|error| anyhow!(error.to_string()))?;
+            drop(store);
+            fs::rename(&staging, &directory)?;
+            Ok(())
+        })();
+        if let Err(error) = prepared {
+            cleanup_staging_directory(&self.root, &staging);
+            return Err(error);
+        }
+        let store = match CampaignStore::open(directory.join("campaign.cc")) {
+            Ok(store) => store,
+            Err(error) => {
+                let _ = fs::rename(&directory, &staging);
+                cleanup_staging_directory(&self.root, &staging);
+                return Err(error);
+            }
+        };
         let kernel = WorldKernel::start(store.clone());
-        kernel
-            .command(crate::domain::WorldCommand::CreateCampaign {
-                campaign: campaign.clone(),
-                evidence_receipts: evidence,
-                model_stage_receipts: model_receipts,
-            })
-            .await?;
-        store.insert(
-            "campaign_lifecycle_receipt.v1",
-            "ghostlight.campaign_lifecycle_receipt.v1",
-            &format!("{}:create", campaign.id),
-            &CampaignLifecycleReceipt {
-                schema: "ghostlight.campaign_lifecycle_receipt.v1".into(),
-                campaign_id: campaign.id,
-                operation: "create".into(),
-                parent_campaign_id: None,
-                parent_revision: None,
-                created_at: Utc::now(),
-            },
-        )?;
         let runtime = CampaignRuntime { store, kernel };
         self.runtimes
             .write()
@@ -259,6 +271,17 @@ impl CampaignRegistry {
         ));
         runtime.store.snapshot_to(&path)?;
         Ok(path)
+    }
+}
+
+fn cleanup_staging_directory(root: &Path, staging: &Path) {
+    let safe = staging.parent() == Some(root)
+        && staging
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.starts_with(".creating-"));
+    if safe && staging.exists() {
+        let _ = fs::remove_dir_all(staging);
     }
 }
 
@@ -443,6 +466,33 @@ mod tests {
             .unwrap()
             .1;
         assert_eq!(forked.name, "A clean branch");
+    }
+
+    #[tokio::test]
+    async fn failed_creation_never_enters_the_discoverable_campaign_namespace() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("campaigns");
+        let registry = CampaignRegistry::new(&root).unwrap();
+        let mut invalid = seed("Invalid");
+        invalid
+            .actors
+            .get_mut(&invalid.player_actor_id)
+            .unwrap()
+            .location_id = "missing".into();
+
+        assert!(registry.create(invalid, vec![], vec![]).await.is_err());
+        assert!(registry.list().await.is_empty());
+        assert_eq!(std::fs::read_dir(&root).unwrap().count(), 0);
+
+        let valid = seed("Valid");
+        let runtime = registry
+            .create(valid.clone(), vec![], vec![])
+            .await
+            .unwrap();
+        assert_eq!(
+            runtime.store.keys("campaign_lifecycle_receipt.v1").unwrap(),
+            vec![format!("{}:create", valid.id)]
+        );
     }
 
     #[tokio::test]

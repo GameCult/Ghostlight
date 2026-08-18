@@ -1,6 +1,7 @@
 use crate::domain::{
-    Campaign, GestaltMaterializationReceipt, ResolutionControlReceipt, ResolutionWaveCommit,
-    StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest, WorldCommitReceipt,
+    Campaign, CampaignLifecycleReceipt, GestaltMaterializationReceipt, ResolutionControlReceipt,
+    ResolutionWaveCommit, StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest,
+    WorldCommitReceipt,
 };
 use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
@@ -123,6 +124,19 @@ impl CampaignStore {
                 candidate,
             )?);
         }
+        rows.push(envelope(
+            "campaign_lifecycle_receipt.v1",
+            "ghostlight.campaign_lifecycle_receipt.v1",
+            &format!("{}:create", campaign.id),
+            &CampaignLifecycleReceipt {
+                schema: "ghostlight.campaign_lifecycle_receipt.v1".into(),
+                campaign_id: campaign.id,
+                operation: "create".into(),
+                parent_campaign_id: None,
+                parent_revision: None,
+                created_at: Utc::now(),
+            },
+        )?);
         if !self.inner.compare_and_swap_batch(&[], rows)? {
             return Err(anyhow!("campaign store is not empty"));
         }
