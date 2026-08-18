@@ -93,6 +93,14 @@ it checks custody transfers, relation shifts, and named-member private deltas,
 while deterministic local validation owns ordinary bounded preparations and
 pressure changes.
 
+The selective verifier now has a forced live custody witness. An exact
+population-owned resource moved to one exact colocated recipient only after a
+separate Flash verdict accepted the causal match; the source campaign snapshot
+remained unchanged during resolution. The witness also removed one avoidable
+provider retry by making the `resource_recipient_ids` input to
+`other_subject_id` output mapping explicit. The remaining release gate is the
+authenticated browser journey after rebuilding and deploying this exact commit.
+
 Multiplayer remains outside the current paid-alpha gate but is now an explicit
 architectural intention. Do not fork the simulation into a multiplayer room
 model. After the solo product and Gestalt agency are proven, extend campaign

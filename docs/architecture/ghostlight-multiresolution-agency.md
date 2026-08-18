@@ -789,9 +789,20 @@ consequences and seven typed material activity outcomes, with three explicit
 no-material-change results, zero rejected pulses, exact member attribution,
 the player unchanged, and the same Mira returning with her persistent delta.
 It used 126,826 prompt tokens, 14,477 completion tokens, and a 58.34% prompt
-cache-hit ratio. This proves the ordinary material-outcome path live; the
-selective high-risk verifier is covered locally and still needs a forced live
-provider witness.
+cache-hit ratio. This proves the ordinary material-outcome path live. The
+selective high-risk verifier was first covered locally, then forced through the
+provider boundary below.
+
+That witness now exists at
+`F:\GameCult\GhostlightDungeon\acceptance\forced-high-risk-outcome-contract-fixed-20260818`.
+Dock Labor Guild explicitly transferred its exact `west winch rerouting plan`
+to the colocated Harbor Neighbors. The Flash resolver emitted the exact custody
+transition, the independent verifier accepted it against the same snapshot,
+and the canonical input remained byte-identical. The first witness also caught
+a prompt/schema naming mismatch: prose said `resource_recipient_id` while the
+schema requires `other_subject_id`. Naming the input-to-output mapping directly
+removed the correction call; the accepted rerun used exactly two first-attempt-
+valid provider calls in 2.95 seconds.
 
 The Starfire deployment smoke ran a live provider-backed wave over three
 eligible singleton cells, committed three offscreen events and three
