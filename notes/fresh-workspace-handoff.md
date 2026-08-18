@@ -231,10 +231,11 @@ not add a second retry inside Projector/Interpreter validation.
 Do not resample Mira until she performs for the fairness test. Three consecutive
 `bc19c8a` Personas validly gave away the berth or waited. The strict callback
 golden already proves emergent migration. For fairness, set
-`GHOSTLIGHT_LIVE_FIRE_SEED_MIGRATION=1`, leave strict migration off, and keep
-`GHOSTLIGHT_LIVE_FIRE_FAIRNESS_WAVES=23`: a validated setup tick moves Mira,
-then the initial provider wave plus 23 sustained waves provide 24 debt foci.
-The result distinguishes `setup_migration_commit` from model proposals.
+`GHOSTLIGHT_LIVE_FIRE_BASELINE_RESULT` to the strict golden's `result.json`,
+leave strict migration off, and keep `GHOSTLIGHT_LIVE_FIRE_FAIRNESS_WAVES=23`:
+the initial provider wave plus 23 sustained waves provide 24 new debt foci.
+The harness validates the baseline's committed campaign, dormant Mira identity,
+arena cover, and player state, then records its path and SHA-256 in the result.
 
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell

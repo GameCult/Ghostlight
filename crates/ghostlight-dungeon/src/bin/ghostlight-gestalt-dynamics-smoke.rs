@@ -88,10 +88,7 @@ fn write_wave_failure(
 async fn main() -> anyhow::Result<()> {
     use chrono::Utc;
     use ghostlight_dungeon::{
-        domain::{
-            SimulationCellMode, StrategicMemberMigration, StrategicTickPlan, TickSource,
-            WorldCommand,
-        },
+        domain::{SimulationCellMode, TickSource, WorldCommand},
         gestalt::GestaltPresencePlanner,
         kernel::{CommandResult, WorldKernel},
         model::{DeepSeekPort, ModelPort},
@@ -102,6 +99,7 @@ async fn main() -> anyhow::Result<()> {
         scheduler::propose_resolution_wave,
         turn::SnapshotPermit,
     };
+    use sha2::{Digest, Sha256};
     use std::{collections::BTreeSet, path::PathBuf, sync::Arc, time::Instant};
 
     let secret = std::env::var_os("GHOSTLIGHT_DEEPSEEK_BLOB")
@@ -111,10 +109,10 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or_else(|_| "gestalt-dynamics-refugee-return".into());
     let require_migration = std::env::var("GHOSTLIGHT_LIVE_FIRE_REQUIRE_MIGRATION")
         .is_ok_and(|value| value == "1" || value.eq_ignore_ascii_case("true"));
-    let seed_migration = std::env::var("GHOSTLIGHT_LIVE_FIRE_SEED_MIGRATION")
-        .is_ok_and(|value| value == "1" || value.eq_ignore_ascii_case("true"));
-    if require_migration && seed_migration {
-        anyhow::bail!("strict live migration and deterministic migration setup are exclusive")
+    let baseline_result_path =
+        std::env::var_os("GHOSTLIGHT_LIVE_FIRE_BASELINE_RESULT").map(PathBuf::from);
+    if require_migration && baseline_result_path.is_some() {
+        anyhow::bail!("strict live migration and a committed migration baseline are exclusive")
     }
     let fairness_stress_waves = std::env::var("GHOSTLIGHT_LIVE_FIRE_FAIRNESS_WAVES")
         .ok()
@@ -147,35 +145,49 @@ async fn main() -> anyhow::Result<()> {
     let member_before = base_campaign.gestalt_members["mira-venn"].clone();
     let capabilities_before = effective_member_capabilities(&base_campaign, "mira-venn")?;
     let knowledge_before = effective_member_knowledge(&base_campaign, "mira-venn")?;
-    let store = CampaignStore::open(root.join("campaign.cc"))?;
-    store.create_campaign(&base_campaign, &[], &[])?;
-    let kernel = WorldKernel::start(store.clone());
-    let (campaign, setup_migration_commit) = if seed_migration {
-        let setup = kernel
-            .command(WorldCommand::AdvanceStrategicTick {
-                expected_revision: base_campaign.revision,
-                source: TickSource::Scheduler,
-                plan: Some(StrategicTickPlan {
-                    member_migrations: vec![StrategicMemberMigration {
-                        member_id: "mira-venn".into(),
-                        source_gestalt_id: "refugees-east".into(),
-                        destination_gestalt_id: "harbor-neighbors".into(),
-                        destination_location_id: "south-harbor".into(),
-                        public_channels: vec!["public-bulletin".into()],
-                    }],
-                    ..Default::default()
-                }),
-                model_receipt_hash: None,
-                resolution_wave: None,
+    let (campaign, baseline_receipt) = if let Some(path) = baseline_result_path {
+        let bytes = std::fs::read(&path)?;
+        let result: serde_json::Value = serde_json::from_slice(&bytes)?;
+        let campaign: ghostlight_dungeon::domain::Campaign =
+            serde_json::from_value(result.pointer("/commit/campaign").cloned().ok_or_else(
+                || anyhow::anyhow!("baseline result lacks committed campaign state"),
+            )?)?;
+        let member = campaign
+            .gestalt_members
+            .get("mira-venn")
+            .ok_or_else(|| anyhow::anyhow!("baseline result lost Mira"))?;
+        if member.gestalt_id != "harbor-neighbors"
+            || member.last_location_id.as_deref() != Some("south-harbor")
+            || member.materialized_actor_id.is_some()
+            || member.name != member_before.name
+            || member.relationships != member_before.relationships
+            || member.memories != member_before.memories
+            || effective_member_capabilities(&campaign, "mira-venn")? != capabilities_before
+            || effective_member_knowledge(&campaign, "mira-venn")? != knowledge_before
+            || campaign.actors[&campaign.player_actor_id] != player_before
+            || campaign.resolution_cover.as_ref().is_none_or(|cover| {
+                cover.cells.len() != 1
+                    || cover.cells[0].mode != SimulationCellMode::Arena
+                    || cover.cells[0].subject_ids.len() != 24
             })
-            .await?;
-        let CommandResult::Committed { campaign, .. } = &setup else {
-            anyhow::bail!("deterministic migration setup did not commit")
-        };
-        (campaign.clone(), Some(setup))
+        {
+            anyhow::bail!("baseline result is not the committed strict migration golden")
+        }
+        (
+            campaign,
+            Some(serde_json::json!({
+                "path":path,
+                "sha256":format!("sha256:{:x}", Sha256::digest(&bytes)),
+                "scenario_id":result.get("scenario_id"),
+                "campaign_revision":result.pointer("/commit/campaign/revision"),
+            })),
+        )
     } else {
         (base_campaign, None)
     };
+    let store = CampaignStore::open(root.join("campaign.cc"))?;
+    store.create_campaign(&campaign, &[], &[])?;
+    let kernel = WorldKernel::start(store.clone());
     let model_calls = Arc::new(std::sync::Mutex::new(Vec::new()));
     let model: Arc<dyn ModelPort> = Arc::new(LiveFireModelRecorder {
         inner: DeepSeekPort::from_machine_dpapi(secret)?,
@@ -301,7 +313,7 @@ async fn main() -> anyhow::Result<()> {
     if advanced.actors[&advanced.player_actor_id] != player_before {
         anyhow::bail!("background simulation puppeted the player")
     }
-    if migration_proposal.is_none() && !seed_migration {
+    if migration_proposal.is_none() && baseline_receipt.is_none() {
         if advanced.gestalt_members["mira-venn"] != member_before {
             anyhow::bail!("explicit inaction changed Mira's dormant identity")
         }
@@ -578,8 +590,7 @@ async fn main() -> anyhow::Result<()> {
         "cell_mode":root_cell.mode,
         "rivals_share_arena":true,
         "migration_proposal":migration_proposal,
-        "seeded_migration":seed_migration,
-        "setup_migration_commit":setup_migration_commit,
+        "migration_baseline":baseline_receipt,
         "initial_background_action_count":background_action_count,
         "sustained_background_subject_ids":background_subject_ids,
         "sustained_detail_focus_subject_ids":detail_focus_subject_ids,

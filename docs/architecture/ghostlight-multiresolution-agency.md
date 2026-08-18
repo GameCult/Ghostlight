@@ -506,11 +506,11 @@ single stage's one-correction rule or rebase stale output.
 
 The callback and fairness claims are independently falsifiable. Strict live
 mode requires Mira's Persona to choose resettlement and proves the later
-callback without forcing that choice. Fairness mode may instead establish the
-same already-proven migration through a validated `AdvanceStrategicTick` setup
-command, then spend all 24 provider-driven ticks on budget-one debt rotation.
-The setup still traverses WorldKernel validation and is explicitly identified
-in the result; it is not presented as a Persona decision.
+callback without forcing that choice. Fairness mode may instead branch from the
+exact committed campaign inside that strict golden's result, then spend all 24
+new provider-driven ticks on budget-one debt rotation. The baseline path and
+SHA-256 are recorded in the result; no migration command or Persona decision is
+fabricated during fairness setup.
 
 A deterministic diaspora test drives two durable people from the same
 depth-two refugee leaf to two different depth-two destination branches in one
