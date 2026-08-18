@@ -820,7 +820,7 @@ impl CellProjectionEngine {
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
                 "Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt pressure transition, gestalt_activity, or gestalt_migration, actor -> actor_move, named member -> member_migration or member_activity. ",
                 "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. ",
-                "target_subject_ids and location_ids must come from that exact subject's permissions. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
+                "target_subject_ids and location_ids must come from that exact subject's permissions. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Institution posture must be a specific new commitment or withholding of at most 240 characters. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
                 "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. Use an empty actions array plus a concrete inaction_reason when nobody acts."
@@ -1274,7 +1274,7 @@ fn validate_cell_appraisal(
                         || location_ids[0] != member.source_location_id
                     {
                         return Err(anyhow!(
-                            "named member {} proposed {:?} toward {:?} at {:?}; exact allowed targets are {:?} and location is {:?}",
+                            "named member {} proposed {:?} toward {:?} at {:?}; exact allowed targets (choose at most four unique IDs) are {:?} and location is {:?}",
                             member.member_id,
                             activity,
                             target_subject_ids,
@@ -1413,7 +1413,7 @@ fn validate_constituent_effect(
                     .any(|location| !subject.location_ids.contains(location))
             {
                 return Err(anyhow!(
-                    "gestalt {} proposed {:?} toward {:?} at {:?}; exact allowed targets are {:?} and locations are {:?}",
+                    "gestalt {} proposed {:?} toward {:?} at {:?}; exact allowed targets (choose at most four unique IDs) are {:?} and exact locations (choose at most four unique IDs) are {:?}",
                     subject.subject_id,
                     activity,
                     target_subject_ids,

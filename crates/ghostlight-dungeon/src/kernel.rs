@@ -2365,6 +2365,310 @@ mod tests {
     }
 
     #[test]
+    fn diaspora_distributes_people_across_nested_population_branches_without_merging_identity() {
+        let mut value = hierarchical_refugee_campaign();
+        value.locations.get_mut("camp").unwrap().routes.insert(
+            "to-hills".into(),
+            Route {
+                destination_id: "hills".into(),
+                distance: "along the ridge road".into(),
+                travel_minutes: 120,
+            },
+        );
+        value.locations.insert(
+            "hills".into(),
+            Location {
+                id: "hills".into(),
+                name: "North hills".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec!["terraced gardens".into()],
+            },
+        );
+
+        let population = |id: &str, name: &str, location: &str| GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: id.into(),
+            name: name.into(),
+            version: 0,
+            home_location_id: location.into(),
+            shared_capabilities: BTreeSet::from([format!("live among {name}")]),
+            shared_knowledge: BTreeSet::from([format!("routines of {name}")]),
+            resources: BTreeSet::new(),
+            goals: vec![format!("sustain {name}")],
+            pressures: vec![],
+        };
+        for (id, name, location) in [
+            ("displaced-root", "Displaced people", "camp"),
+            ("crisis-refugees", "Crisis refugees", "camp"),
+            ("displaced-other", "Other displaced people", "camp"),
+            ("crisis-other", "Other crisis refugees", "camp"),
+            ("southport-root", "Southport residents", "docks"),
+            ("harbor-populations", "Harbor populations", "docks"),
+            ("harbor-other", "Other harbor residents", "docks"),
+            ("inland-other", "Inland residents", "hills"),
+            ("hill-neighbors", "North hill neighbors", "hills"),
+            ("inland-unknown", "Other inland residents", "hills"),
+        ] {
+            value
+                .gestalts
+                .insert(id.into(), population(id, name, location));
+        }
+        crate::resolution::ensure_agency_profiles(&mut value);
+
+        for parent_id in [
+            "displaced-root",
+            "crisis-refugees",
+            "southport-root",
+            "harbor-populations",
+            "inland-other",
+        ] {
+            let profile = value.agency_profiles.get_mut(parent_id).unwrap();
+            profile.active_leaf = false;
+            profile.simulation_eligible = false;
+        }
+        for (child_id, parent_id) in [
+            ("crisis-refugees", "displaced-root"),
+            ("displaced-other", "displaced-root"),
+            ("refugees-east", "crisis-refugees"),
+            ("crisis-other", "crisis-refugees"),
+            ("harbor-populations", "southport-root"),
+            ("inland-other", "southport-root"),
+            ("dock-neighbors", "harbor-populations"),
+            ("harbor-other", "harbor-populations"),
+            ("hill-neighbors", "inland-other"),
+            ("inland-unknown", "inland-other"),
+        ] {
+            value
+                .agency_profiles
+                .get_mut(child_id)
+                .unwrap()
+                .parent_subject_id = Some(parent_id.into());
+        }
+        let lineage =
+            |parent: &str, children: [&str; 2], residual: &str, axis: AgencyAxis| GestaltLineage {
+                schema: "ghostlight.gestalt_lineage.v1".into(),
+                parent_gestalt_id: parent.into(),
+                child_gestalt_ids: children.iter().map(|id| (*id).into()).collect(),
+                partition_axis: axis,
+                partition_values: BTreeMap::from([
+                    (children[0].into(), "selected".into()),
+                    (children[1].into(), "other/unknown".into()),
+                ]),
+                residual_child_id: residual.into(),
+                source_revision: value.revision,
+            };
+        value.gestalt_lineages.insert(
+            "displaced-root".into(),
+            lineage(
+                "displaced-root",
+                ["crisis-refugees", "displaced-other"],
+                "displaced-other",
+                AgencyAxis::Ideology,
+            ),
+        );
+        value.gestalt_lineages.insert(
+            "crisis-refugees".into(),
+            lineage(
+                "crisis-refugees",
+                ["refugees-east", "crisis-other"],
+                "crisis-other",
+                AgencyAxis::Geography,
+            ),
+        );
+        value.gestalt_lineages.insert(
+            "southport-root".into(),
+            lineage(
+                "southport-root",
+                ["harbor-populations", "inland-other"],
+                "inland-other",
+                AgencyAxis::Geography,
+            ),
+        );
+        value.gestalt_lineages.insert(
+            "harbor-populations".into(),
+            lineage(
+                "harbor-populations",
+                ["dock-neighbors", "harbor-other"],
+                "harbor-other",
+                AgencyAxis::EconomyRole,
+            ),
+        );
+        value.gestalt_lineages.insert(
+            "inland-other".into(),
+            lineage(
+                "inland-other",
+                ["hill-neighbors", "inland-unknown"],
+                "inland-unknown",
+                AgencyAxis::Authority,
+            ),
+        );
+
+        let mut tovan = value.gestalt_members["mira"].clone();
+        tovan.id = "tovan".into();
+        tovan.name = "Tovan Ser".into();
+        tovan.version = 9;
+        tovan.capability_additions = BTreeSet::from(["tend terrace herbs".into()]);
+        tovan.knowledge_additions = BTreeSet::from(["the player found his daughter".into()]);
+        tovan.equipment = BTreeSet::from(["copper seed case".into()]);
+        tovan.conditions = BTreeSet::from(["healed broken wrist".into()]);
+        tovan.obligations = BTreeSet::from(["send medicine back to the camp".into()]);
+        tovan.relationships = BTreeMap::from([(
+            "player".into(),
+            "remembers that they found his daughter".into(),
+        )]);
+        tovan.memories = vec!["The player found Lio beneath the fallen awning.".into()];
+        value.gestalt_members.insert("tovan".into(), tovan);
+        value.agency_relations.insert(
+            "hill-resettlement".into(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "hill-resettlement".into(),
+                from_subject_id: "refugees-east".into(),
+                to_subject_id: "hill-neighbors".into(),
+                kind: AgencyRelationKind::Migration,
+                strength: 85,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+
+        let before = value.gestalt_members.clone();
+        let source_before = value.gestalts["refugees-east"].clone();
+        let docks_before = value.gestalts["dock-neighbors"].clone();
+        let hills_before = value.gestalts["hill-neighbors"].clone();
+        let effective_goals = |campaign: &Campaign, id: &str| {
+            let member = &campaign.gestalt_members[id];
+            if member.goals.is_empty() {
+                campaign.gestalts[&member.gestalt_id]
+                    .goals
+                    .iter()
+                    .cloned()
+                    .collect::<BTreeSet<_>>()
+            } else {
+                member.goals.iter().cloned().collect::<BTreeSet<_>>()
+            }
+        };
+        let effective_before = ["mira", "tovan"]
+            .into_iter()
+            .map(|id| {
+                (
+                    id,
+                    (
+                        crate::resolution::effective_member_capabilities(&value, id).unwrap(),
+                        crate::resolution::effective_member_knowledge(&value, id).unwrap(),
+                        effective_goals(&value, id),
+                    ),
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                member_migrations: vec![
+                    StrategicMemberMigration {
+                        member_id: "mira".into(),
+                        source_gestalt_id: "refugees-east".into(),
+                        destination_gestalt_id: "dock-neighbors".into(),
+                        destination_location_id: "docks".into(),
+                        public_channels: vec![],
+                    },
+                    StrategicMemberMigration {
+                        member_id: "tovan".into(),
+                        source_gestalt_id: "refugees-east".into(),
+                        destination_gestalt_id: "hill-neighbors".into(),
+                        destination_location_id: "hills".into(),
+                        public_channels: vec![],
+                    },
+                ],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        for (id, destination, location) in [
+            ("mira", "dock-neighbors", "docks"),
+            ("tovan", "hill-neighbors", "hills"),
+        ] {
+            let member = &value.gestalt_members[id];
+            let old = &before[id];
+            assert_eq!(member.id, old.id);
+            assert_eq!(member.name, old.name);
+            assert_eq!(member.gestalt_id, destination);
+            assert_eq!(member.last_location_id.as_deref(), Some(location));
+            assert_eq!(member.version, old.version + 1);
+            assert_eq!(member.relationships, old.relationships);
+            assert_eq!(member.memories, old.memories);
+            assert_eq!(member.equipment, old.equipment);
+            assert_eq!(member.conditions, old.conditions);
+            assert_eq!(member.obligations, old.obligations);
+            assert_eq!(
+                crate::resolution::effective_member_capabilities(&value, id).unwrap(),
+                effective_before[id].0
+            );
+            assert_eq!(
+                crate::resolution::effective_member_knowledge(&value, id).unwrap(),
+                effective_before[id].1
+            );
+            assert_eq!(effective_goals(&value, id), effective_before[id].2);
+            let actor = materialize_actor(
+                &value.gestalts[destination],
+                member,
+                &format!("member:{id}"),
+                location,
+            );
+            assert_eq!(actor.name, old.name);
+            assert_eq!(actor.relationships, old.relationships);
+            assert_eq!(actor.memories, old.memories);
+        }
+        for (id, before, version_increment) in [
+            ("refugees-east", source_before, 2),
+            ("dock-neighbors", docks_before, 1),
+            ("hill-neighbors", hills_before, 1),
+        ] {
+            let after = &value.gestalts[id];
+            assert_eq!(after.name, before.name);
+            assert_eq!(after.home_location_id, before.home_location_id);
+            assert_eq!(after.shared_capabilities, before.shared_capabilities);
+            assert_eq!(after.shared_knowledge, before.shared_knowledge);
+            assert_eq!(after.resources, before.resources);
+            assert_eq!(after.goals, before.goals);
+            assert_eq!(after.pressures, before.pressures);
+            assert_eq!(after.version, before.version + version_increment);
+        }
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[0].actor_ids, vec!["member:mira"]);
+        assert_eq!(events[1].actor_ids, vec!["member:tovan"]);
+        assert_eq!(
+            events[0].gestalt_ids,
+            vec!["refugees-east", "dock-neighbors"]
+        );
+        assert_eq!(
+            events[1].gestalt_ids,
+            vec!["refugees-east", "hill-neighbors"]
+        );
+
+        let depth = |leaf_id: &str| {
+            let mut current = leaf_id;
+            let mut depth = 0;
+            while let Some(lineage) = value.gestalt_lineages.values().find(|lineage| {
+                lineage
+                    .child_gestalt_ids
+                    .iter()
+                    .any(|child| child == current)
+            }) {
+                depth += 1;
+                current = &lineage.parent_gestalt_id;
+            }
+            depth
+        };
+        assert_eq!(depth("refugees-east"), 2);
+        assert_eq!(depth("dock-neighbors"), 2);
+        assert_eq!(depth("hill-neighbors"), 2);
+    }
+
+    #[test]
     fn gestalt_migration_moves_only_the_population_leaf() {
         let mut value = hierarchical_refugee_campaign();
         let member_before = value.gestalt_members["mira"].clone();

@@ -497,6 +497,14 @@ lineage parents as simulation subjects, and repeats the identity/callback check
 after sustained compression. Both migration endpoints must be active leaves at
 lineage depth two or greater.
 
+A deterministic diaspora test drives two durable people from the same
+depth-two refugee leaf to two different depth-two destination branches in one
+strategic plan. It proves exact effective capabilities, knowledge, goals,
+memories, relationships, possessions, conditions, and obligations survive the
+rebases; destination populations receive none of that private state. Only the
+source and destination population version counters change. Each person can then
+materialize from their new local baseline with the same name and private delta.
+
 The Starfire deployment smoke ran a live provider-backed wave over three
 eligible singleton cells, committed three offscreen events and three
 channel-accessible news items in 19.55 seconds, and preserved the absent player.

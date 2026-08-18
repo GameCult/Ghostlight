@@ -211,6 +211,15 @@ budget 1 for 23 additional waves, require all 24 debt-selected foci across the
 initial plus sustained ticks, reject inactive lineage parents, and repeat the
 callback after compression.
 
+The first 24-tick fairness attempt stopped safely after 20 total ticks when a
+named member selected six valid communication targets although an activity may
+encode at most four. The rejected wave did not commit. The Interpreter contract
+and same-snapshot correction now state the cardinality explicitly instead of
+making the model infer it from JSON Schema. A deterministic diaspora regression
+also moves two remembered refugees from one depth-two source leaf to different
+depth-two destination branches in one plan and proves their effective and
+private state remains distinct.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without
