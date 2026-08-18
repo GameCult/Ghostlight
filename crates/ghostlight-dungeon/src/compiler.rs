@@ -77,7 +77,7 @@ pub struct GestaltFissionRequest {
 pub struct SuggestedOpenings {
     pub openings: Vec<OpeningSuggestion>,
     pub evidence_receipts: Vec<VaultEvidenceReceipt>,
-    pub model_receipt: ModelStageReceipt,
+    pub model_receipts: Vec<ModelStageReceipt>,
     pub retrieval_receipt: ModelStageReceipt,
 }
 
@@ -234,18 +234,61 @@ impl WorldCompiler {
             .await?;
         let receipts = self.retrieve_all(&queries, "all", 8).await?;
         let evidence = evidence_text(&receipts);
-        let output = self.structured("world_openings", "opening-suggestions", &format!("Generate exactly three source-grounded openings. They must use distinct eras, places, and pressures. Do not fill material evidence gaps with invention. REQUEST:\n{}\nEVIDENCE:\n{}", serde_json::to_string(&request)?, evidence), serde_json::to_value(schema_for!(OpeningSet))?, receipt_ids(&receipts)).await?;
-        let parsed: OpeningSet = serde_json::from_value(output.0)?;
-        if parsed.openings.len() != 3 {
-            return Err(anyhow!("world compiler must return exactly three openings"));
+        let base_prompt = format!(
+            "Generate exactly three source-grounded openings. They must use distinct eras, places, and pressures. Do not fill material evidence gaps with invention. REQUEST:\n{}\nEVIDENCE:\n{}",
+            serde_json::to_string(&request)?,
+            evidence
+        );
+        let schema = serde_json::to_value(schema_for!(OpeningSet))?;
+        let source_receipts = receipt_ids(&receipts);
+        let mut correction = String::new();
+        let mut model_receipts = Vec::new();
+        for attempt in 0..2 {
+            let (value, stage) = self
+                .structured(
+                    "world_openings",
+                    "opening-suggestions",
+                    &format!("{base_prompt}{correction}"),
+                    schema.clone(),
+                    source_receipts.clone(),
+                )
+                .await?;
+            model_receipts.push(stage);
+            let parsed: OpeningSet = serde_json::from_value(value.clone())?;
+            let validation = if parsed.openings.len() != 3 {
+                Err(anyhow!("world compiler must return exactly three openings"))
+            } else {
+                ensure_distinct_openings(&parsed.openings)
+            };
+            match validation {
+                Ok(()) => {
+                    return Ok(SuggestedOpenings {
+                        openings: parsed.openings,
+                        evidence_receipts: receipts,
+                        model_receipts,
+                        retrieval_receipt,
+                    });
+                }
+                Err(error) if attempt == 0 => {
+                    mark_semantic_invalid(
+                        model_receipts
+                            .last_mut()
+                            .expect("opening receipt was just stored"),
+                        &error,
+                    );
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS OPENINGS: {error}\nPREVIOUS_REJECTED_OPENINGS:\n{}\nReturn one complete corrected set. Change every duplicated era, place, or pressure so all three values on each axis are pairwise distinct. Preserve source grounding and use only supplied evidence.",
+                        serde_json::to_string(&value)?
+                    );
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "world opening compiler failed local validation after one correction: {error}"
+                    ));
+                }
+            }
         }
-        ensure_distinct_openings(&parsed.openings)?;
-        Ok(SuggestedOpenings {
-            openings: parsed.openings,
-            evidence_receipts: receipts,
-            model_receipt: output.1,
-            retrieval_receipt,
-        })
+        unreachable!()
     }
 
     pub async fn suggest_roles(&self, opening: &OpeningSuggestion) -> Result<SuggestedRoles> {
@@ -2089,6 +2132,46 @@ mod tests {
         saw_previous_structure: AtomicBool,
     }
 
+    struct CorrectionAwareOpeningModel {
+        opening_calls: AtomicUsize,
+        saw_exact_correction: AtomicBool,
+    }
+
+    #[async_trait]
+    impl ModelPort for CorrectionAwareOpeningModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            let output = CompilerModel {
+                invalid_route: false,
+            }
+            .run(request)
+            .await?;
+            if request.stage != "world_openings" {
+                return Ok(output);
+            }
+            let call = self.opening_calls.fetch_add(1, Ordering::SeqCst);
+            if call == 0 {
+                let mut candidate: serde_json::Value = serde_json::from_str(&output)?;
+                candidate["openings"][1]["era"] = serde_json::json!("early");
+                return Ok(candidate.to_string());
+            }
+            self.saw_exact_correction.store(
+                request
+                    .lived_stream
+                    .contains("LOCAL VALIDATOR REJECTED THE PREVIOUS OPENINGS")
+                    && request
+                        .lived_stream
+                        .contains("openings are not distinct across era, place, and pressure")
+                    && request.lived_stream.contains("\"era\":\"early\""),
+                Ordering::SeqCst,
+            );
+            Ok(output)
+        }
+
+        fn provider(&self) -> &'static str {
+            "correction-aware-opening-fixture"
+        }
+    }
+
     #[async_trait]
     impl ModelPort for CorrectionAwareCompilerModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
@@ -2295,6 +2378,30 @@ mod tests {
             .unwrap();
         assert_eq!(output.openings.len(), 3);
         assert_eq!(output.evidence_receipts.len(), 3);
+        assert_eq!(output.model_receipts.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn opening_stage_corrects_a_semantically_duplicate_axis_once() {
+        let model = Arc::new(CorrectionAwareOpeningModel {
+            opening_calls: AtomicUsize::new(0),
+            saw_exact_correction: AtomicBool::new(false),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+
+        let output = compiler
+            .suggest_openings(OpeningRequest {
+                setting: "Aetheria".into(),
+                constraints: vec![],
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(output.openings.len(), 3);
+        assert_eq!(output.model_receipts.len(), 2);
+        assert!(output.model_receipts[0].local_validation_error.is_some());
+        assert!(output.model_receipts[1].local_validation_error.is_none());
+        assert!(model.saw_exact_correction.load(Ordering::SeqCst));
     }
 
     #[tokio::test]
