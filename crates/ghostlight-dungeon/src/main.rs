@@ -803,7 +803,9 @@ async fn create_or_recover_preview_campaign(
         .load::<Campaign>("campaign_seed.v1", &campaign_id.to_string())?
         .ok_or_else(|| anyhow::anyhow!("published campaign has no approved seed"))?
         .1;
-    if persisted_seed != preview.campaign {
+    let mut expected_seed = preview.campaign.clone();
+    ghostlight_dungeon::resolution::ensure_agency_profiles(&mut expected_seed);
+    if persisted_seed != expected_seed {
         return Err(anyhow::anyhow!(
             "published campaign id belongs to a different approval preview"
         ));
@@ -2685,6 +2687,67 @@ mod tests {
                 .contains_key(&preview_id)
         );
         assert!(state.registry.list().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn valid_campaign_approval_accepts_the_registry_normalized_seed() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let session = "valid-session";
+        let session_hash = secret_hash(session);
+        {
+            let mut auth = state.auth.lock().await;
+            let mut authorized = auth.state.clone();
+            authorized.session_hashes.insert(session_hash.clone());
+            auth.commit(authorized).unwrap();
+        }
+        let campaign = seed("Valid preview");
+        assert!(campaign.agency_profiles.is_empty());
+        let campaign_id = campaign.id;
+        let preview_id = "valid-preview".to_owned();
+        state.compile_previews.lock().await.insert(
+            preview_id.clone(),
+            OwnedPreview {
+                session_hash: session_hash.clone(),
+                value: WorldCompilePreview {
+                    schema: "ghostlight.world_compile_preview.v1".into(),
+                    title: "Valid preview".into(),
+                    campaign,
+                    evidence_receipts: vec![],
+                    evidence_coverage: vec![],
+                    gaps: vec![],
+                    branch_assumptions: vec![],
+                    requires_approval: true,
+                },
+                model_receipts: vec![],
+            },
+        );
+        let app = app_router(state.clone(), dir.path().join("web"));
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(format!("/api/compiler/approve/{preview_id}"))
+                    .header(header::COOKIE, format!("ghostlight_session={session}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(
+            !state
+                .compile_previews
+                .lock()
+                .await
+                .contains_key(&preview_id)
+        );
+        assert_eq!(state.registry.list().await, vec![campaign_id]);
+        let auth = state.auth.lock().await;
+        assert_eq!(auth.state.session_campaigns[&session_hash], campaign_id);
+        assert!(auth.state.session_campaign_ids[&session_hash].contains(&campaign_id));
     }
 
     #[tokio::test]
