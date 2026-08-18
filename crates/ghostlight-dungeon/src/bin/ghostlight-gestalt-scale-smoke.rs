@@ -76,11 +76,14 @@ async fn main() -> anyhow::Result<()> {
 
     let cover = &output.wave.cover;
     let expected_cells = usize::min(budget as usize, 24);
-    if cover.cells.len() != expected_cells || cover.effective_budget != budget {
+    let expected_effective_budget = u8::try_from(expected_cells).expect("fixture size fits u8");
+    if cover.cells.len() != expected_cells || cover.effective_budget != expected_effective_budget {
         anyhow::bail!(
-            "budget-{budget} cover produced {} cells at effective budget {}",
+            "budget-{budget} cover produced {} cells at effective budget {}; expected {} cells and effective budget {}",
             cover.cells.len(),
-            cover.effective_budget
+            cover.effective_budget,
+            expected_cells,
+            expected_effective_budget,
         )
     }
     let covered = cover
