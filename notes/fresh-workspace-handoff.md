@@ -390,8 +390,20 @@ High-risk effects—custody consumption/transfers, agency-relation shifts, and
 named-member private deltas—now receive an independent same-snapshot semantic
 verdict before admission. Low-risk preparations and pressures remain locally
 validated; a verifier on every effect caused disproportionate retries and was
-cut. The high-risk path has local regression proof but still needs a forced
-live provider witness.
+cut. The high-risk path has both local regression proof and the forced live
+provider witness below.
+
+That forced live witness now passes: Dock Labor Guild transferred one exact
+owned plan to one exact colocated population, a separate Flash verifier
+accepted the causal match, and the campaign snapshot remained byte-identical.
+The witness removed an avoidable field-name correction call. The deployed
+authenticated rehearsal then found and repaired two first-use failures:
+invite rotation now replaces persisted auth authority with the protected
+tokens, and semantically duplicate opening sets receive one same-evidence
+correction. Exact release `0e4b8f4617840d45daec8a6451001192193ca5e0`
+accepted one invite exactly once, returned three distinct grounded openings,
+preserved authentication across restart, and was finally rotated back to two
+unused tester invitations.
 
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell

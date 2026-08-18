@@ -156,6 +156,14 @@ replication, not daemon-liveness authority: a failed publish is logged with its
 key and target while the complete local snapshot persists and HTTP serves that
 same typed health and Eve state.
 
+Opening suggestions receive one same-evidence semantic correction when the
+local distinctness invariant rejects the first typed set. Both the rejected
+and accepted stage receipts remain in the private compiler result; the browser
+still receives only the three public suggestions. Invite rotation is owned by
+the deployment boundary: it replaces the protected token set and clears the
+persisted auth authority together while the daemon is stopped. Campaign stores
+survive; old sessions deliberately do not.
+
 `gestalt_migration` records a collective decision by one exact active leaf to
 move along an explicit migration relation and reachable route. WorldKernel
 changes the leaf's home location and agency-profile location together. The
