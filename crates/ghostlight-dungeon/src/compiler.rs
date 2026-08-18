@@ -555,28 +555,11 @@ impl WorldCompiler {
         Vec<VaultEvidenceReceipt>,
         Vec<ModelStageReceipt>,
     )> {
+        let requested = validate_fission_request(&request)?;
         let parent = campaign
             .gestalts
             .get(&request.parent_gestalt_id)
             .ok_or_else(|| anyhow!("fission parent is unknown"))?;
-        let requested: BTreeSet<_> = request
-            .requested_partition_values
-            .iter()
-            .map(|value| value.trim().to_ascii_lowercase())
-            .collect();
-        if request.reason.trim().is_empty()
-            || requested.is_empty()
-            || requested.len() != request.requested_partition_values.len()
-            || requested.contains("other/unknown")
-            || request
-                .requested_partition_values
-                .iter()
-                .any(|value| value.trim().is_empty())
-        {
-            return Err(anyhow!(
-                "fission request needs distinct named cuts and a reason"
-            ));
-        }
         let subject = serde_json::json!({
             "request":request,
             "parent":parent,
@@ -1215,6 +1198,31 @@ fn validate_user_text(label: &str, value: &str, max_chars: usize) -> Result<()> 
         ));
     }
     Ok(())
+}
+
+fn validate_fission_request(request: &GestaltFissionRequest) -> Result<BTreeSet<String>> {
+    validate_user_text("fission reason", &request.reason, 500)?;
+    if request.requested_partition_values.is_empty()
+        || request.requested_partition_values.len() > 16
+    {
+        return Err(anyhow!("fission request needs between 1 and 16 named cuts"));
+    }
+    for value in &request.requested_partition_values {
+        validate_user_text("fission cut", value, 160)?;
+    }
+    let requested: BTreeSet<_> = request
+        .requested_partition_values
+        .iter()
+        .map(|value| value.trim().to_ascii_lowercase())
+        .collect();
+    if requested.len() != request.requested_partition_values.len()
+        || requested.contains("other/unknown")
+    {
+        return Err(anyhow!(
+            "fission request needs distinct named cuts and reserves other/unknown for the compiler"
+        ));
+    }
+    Ok(requested)
 }
 
 fn global_agency_queries(start: &CustomStart) -> Vec<String> {
@@ -2294,6 +2302,29 @@ mod tests {
         assert!(validate_user_text("field", "123456789", 8).is_err());
         assert!(validate_user_text("field", "hello\0world", 20).is_err());
         assert!(validate_user_text("field", "hello\nworld", 20).is_ok());
+    }
+
+    #[test]
+    fn fission_text_is_bounded_before_retrieval_or_inference() {
+        let mut request = GestaltFissionRequest {
+            parent_gestalt_id: "population".into(),
+            partition_axis: AgencyAxis::Geography,
+            requested_partition_values: vec!["harbor".into(), "inland".into()],
+            reason: "The population is dispersing along established routes.".into(),
+        };
+        assert!(validate_fission_request(&request).is_ok());
+
+        request.requested_partition_values = (0..17).map(|index| format!("cut-{index}")).collect();
+        assert!(validate_fission_request(&request).is_err());
+        request.requested_partition_values = vec!["x".repeat(161)];
+        assert!(validate_fission_request(&request).is_err());
+        request.requested_partition_values = vec!["Harbor".into(), "harbor".into()];
+        assert!(validate_fission_request(&request).is_err());
+        request.requested_partition_values = vec!["other/unknown".into()];
+        assert!(validate_fission_request(&request).is_err());
+        request.requested_partition_values = vec!["harbor".into()];
+        request.reason = "x".repeat(501);
+        assert!(validate_fission_request(&request).is_err());
     }
     use crate::{domain::SourceWitness, model::ModelPort, vault::FixtureVault};
     use async_trait::async_trait;

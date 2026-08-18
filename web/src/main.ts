@@ -415,10 +415,16 @@ destinationForm.addEventListener("submit", async event => {
 document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("submit", async event => {
   event.preventDefault();
   const data = new FormData(event.currentTarget as HTMLFormElement);
+  const cuts = String(data.get("requested_partition_values") ?? "").split(",").map(value => value.trim()).filter(Boolean);
+  if (cuts.length > 16 || cuts.some(value => [...value].length > 160)) {
+    status.textContent = "Use at most 16 named cuts, with at most 160 characters in each cut.";
+    document.querySelector<HTMLInputElement>("#fission-values")!.focus();
+    return;
+  }
   const result = await compilerPost("/api/compiler/gestalt/fission", {
     parent_gestalt_id: data.get("parent_gestalt_id"),
     partition_axis: data.get("partition_axis"),
-    requested_partition_values: String(data.get("requested_partition_values") ?? "").split(",").map(value => value.trim()).filter(Boolean),
+    requested_partition_values: cuts,
     reason: data.get("reason"),
   });
   showSummary("Population fission preview", [
