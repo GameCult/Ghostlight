@@ -555,6 +555,14 @@ cost at 247,578 prompt tokens and only 34.54% cache hits. Prompt/context work
 should therefore target Interpreter permissions and stable-prefix layout before
 shrinking the Persona stream.
 
+Resolution control is edge-triggered. `active_cell_budget` owns
+`resolution_epoch`; provider parallelism owns only
+`provider_configuration_epoch`. An unchanged control value is rejected without
+persistence, epoch movement, or cover invalidation. Acceptance harnesses issue
+either control only when its value actually differs, so repeated strategic
+ticks preserve the previous cover, leases, and churn history. Stress runs may
+select cell budget and provider parallelism independently.
+
 The run also exposes the next authority gap. Institution postures, population
 migration, clocks, and history changed canonically, but most Gestalt activities
 remain attributed attempts recorded as events. Over many ticks this can repeat

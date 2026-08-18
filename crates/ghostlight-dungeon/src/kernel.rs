@@ -261,6 +261,11 @@ fn execute(
         } => {
             require_revision(&campaign, expected_revision)?;
             require_resolution_epoch(&campaign, expected_resolution_epoch)?;
+            if campaign.resolution_policy.active_cell_budget == active_cell_budget {
+                return Err(KernelError::Invalid(
+                    "resolution budget command does not change the active cell budget".into(),
+                ));
+            }
             let previous_epoch = campaign.resolution_policy.resolution_epoch;
             campaign.resolution_policy.active_cell_budget = active_cell_budget;
             campaign.resolution_policy.pending_active_cell_budget = None;
@@ -289,6 +294,11 @@ fn execute(
                     expected: expected_provider_configuration_epoch,
                     actual: campaign.resolution_policy.provider_configuration_epoch,
                 });
+            }
+            if campaign.resolution_policy.provider_parallelism == provider_parallelism {
+                return Err(KernelError::Invalid(
+                    "provider parallelism command does not change provider configuration".into(),
+                ));
             }
             campaign.resolution_policy.provider_parallelism = provider_parallelism;
             crate::resolution::validate_policy(&campaign.resolution_policy)
@@ -4194,6 +4204,15 @@ mod tests {
         assert_eq!(campaign.resolution_policy.active_cell_budget, 3);
         assert_eq!(campaign.resolution_policy.resolution_epoch, 1);
         assert_eq!(receipt.previous_resolution_epoch, 0);
+        let unchanged = kernel
+            .command(WorldCommand::SetResolutionBudget {
+                expected_revision: 0,
+                expected_resolution_epoch: 1,
+                active_cell_budget: 3,
+            })
+            .await
+            .unwrap_err();
+        assert!(unchanged.to_string().contains("does not change"));
         assert!(
             kernel
                 .command(WorldCommand::SetResolutionBudget {
@@ -4249,6 +4268,15 @@ mod tests {
         assert_eq!(campaign.resolution_policy.provider_parallelism, 4);
         assert_eq!(campaign.resolution_cover, Some(cover));
         assert_eq!(receipt.operation, "set_provider_parallelism");
+        let unchanged = kernel
+            .command(WorldCommand::SetProviderParallelism {
+                expected_revision: 0,
+                expected_provider_configuration_epoch: 1,
+                provider_parallelism: 4,
+            })
+            .await
+            .unwrap_err();
+        assert!(unchanged.to_string().contains("does not change"));
         assert!(
             kernel
                 .command(WorldCommand::SetProviderParallelism {

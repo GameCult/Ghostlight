@@ -252,6 +252,16 @@ atomically on one overlong posture, demonstrating its higher tail risk. Budget
 4 is fastest; budget 8 is the best action-per-token point and reaches the global
 consequence cap.
 
+The first fairness profile accidentally sent `SetResolutionBudget(1)` before
+every tick. The kernel accepted the redundant command, incremented
+`resolution_epoch`, and discarded cover leases each time. The runtime now
+rejects unchanged budget and provider-parallelism controls without persistence;
+the harness only sends a real change. Use `GHOSTLIGHT_LIVE_FIRE_STRESS_BUDGET`
+and `GHOSTLIGHT_LIVE_FIRE_PROVIDER_PARALLELISM` independently for the next
+profiles. Rerun the long budget-one case before treating its cache or churn
+numbers as the lease-preserving baseline; its agency/fairness result remains
+valid.
+
 Do not call setting-wide material agency finished yet. Most population output
 is still an attributed `gestalt_activity` attempt stored as history. The long
 run became repetitive around ferry loading and shelter requests because no

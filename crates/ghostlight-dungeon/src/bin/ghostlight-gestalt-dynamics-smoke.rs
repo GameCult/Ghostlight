@@ -119,6 +119,15 @@ async fn main() -> anyhow::Result<()> {
         .and_then(|value| value.parse::<usize>().ok())
         .filter(|value| (1..=31).contains(value))
         .unwrap_or_default();
+    let fairness_stress_budget = std::env::var("GHOSTLIGHT_LIVE_FIRE_STRESS_BUDGET")
+        .ok()
+        .and_then(|value| value.parse::<u8>().ok())
+        .filter(|value| (1..=32).contains(value))
+        .unwrap_or(1);
+    let stress_provider_parallelism = std::env::var("GHOSTLIGHT_LIVE_FIRE_PROVIDER_PARALLELISM")
+        .ok()
+        .and_then(|value| value.parse::<u8>().ok())
+        .filter(|value| (1..=32).contains(value));
     let max_rejected_pulses_per_wave =
         std::env::var("GHOSTLIGHT_LIVE_FIRE_MAX_REJECTED_PULSES_PER_WAVE")
             .ok()
@@ -370,20 +379,39 @@ async fn main() -> anyhow::Result<()> {
     let sustained_budgets = if fairness_stress_waves == 0 {
         vec![4_u8, 8, 4]
     } else {
-        vec![1_u8; fairness_stress_waves]
+        vec![fairness_stress_budget; fairness_stress_waves]
     };
-    for (wave_index, budget) in sustained_budgets.into_iter().enumerate() {
+    if let Some(provider_parallelism) = stress_provider_parallelism
+        && advanced.resolution_policy.provider_parallelism != provider_parallelism
+    {
         let control = kernel
-            .command(WorldCommand::SetResolutionBudget {
+            .command(WorldCommand::SetProviderParallelism {
                 expected_revision: advanced.revision,
-                expected_resolution_epoch: advanced.resolution_policy.resolution_epoch,
-                active_cell_budget: budget,
+                expected_provider_configuration_epoch: advanced
+                    .resolution_policy
+                    .provider_configuration_epoch,
+                provider_parallelism,
             })
             .await?;
         advanced = match control {
             CommandResult::ResolutionUpdated { campaign, .. } => campaign,
-            _ => anyhow::bail!("resolution budget change did not commit at a safe boundary"),
+            _ => anyhow::bail!("provider parallelism change used the world commit path"),
         };
+    }
+    for (wave_index, budget) in sustained_budgets.into_iter().enumerate() {
+        if advanced.resolution_policy.active_cell_budget != budget {
+            let control = kernel
+                .command(WorldCommand::SetResolutionBudget {
+                    expected_revision: advanced.revision,
+                    expected_resolution_epoch: advanced.resolution_policy.resolution_epoch,
+                    active_cell_budget: budget,
+                })
+                .await?;
+            advanced = match control {
+                CommandResult::ResolutionUpdated { campaign, .. } => campaign,
+                _ => anyhow::bail!("resolution budget change did not commit at a safe boundary"),
+            };
+        }
         let mut rejected_pulses_for_wave = 0;
         let sustained_output = loop {
             let trace_start = model_calls.lock().expect("live-fire trace lock").len();
@@ -595,6 +623,8 @@ async fn main() -> anyhow::Result<()> {
         "sustained_background_subject_ids":background_subject_ids,
         "sustained_detail_focus_subject_ids":detail_focus_subject_ids,
         "fairness_stress_waves":fairness_stress_waves,
+        "fairness_stress_budget":fairness_stress_budget,
+        "stress_provider_parallelism":stress_provider_parallelism,
         "max_rejected_pulses_per_wave":max_rejected_pulses_per_wave,
         "rejected_wave_pulses":rejected_wave_pulses,
         "fairness_missing_subject_ids":fairness_missing_subject_ids,
