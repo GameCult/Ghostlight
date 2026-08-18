@@ -343,7 +343,12 @@ the character's described act or speech and the effect the player wants it to
 cause. The receipt panel is the sole owner of the current assessment,
 destination, or fission approval control; rendering a newer receipt removes the
 older snapshot-bound control instead of accumulating stale confirmations in
-persistent forms.
+persistent forms. World-seed approval renders expandable public sections for
+the player role, initial topology, present cast, institutions, populations,
+world clocks, and exact evidence-use rationales instead of asking for approval
+from summary counts. A browser-local interaction lock prevents duplicate paid
+requests while preserving the kernel mailbox and revision checks as the only
+world-mutation authority.
 
 Relationship documents in the schema catalog are revision-bound projections
 of actor-owned relationship maps; they are not a second relationship writer.

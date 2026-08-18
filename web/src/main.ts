@@ -16,6 +16,28 @@ let playerActorId = "";
 let resolutionEpoch = 0;
 let providerConfigurationEpoch = 0;
 let resolutionPins: any[] = [];
+let requestInFlight = false;
+const controlsDisabledByRequest = new Set<HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>();
+
+async function withInteractionLock<T>(work: () => Promise<T>): Promise<T> {
+  if (requestInFlight) throw new Error("A Ghostlight request is already in progress.");
+  requestInFlight = true;
+  document.body.setAttribute("aria-busy", "true");
+  for (const control of document.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("button, input, textarea, select")) {
+    if (!control.disabled) {
+      control.disabled = true;
+      controlsDisabledByRequest.add(control);
+    }
+  }
+  try {
+    return await work();
+  } finally {
+    for (const control of controlsDisabledByRequest) control.disabled = false;
+    controlsDisabledByRequest.clear();
+    document.body.removeAttribute("aria-busy");
+    requestInFlight = false;
+  }
+}
 
 function node<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -149,14 +171,16 @@ async function refresh() {
 }
 
 async function compilerPost(path: string, body: unknown) {
-  status.textContent = "Retrieving evidence and compiling…";
-  const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-  const value = response.headers.get("content-type")?.includes("json") ? await response.json() : await response.text();
-  if (!response.ok) {
-    status.textContent = typeof value === "string" ? value : String(value?.error ?? "Compilation failed");
-    throw new Error(status.textContent);
-  }
-  return value;
+  return withInteractionLock(async () => {
+    status.textContent = "Retrieving evidence and compiling…";
+    const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const value = response.headers.get("content-type")?.includes("json") ? await response.json() : await response.text();
+    if (!response.ok) {
+      status.textContent = typeof value === "string" ? value : String(value?.error ?? "Compilation failed");
+      throw new Error(status.textContent);
+    }
+    return value;
+  });
 }
 
 function showCards(items: any[], action: string, choose: (item: any) => void) {
@@ -172,6 +196,16 @@ function showCards(items: any[], action: string, choose: (item: any) => void) {
     cards.append(card);
   });
   compilerResults.replaceChildren(cards);
+}
+
+function appendDetailList(parent: HTMLElement, summary: string, lines: string[]) {
+  const details = node("details");
+  details.append(node("summary", summary));
+  const list = node("ul");
+  for (const line of lines) list.append(node("li", line));
+  if (lines.length === 0) list.append(node("li", "None declared."));
+  details.append(list);
+  parent.append(details);
 }
 
 document.querySelector<HTMLFormElement>("#suggest-form")!.addEventListener("submit", async event => {
@@ -204,6 +238,23 @@ async function showPreview(result: any) {
       ? `Evidence use: ${evidenceCounts.direct_seed ?? 0} direct · ${evidenceCounts.setting_background ?? 0} background · ${evidenceCounts.excluded ?? 0} excluded`
       : "Evidence use: no retrieved sources were admitted to this seed.", "quiet"),
   );
+  const role = preview.player_role ?? {};
+  appendDetailList(card, `Player role · ${role.name ?? "unnamed"}`, [
+    `Starts at ${role.location_id ?? "an unspecified location"}`,
+    ...(role.capabilities ?? []).map((value: string) => `Capability: ${value}`),
+    ...(role.equipment ?? []).map((value: string) => `Equipment: ${value}`),
+    ...(role.conditions ?? []).map((value: string) => `Condition: ${value}`),
+    ...(role.obligations ?? []).map((value: string) => `Obligation: ${value}`),
+  ]);
+  appendDetailList(card, `Initial topology · ${preview.locations?.length ?? 0} locations`, (preview.locations ?? []).map((location: any) => {
+    const routes = Object.keys(location.routes ?? {});
+    return `${location.name} · ${location.id}${location.container_id ? ` · inside ${location.container_id}` : ""}${routes.length ? ` · routes to ${routes.join(", ")}` : " · no compiled route"}`;
+  }));
+  appendDetailList(card, `Present cast · ${preview.cast?.length ?? 0}`, (preview.cast ?? []).map((actor: any) => `${actor.name} · ${actor.id} · at ${actor.location_id}`));
+  appendDetailList(card, `Institutions · ${preview.institutions?.length ?? 0}`, (preview.institutions ?? []).map((institution: any) => `${institution.name} · ${institution.id}`));
+  appendDetailList(card, `Populations · ${preview.populations?.length ?? 0}`, (preview.populations ?? []).map((population: any) => `${population.name} · ${population.id} · at ${population.home_location_id}`));
+  appendDetailList(card, `World clocks · ${preview.clocks?.length ?? 0}`, (preview.clocks ?? []).map((clock: any) => `${clock.name} · ${clock.progress}/${clock.threshold} · ${clock.trigger}`));
+  appendDetailList(card, `Evidence coverage · ${coverage.length}`, coverage.map((item: any) => `${item.source_id} · ${String(item.lane).replaceAll("_", " ")} · ${item.rationale}`));
   const approve = node("button", "Approve and enter");
   approve.type = "button";
   approve.addEventListener("click", async () => { await compilerPost(`/api/compiler/approve/${result.preview_id}`, {}); await refresh(); });
@@ -212,7 +263,7 @@ async function showPreview(result: any) {
   status.textContent = "Preview compiled. Nothing has entered world state yet.";
 }
 
-async function send(command: unknown) { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await response.json(); renderCommandReceipt(body); if (!response.ok) { status.textContent = body.error ?? "The command was refused."; await refresh(); return body; } await refresh(); return body; }
+async function send(command: unknown) { return withInteractionLock(async () => { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await response.json(); renderCommandReceipt(body); if (!response.ok) { status.textContent = body.error ?? "The command was refused."; await refresh(); return body; } await refresh(); return body; }); }
 function installAssessment(result: any) {
   if (result?.kind !== "assessed") return;
   const button = document.createElement("button");
@@ -262,19 +313,21 @@ document.querySelector<HTMLInputElement>("#provider-parallelism")!.addEventListe
 });
 document.querySelector<HTMLFormElement>("#provider-parallelism-form")!.addEventListener("submit", async event => {
   event.preventDefault();
-  status.textContent = "Applying the provider concurrency limit…";
-  const response = await fetch("/api/operator/provider-parallelism", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      expected_provider_configuration_epoch: providerConfigurationEpoch,
-      provider_parallelism: Number(document.querySelector<HTMLInputElement>("#provider-parallelism")!.value),
-    }),
+  await withInteractionLock(async () => {
+    status.textContent = "Applying the provider concurrency limit…";
+    const response = await fetch("/api/operator/provider-parallelism", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        expected_provider_configuration_epoch: providerConfigurationEpoch,
+        provider_parallelism: Number(document.querySelector<HTMLInputElement>("#provider-parallelism")!.value),
+      }),
+    });
+    const body = await response.json();
+    showSummary(response.ok ? "Provider concurrency updated" : "Provider concurrency refused", [response.ok ? `Parallel requests: ${body.receipt?.provider_parallelism ?? body.provider_parallelism ?? "updated"}` : body.error ?? "The operator limit was refused."]);
+    if (!response.ok) status.textContent = body.error ?? "The operator limit was refused.";
+    await refresh();
   });
-  const body = await response.json();
-  showSummary(response.ok ? "Provider concurrency updated" : "Provider concurrency refused", [response.ok ? `Parallel requests: ${body.receipt?.provider_parallelism ?? body.provider_parallelism ?? "updated"}` : body.error ?? "The operator limit was refused."]);
-  if (!response.ok) status.textContent = body.error ?? "The operator limit was refused.";
-  await refresh();
 });
 document.querySelector<HTMLFormElement>("#pin-form")!.addEventListener("submit", async event => {
   event.preventDefault();

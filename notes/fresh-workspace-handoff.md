@@ -805,7 +805,10 @@ therefore leave several stale controls visible even though the kernel rejected
 them safely. The receipt panel now owns exactly the current approval action.
 The same audit restored separate composer fields for the visible act or speech
 and its intended effect; the browser no longer duplicates one sentence into
-both assessment fields.
+both assessment fields. The approval preview now exposes its full public
+decision surface in expandable sections, and a browser-local request lock
+prevents double-clicks from launching duplicate inference without claiming any
+world-state authority.
 
 ## Warnings
 
