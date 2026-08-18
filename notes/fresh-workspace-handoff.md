@@ -893,6 +893,29 @@ seconds, produced three appraisals and nine validated stage receipts, and
 atomically committed revision 1. One credentialed rendered-browser journey
 remains pending; invitations have not been rotated or consumed.
 
+Release `9f991e4ce6ee7ca6c33cfc97f86dda4c05992caa` was driven through the first
+credentialed rendered-browser journey. That journey exposed a real approval
+bug: the registry normalizes the campaign seed before persistence, while the
+recovery guard compared it with the pre-normalized preview. The server refused
+selection and preserved the preview, but left the valid new store unowned. The
+guard now compares the persisted seed with the same registry-normalized value,
+and a valid-approval regression test covers campaign ownership and preview
+consumption. The unowned test store is preserved outside the campaign namespace
+under `acceptance/quarantine`.
+
+The fixed browser journey compiled a grounded Aetheria preview, displayed its
+material gaps and branch assumptions before mutation, approved and selected it,
+refused two impossible claims without rolling or advancing revision, previewed
+an admissible DC 10 social attempt, rolled server-side, committed exactly one
+revision, and surfaced only the bounded observed fact. Fork and reset each
+published and selected exactly once. After a daemon restart, the HttpOnly
+session returned to the selected reset branch with all three owned campaigns
+and continuity intact. Starfire PID 5368 serves seven campaigns from release
+`9f991e4` with zero staging directories and executable SHA-256
+`b4e8a68006a46d32c712c4ebc21ec19d7de2a73165ea62645e87cb76e731c68a`.
+One invite is consumed; the second remains unused. Remote Odin replication is
+still the only known deployment degradation.
+
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.
