@@ -440,7 +440,7 @@ fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "migration_destinations": subject.migration_destinations,
             "activity_target_ids": subject.activity_target_ids,
             "goals": subject.goals,
-            "current_posture": subject.current_posture,
+            "already_committed_posture": subject.current_posture,
             "pressures": subject.pressures,
         })).collect::<Vec<_>>(),
         "member_exceptions": slice.member_exceptions.iter().map(|member| serde_json::json!({
@@ -487,7 +487,7 @@ fn cell_interpreter_context(slice: &PermittedCellSlice) -> serde_json::Value {
             "reachable_destination_ids": subject.reachable_destination_ids,
             "migration_destinations": subject.migration_destinations,
             "activity_target_ids": subject.activity_target_ids,
-            "current_posture": subject.current_posture,
+            "already_committed_posture": subject.current_posture,
             "current_pressures": subject.pressures,
         })).collect::<Vec<_>>(),
         "member_permissions": slice.member_exceptions.iter().map(|member| serde_json::json!({
@@ -728,7 +728,7 @@ impl CellProjectionEngine {
             .join("\n");
         let mode_guidance = cell_projector_mode_guidance(&slice.mode);
         let mode_guidance = format!(
-            "{mode_guidance} Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Only supplied constituents and member_exceptions may own an internal perspective or choice. A person merely mentioned in an event is external observation when absent from those lists: never voice them. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
+            "{mode_guidance} Treat already_committed_posture as an institutional course already in force, not a pressure, option, or fresh decision. Continuing it is holding steady; only a materially different commitment is a new posture choice. Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Only supplied constituents and member_exceptions may own an internal perspective or choice. A person merely mentioned in an event is external observation when absent from those lists: never voice them. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
         );
         let word_budget = (120 + 45 * slice.constituents.len()).min(360);
         let perspective_limit = slice.max_actions.max(1);
@@ -821,7 +821,7 @@ impl CellProjectionEngine {
                 "Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt pressure transition, gestalt_activity, or gestalt_migration, actor -> actor_move, named member -> member_migration or member_activity. ",
                 "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
-                "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Institution posture must be a specific new commitment or withholding of at most 240 characters. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
+                "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
                 "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. Use an empty actions array plus a concrete inaction_reason when nobody acts."
             ),
@@ -999,10 +999,10 @@ fn cell_projector_mode_guidance(mode: &crate::domain::SimulationCellMode) -> &'s
 fn cell_persona_mode_guidance(mode: &crate::domain::SimulationCellMode) -> &'static str {
     match mode {
         crate::domain::SimulationCellMode::Cohesive => {
-            "Appraise the strategic horizon as a real collective. End this turn with a present-tense choice: describe the concrete attempt the collective now makes, or explicitly choose to hold or wait. Deliberating, asking for a future decision, considering an option, or saying what could be done is intentional inaction unless the choice to act is actually made. Do not invent completed consequences."
+            "Appraise the strategic horizon as a real collective. End this turn with a present-tense choice: describe the concrete attempt the collective now makes, or explicitly choose to hold or wait. An institution continuing its already committed posture is holding steady, not choosing that posture again. Deliberating, asking for a future decision, considering an option, or saying what could be done is intentional inaction unless the choice to act is actually made. Do not invent completed consequences."
         }
         crate::domain::SimulationCellMode::Arena => {
-            "Appraise the strategic horizon polyphonically. Name the constituent responsible for every perspective and decision; never speak as the arena or use an unmarked first-person voice. Only subjects already given an attributed internal perspective in the lived stream may choose; people merely observed or mentioned remain external. The lived stream may contain simultaneous remote scenes: preserve every stated location boundary, and never make one constituent see, hear, address, or answer another unless the stream explicitly establishes co-presence or a communication channel. Do not invent an available person, office, route, resource, or response absent from the lived stream. A constituent may choose to seek something unknown, but cannot claim contact with it. For each voiced constituent, end with a present-tense choice: a concrete attempt now, or an explicit choice to hold or wait. Deliberating, asking for a future decision, considering an option, or saying what could be done is inaction unless that constituent actually chooses to act."
+            "Appraise the strategic horizon polyphonically. Name the constituent responsible for every perspective and decision; never speak as the arena or use an unmarked first-person voice. Only subjects already given an attributed internal perspective in the lived stream may choose; people merely observed or mentioned remain external. The lived stream may contain simultaneous remote scenes: preserve every stated location boundary, and never make one constituent see, hear, address, or answer another unless the stream explicitly establishes co-presence or a communication channel. Do not invent an available person, office, route, resource, or response absent from the lived stream. A constituent may choose to seek something unknown, but cannot claim contact with it. For each voiced constituent, end with a present-tense choice: a concrete attempt now, or an explicit choice to hold or wait. An institution continuing its already committed posture is holding steady, not choosing that posture again. Deliberating, asking for a future decision, considering an option, or saying what could be done is inaction unless that constituent actually chooses to act."
         }
     }
 }
@@ -1013,7 +1013,7 @@ fn append_cell_correction(
     rejected_appraisal: &str,
 ) {
     request.lived_stream.push_str(&format!(
-        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. A rejected action is forbidden unchanged: remove it or replace it with a different, faithful, permitted typed consequence. Do not repeat its subject, intended_effect, and typed effect together. Every retained action must still carry a valid non-empty typed transition under the original contract. If the Persona chose travel but that subject has no exact permitted destination in reachable_destination_ids or migration_destinations, no movement transition is available: remove that action and use explicit inaction. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and use explicit inaction; never emit an empty transition or upgrade consideration into a completed consequence."
+        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. A rejected action is forbidden unchanged: remove it or replace it with a different, faithful, permitted typed consequence. Do not repeat its subject, intended_effect, and typed effect together. Every retained action must still carry a valid non-empty typed transition under the original contract. If an institution merely continues or restates already_committed_posture, omit that no-op action; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destination_ids or migration_destinations, no movement transition is available: remove that action and use explicit inaction. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and use explicit inaction; never emit an empty transition or upgrade consideration into a completed consequence."
     ));
 }
 
@@ -2185,9 +2185,10 @@ mod tests {
         );
         let projector_context = cell_projector_context(&slice);
         assert_eq!(
-            projector_context["constituents"][0]["current_posture"],
+            projector_context["constituents"][0]["already_committed_posture"],
             "weighing whether to publish a position"
         );
+        assert!(projector_context["constituents"][0]["current_posture"].is_null());
         assert_eq!(
             projector_context["constituents"][0]["pressures"][0],
             "the vote is near"

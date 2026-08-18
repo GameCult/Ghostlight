@@ -119,6 +119,11 @@ async fn main() -> anyhow::Result<()> {
         .and_then(|value| value.parse::<usize>().ok())
         .filter(|value| (1..=31).contains(value))
         .unwrap_or_default();
+    let presence_only = std::env::var("GHOSTLIGHT_LIVE_FIRE_PRESENCE_ONLY")
+        .is_ok_and(|value| value == "1" || value.eq_ignore_ascii_case("true"));
+    if presence_only && baseline_result_path.is_none() {
+        anyhow::bail!("presence-only live fire requires a committed migration baseline")
+    }
     let fairness_stress_budget = std::env::var("GHOSTLIGHT_LIVE_FIRE_STRESS_BUDGET")
         .ok()
         .and_then(|value| value.parse::<u8>().ok())
@@ -376,7 +381,9 @@ async fn main() -> anyhow::Result<()> {
     let mut background_subject_ids = BTreeSet::new();
     let mut detail_focus_subject_ids = BTreeSet::new();
     detail_focus_subject_ids.extend(direct_resolution_subject_ids(&output.wave.cover.cells));
-    let sustained_budgets = if fairness_stress_waves == 0 {
+    let sustained_budgets = if presence_only {
+        vec![]
+    } else if fairness_stress_waves == 0 {
         vec![4_u8, 8, 4]
     } else {
         vec![fairness_stress_budget; fairness_stress_waves]
@@ -516,7 +523,7 @@ async fn main() -> anyhow::Result<()> {
             serde_json::to_vec_pretty(&sustained_waves)?,
         )?;
     }
-    if background_subject_ids.len() < 3 {
+    if !presence_only && background_subject_ids.len() < 3 {
         anyhow::bail!(
             "sustained multiresolution waves produced only {} distinct background actors",
             background_subject_ids.len()
@@ -628,6 +635,7 @@ async fn main() -> anyhow::Result<()> {
         "sustained_background_subject_ids":background_subject_ids,
         "sustained_detail_focus_subject_ids":detail_focus_subject_ids,
         "fairness_stress_waves":fairness_stress_waves,
+        "presence_only":presence_only,
         "fairness_stress_budget":fairness_stress_budget,
         "stress_provider_parallelism":stress_provider_parallelism,
         "max_rejected_pulses_per_wave":max_rejected_pulses_per_wave,
