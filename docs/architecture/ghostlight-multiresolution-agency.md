@@ -631,6 +631,17 @@ showed that the remaining repeated-posture failures occurred when several
 constituents in one arena held while others acted, motivating the attributed
 inaction lane rather than another prompt-only prohibition.
 
+The first attributed-inaction/provider-parallelism-8 comparison committed nine
+waves, then exhausted its bounded retries at wave 10. It proved the new lane in
+mixed appraisals—across the first nine waves, 72 cells emitted 63 actions and 93
+attributed inactions, including 18 action-plus-inaction appraisals—but also
+exposed an overprojection failure. The Interpreter invented roster-completion
+inactions for subjects absent from the Persona turn, overflowing the
+four-perspective limit, and once wrote a reason beyond the 240-character schema
+bound. The contract now admits inaction only for a subject that explicitly
+holds or waits in the Persona turn, forbids absence-as-inaction, and asks for a
+reason of at most 160 characters while retaining the 240-character hard bound.
+
 The run also exposes the next authority gap. Institution postures, population
 migration, clocks, and history changed canonically, but most Gestalt activities
 remain attributed attempts recorded as events. Over many ticks this can repeat

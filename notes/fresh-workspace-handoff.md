@@ -321,6 +321,17 @@ non-mutating, permission-checked, unique, and mutually exclusive with an action
 from the same subject. The next live profile must compare retry rate and token
 efficiency under this new contract before claiming the waste is cut.
 
+The first parallelism-8 comparison on `97e05c5` committed nine waves and then
+failed closed at wave 10 after 11 total rejected pulses. Its first nine waves
+already showed the missing expressive capacity: 72 cell appraisals contained
+63 actions, 93 attributed inactions, and 18 mixed appraisals. The failure was
+overprojection, not authority leakage: the Interpreter filled in “no action
+taken” for unvoiced roster members, exceeded the four-perspective limit, and
+once exceeded the reason-length bound. The prompt now maps only explicit holds
+or waits from the Persona turn, forbids absence-as-inaction, and requests
+reasons within 160 characters. Rerun a 23-wave fairness-length budget-8 profile
+at provider parallelism 8 from the same committed migration baseline.
+
 Do not call setting-wide material agency finished yet. Most population output
 is still an attributed `gestalt_activity` attempt stored as history. The long
 run became repetitive around ferry loading and shelter requests because no
