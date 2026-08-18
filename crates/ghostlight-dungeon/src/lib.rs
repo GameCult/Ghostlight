@@ -8,6 +8,7 @@ pub mod kernel;
 pub mod mesh;
 pub mod model;
 pub mod narrator;
+pub mod outcome;
 pub mod persistence;
 pub mod persona;
 pub mod registry;

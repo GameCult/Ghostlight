@@ -1518,6 +1518,7 @@ async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
             rejected: runtime.store.load_all("rejected_proposal_receipt.v1")?,
             resolution_plans: runtime.store.load_all("resolution_plan_receipt.v1")?,
             cell_appraisals: runtime.store.load_all("cell_appraisal.v1")?,
+            activity_outcomes: runtime.store.load_all("strategic_activity_outcome.v1")?,
             resolution_controls: runtime.store.load_all("resolution_control_receipt.v1")?,
         });
     }

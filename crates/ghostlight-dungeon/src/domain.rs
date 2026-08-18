@@ -516,7 +516,79 @@ pub struct ResolutionWaveCommit {
     pub cover: ResolutionCover,
     pub plan_receipt: ResolutionPlanReceipt,
     pub appraisals: Vec<CellAppraisal>,
+    #[serde(default)]
+    pub activity_outcomes: Vec<StrategicActivityOutcome>,
     pub model_receipt_hashes: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum StrategicOutcomeBand {
+    Success,
+    Mixed,
+    Failure,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct StrategicActivityOutcome {
+    pub schema: String,
+    pub action_digest: String,
+    pub source_subject_id: String,
+    pub band: StrategicOutcomeBand,
+    #[schemars(length(min = 1, max = 240))]
+    pub summary: String,
+    #[serde(default)]
+    pub supporting_state_references: Vec<String>,
+    pub effect: StrategicOutcomeEffect,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum StrategicOutcomeEffect {
+    NoMaterialChange {
+        reason: String,
+    },
+    ResourceCreated {
+        owner_subject_id: String,
+        resource: String,
+    },
+    ResourceConsumed {
+        owner_subject_id: String,
+        resource: String,
+    },
+    ResourceTransferred {
+        from_subject_id: String,
+        to_subject_id: String,
+        resource: String,
+    },
+    GestaltPressure {
+        gestalt_id: String,
+        #[serde(default)]
+        pressure_additions: Vec<String>,
+        #[serde(default)]
+        pressure_resolutions: Vec<String>,
+    },
+    AgencyRelationShift {
+        relation_id: String,
+        strength_delta: i16,
+    },
+    MemberMemory {
+        member_id: String,
+        memory: String,
+    },
+    MemberObligation {
+        member_id: String,
+        obligation: String,
+    },
+    MemberRelationship {
+        member_id: String,
+        other_subject_id: String,
+        description: String,
+    },
+    KnowledgeLearned {
+        owner_subject_id: String,
+        fact_id: String,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -633,6 +705,8 @@ pub struct StrategicTickPlan {
     pub member_migrations: Vec<StrategicMemberMigration>,
     #[serde(default)]
     pub member_activities: Vec<StrategicMemberActivity>,
+    #[serde(default)]
+    pub activity_outcomes: Vec<StrategicActivityOutcome>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -653,6 +727,7 @@ pub struct StrategicGestaltAction {
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct StrategicGestaltActivity {
+    pub action_digest: String,
     pub gestalt_id: String,
     pub activity: StrategicActivityKind,
     pub target_subject_ids: Vec<String>,
@@ -686,6 +761,7 @@ pub struct StrategicMemberMigration {
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct StrategicMemberActivity {
+    pub action_digest: String,
     pub member_id: String,
     pub source_gestalt_id: String,
     pub activity: StrategicActivityKind,

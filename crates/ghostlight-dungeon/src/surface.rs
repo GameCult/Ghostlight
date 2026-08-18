@@ -115,6 +115,7 @@ pub fn operator_surface(
     rejected: &[RejectedProposalReceipt],
     resolution_plans: &[crate::domain::ResolutionPlanReceipt],
     cell_appraisals: &[crate::domain::CellAppraisal],
+    activity_outcomes: &[crate::domain::StrategicActivityOutcome],
     resolution_controls: &[crate::domain::ResolutionControlReceipt],
     live_turn_pressure: usize,
 ) -> Value {
@@ -205,6 +206,7 @@ pub fn operator_surface(
     "rejected_proposals": rejected,
     "resolution_plan_receipts": resolution_plans,
     "cell_appraisals": cell_appraisals,
+    "strategic_activity_outcomes": activity_outcomes,
     "resolution_control_receipts": resolution_controls,
     "scheduler": {"live_turn_pressure": live_turn_pressure}
     });
@@ -223,6 +225,7 @@ pub fn operator_surface(
         {"id":"dungeon.operator.status","kind":"card","props":{"title":format!("Revision {} · {} model stages / {} provider attempts · {} tokens · {} rejected proposals",campaign.revision,stages.len(),provider_attempt_count,token_usage.total_tokens,rejected.len())},"children":[{"id":"dungeon.operator.usage","kind":"text","props":{"value":format!("Prompt {} (cache hit {}, miss {}, {}%) · completion {} · reasoning {} · retries {}",token_usage.prompt_tokens,token_usage.prompt_cache_hit_tokens,token_usage.prompt_cache_miss_tokens,cache_hit_percent,token_usage.completion_tokens,token_usage.reasoning_tokens,retry_count)},"children":[]}]},
         {"id":"dungeon.operator.cover","kind":"card","props":{"title":format!("Agency cover · epoch {} · budget {}",campaign.resolution_policy.resolution_epoch,campaign.resolution_policy.active_cell_budget)},"children":[{"id":"dungeon.operator.cover.text","kind":"text","props":{"value":cover_text},"children":[]}]},
         {"id":"dungeon.operator.graph","kind":"card","props":{"title":format!("Agency graph · {} profiles · {} relations",campaign.agency_profiles.len(),campaign.agency_relations.len())},"children":[{"id":"dungeon.operator.graph.text","kind":"text","props":{"value":graph_text},"children":[]}]},
+        {"id":"dungeon.operator.outcomes","kind":"card","props":{"title":format!("Strategic activity outcomes · {}",activity_outcomes.len())},"children":[{"id":"dungeon.operator.outcomes.text","kind":"text","props":{"value":activity_outcomes.iter().rev().take(16).map(|outcome|format!("{} {:?} — {}",outcome.source_subject_id,outcome.band,outcome.summary)).collect::<Vec<_>>().join("\n")},"children":[]}]},
         {"id":"dungeon.operator.typed","kind":"code","props":{"language":"json","value":serde_json::to_string_pretty(&typed).unwrap_or_else(|_| "operator projection failed".into())},"children":[]}
       ]},"styles":{"tokens":{"colorBackground":"#0c1110","colorPanel":"#17201d","colorText":"#e8e1cf","colorMuted":"#9aa69f","colorAccent":"#d49b58"}}},
       "commands":[]

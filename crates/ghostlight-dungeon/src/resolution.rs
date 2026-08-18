@@ -1564,10 +1564,23 @@ pub fn plan_receipt(campaign: &Campaign, cover: &ResolutionCover) -> ResolutionP
     }
 }
 
-pub fn validate_and_resolve_wave(
+#[derive(Clone, Debug)]
+pub struct ResolutionWaveSelection {
+    pub plan: StrategicTickPlan,
+    pub activity_proposals: Vec<CellActionProposal>,
+}
+
+pub fn cell_action_digest(proposal: &CellActionProposal) -> Result<String> {
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(proposal)?)
+    ))
+}
+
+pub fn select_resolution_wave(
     campaign: &Campaign,
     wave: &ResolutionWaveCommit,
-) -> Result<StrategicTickPlan> {
+) -> Result<ResolutionWaveSelection> {
     if wave.world_revision != campaign.revision
         || wave.resolution_epoch != campaign.resolution_policy.resolution_epoch
         || wave.cover.world_revision != campaign.revision
@@ -1655,11 +1668,19 @@ pub fn validate_and_resolve_wave(
     let consequence_limit = 16usize.min(usize::from(wave.cover.effective_budget) * 2);
     let mut used = BTreeSet::new();
     let mut plan = StrategicTickPlan::default();
+    let mut activity_proposals = Vec::new();
     for proposal in proposals {
         let key = proposal_target_key(&proposal);
         if !used.insert(key) {
             continue;
         }
+        let action_digest = cell_action_digest(&proposal)?;
+        let is_activity = matches!(
+            proposal.effect,
+            StrategicCellEffect::GestaltActivity { .. }
+                | StrategicCellEffect::MemberActivity { .. }
+        );
+        let selected_activity_proposal = is_activity.then(|| proposal.clone());
         match proposal.effect {
             StrategicCellEffect::Institution {
                 institution_id,
@@ -1687,6 +1708,7 @@ pub fn validate_and_resolve_wave(
                 target_subject_ids,
                 location_ids,
             } => plan.gestalt_activities.push(StrategicGestaltActivity {
+                action_digest,
                 gestalt_id,
                 activity,
                 target_subject_ids,
@@ -1723,6 +1745,7 @@ pub fn validate_and_resolve_wave(
             } => {
                 let source_gestalt_id = campaign.gestalt_members[&member_id].gestalt_id.clone();
                 plan.member_activities.push(StrategicMemberActivity {
+                    action_digest,
                     member_id,
                     source_gestalt_id,
                     activity,
@@ -1752,6 +1775,9 @@ pub fn validate_and_resolve_wave(
                 });
             }
         }
+        if let Some(proposal) = selected_activity_proposal {
+            activity_proposals.push(proposal);
+        }
         if plan.institution_actions.len()
             + plan.gestalt_actions.len()
             + plan.gestalt_activities.len()
@@ -1764,7 +1790,24 @@ pub fn validate_and_resolve_wave(
             break;
         }
     }
-    Ok(plan)
+    Ok(ResolutionWaveSelection {
+        plan,
+        activity_proposals,
+    })
+}
+
+pub fn validate_and_resolve_wave(
+    campaign: &Campaign,
+    wave: &ResolutionWaveCommit,
+) -> Result<StrategicTickPlan> {
+    let mut selection = select_resolution_wave(campaign, wave)?;
+    crate::outcome::validate_activity_outcomes(
+        campaign,
+        &selection.activity_proposals,
+        &wave.activity_outcomes,
+    )?;
+    selection.plan.activity_outcomes = wave.activity_outcomes.clone();
+    Ok(selection.plan)
 }
 
 fn validate_cell_proposal(
@@ -3113,6 +3156,7 @@ pub(crate) mod tests {
                 inactions: vec![],
             }],
             cover: cover.clone(),
+            activity_outcomes: vec![],
             model_receipt_hashes: vec![],
         };
         let collective = CellActionProposal {
@@ -3286,6 +3330,7 @@ pub(crate) mod tests {
                 inactions: vec![],
             }],
             cover: cover.clone(),
+            activity_outcomes: vec![],
             model_receipt_hashes: vec![],
         };
         let plan = validate_and_resolve_wave(&value, &make_wave(proposal.clone())).unwrap();
@@ -3305,8 +3350,9 @@ pub(crate) mod tests {
                 location_ids: vec!["center".into()],
             },
         };
-        let activity_plan =
-            validate_and_resolve_wave(&value, &make_wave(member_activity.clone())).unwrap();
+        let activity_plan = select_resolution_wave(&value, &make_wave(member_activity.clone()))
+            .unwrap()
+            .plan;
         assert_eq!(activity_plan.member_activities.len(), 1);
         assert!(activity_plan.member_migrations.is_empty());
 
@@ -3318,7 +3364,7 @@ pub(crate) mod tests {
             unreachable!()
         };
         target_subject_ids.clear();
-        assert!(validate_and_resolve_wave(&value, &make_wave(local_member_communication)).is_ok());
+        assert!(select_resolution_wave(&value, &make_wave(local_member_communication)).is_ok());
 
         let same_member_wave = ResolutionWaveCommit {
             schema: "ghostlight.resolution_wave_commit.v1".into(),
@@ -3335,9 +3381,12 @@ pub(crate) mod tests {
                 inactions: vec![],
             }],
             cover: cover.clone(),
+            activity_outcomes: vec![],
             model_receipt_hashes: vec![],
         };
-        let same_member_plan = validate_and_resolve_wave(&value, &same_member_wave).unwrap();
+        let same_member_plan = select_resolution_wave(&value, &same_member_wave)
+            .unwrap()
+            .plan;
         assert_eq!(same_member_plan.member_activities.len(), 1);
         assert!(same_member_plan.member_migrations.is_empty());
 
@@ -3374,7 +3423,9 @@ pub(crate) mod tests {
             },
         };
         let activity_plan =
-            validate_and_resolve_wave(&value, &make_wave(exact_rival_activity.clone())).unwrap();
+            select_resolution_wave(&value, &make_wave(exact_rival_activity.clone()))
+                .unwrap()
+                .plan;
         assert_eq!(activity_plan.gestalt_activities.len(), 1);
         assert!(activity_plan.gestalt_actions.is_empty());
 
@@ -3406,15 +3457,18 @@ pub(crate) mod tests {
                 inactions: vec![],
             }],
             cover: cover.clone(),
+            activity_outcomes: vec![],
             model_receipt_hashes: vec![],
         };
-        let same_subject_plan = validate_and_resolve_wave(&value, &same_subject_wave).unwrap();
+        let same_subject_plan = select_resolution_wave(&value, &same_subject_wave)
+            .unwrap()
+            .plan;
         assert_eq!(same_subject_plan.gestalt_activities.len(), 1);
         assert!(same_subject_plan.gestalt_actions.is_empty());
 
         let mut borrowed_rival_channel = exact_rival_activity.clone();
         borrowed_rival_channel.public_channels = vec!["private dock code".into()];
-        assert!(validate_and_resolve_wave(&value, &make_wave(borrowed_rival_channel)).is_err());
+        assert!(select_resolution_wave(&value, &make_wave(borrowed_rival_channel)).is_err());
 
         let mut invented_target = exact_rival_activity;
         let StrategicCellEffect::GestaltActivity {
@@ -3424,7 +3478,7 @@ pub(crate) mod tests {
             unreachable!()
         };
         *target_subject_ids = vec!["unseen-stranger".into()];
-        assert!(validate_and_resolve_wave(&value, &make_wave(invented_target)).is_err());
+        assert!(select_resolution_wave(&value, &make_wave(invented_target)).is_err());
 
         assert!(strategic_activity_targets(&value, "dockers").contains("member:mira"));
         let address_mira = CellActionProposal {
@@ -3441,7 +3495,9 @@ pub(crate) mod tests {
                 location_ids: vec!["center".into()],
             },
         };
-        let address_plan = validate_and_resolve_wave(&value, &make_wave(address_mira)).unwrap();
+        let address_plan = select_resolution_wave(&value, &make_wave(address_mira))
+            .unwrap()
+            .plan;
         assert_eq!(address_plan.gestalt_activities.len(), 1);
         assert_eq!(address_plan.gestalt_activities[0].gestalt_id, "dockers");
         assert_eq!(
@@ -3488,6 +3544,7 @@ pub(crate) mod tests {
                 inactions: vec![],
             }],
             cover,
+            activity_outcomes: vec![],
             model_receipt_hashes: vec![],
         };
         let plan = validate_and_resolve_wave(&value, &wave).unwrap();

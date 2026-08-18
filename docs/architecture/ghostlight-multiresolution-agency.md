@@ -256,6 +256,75 @@ exact constituent. The kernel validates that subject's knowledge, information
 channel, resources, authority, relationships, location, and reachable
 destinations. Secrets are never unioned.
 
+## Strategic outcome authority
+
+A valid attributed attempt is not yet a world consequence. The Interpreter
+owns the narrow claim that a constituent chose an admissible attempt; it does
+not decide whether the attempt worked, what opposition did, or which durable
+state changed. Treating the attempt event as a sufficient result made the
+world busy in prose while its resources, relationships, knowledge, and
+pressures mostly stood still.
+
+One wave-level strategic outcome resolver owns that missing decision. It runs
+after priority and incompatibility selection but before the command enters the
+kernel:
+
+1. Ghostlight content-addresses every selected `gestalt_activity` and
+   `member_activity` proposal. The digest binds exact source, intent, intended
+   effect, targets, locations, state references, channels, and typed activity.
+2. A local context compiler supplies only those selected attempts and their
+   legal consequence handles: source capabilities and holdings, exact target
+   state, active incident relations, current pressures, eligible named-member
+   deltas, and source-discoverable canonical facts.
+3. One cheap structured model call resolves the batch. It returns exactly one
+   success, mixed, or failure result for every digest and chooses one bounded
+   typed effect, including an explicit `no_material_change` when the attempt
+   cannot honestly alter canonical state.
+4. Local validation recomputes every permission from the unchanged campaign
+   snapshot. It rejects invented owners, resources, relations, facts, pressure
+   resolutions, player mutation, missing outcomes, duplicate outcomes, and
+   conflicting effect targets. One same-snapshot correction is permitted.
+5. `WorldKernel` requires the outcome-stage receipt bound to the complete
+   ordered digest set, then applies the plan and all outcomes to one private
+   campaign copy. A late invalid effect aborts the wave; no clock, activity,
+   outcome, detail debt, or world state reaches the committed campaign.
+
+The public `strategic_activity_outcome.v1` contract is a typed sum. Its MVP
+effects are deliberately small:
+
+- create, spend, or give away a resource owned by the acting population or
+  named member;
+- add or resolve pressure on the acting population or an exact targeted
+  population;
+- shift one exact active agency relation incident to the source and a supplied
+  target by a bounded amount;
+- add one memory, obligation, or relationship description to an exact named
+  member who owns that perspective;
+- learn one exact canonical fact that was discoverable at the attempt location
+  or already known by an exact communication target;
+- or record an explicit reason why no durable material change occurred.
+
+The provider boundary uses a flat JSON proposal rather than asking the model to
+emit the public tagged sum directly. The private flat shape avoids fragile
+`oneOf` generation; a local interpreter is the only component allowed to turn
+it into the typed public effect. JSON remains a model-provider boundary. The
+accepted outcome, its binding, and its receipt are persisted through the
+campaign's CultCache path.
+
+Outcome resolution does not grant an arena collective authority. Every result
+remains bound to the exact constituent proposal digest. A rival can suffer a
+pressure or relation consequence, but cannot be made to speak, spend a
+resource, reveal knowledge, or acquire a private relationship as though the
+arena had chosen for it. Effects on the player are forbidden; accessible news
+may later reveal a committed consequence, but the absent player is never
+puppeted or directly harmed.
+
+The resolver is batched once per strategic wave rather than once per cell or
+attempt. This keeps the stable rules and schema in one cacheable prompt prefix,
+lets it compare simultaneous opposition, and spends completion tokens only on
+the handful of attempts that survived selection. Provider concurrency still
+controls the preceding Persona-cell wave and does not alter outcome authority.
+
 ## Fairness and quiet-world agency
 
 Every active profile carries persistent non-fictional `detail_debt`. Aggregate
@@ -496,6 +565,8 @@ The schema catalog and CultCache stores publish:
   `resolution_plan_receipt.v1`, and `resolution_control_receipt.v1`;
 - `cell_appraisal.v1`, `cell_action_proposal.v1`, and the internal atomic
   `resolution_wave_commit.v1` bundle;
+- `strategic_activity_outcome.v1`, persisted individually for inspection and
+  also bound inside the atomic resolution wave;
 - `gestalt_migration.v1` and `member_migration.v1` as distinct collective and
   individual movement contracts inside strategic plans;
 - `gestalt_fission_preview.v1` and approval-gated `FissionGestalt`.
@@ -526,6 +597,15 @@ lineage parents as simulation subjects, and repeats the identity/callback check
 after sustained compression. Both migration endpoints must be active leaves at
 lineage depth two or greater.
 
+Both modes distinguish selected attempts from resolved material consequences.
+The harness counts direct typed transitions and non-`no_material_change`
+activity outcomes separately, rejects a sustained run that never changes the
+background world materially, and records every outcome in the private
+preflight. A named member's dormant delta may now evolve offscreen, but any
+change to memory, obligation, relationship, equipment, or knowledge must be
+accounted for by an exact member-bound outcome before the return callback is
+accepted.
+
 Fairness acceptance treats a rejected provider wave the same way the daemon's
 scheduler does: the failed pulse records its private trace and commits nothing;
 a later pulse may try the same still-current revision again. The harness permits
@@ -538,7 +618,7 @@ proof of the attributed-inaction and immutable-batch machinery together. It ran
 23 sustained waves over 24 active subjects in 742.435 seconds. Every subject
 received direct resolution attention; 22 background subjects acted, while the
 two without a committed action were represented by exact attributed inaction.
-The wave plans committed 175 consequences: 85 population activities, 66
+The wave plans selected 175 strategic effects: 85 population activities, 66
 institution postures, 22 named-member activities, one population migration,
 and one population-pressure transition. The appraisals also retained 179
 attributed inactions, including 31 cells where some constituents acted while
@@ -560,11 +640,14 @@ victory lap. Observed traffic used 1,988,812 prompt and 233,146 completion
 tokens at a 66.64% prompt-cache hit rate. Nineteen rejected pulses consumed
 807,304 prompt tokens—40.59% of observed prompt work. Eleven were caught by the
 action-bound semantic verifier, three by Interpreter semantic validation, two
-by JSON Schema, and three by transport failure. Most population consequences
-are still attributed attempts recorded in event history rather than resolved
-changes to resources, bargains, obligations, relationships, or pressures. A
-separate strategic outcome resolver must own those material consequences; the
-Interpreter must not be promoted into asserting success.
+by JSON Schema, and three by transport failure. In that build, most population
+effects were still attributed attempts recorded in event history rather than
+resolved changes to resources, obligations, relationships, knowledge, or
+pressures. The current candidate adds the separate strategic outcome resolver
+described above without promoting the Interpreter into asserting success. A
+revised live result is still required; the `d044951` profile is evidence for
+cover, fairness, attribution, and atomic batch behavior, not evidence for
+material activity outcomes.
 
 The callback and fairness claims are independently falsifiable. Strict live
 mode requires Mira's Persona to choose resettlement and proves the later

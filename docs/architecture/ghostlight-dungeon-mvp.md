@@ -836,6 +836,7 @@ Ghostlight publishes JSON Schema for:
 - `ghostlight.resolution_control_receipt.v1`
 - `ghostlight.cell_appraisal.v1`
 - `ghostlight.cell_action_proposal.v1`
+- `ghostlight.strategic_activity_outcome.v1`
 - `ghostlight.gestalt_fission_preview.v1`
 
 The UI consumes existing `gamecult.eve.surface.v1` and

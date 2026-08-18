@@ -7,9 +7,9 @@ use crate::{
         RegionExpansionPreview, RejectedProposalReceipt, RelationshipState,
         ResolutionControlReceipt, ResolutionCover, ResolutionDemand, ResolutionPin,
         ResolutionPlanReceipt, ResolutionPolicy, RollReceipt, SimulationCell,
-        StrategicGestaltMigration, StrategicMemberMigration, StrategicTickPlan,
-        StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest, WorldActionProposal, WorldClock,
-        WorldCommitReceipt, WorldCompilePreview, WorldFact,
+        StrategicActivityOutcome, StrategicGestaltMigration, StrategicMemberMigration,
+        StrategicTickPlan, StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest,
+        WorldActionProposal, WorldClock, WorldCommitReceipt, WorldCompilePreview, WorldFact,
     },
     model::ModelStageReceipt,
     surface::{operator_surface, player_surface},
@@ -43,6 +43,7 @@ pub struct CampaignMeshSnapshot {
     pub rejected: Vec<RejectedProposalReceipt>,
     pub resolution_plans: Vec<ResolutionPlanReceipt>,
     pub cell_appraisals: Vec<CellAppraisal>,
+    pub activity_outcomes: Vec<StrategicActivityOutcome>,
     pub resolution_controls: Vec<ResolutionControlReceipt>,
 }
 
@@ -279,6 +280,7 @@ impl MeshPublisher {
                 &snapshot.rejected,
                 &snapshot.resolution_plans,
                 &snapshot.cell_appraisals,
+                &snapshot.activity_outcomes,
                 &snapshot.resolution_controls,
                 live_turn_pressure,
             );
@@ -405,6 +407,11 @@ fn schema_catalog() -> Value {
     let schemas = catalog
         .as_object_mut()
         .expect("schema catalog literal is an object");
+    schemas.insert(
+        "ghostlight.strategic_activity_outcome.v1".into(),
+        serde_json::to_value(schemars::schema_for!(StrategicActivityOutcome))
+            .expect("strategic activity outcome schema serializes"),
+    );
     schemas.insert(
         "ghostlight.gestalt_migration.v1".into(),
         serde_json::to_value(schemars::schema_for!(StrategicGestaltMigration))

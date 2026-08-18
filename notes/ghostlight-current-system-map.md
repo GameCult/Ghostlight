@@ -42,8 +42,10 @@ exact campaign revision
   -> cohesive or arena simulation-cell cover
   -> one private Projector/Persona/Interpreter membrane per cell
   -> model proposes exact constituent-attributed actions or explicit inaction
+  -> runtime selects compatible attempts and content-addresses each activity
+  -> one batched outcome resolver chooses bounded typed consequences
   -> runtime binds complete cell membership + world/resolution revisions
-  -> WorldKernel validates cover, receipts, knowledge, scope, topology, and bounds
+  -> WorldKernel validates cover, stage/outcome receipts, knowledge, scope, custody, topology, and bounds
   -> AdvanceStrategicTick through the campaign mailbox
   -> one atomic campaign/event/news/cover/appraisal commit
 ```
@@ -110,10 +112,25 @@ Gestalt background choices use three distinct typed paths. Pressure transitions
 change exact unresolved markers. `gestalt_activity` records an attributed
 preparation, coordination, investigation, recruitment, obstruction, trade, or
 communication attempt against subjects connected by an explicit agency
-relation or exact shared location without claiming the outcome. A selected
+relation or exact shared location without claiming the outcome. After
+selection, one wave-level Flash resolver receives only those attempts and
+precomputed legal consequence handles. It must return one digest-bound
+`strategic_activity_outcome.v1` per activity; missing, duplicate, stale,
+player-mutating, or invented effects reject the entire wave. Accepted outcomes
+may change exact resources, population pressures, incident agency relations,
+named-member deltas, or discoverable canonical knowledge, or explicitly record
+that no durable material change occurred. A selected
 dormant member can be addressed by their durable ID; this does not union them
 into the source population. The kernel derives the event text and exact
 participant IDs; the arena and model prose own neither.
+
+The outcome resolver does not repair or reinterpret Persona intent. The
+Interpreter owns the attempt; the resolver owns opposition and result;
+WorldKernel alone owns mutation. Its stage receipt binds the sorted set of
+MessagePack proposal digests, and every outcome is stored independently in
+CultCache and projected on the operator Eve surface. All effects apply to the
+same private campaign copy as the rest of the strategic wave, so a late invalid
+outcome cannot leave an earlier action, clock, detail debt, or event committed.
 
 `gestalt_migration` records a collective decision by one exact active leaf to
 move along an explicit migration relation and reachable route. WorldKernel

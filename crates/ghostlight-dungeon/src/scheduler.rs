@@ -4,13 +4,14 @@ use crate::{
         SimulationCell,
     },
     model::{ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
+    outcome::{activity_outcome_binding, resolve_activity_outcomes},
     persona::{
         CellConstituentSlice, CellMemberSlice, CellPerceivedEventSlice, CellProjectionEngine,
         ExecutionPermit, PermittedCellSlice,
     },
     resolution::{
-        cell_action_limit, default_demand, plan_cover, plan_receipt, validate_and_resolve_wave,
-        validate_demand,
+        cell_action_digest, cell_action_limit, default_demand, plan_cover, plan_receipt,
+        select_resolution_wave, validate_and_resolve_wave, validate_demand,
     },
 };
 use anyhow::{Context, Result, anyhow};
@@ -57,6 +58,8 @@ pub async fn propose_resolution_wave(
     let (demand, mut stages) = project_resolution_demand(model.as_ref(), campaign).await;
     let cover = plan_cover(campaign, demand)?;
     let receipt = plan_receipt(campaign, &cover);
+    let outcome_model = model.clone();
+    let outcome_permit = permit.clone();
     let engine = CellProjectionEngine {
         model,
         permit,
@@ -110,24 +113,67 @@ pub async fn propose_resolution_wave(
                 }),
         );
     }
-    let model_receipt_hashes = stages
+    let cell_model_receipt_hashes = stages
         .iter()
         .map(|stage| stage.receipt.storage_key().to_owned())
         .collect::<Vec<_>>();
-    let aggregate_receipt_hash = format!(
-        "sha256:{:x}",
-        Sha256::digest(model_receipt_hashes.join("|").as_bytes())
-    );
-    let wave = ResolutionWaveCommit {
+    let mut wave = ResolutionWaveCommit {
         schema: "ghostlight.resolution_wave_commit.v1".into(),
         world_revision: campaign.revision,
         resolution_epoch: campaign.resolution_policy.resolution_epoch,
         cover,
         plan_receipt: receipt,
         appraisals,
-        model_receipt_hashes,
+        activity_outcomes: Vec::new(),
+        model_receipt_hashes: cell_model_receipt_hashes,
     };
+    let selection = select_resolution_wave(campaign, &wave)?;
+    let outcome_digests = selection
+        .activity_proposals
+        .iter()
+        .map(cell_action_digest)
+        .collect::<Result<Vec<_>>>()?;
+    let outcome_binding = activity_outcome_binding(
+        campaign.id,
+        campaign.revision,
+        campaign.resolution_policy.resolution_epoch,
+        &outcome_digests,
+    );
+    if !outcome_digests.is_empty() {
+        outcome_permit
+            .require(
+                "strategic-outcomes",
+                &outcome_binding,
+                "strategic_outcome_resolver",
+            )
+            .await?;
+    }
+    let (activity_outcomes, outcome_stages) = resolve_activity_outcomes(
+        outcome_model.as_ref(),
+        campaign,
+        &selection.activity_proposals,
+    )
+    .await?;
+    if !outcome_digests.is_empty() {
+        outcome_permit
+            .require(
+                "strategic-outcomes",
+                &outcome_binding,
+                "strategic_outcome_terminal",
+            )
+            .await?;
+    }
+    stages.extend(outcome_stages);
+    wave.activity_outcomes = activity_outcomes;
+    wave.model_receipt_hashes = stages
+        .iter()
+        .map(|stage| stage.receipt.storage_key().to_owned())
+        .collect();
     validate_and_resolve_wave(campaign, &wave)?;
+    let aggregate_receipt_hash = format!(
+        "sha256:{:x}",
+        Sha256::digest(wave.model_receipt_hashes.join("|").as_bytes())
+    );
     Ok(StrategicResolutionOutput {
         wave,
         stages,

@@ -66,15 +66,25 @@ async fn main() -> anyhow::Result<()> {
     )
     .await?;
     let plan = ghostlight_dungeon::resolution::validate_and_resolve_wave(&campaign, &output.wave)?;
+    let material_activity_outcomes = plan
+        .activity_outcomes
+        .iter()
+        .filter(|outcome| {
+            !matches!(
+                outcome.effect,
+                ghostlight_dungeon::domain::StrategicOutcomeEffect::NoMaterialChange { .. }
+            )
+        })
+        .count();
     if plan.institution_actions.is_empty()
         && plan.gestalt_actions.is_empty()
-        && plan.gestalt_activities.is_empty()
+        && plan.gestalt_migrations.is_empty()
         && plan.actor_moves.is_empty()
-        && plan.member_activities.is_empty()
+        && plan.member_migrations.is_empty()
+        && material_activity_outcomes == 0
     {
         anyhow::bail!(
-            "strategic model proposed no material offscreen change: {}",
-            "all cells explicitly chose inaction"
+            "strategic model resolved no material offscreen change: direct transitions were empty and every selected activity outcome was no_material_change"
         );
     }
     for stage in &output.stages {

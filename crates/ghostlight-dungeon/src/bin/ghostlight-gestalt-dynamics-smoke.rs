@@ -232,6 +232,7 @@ async fn main() -> anyhow::Result<()> {
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "cover":&output.wave.cover,
         "appraisals":&output.wave.appraisals,
+        "activity_outcomes":&output.wave.activity_outcomes,
         "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
         "private_cell_traces":&output.private_cell_traces,
         "private_model_stage_outputs":output.stages.iter().map(|stage|serde_json::json!({
@@ -380,6 +381,9 @@ async fn main() -> anyhow::Result<()> {
     let mut rejected_wave_pulses = Vec::new();
     let mut background_subject_ids = BTreeSet::new();
     let mut detail_focus_subject_ids = BTreeSet::new();
+    let mut sustained_material_consequence_count = 0usize;
+    let mut sustained_material_outcome_count = 0usize;
+    let mut mira_outcome_kinds = BTreeSet::new();
     detail_focus_subject_ids.extend(direct_resolution_subject_ids(&output.wave.cover.cells));
     let sustained_budgets = if presence_only {
         vec![]
@@ -469,11 +473,34 @@ async fn main() -> anyhow::Result<()> {
                 "budget":budget,
                 "cover":&sustained_output.wave.cover,
                 "appraisals":&sustained_output.wave.appraisals,
+                "activity_outcomes":&sustained_output.wave.activity_outcomes,
                 "private_cell_traces":&sustained_output.private_cell_traces,
                 "model_stage_receipts":sustained_output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
             }))?,
         )?;
         let sustained_plan = validate_and_resolve_wave(&advanced, &sustained_output.wave)?;
+        let direct_material_count = sustained_plan.institution_actions.len()
+            + sustained_plan.gestalt_actions.len()
+            + sustained_plan.gestalt_migrations.len()
+            + sustained_plan.actor_moves.len()
+            + sustained_plan.member_migrations.len();
+        let material_outcome_count = sustained_plan
+            .activity_outcomes
+            .iter()
+            .filter(|outcome| {
+                !matches!(
+                    outcome.effect,
+                    ghostlight_dungeon::domain::StrategicOutcomeEffect::NoMaterialChange { .. }
+                )
+            })
+            .count();
+        sustained_material_consequence_count += direct_material_count + material_outcome_count;
+        sustained_material_outcome_count += material_outcome_count;
+        for outcome in &sustained_plan.activity_outcomes {
+            if let Some(kind) = member_outcome_kind(&outcome.effect, "mira-venn") {
+                mira_outcome_kinds.insert(kind.to_owned());
+            }
+        }
         for appraisal in &sustained_output.wave.appraisals {
             for proposal in &appraisal.actions {
                 if proposal.subject_id != "member:mira-venn" {
@@ -529,6 +556,9 @@ async fn main() -> anyhow::Result<()> {
             background_subject_ids.len()
         )
     }
+    if !presence_only && sustained_material_consequence_count == 0 {
+        anyhow::bail!("sustained multiresolution waves resolved no material background consequence")
+    }
     let fairness_missing_subject_ids = if fairness_stress_waves == 0 {
         BTreeSet::new()
     } else {
@@ -546,12 +576,24 @@ async fn main() -> anyhow::Result<()> {
     }
     let member_after_sustained = &advanced.gestalt_members["mira-venn"];
     if member_after_sustained.gestalt_id != "harbor-neighbors"
-        || member_after_sustained.relationships != member_before.relationships
-        || member_after_sustained.memories != member_before.memories
+        || member_after_sustained.name != member_before.name
+        || member_after_sustained.conditions != member_before.conditions
         || effective_member_capabilities(&advanced, "mira-venn")? != capabilities_before
-        || effective_member_knowledge(&advanced, "mira-venn")? != knowledge_before
     {
         anyhow::bail!("sustained population simulation damaged Mira's dormant identity")
+    }
+    if (member_after_sustained.relationships != member_before.relationships
+        && !mira_outcome_kinds.contains("relationship"))
+        || (member_after_sustained.memories != member_before.memories
+            && !mira_outcome_kinds.contains("memory"))
+        || (member_after_sustained.obligations != member_before.obligations
+            && !mira_outcome_kinds.contains("obligation"))
+        || (member_after_sustained.equipment != member_before.equipment
+            && !mira_outcome_kinds.contains("resource"))
+        || (effective_member_knowledge(&advanced, "mira-venn")? != knowledge_before
+            && !mira_outcome_kinds.contains("knowledge"))
+    {
+        anyhow::bail!("Mira's dormant delta changed without an exact member-bound outcome")
     }
 
     let return_event = "The player spends a quiet afternoon repairing the South Harbor ferry steps after the resettlement. The settled harbor populations move through their ordinary routines nearby.";
@@ -634,6 +676,9 @@ async fn main() -> anyhow::Result<()> {
         "initial_background_action_count":background_action_count,
         "sustained_background_subject_ids":background_subject_ids,
         "sustained_detail_focus_subject_ids":detail_focus_subject_ids,
+        "sustained_material_consequence_count":sustained_material_consequence_count,
+        "sustained_material_outcome_count":sustained_material_outcome_count,
+        "mira_outcome_kinds":mira_outcome_kinds,
         "fairness_stress_waves":fairness_stress_waves,
         "presence_only":presence_only,
         "fairness_stress_budget":fairness_stress_budget,
@@ -650,7 +695,7 @@ async fn main() -> anyhow::Result<()> {
         "automatic_presence_plan":presence_plan,
         "automatic_presence_receipt":presence_receipt,
         "identity_preserved":true,
-        "effective_state_preserved":true,
+        "member_delta_changes_bound_to_outcomes":true,
         "player_unchanged":true,
         "return_encounter_same_person":true,
         "event_kinds":event_kinds,
@@ -665,6 +710,44 @@ async fn main() -> anyhow::Result<()> {
     )?;
     println!("{}", serde_json::to_string_pretty(&result)?);
     Ok(())
+}
+
+#[cfg(windows)]
+fn member_outcome_kind(
+    effect: &ghostlight_dungeon::domain::StrategicOutcomeEffect,
+    member_id: &str,
+) -> Option<&'static str> {
+    use ghostlight_dungeon::domain::StrategicOutcomeEffect;
+
+    let member_subject_id = format!("member:{member_id}");
+    match effect {
+        StrategicOutcomeEffect::MemberMemory {
+            member_id: owner, ..
+        } if owner == member_id => Some("memory"),
+        StrategicOutcomeEffect::MemberObligation {
+            member_id: owner, ..
+        } if owner == member_id => Some("obligation"),
+        StrategicOutcomeEffect::MemberRelationship {
+            member_id: owner, ..
+        } if owner == member_id => Some("relationship"),
+        StrategicOutcomeEffect::KnowledgeLearned {
+            owner_subject_id, ..
+        } if owner_subject_id == &member_subject_id => Some("knowledge"),
+        StrategicOutcomeEffect::ResourceCreated {
+            owner_subject_id, ..
+        }
+        | StrategicOutcomeEffect::ResourceConsumed {
+            owner_subject_id, ..
+        } if owner_subject_id == &member_subject_id => Some("resource"),
+        StrategicOutcomeEffect::ResourceTransferred {
+            from_subject_id,
+            to_subject_id,
+            ..
+        } if from_subject_id == &member_subject_id || to_subject_id == &member_subject_id => {
+            Some("resource")
+        }
+        _ => None,
+    }
 }
 
 #[cfg(windows)]

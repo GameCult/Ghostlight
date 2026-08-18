@@ -414,6 +414,11 @@ fn execute(
                     .iter()
                     .filter(|appraisal| !appraisal.actions.is_empty())
                     .count();
+                let outcome_digests = resolved_plan
+                    .as_ref()
+                    .map(crate::outcome::plan_activity_digests)
+                    .unwrap_or_default();
+                let outcome_stage_count = usize::from(!outcome_digests.is_empty());
                 if unique_hashes.len() != wave.model_receipt_hashes.len()
                     || wave.model_receipt_hashes.len()
                         < wave
@@ -422,6 +427,7 @@ fn execute(
                             .len()
                             .saturating_mul(3)
                             .saturating_add(actionful_cell_count)
+                            .saturating_add(outcome_stage_count)
                 {
                     return Err(KernelError::Invalid(
                         "resolution wave does not carry one distinct stage receipt per cell stage"
@@ -488,6 +494,20 @@ fn execute(
                                 cell.id
                             )));
                         }
+                    }
+                }
+                if !outcome_digests.is_empty() {
+                    let binding = crate::outcome::activity_outcome_binding(
+                        campaign.id,
+                        campaign.revision,
+                        campaign.resolution_policy.resolution_epoch,
+                        &outcome_digests,
+                    );
+                    if !stage_bindings.contains(&("strategic_outcome_resolver".into(), binding)) {
+                        return Err(KernelError::Invalid(
+                            "resolution wave lacks an activity-bound strategic outcome receipt"
+                                .into(),
+                        ));
                     }
                 }
             }
@@ -1270,6 +1290,30 @@ fn apply_strategic_tick_plan(
     campaign: &mut Campaign,
     plan: crate::domain::StrategicTickPlan,
 ) -> Result<Vec<crate::domain::Event>, KernelError> {
+    crate::outcome::validate_plan_activity_outcomes(campaign, &plan)
+        .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    let activity_outcomes = plan.activity_outcomes.clone();
+    let mut outcome_event_context = BTreeMap::new();
+    for activity in &plan.gestalt_activities {
+        outcome_event_context.insert(
+            activity.action_digest.clone(),
+            (
+                activity.gestalt_id.clone(),
+                activity.location_ids.clone(),
+                activity.public_channels.clone(),
+            ),
+        );
+    }
+    for activity in &plan.member_activities {
+        outcome_event_context.insert(
+            activity.action_digest.clone(),
+            (
+                format!("member:{}", activity.member_id),
+                activity.location_ids.clone(),
+                activity.public_channels.clone(),
+            ),
+        );
+    }
     // Every action in a strategic wave was chosen against the same committed
     // snapshot. Keep that snapshot immutable while applying to a private copy
     // so action ordering cannot rewrite another action's permissions and an
@@ -1706,8 +1750,289 @@ fn apply_strategic_tick_plan(
             public_channels: action.public_channels,
         });
     }
+    for outcome in activity_outcomes {
+        let (source_subject_id, locations, public_channels) = outcome_event_context
+            .remove(&outcome.action_digest)
+            .ok_or_else(|| {
+                KernelError::Invalid("strategic outcome lost its activity context".into())
+            })?;
+        apply_strategic_outcome_effect(&mut next, &outcome.effect)?;
+        let mut subject_ids = BTreeSet::from([source_subject_id]);
+        collect_outcome_subject_ids(&outcome.effect, &mut subject_ids);
+        let mut actor_ids = Vec::new();
+        let mut institution_ids = Vec::new();
+        let mut gestalt_ids = Vec::new();
+        for subject_id in subject_ids {
+            if let Some(member_id) = subject_id.strip_prefix("member:") {
+                actor_ids.push(subject_id.clone());
+                if let Some(member) = next.gestalt_members.get(member_id) {
+                    gestalt_ids.push(member.gestalt_id.clone());
+                }
+            } else if next.actors.contains_key(&subject_id) {
+                actor_ids.push(subject_id);
+            } else if next.institutions.contains_key(&subject_id) {
+                institution_ids.push(subject_id);
+            } else if next.gestalts.contains_key(&subject_id) {
+                gestalt_ids.push(subject_id);
+            }
+        }
+        actor_ids.sort();
+        actor_ids.dedup();
+        institution_ids.sort();
+        institution_ids.dedup();
+        gestalt_ids.sort();
+        gestalt_ids.dedup();
+        let digest_suffix = outcome
+            .action_digest
+            .strip_prefix("sha256:")
+            .unwrap_or(&outcome.action_digest)
+            .chars()
+            .take(16)
+            .collect::<String>();
+        events.push(Event {
+            id: format!("strategic:{revision}:activity-outcome:{digest_suffix}"),
+            at,
+            kind: "strategic_activity_outcome".into(),
+            summary: outcome.summary,
+            actor_ids,
+            institution_ids,
+            gestalt_ids,
+            location_ids: locations,
+            public_channels,
+        });
+    }
     *campaign = next;
     Ok(events)
+}
+
+fn apply_strategic_outcome_effect(
+    campaign: &mut Campaign,
+    effect: &crate::domain::StrategicOutcomeEffect,
+) -> Result<(), KernelError> {
+    use crate::domain::StrategicOutcomeEffect;
+    match effect {
+        StrategicOutcomeEffect::NoMaterialChange { .. } => {}
+        StrategicOutcomeEffect::ResourceCreated {
+            owner_subject_id,
+            resource,
+        } => insert_subject_resource(campaign, owner_subject_id, resource)?,
+        StrategicOutcomeEffect::ResourceConsumed {
+            owner_subject_id,
+            resource,
+        } => remove_subject_resource(campaign, owner_subject_id, resource)?,
+        StrategicOutcomeEffect::ResourceTransferred {
+            from_subject_id,
+            to_subject_id,
+            resource,
+        } => {
+            remove_subject_resource(campaign, from_subject_id, resource)?;
+            insert_subject_resource(campaign, to_subject_id, resource)?;
+        }
+        StrategicOutcomeEffect::GestaltPressure {
+            gestalt_id,
+            pressure_additions,
+            pressure_resolutions,
+        } => {
+            let gestalt = campaign
+                .gestalts
+                .get_mut(gestalt_id)
+                .ok_or_else(|| KernelError::Invalid("outcome gestalt vanished".into()))?;
+            crate::resolution::validate_gestalt_pressure_transition(
+                &gestalt.pressures,
+                pressure_additions,
+                pressure_resolutions,
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let resolved = pressure_resolutions.iter().collect::<BTreeSet<_>>();
+            gestalt
+                .pressures
+                .retain(|pressure| !resolved.contains(pressure));
+            gestalt.pressures.extend(pressure_additions.iter().cloned());
+            gestalt.version = gestalt.version.saturating_add(1);
+        }
+        StrategicOutcomeEffect::AgencyRelationShift {
+            relation_id,
+            strength_delta,
+        } => {
+            let relation = campaign
+                .agency_relations
+                .get_mut(relation_id)
+                .ok_or_else(|| KernelError::Invalid("outcome relation vanished".into()))?;
+            relation.strength = u8::try_from(i16::from(relation.strength) + strength_delta)
+                .map_err(|_| KernelError::Invalid("outcome relation shift overflowed".into()))?;
+        }
+        StrategicOutcomeEffect::MemberMemory { member_id, memory } => {
+            let member = campaign
+                .gestalt_members
+                .get_mut(member_id)
+                .ok_or_else(|| KernelError::Invalid("outcome member vanished".into()))?;
+            if !member.memories.contains(memory) {
+                member.memories.push(memory.clone());
+            }
+            member.version = member.version.saturating_add(1);
+        }
+        StrategicOutcomeEffect::MemberObligation {
+            member_id,
+            obligation,
+        } => {
+            let member = campaign
+                .gestalt_members
+                .get_mut(member_id)
+                .ok_or_else(|| KernelError::Invalid("outcome member vanished".into()))?;
+            member.obligations.insert(obligation.clone());
+            member.version = member.version.saturating_add(1);
+        }
+        StrategicOutcomeEffect::MemberRelationship {
+            member_id,
+            other_subject_id,
+            description,
+        } => {
+            let member = campaign
+                .gestalt_members
+                .get_mut(member_id)
+                .ok_or_else(|| KernelError::Invalid("outcome member vanished".into()))?;
+            member
+                .relationships
+                .insert(other_subject_id.clone(), description.clone());
+            member.version = member.version.saturating_add(1);
+        }
+        StrategicOutcomeEffect::KnowledgeLearned {
+            owner_subject_id,
+            fact_id,
+        } => {
+            let statement = campaign
+                .facts
+                .get(fact_id)
+                .map(|fact| fact.statement.clone())
+                .ok_or_else(|| KernelError::Invalid("outcome fact vanished".into()))?;
+            if let Some(member_id) = owner_subject_id.strip_prefix("member:") {
+                let member = campaign
+                    .gestalt_members
+                    .get_mut(member_id)
+                    .ok_or_else(|| KernelError::Invalid("outcome member vanished".into()))?;
+                member.knowledge_removals.remove(&statement);
+                member.knowledge_additions.insert(statement);
+                member.version = member.version.saturating_add(1);
+            } else {
+                let gestalt = campaign.gestalts.get_mut(owner_subject_id).ok_or_else(|| {
+                    KernelError::Invalid("outcome knowledge owner vanished".into())
+                })?;
+                gestalt.shared_knowledge.insert(statement);
+                gestalt.version = gestalt.version.saturating_add(1);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn insert_subject_resource(
+    campaign: &mut Campaign,
+    subject_id: &str,
+    resource: &str,
+) -> Result<(), KernelError> {
+    if let Some(member_id) = subject_id.strip_prefix("member:") {
+        let member = campaign
+            .gestalt_members
+            .get_mut(member_id)
+            .ok_or_else(|| KernelError::Invalid("resource member vanished".into()))?;
+        member.equipment.insert(resource.into());
+        member.version = member.version.saturating_add(1);
+        return Ok(());
+    }
+    if let Some(gestalt) = campaign.gestalts.get_mut(subject_id) {
+        gestalt.resources.insert(resource.into());
+        gestalt.version = gestalt.version.saturating_add(1);
+        return Ok(());
+    }
+    if let Some(institution) = campaign.institutions.get_mut(subject_id) {
+        institution.resources.push(resource.into());
+        institution.resources.sort();
+        institution.resources.dedup();
+        return Ok(());
+    }
+    if let Some(actor) = campaign.actors.get_mut(subject_id) {
+        actor.equipment.insert(resource.into());
+        return Ok(());
+    }
+    Err(KernelError::Invalid("resource recipient vanished".into()))
+}
+
+fn remove_subject_resource(
+    campaign: &mut Campaign,
+    subject_id: &str,
+    resource: &str,
+) -> Result<(), KernelError> {
+    let removed = if let Some(member_id) = subject_id.strip_prefix("member:") {
+        let member = campaign
+            .gestalt_members
+            .get_mut(member_id)
+            .ok_or_else(|| KernelError::Invalid("resource member vanished".into()))?;
+        let removed = member.equipment.remove(resource);
+        member.version = member.version.saturating_add(1);
+        removed
+    } else if let Some(gestalt) = campaign.gestalts.get_mut(subject_id) {
+        let removed = gestalt.resources.remove(resource);
+        gestalt.version = gestalt.version.saturating_add(1);
+        removed
+    } else if let Some(institution) = campaign.institutions.get_mut(subject_id) {
+        let previous = institution.resources.len();
+        institution.resources.retain(|value| value != resource);
+        institution.resources.len() != previous
+    } else if let Some(actor) = campaign.actors.get_mut(subject_id) {
+        actor.equipment.remove(resource)
+    } else {
+        return Err(KernelError::Invalid("resource owner vanished".into()));
+    };
+    if !removed {
+        return Err(KernelError::Invalid(
+            "outcome attempted to spend a missing resource".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn collect_outcome_subject_ids(
+    effect: &crate::domain::StrategicOutcomeEffect,
+    subjects: &mut BTreeSet<String>,
+) {
+    use crate::domain::StrategicOutcomeEffect;
+    match effect {
+        StrategicOutcomeEffect::NoMaterialChange { .. } => {}
+        StrategicOutcomeEffect::ResourceCreated {
+            owner_subject_id, ..
+        }
+        | StrategicOutcomeEffect::ResourceConsumed {
+            owner_subject_id, ..
+        }
+        | StrategicOutcomeEffect::KnowledgeLearned {
+            owner_subject_id, ..
+        } => {
+            subjects.insert(owner_subject_id.clone());
+        }
+        StrategicOutcomeEffect::ResourceTransferred {
+            from_subject_id,
+            to_subject_id,
+            ..
+        } => {
+            subjects.insert(from_subject_id.clone());
+            subjects.insert(to_subject_id.clone());
+        }
+        StrategicOutcomeEffect::GestaltPressure { gestalt_id, .. } => {
+            subjects.insert(gestalt_id.clone());
+        }
+        StrategicOutcomeEffect::AgencyRelationShift { .. } => {}
+        StrategicOutcomeEffect::MemberMemory { member_id, .. }
+        | StrategicOutcomeEffect::MemberObligation { member_id, .. }
+        | StrategicOutcomeEffect::MemberRelationship { member_id, .. } => {
+            subjects.insert(format!("member:{member_id}"));
+            if let StrategicOutcomeEffect::MemberRelationship {
+                other_subject_id, ..
+            } = effect
+            {
+                subjects.insert(other_subject_id.clone());
+            }
+        }
+    }
 }
 
 fn strategic_activity_summary(
@@ -2132,7 +2457,40 @@ fn persist(e: anyhow::Error) -> KernelError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sha2::{Digest, Sha256};
     use std::collections::{BTreeMap, BTreeSet};
+
+    fn test_action_digest(label: &str) -> String {
+        format!("sha256:{:x}", Sha256::digest(label.as_bytes()))
+    }
+
+    fn resolve_test_activities(mut plan: StrategicTickPlan) -> StrategicTickPlan {
+        plan.activity_outcomes.extend(
+            plan.gestalt_activities
+                .iter()
+                .map(|activity| (activity.action_digest.clone(), activity.gestalt_id.clone()))
+                .chain(plan.member_activities.iter().map(|activity| {
+                    (
+                        activity.action_digest.clone(),
+                        format!("member:{}", activity.member_id),
+                    )
+                }))
+                .map(
+                    |(action_digest, source_subject_id)| StrategicActivityOutcome {
+                        schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                        action_digest,
+                        source_subject_id,
+                        band: StrategicOutcomeBand::Mixed,
+                        summary: "The attempt produces no durable material change.".into(),
+                        supporting_state_references: vec![],
+                        effect: StrategicOutcomeEffect::NoMaterialChange {
+                            reason: "No response is established in this test snapshot.".into(),
+                        },
+                    },
+                ),
+        );
+        plan
+    }
 
     fn campaign() -> Campaign {
         let id = uuid::Uuid::new_v4();
@@ -2741,7 +3099,7 @@ mod tests {
 
         let events = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 gestalt_migrations: vec![StrategicGestaltMigration {
                     gestalt_id: "refugees-east".into(),
                     destination_gestalt_id: "dock-neighbors".into(),
@@ -2749,6 +3107,7 @@ mod tests {
                     public_channels: vec![],
                 }],
                 gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("simultaneous communication"),
                     gestalt_id: "camp-neighbors".into(),
                     activity: StrategicActivityKind::Communicate,
                     target_subject_ids: vec!["refugees-east".into()],
@@ -2756,12 +3115,12 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap();
 
         assert_eq!(value.gestalts["refugees-east"].home_location_id, "docks");
-        assert_eq!(events.len(), 2);
+        assert_eq!(events.len(), 3);
         assert_eq!(events[1].kind, "gestalt_activity");
         assert_eq!(events[1].location_ids, vec!["camp"]);
         assert_eq!(
@@ -2776,7 +3135,7 @@ mod tests {
         let before = value.clone();
         let error = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 gestalt_migrations: vec![StrategicGestaltMigration {
                     gestalt_id: "refugees-east".into(),
                     destination_gestalt_id: "dock-neighbors".into(),
@@ -2784,6 +3143,7 @@ mod tests {
                     public_channels: vec![],
                 }],
                 gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("conflicting refugee preparation"),
                     gestalt_id: "refugees-east".into(),
                     activity: StrategicActivityKind::Prepare,
                     target_subject_ids: vec![],
@@ -2791,7 +3151,7 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap_err();
 
@@ -2896,13 +3256,14 @@ mod tests {
     }
 
     #[test]
-    fn gestalt_activity_records_an_attributed_attempt_without_claiming_an_outcome() {
+    fn gestalt_activity_requires_an_explicit_resolved_no_material_outcome() {
         let mut value = hierarchical_refugee_campaign();
         let before = value.clone();
         let events = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("refugee coordination"),
                     gestalt_id: "refugees-east".into(),
                     activity: StrategicActivityKind::Coordinate,
                     target_subject_ids: vec!["dock-neighbors".into()],
@@ -2910,11 +3271,11 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap();
         assert_eq!(value, before);
-        assert_eq!(events.len(), 1);
+        assert_eq!(events.len(), 2);
         assert_eq!(events[0].kind, "gestalt_activity");
         assert_eq!(
             events[0].summary,
@@ -2926,6 +3287,173 @@ mod tests {
         );
         assert!(events[0].actor_ids.is_empty());
         assert!(events[0].institution_ids.is_empty());
+        assert_eq!(events[1].kind, "strategic_activity_outcome");
+        assert_eq!(
+            events[1].summary,
+            "The attempt produces no durable material change."
+        );
+    }
+
+    #[test]
+    fn strategic_outcome_materializes_a_bounded_resource_from_exact_capability() {
+        let mut value = hierarchical_refugee_campaign();
+        let digest = test_action_digest("refugees prepare storm lashings");
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: digest.clone(),
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Prepare,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                activity_outcomes: vec![StrategicActivityOutcome {
+                    schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                    action_digest: digest,
+                    source_subject_id: "refugees-east".into(),
+                    band: StrategicOutcomeBand::Success,
+                    summary: "The refugees finish a set of storm lashings.".into(),
+                    supporting_state_references: vec![
+                        "capability:survive transit".into(),
+                        "location:camp".into(),
+                    ],
+                    effect: StrategicOutcomeEffect::ResourceCreated {
+                        owner_subject_id: "refugees-east".into(),
+                        resource: "storm lashings".into(),
+                    },
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        assert!(
+            value.gestalts["refugees-east"]
+                .resources
+                .contains("storm lashings")
+        );
+        assert_eq!(value.gestalts["refugees-east"].version, 1);
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[1].kind, "strategic_activity_outcome");
+    }
+
+    #[test]
+    fn invalid_outcome_bundle_cannot_apply_an_earlier_material_effect() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let first = test_action_digest("valid material preparation");
+        let second = test_action_digest("invalid resource spend");
+        let error = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                gestalt_activities: vec![
+                    StrategicGestaltActivity {
+                        action_digest: first.clone(),
+                        gestalt_id: "refugees-east".into(),
+                        activity: StrategicActivityKind::Prepare,
+                        target_subject_ids: vec![],
+                        location_ids: vec!["camp".into()],
+                        public_channels: vec![],
+                    },
+                    StrategicGestaltActivity {
+                        action_digest: second.clone(),
+                        gestalt_id: "dock-neighbors".into(),
+                        activity: StrategicActivityKind::Prepare,
+                        target_subject_ids: vec![],
+                        location_ids: vec!["docks".into()],
+                        public_channels: vec![],
+                    },
+                ],
+                activity_outcomes: vec![
+                    StrategicActivityOutcome {
+                        schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                        action_digest: first,
+                        source_subject_id: "refugees-east".into(),
+                        band: StrategicOutcomeBand::Success,
+                        summary: "A valid first result.".into(),
+                        supporting_state_references: vec!["capability:survive transit".into()],
+                        effect: StrategicOutcomeEffect::ResourceCreated {
+                            owner_subject_id: "refugees-east".into(),
+                            resource: "valid new shelter frame".into(),
+                        },
+                    },
+                    StrategicActivityOutcome {
+                        schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                        action_digest: second,
+                        source_subject_id: "dock-neighbors".into(),
+                        band: StrategicOutcomeBand::Failure,
+                        summary: "An invalid second result.".into(),
+                        supporting_state_references: vec!["capability:repair nets".into()],
+                        effect: StrategicOutcomeEffect::ResourceConsumed {
+                            owner_subject_id: "dock-neighbors".into(),
+                            resource: "invented missing winch".into(),
+                        },
+                    },
+                ],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+
+        assert!(error.to_string().contains("custody"));
+        assert_eq!(value, before);
+    }
+
+    #[test]
+    fn member_outcome_preserves_its_own_relationship_without_mutating_the_player() {
+        let mut value = hierarchical_refugee_campaign();
+        value.agency_relations.insert(
+            "refugee-message-to-player".into(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "refugee-message-to-player".into(),
+                from_subject_id: "refugees-east".into(),
+                to_subject_id: "player".into(),
+                kind: AgencyRelationKind::Communication,
+                strength: 40,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+        let player_before = value.actors["player"].clone();
+        let digest = test_action_digest("mira renews her promise");
+        apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                member_activities: vec![StrategicMemberActivity {
+                    action_digest: digest.clone(),
+                    member_id: "mira".into(),
+                    source_gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec!["player".into()],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                activity_outcomes: vec![StrategicActivityOutcome {
+                    schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                    action_digest: digest,
+                    source_subject_id: "member:mira".into(),
+                    band: StrategicOutcomeBand::Success,
+                    summary: "Mira keeps the promise alive despite the distance.".into(),
+                    supporting_state_references: vec!["member:mira".into()],
+                    effect: StrategicOutcomeEffect::MemberRelationship {
+                        member_id: "mira".into(),
+                        other_subject_id: "player".into(),
+                        description: "intends to find and repay the rescuer after settling".into(),
+                    },
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(value.actors["player"], player_before);
+        assert_eq!(
+            value.gestalt_members["mira"].relationships["player"],
+            "intends to find and repay the rescuer after settling"
+        );
     }
 
     #[test]
@@ -2934,8 +3462,9 @@ mod tests {
         let before = value.clone();
         let events = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("local refugee investigation"),
                     gestalt_id: "refugees-east".into(),
                     activity: StrategicActivityKind::Investigate,
                     target_subject_ids: vec![],
@@ -2943,7 +3472,7 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap();
         assert_eq!(value, before);
@@ -2961,8 +3490,9 @@ mod tests {
         let before = value.clone();
         let events = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("local refugee communication"),
                     gestalt_id: "refugees-east".into(),
                     activity: StrategicActivityKind::Communicate,
                     target_subject_ids: vec![],
@@ -2970,7 +3500,7 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap();
         assert_eq!(value, before);
@@ -2989,8 +3519,9 @@ mod tests {
         let before = value.clone();
         let events = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 member_activities: vec![StrategicMemberActivity {
+                    action_digest: test_action_digest("mira local communication"),
                     member_id: "mira".into(),
                     source_gestalt_id: "refugees-east".into(),
                     activity: StrategicActivityKind::Communicate,
@@ -2999,7 +3530,7 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap();
         assert_eq!(value, before);
@@ -3024,8 +3555,9 @@ mod tests {
         let before = value.clone();
         let events = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("neighbors address mira"),
                     gestalt_id: "dock-neighbors".into(),
                     activity: StrategicActivityKind::Communicate,
                     target_subject_ids: vec!["member:mira".into()],
@@ -3033,11 +3565,11 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap();
         assert_eq!(value, before);
-        assert_eq!(events.len(), 1);
+        assert_eq!(events.len(), 2);
         assert_eq!(
             events[0].summary,
             "South dock neighbors sends a communication to Mira Venn."
@@ -3052,8 +3584,9 @@ mod tests {
         let before = value.clone();
         let error = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("remote address mira"),
                     gestalt_id: "dock-neighbors".into(),
                     activity: StrategicActivityKind::Communicate,
                     target_subject_ids: vec!["member:mira".into()],
@@ -3061,7 +3594,7 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap_err();
         assert!(error.to_string().contains("exact graph or location scope"));
@@ -3090,8 +3623,9 @@ mod tests {
         let before = value.clone();
         let error = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("nonadjacent communication"),
                     gestalt_id: "refugees-east".into(),
                     activity: StrategicActivityKind::Communicate,
                     target_subject_ids: vec!["distant-crowd".into()],
@@ -3099,7 +3633,7 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap_err();
         assert!(error.to_string().contains("exact graph or location scope"));
@@ -3112,8 +3646,9 @@ mod tests {
         let before = value.clone();
         let events = apply_strategic_tick_plan(
             &mut value,
-            StrategicTickPlan {
+            resolve_test_activities(StrategicTickPlan {
                 member_activities: vec![StrategicMemberActivity {
+                    action_digest: test_action_digest("mira addresses refugees"),
                     member_id: "mira".into(),
                     source_gestalt_id: "refugees-east".into(),
                     activity: StrategicActivityKind::Communicate,
@@ -3122,11 +3657,11 @@ mod tests {
                     public_channels: vec![],
                 }],
                 ..Default::default()
-            },
+            }),
         )
         .unwrap();
         assert_eq!(value, before);
-        assert_eq!(events.len(), 1);
+        assert_eq!(events.len(), 2);
         assert_eq!(events[0].kind, "gestalt_member_activity");
         assert_eq!(
             events[0].summary,
@@ -4263,6 +4798,7 @@ mod tests {
                 })
                 .collect(),
             cover,
+            activity_outcomes: vec![],
             model_receipt_hashes: hashes,
         }
     }
@@ -4508,6 +5044,177 @@ mod tests {
             .1;
         assert_eq!(stored.revision, 0);
         assert_eq!(stored.world_time, seed.world_time);
+    }
+
+    #[tokio::test]
+    async fn activity_outcome_receipt_must_bind_the_exact_selected_digest_set() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = hierarchical_refugee_campaign();
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        let mut wave = inaction_wave(&persisted, &store);
+        let appraisal = wave
+            .appraisals
+            .iter_mut()
+            .find(|appraisal| appraisal.considered_subject_ids.contains("refugees-east"))
+            .unwrap();
+        let proposal = CellActionProposal {
+            subject_id: "refugees-east".into(),
+            intent: "prepare storm lashings".into(),
+            intended_effect: "finish one bounded set of camp lashings".into(),
+            priority: 60,
+            state_references: vec![
+                "subject:refugees-east".into(),
+                "capability:survive transit".into(),
+                "location:camp".into(),
+            ],
+            public_channels: vec![],
+            effect: StrategicCellEffect::GestaltActivity {
+                gestalt_id: "refugees-east".into(),
+                activity: StrategicActivityKind::Prepare,
+                target_subject_ids: vec![],
+                location_ids: vec!["camp".into()],
+            },
+        };
+        let action_digest = crate::resolution::cell_action_digest(&proposal).unwrap();
+        appraisal.actions = vec![proposal];
+        appraisal.inactions.clear();
+        let appraisal_cell_id = appraisal.cell_id.clone();
+        let appraisal_actions = appraisal.actions.clone();
+        wave.activity_outcomes = vec![StrategicActivityOutcome {
+            schema: "ghostlight.strategic_activity_outcome.v1".into(),
+            action_digest: action_digest.clone(),
+            source_subject_id: "refugees-east".into(),
+            band: StrategicOutcomeBand::Success,
+            summary: "The camp finishes one set of storm lashings.".into(),
+            supporting_state_references: vec!["capability:survive transit".into()],
+            effect: StrategicOutcomeEffect::ResourceCreated {
+                owner_subject_id: "refugees-east".into(),
+                resource: "storm lashings".into(),
+            },
+        }];
+
+        let base_binding = format!(
+            "campaign:{}:revision:{}:resolution:{}:cell:{}",
+            persisted.id,
+            persisted.revision,
+            persisted.resolution_policy.resolution_epoch,
+            appraisal_cell_id
+        );
+        let mut verifier =
+            resolution_stage(&appraisal_cell_id, &persisted, "cell_effect_verifier", '7');
+        verifier.snapshot_binding =
+            crate::persona::cell_effect_verification_binding(&base_binding, &appraisal_actions)
+                .unwrap();
+        let wrong_outcome = resolution_stage(
+            &appraisal_cell_id,
+            &persisted,
+            "strategic_outcome_resolver",
+            '8',
+        );
+        for receipt in [verifier, wrong_outcome] {
+            store
+                .insert(
+                    "persona_stage_receipt.v1",
+                    "ghostlight.persona_stage_receipt.v1",
+                    receipt.storage_key(),
+                    &receipt,
+                )
+                .unwrap();
+            wave.model_receipt_hashes
+                .push(receipt.storage_key().to_owned());
+        }
+        let mut correct_wave = wave.clone();
+        let mut correct_outcome = resolution_stage(
+            &appraisal_cell_id,
+            &persisted,
+            "strategic_outcome_resolver",
+            '9',
+        );
+        correct_outcome.snapshot_binding = crate::outcome::activity_outcome_binding(
+            persisted.id,
+            persisted.revision,
+            persisted.resolution_policy.resolution_epoch,
+            &[action_digest],
+        );
+        store
+            .insert(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                correct_outcome.storage_key(),
+                &correct_outcome,
+            )
+            .unwrap();
+        correct_wave.model_receipt_hashes.pop();
+        correct_wave
+            .model_receipt_hashes
+            .push(correct_outcome.storage_key().to_owned());
+
+        let error = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 0,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(format!("sha256:{}", "9".repeat(64))),
+                resolution_wave: Some(wave),
+            })
+            .await
+            .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("lacks an activity-bound strategic outcome receipt"),
+            "unexpected kernel rejection: {error}"
+        );
+        let stored = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(stored.revision, 0);
+        assert_eq!(stored.world_time, seed.world_time);
+        assert!(
+            !stored.gestalts["refugees-east"]
+                .resources
+                .contains("storm lashings")
+        );
+
+        let result = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 0,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(format!("sha256:{}", "a".repeat(64))),
+                resolution_wave: Some(correct_wave),
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!()
+        };
+        assert_eq!(campaign.revision, 1);
+        assert!(
+            campaign.gestalts["refugees-east"]
+                .resources
+                .contains("storm lashings")
+        );
+        assert_eq!(
+            store.keys("strategic_activity_outcome.v1").unwrap().len(),
+            1
+        );
     }
 
     #[tokio::test]

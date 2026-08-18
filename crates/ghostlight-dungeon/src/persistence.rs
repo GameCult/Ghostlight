@@ -312,6 +312,17 @@ impl CampaignStore {
                     appraisal,
                 )?);
             }
+            for outcome in &wave.activity_outcomes {
+                rows.push(envelope(
+                    "strategic_activity_outcome.v1",
+                    "ghostlight.strategic_activity_outcome.v1",
+                    &format!(
+                        "{}:{}:{}",
+                        next.revision, wave.resolution_epoch, outcome.action_digest
+                    ),
+                    outcome,
+                )?);
+            }
         }
         if !self
             .inner

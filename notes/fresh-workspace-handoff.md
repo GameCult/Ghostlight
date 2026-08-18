@@ -354,16 +354,29 @@ recovered 19 rejected pulses with no partial mutation. Observed usage was
 1,988,812 prompt / 233,146 completion tokens at 66.64% prompt-cache hits;
 rejected pulses consumed 807,304 prompt tokens (40.59%). The next efficiency
 cut is the failed-pulse tail, led by semantic effect-verifier rejection. The
-next dramatic cut is a separate strategic outcome resolver: 85 committed
-population activities are still attempts, not enough typed material change.
+dramatic result was still missing: 85 committed population activities were
+attempts rather than typed material change.
 
-Do not call setting-wide material agency finished yet. Most population output
-is still an attributed `gestalt_activity` attempt stored as history. The long
-run became repetitive around ferry loading and shelter requests because no
-separate owner resolved enough attempts into typed resources, bargains,
-relationships, obligations, or pressure changes. Add a strategic outcome
-resolver between attributed proposals and WorldKernel commit; do not grant the
-Interpreter permission to assert successful outcomes.
+The candidate now contains that separate owner. Priority selection
+content-addresses each selected population/member activity, one batched Flash
+stage resolves the exact attempt set, and WorldKernel requires one outcome per
+digest plus a stage receipt bound to the whole digest set. Outcomes are locally
+limited to exact resources, population pressures, incident relations,
+named-member memories/obligations/relationships, discoverable facts, or an
+explicit no-material-change result. The Interpreter still owns attempts only.
+Kernel tests prove a wrong outcome binding leaves time and state untouched, a
+correct binding commits the material result, and a malformed late outcome
+cannot partially apply an earlier one. CultCache stores outcomes individually
+and the operator Eve projection exposes them.
+
+Do not call setting-wide material agency finished until the revised live
+Gestalt harness passes. It now refuses to count an activity attempt as a
+material consequence, requires at least one sustained direct or typed material
+result, and permits Mira's dormant delta to evolve only when an exact
+member-bound outcome accounts for the change. Run a small golden first, then a
+budget/parallelism pressure profile; inspect material-outcome rate, no-change
+rate, retries, cache hits, and player/arena invariants before the two-tester
+playtest.
 
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell

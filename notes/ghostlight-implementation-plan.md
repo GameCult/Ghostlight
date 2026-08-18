@@ -43,6 +43,15 @@ strings are bound to witnesses locally, rejected candidates become coverage
 gaps, and deterministic coarse profiles keep unknown facets unknown. The Pro
 agency stage no longer spends output tokens restating remote profiles.
 
+Strategic activity outcomes now have their own authority between attempt
+selection and commit. One batched Flash resolver receives only selected
+digest-bound attempts plus exact legal consequence handles. It emits one
+bounded typed result per activity; local validation rejects invented custody,
+relations, facts, pressure resolutions, member owners, and player mutation.
+WorldKernel requires the action-set-bound stage receipt and applies every
+outcome with the rest of the wave on one private campaign copy. Accepted
+outcomes are stored in CultCache and shown through the operator Eve surface.
+
 The current browser/compiler hardening adds three ownership cuts before the
 next isolated acceptance run: compiler evidence is triaged into direct,
 background, and excluded lanes before generation, with only direct source text
@@ -65,11 +74,15 @@ ownership, single-use invite rejection, fork/reset/export, four persisted
 campaigns, and exact-commit restart. Live priority cancels in-flight scheduler
 inference and excludes its commit gate.
 
-Next, run the two-tester playtest. Treat player confusion, dramatic flatness,
-and token-heavy low-consequence stages as evidence about missing context or
+Next, run the revised Gestalt live golden and a bounded multiresolution pressure
+profile. The harness must observe real typed background change rather than
+counting attempts, preserve exact arena/member/player authority, and report
+material-outcome rate, no-change rate, retries, cache hits, and token cost.
+Then run the two-tester playtest. Treat player confusion, dramatic flatness, and
+token-heavy low-consequence stages as evidence about missing context or
 misplaced authority. Use model-stage cache usage, rejection receipts, cover
-plans, and world commits to improve satisfaction and cognitive efficiency
-without weakening state admission.
+plans, outcomes, and world commits to improve satisfaction and cognitive
+efficiency without weakening state admission.
 
 ## Prior research-program phase
 
