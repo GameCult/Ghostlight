@@ -845,6 +845,15 @@ anonymous command bodies receive `401`; authenticated malformed JSON still
 reaches the normal `400` extractor path. The full workspace passed 137 core
 tests and 13 daemon tests. Invitations were neither rotated nor consumed.
 
+Release `ca9c1ccbfaac8026bee9554d7244ed75931b5104` hardens the browser handoff.
+The release build now runs strict TypeScript checking before Vite. Definite HTTP
+refusals no longer fall into the ambiguous lost-response warning, and campaign
+selection, approvals, fork, and reset retain the browser interaction lock until
+the canonical surface refresh completes. Starfire serves
+`assets/index-CA3oKXnL.js`; source commit, manifest, and executable SHA-256
+`b17dcfad6d4cbd442153f1e5b3c834c795614fdd08253cb7e8f0ca2527af65b4`
+agree. Invitations remain untouched.
+
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.

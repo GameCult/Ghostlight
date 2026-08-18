@@ -390,6 +390,15 @@ destination compiler binds that value into a read-only origin field and shows
 the proposed locations, containment, routes, persistent features, and material
 gaps before approval. Population fission approval similarly shows each named
 child leaf, partition value (including `other/unknown`), and home location.
+The browser interaction lock covers a canonical mutation and the subsequent
+surface refresh as one user interaction. Campaign selection, world approval,
+destination approval, fission approval, fork, and reset cannot re-enable stale
+controls between the commit response and the refreshed revision. Compiler
+preview requests remain non-mutating and release the lock with their returned
+preview. Received non-success HTTP responses are rendered as server refusals;
+only missing or undecodable responses receive the ambiguous-transport warning
+that a commit may have preceded the lost response. The production web build
+runs strict TypeScript checking before Vite emits assets.
 
 Relationship documents in the schema catalog are revision-bound projections
 of actor-owned relationship maps; they are not a second relationship writer.
