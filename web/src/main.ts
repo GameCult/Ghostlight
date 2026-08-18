@@ -58,6 +58,32 @@ function showSummary(title: string, lines: string[]) {
   receipt.hidden = false;
 }
 
+async function decodeResponse(response: Response): Promise<any> {
+  if (response.status === 204) return null;
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("json")) return response.json();
+  return response.text();
+}
+
+function responseError(value: any, fallback: string): string {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (value && typeof value.error === "string" && value.error.trim()) return value.error.trim();
+  return fallback;
+}
+
+function reportClientFailure(reason: unknown) {
+  const message = reason instanceof Error && reason.message.trim()
+    ? reason.message.trim()
+    : "The Ghostlight connection failed before a response arrived.";
+  status.textContent = message;
+  showSummary("Request did not complete", [message, "The server remains authoritative. Refresh the campaign before retrying; the lost response may have followed a commit."]);
+}
+
+window.addEventListener("unhandledrejection", event => {
+  event.preventDefault();
+  reportClientFailure(event.reason);
+});
+
 function renderCommandReceipt(body: any) {
   if (body?.kind === "assessed") {
     const assessment = body.assessment;
@@ -121,7 +147,11 @@ function showAuthenticationGate() {
 async function refresh() {
   const response = await fetch("/api/surface");
   if (response.status === 401) { showAuthenticationGate(); return; }
-  const surface = await response.json();
+  const surface = await decodeResponse(response);
+  if (!response.ok) {
+    status.textContent = responseError(surface, "The campaign surface is temporarily unavailable.");
+    return;
+  }
   const needsCompilation = surface.surface_id === "ghostlight.compiler";
   compiler.hidden = !needsCompilation; composer.hidden = needsCompilation; destinationForm.hidden = needsCompilation; host.hidden = needsCompilation; campaignLab.hidden = needsCompilation;
   if (needsCompilation) { status.textContent = "No campaign exists. Retrieve the Vault and approve a world seed."; return; }
@@ -149,7 +179,12 @@ async function refresh() {
   }));
   document.querySelector<HTMLFormElement>("#fission-form")!.hidden = fissionParent.options.length === 0;
   renderEveSurface(surface, host, { body: document.body, clientId: "ghostlight.browser", statusElement: status });
-  const campaigns = await fetch("/api/campaigns").then(response => response.json());
+  const campaignsResponse = await fetch("/api/campaigns");
+  const campaigns = await decodeResponse(campaignsResponse);
+  if (!campaignsResponse.ok) {
+    status.textContent = responseError(campaigns, "The campaign list is temporarily unavailable.");
+    return;
+  }
   campaignList.replaceChildren(...campaigns.campaigns.map((item: any) => {
     const button = node("button", `${item.selected ? "●" : "○"} ${item.name} · revision ${item.revision}`);
     button.type = "button";
@@ -163,9 +198,9 @@ async function compilerPost(path: string, body: unknown) {
   return withInteractionLock(async () => {
     status.textContent = "Retrieving evidence and compiling…";
     const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-    const value = response.headers.get("content-type")?.includes("json") ? await response.json() : await response.text();
+    const value = await decodeResponse(response);
     if (!response.ok) {
-      status.textContent = typeof value === "string" ? value : String(value?.error ?? "Compilation failed");
+      status.textContent = responseError(value, "Compilation failed");
       throw new Error(status.textContent);
     }
     return value;
@@ -252,7 +287,7 @@ async function showPreview(result: any) {
   status.textContent = "Preview compiled. Nothing has entered world state yet.";
 }
 
-async function send(command: unknown) { return withInteractionLock(async () => { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await response.json(); renderCommandReceipt(body); if (!response.ok) { status.textContent = body.error ?? "The command was refused."; await refresh(); return body; } await refresh(); return body; }); }
+async function send(command: unknown) { return withInteractionLock(async () => { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await decodeResponse(response); if (!response.ok) { const message = responseError(body, "The command was refused."); showSummary("Command refused", [message]); status.textContent = message; await refresh(); return body; } renderCommandReceipt(body); await refresh(); return body; }); }
 function installAssessment(result: any) {
   if (result?.kind !== "assessed") return;
   const button = document.createElement("button");
@@ -312,9 +347,10 @@ document.querySelector<HTMLFormElement>("#provider-parallelism-form")!.addEventL
         provider_parallelism: Number(document.querySelector<HTMLInputElement>("#provider-parallelism")!.value),
       }),
     });
-    const body = await response.json();
-    showSummary(response.ok ? "Provider concurrency updated" : "Provider concurrency refused", [response.ok ? `Parallel requests: ${body.receipt?.provider_parallelism ?? body.provider_parallelism ?? "updated"}` : body.error ?? "The operator limit was refused."]);
-    if (!response.ok) status.textContent = body.error ?? "The operator limit was refused.";
+    const body = await decodeResponse(response);
+    const failure = responseError(body, "The operator limit was refused.");
+    showSummary(response.ok ? "Provider concurrency updated" : "Provider concurrency refused", [response.ok ? `Parallel requests: ${body?.receipt?.provider_parallelism ?? body?.provider_parallelism ?? "updated"}` : failure]);
+    if (!response.ok) status.textContent = failure;
     await refresh();
   });
 });
@@ -364,5 +400,17 @@ document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("subm
 });
 document.querySelector<HTMLFormElement>("#fork-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerPost("/api/campaigns/fork",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));await refresh();});
 document.querySelector<HTMLFormElement>("#reset-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerPost("/api/campaigns/reset",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));await refresh();});
-document.querySelector<HTMLButtonElement>("#load-operator")!.addEventListener("click",async()=>{const response=await fetch("/api/operator");const surface=await response.json();renderEveSurface(surface,document.querySelector<HTMLElement>("#operator-output")!,{body:document.body,clientId:"ghostlight.operator",statusElement:status});});
-void refresh();
+document.querySelector<HTMLButtonElement>("#load-operator")!.addEventListener("click", async () => {
+  await withInteractionLock(async () => {
+    const response = await fetch("/api/operator");
+    const surface = await decodeResponse(response);
+    if (!response.ok) {
+      const message = responseError(surface, "The operator surface is unavailable.");
+      showSummary("Operator inspector refused", [message]);
+      status.textContent = message;
+      return;
+    }
+    renderEveSurface(surface, document.querySelector<HTMLElement>("#operator-output")!, { body: document.body, clientId: "ghostlight.operator", statusElement: status });
+  });
+});
+void refresh().catch(reportClientFailure);

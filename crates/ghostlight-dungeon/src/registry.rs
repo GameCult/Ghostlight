@@ -153,6 +153,7 @@ impl CampaignRegistry {
     }
 
     pub async fn fork(&self, source_id: Uuid, name: String) -> Result<CampaignRuntime> {
+        let name = validated_branch_name(name)?;
         let source = self.runtime(source_id).await?;
         let key = source_id.to_string();
         let (_, parent) = source
@@ -198,6 +199,7 @@ impl CampaignRegistry {
     }
 
     pub async fn reset(&self, source_id: Uuid, name: String) -> Result<CampaignRuntime> {
+        let name = validated_branch_name(name)?;
         let source = self.runtime(source_id).await?;
         let (_, mut seed) = source
             .store
@@ -257,6 +259,16 @@ impl CampaignRegistry {
         runtime.store.snapshot_to(&path)?;
         Ok(path)
     }
+}
+
+fn validated_branch_name(name: String) -> Result<String> {
+    let name = name.trim();
+    if name.is_empty() || name.chars().count() > 80 || name.chars().any(char::is_control) {
+        return Err(anyhow!(
+            "campaign name must contain 1 to 80 visible characters"
+        ));
+    }
+    Ok(name.to_owned())
 }
 
 #[cfg(test)]
@@ -387,6 +399,39 @@ mod tests {
                 .unwrap(),
             vec![original.id.to_string()]
         );
+    }
+
+    #[tokio::test]
+    async fn fork_and_reset_reject_invalid_names_before_creating_state() {
+        let dir = tempfile::tempdir().unwrap();
+        let registry = CampaignRegistry::new(dir.path().join("campaigns")).unwrap();
+        let original = seed("Original");
+        registry
+            .create(original.clone(), vec![], vec![])
+            .await
+            .unwrap();
+
+        for invalid in ["", "   ", "bad\nname"] {
+            assert!(registry.fork(original.id, invalid.into()).await.is_err());
+            assert!(registry.reset(original.id, invalid.into()).await.is_err());
+        }
+        let too_long = "x".repeat(81);
+        assert!(registry.fork(original.id, too_long.clone()).await.is_err());
+        assert!(registry.reset(original.id, too_long).await.is_err());
+        assert_eq!(registry.list().await, vec![original.id]);
+
+        let fork = registry
+            .fork(original.id, "  A clean branch  ".into())
+            .await
+            .unwrap();
+        let fork_id = fork.store.keys("campaign.v1").unwrap()[0].clone();
+        let forked = fork
+            .store
+            .load::<Campaign>("campaign.v1", &fork_id)
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(forked.name, "A clean branch");
     }
 
     #[tokio::test]
