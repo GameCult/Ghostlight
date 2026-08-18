@@ -533,6 +533,39 @@ a bounded, operator-selected number of these fresh pulses per desired committed
 tick and reports every rejection in the final result. This does not expand the
 single stage's one-correction rule or rebase stale output.
 
+The exact-build `d044951` budget-8/provider-8 profile is the first complete live
+proof of the attributed-inaction and immutable-batch machinery together. It ran
+23 sustained waves over 24 active subjects in 742.435 seconds. Every subject
+received direct resolution attention; 22 background subjects acted, while the
+two without a committed action were represented by exact attributed inaction.
+The wave plans committed 175 consequences: 85 population activities, 66
+institution postures, 22 named-member activities, one population migration,
+and one population-pressure transition. The appraisals also retained 179
+attributed inactions, including 31 cells where some constituents acted while
+others held. Ninety arena cells ran without an arena acquiring an actor ID or
+collective voice. The eight-cell cover used only two partitions and preserved
+the same boundaries across 21 of 22 wave transitions; its largest arena held
+13 rivals.
+
+The same run preserved Mira Venn's effective capabilities, knowledge,
+equipment, conditions, obligations, memories, and relationship after her
+durable delta crossed the hierarchy. The presence planner later selected her
+from `harbor-neighbors` without the player naming her, and the kernel
+materialized the same person beside the player. The player remained unchanged.
+The private witness is
+`F:\GameCult\GhostlightDungeon\acceptance\gestalt-lease-b8p8-d044951-1`.
+
+The profile also names the next pressure point instead of laundering it into a
+victory lap. Observed traffic used 1,988,812 prompt and 233,146 completion
+tokens at a 66.64% prompt-cache hit rate. Nineteen rejected pulses consumed
+807,304 prompt tokens—40.59% of observed prompt work. Eleven were caught by the
+action-bound semantic verifier, three by Interpreter semantic validation, two
+by JSON Schema, and three by transport failure. Most population consequences
+are still attributed attempts recorded in event history rather than resolved
+changes to resources, bargains, obligations, relationships, or pressures. A
+separate strategic outcome resolver must own those material consequences; the
+Interpreter must not be promoted into asserting success.
+
 The callback and fairness claims are independently falsifiable. Strict live
 mode requires Mira's Persona to choose resettlement and proves the later
 callback without forcing that choice. Fairness mode may instead branch from the

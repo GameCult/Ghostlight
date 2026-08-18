@@ -343,6 +343,20 @@ it in only on total success. Regressions cover the simultaneous
 migration/communication case and prove that an invalid late action cannot
 partially apply an earlier migration.
 
+`gestalt-lease-b8p8-d044951-1` then passed all 23 sustained waves in 742.435
+seconds at budget 8 and provider parallelism 8. All 24 subjects received direct
+resolution attention; 22 background subjects acted and the remainder were
+explicitly represented by attributed inaction. The run committed 175
+consequences, retained 179 inactions across the appraisals, ran 90 arena cells,
+preserved the cover across 21 of 22 boundaries, kept the player unchanged, and
+automatically returned the same Mira with effective personal state intact. It
+recovered 19 rejected pulses with no partial mutation. Observed usage was
+1,988,812 prompt / 233,146 completion tokens at 66.64% prompt-cache hits;
+rejected pulses consumed 807,304 prompt tokens (40.59%). The next efficiency
+cut is the failed-pulse tail, led by semantic effect-verifier rejection. The
+next dramatic cut is a separate strategic outcome resolver: 85 committed
+population activities are still attempts, not enough typed material change.
+
 Do not call setting-wide material agency finished yet. Most population output
 is still an attributed `gestalt_activity` attempt stored as history. The long
 run became repetitive around ferry loading and shelter requests because no
@@ -715,10 +729,12 @@ remote candidates into an approval-visible non-canonical coverage gap.
 
 Authenticated HTTP/browser, session isolation, lifecycle, export, persistence,
 restart, strategic agency, and live/background exclusion have isolated-runtime
-evidence. The deployment smoke is complete. Next: run the two-tester playtest
-and use player reports together with cache/model/rejection/commit receipts to
-locate missing context, dramatic friction, or expensive stages that rarely
-change a decision. Repair the owning context or authority seam first.
+evidence. The deployment smoke is complete. The multiresolution live profile
+now makes the next runtime cut concrete: design a strategic outcome resolver
+between attributed attempts and kernel commit, then pressure its typed material
+effects before the two-tester playtest. Inspect the semantic-verifier rejection
+tail alongside that work; do not recover efficiency by weakening atomic waves
+or letting the Interpreter claim outcomes.
 
 ## Warnings
 
