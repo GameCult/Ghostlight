@@ -35,6 +35,7 @@ impl GestaltPresencePlanner {
             .iter()
             .map(|gestalt| gestalt.id.as_str())
             .collect::<BTreeSet<_>>();
+        let player = &campaign.actors[&campaign.player_actor_id];
         let nearby_dormant_members = campaign
             .gestalt_members
             .values()
@@ -42,6 +43,14 @@ impl GestaltPresencePlanner {
                 nearby_gestalt_ids.contains(member.gestalt_id.as_str())
                     && crate::resolution::dormant_member_location(campaign, &member.id)
                         .is_ok_and(|location| location == *player_location)
+            })
+            .map(|member| {
+                serde_json::json!({
+                    "member": member,
+                    "player_relationship_to_member": player
+                        .relationships
+                        .get(&format!("member:{}", member.id)),
+                })
             })
             .collect::<Vec<_>>();
         let materialized_members = campaign
@@ -73,7 +82,7 @@ impl GestaltPresencePlanner {
                 model: self.model_name.clone(),
                 snapshot_binding: format!("campaign:{}:revision:{}", campaign.id, campaign.revision),
                 lived_stream: format!(
-                    "Choose reversible Persona population presence after this event. Promote an existing member when they become individually relevant. A nearby dormant member with a specific relationship, memory, obligation, or unresolved goal tied to the player may create a natural callback during an otherwise ordinary encounter; prefer that existing person over anonymous individuation when their exact delta supports it. If the event makes an anonymous population member individually relevant and no supplied member fits, individuate exactly one durable member delta from the gestalt baseline; use a new stable lowercase id, version 0, the exact gestalt id/version, no materialized actor id, and record only personal departures from the shared baseline. Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
+                    "Cast reversible Persona population presence for the next scene after this event. The purpose is to make causal continuity visible without crowding the scene or inventing coincidence. Promote an existing member when their exact durable history makes them individually relevant. When a nearby dormant member has a reciprocal player relationship and an unresolved callback signal such as an obligation, memory, or goal, promote the single strongest earned callback unless the event makes their presence implausible or dramatically harmful. An ordinary shared-location event is enough opportunity for an earned callback; do not require the player to ask for that person. Prefer an existing person over anonymous individuation whenever their exact delta supports the scene. Return no promotion when there is no earned callback or the current event conflicts with it. If the event makes an anonymous population member individually relevant and no supplied member fits, individuate exactly one durable member delta from the gestalt baseline; use a new stable lowercase id, version 0, the exact gestalt id/version, no materialized actor id, and record only personal departures from the shared baseline. Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
                     serde_json::to_string_pretty(&schema)?, candidates, event_summary
                 ),
                 output_schema: Some(schema),
@@ -279,6 +288,25 @@ mod tests {
             "mira".into(),
             member("mira", "Mira Nearby", "nearby-leaf", "center"),
         );
+        let player_id = campaign.player_actor_id.clone();
+        campaign
+            .actors
+            .get_mut(&player_id)
+            .unwrap()
+            .relationships
+            .insert("member:mira".into(), "helped her cross the flood".into());
+        campaign
+            .gestalt_members
+            .get_mut("mira")
+            .unwrap()
+            .relationships
+            .insert(player_id, "trusts them for helping".into());
+        campaign
+            .gestalt_members
+            .get_mut("mira")
+            .unwrap()
+            .obligations
+            .insert("thank the player if they meet again".into());
         campaign.gestalt_members.insert(
             "far-person".into(),
             member("far-person", "Far Person", "far-leaf", "far"),
@@ -301,6 +329,9 @@ mod tests {
         let prompt = prompt.lock().unwrap();
         assert!(prompt.contains("Nearby leaf"));
         assert!(prompt.contains("Mira Nearby"));
+        assert!(prompt.contains("helped her cross the flood"));
+        assert!(prompt.contains("thank the player if they meet again"));
+        assert!(prompt.contains("do not require the player to ask for that person"));
         assert!(!prompt.contains("Far leaf"));
         assert!(!prompt.contains("Far Person"));
         assert!(!prompt.contains("Inactive parent"));

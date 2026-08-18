@@ -553,6 +553,16 @@ async fn main() -> anyhow::Result<()> {
         model_name: "deepseek-v4-flash".into(),
     };
     let (presence_plan, presence_receipt) = presence_planner.plan(&advanced, return_event).await?;
+    std::fs::write(
+        root.join("presence-preflight.json"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "schema":"ghostlight.live_fire_presence_preflight.v1",
+            "campaign_revision":advanced.revision,
+            "return_event":return_event,
+            "plan":presence_plan,
+            "receipt":presence_receipt,
+        }))?,
+    )?;
     if presence_plan.individuations.len() != 0
         || presence_plan.demotions.len() != 0
         || presence_plan.promotions.len() != 1
