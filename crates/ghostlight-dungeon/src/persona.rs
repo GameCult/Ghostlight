@@ -823,7 +823,7 @@ impl CellProjectionEngine {
                 "target_subject_ids and location_ids must come from that exact subject's permissions. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
-                "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. Record only a subject that explicitly holds, waits, or merely continues already_committed_posture in the Persona turn as an inaction, using its exact subject_id and a concrete reason of at most 160 characters. Never invent an inaction for an unvoiced subject or use absence of a Persona decision as a reason. Inactions share the same count limit stated for actions. A subject cannot appear in both actions and inactions. When nobody acts, actions is empty and inactions must still contain at least one exact attributed decision from the Persona turn."
+                "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. An inaction means that exact subject takes no strategic action in this horizon. Record only a subject that explicitly holds, waits without making another attempt, or merely continues already_committed_posture in the Persona turn as an inaction, using its exact subject_id and a concrete reason of at most 160 characters. Waiting for the result of an action, withholding a different possible action, or declining one option after choosing another does not make the chosen action an inaction. Never invent an inaction for an unvoiced subject or use absence of a Persona decision as a reason. Inactions share the same count limit stated for actions. A subject cannot appear in both actions and inactions. When nobody acts, actions is empty and inactions must still contain at least one exact attributed decision from the Persona turn."
             ),
             slice.max_actions
         );
@@ -1012,9 +1012,21 @@ fn append_cell_correction(
     error: &anyhow::Error,
     rejected_appraisal: &str,
 ) {
+    let repair_guidance = cell_correction_guidance(error);
     request.lived_stream.push_str(&format!(
-        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. A rejected action is forbidden unchanged: remove it or replace it with a different, faithful, permitted typed consequence. Do not repeat its subject, intended_effect, and typed effect together. Every retained action must still carry a valid non-empty typed transition under the original contract. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destination_ids or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
+        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. {repair_guidance} Every retained action must still carry a valid non-empty typed transition under the original contract. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destination_ids or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
     ));
+}
+
+fn cell_correction_guidance(error: &anyhow::Error) -> &'static str {
+    if error
+        .to_string()
+        .contains("appears in both actions and inactions")
+    {
+        "The named subject already has a concrete chosen attempt in actions. Remove its inaction entry. Waiting for that attempt's result or declining some other option is not inaction. Do not change a faithful permitted action merely to preserve the duplicate inaction."
+    } else {
+        "A rejected action is forbidden unchanged: remove it or replace it with a different, faithful, permitted typed consequence. Do not repeat its subject, intended_effect, and typed effect together."
+    }
 }
 
 fn validate_effect_verification(
@@ -1981,6 +1993,16 @@ mod tests {
                 .to_string()
                 .contains("subject faction-06 appears in both actions and inactions")
         );
+    }
+
+    #[test]
+    fn duplicate_action_inaction_correction_preserves_the_chosen_attempt() {
+        let guidance = cell_correction_guidance(&anyhow!(
+            "subject refugees-east appears in both actions and inactions; retain exactly one of those decisions"
+        ));
+        assert!(guidance.contains("Remove its inaction entry"));
+        assert!(guidance.contains("Waiting for that attempt's result"));
+        assert!(!guidance.contains("rejected action is forbidden"));
     }
 
     #[test]
