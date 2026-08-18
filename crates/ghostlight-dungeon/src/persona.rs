@@ -195,6 +195,7 @@ struct CellActionEffectVerdict {
     action_index: usize,
     result: CellEffectMatchResult,
     mismatch_kind: Option<CellEffectMismatchKind>,
+    repair_guidance: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -911,7 +912,7 @@ impl CellProjectionEngine {
                                 model: self.interpreter_model.clone(),
                                 snapshot_binding: verifier_binding,
                                 lived_stream: format!(
-                                    "You are the private semantic verifier between an Interpreter and the world kernel. Judge each candidate typed effect independently against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Return exactly one verdict for every supplied action_index, in the same order, with no omissions or duplicates. Never reject one action merely because another action is wrong. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current location is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. Each verdict uses result \"match\" with null mismatch_kind when the typed effect faithfully records the attempt. Otherwise use result \"mismatch\" and exactly one mismatch_kind: \"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\". Shape: {{\"verdicts\":[{{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null}}]}}.\n\nCONTEXT:\n{}",
+                                    "You are the private semantic verifier between an Interpreter and the world kernel. Judge each candidate typed effect independently against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Return exactly one verdict for every supplied action_index, in the same order, with no omissions or duplicates. Never reject one action merely because another action is wrong. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current location is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. Each faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice or substituted target. When no supplied typed effect can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {{\"verdicts\":[{{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}}]}}.\n\nCONTEXT:\n{}",
                                     serde_json::to_string(&verifier_context)?
                                 ),
                                 output_schema: Some(verifier_schema),
@@ -941,8 +942,16 @@ impl CellProjectionEngine {
                                         .mismatch_kind
                                         .as_ref()
                                         .expect("validated mismatch kind");
-                                    format!("action {}: {:?}", verdict.action_index, mismatch_kind)
-                                        .into()
+                                    format!(
+                                        "action {}: {:?} — {}",
+                                        verdict.action_index,
+                                        mismatch_kind,
+                                        verdict
+                                            .repair_guidance
+                                            .as_deref()
+                                            .expect("validated mismatch guidance")
+                                    )
+                                    .into()
                                 })
                                 .collect::<Vec<_>>()
                                 .join("; ");
@@ -959,7 +968,10 @@ impl CellProjectionEngine {
                                 append_cell_correction(
                                     &mut request,
                                     &error,
-                                    &serde_json::to_string(&appraisal.actions)?,
+                                    &serde_json::to_string(&serde_json::json!({
+                                        "actions":appraisal.actions,
+                                        "inactions":appraisal.inactions,
+                                    }))?,
                                 );
                                 continue;
                             }
@@ -1063,12 +1075,20 @@ fn validate_effect_verification(
                 "cell effect verifier returned an incoherent verdict for action {expected_index}"
             ));
         }
-        match (&verdict.result, &verdict.mismatch_kind) {
-            (CellEffectMatchResult::Match, None) => {}
-            (CellEffectMatchResult::Mismatch, Some(_)) => rejected.push(expected_index),
+        match (
+            &verdict.result,
+            &verdict.mismatch_kind,
+            &verdict.repair_guidance,
+        ) {
+            (CellEffectMatchResult::Match, None, None) => {}
+            (CellEffectMatchResult::Mismatch, Some(_), Some(guidance))
+                if !guidance.trim().is_empty() && guidance.chars().count() <= 240 =>
+            {
+                rejected.push(expected_index)
+            }
             _ => {
                 return Err(anyhow!(
-                    "cell effect verifier returned an incoherent result discriminator for action {expected_index}"
+                    "cell effect verifier returned an incoherent result or repair guidance for action {expected_index}"
                 ));
             }
         }
@@ -1799,7 +1819,8 @@ mod tests {
                         "verdicts":[{
                             "action_index":0,
                             "result":"match",
-                            "mismatch_kind":null
+                            "mismatch_kind":null,
+                            "repair_guidance":null
                         }]
                     })
                     .to_string())
@@ -1949,6 +1970,11 @@ mod tests {
                                 None::<&str>
                             } else {
                                 Some("effect_reversal")
+                            },
+                            "repair_guidance":if correction {
+                                None::<&str>
+                            } else {
+                                Some("Preserve the Persona's exact withholding decision rather than reversing it into release.")
                             }
                         }]
                     })
@@ -2099,17 +2125,31 @@ mod tests {
                     action_index: 0,
                     result: CellEffectMatchResult::Match,
                     mismatch_kind: None,
+                    repair_guidance: None,
                 },
                 CellActionEffectVerdict {
                     action_index: 1,
                     result: CellEffectMatchResult::Mismatch,
                     mismatch_kind: Some(CellEffectMismatchKind::TargetSubstitution),
+                    repair_guidance: Some(
+                        "Remove the substituted target and retain only the exact addressed subject."
+                            .into(),
+                    ),
                 },
             ],
         };
         assert_eq!(
             validate_effect_verification(&verification, 2).unwrap(),
             vec![1]
+        );
+
+        let mut missing_guidance = verification.clone();
+        missing_guidance.verdicts[1].repair_guidance = None;
+        assert!(
+            validate_effect_verification(&missing_guidance, 2)
+                .unwrap_err()
+                .to_string()
+                .contains("repair guidance")
         );
 
         let mut duplicate = verification;
