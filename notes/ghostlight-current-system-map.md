@@ -187,9 +187,15 @@ and operator inspection; the browser cannot reveal them before discovery.
 ## Current acceptance body
 
 Starfire currently serves immutable release
-`12a704a508f2be1f4eee96acd46fe0dd9369b81c`, executable SHA-256
-`58ba8e3786fda8217df39c9c325e1b2e3e481baac70c5cf51d314093055df042`,
-with rollback `0815776fa883dd5aefc1ba18c9aa7d1e4a048beb`.
+`b76bb5a8936624513fd0cd5e46d4d9ab11c3a517`, executable SHA-256
+`41928dbe73bb3e4a75e3a468d8a2c7ce725254621d17faa8a565ea526b2a3296`,
+with rollback `12a704a508f2be1f4eee96acd46fe0dd9369b81c`.
+
+Local CultMesh publication and HTTP readiness do not wait for Odin. Remote
+replication is coalesced into one asynchronous RUDP batch. On 2026-08-18 the
+canonical Yggdrasil endpoint `10.77.0.1:17871` had no listener; the live daemon
+became healthy in 2.803 seconds and then emitted one acknowledged-failure
+warning for its 19-document batch without losing local state or liveness.
 
 Authenticated acceptance against the exact release has proved generated
 opening/role/approval compilation, a nonliteral canonical player actor ID,
