@@ -504,6 +504,14 @@ a bounded, operator-selected number of these fresh pulses per desired committed
 tick and reports every rejection in the final result. This does not expand the
 single stage's one-correction rule or rebase stale output.
 
+The callback and fairness claims are independently falsifiable. Strict live
+mode requires Mira's Persona to choose resettlement and proves the later
+callback without forcing that choice. Fairness mode may instead establish the
+same already-proven migration through a validated `AdvanceStrategicTick` setup
+command, then spend all 24 provider-driven ticks on budget-one debt rotation.
+The setup still traverses WorldKernel validation and is explicitly identified
+in the result; it is not presented as a Persona decision.
+
 A deterministic diaspora test drives two durable people from the same
 depth-two refugee leaf to two different depth-two destination branches in one
 strategic plan. It proves exact effective capabilities, knowledge, goals,

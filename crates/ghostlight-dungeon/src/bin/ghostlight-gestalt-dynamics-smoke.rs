@@ -88,7 +88,10 @@ fn write_wave_failure(
 async fn main() -> anyhow::Result<()> {
     use chrono::Utc;
     use ghostlight_dungeon::{
-        domain::{SimulationCellMode, TickSource, WorldCommand},
+        domain::{
+            SimulationCellMode, StrategicMemberMigration, StrategicTickPlan, TickSource,
+            WorldCommand,
+        },
         gestalt::GestaltPresencePlanner,
         kernel::{CommandResult, WorldKernel},
         model::{DeepSeekPort, ModelPort},
@@ -108,6 +111,11 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or_else(|_| "gestalt-dynamics-refugee-return".into());
     let require_migration = std::env::var("GHOSTLIGHT_LIVE_FIRE_REQUIRE_MIGRATION")
         .is_ok_and(|value| value == "1" || value.eq_ignore_ascii_case("true"));
+    let seed_migration = std::env::var("GHOSTLIGHT_LIVE_FIRE_SEED_MIGRATION")
+        .is_ok_and(|value| value == "1" || value.eq_ignore_ascii_case("true"));
+    if require_migration && seed_migration {
+        anyhow::bail!("strict live migration and deterministic migration setup are exclusive")
+    }
     let fairness_stress_waves = std::env::var("GHOSTLIGHT_LIVE_FIRE_FAIRNESS_WAVES")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
@@ -129,18 +137,45 @@ async fn main() -> anyhow::Result<()> {
             ))
         });
     std::fs::create_dir_all(&root)?;
-    let campaign = dynamics_campaign();
-    let source_lineage_depth = lineage_depth(&campaign, "refugees-east")?;
-    let destination_lineage_depth = lineage_depth(&campaign, "harbor-neighbors")?;
+    let base_campaign = dynamics_campaign();
+    let source_lineage_depth = lineage_depth(&base_campaign, "refugees-east")?;
+    let destination_lineage_depth = lineage_depth(&base_campaign, "harbor-neighbors")?;
     if source_lineage_depth < 2 || destination_lineage_depth < 2 {
         anyhow::bail!("refugee callback fixture lost its nested lineage depth")
     }
-    let player_before = campaign.actors[&campaign.player_actor_id].clone();
-    let member_before = campaign.gestalt_members["mira-venn"].clone();
-    let capabilities_before = effective_member_capabilities(&campaign, "mira-venn")?;
-    let knowledge_before = effective_member_knowledge(&campaign, "mira-venn")?;
+    let player_before = base_campaign.actors[&base_campaign.player_actor_id].clone();
+    let member_before = base_campaign.gestalt_members["mira-venn"].clone();
+    let capabilities_before = effective_member_capabilities(&base_campaign, "mira-venn")?;
+    let knowledge_before = effective_member_knowledge(&base_campaign, "mira-venn")?;
     let store = CampaignStore::open(root.join("campaign.cc"))?;
-    store.create_campaign(&campaign, &[], &[])?;
+    store.create_campaign(&base_campaign, &[], &[])?;
+    let kernel = WorldKernel::start(store.clone());
+    let (campaign, setup_migration_commit) = if seed_migration {
+        let setup = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: base_campaign.revision,
+                source: TickSource::Scheduler,
+                plan: Some(StrategicTickPlan {
+                    member_migrations: vec![StrategicMemberMigration {
+                        member_id: "mira-venn".into(),
+                        source_gestalt_id: "refugees-east".into(),
+                        destination_gestalt_id: "harbor-neighbors".into(),
+                        destination_location_id: "south-harbor".into(),
+                        public_channels: vec!["public-bulletin".into()],
+                    }],
+                    ..Default::default()
+                }),
+                model_receipt_hash: None,
+                resolution_wave: None,
+            })
+            .await?;
+        let CommandResult::Committed { campaign, .. } = &setup else {
+            anyhow::bail!("deterministic migration setup did not commit")
+        };
+        (campaign.clone(), Some(setup))
+    } else {
+        (base_campaign, None)
+    };
     let model_calls = Arc::new(std::sync::Mutex::new(Vec::new()));
     let model: Arc<dyn ModelPort> = Arc::new(LiveFireModelRecorder {
         inner: DeepSeekPort::from_machine_dpapi(secret)?,
@@ -250,7 +285,6 @@ async fn main() -> anyhow::Result<()> {
             &stage.receipt,
         )?;
     }
-    let kernel = WorldKernel::start(store.clone());
     let committed = kernel
         .command(WorldCommand::AdvanceStrategicTick {
             expected_revision: campaign.revision,
@@ -267,7 +301,7 @@ async fn main() -> anyhow::Result<()> {
     if advanced.actors[&advanced.player_actor_id] != player_before {
         anyhow::bail!("background simulation puppeted the player")
     }
-    if migration_proposal.is_none() {
+    if migration_proposal.is_none() && !seed_migration {
         if advanced.gestalt_members["mira-venn"] != member_before {
             anyhow::bail!("explicit inaction changed Mira's dormant identity")
         }
@@ -302,7 +336,6 @@ async fn main() -> anyhow::Result<()> {
         println!("{}", serde_json::to_string_pretty(&result)?);
         return Ok(());
     }
-    let migration_proposal = migration_proposal.expect("migration branch was selected");
     let member_after = &advanced.gestalt_members["mira-venn"];
     if member_after.gestalt_id != "harbor-neighbors"
         || member_after.last_location_id.as_deref() != Some("south-harbor")
@@ -545,6 +578,8 @@ async fn main() -> anyhow::Result<()> {
         "cell_mode":root_cell.mode,
         "rivals_share_arena":true,
         "migration_proposal":migration_proposal,
+        "seeded_migration":seed_migration,
+        "setup_migration_commit":setup_migration_commit,
         "initial_background_action_count":background_action_count,
         "sustained_background_subject_ids":background_subject_ids,
         "sustained_detail_focus_subject_ids":detail_focus_subject_ids,
