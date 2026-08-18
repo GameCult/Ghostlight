@@ -231,6 +231,13 @@ impl WorldCompiler {
     }
 
     pub async fn suggest_openings(&self, request: OpeningRequest) -> Result<SuggestedOpenings> {
+        validate_user_text("setting", &request.setting, 120)?;
+        if request.constraints.len() > 8 {
+            return Err(anyhow!("opening request accepts at most 8 constraints"));
+        }
+        for constraint in &request.constraints {
+            validate_user_text("opening constraint", constraint, 240)?;
+        }
         let (queries, retrieval_receipt) = self.plan_opening_queries(&request).await?;
         let receipts = self.retrieve_all(&queries, "all", 8).await?;
         let evidence = opening_evidence_text(&queries, &receipts);
@@ -362,6 +369,11 @@ impl WorldCompiler {
         &self,
         start: CustomStart,
     ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
+        validate_user_text("campaign name", &start.campaign_name, 80)?;
+        validate_user_text("player identity", &start.who, 500)?;
+        validate_user_text("starting location", &start.where_, 500)?;
+        validate_user_text("starting time", &start.when, 500)?;
+        validate_user_text("player goal", &start.goal, 1_000)?;
         let (queries, retrieval_receipt) = self
             .plan_queries(
                 "custom_retrieval_plan",
@@ -706,6 +718,7 @@ impl WorldCompiler {
         crate::domain::RegionExpansionPreview,
         Vec<ModelStageReceipt>,
     )> {
+        validate_user_text("destination request", destination_request, 500)?;
         let origin = campaign
             .locations
             .get(origin_location_id)
@@ -1187,6 +1200,21 @@ impl WorldCompiler {
             out.receipt,
         ))
     }
+}
+
+fn validate_user_text(label: &str, value: &str, max_chars: usize) -> Result<()> {
+    let value = value.trim();
+    if value.is_empty()
+        || value.chars().count() > max_chars
+        || value
+            .chars()
+            .any(|character| character.is_control() && !matches!(character, '\n' | '\r' | '\t'))
+    {
+        return Err(anyhow!(
+            "{label} must contain 1 to {max_chars} readable characters"
+        ));
+    }
+    Ok(())
 }
 
 fn global_agency_queries(start: &CustomStart) -> Vec<String> {
@@ -2258,6 +2286,15 @@ fn validate_opening_playability(campaign: &Campaign) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn user_text_admission_rejects_empty_oversized_and_binary_control_input() {
+        assert!(validate_user_text("field", "", 8).is_err());
+        assert!(validate_user_text("field", "   ", 8).is_err());
+        assert!(validate_user_text("field", "123456789", 8).is_err());
+        assert!(validate_user_text("field", "hello\0world", 20).is_err());
+        assert!(validate_user_text("field", "hello\nworld", 20).is_ok());
+    }
     use crate::{domain::SourceWitness, model::ModelPort, vault::FixtureVault};
     use async_trait::async_trait;
     use sha2::Digest;

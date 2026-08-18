@@ -311,13 +311,36 @@ function installAssessment(result: any) {
 composer.addEventListener("submit", async event => {
   event.preventDefault();
   const description = document.querySelector<HTMLTextAreaElement>("#attempt")!.value.trim();
-  const intendedEffect = document.querySelector<HTMLInputElement>("#intended-effect")!.value.trim();
-  if (!description || !intendedEffect) return;
+  const effectInput = document.querySelector<HTMLInputElement>("#intended-effect")!;
+  const intendedEffect = effectInput.value.trim();
+  if (!description) return;
+  if (!intendedEffect) {
+    status.textContent = "Describe the uncertain outcome you want assessed, or use Speak for words that need no roll.";
+    effectInput.focus();
+    return;
+  }
   installAssessment(await send({
     type: "assess",
     expected_revision: revision,
     intent: { actor_id: playerActorId, description, intended_effect: intendedEffect },
   }));
+});
+document.querySelector<HTMLButtonElement>("#speak")!.addEventListener("click", async () => {
+  const speechInput = document.querySelector<HTMLTextAreaElement>("#attempt")!;
+  const text = speechInput.value.trim();
+  if (!text) {
+    status.textContent = "Write what your character says first.";
+    speechInput.focus();
+    return;
+  }
+  const result = await send({
+    type: "speak",
+    expected_revision: revision,
+    actor_id: playerActorId,
+    text,
+    intended_effect: null,
+  });
+  if (result?.kind === "committed") speechInput.value = "";
 });
 document.querySelector<HTMLButtonElement>("#wait")!.addEventListener("click", () => void send({ type: "wait", expected_revision: revision, minutes: 60 }));
 document.querySelector<HTMLInputElement>("#active-cell-budget")!.addEventListener("input", event => {
