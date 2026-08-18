@@ -237,6 +237,29 @@ the initial provider wave plus 23 sustained waves provide 24 new debt foci.
 The harness validates the baseline's committed campaign, dormant Mira identity,
 arena cover, and player state, then records its path and SHA-256 in the result.
 
+`gestalt-dynamics-fairness-a4ea28b-1` passed the full budget-one pressure: 24
+distinct foci for 24 subjects, 45 committed consequences from 15 background
+subjects, four rejected-and-recovered scheduler pulses, stable player and Mira
+state, and the same-person callback after 641.578 seconds. Aggregate prompt use
+was 572,695 tokens with 47.07% cache hits. Projector reached 75.45% cache hits;
+Interpreter consumed 247,578 prompt tokens at 34.54% cache hits and is the next
+efficiency target.
+
+The scale matrix was 1 cell / 2 actions / 18.913s / 11,734.5 prompt tokens per
+action; 4 / 8 / 15.619s / 4,682.1; 8 / 16 / 26.300s / 3,546.6; and configured
+32, effective 24 / 16 / 55.906s / 7,410.5. The first budget-32 attempt aborted
+atomically on one overlong posture, demonstrating its higher tail risk. Budget
+4 is fastest; budget 8 is the best action-per-token point and reaches the global
+consequence cap.
+
+Do not call setting-wide material agency finished yet. Most population output
+is still an attributed `gestalt_activity` attempt stored as history. The long
+run became repetitive around ferry loading and shelter requests because no
+separate owner resolved enough attempts into typed resources, bargains,
+relationships, obligations, or pressure changes. Add a strategic outcome
+resolver between attributed proposals and WorldKernel commit; do not grant the
+Interpreter permission to assert successful outcomes.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

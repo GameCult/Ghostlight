@@ -520,6 +520,50 @@ rebases; destination populations receive none of that private state. Only the
 source and destination population version counters change. Each person can then
 materialize from their new local baseline with the same name and private delta.
 
+### Live pressure results
+
+The 24-tick budget-one fairness run `gestalt-dynamics-fairness-a4ea28b-1`
+covered all 24 canonical subjects with 24 distinct debt-selected foci. Its
+accepted appraisals contained 77 attributed proposals: one population
+migration, nine institution posture changes, 15 named-member activities, and 52
+Gestalt activities. Consequence capping committed 45 actions from 15 background
+subjects. Four
+bad scheduler pulses were rejected without revision movement; fresh pulses at
+the same current state recovered. Mira retained her exact private and effective
+state and was automatically rematerialized at the end. The run took 641.578
+seconds. Its committed baseline is bound by SHA-256 in the result.
+
+The 24-faction scale matrix produced:
+
+| Configured cells | Effective cells | Arenas | Committed actions | Seconds | Prompt tokens/action |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 1 | 1 | 2 | 18.913 | 11,734.5 |
+| 4 | 4 | 3 | 8 | 15.619 | 4,682.1 |
+| 8 | 8 | 7 | 16 | 26.300 | 3,546.6 |
+| 32 | 24 | 0 | 16 | 55.906 | 7,410.5 |
+
+Budget 4 is the latency sweet spot in this fixture. Budget 8 reaches the global
+16-consequence cap with the best cognitive efficiency. Resolving every faction
+individually doubles prompt cost and wall time relative to budget 8, adds no
+committed consequences under the cap, and increases whole-wave tail-failure
+risk. Budget 1 remains a valid emergency compression mode, not an efficient
+default.
+
+Repeated fairness prompts reached a 47.07% aggregate provider cache-hit ratio;
+Projector reached 75.45% and Persona 61.57%. Interpreter remained the dominant
+cost at 247,578 prompt tokens and only 34.54% cache hits. Prompt/context work
+should therefore target Interpreter permissions and stable-prefix layout before
+shrinking the Persona stream.
+
+The run also exposes the next authority gap. Institution postures, population
+migration, clocks, and history changed canonically, but most Gestalt activities
+remain attributed attempts recorded as events. Over many ticks this can repeat
+an unresolved pressure instead of producing enough typed resource, bargain,
+relationship, or obligation changes. A strategic outcome resolver must own
+those consequences after proposal attribution and before the atomic
+WorldKernel commit; the Interpreter must not gain authority to declare its own
+hoped-for outcome.
+
 The Starfire deployment smoke ran a live provider-backed wave over three
 eligible singleton cells, committed three offscreen events and three
 channel-accessible news items in 19.55 seconds, and preserved the absent player.
