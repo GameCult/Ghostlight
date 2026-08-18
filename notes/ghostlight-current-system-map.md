@@ -349,6 +349,11 @@ world clocks, and exact evidence-use rationales instead of asking for approval
 from summary counts. A browser-local interaction lock prevents duplicate paid
 requests while preserving the kernel mailbox and revision checks as the only
 world-mutation authority.
+The player surface also projects the canonical current location ID. The
+destination compiler binds that value into a read-only origin field and shows
+the proposed locations, containment, routes, persistent features, and material
+gaps before approval. Population fission approval similarly shows each named
+child leaf, partition value (including `other/unknown`), and home location.
 
 Relationship documents in the schema catalog are revision-bound projections
 of actor-owned relationship maps; they are not a second relationship writer.

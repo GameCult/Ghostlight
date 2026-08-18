@@ -808,7 +808,10 @@ and its intended effect; the browser no longer duplicates one sentence into
 both assessment fields. The approval preview now exposes its full public
 decision surface in expandable sections, and a browser-local request lock
 prevents double-clicks from launching duplicate inference without claiming any
-world-state authority.
+world-state authority. Destination compilation no longer asks the player to
+transcribe an internal location ID: the canonical current ID is projected by
+the server and bound read-only, while destination and fission receipts expose
+the topology or child leaves being approved.
 
 ## Warnings
 

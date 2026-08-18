@@ -127,6 +127,9 @@ async function refresh() {
   revision = Number(surface.world_revision ?? surface.version ?? 0);
   playerActorId = String(surface.player_actor_id ?? "");
   if (!playerActorId) throw new Error("Campaign surface omitted its canonical player actor ID.");
+  const playerLocationId = String(surface.player_location_id ?? "");
+  if (!playerLocationId) throw new Error("Campaign surface omitted its canonical player location ID.");
+  document.querySelector<HTMLInputElement>("#destination-origin")!.value = playerLocationId;
   resolutionEpoch = Number(surface.resolution?.policy?.resolution_epoch ?? 0);
   providerConfigurationEpoch = Number(surface.resolution?.policy?.provider_configuration_epoch ?? 0);
   resolutionPins = surface.resolution?.pins ?? [];
@@ -343,7 +346,26 @@ document.querySelector<HTMLFormElement>("#pin-form")!.addEventListener("submit",
   };
   await send({ type: "replace_resolution_pins", expected_revision: revision, expected_resolution_epoch: resolutionEpoch, pins: [...resolutionPins, pin] });
 });
-destinationForm.addEventListener("submit",async event=>{event.preventDefault();const result=await compilerPost("/api/compiler/destination",Object.fromEntries(new FormData(destinationForm)));const preview=result.preview;showSummary("Destination preview",[...(preview.locations ?? []).map((location:any)=>location.name),...(preview.gaps ?? []).map((gap:string)=>`Material gap: ${gap}`)]);status.textContent="Destination preview compiled; topology is unchanged until approval.";const button=node("button","Approve destination");button.type="button";button.addEventListener("click",async()=>{await compilerPost(`/api/compiler/destination/approve/${result.preview_id}`,{});button.remove();await refresh();});receipt.append(button);});
+destinationForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  const result = await compilerPost("/api/compiler/destination", Object.fromEntries(new FormData(destinationForm)));
+  const preview = result.preview;
+  showSummary("Destination preview", (preview.gaps ?? []).map((gap: string) => `Material gap: ${gap}`));
+  appendDetailList(receipt, `Compiled topology · ${preview.locations?.length ?? 0} locations`, (preview.locations ?? []).map((location: any) => {
+    const routes = Object.keys(location.routes ?? {});
+    const features = [...(location.persistent_features ?? [])];
+    return `${location.name} · ${location.id}${location.container_id ? ` · inside ${location.container_id}` : ""}${routes.length ? ` · routes to ${routes.join(", ")}` : " · no compiled route"}${features.length ? ` · ${features.join(", ")}` : ""}`;
+  }));
+  status.textContent = "Destination preview compiled; topology is unchanged until approval.";
+  const button = node("button", "Approve destination");
+  button.type = "button";
+  button.addEventListener("click", async () => {
+    await compilerPost(`/api/compiler/destination/approve/${result.preview_id}`, {});
+    button.remove();
+    await refresh();
+  });
+  receipt.append(button);
+});
 document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("submit", async event => {
   event.preventDefault();
   const data = new FormData(event.currentTarget as HTMLFormElement);
@@ -354,9 +376,9 @@ document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("subm
     reason: data.get("reason"),
   });
   showSummary("Population fission preview", [
-    ...(result.preview?.children ?? []).map((child: any) => `${child.name} · ${child.id}`),
     ...(result.preview?.gaps ?? []).map((gap: string) => `Material gap: ${gap}`),
   ]);
+  appendDetailList(receipt, `Canonical child leaves · ${result.preview?.children?.length ?? 0}`, (result.preview?.children ?? []).map((child: any) => `${child.name} · ${child.id} · ${child.partition_value ?? "other/unknown"} · at ${child.home_location_id}`));
   status.textContent = "Fission preview compiled. Canonical leaves are unchanged until approval.";
   const button = document.createElement("button");
   button.type = "button";

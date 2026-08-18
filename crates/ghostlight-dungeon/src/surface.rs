@@ -57,6 +57,7 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
       "providerKind":"narrative.simulation", "title":campaign.name, "version":interface_version,
       "world_revision":campaign.revision,
       "player_actor_id":campaign.player_actor_id,
+      "player_location_id":player.location_id,
       "resolution":{
         "policy":campaign.resolution_policy,
         "effective_budget":effective_budget,
@@ -298,7 +299,7 @@ mod tests {
     }
 
     #[test]
-    fn player_surface_projects_the_canonical_player_actor_id() {
+    fn player_surface_projects_canonical_player_and_location_ids() {
         let mut campaign = crate::resolution::tests::campaign(1, 1);
         let mut player = campaign.actors.remove("player").unwrap();
         player.id = "pilot-nyx".into();
@@ -308,5 +309,6 @@ mod tests {
         let surface = player_surface(&campaign, &[]);
 
         assert_eq!(surface["player_actor_id"], "pilot-nyx");
+        assert_eq!(surface["player_location_id"], "center");
     }
 }
