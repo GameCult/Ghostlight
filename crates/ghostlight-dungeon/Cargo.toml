@@ -14,6 +14,7 @@ cultcache-rs.workspace = true
 cultnet-rs.workspace = true
 cultmesh-rs.workspace = true
 jsonschema.workspace = true
+jsonwebtoken.workspace = true
 ghostlight-persona-projection = { path = "../ghostlight-persona-projection" }
 rand.workspace = true
 reqwest.workspace = true

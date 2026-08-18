@@ -45,11 +45,15 @@ use tokio::sync::{Mutex, Notify, OwnedRwLockReadGuard, RwLock};
 use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
+mod heimdall;
+use heimdall::HeimdallClient;
+
 #[derive(Clone)]
 struct AppState {
     registry: CampaignRegistry,
     runtime_root: PathBuf,
     auth: Arc<Mutex<AuthOwner>>,
+    heimdall: Arc<HeimdallClient>,
     deepseek_status: String,
     compiler: Option<Arc<WorldCompiler>>,
     assessor: Option<Arc<ActionAssessor>>,
@@ -125,6 +129,11 @@ struct ProviderParallelismRequest {
     provider_parallelism: u8,
 }
 
+#[derive(Deserialize)]
+struct HeimdallRedeemRequest {
+    completion_code: String,
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 struct AuthState {
     schema: String,
@@ -132,6 +141,8 @@ struct AuthState {
     #[serde(default)]
     provisioned_invite_hashes: BTreeSet<String>,
     session_hashes: BTreeSet<String>,
+    #[serde(default)]
+    session_aliases: BTreeMap<String, String>,
     #[serde(default)]
     session_campaigns: BTreeMap<String, uuid::Uuid>,
     #[serde(default)]
@@ -237,6 +248,7 @@ async fn main() -> anyhow::Result<()> {
                 unused_invite_hashes: supplied_invite_hashes.clone(),
                 provisioned_invite_hashes: supplied_invite_hashes,
                 session_hashes: BTreeSet::new(),
+                session_aliases: BTreeMap::new(),
                 session_campaigns: BTreeMap::new(),
                 session_campaign_ids: BTreeMap::new(),
             };
@@ -297,6 +309,7 @@ async fn main() -> anyhow::Result<()> {
             row: auth_row,
             state: auth_state,
         })),
+        heimdall: Arc::new(HeimdallClient::public_demo()?),
         deepseek_status,
         compiler,
         assessor,
@@ -377,9 +390,54 @@ fn app_router(state: AppState, web_root: PathBuf) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/invite/{token}", get(invite))
+        .route("/api/auth/heimdall/start", post(heimdall_start))
+        .route("/api/auth/heimdall/redeem", post(heimdall_redeem))
         .merge(protected_api)
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state)
+}
+
+async fn heimdall_start(State(state): State<AppState>) -> Response {
+    match state.heimdall.start().await {
+        Ok(start) => {
+            Json(serde_json::json!({"authorization_url": start.authorization_url})).into_response()
+        }
+        Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
+    }
+}
+
+async fn heimdall_redeem(
+    State(state): State<AppState>,
+    Json(request): Json<HeimdallRedeemRequest>,
+) -> Response {
+    if request.completion_code.len() > 1024 || request.completion_code.trim().is_empty() {
+        return (StatusCode::BAD_REQUEST, "invalid completion code").into_response();
+    }
+    let claims = match state.heimdall.redeem(request.completion_code.trim()).await {
+        Ok(claims) => claims,
+        Err(error) => return (StatusCode::UNAUTHORIZED, error.to_string()).into_response(),
+    };
+    let account_session = secret_hash(&format!("heimdall-account:{}", claims.account_id));
+    let raw_session = uuid::Uuid::new_v4().to_string();
+    let alias_hash = secret_hash(&raw_session);
+    let mut auth = state.auth.lock().await;
+    let mut next_state = auth.state.clone();
+    next_state.session_hashes.insert(account_session.clone());
+    next_state
+        .session_aliases
+        .insert(alias_hash, account_session);
+    if let Err(error) = auth.commit(next_state) {
+        return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+    }
+    let mut response = Json(serde_json::json!({"status":"authenticated"})).into_response();
+    response.headers_mut().insert(
+        header::SET_COOKIE,
+        HeaderValue::from_str(&format!(
+            "ghostlight_session={raw_session}; HttpOnly; Secure; SameSite=Lax; Path=/"
+        ))
+        .unwrap(),
+    );
+    response
 }
 
 async fn require_api_authentication(
@@ -2328,14 +2386,11 @@ async fn authenticated_session(headers: &HeaderMap, state: &AppState) -> Option<
                 .find_map(|cookie| cookie.strip_prefix("ghostlight_session="))
         });
     let hash = secret_hash(session?);
-    state
-        .auth
-        .lock()
-        .await
-        .state
-        .session_hashes
-        .contains(&hash)
-        .then_some(hash)
+    let auth = state.auth.lock().await;
+    if auth.state.session_hashes.contains(&hash) {
+        return Some(hash);
+    }
+    auth.state.session_aliases.get(&hash).cloned()
 }
 
 async fn session_runtime(
@@ -2514,6 +2569,7 @@ mod tests {
             unused_invite_hashes: BTreeSet::new(),
             provisioned_invite_hashes: BTreeSet::new(),
             session_hashes: BTreeSet::new(),
+            session_aliases: BTreeMap::new(),
             session_campaigns: BTreeMap::new(),
             session_campaign_ids: BTreeMap::new(),
         };
@@ -2533,6 +2589,7 @@ mod tests {
                 row,
                 state: auth_state,
             })),
+            heimdall: Arc::new(HeimdallClient::fixture()),
             deepseek_status: "fixture".into(),
             compiler: None,
             assessor: None,
@@ -2593,6 +2650,30 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn heimdall_cookie_alias_resolves_to_stable_account_campaign_authority() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let account_session = secret_hash("heimdall-account:acct-1");
+        let cookie_hash = secret_hash("browser-session");
+        {
+            let mut auth = state.auth.lock().await;
+            auth.state.session_hashes.insert(account_session.clone());
+            auth.state
+                .session_aliases
+                .insert(cookie_hash, account_session.clone());
+        }
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::COOKIE,
+            HeaderValue::from_static("ghostlight_session=browser-session"),
+        );
+        assert_eq!(
+            authenticated_session(&headers, &state).await,
+            Some(account_session)
+        );
     }
 
     #[test]
@@ -2870,6 +2951,7 @@ mod tests {
             unused_invite_hashes: BTreeSet::new(),
             provisioned_invite_hashes: BTreeSet::new(),
             session_hashes: BTreeSet::from(["left".into(), "right".into()]),
+            session_aliases: BTreeMap::new(),
             session_campaigns: BTreeMap::from([
                 ("left".into(), left.id),
                 ("right".into(), right.id),
@@ -2895,6 +2977,7 @@ mod tests {
                 row,
                 state: auth_state,
             })),
+            heimdall: Arc::new(HeimdallClient::fixture()),
             deepseek_status: "fixture".into(),
             compiler: None,
             assessor: None,
@@ -2929,6 +3012,7 @@ mod tests {
             unused_invite_hashes: BTreeSet::from(["invite".into()]),
             provisioned_invite_hashes: BTreeSet::from(["invite".into()]),
             session_hashes: BTreeSet::new(),
+            session_aliases: BTreeMap::new(),
             session_campaigns: BTreeMap::new(),
             session_campaign_ids: BTreeMap::new(),
         };
@@ -2971,6 +3055,7 @@ mod tests {
             unused_invite_hashes: BTreeSet::new(),
             provisioned_invite_hashes: BTreeSet::from(["consumed".into()]),
             session_hashes: BTreeSet::new(),
+            session_aliases: BTreeMap::new(),
             session_campaigns: BTreeMap::new(),
             session_campaign_ids: BTreeMap::new(),
         };

@@ -41,7 +41,7 @@ Ghostlight Dungeon is implemented and deployed as a private Starfire-hosted
 playtest harness. The current acceptance surface covers:
 
 - source-grounded world compilation with approval previews;
-- persistent campaigns, forks, resets, exports, and isolated invite sessions;
+- persistent campaigns, forks, resets, exports, and Heimdall-account-isolated sessions;
 - parallel affected-character Projector/Persona/Interpreter waves;
 - impossible-action refusal, assessed stakes, server-side rolls, and receipted
   commits;

@@ -51,13 +51,11 @@ institutions, two clocks, explicit gaps, and branch assumptions. It remained
 an uncommitted revision-0 preview with `requires_approval: true` until the
 tester explicitly approved it.
 
-The invite/session authority is persisted separately in `service/auth.cc`.
-Only hashes of invite and session tokens enter CultCache. Consuming an invite
-atomically replaces that auth row, so daemon restart neither resurrects a used
-invite nor invalidates an established session. A disposable HTTP acceptance
-run verified unauthenticated `401`, pre-approval compiler surface, explicit
-approval, campaign/evidence persistence, session survival across restart, and
-`401` on consumed-invite reuse.
+Heimdall owns public identity and Discord OAuth. The browser receives a
+one-time completion code rather than a provider token. Ghostlight redeems that
+code server-to-server, verifies the EdDSA `aud=ghostlight` access claim against
+Heimdall's published JWKS, and maps the account to stable app-local campaign
+authority. Only hashed local session aliases enter `service/auth.cc`.
 
 ## Body and faculty map
 

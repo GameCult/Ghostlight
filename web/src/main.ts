@@ -133,7 +133,7 @@ function renderCommandReceipt(body: any) {
 }
 
 function showAuthenticationGate() {
-  const message = "This laboratory requires an unused invite link.";
+  const message = "Sign in through Heimdall to enter the public demo.";
   status.textContent = message;
   compiler.hidden = true;
   composer.hidden = true;
@@ -143,11 +143,38 @@ function showAuthenticationGate() {
   host.hidden = false;
   const gate = node("article", undefined, "card");
   gate.append(
-    node("h2", "Private campaign laboratory"),
+    node("h2", "Ghostlight Dungeon public demo"),
     node("p", message),
-    node("p", "Open a single-use tester invitation on this device. The resulting session stays separate from every other player's campaigns.", "quiet"),
+    node("p", "Heimdall uses Discord only to establish your GameCult identity. Ghostlight keeps your campaigns isolated from every other account.", "quiet"),
   );
+  const login = node("button", "Continue with Discord") as HTMLButtonElement;
+  login.type = "button";
+  login.addEventListener("click", () => { void startHeimdallLogin().catch(reportClientFailure); });
+  gate.append(login);
   host.replaceChildren(gate);
+}
+
+async function startHeimdallLogin() {
+  const response = await fetch("/api/auth/heimdall/start", { method: "POST" });
+  const body = await decodeResponse(response);
+  if (!response.ok || typeof body?.authorization_url !== "string") {
+    throw new ServerResponseFailure(responseError(body, "Heimdall could not start Discord sign-in."));
+  }
+  window.location.assign(body.authorization_url);
+}
+
+async function redeemHeimdallReturn() {
+  const fragment = new URLSearchParams(window.location.hash.slice(1));
+  const completionCode = fragment.get("heimdall_completion_code");
+  if (!completionCode) return;
+  const response = await fetch("/api/auth/heimdall/redeem", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ completion_code: completionCode }),
+  });
+  const body = await decodeResponse(response);
+  history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+  if (!response.ok) throw new ServerResponseFailure(responseError(body, "Heimdall sign-in could not be adopted."));
 }
 
 async function refresh() {
@@ -456,4 +483,4 @@ document.querySelector<HTMLButtonElement>("#load-operator")!.addEventListener("c
     renderEveSurface(surface, document.querySelector<HTMLElement>("#operator-output")!, { body: document.body, clientId: "ghostlight.operator", statusElement: status });
   });
 });
-void refresh().catch(reportClientFailure);
+void redeemHeimdallReturn().then(refresh).catch(reportClientFailure);
