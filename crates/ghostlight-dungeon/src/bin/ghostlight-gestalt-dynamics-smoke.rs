@@ -295,6 +295,12 @@ async fn main() -> anyhow::Result<()> {
         anyhow::bail!("arena emitted an action as if it were a person")
     }
     let plan = validate_and_resolve_wave(&campaign, &output.wave)?;
+    let mut mira_outcome_kinds = plan
+        .activity_outcomes
+        .iter()
+        .filter_map(|outcome| member_outcome_kind(&outcome.effect, "mira-venn"))
+        .map(str::to_owned)
+        .collect::<BTreeSet<_>>();
     if plan.member_migrations.len() != usize::from(migration_proposal.is_some()) {
         anyhow::bail!("validated wave changed the attributed member choice")
     }
@@ -366,16 +372,26 @@ async fn main() -> anyhow::Result<()> {
     let member_after = &advanced.gestalt_members["mira-venn"];
     if member_after.gestalt_id != "harbor-neighbors"
         || member_after.last_location_id.as_deref() != Some("south-harbor")
+        || member_after.materialized_actor_id.is_some()
         || member_after.name != member_before.name
-        || member_after.relationships != member_before.relationships
-        || member_after.memories != member_before.memories
-        || member_after.equipment != member_before.equipment
         || member_after.conditions != member_before.conditions
-        || member_after.obligations != member_before.obligations
+        || member_after.goals != member_before.goals
         || effective_member_capabilities(&advanced, "mira-venn")? != capabilities_before
-        || effective_member_knowledge(&advanced, "mira-venn")? != knowledge_before
     {
-        anyhow::bail!("migration changed Mira's identity or effective personal state")
+        anyhow::bail!("initial background wave damaged Mira's stable identity")
+    }
+    if (member_after.relationships != member_before.relationships
+        && !mira_outcome_kinds.contains("relationship"))
+        || (member_after.memories != member_before.memories
+            && !mira_outcome_kinds.contains("memory"))
+        || (member_after.obligations != member_before.obligations
+            && !mira_outcome_kinds.contains("obligation"))
+        || (member_after.equipment != member_before.equipment
+            && !mira_outcome_kinds.contains("resource"))
+        || (effective_member_knowledge(&advanced, "mira-venn")? != knowledge_before
+            && !mira_outcome_kinds.contains("knowledge"))
+    {
+        anyhow::bail!("initial Mira delta changed without an exact member-bound outcome")
     }
     let mut sustained_waves = Vec::new();
     let mut rejected_wave_pulses = Vec::new();
@@ -383,7 +399,6 @@ async fn main() -> anyhow::Result<()> {
     let mut detail_focus_subject_ids = BTreeSet::new();
     let mut sustained_material_consequence_count = 0usize;
     let mut sustained_material_outcome_count = 0usize;
-    let mut mira_outcome_kinds = BTreeSet::new();
     detail_focus_subject_ids.extend(direct_resolution_subject_ids(&output.wave.cover.cells));
     let sustained_budgets = if presence_only {
         vec![]
@@ -645,12 +660,16 @@ async fn main() -> anyhow::Result<()> {
     let actor = &returned.actors["member:mira-venn"];
     if actor.location_id != returned.actors[&returned.player_actor_id].location_id
         || actor.name != member_before.name
-        || actor.relationships != member_before.relationships
-        || actor.memories != member_before.memories
-        || actor.capabilities != capabilities_before
-        || actor.knowledge != knowledge_before
+        || actor.relationships != member_after_sustained.relationships
+        || actor.memories != member_after_sustained.memories
+        || actor.equipment != member_after_sustained.equipment
+        || actor.conditions != member_after_sustained.conditions
+        || actor.obligations != member_after_sustained.obligations
+        || actor.goals != member_after_sustained.goals
+        || actor.capabilities != effective_member_capabilities(&advanced, "mira-venn")?
+        || actor.knowledge != effective_member_knowledge(&advanced, "mira-venn")?
     {
-        anyhow::bail!("return encounter did not rematerialize the same person")
+        anyhow::bail!("return encounter did not rematerialize Mira's current exact delta")
     }
     let event_kinds = returned
         .events
