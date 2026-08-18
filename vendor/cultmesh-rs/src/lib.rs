@@ -662,8 +662,21 @@ impl CultMeshNode {
     where
         T: DatabaseEntry + Serialize,
     {
+        let message = self.create_rudp_document_message(key, value, &options)?;
+        publish_cultnet_messages_to_rudp_catalog(std::slice::from_ref(&message), options)
+    }
+
+    pub fn create_rudp_document_message<T>(
+        &self,
+        key: impl Into<String>,
+        value: &T,
+        options: &CultMeshRudpDocumentPublishOptions,
+    ) -> Result<cultnet_rs::CultNetMessage>
+    where
+        T: DatabaseEntry + Serialize,
+    {
         let key = key.into();
-        let message = self.documents.create_raw_document_put_message(
+        self.documents.create_raw_document_put_message(
             format!("{}:{}:{}", options.runtime_id, T::TYPE, key),
             key,
             value,
@@ -678,8 +691,7 @@ impl CultMeshNode {
                 },
                 ..CultNetDocumentPutOptions::default()
             },
-        )?;
-        publish_cultnet_message_to_rudp_catalog(&message, options)
+        )
     }
 
     pub fn pull_rudp_catalog_snapshot(
@@ -832,8 +844,8 @@ fn unix_millis() -> u128 {
         .as_millis()
 }
 
-fn publish_cultnet_message_to_rudp_catalog(
-    message: &cultnet_rs::CultNetMessage,
+pub fn publish_cultnet_messages_to_rudp_catalog(
+    messages: &[cultnet_rs::CultNetMessage],
     options: CultMeshRudpDocumentPublishOptions,
 ) -> Result<()> {
     if options.runtime_id.trim().is_empty() {
@@ -872,8 +884,10 @@ fn publish_cultnet_message_to_rudp_catalog(
         client.assume_connected();
     }
 
-    let payload = encode_cultnet_message_to_vec(message, CultNetWireContract::CultNetSchemaV0)?;
-    client.send("schema", payload)?;
+    for message in messages {
+        let payload = encode_cultnet_message_to_vec(message, CultNetWireContract::CultNetSchemaV0)?;
+        client.send("schema", payload)?;
+    }
     let flush_deadline = Instant::now() + options.flush_timeout;
     while Instant::now() < flush_deadline {
         let _ = client.receive_once()?;

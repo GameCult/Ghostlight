@@ -19,12 +19,14 @@ use chrono::Utc;
 use cultcache_rs::DatabaseEntry;
 use cultmesh_rs::{
     CultMesh, CultMeshNode, CultMeshNodeOptions, CultMeshRudpDocumentPublishOptions,
+    publish_cultnet_messages_to_rudp_catalog,
 };
 use serde_json::{Value, json};
 use std::{
     net::SocketAddr,
     path::Path,
-    sync::{Arc, Mutex},
+    sync::{Arc, Condvar, Mutex},
+    thread,
 };
 
 pub const PROVIDER_ID: &str = "gamecult.ghostlight.dungeon";
@@ -113,7 +115,13 @@ cultmesh_rs::cultmesh_documents!(GhostlightDocuments {
 #[derive(Clone)]
 pub struct MeshPublisher {
     node: Arc<Mutex<CultMeshNode>>,
-    rudp_target: Option<SocketAddr>,
+    remote: Option<RemoteReplication>,
+}
+
+#[derive(Clone)]
+struct RemoteReplication {
+    target: SocketAddr,
+    pending: Arc<(Mutex<Option<Vec<cultnet_rs::CultNetMessage>>>, Condvar)>,
 }
 
 impl MeshPublisher {
@@ -129,9 +137,10 @@ impl MeshPublisher {
                 pull_on_start: true,
             },
         )?;
+        let remote = rudp_target.map(RemoteReplication::start);
         Ok(Self {
             node: Arc::new(Mutex::new(node)),
-            rudp_target,
+            remote,
         })
     }
 
@@ -229,24 +238,28 @@ impl MeshPublisher {
             .node
             .lock()
             .map_err(|_| anyhow::anyhow!("mesh lock poisoned"))?;
-        self.put_and_publish(
+        let mut remote_messages = Vec::new();
+        self.put_and_stage(
             &mut node,
             HEALTH_KEY,
             &ServiceHealthRecord {
                 value: health.clone(),
             },
+            &mut remote_messages,
         )?;
-        self.put_and_publish(
+        self.put_and_stage(
             &mut node,
             "ghostlight:schema-catalog",
             &SchemaCatalogRecord { value: catalog },
+            &mut remote_messages,
         )?;
-        self.put_and_publish(
+        self.put_and_stage(
             &mut node,
             ADVERTISEMENT_KEY,
             &EveProviderAdvertisementRecord {
                 value: advertisement,
             },
+            &mut remote_messages,
         )?;
         for snapshot in campaigns {
             let campaign = &snapshot.campaign;
@@ -263,12 +276,13 @@ impl MeshPublisher {
                 as i64;
             let surface = player_surface(campaign, &snapshot.narrations);
             let key = format!("eve:surface:ghostlight.campaign.{}", campaign.id);
-            self.put_and_publish(
+            self.put_and_stage(
                 &mut node,
                 &key,
                 &EveSurfaceRecord {
                     value: surface.clone(),
                 },
+                &mut remote_messages,
             )?;
             let operator = operator_surface(
                 campaign,
@@ -284,14 +298,15 @@ impl MeshPublisher {
                 &snapshot.resolution_controls,
                 live_turn_pressure,
             );
-            self.put_and_publish(
+            self.put_and_stage(
                 &mut node,
                 format!("eve:operator:ghostlight.campaign.{}", campaign.id),
                 &EveSurfaceRecord {
                     value: operator.clone(),
                 },
+                &mut remote_messages,
             )?;
-            self.put_and_publish(
+            self.put_and_stage(
                 &mut node,
                 format!("eve:operator-state:ghostlight.campaign.{}", campaign.id),
                 &EveSurfaceStateRecord {
@@ -301,8 +316,9 @@ impl MeshPublisher {
                     updated_at: updated_at.clone(),
                     surface: operator,
                 },
+                &mut remote_messages,
             )?;
-            self.put_and_publish(
+            self.put_and_stage(
                 &mut node,
                 format!("eve:surface-state:ghostlight.campaign.{}", campaign.id),
                 &EveSurfaceStateRecord {
@@ -312,9 +328,14 @@ impl MeshPublisher {
                     updated_at: updated_at.clone(),
                     surface,
                 },
+                &mut remote_messages,
             )?;
         }
         node.flush()?;
+        drop(node);
+        if let Some(remote) = &self.remote {
+            remote.enqueue(remote_messages);
+        }
         Ok(health)
     }
 
@@ -336,34 +357,85 @@ impl MeshPublisher {
             .map(|record| record.value)
     }
 
-    fn put_and_publish<T>(
+    fn put_and_stage<T>(
         &self,
         node: &mut CultMeshNode,
         key: impl Into<String>,
         value: &T,
+        remote_messages: &mut Vec<cultnet_rs::CultNetMessage>,
     ) -> Result<()>
     where
         T: DatabaseEntry + serde::Serialize,
     {
         let key = key.into();
         node.put(&key, value)?;
-        if let Some(target) = self.rudp_target {
-            let mut options =
-                CultMeshRudpDocumentPublishOptions::odin(target, "ghostlight-dungeon-starfire");
-            options.source_agent_id = Some(PROVIDER_ID.into());
-            options.source_role = Some("narrative-simulation".into());
-            options.tags = vec!["ghostlight".into(), "eve".into(), "private".into()];
-            if let Err(error) = node.publish_document_to_rudp_catalog(&key, value, options) {
-                tracing::warn!(
-                    %key,
-                    %target,
-                    %error,
-                    "Odin RUDP publication failed; retained canonical local CultMesh projection"
-                );
-            }
+        if let Some(remote) = &self.remote {
+            remote_messages.push(node.create_rudp_document_message(
+                &key,
+                value,
+                &remote.options(),
+            )?);
         }
         Ok(())
     }
+}
+
+impl RemoteReplication {
+    fn start(target: SocketAddr) -> Self {
+        let pending = Arc::new((
+            Mutex::new(None::<Vec<cultnet_rs::CultNetMessage>>),
+            Condvar::new(),
+        ));
+        let worker_pending = pending.clone();
+        thread::Builder::new()
+            .name("ghostlight-odin-rudp".into())
+            .spawn(move || loop {
+                let messages = {
+                    let (lock, ready) = &*worker_pending;
+                    let mut pending = lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                    while pending.is_none() {
+                        pending = ready
+                            .wait(pending)
+                            .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    }
+                    pending.take().unwrap_or_default()
+                };
+                if messages.is_empty() {
+                    continue;
+                }
+                let options = remote_options(target);
+                if let Err(error) = publish_cultnet_messages_to_rudp_catalog(&messages, options) {
+                    tracing::warn!(
+                        document_count = messages.len(),
+                        %target,
+                        %error,
+                        "Odin RUDP batch publication failed; retained canonical local CultMesh projection"
+                    );
+                }
+            })
+            .expect("Ghostlight RUDP replication worker must start");
+        Self { target, pending }
+    }
+
+    fn options(&self) -> CultMeshRudpDocumentPublishOptions {
+        remote_options(self.target)
+    }
+
+    fn enqueue(&self, messages: Vec<cultnet_rs::CultNetMessage>) {
+        let (lock, ready) = &*self.pending;
+        let mut pending = lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        *pending = Some(messages);
+        ready.notify_one();
+    }
+}
+
+fn remote_options(target: SocketAddr) -> CultMeshRudpDocumentPublishOptions {
+    let mut options =
+        CultMeshRudpDocumentPublishOptions::odin(target, "ghostlight-dungeon-starfire");
+    options.source_agent_id = Some(PROVIDER_ID.into());
+    options.source_role = Some("narrative-simulation".into());
+    options.tags = vec!["ghostlight".into(), "eve".into(), "private".into()];
+    options
 }
 
 fn schema_catalog() -> Value {
@@ -475,10 +547,15 @@ mod tests {
         let publisher =
             MeshPublisher::open(temp.path().join("mesh.cc"), Some(unavailable)).unwrap();
 
+        let started = std::time::Instant::now();
         let written = publisher
             .publish_snapshot(&[], "fixture-ready", 0)
             .expect("local projection remains writable while rendezvous is unavailable");
 
+        assert!(
+            started.elapsed() < std::time::Duration::from_millis(500),
+            "optional remote replication blocked local publication"
+        );
         assert_eq!(publisher.health().unwrap(), written);
         assert!(
             publisher
