@@ -497,6 +497,13 @@ lineage parents as simulation subjects, and repeats the identity/callback check
 after sustained compression. Both migration endpoints must be active leaves at
 lineage depth two or greater.
 
+Fairness acceptance treats a rejected provider wave the same way the daemon's
+scheduler does: the failed pulse records its private trace and commits nothing;
+a later pulse may try the same still-current revision again. The harness permits
+a bounded, operator-selected number of these fresh pulses per desired committed
+tick and reports every rejection in the final result. This does not expand the
+single stage's one-correction rule or rebase stale output.
+
 A deterministic diaspora test drives two durable people from the same
 depth-two refugee leaf to two different depth-two destination branches in one
 strategic plan. It proves exact effective capabilities, knowledge, goals,

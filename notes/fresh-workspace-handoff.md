@@ -220,6 +220,14 @@ also moves two remembered refugees from one depth-two source leaf to different
 depth-two destination branches in one plan and proves their effective and
 private state remains distinct.
 
+The fairness harness now models scheduler continuation explicitly. Set
+`GHOSTLIGHT_LIVE_FIRE_MAX_REJECTED_PULSES_PER_WAVE` from `0` through `8`. Each
+failed pulse retains its exact world and resolution revisions, writes a numbered
+private failure artifact, and commits nothing; the next pulse starts a new model
+pipeline against the still-current snapshot. Final results enumerate the failed
+pulses instead of hiding them. This is acceptance orchestration only and does
+not add a second retry inside Projector/Interpreter validation.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

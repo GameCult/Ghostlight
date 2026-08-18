@@ -60,6 +60,7 @@ impl ghostlight_dungeon::model::ModelPort for LiveFireModelRecorder {
 fn write_wave_failure(
     root: &std::path::Path,
     wave_index: usize,
+    pulse_attempt: usize,
     budget: u8,
     error: &anyhow::Error,
     calls: &std::sync::Arc<std::sync::Mutex<Vec<serde_json::Value>>>,
@@ -67,10 +68,13 @@ fn write_wave_failure(
 ) -> anyhow::Result<()> {
     let calls = calls.lock().expect("live-fire trace lock");
     std::fs::write(
-        root.join(format!("sustained-wave-{wave_index:02}-failure.json")),
+        root.join(format!(
+            "sustained-wave-{wave_index:02}-pulse-{pulse_attempt:02}-failure.json"
+        )),
         serde_json::to_vec_pretty(&serde_json::json!({
             "schema":"ghostlight.live_fire_model_failure.v1",
             "wave_index":wave_index,
+            "pulse_attempt":pulse_attempt,
             "budget":budget,
             "error":error.to_string(),
             "private_model_calls":&calls[trace_start..],
@@ -109,6 +113,12 @@ async fn main() -> anyhow::Result<()> {
         .and_then(|value| value.parse::<usize>().ok())
         .filter(|value| (1..=31).contains(value))
         .unwrap_or_default();
+    let max_rejected_pulses_per_wave =
+        std::env::var("GHOSTLIGHT_LIVE_FIRE_MAX_REJECTED_PULSES_PER_WAVE")
+            .ok()
+            .and_then(|value| value.parse::<usize>().ok())
+            .filter(|value| *value <= 8)
+            .unwrap_or_default();
     let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
@@ -151,7 +161,7 @@ async fn main() -> anyhow::Result<()> {
     {
         Ok(output) => output,
         Err(error) => {
-            write_wave_failure(&root, 0, 1, &error, &model_calls, 0)?;
+            write_wave_failure(&root, 0, 1, 1, &error, &model_calls, 0)?;
             return Err(error);
         }
     };
@@ -308,6 +318,7 @@ async fn main() -> anyhow::Result<()> {
         anyhow::bail!("migration changed Mira's identity or effective personal state")
     }
     let mut sustained_waves = Vec::new();
+    let mut rejected_wave_pulses = Vec::new();
     let mut background_subject_ids = BTreeSet::new();
     let mut detail_focus_subject_ids = BTreeSet::new();
     detail_focus_subject_ids.extend(root_cell.detail_focus_subject_id.clone());
@@ -328,30 +339,44 @@ async fn main() -> anyhow::Result<()> {
             CommandResult::ResolutionUpdated { campaign, .. } => campaign,
             _ => anyhow::bail!("resolution budget change did not commit at a safe boundary"),
         };
-        let trace_start = model_calls.lock().expect("live-fire trace lock").len();
-        let sustained_output = match propose_resolution_wave(
-            model.clone(),
-            Arc::new(SnapshotPermit::new_resolution(
-                store.clone(),
-                advanced.id,
-                advanced.revision,
-                advanced.resolution_policy.resolution_epoch,
-            )),
-            &advanced,
-        )
-        .await
-        {
-            Ok(output) => output,
-            Err(error) => {
-                write_wave_failure(
-                    &root,
-                    wave_index + 1,
-                    budget,
-                    &error,
-                    &model_calls,
-                    trace_start,
-                )?;
-                return Err(error);
+        let mut rejected_pulses_for_wave = 0;
+        let sustained_output = loop {
+            let trace_start = model_calls.lock().expect("live-fire trace lock").len();
+            match propose_resolution_wave(
+                model.clone(),
+                Arc::new(SnapshotPermit::new_resolution(
+                    store.clone(),
+                    advanced.id,
+                    advanced.revision,
+                    advanced.resolution_policy.resolution_epoch,
+                )),
+                &advanced,
+            )
+            .await
+            {
+                Ok(output) => break output,
+                Err(error) => {
+                    rejected_pulses_for_wave += 1;
+                    write_wave_failure(
+                        &root,
+                        wave_index + 1,
+                        rejected_pulses_for_wave,
+                        budget,
+                        &error,
+                        &model_calls,
+                        trace_start,
+                    )?;
+                    rejected_wave_pulses.push(serde_json::json!({
+                        "wave_index":wave_index + 1,
+                        "pulse_attempt":rejected_pulses_for_wave,
+                        "world_revision":advanced.revision,
+                        "resolution_epoch":advanced.resolution_policy.resolution_epoch,
+                        "error":error.to_string(),
+                    }));
+                    if rejected_pulses_for_wave > max_rejected_pulses_per_wave {
+                        return Err(error);
+                    }
+                }
             }
         };
         std::fs::write(
@@ -524,6 +549,8 @@ async fn main() -> anyhow::Result<()> {
         "sustained_background_subject_ids":background_subject_ids,
         "sustained_detail_focus_subject_ids":detail_focus_subject_ids,
         "fairness_stress_waves":fairness_stress_waves,
+        "max_rejected_pulses_per_wave":max_rejected_pulses_per_wave,
+        "rejected_wave_pulses":rejected_wave_pulses,
         "fairness_missing_subject_ids":fairness_missing_subject_ids,
         "source_lineage_depth":source_lineage_depth,
         "destination_lineage_depth":destination_lineage_depth,
