@@ -1871,6 +1871,37 @@ async fn process_due_ticks(
         if campaign.away_ticks_processed >= target {
             return Ok(());
         }
+        let has_simulatable_agency = campaign
+            .agency_profiles
+            .values()
+            .any(|profile| profile.active_leaf && profile.simulation_eligible);
+        if !has_simulatable_agency {
+            if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
+                return Ok(());
+            }
+            let _background_commit = if yield_to_live_turns {
+                match state.live_commit_gate.clone().try_write_owned() {
+                    Ok(guard) => Some(guard),
+                    Err(_) => return Ok(()),
+                }
+            } else {
+                None
+            };
+            if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
+                return Ok(());
+            }
+            runtime
+                .kernel
+                .command(WorldCommand::AdvanceStrategicTick {
+                    expected_revision: campaign.revision,
+                    source: source.clone(),
+                    plan: None,
+                    model_receipt_hash: None,
+                    resolution_wave: None,
+                })
+                .await?;
+            continue;
+        }
         let Some(model) = &state.model else {
             return Ok(());
         };
@@ -2214,6 +2245,50 @@ mod tests {
         trigger.await.unwrap();
         assert_eq!(state.live_turns.load(Ordering::SeqCst), 0);
         assert!(state.live_commit_gate.clone().try_write_owned().is_ok());
+    }
+
+    #[tokio::test]
+    async fn due_ticks_without_simulatable_agency_advance_deterministically_without_a_model() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let mut campaign = seed("Quiet world");
+        let original_player = campaign.actors["player"].clone();
+        let original_time = campaign.world_time;
+        campaign.last_player_activity = chrono::Utc::now() - chrono::Duration::hours(2);
+        campaign.clocks.insert(
+            "tide".into(),
+            ghostlight_dungeon::domain::WorldClock {
+                id: "tide".into(),
+                label: "Tide turns".into(),
+                progress: 0,
+                threshold: 4,
+                consequence: "the channel narrows".into(),
+            },
+        );
+        let runtime = state
+            .registry
+            .create(campaign.clone(), vec![], vec![])
+            .await
+            .unwrap();
+
+        process_due_ticks(
+            &state,
+            &runtime,
+            ghostlight_dungeon::domain::TickSource::Scheduler,
+            true,
+        )
+        .await
+        .unwrap();
+
+        let advanced = load_campaign(&runtime.store).unwrap();
+        assert_eq!(advanced.away_ticks_processed, 2);
+        assert_eq!(advanced.strategic_tick_count, 2);
+        assert_eq!(advanced.clocks["tide"].progress, 2);
+        assert_eq!(
+            advanced.world_time,
+            original_time + chrono::Duration::hours(12)
+        );
+        assert_eq!(advanced.actors["player"], original_player);
     }
 
     #[tokio::test]

@@ -164,6 +164,14 @@ the deployment boundary: it replaces the protected token set and clears the
 persisted auth authority together while the daemon is stopped. Campaign stores
 survive; old sessions deliberately do not.
 
+Away time does not require invented agency. When a campaign has no active,
+simulation-eligible agency profiles, the scheduler enters the same
+`AdvanceStrategicTick` kernel command with no model plan or resolution wave.
+World time, clocks, pending-tick accounting, and deterministic obligations
+advance atomically while the player remains untouched. The scheduler does not
+call the partitioner merely to discover an empty graph, and it retains the same
+live-turn commit exclusion as model-backed waves.
+
 `gestalt_migration` records a collective decision by one exact active leaf to
 move along an explicit migration relation and reachable route. WorldKernel
 changes the leaf's home location and agency-profile location together. The

@@ -101,6 +101,12 @@ provider retry by making the `resource_recipient_ids` input to
 `other_subject_id` output mapping explicit. The remaining release gate is the
 authenticated browser journey after rebuilding and deploying this exact commit.
 
+The live scheduler audit also removed an empty-agency failure loop. A campaign
+with clocks but no simulatable NPC, institution, or population now advances
+through a deterministic kernel tick without a model call or fabricated Persona
+cell. A regression proves two missed ticks advance time and the clock while
+leaving the player byte-identical.
+
 Multiplayer remains outside the current paid-alpha gate but is now an explicit
 architectural intention. Do not fork the simulation into a multiplayer room
 model. After the solo product and Gestalt agency are proven, extend campaign
