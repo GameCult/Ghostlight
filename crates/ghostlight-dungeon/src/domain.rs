@@ -490,6 +490,14 @@ pub struct CellActionProposal {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct CellInaction {
+    pub subject_id: String,
+    #[schemars(length(min = 1, max = 240))]
+    pub reason: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct CellAppraisal {
     pub schema: String,
     pub cell_id: String,
@@ -497,7 +505,7 @@ pub struct CellAppraisal {
     pub resolution_epoch: u64,
     pub considered_subject_ids: BTreeSet<String>,
     pub actions: Vec<CellActionProposal>,
-    pub inaction_reason: Option<String>,
+    pub inactions: Vec<CellInaction>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]

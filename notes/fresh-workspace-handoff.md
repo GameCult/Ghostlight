@@ -277,6 +277,50 @@ cover, so `advance_detail_debt` correctly treated it as directly resolved while
 the harness counted only explicit aggregate focus labels. Acceptance now uses
 the canonical union of explicit focus plus singleton subjects.
 
+The corrected lease-preserving budget-4 run committed all 23 sustained waves
+and recovered from 18 rejected pulses without partial world mutation. It failed
+only after those waves when automatic presence planning returned an empty cast
+for Mira's South Harbor callback. Mira's dormant identity, destination,
+relationships, memories, and effective state were intact. `dab6aae` made the
+planner's scene-casting objective explicit, projected the player's reciprocal
+relationship beside the exact member delta, and began persisting
+`presence-preflight.json` before assertions.
+
+The first focused callback probe was blocked before casting by the dominant
+long-run failure: an institution repeatedly emitted its already committed
+posture as if it were a new action. `6253f9f` now projects that field as
+`already_committed_posture` and defines continuation as inaction throughout the
+Projector, Persona, Interpreter, and correction contexts. Validation still
+rejects the no-op rather than silently repairing it. The same commit adds
+`GHOSTLIGHT_LIVE_FIRE_PRESENCE_ONLY=1` for a baseline-backed focused acceptance
+run.
+
+`gestalt-callback-6253f9f-1` passed in 18.465 seconds. A fresh 24-subject arena
+wave ran first; then the presence planner selected `mira-venn` from
+`harbor-neighbors` without the player naming her. `WorldKernel` rematerialized
+the same private and effective state at South Harbor. The strategic membrane
+used 18,662 prompt / 1,096 completion tokens; presence used another 2,504 / 78.
+
+`gestalt-lease-b8p4-6253f9f-1` then passed 31 sustained budget-8 waves at
+provider parallelism 4 in 1,211.592 seconds. It covered all 24 subjects, made
+199 accepted proposals from 22 subjects, committed 193 sustained consequences
+plus the initial arena consequence, recovered 15 rejected pulses, preserved the
+player and Mira, and passed the same-person callback. Strategic prompt use was
+1,468,039 with 60.69% cache hits and 7,567 prompt tokens per committed
+consequence. Interpreter consumed 737,148 prompt tokens at 67.18% cache hits;
+Projector reached 70.03%.
+
+That run falsified the prompt-only repeated-posture fix. Its trace showed mixed
+arena turns where one constituent acted while other institutions explicitly
+held their existing course. The old `CellAppraisal` could represent actions or
+one global inaction reason, not attributed inaction beside another subject's
+action. The Interpreter sometimes restated the holding institution's posture to
+avoid dropping its choice. The appraisal contract now has exact `actions[]` and
+exact `inactions[]`; the old global field is deleted. Inactions are bounded,
+non-mutating, permission-checked, unique, and mutually exclusive with an action
+from the same subject. The next live profile must compare retry rate and token
+efficiency under this new contract before claiming the waste is cut.
+
 Do not call setting-wide material agency finished yet. Most population output
 is still an attributed `gestalt_activity` attempt stored as history. The long
 run became repetitive around ferry loading and shelter requests because no

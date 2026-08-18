@@ -833,11 +833,24 @@ mod tests {
                 }
                 "cell_persona" => Ok("Each constituent watches and deliberately holds.".into()),
                 "cell_interpreter" if self.malformed_cell => Ok("not-json".into()),
-                "cell_interpreter" => Ok(serde_json::json!({
-                    "actions": [],
-                    "inaction_reason": "No constituent has a justified move this horizon."
-                })
-                .to_string()),
+                "cell_interpreter" => {
+                    let subject_id = request
+                        .output_schema
+                        .as_ref()
+                        .and_then(|schema| {
+                            schema.pointer("/$defs/CellInaction/properties/subject_id/enum/0")
+                        })
+                        .and_then(serde_json::Value::as_str)
+                        .ok_or_else(|| anyhow!("fixture Interpreter lacks a bound subject"))?;
+                    Ok(serde_json::json!({
+                        "actions": [],
+                        "inactions": [{
+                            "subject_id":subject_id,
+                            "reason":"No justified move this horizon."
+                        }]
+                    })
+                    .to_string())
+                }
                 stage => Err(anyhow!("unexpected fixture stage {stage}")),
             }
         }

@@ -4165,7 +4165,16 @@ mod tests {
                     resolution_epoch: campaign.resolution_policy.resolution_epoch,
                     considered_subject_ids: cell.subject_ids.clone(),
                     actions: vec![],
-                    inaction_reason: Some("No justified move.".into()),
+                    inactions: cell
+                        .subject_ids
+                        .iter()
+                        .next()
+                        .map(|subject_id| crate::domain::CellInaction {
+                            subject_id: subject_id.clone(),
+                            reason: "No justified move.".into(),
+                        })
+                        .into_iter()
+                        .collect(),
                 })
                 .collect(),
             cover,
@@ -4370,7 +4379,7 @@ mod tests {
                 location_ids: vec![],
             },
         }];
-        wave.appraisals[0].inaction_reason = None;
+        wave.appraisals[0].inactions.clear();
         let mut rejected_verifier = resolution_stage(
             &wave.cover.cells[0].id,
             &persisted,

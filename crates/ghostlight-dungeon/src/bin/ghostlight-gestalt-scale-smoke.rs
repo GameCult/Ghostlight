@@ -110,9 +110,9 @@ async fn main() -> anyhow::Result<()> {
         .filter(|appraisal| {
             appraisal.actions.is_empty()
                 && appraisal
-                    .inaction_reason
-                    .as_deref()
-                    .is_some_and(|reason| !reason.trim().is_empty())
+                    .inactions
+                    .iter()
+                    .any(|inaction| !inaction.reason.trim().is_empty())
         })
         .count();
     for stage in &output.stages {

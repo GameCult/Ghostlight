@@ -176,6 +176,21 @@ location, dormant members whose exact location matches, and materialized
 members eligible for folding. The kernel rejects inactive hierarchy nodes and
 location mismatches. Nested fission and migration therefore change which
 baseline a durable delta composes with, never who the person is.
+The projection also names the player actor's reciprocal relationship to each
+nearby dormant member. The planner owns reversible scene casting and may surface
+an earned callback without a player prompt; it cannot move a remote person or
+commit the cast. Failed live casts retain a private presence-preflight artifact.
+
+Institution `already_committed_posture` is projected as durable state, distinct
+from unresolved pressure and fresh choice. Maintaining it is inaction. A model
+may propose only a materially different posture; repeated posture remains a
+locally rejected no-op and cannot enter an atomic wave.
+
+Cell appraisals carry exact `actions[]` and exact `inactions[]`. Inactions name
+the constituent or selected dormant member who holds and a bounded reason. They
+cannot duplicate, cross cell authority, or coexist with an action from the same
+subject. They are non-mutating audit/fairness evidence. The former global
+inaction string is no longer an owner or runtime path.
 
 The active cell budget and provider concurrency limit are separate controls.
 Budget and pins increment `resolution_epoch` without advancing world revision or

@@ -129,7 +129,7 @@ pub struct CellTerminalBundle {
 #[serde(deny_unknown_fields)]
 struct CellAppraisalProposal {
     actions: Vec<CellActionCandidate>,
-    inaction_reason: Option<String>,
+    inactions: Vec<crate::domain::CellInaction>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -236,7 +236,7 @@ const CELL_PROJECTION_OUTPUT_CONTRACT: &str = r#"{
 
 const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
   "type":"object",
-  "required":["actions","inaction_reason"],
+  "required":["actions","inactions"],
   "properties":{
     "actions":{"type":"array","items":{"type":"object","required":["subject_id","intent","intended_effect","priority","state_references","public_channels","effect"],"properties":{
       "subject_id":{"type":"string"},"intent":{"type":"string"},"intended_effect":{"type":"string"},"priority":{"type":"integer"},
@@ -251,7 +251,7 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
         {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"member_migration"},"destination_gestalt_id":{"type":"string"}}}
       ]}
     }}},
-    "inaction_reason":{"type":["string","null"]}
+    "inactions":{"type":"array","items":{"type":"object","required":["subject_id","reason"],"properties":{"subject_id":{"type":"string"},"reason":{"type":"string","minLength":1,"maxLength":240}}}}
   }
 }"#;
 
@@ -823,7 +823,7 @@ impl CellProjectionEngine {
                 "target_subject_ids and location_ids must come from that exact subject's permissions. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
-                "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. Use an empty actions array plus a concrete inaction_reason when nobody acts."
+                "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. Record every voiced subject that explicitly holds, waits, or merely continues already_committed_posture in inactions with its exact subject_id and a concrete reason. A subject cannot appear in both actions and inactions. When nobody acts, actions is empty and inactions must still contain at least one exact attributed decision."
             ),
             slice.max_actions
         );
@@ -1013,7 +1013,7 @@ fn append_cell_correction(
     rejected_appraisal: &str,
 ) {
     request.lived_stream.push_str(&format!(
-        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. A rejected action is forbidden unchanged: remove it or replace it with a different, faithful, permitted typed consequence. Do not repeat its subject, intended_effect, and typed effect together. Every retained action must still carry a valid non-empty typed transition under the original contract. If an institution merely continues or restates already_committed_posture, omit that no-op action; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destination_ids or migration_destinations, no movement transition is available: remove that action and use explicit inaction. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and use explicit inaction; never emit an empty transition or upgrade consideration into a completed consequence."
+        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. A rejected action is forbidden unchanged: remove it or replace it with a different, faithful, permitted typed consequence. Do not repeat its subject, intended_effect, and typed effect together. Every retained action must still carry a valid non-empty typed transition under the original contract. If an institution merely continues or restates already_committed_posture, move that exact subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destination_ids or migration_destinations, no movement transition is available: remove that action and record attributed inaction. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction; never emit an empty transition or upgrade consideration into a completed consequence."
     ));
 }
 
@@ -1179,7 +1179,7 @@ fn bind_cell_appraisal(
             .map(|subject| subject.subject_id.clone())
             .collect(),
         actions,
-        inaction_reason: proposal.inaction_reason,
+        inactions: proposal.inactions,
     })
 }
 
@@ -1209,15 +1209,40 @@ fn validate_cell_appraisal(
             slice.max_actions
         ));
     }
-    if appraisal.actions.is_empty()
-        && appraisal
-            .inaction_reason
-            .as_deref()
-            .is_none_or(|reason| reason.trim().is_empty())
-    {
+    if appraisal.actions.is_empty() && appraisal.inactions.is_empty() {
         return Err(anyhow!(
-            "an appraisal with no actions requires one concrete non-empty inaction_reason"
+            "an appraisal with no actions requires one exact attributed inaction"
         ));
+    }
+    let permitted_subject_ids = slice
+        .constituents
+        .iter()
+        .map(|subject| subject.subject_id.as_str())
+        .chain(
+            slice
+                .member_exceptions
+                .iter()
+                .map(|member| member.subject_id.as_str()),
+        )
+        .collect::<BTreeSet<_>>();
+    let action_subject_ids = appraisal
+        .actions
+        .iter()
+        .map(|action| action.subject_id.as_str())
+        .collect::<BTreeSet<_>>();
+    let mut inaction_subject_ids = BTreeSet::new();
+    for inaction in &appraisal.inactions {
+        if inaction.reason.trim().is_empty()
+            || inaction.reason.len() > 240
+            || !permitted_subject_ids.contains(inaction.subject_id.as_str())
+            || action_subject_ids.contains(inaction.subject_id.as_str())
+            || !inaction_subject_ids.insert(inaction.subject_id.as_str())
+        {
+            return Err(anyhow!(
+                "inaction for subject {} is empty, duplicate, outside the cell, or conflicts with an action",
+                inaction.subject_id
+            ));
+        }
     }
     for action in &appraisal.actions {
         if action.intent.trim().is_empty() || action.intended_effect.trim().is_empty() {
@@ -1512,6 +1537,11 @@ fn constrain_cell_proposal_schema(
         .and_then(serde_json::Value::as_object_mut)
         .ok_or_else(|| anyhow!("cell appraisal schema has no action array"))?;
     actions.insert("maxItems".into(), slice.max_actions.into());
+    let inactions = properties
+        .get_mut("inactions")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("cell appraisal schema has no inaction array"))?;
+    inactions.insert("maxItems".into(), slice.max_actions.into());
     let proposal = schema
         .pointer_mut("/$defs/CellActionCandidate/properties")
         .and_then(serde_json::Value::as_object_mut)
@@ -1529,11 +1559,19 @@ fn constrain_cell_proposal_schema(
         .collect::<Vec<_>>();
     proposal.insert(
         "subject_id".into(),
-        serde_json::json!({"type":"string","enum":subject_ids}),
+        serde_json::json!({"type":"string","enum":subject_ids.clone()}),
     );
     proposal.insert(
         "priority".into(),
         serde_json::json!({"type":"integer","minimum":0,"maximum":100}),
+    );
+    let inaction = schema
+        .pointer_mut("/$defs/CellInaction/properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("cell appraisal schema has no inaction properties"))?;
+    inaction.insert(
+        "subject_id".into(),
+        serde_json::json!({"type":"string","enum":subject_ids}),
     );
     Ok(())
 }
@@ -1643,7 +1681,7 @@ mod tests {
                                 "public_channels":["public bulletin"],
                                 "effect":{"type":"actor_move","destination_id":"forum"}
                             }],
-                            "inaction_reason":null
+                            "inactions":[]
                         })
                         .to_string());
                     }
@@ -1663,7 +1701,7 @@ mod tests {
                             "public_channels":["public bulletin"],
                             "effect":{"type":"institution","posture":"published a bounded position","location_ids":["forum"]}
                         }],
-                        "inaction_reason":null
+                        "inactions":[]
                     }).to_string())
                 }
                 "cell_effect_verifier" => {
@@ -1811,7 +1849,7 @@ mod tests {
                                 "location_ids":["forum"]
                             }
                         }],
-                        "inaction_reason":null
+                        "inactions":[]
                     }).to_string())
                 }
                 "cell_effect_verifier" => {
@@ -1879,21 +1917,47 @@ mod tests {
     }
 
     #[test]
-    fn empty_cell_appraisal_names_the_missing_inaction_reason() {
+    fn empty_cell_appraisal_requires_exact_attributed_inaction() {
         let slice = fixture_cell_slice();
-        let appraisal = bind_cell_appraisal(
+        let mut appraisal = bind_cell_appraisal(
             &slice,
             CellAppraisalProposal {
                 actions: vec![],
-                inaction_reason: Some("   ".into()),
+                inactions: vec![crate::domain::CellInaction {
+                    subject_id: "faction-06".into(),
+                    reason: "The institution deliberately holds its current position.".into(),
+                }],
             },
         )
         .unwrap();
+        validate_cell_appraisal(&slice, &appraisal).unwrap();
+        appraisal.inactions[0].reason = "   ".into();
         let error = validate_cell_appraisal(&slice, &appraisal).unwrap_err();
         assert!(
             error
                 .to_string()
-                .contains("concrete non-empty inaction_reason")
+                .contains("inaction for subject faction-06")
+        );
+
+        appraisal.inactions[0].reason = "The institution holds.".into();
+        appraisal.actions.push(crate::domain::CellActionProposal {
+            subject_id: "faction-06".into(),
+            intent: "publish a new position".into(),
+            intended_effect: "adopt a bounded commitment".into(),
+            priority: 50,
+            state_references: vec!["institution:faction-06".into()],
+            public_channels: vec!["public bulletin".into()],
+            effect: StrategicCellEffect::Institution {
+                institution_id: "faction-06".into(),
+                posture: "publishing a bounded new commitment".into(),
+                location_ids: vec!["forum".into()],
+            },
+        });
+        assert!(
+            validate_cell_appraisal(&slice, &appraisal)
+                .unwrap_err()
+                .to_string()
+                .contains("conflicts with an action")
         );
     }
 
@@ -2009,7 +2073,7 @@ mod tests {
                         pressure_resolutions: vec![],
                     },
                 }],
-                inaction_reason: None,
+                inactions: vec![],
             },
         )
         .unwrap();
@@ -2150,7 +2214,7 @@ mod tests {
                         location_ids: vec!["forum".into()],
                     },
                 }],
-                inaction_reason: None,
+                inactions: vec![],
             },
         )
         .unwrap();
@@ -2258,7 +2322,7 @@ mod tests {
                 .lived_stream
                 .contains("preparation, inspection, request, or deliberation")
         );
-        assert!(request.lived_stream.contains("use explicit inaction"));
+        assert!(request.lived_stream.contains("record attributed inaction"));
     }
 
     #[test]

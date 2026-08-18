@@ -1614,17 +1614,31 @@ pub fn validate_and_resolve_wave(
             || appraisal.world_revision != campaign.revision
             || appraisal.resolution_epoch != campaign.resolution_policy.resolution_epoch
             || appraisal.considered_subject_ids != cell.subject_ids
-            || (appraisal.actions.is_empty()
-                && appraisal
-                    .inaction_reason
-                    .as_deref()
-                    .is_none_or(|reason| reason.trim().is_empty()))
+            || (appraisal.actions.is_empty() && appraisal.inactions.is_empty())
         {
             return Err(anyhow!("cell appraisal is incomplete or stale"));
         }
         let quota = cell_action_limit(cell);
-        if appraisal.actions.len() > quota {
+        if appraisal.actions.len() > quota || appraisal.inactions.len() > quota {
             return Err(anyhow!("cell appraisal exceeds its action quota"));
+        }
+        let action_subject_ids = appraisal
+            .actions
+            .iter()
+            .map(|proposal| proposal.subject_id.as_str())
+            .collect::<BTreeSet<_>>();
+        let mut inaction_subject_ids = BTreeSet::new();
+        for inaction in &appraisal.inactions {
+            if inaction.reason.trim().is_empty()
+                || inaction.reason.len() > 240
+                || action_subject_ids.contains(inaction.subject_id.as_str())
+                || !inaction_subject_ids.insert(inaction.subject_id.as_str())
+                || !cell_contains_attributed_subject(campaign, cell, &inaction.subject_id)
+            {
+                return Err(anyhow!(
+                    "cell appraisal contains an invalid attributed inaction"
+                ));
+            }
         }
         for proposal in &appraisal.actions {
             validate_cell_proposal(campaign, cell, proposal)?;
@@ -1905,6 +1919,23 @@ fn validate_cell_proposal(
         }
     }
     Ok(())
+}
+
+fn cell_contains_attributed_subject(
+    campaign: &Campaign,
+    cell: &SimulationCell,
+    subject_id: &str,
+) -> bool {
+    if subject_id == campaign.player_actor_id {
+        return false;
+    }
+    if let Some(member_id) = subject_id.strip_prefix("member:") {
+        return campaign
+            .gestalt_members
+            .get(member_id)
+            .is_some_and(|member| cell.subject_ids.contains(&member.gestalt_id));
+    }
+    cell.subject_ids.contains(subject_id)
 }
 
 pub fn substantive_text_change(current: &str, candidate: &str) -> bool {
@@ -3079,7 +3110,7 @@ pub(crate) mod tests {
                 resolution_epoch: value.resolution_policy.resolution_epoch,
                 considered_subject_ids: cell.subject_ids.clone(),
                 actions: vec![proposal],
-                inaction_reason: None,
+                inactions: vec![],
             }],
             cover: cover.clone(),
             model_receipt_hashes: vec![],
@@ -3112,6 +3143,33 @@ pub(crate) mod tests {
             },
         };
         assert!(validate_and_resolve_wave(&value, &make_wave(borrowed_secret)).is_err());
+
+        let valid_action = CellActionProposal {
+            subject_id: "faction-0000".into(),
+            intent: "publish a bounded position".into(),
+            intended_effect: "adopt a materially different posture".into(),
+            priority: 50,
+            state_references: vec![],
+            public_channels: vec![],
+            effect: StrategicCellEffect::Institution {
+                institution_id: "faction-0000".into(),
+                posture: "publishing a bounded position under the current pressure".into(),
+                location_ids: vec![],
+            },
+        };
+        let mut mixed = make_wave(valid_action.clone());
+        mixed.appraisals[0].inactions = vec![CellInaction {
+            subject_id: "faction-0001".into(),
+            reason: "The rival deliberately holds its separate position.".into(),
+        }];
+        validate_and_resolve_wave(&value, &mixed).unwrap();
+
+        let mut contradictory = make_wave(valid_action);
+        contradictory.appraisals[0].inactions = vec![CellInaction {
+            subject_id: "faction-0000".into(),
+            reason: "The same institution cannot also hold.".into(),
+        }];
+        assert!(validate_and_resolve_wave(&value, &contradictory).is_err());
     }
 
     #[test]
@@ -3225,7 +3283,7 @@ pub(crate) mod tests {
                 resolution_epoch: value.resolution_policy.resolution_epoch,
                 considered_subject_ids: cover.cells[0].subject_ids.clone(),
                 actions: vec![proposal],
-                inaction_reason: None,
+                inactions: vec![],
             }],
             cover: cover.clone(),
             model_receipt_hashes: vec![],
@@ -3274,7 +3332,7 @@ pub(crate) mod tests {
                 resolution_epoch: value.resolution_policy.resolution_epoch,
                 considered_subject_ids: cover.cells[0].subject_ids.clone(),
                 actions: vec![member_activity.clone(), proposal.clone()],
-                inaction_reason: None,
+                inactions: vec![],
             }],
             cover: cover.clone(),
             model_receipt_hashes: vec![],
@@ -3345,7 +3403,7 @@ pub(crate) mod tests {
                 resolution_epoch: value.resolution_policy.resolution_epoch,
                 considered_subject_ids: cover.cells[0].subject_ids.clone(),
                 actions: vec![exact_rival_activity.clone(), lower_priority_pressure],
-                inaction_reason: None,
+                inactions: vec![],
             }],
             cover: cover.clone(),
             model_receipt_hashes: vec![],
@@ -3427,7 +3485,7 @@ pub(crate) mod tests {
                     action("faction-0001", 100),
                     action("faction-0002", 50),
                 ],
-                inaction_reason: None,
+                inactions: vec![],
             }],
             cover,
             model_receipt_hashes: vec![],

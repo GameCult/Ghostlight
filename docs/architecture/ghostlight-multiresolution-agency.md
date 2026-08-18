@@ -123,6 +123,14 @@ outside the player's active location. A direct internal command may preserve a
 named offscreen actor, but model-driven presence reconciliation cannot teleport
 one into view. Existing member deltas are preferred when their relationship,
 memory, obligation, or goal makes an ordinary encounter a meaningful callback.
+The player actor's reciprocal relationship to each nearby dormant member is
+projected beside that member's exact delta. Presence planning is scene casting,
+not roster cleanup: an earned local callback may surface without the player
+asking for the person, while an incompatible event or absence of durable
+callback evidence may still produce no promotion. The model only proposes the
+cast; `WorldKernel` validates exact member, gestalt, location, and versions
+before materialization. Live harnesses persist the private presence preflight
+even when their acceptance assertion fails.
 
 ## Canonical population migration
 
@@ -272,6 +280,17 @@ Projector → Persona → Interpreter membrane:
 - Personas receive only the private lived narrative stream;
 - Interpreters emit a typed appraisal and exact constituent effects;
 - malformed or semantically invalid output gets one same-snapshot correction.
+
+An appraisal has two attributed lanes: `actions[]` for proposed transitions and
+`inactions[]` for exact subjects that deliberately hold, wait, or continue an
+already committed course. The old cell-wide inaction string is gone. This
+matters in a mixed arena: one institution can act while two rivals hold without
+the Interpreter manufacturing repeated posture transitions merely to preserve
+their separately voiced decisions. Inaction IDs use the same constituent or
+selected-member permission set, carry a bounded reason, cannot duplicate, and
+cannot also appear in the action lane. They are audit/fairness evidence and
+never mutate the world. A cell with no actions must still contain at least one
+attributed inaction.
 
 An arena may contain simultaneous views from distant locations. The Projector
 names each subject's actual location and keeps those views as separate scenes;
@@ -573,6 +592,44 @@ Fairness accounting uses the same definition as canonical detail debt: an
 explicit aggregate `detail_focus_subject_id` and every singleton cell both
 receive direct resolution attention. A named focus is not required for a
 subject already receiving its own complete Persona pipeline.
+
+The lease-preserving budget-4 profile committed all 23 requested sustained
+waves and recovered from 18 rejected provider pulses without partial mutation.
+It then failed its separate callback assertion because the presence planner
+returned an empty cast. This isolated a player-experience fault from the agency
+invariants: Mira remained the same dormant person in the correct destination,
+but continuity was not surfaced. The focused `gestalt-callback-6253f9f-1` run
+then passed: after one fresh 24-subject arena wave, the planner promoted
+`mira-venn` from `harbor-neighbors` without the player naming her, and the
+kernel rematerialized the same private and effective state. The full run took
+18.465 seconds. Its strategic membrane used 18,662 prompt and 1,096 completion
+tokens; the additional presence decision used 2,504 prompt and 78 completion
+tokens.
+
+Institution posture is projected as `already_committed_posture`. It is durable
+state already in force, not a new pressure or decision. Projector, Persona, and
+Interpreter contracts all treat continuing or restating it as explicit
+inaction; only a materially different commitment may emit an institution
+posture transition. Local validation remains strict rather than silently
+dropping a no-op.
+
+The 31-wave budget-8 / provider-parallelism-4 profile
+`gestalt-lease-b8p4-6253f9f-1` passed after 1,211.592 seconds. All 24 subjects
+received direct attention. Its sustained appraisals made 199 accepted proposals
+from 22 distinct subjects; consequence resolution committed 51 institution
+postures, 110 Gestalt activities, one population migration, and 31 named-member
+activities, plus the initial arena consequence. Fifteen rejected pulses left
+the world unchanged and later recovered. The same Mira callback passed after
+the full run.
+
+The profile used 1,468,039 strategic prompt tokens and 165,725 completion
+tokens, reached a 60.69% cache-hit ratio, and spent 7,567 prompt tokens per
+committed consequence. Interpreter remained the largest stage at 737,148
+prompt tokens but reached 67.18% cache hits; Projector reached 70.03%. The
+presence decision added 2,606 prompt and 78 completion tokens. Live traces
+showed that the remaining repeated-posture failures occurred when several
+constituents in one arena held while others acted, motivating the attributed
+inaction lane rather than another prompt-only prohibition.
 
 The run also exposes the next authority gap. Institution postures, population
 migration, clocks, and history changed canonically, but most Gestalt activities
