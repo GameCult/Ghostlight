@@ -881,7 +881,11 @@ pub fn publish_cultnet_messages_to_rudp_catalog(
         thread::sleep(options.poll_interval);
     }
     if !client.connected() {
-        client.assume_connected();
+        anyhow::bail!(
+            "timed out connecting CultMesh RUDP document publisher {} to {}",
+            options.runtime_id,
+            options.target
+        );
     }
 
     for message in messages {
