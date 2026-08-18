@@ -252,9 +252,10 @@ impl CampaignRegistry {
         let runtime = self.runtime(campaign_id).await?;
         fs::create_dir_all(exports_root.as_ref())?;
         let path = exports_root.as_ref().join(format!(
-            "{}-{}.cc",
+            "{}-{}-{}.cc",
             campaign_id,
-            Utc::now().format("%Y%m%dT%H%M%SZ")
+            Utc::now().format("%Y%m%dT%H%M%S%.3fZ"),
+            Uuid::new_v4()
         ));
         runtime.store.snapshot_to(&path)?;
         Ok(path)
@@ -384,9 +385,19 @@ mod tests {
             .export(fork_id, dir.path().join("exports"))
             .await
             .unwrap();
+        let second_export = registry
+            .export(fork_id, dir.path().join("exports"))
+            .await
+            .unwrap();
+        assert_ne!(exported, second_export);
         let export_store = CampaignStore::open(exported).unwrap();
+        let second_export_store = CampaignStore::open(second_export).unwrap();
         assert_eq!(
             export_store.keys("campaign.v1").unwrap(),
+            vec![fork_id.to_string()]
+        );
+        assert_eq!(
+            second_export_store.keys("campaign.v1").unwrap(),
             vec![fork_id.to_string()]
         );
         assert_eq!(

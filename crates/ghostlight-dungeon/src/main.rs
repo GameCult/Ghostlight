@@ -120,6 +120,17 @@ struct AuthOwner {
     state: AuthState,
 }
 
+impl AuthOwner {
+    fn commit(&mut self, next_state: AuthState) -> anyhow::Result<()> {
+        let next_row = self
+            .store
+            .replace(&self.row, "ghostlight.auth_state.v1", &next_state)?;
+        self.row = next_row;
+        self.state = next_state;
+        Ok(())
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -309,21 +320,20 @@ async fn health(State(state): State<AppState>) -> Response {
 
 async fn invite(Path(token): Path<String>, State(state): State<AppState>) -> Response {
     let mut auth = state.auth.lock().await;
-    if !auth.state.unused_invite_hashes.remove(&secret_hash(&token)) {
+    let invite_hash = secret_hash(&token);
+    if !auth.state.unused_invite_hashes.contains(&invite_hash) {
         return (StatusCode::UNAUTHORIZED, "invalid or consumed invite").into_response();
     }
     let session = uuid::Uuid::new_v4().to_string();
-    auth.state.session_hashes.insert(secret_hash(&session));
-    let next = match auth
-        .store
-        .replace(&auth.row, "ghostlight.auth_state.v1", &auth.state)
-    {
-        Ok(row) => row,
+    let mut next_state = auth.state.clone();
+    next_state.unused_invite_hashes.remove(&invite_hash);
+    next_state.session_hashes.insert(secret_hash(&session));
+    match auth.commit(next_state) {
+        Ok(()) => {}
         Err(error) => {
             return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
         }
-    };
-    auth.row = next;
+    }
     drop(auth);
     let mut response = Redirect::to("/").into_response();
     response.headers_mut().insert(
@@ -2053,18 +2063,16 @@ async fn select_campaign(
     if !auth.state.session_hashes.contains(session_hash) {
         return Err(anyhow::anyhow!("session is no longer authorized"));
     }
-    auth.state
+    let mut next_state = auth.state.clone();
+    next_state
         .session_campaigns
         .insert(session_hash.to_owned(), campaign_id);
-    auth.state
+    next_state
         .session_campaign_ids
         .entry(session_hash.to_owned())
         .or_default()
         .insert(campaign_id);
-    auth.row = auth
-        .store
-        .replace(&auth.row, "ghostlight.auth_state.v1", &auth.state)?;
-    Ok(())
+    auth.commit(next_state)
 }
 
 fn secret_hash(value: &str) -> String {
@@ -2358,6 +2366,49 @@ mod tests {
             right_runtime.store.identity()
         );
         assert!(!state.auth.lock().await.state.session_campaign_ids["left"].contains(&right.id));
+    }
+
+    #[test]
+    fn failed_auth_commit_cannot_change_in_memory_authority() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("auth.cc")).unwrap();
+        let original = AuthState {
+            schema: "ghostlight.auth_state.v1".into(),
+            unused_invite_hashes: BTreeSet::from(["invite".into()]),
+            session_hashes: BTreeSet::new(),
+            session_campaigns: BTreeMap::new(),
+            session_campaign_ids: BTreeMap::new(),
+        };
+        let row = store
+            .insert(
+                "auth_state.v1",
+                "ghostlight.auth_state.v1",
+                "primary",
+                &original,
+            )
+            .unwrap();
+        let mut owner = AuthOwner {
+            store: store.clone(),
+            row: row.clone(),
+            state: original.clone(),
+        };
+
+        let mut externally_committed = original.clone();
+        externally_committed.session_hashes.insert("other".into());
+        store
+            .replace(&row, "ghostlight.auth_state.v1", &externally_committed)
+            .unwrap();
+
+        let mut rejected = original.clone();
+        rejected.unused_invite_hashes.clear();
+        rejected.session_hashes.insert("phantom".into());
+        assert!(owner.commit(rejected).is_err());
+        assert_eq!(
+            owner.state.unused_invite_hashes,
+            original.unused_invite_hashes
+        );
+        assert_eq!(owner.state.session_hashes, original.session_hashes);
+        assert_eq!(owner.row, row);
     }
 
     #[test]
