@@ -105,6 +105,13 @@ struct RetrievalQueryPlan {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct OpeningRetrievalPlan {
+    early_frame_query: String,
+    transition_frame_query: String,
+    late_frame_query: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct EvidenceUsePlan {
     coverage: Vec<EvidenceCoverage>,
 }
@@ -224,21 +231,11 @@ impl WorldCompiler {
     }
 
     pub async fn suggest_openings(&self, request: OpeningRequest) -> Result<SuggestedOpenings> {
-        let (queries, retrieval_receipt) = self
-            .plan_queries(
-                "opening_retrieval_plan",
-                "opening-suggestions",
-                &format!(
-                    "Retrieve evidence for three opening candidates in genuinely different source-supported eras, places, and pressures. Include historical chronology and geographic anchors rather than three variations on the most prominent period. REQUEST: {}",
-                    serde_json::to_string(&request)?
-                ),
-                3,
-            )
-            .await?;
+        let (queries, retrieval_receipt) = self.plan_opening_queries(&request).await?;
         let receipts = self.retrieve_all(&queries, "all", 8).await?;
-        let evidence = evidence_text(&receipts);
+        let evidence = opening_evidence_text(&queries, &receipts);
         let base_prompt = format!(
-            "Generate exactly three source-grounded openings. The three literal `era` values must be pairwise distinct after trimming and case-folding; the three `place` values and three `pressure` values must independently satisfy the same rule. Do not return aliases for the same era or place merely to satisfy spelling-level diversity. Do not fill material evidence gaps with invention. Before returning, verify the nine axis values yourself. REQUEST:\n{}\nEVIDENCE:\n{}",
+            "Generate exactly three source-grounded openings, taking one from each labeled historical-frame evidence group when that group contains adequate support. The three literal `era` values must name specific, genuinely different historical periods and be pairwise distinct after trimming and case-folding. An umbrella label such as `Post-Elysium` is insufficient when used twice: qualify each with its distinct source-supported event, phase, or date. The three `place` values and three `pressure` values must independently be pairwise distinct. Do not return aliases for the same period or place merely to satisfy spelling-level diversity. Do not fill material evidence gaps with invention. Before returning, verify the nine axis values yourself. REQUEST:\n{}\nEVIDENCE GROUPS:\n{}",
             serde_json::to_string(&request)?,
             evidence
         );
@@ -937,6 +934,56 @@ impl WorldCompiler {
         Ok((normalized, output.receipt))
     }
 
+    async fn plan_opening_queries(
+        &self,
+        request: &OpeningRequest,
+    ) -> Result<(Vec<String>, ModelStageReceipt)> {
+        let schema = serde_json::to_value(schema_for!(OpeningRetrievalPlan))?;
+        let prompt = format!(
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nPlan three source-search queries for distinct historical frames in the requested setting. `early_frame_query` must seek the earliest well-documented playable period and its geography and pressure. `transition_frame_query` must seek a materially later transition, shunt, collapse, migration, or institutional realignment. `late_frame_query` must seek the latest well-documented playable period and a different geography and pressure. Use setting-specific terms from the request where available. Each value is only a concise natural-language search query of 1 to 240 Unicode characters; do not answer the request. REQUEST:\n{}",
+            serde_json::to_string(&schema)?,
+            serde_json::to_string(request)?
+        );
+        let output = run_validated_stage(
+            self.model.as_ref(),
+            &ModelStageRequest {
+                stage: "opening_retrieval_plan".into(),
+                model: self.retrieval_model.clone(),
+                snapshot_binding: "opening-suggestions".into(),
+                lived_stream: prompt,
+                output_schema: Some(schema),
+                source_receipt_ids: vec![],
+                temperature: Some(0.0),
+                max_output_tokens: Some(512),
+            },
+        )
+        .await?;
+        let plan: OpeningRetrievalPlan =
+            serde_json::from_value(output.structured.ok_or_else(|| {
+                anyhow!("opening retrieval planner returned no structured output")
+            })?)?;
+        let queries = vec![
+            plan.early_frame_query.trim().to_owned(),
+            plan.transition_frame_query.trim().to_owned(),
+            plan.late_frame_query.trim().to_owned(),
+        ];
+        let unique = queries.iter().collect::<BTreeSet<_>>();
+        if unique.len() != 3 {
+            return Err(anyhow!(
+                "opening retrieval planner must return three distinct historical-frame queries"
+            ));
+        }
+        if queries
+            .iter()
+            .any(|query| query.is_empty() || query.chars().count() > 240)
+        {
+            return Err(anyhow!(
+                "opening retrieval query must contain 1 to 240 characters"
+            ));
+        }
+        Ok((queries, output.receipt))
+    }
+
     async fn classify_evidence(
         &self,
         start: &CustomStart,
@@ -1549,6 +1596,20 @@ fn evidence_text(receipts: &[VaultEvidenceReceipt]) -> String {
                 witness.content_hash,
                 witness.excerpt
             )
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
+fn opening_evidence_text(queries: &[String], receipts: &[VaultEvidenceReceipt]) -> String {
+    const FRAME_LABELS: [&str; 3] = ["early", "transition", "late"];
+    queries
+        .iter()
+        .zip(receipts)
+        .zip(FRAME_LABELS)
+        .map(|((query, receipt), frame)| {
+            let witnesses = evidence_text(std::slice::from_ref(receipt));
+            format!("[historical_frame={frame} | retrieval_query={query}]\n{witnesses}")
         })
         .collect::<Vec<_>>()
         .join("\n\n")
@@ -2342,6 +2403,11 @@ mod tests {
     impl ModelPort for CompilerModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             Ok(match request.stage.as_str() {
+                "opening_retrieval_plan" => serde_json::json!({
+                    "early_frame_query":"fixture earliest period ring strike",
+                    "transition_frame_query":"fixture transition period moon siege",
+                    "late_frame_query":"fixture latest period station election"
+                }).to_string(),
                 stage if stage.ends_with("_retrieval_plan") => {
                     let count = if stage == "role_retrieval_plan"
                         || stage == "destination_retrieval_plan"
