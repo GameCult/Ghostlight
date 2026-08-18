@@ -372,6 +372,10 @@ The committed posture is projected as already true and is the exact baseline
 against which a new institutional commitment is validated. It is never hidden
 in a generic pressure list, where a Projector could mistake a completed choice
 for a dilemma still awaiting action.
+Institution posture proposals are bounded to 240 characters in both the stable
+Interpreter contract and local JSON Schema, matching the canonical validator.
+The model sees the limit before generation instead of spending a semantic retry
+on an otherwise valid but overlong commitment.
 
 A committed strategic effect must produce an exact canonical consequence.
 Institutions cannot re-adopt their current posture. Population pressure effects

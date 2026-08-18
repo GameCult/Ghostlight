@@ -194,6 +194,12 @@ canonical location belongs to the activity and creates no topology or arrival;
 only movement to a different supplied canonical location requires a movement
 effect.
 
+The next stochastic strict run chose no Mira migration and correctly stopped
+without mutation. A second run passed preflight, then an institution emitted a
+genuinely new but over-240-character posture twice. The existing canonical
+bound is now present in both the compact Interpreter contract and generated
+JSON Schema, and prompt guidance names it before generation.
+
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
 smoke committed three offscreen events plus three accessible news items without

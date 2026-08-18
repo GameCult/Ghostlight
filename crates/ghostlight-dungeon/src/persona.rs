@@ -148,6 +148,7 @@ struct CellActionCandidate {
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 enum CellEffectCandidate {
     Institution {
+        #[schemars(length(min = 1, max = 240))]
         posture: String,
         location_ids: Vec<String>,
     },
@@ -241,7 +242,7 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
       "subject_id":{"type":"string"},"intent":{"type":"string"},"intended_effect":{"type":"string"},"priority":{"type":"integer"},
       "state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},
       "effect":{"oneOf":[
-        {"type":"object","required":["type","posture","location_ids"],"properties":{"type":{"const":"institution"},"posture":{"type":"string"},"location_ids":{"type":"array","items":{"type":"string"}}}},
+        {"type":"object","required":["type","posture","location_ids"],"properties":{"type":{"const":"institution"},"posture":{"type":"string","minLength":1,"maxLength":240},"location_ids":{"type":"array","items":{"type":"string"}}}},
         {"type":"object","required":["type","pressure_additions","pressure_resolutions"],"properties":{"type":{"const":"gestalt"},"pressure_additions":{"type":"array","maxItems":4,"items":{"type":"string"}},"pressure_resolutions":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
         {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"gestalt_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
         {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"gestalt_migration"},"destination_gestalt_id":{"type":"string"}}},
@@ -820,7 +821,7 @@ impl CellProjectionEngine {
                 "Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt pressure transition, gestalt_activity, or gestalt_migration, actor -> actor_move, named member -> member_migration or member_activity. ",
                 "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
-                "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Institution posture must be a specific new commitment or withholding. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
+                "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Institution posture must be a specific new commitment or withholding of at most 240 characters. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
                 "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. Use an empty actions array plus a concrete inaction_reason when nobody acts."
             ),
@@ -1899,6 +1900,12 @@ mod tests {
     #[test]
     fn compact_cell_prompt_contract_is_valid_json() {
         serde_json::from_str::<serde_json::Value>(CELL_APPRAISAL_OUTPUT_CONTRACT).unwrap();
+        assert!(CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"maxLength\":240"));
+        assert!(
+            serde_json::to_string(&schema_for!(CellAppraisalProposal))
+                .unwrap()
+                .contains("\"maxLength\":240")
+        );
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"institution_id\""));
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"gestalt_id\""));
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"actor_id\""));
