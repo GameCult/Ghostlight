@@ -878,6 +878,21 @@ binary SHA-256
 `1e1d46c549bd91feac58523861268797114e83a942e79d9c13de8bfc5fa96ea5`
 agree. Invitations remain untouched.
 
+Release `53f3f0cc3165bef6d68a6edc4d4ffbbc16dc7fd8` closes the campaign branch
+publication boundary. Fork and reset lifecycle receipts are written inside the
+non-discoverable staging store before its atomic rename; a failed receipt write
+leaves neither a campaign directory nor registry entry. Campaign selection now
+reloads canonical auth state once after a stale optimistic write, rechecks the
+session, and preserves concurrent session authority before retrying. The full
+workspace passed 141 core and 16 daemon tests. Starfire PID 7868 serves the
+exact release with executable SHA-256
+`a4bbc699bcb120b3e2d546ee3f60491b36ecbb30013f60af58216ad2043426dc`,
+four recovered campaign directories, zero `.creating-*` directories, and a
+ready DeepSeek probe. A fresh four-actor live Persona wave completed in 10.39
+seconds, produced three appraisals and nine validated stage receipts, and
+atomically committed revision 1. One credentialed rendered-browser journey
+remains pending; invitations have not been rotated or consumed.
+
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.
