@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
+const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), summary, effect_kind, and supporting_state_references. The remaining permitted fields are owner_subject_id, other_subject_id, relation_id, strength_delta, resource, pressure_additions, pressure_resolutions, member_id, memory, obligation, relationship_description, fact_id, and reason. Omit every optional field not used by the chosen effect_kind. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","summary":"A bounded resolved consequence.","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
+
 #[derive(Clone, Debug, Serialize)]
 struct OutcomeContext {
     world_revision: u64,
@@ -124,7 +126,9 @@ pub async fn resolve_activity_outcomes(
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
-    let static_contract = "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. A success may still have no durable material change when the attempt was speech, preparation, or inquiry whose response is not established. A failure may create a pressure or spend a committed resource when causally supported. Summary describes the resolved consequence, not a new attempt. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one supplied resource_recipient_id; it cannot take from a target. gestalt_pressure uses one supplied pressure_owner_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; a relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.";
+    let static_contract = format!(
+        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. A success may still have no durable material change when the attempt was speech, preparation, or inquiry whose response is not established. A failure may create a pressure or spend a committed resource when causally supported. Summary describes the resolved consequence, not a new attempt. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one supplied resource_recipient_id; it cannot take from a target. gestalt_pressure uses one supplied pressure_owner_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; a relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
+    );
     let mut request = ModelStageRequest {
         stage: "strategic_outcome_resolver".into(),
         model: "deepseek-v4-flash".into(),
@@ -1319,6 +1323,16 @@ mod tests {
         let requests = model.requests.lock().unwrap();
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].stage, "strategic_outcome_resolver");
+        assert!(
+            requests[0]
+                .lived_stream
+                .contains("exactly one field named outcomes")
+        );
+        assert!(
+            requests[0]
+                .lived_stream
+                .contains("never action_resolutions")
+        );
         assert_eq!(
             requests[0].snapshot_binding,
             activity_outcome_binding(
