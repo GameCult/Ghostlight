@@ -35,6 +35,7 @@ struct ActionOutcomeContext {
     target_state: Vec<serde_json::Value>,
     active_relations: Vec<serde_json::Value>,
     pressure_owner_ids: Vec<String>,
+    resource_owner_id: String,
     resource_recipient_ids: Vec<String>,
     discoverable_facts: Vec<serde_json::Value>,
     member_state_owner_id: Option<String>,
@@ -127,7 +128,7 @@ pub async fn resolve_activity_outcomes(
         .into_iter()
         .collect();
     let static_contract = format!(
-        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. A success may still have no durable material change when the attempt was speech, preparation, or inquiry whose response is not established. A failure may create a pressure or spend a committed resource when causally supported. Summary describes the resolved consequence, not a new attempt. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one supplied resource_recipient_id; it cannot take from a target. gestalt_pressure uses one supplied pressure_owner_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; a relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
+        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. A success may still have no durable material change when the attempt was speech, preparation, or inquiry whose response is not established. A failure may create a pressure or spend a committed resource when causally supported. Summary describes the resolved consequence, not a new attempt. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one supplied resource_recipient_id; it cannot take from a target. Every resource effect's owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure uses one supplied pressure_owner_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
     );
     let mut request = ModelStageRequest {
         stage: "strategic_outcome_resolver".into(),
@@ -521,20 +522,51 @@ fn validate_effect(
             owner_subject_id,
             resource,
         } => {
-            if owner_subject_id != source
-                || !matches!(activity, StrategicActivityKind::Prepare)
-                || !bounded_text(resource, 160)
-                || contains_normalized(&subject_resources(campaign, source)?, resource)
-                || subject_resources(campaign, source)?.len() >= 64
-                || !can_hold_resources(campaign, source)
-                || !outcome
-                    .supporting_state_references
-                    .iter()
-                    .any(|reference| reference.starts_with("capability:"))
-                || !exclusive_effects.insert(format!("resource:{source}:{resource}"))
+            if owner_subject_id != source {
+                return Err(anyhow!(
+                    "outcome {} resource_created owner_subject_id must copy exact resource_owner_id {source}",
+                    outcome.action_digest
+                ));
+            }
+            if !matches!(activity, StrategicActivityKind::Prepare) {
+                return Err(anyhow!(
+                    "outcome {} resource_created requires a prepare activity",
+                    outcome.action_digest
+                ));
+            }
+            if !bounded_text(resource, 160) {
+                return Err(anyhow!(
+                    "outcome {} resource_created requires one bounded resource description",
+                    outcome.action_digest
+                ));
+            }
+            let existing_resources = subject_resources(campaign, source)?;
+            if contains_normalized(&existing_resources, resource) {
+                return Err(anyhow!(
+                    "outcome {} resource_created repeats an existing source resource",
+                    outcome.action_digest
+                ));
+            }
+            if existing_resources.len() >= 64 || !can_hold_resources(campaign, source) {
+                return Err(anyhow!(
+                    "outcome {} resource_created exceeds source resource capacity",
+                    outcome.action_digest
+                ));
+            }
+            if !outcome
+                .supporting_state_references
+                .iter()
+                .any(|reference| reference.starts_with("capability:"))
             {
                 return Err(anyhow!(
-                    "resource creation exceeds the acting subject's scope"
+                    "outcome {} resource_created requires one supplied capability reference",
+                    outcome.action_digest
+                ));
+            }
+            if !exclusive_effects.insert(format!("resource:{source}:{resource}")) {
+                return Err(anyhow!(
+                    "outcome {} duplicates a resource creation in this wave",
+                    outcome.action_digest
                 ));
             }
         }
@@ -811,6 +843,7 @@ fn action_context(
         pressure_owner_ids: pressure_owner_ids(campaign, proposal)?
             .into_iter()
             .collect(),
+        resource_owner_id: proposal.subject_id.clone(),
         resource_recipient_ids,
         discoverable_facts,
         member_state_owner_id: proposal
@@ -1298,6 +1331,36 @@ mod tests {
     fn missing_outcome_is_rejected() {
         let value = campaign();
         assert!(validate_activity_outcomes(&value, &[proposal()], &[]).is_err());
+    }
+
+    #[test]
+    fn resource_outcome_reports_the_exact_required_owner() {
+        let value = campaign();
+        let mut action = proposal();
+        action.effect = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "dockers".into(),
+            activity: StrategicActivityKind::Prepare,
+            target_subject_ids: vec![],
+            location_ids: vec!["dock".into()],
+        };
+        let outcome = StrategicActivityOutcome {
+            schema: "ghostlight.strategic_activity_outcome.v1".into(),
+            action_digest: cell_action_digest(&action).unwrap(),
+            source_subject_id: "dockers".into(),
+            band: StrategicOutcomeBand::Success,
+            summary: "The dockers finish a new net.".into(),
+            supporting_state_references: vec!["capability:repair nets".into()],
+            effect: StrategicOutcomeEffect::ResourceCreated {
+                owner_subject_id: "member:dockers".into(),
+                resource: "finished storm net".into(),
+            },
+        };
+        let error = validate_activity_outcomes(&value, &[action], &[outcome]).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("owner_subject_id must copy exact resource_owner_id dockers")
+        );
     }
 
     #[tokio::test]
