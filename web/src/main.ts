@@ -20,6 +20,8 @@ let providerConfigurationEpoch = 0;
 let requestInFlight = false;
 const controlsDisabledByRequest = new Set<HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>();
 
+class ServerResponseFailure extends Error {}
+
 async function withInteractionLock<T>(work: () => Promise<T>): Promise<T> {
   if (requestInFlight) throw new Error("A Ghostlight request is already in progress.");
   requestInFlight = true;
@@ -76,6 +78,10 @@ function reportClientFailure(reason: unknown) {
     ? reason.message.trim()
     : "The Ghostlight connection failed before a response arrived.";
   status.textContent = message;
+  if (reason instanceof ServerResponseFailure) {
+    showSummary("Request refused", [message, "The server returned an error response. Refresh campaign state before retrying."]);
+    return;
+  }
   showSummary("Request did not complete", [message, "The server remains authoritative. Refresh the campaign before retrying; the lost response may have followed a commit."]);
 }
 
@@ -189,20 +195,30 @@ async function refresh() {
     const button = node("button", `${item.selected ? "●" : "○"} ${item.name} · revision ${item.revision}`);
     button.type = "button";
     button.disabled = Boolean(item.selected);
-    if (!item.selected) button.addEventListener("click", async () => { await compilerPost(`/api/campaigns/select/${item.id}`, {}); await refresh(); });
+    if (!item.selected) button.addEventListener("click", async () => { await compilerMutation(`/api/campaigns/select/${item.id}`, {}); });
     return button;
   }));
 }
 
+async function compilerRequest(path: string, body: unknown) {
+  status.textContent = "Retrieving evidence and compiling…";
+  const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const value = await decodeResponse(response);
+  if (!response.ok) {
+    status.textContent = responseError(value, "Compilation failed");
+    throw new ServerResponseFailure(status.textContent);
+  }
+  return value;
+}
+
 async function compilerPost(path: string, body: unknown) {
+  return withInteractionLock(() => compilerRequest(path, body));
+}
+
+async function compilerMutation(path: string, body: unknown) {
   return withInteractionLock(async () => {
-    status.textContent = "Retrieving evidence and compiling…";
-    const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-    const value = await decodeResponse(response);
-    if (!response.ok) {
-      status.textContent = responseError(value, "Compilation failed");
-      throw new Error(status.textContent);
-    }
+    const value = await compilerRequest(path, body);
+    await refresh();
     return value;
   });
 }
@@ -281,7 +297,7 @@ async function showPreview(result: any) {
   appendDetailList(card, `Evidence coverage · ${coverage.length}`, coverage.map((item: any) => `${item.source_id} · ${String(item.lane).replaceAll("_", " ")} · ${item.rationale}`));
   const approve = node("button", "Approve and enter");
   approve.type = "button";
-  approve.addEventListener("click", async () => { await compilerPost(`/api/compiler/approve/${result.preview_id}`, {}); await refresh(); });
+  approve.addEventListener("click", async () => { await compilerMutation(`/api/compiler/approve/${result.preview_id}`, {}); });
   card.append(approve);
   compilerResults.replaceChildren(card);
   status.textContent = "Preview compiled. Nothing has entered world state yet.";
@@ -391,9 +407,8 @@ destinationForm.addEventListener("submit", async event => {
   const button = node("button", "Approve destination");
   button.type = "button";
   button.addEventListener("click", async () => {
-    await compilerPost(`/api/compiler/destination/approve/${result.preview_id}`, {});
+    await compilerMutation(`/api/compiler/destination/approve/${result.preview_id}`, {});
     button.remove();
-    await refresh();
   });
   receipt.append(button);
 });
@@ -415,14 +430,13 @@ document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("subm
   button.type = "button";
   button.textContent = "Approve population fission";
   button.addEventListener("click", async () => {
-    await compilerPost(`/api/compiler/gestalt/fission/approve/${result.preview_id}`, {});
+    await compilerMutation(`/api/compiler/gestalt/fission/approve/${result.preview_id}`, {});
     button.remove();
-    await refresh();
   });
   receipt.append(button);
 });
-document.querySelector<HTMLFormElement>("#fork-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerPost("/api/campaigns/fork",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));await refresh();});
-document.querySelector<HTMLFormElement>("#reset-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerPost("/api/campaigns/reset",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));await refresh();});
+document.querySelector<HTMLFormElement>("#fork-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerMutation("/api/campaigns/fork",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));});
+document.querySelector<HTMLFormElement>("#reset-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerMutation("/api/campaigns/reset",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));});
 document.querySelector<HTMLButtonElement>("#load-operator")!.addEventListener("click", async () => {
   await withInteractionLock(async () => {
     const response = await fetch("/api/operator");
