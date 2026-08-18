@@ -1,6 +1,6 @@
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{ConnectInfo, Path, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Redirect, Response},
     routing::{get, post},
@@ -292,7 +292,11 @@ async fn main() -> anyhow::Result<()> {
         .parse()?;
     let listener = tokio::net::TcpListener::bind(address).await?;
     tracing::info!(%address, "GhostlightDungeon listening");
-    axum::serve(listener, app).await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
     Ok(())
 }
 
@@ -1770,10 +1774,14 @@ async fn export_canon_candidates_markdown(
 }
 
 async fn set_provider_parallelism(
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
     State(state): State<AppState>,
     Json(request): Json<ProviderParallelismRequest>,
 ) -> Response {
+    if !operator_peer_allowed(peer) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     let session = match authenticated_session(&headers, &state).await {
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
@@ -1810,7 +1818,14 @@ async fn set_provider_parallelism(
     }
 }
 
-async fn operator_inspector(headers: HeaderMap, State(state): State<AppState>) -> Response {
+async fn operator_inspector(
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    if !operator_peer_allowed(peer) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     let session = match authenticated_session(&headers, &state).await {
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
@@ -1834,6 +1849,10 @@ async fn operator_inspector(headers: HeaderMap, State(state): State<AppState>) -
         Ok(surface) => Json(surface).into_response(),
         Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
     }
+}
+
+fn operator_peer_allowed(peer: SocketAddr) -> bool {
+    peer.ip().is_loopback()
 }
 
 async fn process_due_ticks(
@@ -2402,6 +2421,16 @@ mod tests {
             },
             "player",
         ));
+    }
+
+    #[test]
+    fn operator_http_boundary_is_loopback_only() {
+        assert!(operator_peer_allowed("127.0.0.1:8831".parse().unwrap()));
+        assert!(operator_peer_allowed("[::1]:8831".parse().unwrap()));
+        assert!(!operator_peer_allowed(
+            "192.168.178.158:55000".parse().unwrap()
+        ));
+        assert!(!operator_peer_allowed("10.77.0.4:55000".parse().unwrap()));
     }
 
     #[test]

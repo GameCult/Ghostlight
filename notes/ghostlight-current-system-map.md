@@ -335,6 +335,14 @@ It likewise exposes only the number of operator pins and local active
 population leaves eligible for a fission preview. Pin bodies, remote population
 names, and `ReplaceResolutionPins` remain outside the player boundary.
 
+HTTP operator inspection and provider-parallelism mutation require both an
+authenticated campaign session and an actual loopback TCP peer. The daemon uses
+Axum connection metadata from its direct listener; forwarded address headers do
+not grant authority. LAN and WireGuard peers receive `403` before spoiler state
+or controls are read. The browser operator panel is present only when loaded
+from `127.0.0.1`, `localhost`, or `::1`; this mirrors the server boundary and is
+not itself treated as security.
+
 Global strategic context has a separate non-causal lane. Two stable broad Vault
 queries run alongside local retrieval, and a Flash extraction stage proposes at
 most 32 remote institution names with one short durable mandate each. Local code

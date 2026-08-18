@@ -828,6 +828,13 @@ rejects `ReplaceResolutionPins`. Fission candidates are restricted to active
 population leaves at the player's canonical current location; remote population
 names remain in the operator surface.
 
+The operator surface now has a real HTTP boundary. Axum carries the direct TCP
+peer address into the operator inspector and provider-parallelism handlers;
+only loopback plus a valid campaign session is admitted. LAN/WireGuard tester
+peers receive `403`, and the browser hides the operator panel away from
+loopback. Do not replace this with trusted forwarded headers unless a named
+reverse proxy becomes the actual connection owner.
+
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.
