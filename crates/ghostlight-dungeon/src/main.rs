@@ -431,25 +431,7 @@ async fn compile_custom(
         )
             .into_response();
     };
-    match compiler.compile_custom(request).await {
-        Ok((preview, model_receipts)) => {
-            let id = uuid::Uuid::new_v4().to_string();
-            state.compile_previews.lock().await.insert(
-                id.clone(),
-                OwnedPreview {
-                    session_hash: session,
-                    value: preview.clone(),
-                    model_receipts: model_receipts.clone(),
-                },
-            );
-            Json(serde_json::json!({
-                "preview_id":id,
-                "preview":world_compile_preview_projection(&preview),
-            }))
-            .into_response()
-        }
-        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
-    }
+    store_preview(&state, session, compiler.compile_custom(request).await).await
 }
 
 async fn compile_roles(
@@ -517,7 +499,9 @@ async fn store_preview(
     match result {
         Ok((preview, model_receipts)) => {
             let id = uuid::Uuid::new_v4().to_string();
-            state.compile_previews.lock().await.insert(
+            let mut previews = state.compile_previews.lock().await;
+            previews.retain(|_, existing| existing.session_hash != session_hash);
+            previews.insert(
                 id.clone(),
                 OwnedPreview {
                     session_hash,
@@ -626,7 +610,9 @@ async fn compile_destination(
     {
         Ok((preview, model_receipts)) => {
             let id = uuid::Uuid::new_v4().to_string();
-            state.expansion_previews.lock().await.insert(
+            let mut previews = state.expansion_previews.lock().await;
+            previews.retain(|_, existing| existing.session_hash != session);
+            previews.insert(
                 id.clone(),
                 OwnedPreview {
                     session_hash: session,
@@ -722,7 +708,9 @@ async fn compile_fission(
     match compiler.compile_fission(&campaign, request).await {
         Ok((preview, evidence_receipts, model_receipts)) => {
             let id = uuid::Uuid::new_v4().to_string();
-            state.fission_previews.lock().await.insert(
+            let mut previews = state.fission_previews.lock().await;
+            previews.retain(|_, existing| existing.session_hash != session);
+            previews.insert(
                 id.clone(),
                 OwnedFissionPreview {
                     session_hash: session,
@@ -2671,5 +2659,37 @@ mod tests {
         ] {
             assert!(!encoded.contains(private_key), "leaked {private_key}");
         }
+    }
+
+    #[tokio::test]
+    async fn compiling_a_new_world_preview_retires_only_that_sessions_old_preview() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let preview = |name: &str| WorldCompilePreview {
+            schema: "ghostlight.world_compile_preview.v1".into(),
+            title: name.into(),
+            campaign: seed(name),
+            evidence_receipts: vec![],
+            evidence_coverage: vec![],
+            gaps: vec![],
+            branch_assumptions: vec![],
+            requires_approval: true,
+        };
+
+        let _ = store_preview(&state, "left".into(), Ok((preview("old"), vec![]))).await;
+        let _ = store_preview(&state, "right".into(), Ok((preview("other"), vec![]))).await;
+        let _ = store_preview(&state, "left".into(), Ok((preview("new"), vec![]))).await;
+
+        let previews = state.compile_previews.lock().await;
+        assert_eq!(previews.len(), 2);
+        assert_eq!(
+            previews
+                .values()
+                .filter(|owned| owned.session_hash == "left")
+                .map(|owned| owned.value.title.as_str())
+                .collect::<Vec<_>>(),
+            vec!["new"]
+        );
+        assert!(previews.values().any(|owned| owned.session_hash == "right"));
     }
 }
