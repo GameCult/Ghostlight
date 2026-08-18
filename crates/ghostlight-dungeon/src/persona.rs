@@ -1232,14 +1232,34 @@ fn validate_cell_appraisal(
         .collect::<BTreeSet<_>>();
     let mut inaction_subject_ids = BTreeSet::new();
     for inaction in &appraisal.inactions {
-        if inaction.reason.trim().is_empty()
-            || inaction.reason.len() > 240
-            || !permitted_subject_ids.contains(inaction.subject_id.as_str())
-            || action_subject_ids.contains(inaction.subject_id.as_str())
-            || !inaction_subject_ids.insert(inaction.subject_id.as_str())
-        {
+        if inaction.reason.trim().is_empty() {
             return Err(anyhow!(
-                "inaction for subject {} is empty, duplicate, outside the cell, or conflicts with an action",
+                "inaction for subject {} requires a non-empty reason",
+                inaction.subject_id
+            ));
+        }
+        if inaction.reason.len() > 240 {
+            return Err(anyhow!(
+                "inaction reason for subject {} is {} characters but permits at most 240",
+                inaction.subject_id,
+                inaction.reason.len()
+            ));
+        }
+        if !permitted_subject_ids.contains(inaction.subject_id.as_str()) {
+            return Err(anyhow!(
+                "inaction subject {} is outside this cell's exact constituents and member exceptions",
+                inaction.subject_id
+            ));
+        }
+        if action_subject_ids.contains(inaction.subject_id.as_str()) {
+            return Err(anyhow!(
+                "subject {} appears in both actions and inactions; retain exactly one of those decisions",
+                inaction.subject_id
+            ));
+        }
+        if !inaction_subject_ids.insert(inaction.subject_id.as_str()) {
+            return Err(anyhow!(
+                "subject {} has duplicate attributed inactions; retain exactly one",
                 inaction.subject_id
             ));
         }
@@ -1938,7 +1958,7 @@ mod tests {
         assert!(
             error
                 .to_string()
-                .contains("inaction for subject faction-06")
+                .contains("inaction for subject faction-06 requires a non-empty reason")
         );
 
         appraisal.inactions[0].reason = "The institution holds.".into();
@@ -1959,7 +1979,7 @@ mod tests {
             validate_cell_appraisal(&slice, &appraisal)
                 .unwrap_err()
                 .to_string()
-                .contains("conflicts with an action")
+                .contains("subject faction-06 appears in both actions and inactions")
         );
     }
 
