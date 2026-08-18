@@ -768,14 +768,30 @@ bound. The contract now admits inaction only for a subject that explicitly
 holds or waits in the Persona turn, forbids absence-as-inaction, and asks for a
 reason of at most 160 characters while retaining the 240-character hard bound.
 
-The run also exposes the next authority gap. Institution postures, population
-migration, clocks, and history changed canonically, but most Gestalt activities
-remain attributed attempts recorded as events. Over many ticks this can repeat
-an unresolved pressure instead of producing enough typed resource, bargain,
-relationship, or obligation changes. A strategic outcome resolver must own
-those consequences after proposal attribution and before the atomic
-WorldKernel commit; the Interpreter must not gain authority to declare its own
-hoped-for outcome.
+The strategic outcome resolver closes the attempt/result authority gap.
+Institution postures, population migration, clocks, and history remain kernel
+state; selected Gestalt activities are digest-bound attempts. One batched
+resolver receives only those attempts and deterministic admissible consequence
+handles, then returns one typed result per attempt. The Interpreter cannot
+declare its own hoped-for outcome.
+
+Local validation owns ordinary bounded preparations, pressure changes, and
+discoverable knowledge. Effects with easy-to-hide private authority mistakes—
+resource consumption or transfer, agency-relation shifts, and named-member
+memory, obligation, or relationship deltas—also pass through an independent
+same-snapshot semantic verifier. Its verdict is advisory to the resolver retry,
+never a writer. Applying that verifier to every harmless preparation was both
+expensive and over-strict, so the risk boundary is deliberately selective.
+
+The current provider-backed golden completed four waves across budgets
+`1 -> 4 -> 8 -> 4` in 81.28 seconds in a debug build. It produced ten durable
+consequences and seven typed material activity outcomes, with three explicit
+no-material-change results, zero rejected pulses, exact member attribution,
+the player unchanged, and the same Mira returning with her persistent delta.
+It used 126,826 prompt tokens, 14,477 completion tokens, and a 58.34% prompt
+cache-hit ratio. This proves the ordinary material-outcome path live; the
+selective high-risk verifier is covered locally and still needs a forced live
+provider witness.
 
 The Starfire deployment smoke ran a live provider-backed wave over three
 eligible singleton cells, committed three offscreen events and three

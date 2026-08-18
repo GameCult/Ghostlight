@@ -12,7 +12,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
-const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. The remaining permitted fields are owner_subject_id, other_subject_id, relation_id, strength_delta, resource, pressure_additions, pressure_resolutions, member_id, memory, obligation, relationship_description, fact_id, and reason. Omit every optional field not used by the chosen effect_kind. Do not emit summary; Ghostlight derives it from the validated typed effect. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
+const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. The remaining permitted fields are owner_subject_id, other_subject_id, relation_id, strength_delta, resource, pressure_additions, pressure_resolutions, member_id, memory, obligation, relationship_description, fact_id, and reason. pressure_additions and pressure_resolutions are arrays of plain strings, never objects. Omit every optional field not used by the chosen effect_kind. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable source-owned result, the resource field names that resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
+const OUTCOME_VERIFIER_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named verdicts—never verifications, outcomes, results, or resolutions. verdicts is an array with one item per supplied action_digest. Every item has exactly action_digest, result, and repair_guidance. Example: {"verdicts":[{"action_digest":"sha256:<copy exact supplied digest>","result":"match","repair_guidance":null}]}"#;
 
 #[derive(Clone, Debug, Serialize)]
 struct OutcomeContext {
@@ -34,11 +35,12 @@ struct ActionOutcomeContext {
     source_state: serde_json::Value,
     target_state: Vec<serde_json::Value>,
     active_relations: Vec<serde_json::Value>,
-    pressure_owner_ids: Vec<String>,
+    pressure_owner_subject_ids: Vec<String>,
     resource_owner_id: String,
     resource_recipient_ids: Vec<String>,
     discoverable_facts: Vec<serde_json::Value>,
     member_state_owner_id: Option<String>,
+    admissible_effect_kinds: Vec<OutcomeEffectKind>,
     allowed_state_references: Vec<String>,
 }
 
@@ -48,7 +50,7 @@ struct OutcomeProposalBundle {
     outcomes: Vec<OutcomeProposal>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 enum OutcomeEffectKind {
     NoMaterialChange,
@@ -99,6 +101,28 @@ struct OutcomeProposal {
     reason: Option<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct OutcomeVerifierBundle {
+    verdicts: Vec<OutcomeVerifierVerdict>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum OutcomeVerifierResult {
+    Match,
+    Mismatch,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct OutcomeVerifierVerdict {
+    action_digest: String,
+    result: OutcomeVerifierResult,
+    #[serde(default)]
+    repair_guidance: Option<String>,
+}
+
 pub async fn resolve_activity_outcomes(
     model: &dyn ModelPort,
     campaign: &Campaign,
@@ -120,14 +144,14 @@ pub async fn resolve_activity_outcomes(
     );
     let mut schema = serde_json::to_value(schema_for!(OutcomeProposalBundle))?;
     constrain_digest_schema(&mut schema, &digests);
-    let source_receipt_ids = proposals
+    let source_receipt_ids: Vec<String> = proposals
         .iter()
         .flat_map(|proposal| outcome_source_receipts(campaign, proposal))
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
     let static_contract = format!(
-        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. A success may still have no durable material change when the attempt was speech, preparation, or inquiry whose response is not established. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one supplied resource_recipient_id; it cannot take from a target. Every resource effect's owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure uses one supplied pressure_owner_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
+        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. For each action, effect_kind must come from that action's admissible_effect_kinds; this is the runtime's exact projection of locally valid consequence handles. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. Prefer the most specific causally supported durable effect when the attempt and its band establish one. A mixed result should preserve bounded progress, cost, or a new unresolved pressure when a supplied handle supports it; do not collapse concrete partial work into no change merely because it is incomplete. Use no_material_change when none of the other supplied handles honestly represents a durable result; success or mixed success does not itself authorize inventing a response, fact, relationship, or resource. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one supplied resource_recipient_id; it cannot take from a target. Every resource effect's owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure copies one exact pressure_owner_subject_ids value into owner_subject_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
     );
     let mut request = ModelStageRequest {
         stage: "strategic_outcome_resolver".into(),
@@ -138,7 +162,7 @@ pub async fn resolve_activity_outcomes(
             serde_json::to_string(&context)?
         ),
         output_schema: Some(schema),
-        source_receipt_ids,
+        source_receipt_ids: source_receipt_ids.clone(),
         temperature: Some(0.0),
         max_output_tokens: Some(2_400),
     };
@@ -154,7 +178,53 @@ pub async fn resolve_activity_outcomes(
         match bind_outcomes(campaign, proposals, proposal_bundle) {
             Ok(outcomes) => {
                 stages.push(stage);
-                return Ok((outcomes, stages));
+                let semantic_outcomes = outcomes
+                    .iter()
+                    .filter(|outcome| requires_semantic_outcome_verifier(&outcome.effect))
+                    .cloned()
+                    .collect::<Vec<_>>();
+                if semantic_outcomes.is_empty() {
+                    return Ok((outcomes, stages));
+                }
+                let semantic_digests = semantic_outcomes
+                    .iter()
+                    .map(|outcome| outcome.action_digest.clone())
+                    .collect::<Vec<_>>();
+                let semantic_digest_set = semantic_digests.iter().cloned().collect::<BTreeSet<_>>();
+                let semantic_proposals = proposals
+                    .iter()
+                    .filter(|proposal| {
+                        cell_action_digest(proposal)
+                            .is_ok_and(|digest| semantic_digest_set.contains(&digest))
+                    })
+                    .cloned()
+                    .collect::<Vec<_>>();
+                let semantic_context = build_context(campaign, &semantic_proposals)?;
+                let (verifier, mismatches) = verify_outcomes(
+                    model,
+                    campaign,
+                    &semantic_context,
+                    &semantic_outcomes,
+                    &semantic_digests,
+                    &source_receipt_ids,
+                )
+                .await?;
+                stages.push(verifier);
+                if mismatches.is_empty() {
+                    return Ok((outcomes, stages));
+                }
+                if semantic_attempt == 0 {
+                    request.lived_stream.push_str(&format!(
+                        "\n\nCORRECTION TASK—THE INDEPENDENT OUTCOME VERIFIER REJECTED THE PREVIOUS BUNDLE.\nREPAIRS:\n{}\nPREVIOUS_REJECTED_OUTCOMES:\n{}\nReturn one complete corrected bundle against the exact same snapshot and action digests. Do not preserve a rejected effect_kind unless its repair explicitly says that kind remains valid. When no exact supplied handle can express the repair, use no_material_change with a concrete reason.",
+                        mismatches.join("\n"),
+                        serde_json::to_string(&outcomes)?
+                    ));
+                } else {
+                    return Err(anyhow!(
+                        "strategic outcome verifier rejected the corrected bundle: {}",
+                        mismatches.join("; ")
+                    ));
+                }
             }
             Err(error) if semantic_attempt == 0 => {
                 let rejected = stage.narrative.clone();
@@ -174,6 +244,91 @@ pub async fn resolve_activity_outcomes(
         }
     }
     unreachable!()
+}
+
+fn requires_semantic_outcome_verifier(effect: &StrategicOutcomeEffect) -> bool {
+    matches!(
+        effect,
+        StrategicOutcomeEffect::ResourceConsumed { .. }
+            | StrategicOutcomeEffect::ResourceTransferred { .. }
+            | StrategicOutcomeEffect::AgencyRelationShift { .. }
+            | StrategicOutcomeEffect::MemberMemory { .. }
+            | StrategicOutcomeEffect::MemberObligation { .. }
+            | StrategicOutcomeEffect::MemberRelationship { .. }
+    )
+}
+
+async fn verify_outcomes(
+    model: &dyn ModelPort,
+    campaign: &Campaign,
+    context: &OutcomeContext,
+    outcomes: &[StrategicActivityOutcome],
+    digests: &[String],
+    source_receipt_ids: &[String],
+) -> Result<(ModelStageOutput, Vec<String>)> {
+    let mut schema = serde_json::to_value(schema_for!(OutcomeVerifierBundle))?;
+    constrain_verifier_schema(&mut schema, digests);
+    let outcome_hash = format!(
+        "sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(outcomes)?)
+    );
+    let request = ModelStageRequest {
+        stage: "strategic_outcome_verifier".into(),
+        model: "deepseek-v4-flash".into(),
+        snapshot_binding: format!(
+            "{}:verifier:{outcome_hash}",
+            activity_outcome_binding(
+                campaign.id,
+                campaign.revision,
+                campaign.resolution_policy.resolution_epoch,
+                digests,
+            )
+        ),
+        lived_stream: format!(
+            "You are Ghostlight's independent semantic verifier for high-risk strategic outcomes. The local validator has already proved IDs, custody, scope, and bounds. Judge only whether each proposed resource expenditure, transfer, relation shift, or named-member private delta is causally entailed by that exact subject's attempt and supplied state. Return one verdict per action_digest in supplied order. A resource_consumed must be an exact resource the attempt actually uses, spends, gives up, damages, or transforms; reject unrelated inventory charges. A resource_transferred requires the attempt to give that exact resource to that exact recipient. A relation shift requires an interaction capable of changing that relationship, not merely a message, proximity, or unrelated work. Member memory, obligation, and relationship effects require an event in the attempt that could create that exact personal delta. Do not review low-risk resource creation, pressure, knowledge, or no-change outcomes here. result is match or mismatch. match requires null repair_guidance; mismatch requires one concrete correction sentence of at most 240 characters. Return JSON only.\n\nOUTPUT CONTRACT:\n{OUTCOME_VERIFIER_OUTPUT_CONTRACT}\n\nACTION_CONTEXT:\n{}\n\nPROPOSED_OUTCOMES:\n{}",
+            serde_json::to_string(context)?,
+            serde_json::to_string(outcomes)?,
+        ),
+        output_schema: Some(schema),
+        source_receipt_ids: source_receipt_ids.to_vec(),
+        temperature: Some(0.0),
+        max_output_tokens: Some(1_200),
+    };
+    let stage = run_validated_stage(model, &request).await?;
+    let bundle: OutcomeVerifierBundle = serde_json::from_value(
+        stage
+            .structured
+            .clone()
+            .ok_or_else(|| anyhow!("strategic outcome verifier produced no typed output"))?,
+    )?;
+    let expected = digests.iter().cloned().collect::<BTreeSet<_>>();
+    let mut seen = BTreeSet::new();
+    let mut mismatches = Vec::new();
+    for verdict in bundle.verdicts {
+        if !expected.contains(&verdict.action_digest) || !seen.insert(verdict.action_digest.clone())
+        {
+            return Err(anyhow!(
+                "strategic outcome verifier changed or duplicated an action digest"
+            ));
+        }
+        match (verdict.result, verdict.repair_guidance) {
+            (OutcomeVerifierResult::Match, None) => {}
+            (OutcomeVerifierResult::Mismatch, Some(guidance)) if bounded_text(&guidance, 240) => {
+                mismatches.push(format!("{}: {guidance}", verdict.action_digest));
+            }
+            _ => {
+                return Err(anyhow!(
+                    "strategic outcome verifier returned incoherent result or repair guidance"
+                ));
+            }
+        }
+    }
+    if seen != expected {
+        return Err(anyhow!(
+            "strategic outcome verifier omitted an action digest"
+        ));
+    }
+    Ok((stage, mismatches))
 }
 
 pub fn activity_outcome_binding(
@@ -319,7 +474,15 @@ fn validate_outcomes_against_expected(
                 "strategic outcome cites state outside its exact slice"
             ));
         }
-        validate_effect(campaign, proposal, outcome, &mut exclusive_effects)?;
+        validate_effect(campaign, proposal, outcome, &mut exclusive_effects).map_err(|error| {
+            let admissible = admissible_effect_kinds(campaign, proposal)
+                .and_then(|kinds| serde_json::to_string(&kinds).map_err(Into::into))
+                .unwrap_or_else(|_| "[unavailable]".into());
+            anyhow!(
+                "outcome {} is invalid: {error}; exact admissible_effect_kinds are {admissible}",
+                outcome.action_digest
+            )
+        })?;
         if let StrategicOutcomeEffect::AgencyRelationShift {
             relation_id,
             strength_delta,
@@ -380,9 +543,12 @@ fn bind_effect(proposal: &OutcomeProposal) -> Result<StrategicOutcomeEffect> {
     let populated = proposal.populated_effect_fields();
     let require_exact = |allowed: &[&str]| -> Result<()> {
         let allowed = allowed.iter().copied().collect::<BTreeSet<_>>();
-        if populated.iter().any(|field| !allowed.contains(field)) {
+        let irrelevant = populated.difference(&allowed).copied().collect::<Vec<_>>();
+        if !irrelevant.is_empty() {
             return Err(anyhow!(
-                "outcome populated fields irrelevant to its effect_kind"
+                "outcome populated irrelevant fields [{}]; the chosen effect_kind permits only [{}]",
+                irrelevant.join(", "),
+                allowed.into_iter().collect::<Vec<_>>().join(", ")
             ));
         }
         Ok(())
@@ -924,7 +1090,7 @@ fn action_context(
         source_state,
         target_state,
         active_relations,
-        pressure_owner_ids: pressure_owner_ids(campaign, proposal)?
+        pressure_owner_subject_ids: pressure_owner_ids(campaign, proposal)?
             .into_iter()
             .collect(),
         resource_owner_id: proposal.subject_id.clone(),
@@ -934,10 +1100,91 @@ fn action_context(
             .subject_id
             .strip_prefix("member:")
             .map(str::to_owned),
+        admissible_effect_kinds: admissible_effect_kinds(campaign, proposal)?,
         allowed_state_references: allowed_state_references(campaign, proposal)?
             .into_iter()
             .collect(),
     })
+}
+
+fn admissible_effect_kinds(
+    campaign: &Campaign,
+    proposal: &CellActionProposal,
+) -> Result<Vec<OutcomeEffectKind>> {
+    let (activity, targets, _) = activity_parts(proposal)?;
+    let source = proposal.subject_id.as_str();
+    let resources = subject_resources(campaign, source)?;
+    let references = allowed_state_references(campaign, proposal)?;
+    let mut kinds = vec![OutcomeEffectKind::NoMaterialChange];
+
+    if matches!(activity, StrategicActivityKind::Prepare)
+        && resources.len() < 64
+        && can_hold_resources(campaign, source)
+        && references
+            .iter()
+            .any(|reference| reference.starts_with("capability:"))
+    {
+        kinds.push(OutcomeEffectKind::ResourceCreated);
+    }
+    if !resources.is_empty() {
+        kinds.push(OutcomeEffectKind::ResourceConsumed);
+    }
+    if !resources.is_empty()
+        && matches!(
+            activity,
+            StrategicActivityKind::Trade
+                | StrategicActivityKind::Communicate
+                | StrategicActivityKind::Recruit
+                | StrategicActivityKind::Coordinate
+        )
+        && targets.iter().any(|target| {
+            target != &campaign.player_actor_id && can_hold_resources(campaign, target)
+        })
+    {
+        kinds.push(OutcomeEffectKind::ResourceTransferred);
+    }
+    if !pressure_owner_ids(campaign, proposal)?.is_empty() {
+        kinds.push(OutcomeEffectKind::GestaltPressure);
+    }
+    if !source.starts_with("member:")
+        && matches!(
+            activity,
+            StrategicActivityKind::Coordinate
+                | StrategicActivityKind::Recruit
+                | StrategicActivityKind::Obstruct
+                | StrategicActivityKind::Trade
+                | StrategicActivityKind::Communicate
+        )
+        && campaign.agency_relations.values().any(|relation| {
+            relation.active
+                && ((relation.from_subject_id == source
+                    && targets.contains(&relation.to_subject_id))
+                    || (relation.to_subject_id == source
+                        && targets.contains(&relation.from_subject_id)))
+        })
+    {
+        kinds.push(OutcomeEffectKind::AgencyRelationShift);
+    }
+    if let Some(member_id) = source.strip_prefix("member:") {
+        let member = &campaign.gestalt_members[member_id];
+        if member.memories.len() < 64 {
+            kinds.push(OutcomeEffectKind::MemberMemory);
+        }
+        if member.obligations.len() < 64 {
+            kinds.push(OutcomeEffectKind::MemberObligation);
+        }
+        if !targets.is_empty() {
+            kinds.push(OutcomeEffectKind::MemberRelationship);
+        }
+    }
+    if matches!(
+        activity,
+        StrategicActivityKind::Investigate | StrategicActivityKind::Communicate
+    ) && !discoverable_fact_ids(campaign, proposal)?.is_empty()
+    {
+        kinds.push(OutcomeEffectKind::KnowledgeLearned);
+    }
+    Ok(kinds)
 }
 
 fn subject_summary(campaign: &Campaign, subject_id: &str) -> Result<serde_json::Value> {
@@ -1195,6 +1442,16 @@ fn constrain_digest_schema(schema: &mut serde_json::Value, digests: &[String]) {
     }
 }
 
+fn constrain_verifier_schema(schema: &mut serde_json::Value, digests: &[String]) {
+    if let Some(value) = schema.pointer_mut("/properties/verdicts/items/properties/action_digest") {
+        value["enum"] = serde_json::json!(digests);
+    }
+    if let Some(verdicts) = schema.pointer_mut("/properties/verdicts") {
+        verdicts["minItems"] = serde_json::json!(digests.len());
+        verdicts["maxItems"] = serde_json::json!(digests.len());
+    }
+}
+
 fn required(value: &Option<String>, field: &str) -> Result<String> {
     value
         .clone()
@@ -1243,10 +1500,100 @@ mod tests {
         requests: Mutex<Vec<ModelStageRequest>>,
     }
 
+    struct RejectingVerifierModel {
+        action_digest: String,
+    }
+
+    struct CorrectingOutcomeModel {
+        action_digest: String,
+        resolver_calls: Mutex<usize>,
+    }
+
+    #[async_trait::async_trait]
+    impl ModelPort for CorrectingOutcomeModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            if request.stage == "strategic_outcome_verifier" {
+                let rejects_consumption = request
+                    .lived_stream
+                    .contains("\"type\":\"resource_consumed\"");
+                return Ok(serde_json::json!({
+                    "verdicts":[{
+                        "action_digest":self.action_digest,
+                        "result":if rejects_consumption {"mismatch"} else {"match"},
+                        "repair_guidance":if rejects_consumption {
+                            Some("The inspection does not use spare rope; choose no_material_change.")
+                        } else {
+                            None
+                        }
+                    }]
+                })
+                .to_string());
+            }
+            let mut calls = self.resolver_calls.lock().unwrap();
+            *calls += 1;
+            if *calls == 1 {
+                return Ok(serde_json::json!({
+                    "outcomes":[{
+                        "action_digest":self.action_digest,
+                        "band":"mixed",
+                        "effect_kind":"resource_consumed",
+                        "supporting_state_references":["resource:spare rope"],
+                        "owner_subject_id":"dockers",
+                        "resource":"spare rope"
+                    }]
+                })
+                .to_string());
+            }
+            Ok(serde_json::json!({
+                "outcomes":[{
+                    "action_digest":self.action_digest,
+                    "band":"mixed",
+                    "effect_kind":"no_material_change",
+                    "supporting_state_references":[],
+                    "reason":"The inspection does not use or alter any durable resource."
+                }]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "correcting-outcome-model"
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl ModelPort for RejectingVerifierModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            assert_eq!(request.stage, "strategic_outcome_verifier");
+            Ok(serde_json::json!({
+                "verdicts":[{
+                    "action_digest":self.action_digest,
+                    "result":"mismatch",
+                    "repair_guidance":"The inspection never uses or expends spare rope; choose no_material_change."
+                }]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "rejecting-outcome-verifier"
+        }
+    }
+
     #[async_trait::async_trait]
     impl ModelPort for OutcomeFixtureModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             self.requests.lock().unwrap().push(request.clone());
+            if request.stage == "strategic_outcome_verifier" {
+                return Ok(serde_json::json!({
+                    "verdicts":[{
+                        "action_digest":self.action_digest,
+                        "result":"match",
+                        "repair_guidance":null
+                    }]
+                })
+                .to_string());
+            }
             Ok(serde_json::json!({
                 "outcomes":[{
                     "action_digest":self.action_digest,
@@ -1444,6 +1791,7 @@ mod tests {
                 .to_string()
                 .contains("owner_subject_id must copy exact resource_owner_id dockers")
         );
+        assert!(error.to_string().contains("exact admissible_effect_kinds"));
     }
 
     #[tokio::test]
@@ -1484,6 +1832,8 @@ mod tests {
                 .contains("never action_resolutions")
         );
         assert!(requests[0].lived_stream.contains("Do not emit summary"));
+        assert!(requests[0].lived_stream.contains("admissible_effect_kinds"));
+        assert!(requests[0].lived_stream.contains("knowledge_learned"));
         assert_eq!(
             requests[0].snapshot_binding,
             activity_outcome_binding(
@@ -1493,5 +1843,137 @@ mod tests {
                 &[digest]
             )
         );
+    }
+
+    #[test]
+    fn prepare_context_projects_only_locally_admissible_durable_handles() {
+        let value = campaign();
+        let mut action = proposal();
+        action.effect = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "dockers".into(),
+            activity: StrategicActivityKind::Prepare,
+            target_subject_ids: vec![],
+            location_ids: vec!["dock".into()],
+        };
+
+        let context = action_context(&value, &action).unwrap();
+
+        assert!(
+            context
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::NoMaterialChange)
+        );
+        assert!(
+            context
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::ResourceCreated)
+        );
+        assert!(
+            context
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::ResourceConsumed)
+        );
+        assert!(
+            context
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::GestaltPressure)
+        );
+        assert!(
+            !context
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::KnowledgeLearned)
+        );
+    }
+
+    #[test]
+    fn outcome_shape_error_names_the_exact_irrelevant_fields() {
+        let proposal = OutcomeProposal {
+            action_digest: "sha256:ignored".into(),
+            band: StrategicOutcomeBand::Success,
+            effect_kind: OutcomeEffectKind::AgencyRelationShift,
+            supporting_state_references: vec![],
+            owner_subject_id: Some("dockers".into()),
+            other_subject_id: Some("rivals".into()),
+            relation_id: Some("dock-rivalry".into()),
+            strength_delta: Some(-2),
+            resource: None,
+            pressure_additions: vec![],
+            pressure_resolutions: vec![],
+            member_id: None,
+            memory: None,
+            obligation: None,
+            relationship_description: None,
+            fact_id: None,
+            reason: None,
+        };
+
+        let error = bind_effect(&proposal).unwrap_err().to_string();
+
+        assert!(error.contains("other_subject_id, owner_subject_id"));
+        assert!(error.contains("relation_id, strength_delta"));
+    }
+
+    #[tokio::test]
+    async fn independent_verifier_can_reject_a_structurally_legal_unrelated_resource_cost() {
+        let value = campaign();
+        let action = proposal();
+        let digest = cell_action_digest(&action).unwrap();
+        let outcome = StrategicActivityOutcome {
+            schema: "ghostlight.strategic_activity_outcome.v1".into(),
+            action_digest: digest.clone(),
+            source_subject_id: "dockers".into(),
+            band: StrategicOutcomeBand::Mixed,
+            summary: "Dockers expends spare rope.".into(),
+            supporting_state_references: vec!["resource:spare rope".into()],
+            effect: StrategicOutcomeEffect::ResourceConsumed {
+                owner_subject_id: "dockers".into(),
+                resource: "spare rope".into(),
+            },
+        };
+        validate_activity_outcomes(
+            &value,
+            std::slice::from_ref(&action),
+            std::slice::from_ref(&outcome),
+        )
+        .unwrap();
+        let context = build_context(&value, std::slice::from_ref(&action)).unwrap();
+
+        let (_, mismatches) = verify_outcomes(
+            &RejectingVerifierModel {
+                action_digest: digest.clone(),
+            },
+            &value,
+            &context,
+            &[outcome],
+            &[digest],
+            &[],
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(mismatches.len(), 1);
+        assert!(mismatches[0].contains("never uses or expends spare rope"));
+    }
+
+    #[tokio::test]
+    async fn verifier_rejection_returns_to_resolver_without_mutating_the_effect() {
+        let value = campaign();
+        let action = proposal();
+        let digest = cell_action_digest(&action).unwrap();
+        let model = CorrectingOutcomeModel {
+            action_digest: digest,
+            resolver_calls: Mutex::new(0),
+        };
+
+        let (outcomes, stages) = resolve_activity_outcomes(&model, &value, &[action])
+            .await
+            .unwrap();
+
+        assert_eq!(stages.len(), 3);
+        assert!(matches!(
+            outcomes[0].effect,
+            StrategicOutcomeEffect::NoMaterialChange { .. }
+        ));
+        assert_eq!(*model.resolver_calls.lock().unwrap(), 2);
     }
 }

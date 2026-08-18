@@ -377,14 +377,21 @@ correct binding commits the material result, and a malformed late outcome
 cannot partially apply an earlier one. CultCache stores outcomes individually
 and the operator Eve projection exposes them.
 
-Do not call setting-wide material agency finished until the revised live
-Gestalt harness passes. It now refuses to count an activity attempt as a
-material consequence, requires at least one sustained direct or typed material
-result, and permits Mira's dormant delta to evolve only when an exact
-member-bound outcome accounts for the change. Run a small golden first, then a
-budget/parallelism pressure profile; inspect material-outcome rate, no-change
-rate, retries, cache hits, and player/arena invariants before the two-tester
-playtest.
+The revised live Gestalt harness now passes. Its four provider-backed waves at
+budgets `1 -> 4 -> 8 -> 4` produced ten durable consequences and seven typed
+material activity outcomes, with three explicit no-change results and zero
+rejected pulses. The player remained unchanged, member changes stayed bound to
+exact outcomes, and the same Mira returned with effective personal state. The
+run used 126,826 prompt tokens, 14,477 completion tokens, and a 58.34% prompt
+cache-hit ratio. The harness requires at least one typed material activity
+outcome, so unrelated direct consequences cannot counterfeit success.
+
+High-risk effects—custody consumption/transfers, agency-relation shifts, and
+named-member private deltas—now receive an independent same-snapshot semantic
+verdict before admission. Low-risk preparations and pressures remain locally
+validated; a verifier on every effect caused disproportionate retries and was
+cut. The high-risk path has local regression proof but still needs a forced
+live provider witness.
 
 The multiresolution body is deployed on Starfire. Typed health matched the
 immutable release, DeepSeek was ready, and the disposable live strategic-cell
@@ -750,12 +757,15 @@ remote candidates into an approval-visible non-canonical coverage gap.
 
 Authenticated HTTP/browser, session isolation, lifecycle, export, persistence,
 restart, strategic agency, and live/background exclusion have isolated-runtime
-evidence. The deployment smoke is complete. The multiresolution live profile
-now makes the next runtime cut concrete: design a strategic outcome resolver
-between attributed attempts and kernel commit, then pressure its typed material
-effects before the two-tester playtest. Inspect the semantic-verifier rejection
-tail alongside that work; do not recover efficiency by weakening atomic waves
-or letting the Interpreter claim outcomes.
+evidence. The strategic outcome resolver now has a clean provider-backed
+four-wave golden: ten durable consequences, seven typed material activity
+outcomes, zero rejected pulses, exact member binding, no player mutation, and
+Mira's persistent identity across consolidation. High-risk custody, relation,
+and named-member effects receive an independent same-snapshot semantic verdict;
+ordinary preparations remain deterministically bounded without paying that
+model tax. The next action is to commit this exact candidate, deploy its
+optimized immutable build, and repeat authenticated browser/restart/persistence
+checks against the served commit before the two-tester playtest.
 
 ## Warnings
 

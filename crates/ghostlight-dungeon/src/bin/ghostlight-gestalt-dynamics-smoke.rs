@@ -208,22 +208,45 @@ async fn main() -> anyhow::Result<()> {
         calls: model_calls.clone(),
     });
     let started = Instant::now();
-    let output = match propose_resolution_wave(
-        model.clone(),
-        Arc::new(SnapshotPermit::new_resolution(
-            store.clone(),
-            campaign.id,
-            campaign.revision,
-            campaign.resolution_policy.resolution_epoch,
-        )),
-        &campaign,
-    )
-    .await
-    {
-        Ok(output) => output,
-        Err(error) => {
-            write_wave_failure(&root, 0, 1, 1, &error, &model_calls, 0)?;
-            return Err(error);
+    let mut rejected_wave_pulses = Vec::new();
+    let mut initial_rejected_pulses = 0;
+    let output = loop {
+        let trace_start = model_calls.lock().expect("live-fire trace lock").len();
+        match propose_resolution_wave(
+            model.clone(),
+            Arc::new(SnapshotPermit::new_resolution(
+                store.clone(),
+                campaign.id,
+                campaign.revision,
+                campaign.resolution_policy.resolution_epoch,
+            )),
+            &campaign,
+        )
+        .await
+        {
+            Ok(output) => break output,
+            Err(error) => {
+                initial_rejected_pulses += 1;
+                write_wave_failure(
+                    &root,
+                    0,
+                    initial_rejected_pulses,
+                    campaign.resolution_policy.active_cell_budget,
+                    &error,
+                    &model_calls,
+                    trace_start,
+                )?;
+                rejected_wave_pulses.push(serde_json::json!({
+                    "wave_index":0,
+                    "pulse_attempt":initial_rejected_pulses,
+                    "world_revision":campaign.revision,
+                    "resolution_epoch":campaign.resolution_policy.resolution_epoch,
+                    "error":error.to_string(),
+                }));
+                if initial_rejected_pulses > max_rejected_pulses_per_wave {
+                    return Err(error);
+                }
+            }
         }
     };
     let preflight = serde_json::json!({
@@ -394,7 +417,6 @@ async fn main() -> anyhow::Result<()> {
         anyhow::bail!("initial Mira delta changed without an exact member-bound outcome")
     }
     let mut sustained_waves = Vec::new();
-    let mut rejected_wave_pulses = Vec::new();
     let mut background_subject_ids = BTreeSet::new();
     let mut detail_focus_subject_ids = BTreeSet::new();
     let mut sustained_material_consequence_count = 0usize;
@@ -574,6 +596,15 @@ async fn main() -> anyhow::Result<()> {
     if !presence_only && sustained_material_consequence_count == 0 {
         anyhow::bail!("sustained multiresolution waves resolved no material background consequence")
     }
+    if !presence_only && sustained_material_outcome_count == 0 {
+        std::fs::write(
+            root.join("private-model-calls.json"),
+            serde_json::to_vec_pretty(&*model_calls.lock().expect("live-fire trace lock"))?,
+        )?;
+        anyhow::bail!(
+            "strategic outcome resolver produced no typed material result across sustained waves"
+        )
+    }
     let fairness_missing_subject_ids = if fairness_stress_waves == 0 {
         BTreeSet::new()
     } else {
@@ -723,6 +754,10 @@ async fn main() -> anyhow::Result<()> {
         "preflight_path":root.join("preflight.json"),
         "result_path":root.join("result.json")
     });
+    std::fs::write(
+        root.join("private-model-calls.json"),
+        serde_json::to_vec_pretty(&*model_calls.lock().expect("live-fire trace lock"))?,
+    )?;
     std::fs::write(
         root.join("result.json"),
         serde_json::to_vec_pretty(&result)?,

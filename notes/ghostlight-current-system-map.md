@@ -140,6 +140,16 @@ CultCache and projected on the operator Eve surface. All effects apply to the
 same private campaign copy as the rest of the strategic wave, so a late invalid
 outcome cannot leave an earlier action, clock, detail debt, or event committed.
 
+Deterministic admissible-effect handles constrain every resolver decision.
+Ordinary bounded preparation, pressure, and knowledge effects stop at local
+validation. Resource consumption/transfers, agency-relation shifts, and named
+member private deltas additionally receive an independent same-snapshot
+semantic verdict because those effects can be structurally valid while charging
+the wrong inventory or person. The verifier proposes no state and cannot
+commit. The latest provider-backed four-wave golden produced seven typed
+material activity outcomes, ten durable consequences, and zero rejected pulses
+while leaving the player unchanged and returning the same Mira.
+
 `gestalt_migration` records a collective decision by one exact active leaf to
 move along an explicit migration relation and reachable route. WorldKernel
 changes the leaf's home location and agency-profile location together. The

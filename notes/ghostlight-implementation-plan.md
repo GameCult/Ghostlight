@@ -74,15 +74,24 @@ ownership, single-use invite rejection, fork/reset/export, four persisted
 campaigns, and exact-commit restart. Live priority cancels in-flight scheduler
 inference and excludes its commit gate.
 
-Next, run the revised Gestalt live golden and a bounded multiresolution pressure
-profile. The harness must observe real typed background change rather than
-counting attempts, preserve exact arena/member/player authority, and report
-material-outcome rate, no-change rate, retries, cache hits, and token cost.
-Then run the two-tester playtest. Treat player confusion, dramatic flatness, and
+The revised provider-backed Gestalt golden now passes across four waves and
+budget changes `1 -> 4 -> 8 -> 4`. It committed ten durable consequences,
+including seven typed material activity outcomes, while preserving exact
+member binding, the absent player, and Mira's persistent identity. All four
+pulses committed without retry. The run used 126,826 prompt tokens with a
+58.34% cache-hit ratio and 14,477 completion tokens. The harness now requires a
+typed material outcome; unrelated direct consequences can no longer hide an
+inert outcome resolver.
+
+The next gate is release truth: commit and publish this exact candidate, deploy
+an immutable optimized build to Starfire, and repeat authenticated browser and
+restart checks against the served commit. Then begin the two-tester playtest.
+Treat player confusion, dramatic flatness, composite consequences, and
 token-heavy low-consequence stages as evidence about missing context or
-misplaced authority. Use model-stage cache usage, rejection receipts, cover
-plans, outcomes, and world commits to improve satisfaction and cognitive
-efficiency without weakening state admission.
+misplaced authority. Keep the independent semantic outcome verifier selective:
+it checks custody transfers, relation shifts, and named-member private deltas,
+while deterministic local validation owns ordinary bounded preparations and
+pressure changes.
 
 Multiplayer remains outside the current paid-alpha gate but is now an explicit
 architectural intention. Do not fork the simulation into a multiplayer room
