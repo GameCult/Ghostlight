@@ -49,15 +49,15 @@ foundation checklist below. Existing Ghostlight fixtures remain regression
 evidence.
 
 The active immutable release is
-`7916ab04936ba962720cfbf4af1b83f9aa8d8b24`, binary SHA-256
-`c05b5854be83262067ed417edf1722bb3f79d2981c8292fccb7d7a9695d36d78`.
+`f9b0ffb90e6a8b3e1505d81995e81e09a9c58cd7`, binary SHA-256
+`66df149fbf548fc5da6658268e1bb53c62d9608ef6c2c306c6cfc9c909dabdfe`.
 Manifest, process, typed health, persisted campaign count, CultMesh store,
 DeepSeek startup inference, and VoidBot retrieval agree. Periwinkle proved the
 private-LAN route and unauthenticated 401; Raven and Yggdrasil independently
 proved WireGuard. Exact firewall and rollback truth remains owned by
 `gamecult-ops/runbooks/ghostlight-dungeon-starfire.md`.
 
-The exact release passes the authenticated generated-start and committed
+The accepted runtime lineage passes the authenticated generated-start and committed
 player journey: canonical nonliteral player identity, private assessment,
 confirmed d20 roll, wait, restart, fork, export, original re-selection, and
 reset. The current 24-subject budget matrix passes at 1, 4, 8, and 32 cells.
