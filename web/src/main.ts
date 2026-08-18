@@ -152,7 +152,10 @@ async function compilerPost(path: string, body: unknown) {
   status.textContent = "Retrieving evidence and compiling…";
   const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const value = response.headers.get("content-type")?.includes("json") ? await response.json() : await response.text();
-  if (!response.ok) { status.textContent = typeof value === "string" ? value : "Compilation failed"; throw new Error(status.textContent); }
+  if (!response.ok) {
+    status.textContent = typeof value === "string" ? value : String(value?.error ?? "Compilation failed");
+    throw new Error(status.textContent);
+  }
   return value;
 }
 
@@ -221,18 +224,25 @@ function installAssessment(result: any) {
       return;
     }
     const attempted = await send({ type: "attempt", assessment_digest: result.assessment.digest });
-    button.remove();
     // A stale preview is compiled again against the new revision. It still
     // requires explicit confirmation; the server never rebases or auto-rolls it.
     installAssessment(attempted);
   });
-  composer.append(button);
+  // The receipt is the sole owner of a pending confirmation. A newer
+  // assessment or any other command receipt replaces this button together
+  // with the snapshot it represents.
+  receipt.append(button);
 }
 composer.addEventListener("submit", async event => {
   event.preventDefault();
-  const text = document.querySelector<HTMLTextAreaElement>("#attempt")!.value.trim();
-  if (!text) return;
-  installAssessment(await send({ type: "assess", expected_revision: revision, intent: { actor_id: playerActorId, description: text, intended_effect: text } }));
+  const description = document.querySelector<HTMLTextAreaElement>("#attempt")!.value.trim();
+  const intendedEffect = document.querySelector<HTMLInputElement>("#intended-effect")!.value.trim();
+  if (!description || !intendedEffect) return;
+  installAssessment(await send({
+    type: "assess",
+    expected_revision: revision,
+    intent: { actor_id: playerActorId, description, intended_effect: intendedEffect },
+  }));
 });
 document.querySelector<HTMLButtonElement>("#wait")!.addEventListener("click", () => void send({ type: "wait", expected_revision: revision, minutes: 60 }));
 document.querySelector<HTMLInputElement>("#active-cell-budget")!.addEventListener("input", event => {
@@ -280,7 +290,7 @@ document.querySelector<HTMLFormElement>("#pin-form")!.addEventListener("submit",
   };
   await send({ type: "replace_resolution_pins", expected_revision: revision, expected_resolution_epoch: resolutionEpoch, pins: [...resolutionPins, pin] });
 });
-destinationForm.addEventListener("submit",async event=>{event.preventDefault();const result=await compilerPost("/api/compiler/destination",Object.fromEntries(new FormData(destinationForm)));const preview=result.preview;showSummary("Destination preview",[...(preview.locations ?? []).map((location:any)=>location.name),...(preview.gaps ?? []).map((gap:string)=>`Material gap: ${gap}`)]);status.textContent="Destination preview compiled; topology is unchanged until approval.";const button=node("button","Approve destination");button.type="button";button.addEventListener("click",async()=>{await compilerPost(`/api/compiler/destination/approve/${result.preview_id}`,{});button.remove();await refresh();});destinationForm.append(button);});
+destinationForm.addEventListener("submit",async event=>{event.preventDefault();const result=await compilerPost("/api/compiler/destination",Object.fromEntries(new FormData(destinationForm)));const preview=result.preview;showSummary("Destination preview",[...(preview.locations ?? []).map((location:any)=>location.name),...(preview.gaps ?? []).map((gap:string)=>`Material gap: ${gap}`)]);status.textContent="Destination preview compiled; topology is unchanged until approval.";const button=node("button","Approve destination");button.type="button";button.addEventListener("click",async()=>{await compilerPost(`/api/compiler/destination/approve/${result.preview_id}`,{});button.remove();await refresh();});receipt.append(button);});
 document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("submit", async event => {
   event.preventDefault();
   const data = new FormData(event.currentTarget as HTMLFormElement);
@@ -303,7 +313,7 @@ document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("subm
     button.remove();
     await refresh();
   });
-  (event.currentTarget as HTMLFormElement).append(button);
+  receipt.append(button);
 });
 document.querySelector<HTMLFormElement>("#fork-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerPost("/api/campaigns/fork",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));await refresh();});
 document.querySelector<HTMLFormElement>("#reset-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerPost("/api/campaigns/reset",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));await refresh();});

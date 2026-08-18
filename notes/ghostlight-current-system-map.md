@@ -338,6 +338,12 @@ Compiler, expansion, fission, fork, and reset routes follow the same projection
 rule. Approval previews expose the public decision surface—topology, cast,
 pressures, player role, source-use coverage, gaps, and assumptions—without raw
 campaign, evidence, model receipts, private goals, memories, or relationships.
+The browser composer preserves the assessment contract's distinction between
+the character's described act or speech and the effect the player wants it to
+cause. The receipt panel is the sole owner of the current assessment,
+destination, or fission approval control; rendering a newer receipt removes the
+older snapshot-bound control instead of accumulating stale confirmations in
+persistent forms.
 
 Relationship documents in the schema catalog are revision-bound projections
 of actor-owned relationship maps; they are not a second relationship writer.

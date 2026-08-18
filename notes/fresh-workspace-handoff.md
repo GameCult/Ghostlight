@@ -799,6 +799,14 @@ model tax. The next action is to commit this exact candidate, deploy its
 optimized immutable build, and repeat authenticated browser/restart/persistence
 checks against the served commit before the two-tester playtest.
 
+The pre-human surface audit found that snapshot-bound assessment, destination,
+and fission approvals were appended to long-lived forms. Recompilation could
+therefore leave several stale controls visible even though the kernel rejected
+them safely. The receipt panel now owns exactly the current approval action.
+The same audit restored separate composer fields for the visible act or speech
+and its intended effect; the browser no longer duplicates one sentence into
+both assessment fields.
+
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.
