@@ -112,9 +112,20 @@ impl CampaignRegistry {
 
     pub async fn create(
         &self,
+        campaign: Campaign,
+        evidence: Vec<VaultEvidenceReceipt>,
+        model_receipts: Vec<ModelStageReceipt>,
+    ) -> Result<CampaignRuntime> {
+        self.create_with_lifecycle(campaign, evidence, model_receipts, None)
+            .await
+    }
+
+    async fn create_with_lifecycle(
+        &self,
         mut campaign: Campaign,
         evidence: Vec<VaultEvidenceReceipt>,
         model_receipts: Vec<ModelStageReceipt>,
+        additional_lifecycle: Option<CampaignLifecycleReceipt>,
     ) -> Result<CampaignRuntime> {
         crate::resolution::ensure_agency_profiles(&mut campaign);
         if self.runtimes.read().await.contains_key(&campaign.id) {
@@ -139,6 +150,14 @@ impl CampaignRegistry {
                 },
             )
             .map_err(|error| anyhow!(error.to_string()))?;
+            if let Some(receipt) = &additional_lifecycle {
+                store.insert(
+                    "campaign_lifecycle_receipt.v1",
+                    "ghostlight.campaign_lifecycle_receipt.v1",
+                    &format!("{}:{}", receipt.campaign_id, receipt.operation),
+                    receipt,
+                )?;
+            }
             drop(store);
             fs::rename(&staging, &directory)?;
             Ok(())
@@ -193,20 +212,21 @@ impl CampaignRegistry {
         fork.resolution_policy.resolution_epoch =
             fork.resolution_policy.resolution_epoch.saturating_add(1);
         fork.resolution_cover = None;
-        let runtime = self.create(fork.clone(), evidence, model_receipts).await?;
-        runtime.store.insert(
-            "campaign_lifecycle_receipt.v1",
-            "ghostlight.campaign_lifecycle_receipt.v1",
-            &format!("{}:fork", fork.id),
-            &CampaignLifecycleReceipt {
-                schema: "ghostlight.campaign_lifecycle_receipt.v1".into(),
-                campaign_id: fork.id,
-                operation: "fork".into(),
-                parent_campaign_id: Some(source_id),
-                parent_revision: Some(parent_revision),
-                created_at: Utc::now(),
-            },
-        )?;
+        let runtime = self
+            .create_with_lifecycle(
+                fork.clone(),
+                evidence,
+                model_receipts,
+                Some(CampaignLifecycleReceipt {
+                    schema: "ghostlight.campaign_lifecycle_receipt.v1".into(),
+                    campaign_id: fork.id,
+                    operation: "fork".into(),
+                    parent_campaign_id: Some(source_id),
+                    parent_revision: Some(parent_revision),
+                    created_at: Utc::now(),
+                }),
+            )
+            .await?;
         Ok(runtime)
     }
 
@@ -239,20 +259,21 @@ impl CampaignRegistry {
         let model_receipts = source
             .store
             .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")?;
-        let runtime = self.create(seed.clone(), evidence, model_receipts).await?;
-        runtime.store.insert(
-            "campaign_lifecycle_receipt.v1",
-            "ghostlight.campaign_lifecycle_receipt.v1",
-            &format!("{}:reset", seed.id),
-            &CampaignLifecycleReceipt {
-                schema: "ghostlight.campaign_lifecycle_receipt.v1".into(),
-                campaign_id: seed.id,
-                operation: "reset".into(),
-                parent_campaign_id: Some(source_id),
-                parent_revision: Some(parent_revision),
-                created_at: Utc::now(),
-            },
-        )?;
+        let runtime = self
+            .create_with_lifecycle(
+                seed.clone(),
+                evidence,
+                model_receipts,
+                Some(CampaignLifecycleReceipt {
+                    schema: "ghostlight.campaign_lifecycle_receipt.v1".into(),
+                    campaign_id: seed.id,
+                    operation: "reset".into(),
+                    parent_campaign_id: Some(source_id),
+                    parent_revision: Some(parent_revision),
+                    created_at: Utc::now(),
+                }),
+            )
+            .await?;
         Ok(runtime)
     }
 
@@ -398,11 +419,22 @@ mod tests {
                 .unwrap(),
             vec![model_receipt]
         );
+        assert_eq!(
+            fork.store.keys("campaign_lifecycle_receipt.v1").unwrap(),
+            vec![format!("{}:create", fork_id), format!("{}:fork", fork_id)]
+        );
         let reset = registry.reset(original.id, "Reset".into()).await.unwrap();
         let reset_id = reset.store.keys("campaign.v1").unwrap()[0]
             .parse::<Uuid>()
             .unwrap();
         assert_ne!(reset_id, original.id);
+        assert_eq!(
+            reset.store.keys("campaign_lifecycle_receipt.v1").unwrap(),
+            vec![
+                format!("{}:create", reset_id),
+                format!("{}:reset", reset_id)
+            ]
+        );
         assert_eq!(registry.list().await.len(), 3);
         let exported = registry
             .export(fork_id, dir.path().join("exports"))
@@ -493,6 +525,34 @@ mod tests {
             runtime.store.keys("campaign_lifecycle_receipt.v1").unwrap(),
             vec![format!("{}:create", valid.id)]
         );
+    }
+
+    #[tokio::test]
+    async fn failed_additional_lifecycle_write_never_publishes_the_campaign() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("campaigns");
+        let registry = CampaignRegistry::new(&root).unwrap();
+        let campaign = seed("Colliding lifecycle");
+
+        let result = registry
+            .create_with_lifecycle(
+                campaign.clone(),
+                vec![],
+                vec![],
+                Some(CampaignLifecycleReceipt {
+                    schema: "ghostlight.campaign_lifecycle_receipt.v1".into(),
+                    campaign_id: campaign.id,
+                    operation: "create".into(),
+                    parent_campaign_id: None,
+                    parent_revision: None,
+                    created_at: Utc::now(),
+                }),
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert!(registry.list().await.is_empty());
+        assert_eq!(std::fs::read_dir(&root).unwrap().count(), 0);
     }
 
     #[tokio::test]
