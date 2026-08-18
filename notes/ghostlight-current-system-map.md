@@ -374,6 +374,16 @@ Compiler, expansion, fission, fork, and reset routes follow the same projection
 rule. Approval previews expose the public decision surface—topology, cast,
 pressures, player role, source-use coverage, gaps, and assumptions—without raw
 campaign, evidence, model receipts, private goals, memories, or relationships.
+Generated openings and roles are session-scoped server-owned candidates. The
+browser receives their display projections and returns only an opening ID or
+role ID; it cannot echo a rewritten candidate back into compilation. Role
+selection must resolve against the same session and opening. The selected
+role's validated capabilities and obligations are then bound deterministically
+into the player actor and named as a branch assumption, while the opening/role
+evidence and model receipts are carried into the approval preview. Candidate
+IDs, text, list sizes, and evidence references receive local validation before
+they can become selectable. Restart may expire these noncanonical suggestions;
+it cannot silently reconstruct or substitute them.
 The browser composer preserves the assessment contract's distinction between
 the character's described act or speech and the effect the player wants it to
 cause. The receipt panel is the sole owner of the current assessment,
@@ -390,6 +400,9 @@ destination compiler binds that value into a read-only origin field and shows
 the proposed locations, containment, routes, persistent features, and material
 gaps before approval. Population fission approval similarly shows each named
 child leaf, partition value (including `other/unknown`), and home location.
+Fission admission runs before parent lookup, retrieval planning, or inference:
+one request may contain at most 16 distinct cuts of at most 160 readable
+characters and one 500-character reason. The browser mirrors these bounds.
 The browser interaction lock covers a canonical mutation and the subsequent
 surface refresh as one user interaction. Campaign selection, world approval,
 destination approval, fission approval, fork, and reset cannot re-enable stale

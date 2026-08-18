@@ -854,6 +854,18 @@ the canonical surface refresh completes. Starfire serves
 `b17dcfad6d4cbd442153f1e5b3c834c795614fdd08253cb7e8f0ca2527af65b4`
 agree. Invitations remain untouched.
 
+Release `4995f261f68809857dbed620561e53b80198bd0f` closes two compiler admission
+seams. Fission text is bounded before retrieval or inference. Generated
+opening/role selection is now server-owned per session: the browser sends only
+IDs, cross-session/forged/cross-opening choices fail, and the exact selected
+capabilities and obligations survive world compilation as branch-local player
+state. Suggestion evidence and model receipts survive into the approval
+preview. The full workspace passed 139 core and 14 daemon tests, and the strict
+browser build emitted `assets/index-B_0anyiQ.js`. Starfire health, manifest, and
+binary SHA-256
+`1e1d46c549bd91feac58523861268797114e83a942e79d9c13de8bfc5fa96ea5`
+agree. Invitations remain untouched.
+
 ## Warnings
 
 - Keep persistent state small. Git history and artifacts own chronology.
