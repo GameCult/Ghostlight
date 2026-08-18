@@ -228,7 +228,7 @@ stake prose alone never impersonates world mutation.
   - optional operator inspector for evidence, topology, state versions, model receipts, rejected proposals, and private spoiler traces.
 - Do not expose model chain-of-thought or secrets.
 - Serve the embedded web bundle on TCP `8831`. Firewall access is limited to Starfire’s private LAN and `10.77.0.0/24`; no public listener or Yggdrasil web gateway is added.
-- Use two single-use invite links that establish separate HttpOnly sessions. Campaigns are single-player; simultaneous co-op is outside the MVP.
+- Use provisioned single-use invite links that establish separate HttpOnly sessions. Campaigns are single-player; simultaneous co-op is outside the MVP.
 - Run `GhostlightDungeon` as a normal detached process under the Starfire operator account. Record its PID, executable, and logs; explicit start, stop, health, release, and rollback scripts own lifecycle. ACL the runtime root to administrators and that operator account.
 - Read the DeepSeek key from stdin during setup, protect it with machine-scoped DPAPI plus file ACLs, and never place it in source, arguments, logs, or environment projections.
 - Build immutable release directories from the exact Git commit, switch the active release through the guarded junction, and record provenance in CultCache plus the immutable release manifest. Process restart is explicit; Windows service installation and automatic boot recovery are outside this MVP by operator choice.

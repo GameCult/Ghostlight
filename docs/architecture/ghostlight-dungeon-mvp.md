@@ -771,7 +771,7 @@ Live model allocation:
 
 The daemon serves the embedded browser bundle on TCP 8831. Firewall scope is
 Starfire's private LAN and `10.77.0.0/24`; there is no public listener or
-Yggdrasil web gateway. Two single-use invites establish separate HttpOnly
+Yggdrasil web gateway. Provisioned single-use invites establish separate HttpOnly
 sessions. Campaigns remain single-player in the MVP. This is a product-scope
 constraint, not a WorldKernel identity: the intended post-solo extension maps
 multiple authenticated members to distinct player-controlled actors while all

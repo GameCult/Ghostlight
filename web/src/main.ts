@@ -145,7 +145,7 @@ function showAuthenticationGate() {
   gate.append(
     node("h2", "Private campaign laboratory"),
     node("p", message),
-    node("p", "Open one of the two single-use tester invitations on this device. The resulting session stays separate from the other player's campaigns.", "quiet"),
+    node("p", "Open a single-use tester invitation on this device. The resulting session stays separate from every other player's campaigns.", "quiet"),
   );
   host.replaceChildren(gate);
 }

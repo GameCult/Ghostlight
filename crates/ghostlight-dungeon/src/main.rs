@@ -129,6 +129,8 @@ struct ProviderParallelismRequest {
 struct AuthState {
     schema: String,
     unused_invite_hashes: BTreeSet<String>,
+    #[serde(default)]
+    provisioned_invite_hashes: BTreeSet<String>,
     session_hashes: BTreeSet<String>,
     #[serde(default)]
     session_campaigns: BTreeMap<String, uuid::Uuid>,
@@ -163,6 +165,21 @@ impl AuthOwner {
     }
 }
 
+fn provision_invite_hashes(state: &mut AuthState, supplied: &BTreeSet<String>) -> bool {
+    let new_hashes: BTreeSet<String> = supplied
+        .difference(&state.provisioned_invite_hashes)
+        .cloned()
+        .collect();
+    if new_hashes.is_empty() {
+        return false;
+    }
+    state.unused_invite_hashes.extend(new_hashes);
+    state
+        .provisioned_invite_hashes
+        .extend(supplied.iter().cloned());
+    true
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -194,22 +211,31 @@ async fn main() -> anyhow::Result<()> {
         .filter(|s| !s.is_empty())
         .map(str::to_owned)
         .collect();
-    if invite_tokens.len() != 2 {
+    if invite_tokens.is_empty() || invite_tokens.len() > 128 {
         return Err(anyhow::anyhow!(
-            "GhostlightDungeon requires exactly two unused invite tokens"
+            "GhostlightDungeon requires between 1 and 128 distinct invite tokens"
         ));
     }
+    let supplied_invite_hashes: BTreeSet<String> = invite_tokens
+        .iter()
+        .map(|token| secret_hash(token))
+        .collect();
     std::fs::create_dir_all(runtime_root.join("service"))?;
     let auth_store = CampaignStore::open(runtime_root.join("service/auth.cc"))?;
     let (auth_row, auth_state) = match auth_store.load::<AuthState>("auth_state.v1", "primary")? {
-        Some(existing) => existing,
+        Some((row, mut state)) => {
+            if !provision_invite_hashes(&mut state, &supplied_invite_hashes) {
+                (row, state)
+            } else {
+                let next_row = auth_store.replace(&row, "ghostlight.auth_state.v1", &state)?;
+                (next_row, state)
+            }
+        }
         None => {
             let state = AuthState {
                 schema: "ghostlight.auth_state.v1".into(),
-                unused_invite_hashes: invite_tokens
-                    .iter()
-                    .map(|token| secret_hash(token))
-                    .collect(),
+                unused_invite_hashes: supplied_invite_hashes.clone(),
+                provisioned_invite_hashes: supplied_invite_hashes,
                 session_hashes: BTreeSet::new(),
                 session_campaigns: BTreeMap::new(),
                 session_campaign_ids: BTreeMap::new(),
@@ -2486,6 +2512,7 @@ mod tests {
         let auth_state = AuthState {
             schema: "ghostlight.auth_state.v1".into(),
             unused_invite_hashes: BTreeSet::new(),
+            provisioned_invite_hashes: BTreeSet::new(),
             session_hashes: BTreeSet::new(),
             session_campaigns: BTreeMap::new(),
             session_campaign_ids: BTreeMap::new(),
@@ -2841,6 +2868,7 @@ mod tests {
         let auth_state = AuthState {
             schema: "ghostlight.auth_state.v1".into(),
             unused_invite_hashes: BTreeSet::new(),
+            provisioned_invite_hashes: BTreeSet::new(),
             session_hashes: BTreeSet::from(["left".into(), "right".into()]),
             session_campaigns: BTreeMap::from([
                 ("left".into(), left.id),
@@ -2899,6 +2927,7 @@ mod tests {
         let original = AuthState {
             schema: "ghostlight.auth_state.v1".into(),
             unused_invite_hashes: BTreeSet::from(["invite".into()]),
+            provisioned_invite_hashes: BTreeSet::from(["invite".into()]),
             session_hashes: BTreeSet::new(),
             session_campaigns: BTreeMap::new(),
             session_campaign_ids: BTreeMap::new(),
@@ -2933,6 +2962,24 @@ mod tests {
         );
         assert_eq!(owner.state.session_hashes, original.session_hashes);
         assert_eq!(owner.row, row);
+    }
+
+    #[test]
+    fn invite_provisioning_adds_new_hashes_without_resurrecting_consumed_ones() {
+        let mut state = AuthState {
+            schema: "ghostlight.auth_state.v1".into(),
+            unused_invite_hashes: BTreeSet::new(),
+            provisioned_invite_hashes: BTreeSet::from(["consumed".into()]),
+            session_hashes: BTreeSet::new(),
+            session_campaigns: BTreeMap::new(),
+            session_campaign_ids: BTreeMap::new(),
+        };
+        let supplied = BTreeSet::from(["consumed".into(), "fresh".into()]);
+
+        assert!(provision_invite_hashes(&mut state, &supplied));
+        assert_eq!(state.unused_invite_hashes, BTreeSet::from(["fresh".into()]));
+        assert!(!provision_invite_hashes(&mut state, &supplied));
+        assert_eq!(state.unused_invite_hashes, BTreeSet::from(["fresh".into()]));
     }
 
     #[tokio::test]
