@@ -252,8 +252,8 @@ document.querySelector<HTMLFormElement>("#suggest-form")!.addEventListener("subm
   event.preventDefault();
   const result = await compilerPost("/api/compiler/openings", { setting: document.querySelector<HTMLInputElement>("#setting")!.value, constraints: [] });
   showCards(result.openings, "Choose opening", async opening => {
-    const roles = await compilerPost("/api/compiler/roles", opening);
-    showCards(roles.roles, "Choose role", async role => showPreview(await compilerPost("/api/compiler/selected", { campaign_name: opening.title, opening, role })));
+    const roles = await compilerPost("/api/compiler/roles", { opening_id: opening.id });
+    showCards(roles.roles, "Choose role", async role => showPreview(await compilerPost("/api/compiler/selected", { campaign_name: opening.title, opening_id: opening.id, role_id: role.id })));
   });
 });
 

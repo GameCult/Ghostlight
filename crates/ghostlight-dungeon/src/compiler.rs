@@ -265,7 +265,7 @@ impl WorldCompiler {
             let validation = if parsed.openings.len() != 3 {
                 Err(anyhow!("world compiler must return exactly three openings"))
             } else {
-                ensure_distinct_openings(&parsed.openings)
+                validate_opening_suggestions(&parsed.openings, &source_receipts)
             };
             match validation {
                 Ok(()) => {
@@ -332,7 +332,7 @@ impl WorldCompiler {
             let validation = if parsed.roles.len() != 3 {
                 Err(anyhow!("world compiler must return exactly three roles"))
             } else {
-                ensure_distinct_roles(&parsed.roles)
+                validate_role_suggestions(&parsed.roles, &source_receipts)
             };
             match validation {
                 Ok(()) => {
@@ -536,14 +536,32 @@ impl WorldCompiler {
         &self,
         start: SelectedStart,
     ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
-        self.compile_custom(CustomStart {
-            campaign_name: start.campaign_name,
-            who: format!("{} — {}", start.role.name, start.role.premise),
-            where_: start.opening.place,
-            when: start.opening.era,
-            goal: format!("{}; {}", start.opening.player_hook, start.opening.pressure),
-        })
-        .await
+        let role = start.role.clone();
+        let (mut preview, receipts) = self
+            .compile_custom(CustomStart {
+                campaign_name: start.campaign_name,
+                who: format!("{} — {}", start.role.name, start.role.premise),
+                where_: start.opening.place,
+                when: start.opening.era,
+                goal: format!("{}; {}", start.opening.player_hook, start.opening.pressure),
+            })
+            .await?;
+        let player_id = preview.campaign.player_actor_id.clone();
+        let player = preview
+            .campaign
+            .actors
+            .get_mut(&player_id)
+            .ok_or_else(|| anyhow!("compiled campaign lost its player actor"))?;
+        player.capabilities.extend(role.capabilities.clone());
+        player.obligations.extend(role.obligations.clone());
+        preview.branch_assumptions.push(format!(
+            "The approved generated role '{}' grants the player capabilities [{}] and obligations [{}].",
+            role.name,
+            role.capabilities.join(", "),
+            role.obligations.join(", ")
+        ));
+        validate_campaign_seed(&preview.campaign)?;
+        Ok((preview, receipts))
     }
 
     pub async fn compile_fission(
@@ -1744,6 +1762,69 @@ fn ensure_distinct_roles(items: &[RoleSuggestion]) -> Result<()> {
     )
 }
 
+fn validate_opening_suggestions(items: &[OpeningSuggestion], receipts: &[String]) -> Result<()> {
+    ensure_distinct_openings(items)?;
+    let mut ids = BTreeSet::new();
+    for item in items {
+        validate_user_text("opening id", &item.id, 160)?;
+        validate_user_text("opening title", &item.title, 160)?;
+        validate_user_text("opening era", &item.era, 160)?;
+        validate_user_text("opening place", &item.place, 240)?;
+        validate_user_text("opening pressure", &item.pressure, 500)?;
+        validate_user_text("opening player hook", &item.player_hook, 500)?;
+        if !ids.insert(item.id.trim().to_owned()) {
+            return Err(anyhow!("opening ids must be unique"));
+        }
+        validate_suggestion_evidence("opening", &item.evidence_receipt_ids, receipts)?;
+    }
+    Ok(())
+}
+
+fn validate_role_suggestions(items: &[RoleSuggestion], receipts: &[String]) -> Result<()> {
+    ensure_distinct_roles(items)?;
+    let mut ids = BTreeSet::new();
+    for item in items {
+        validate_user_text("role id", &item.id, 160)?;
+        validate_user_text("role name", &item.name, 160)?;
+        validate_user_text("role premise", &item.premise, 500)?;
+        if !ids.insert(item.id.trim().to_owned()) {
+            return Err(anyhow!("role ids must be unique"));
+        }
+        if item.capabilities.is_empty()
+            || item.capabilities.len() > 8
+            || item.obligations.is_empty()
+            || item.obligations.len() > 8
+        {
+            return Err(anyhow!(
+                "each role needs between 1 and 8 capabilities and obligations"
+            ));
+        }
+        for capability in &item.capabilities {
+            validate_user_text("role capability", capability, 160)?;
+        }
+        for obligation in &item.obligations {
+            validate_user_text("role obligation", obligation, 160)?;
+        }
+        validate_suggestion_evidence("role", &item.evidence_receipt_ids, receipts)?;
+    }
+    Ok(())
+}
+
+fn validate_suggestion_evidence(
+    label: &str,
+    supplied: &[String],
+    allowed: &[String],
+) -> Result<()> {
+    let unique = supplied.iter().collect::<BTreeSet<_>>();
+    let allowed = allowed.iter().collect::<BTreeSet<_>>();
+    if supplied.len() > 8 || unique.len() != supplied.len() || !unique.is_subset(&allowed) {
+        return Err(anyhow!(
+            "{label} evidence may contain at most 8 unique supplied receipt ids"
+        ));
+    }
+    Ok(())
+}
+
 fn ensure_distinct_fields<const N: usize>(
     subject: &str,
     axes: [(&str, Vec<&str>); N],
@@ -2796,6 +2877,50 @@ mod tests {
             preview.campaign.gestalt_members["john"]
                 .materialized_actor_id
                 .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn selected_role_capabilities_and_obligations_survive_world_compilation() {
+        let compiler = WorldCompiler::new(
+            vault(),
+            Arc::new(CompilerModel {
+                invalid_route: false,
+            }),
+            "flash",
+            "pro",
+        );
+        let (preview, _) = compiler
+            .compile_selected(SelectedStart {
+                campaign_name: "Selected role".into(),
+                opening: OpeningSuggestion {
+                    id: "opening".into(),
+                    title: "Opening".into(),
+                    era: "fixture".into(),
+                    place: "yard".into(),
+                    pressure: "A gate is closed".into(),
+                    player_hook: "Learn why".into(),
+                    evidence_receipt_ids: vec![],
+                },
+                role: RoleSuggestion {
+                    id: "courier".into(),
+                    name: "Courier".into(),
+                    premise: "Carry a disputed manifest.".into(),
+                    capabilities: vec!["route knowledge".into()],
+                    obligations: vec!["deliver the manifest".into()],
+                    evidence_receipt_ids: vec![],
+                },
+            })
+            .await
+            .unwrap();
+        let player = &preview.campaign.actors[&preview.campaign.player_actor_id];
+        assert!(player.capabilities.contains("route knowledge"));
+        assert!(player.obligations.contains("deliver the manifest"));
+        assert!(
+            preview
+                .branch_assumptions
+                .iter()
+                .any(|assumption| assumption.contains("Courier"))
         );
     }
 

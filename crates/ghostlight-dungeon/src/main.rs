@@ -12,8 +12,8 @@ use ghostlight_dungeon::windows_secret::unprotect_machine_utf8;
 use ghostlight_dungeon::{
     assessor::ActionAssessor,
     compiler::{
-        CustomStart, GestaltFissionRequest, OpeningRequest, OpeningSuggestion, SelectedStart,
-        SuggestedOpenings, SuggestedRoles, WorldCompiler,
+        CustomStart, GestaltFissionRequest, OpeningRequest, OpeningSuggestion, RoleSuggestion,
+        SelectedStart, SuggestedOpenings, SuggestedRoles, WorldCompiler,
     },
     domain::{
         ActionIntent, Campaign, GestaltFissionPreview, NarrationProjection, RegionExpansionPreview,
@@ -55,6 +55,8 @@ struct AppState {
     assessor: Option<Arc<ActionAssessor>>,
     model: Option<Arc<dyn ModelPort>>,
     compile_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<WorldCompilePreview>>>>,
+    opening_suggestions: Arc<Mutex<BTreeMap<String, SuggestedOpenings>>>,
+    role_suggestions: Arc<Mutex<BTreeMap<String, OwnedRoleSuggestions>>>,
     expansion_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<RegionExpansionPreview>>>>,
     fission_previews: Arc<Mutex<BTreeMap<String, OwnedFissionPreview>>>,
     live_turns: Arc<AtomicUsize>,
@@ -97,6 +99,24 @@ struct OwnedFissionPreview {
     value: GestaltFissionPreview,
     evidence_receipts: Vec<ghostlight_dungeon::domain::VaultEvidenceReceipt>,
     model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+}
+
+#[derive(Clone)]
+struct OwnedRoleSuggestions {
+    opening_id: String,
+    value: SuggestedRoles,
+}
+
+#[derive(Deserialize)]
+struct OpeningSelectionRequest {
+    opening_id: String,
+}
+
+#[derive(Deserialize)]
+struct SelectedStartRequest {
+    campaign_name: String,
+    opening_id: String,
+    role_id: String,
 }
 
 #[derive(Deserialize)]
@@ -246,6 +266,8 @@ async fn main() -> anyhow::Result<()> {
         assessor,
         model: shared_model,
         compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
+        opening_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
+        role_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
         expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
         fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
         live_turns: Arc::new(AtomicUsize::new(0)),
@@ -410,9 +432,10 @@ async fn compile_openings(
     State(state): State<AppState>,
     Json(request): Json<OpeningRequest>,
 ) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
     let _live = LiveTurnGuard::enter(&state).await;
     let Some(compiler) = &state.compiler else {
         return (
@@ -422,7 +445,15 @@ async fn compile_openings(
             .into_response();
     };
     match compiler.suggest_openings(request).await {
-        Ok(value) => Json(opening_suggestions_projection(&value)).into_response(),
+        Ok(value) => {
+            state
+                .opening_suggestions
+                .lock()
+                .await
+                .insert(session.clone(), value.clone());
+            state.role_suggestions.lock().await.remove(&session);
+            Json(opening_suggestions_projection(&value)).into_response()
+        }
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
@@ -462,11 +493,31 @@ async fn compile_custom(
 async fn compile_roles(
     headers: HeaderMap,
     State(state): State<AppState>,
-    Json(opening): Json<OpeningSuggestion>,
+    Json(request): Json<OpeningSelectionRequest>,
 ) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
-    }
+    let session = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let opening = state
+        .opening_suggestions
+        .lock()
+        .await
+        .get(&session)
+        .and_then(|suggestions| {
+            suggestions
+                .openings
+                .iter()
+                .find(|opening| opening.id == request.opening_id)
+                .cloned()
+        });
+    let Some(opening) = opening else {
+        return (
+            StatusCode::CONFLICT,
+            "opening selection is missing, expired, or not owned by this session",
+        )
+            .into_response();
+    };
     let _live = LiveTurnGuard::enter(&state).await;
     let Some(compiler) = &state.compiler else {
         return (
@@ -476,7 +527,16 @@ async fn compile_roles(
             .into_response();
     };
     match compiler.suggest_roles(&opening).await {
-        Ok(value) => Json(role_suggestions_projection(&value)).into_response(),
+        Ok(value) => {
+            state.role_suggestions.lock().await.insert(
+                session,
+                OwnedRoleSuggestions {
+                    opening_id: opening.id,
+                    value: value.clone(),
+                },
+            );
+            Json(role_suggestions_projection(&value)).into_response()
+        }
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
@@ -484,7 +544,7 @@ async fn compile_roles(
 async fn compile_selected(
     headers: HeaderMap,
     State(state): State<AppState>,
-    Json(request): Json<SelectedStart>,
+    Json(request): Json<SelectedStartRequest>,
 ) -> Response {
     let session = match authenticated_session(&headers, &state).await {
         Some(value) => value,
@@ -510,7 +570,121 @@ async fn compile_selected(
         )
             .into_response();
     };
-    store_preview(&state, session, compiler.compile_selected(request).await).await
+    let opening_bundle = state
+        .opening_suggestions
+        .lock()
+        .await
+        .get(&session)
+        .cloned();
+    let role_bundle = state.role_suggestions.lock().await.get(&session).cloned();
+    let Some(opening_bundle) = opening_bundle else {
+        return (
+            StatusCode::CONFLICT,
+            "opening selection is missing or expired",
+        )
+            .into_response();
+    };
+    let Some(role_bundle) = role_bundle.filter(|roles| roles.opening_id == request.opening_id)
+    else {
+        return (
+            StatusCode::CONFLICT,
+            "role selection is missing, expired, or belongs to another opening",
+        )
+            .into_response();
+    };
+    let selected = match resolve_selected_start(
+        request,
+        &opening_bundle.openings,
+        &role_bundle.opening_id,
+        &role_bundle.value.roles,
+    ) {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::CONFLICT, error).into_response(),
+    };
+    let result = compiler
+        .compile_selected(selected)
+        .await
+        .map(|value| enrich_selected_preview(value, &opening_bundle, &role_bundle.value));
+    store_preview(&state, session, result).await
+}
+
+fn resolve_selected_start(
+    request: SelectedStartRequest,
+    openings: &[OpeningSuggestion],
+    role_opening_id: &str,
+    roles: &[RoleSuggestion],
+) -> Result<SelectedStart, &'static str> {
+    if role_opening_id != request.opening_id {
+        return Err("selected role belongs to another opening");
+    }
+    let opening = openings
+        .iter()
+        .find(|opening| opening.id == request.opening_id)
+        .cloned()
+        .ok_or("selected opening is not owned by this session")?;
+    let role = roles
+        .iter()
+        .find(|role| role.id == request.role_id)
+        .cloned()
+        .ok_or("selected role is not owned by this session")?;
+    Ok(SelectedStart {
+        campaign_name: request.campaign_name,
+        opening,
+        role,
+    })
+}
+
+fn enrich_selected_preview(
+    (mut preview, mut compile_receipts): (
+        WorldCompilePreview,
+        Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+    ),
+    openings: &SuggestedOpenings,
+    roles: &SuggestedRoles,
+) -> (
+    WorldCompilePreview,
+    Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+) {
+    let mut known_evidence = preview
+        .evidence_receipts
+        .iter()
+        .map(|receipt| receipt.id.clone())
+        .collect::<BTreeSet<_>>();
+    for receipt in openings
+        .evidence_receipts
+        .iter()
+        .chain(&roles.evidence_receipts)
+    {
+        if known_evidence.insert(receipt.id.clone()) {
+            for source_id in receipt
+                .witnesses
+                .iter()
+                .map(|witness| witness.source_id.clone())
+                .chain(std::iter::once(receipt.id.clone()).filter(|_| receipt.witnesses.is_empty()))
+            {
+                preview.evidence_coverage.push(ghostlight_dungeon::domain::EvidenceCoverage {
+                    source_id,
+                    lane: ghostlight_dungeon::domain::EvidenceUseLane::SettingBackground,
+                    rationale: "Used to generate the selected opening or player role; not admitted as direct causal world evidence.".into(),
+                });
+            }
+            preview.evidence_receipts.push(receipt.clone());
+        }
+    }
+    let mut known_model_receipts = compile_receipts
+        .iter()
+        .map(|receipt| receipt.receipt_hash.clone())
+        .collect::<BTreeSet<_>>();
+    for receipt in std::iter::once(&openings.retrieval_receipt)
+        .chain(&openings.model_receipts)
+        .chain(std::iter::once(&roles.retrieval_receipt))
+        .chain(&roles.model_receipts)
+    {
+        if known_model_receipts.insert(receipt.receipt_hash.clone()) {
+            compile_receipts.push(receipt.clone());
+        }
+    }
+    (preview, compile_receipts)
 }
 
 async fn store_preview(
@@ -2278,6 +2452,8 @@ mod tests {
             assessor: None,
             model: None,
             compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
+            opening_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
+            role_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
             expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
             fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
             live_turns: Arc::new(AtomicUsize::new(0)),
@@ -2331,6 +2507,67 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn generated_start_selection_uses_only_server_owned_ids() {
+        let opening = OpeningSuggestion {
+            id: "opening-a".into(),
+            title: "Opening A".into(),
+            era: "fixture".into(),
+            place: "yard".into(),
+            pressure: "strike".into(),
+            player_hook: "choose".into(),
+            evidence_receipt_ids: vec![],
+        };
+        let role = RoleSuggestion {
+            id: "role-a".into(),
+            name: "Courier".into(),
+            premise: "Carry the message.".into(),
+            capabilities: vec!["route knowledge".into()],
+            obligations: vec!["deliver the message".into()],
+            evidence_receipt_ids: vec![],
+        };
+        let selected = resolve_selected_start(
+            SelectedStartRequest {
+                campaign_name: "Campaign".into(),
+                opening_id: opening.id.clone(),
+                role_id: role.id.clone(),
+            },
+            std::slice::from_ref(&opening),
+            &opening.id,
+            std::slice::from_ref(&role),
+        )
+        .unwrap();
+        assert_eq!(selected.opening, opening);
+        assert_eq!(selected.role, role);
+
+        assert!(
+            resolve_selected_start(
+                SelectedStartRequest {
+                    campaign_name: "Campaign".into(),
+                    opening_id: "forged-opening".into(),
+                    role_id: "role-a".into(),
+                },
+                std::slice::from_ref(&selected.opening),
+                &selected.opening.id,
+                std::slice::from_ref(&selected.role),
+            )
+            .is_err()
+        );
+        assert!(
+            resolve_selected_start(
+                SelectedStartRequest {
+                    campaign_name: "Campaign".into(),
+                    opening_id: selected.opening.id.clone(),
+                    role_id: "forged-role".into(),
+                },
+                std::slice::from_ref(&selected.opening),
+                &selected.opening.id,
+                std::slice::from_ref(&selected.role),
+            )
+            .is_err()
+        );
     }
 
     #[tokio::test]
@@ -2455,6 +2692,8 @@ mod tests {
             assessor: None,
             model: None,
             compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
+            opening_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
+            role_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
             expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
             fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
             live_turns: Arc::new(AtomicUsize::new(0)),
