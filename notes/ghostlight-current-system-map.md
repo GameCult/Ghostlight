@@ -363,9 +363,12 @@ from `127.0.0.1`, `localhost`, or `::1`; this mirrors the server boundary and is
 not itself treated as security.
 
 Global strategic context has a separate non-causal lane. Two stable broad Vault
-queries run alongside local retrieval, and a Flash extraction stage proposes at
-most 32 remote institution names with one short durable mandate each. Local code
-binds each mandate string to an exact witness that also names the institution.
+queries run alongside local retrieval, and a Flash extraction stage proposes a
+bounded pool of remote institution names with one to three exact supporting
+claims each. Local code binds every retained claim to an institution-specific
+witness. Only the grounded candidates, capped at 32, enter a separate Flash
+synthesis stage. It writes concise strategic doctrine from those claims; an
+independent verifier rejects unsupported doctrine.
 Unsupported entries become summarized approval gaps and private receipt detail;
 they do not become canonical institutions or canon-candidate records. Admitted
 remote institutions receive deterministic coarse profiles with distinct
@@ -376,10 +379,11 @@ and ungrounded index fragments can reach local judgment. Exact grounding runs
 before the 32-institution simulation capacity is applied; excess grounded
 candidates become an approval-visible on-demand-compilation gap. Raw proposal
 count therefore cannot consume canonical capacity or abort an otherwise valid
-world compile. A mandate is institution-specific only when its quotation names
+world compile. A supporting claim is institution-specific only when its quotation names
 exactly that candidate or comes from the candidate's dedicated source document;
 shared index headings, category descriptions, cross-faction lists, and orphaned
-sentence fragments are rejected rather than becoming goals.
+sentence fragments are rejected. Exact claims and receipts remain evidence;
+synthesized strategic doctrine alone becomes coarse simulation goals.
 
 The Aetheria Vault adapter derives document authority from the exact source
 path before any model sees a witness. `Worldbuilding` is reusable canon;

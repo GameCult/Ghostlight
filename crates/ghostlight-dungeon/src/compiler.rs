@@ -145,20 +145,64 @@ struct CompiledAgencySkeleton {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
-struct CompiledRemoteInstitution {
+struct ExtractedRemoteInstitution {
     name: String,
-    mandate: String,
-    #[serde(skip)]
-    #[schemars(skip)]
-    evidence_receipt_ids: Vec<String>,
+    #[schemars(length(min = 1, max = 3))]
+    supporting_claims: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
-struct CompiledGlobalAgencyCatalog {
-    // The model proposes a bounded candidate pool. Local grounding owns the
-    // actual 32-cell admission limit because unsupported index fragments must
-    // not consume canonical agency capacity.
+struct ExtractedGlobalAgencyCatalog {
     #[schemars(length(max = 64))]
+    institutions: Vec<ExtractedRemoteInstitution>,
+    gaps: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct GroundedRemoteInstitution {
+    name: String,
+    supporting_claims: Vec<String>,
+    evidence_receipt_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct GroundedGlobalAgencyCatalog {
+    institutions: Vec<GroundedRemoteInstitution>,
+    gaps: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct SynthesizedRemoteInstitution {
+    name: String,
+    strategic_doctrine: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct StrategicDoctrineCatalog {
+    institutions: Vec<SynthesizedRemoteInstitution>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct StrategicDoctrineVerdict {
+    name: String,
+    supported: bool,
+    rationale: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct StrategicDoctrineVerification {
+    verdicts: Vec<StrategicDoctrineVerdict>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct CompiledRemoteInstitution {
+    name: String,
+    strategic_doctrine: String,
+    evidence_receipt_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct CompiledGlobalAgencyCatalog {
     institutions: Vec<CompiledRemoteInstitution>,
     gaps: Vec<String>,
 }
@@ -1116,9 +1160,9 @@ impl WorldCompiler {
         receipts: &[VaultEvidenceReceipt],
     ) -> Result<(CompiledGlobalAgencyCatalog, Vec<ModelStageReceipt>)> {
         let receipts = canonical_worldbuilding_receipts(receipts);
-        let schema = serde_json::to_value(schema_for!(CompiledGlobalAgencyCatalog))?;
+        let schema = serde_json::to_value(schema_for!(ExtractedGlobalAgencyCatalog))?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nBuild the coarse remote strategic agency catalog for the requested historical horizon. This is a different authority lane from local world compilation: it may establish durable institutions, movements, governments, corporations, or other collective powers, but it must never import a story-specific cast, incident, clock, location state, capability inventory, or current branch posture. Include every major power and strategically distinct movement explicitly supported as relevant to this horizon by the supplied witnesses, up to 32 institutions. Do not emit an institution from a mere index link: omit it unless one supplied witness contains a durable institution-specific mandate. For each admitted institution, copy its exact displayed name. mandate must be one short contiguous quotation, at most 320 characters, from a source document dedicated to that institution, or a quotation which itself names the institution while establishing a durable purpose, interest, or pressure it can act on. Never reuse a shared index heading, category description, movement list, or sentence fragment as several institutions' mandates. Copy the quotation exactly; do not paraphrase or identify its source because deterministic code binds it to the actual witness. Summarize classes of omitted institutions in gaps rather than emitting one gap per name. Return no narrative analysis. Fine resources and capabilities compile on demand only when the institution becomes causally relevant.\nHORIZON:\n{}\nREQUESTED PLACE (relevance only; not local authority):\n{}\nEVIDENCE:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nExtract evidence for the coarse remote strategic agency catalog at the requested historical horizon. This stage extracts; it does not write simulation doctrine. Include major powers and strategically distinct movements supported by the supplied witnesses. For each candidate, copy its exact displayed name and 1-3 short, contiguous supporting_claims verbatim from institution-specific source prose. Each claim must establish a durable interest, characteristic method, constraint, refusal, or pressure. Do not use mere index links, shared headings, category descriptions, movement lists, or story-specific incidents. Do not infer current posture, territory, capability inventory, or branch facts. Summarize evidence gaps by class. Return no narrative analysis.\nHORIZON:\n{}\nREQUESTED PLACE (relevance only; not local authority):\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(&schema)?,
             start.when,
             start.where_,
@@ -1147,7 +1191,8 @@ impl WorldCompiler {
                 .clone()
                 .ok_or_else(|| anyhow!("global agency compiler returned no structured output"))
                 .and_then(|value| {
-                    serde_json::from_value::<CompiledGlobalAgencyCatalog>(value).map_err(Into::into)
+                    serde_json::from_value::<ExtractedGlobalAgencyCatalog>(value)
+                        .map_err(Into::into)
                 })
                 .and_then(|catalog| ground_global_agency_catalog(catalog, &receipts));
             let mut receipt = output.receipt;
@@ -1159,6 +1204,10 @@ impl WorldCompiler {
                             Some(grounding_gaps.join("; ").chars().take(1_000).collect());
                     }
                     stage_receipts.push(receipt);
+                    let (catalog, mut doctrine_receipts) = self
+                        .synthesize_global_agency_doctrine(start, catalog)
+                        .await?;
+                    stage_receipts.append(&mut doctrine_receipts);
                     return Ok((catalog, stage_receipts));
                 }
                 Err(error) if attempt == 0 => {
@@ -1176,6 +1225,90 @@ impl WorldCompiler {
             }
         }
         unreachable!()
+    }
+
+    async fn synthesize_global_agency_doctrine(
+        &self,
+        start: &CustomStart,
+        grounded: GroundedGlobalAgencyCatalog,
+    ) -> Result<(CompiledGlobalAgencyCatalog, Vec<ModelStageReceipt>)> {
+        if grounded.institutions.is_empty() {
+            return Ok((
+                CompiledGlobalAgencyCatalog {
+                    institutions: vec![],
+                    gaps: grounded.gaps,
+                },
+                vec![],
+            ));
+        }
+        let evidence = grounded.institutions.iter().map(|institution| {
+            serde_json::json!({"name": institution.name, "supporting_claims": institution.supporting_claims})
+        }).collect::<Vec<_>>();
+        let synthesis_schema = serde_json::to_value(schema_for!(StrategicDoctrineCatalog))?;
+        let synthesis_prompt = format!(
+            "Synthesize one concise strategic_doctrine for every supplied institution. Doctrine is durable simulation state: state its interests, characteristic methods, and meaningful constraints or refusals when supported. Use only the supplied exact claims. Do not quote mechanically, invent current posture, territory, resources, powers, or branch events, and do not merge institutions. Return the same names exactly once and no others. Keep each doctrine under 600 characters.\nHORIZON:\n{}\nGROUNDED CLAIMS:\n{}",
+            start.when,
+            serde_json::to_string(&evidence)?
+        );
+        let (value, synthesis_receipt) = self
+            .structured(
+                "global_agency_doctrine_synthesis",
+                &format!("global-agency-doctrine:{}", start.when),
+                &synthesis_prompt,
+                synthesis_schema,
+                grounded
+                    .institutions
+                    .iter()
+                    .flat_map(|i| i.evidence_receipt_ids.clone())
+                    .collect(),
+            )
+            .await?;
+        let synthesized: StrategicDoctrineCatalog = serde_json::from_value(value)?;
+        validate_doctrine_catalog(&grounded.institutions, &synthesized)?;
+
+        let verification_schema = serde_json::to_value(schema_for!(StrategicDoctrineVerification))?;
+        let verification_prompt = format!(
+            "Verify every strategic doctrine strictly against its exact supporting claims. supported is true only when every asserted interest, method, constraint, and refusal follows from those claims; reject invented current posture, territory, resources, capabilities, or branch events. Return one verdict for each name exactly once.\nCLAIMS:\n{}\nDOCTRINES:\n{}",
+            serde_json::to_string(&evidence)?,
+            serde_json::to_string(&synthesized)?
+        );
+        let (value, verification_receipt) = self
+            .structured(
+                "global_agency_doctrine_verification",
+                &format!("global-agency-doctrine-verification:{}", start.when),
+                &verification_prompt,
+                verification_schema,
+                grounded
+                    .institutions
+                    .iter()
+                    .flat_map(|i| i.evidence_receipt_ids.clone())
+                    .collect(),
+            )
+            .await?;
+        let verification: StrategicDoctrineVerification = serde_json::from_value(value)?;
+        validate_doctrine_verification(&grounded.institutions, &verification)?;
+
+        let doctrines = synthesized
+            .institutions
+            .into_iter()
+            .map(|i| (i.name.clone(), i.strategic_doctrine))
+            .collect::<BTreeMap<_, _>>();
+        let institutions = grounded
+            .institutions
+            .into_iter()
+            .map(|institution| CompiledRemoteInstitution {
+                strategic_doctrine: doctrines[&institution.name].clone(),
+                name: institution.name,
+                evidence_receipt_ids: institution.evidence_receipt_ids,
+            })
+            .collect();
+        Ok((
+            CompiledGlobalAgencyCatalog {
+                institutions,
+                gaps: grounded.gaps,
+            },
+            vec![synthesis_receipt, verification_receipt],
+        ))
     }
 
     async fn structured(
@@ -1332,9 +1465,9 @@ fn bounded_evidence_text(receipts: &[VaultEvidenceReceipt], max_chars: usize) ->
 }
 
 fn ground_global_agency_catalog(
-    mut catalog: CompiledGlobalAgencyCatalog,
+    mut catalog: ExtractedGlobalAgencyCatalog,
     receipts: &[VaultEvidenceReceipt],
-) -> Result<(CompiledGlobalAgencyCatalog, Vec<String>)> {
+) -> Result<(GroundedGlobalAgencyCatalog, Vec<String>)> {
     if catalog.institutions.len() > 64 {
         return Err(anyhow!(
             "global agency candidate pool exceeds 64 institutions"
@@ -1397,37 +1530,35 @@ fn ground_global_agency_catalog(
         .iter()
         .map(|institution| normalized_identity(&institution.name))
         .collect::<Vec<_>>();
-    for mut institution in std::mem::take(&mut catalog.institutions) {
-        let mandate_sources = matching_agency_claim_sources(&institution.mandate, &by_source)?;
-        if mandate_sources.is_empty() {
-            grounding_gaps.push(format!(
-                "{} had no exact mandate quotation in the supplied witnesses",
-                institution.name
-            ));
+    for institution in std::mem::take(&mut catalog.institutions) {
+        let mut valid_claims = Vec::new();
+        let mut claim_sources = BTreeSet::new();
+        for claim in institution.supporting_claims {
+            let sources = matching_agency_claim_sources(&claim, &by_source)?;
+            let normalized_claim = normalized_identity(&claim);
+            let named_candidate_count = candidate_names
+                .iter()
+                .filter(|name| normalized_identity_contains(&normalized_claim, name))
+                .count();
+            let specific = sources
+                .iter()
+                .any(|source_id| source_document_names_institution(source_id, &institution.name))
+                || (normalized_identity_contains(
+                    &normalized_claim,
+                    &normalized_identity(&institution.name),
+                ) && named_candidate_count == 1);
+            if !sources.is_empty() && specific {
+                valid_claims.push(claim);
+                claim_sources.extend(sources);
+            } else {
+                grounding_gaps.push(format!("{} supplied a supporting claim that was not exact institution-specific evidence", institution.name));
+            }
+        }
+        if valid_claims.is_empty() {
             omitted_names.push(institution.name);
             continue;
         }
-        let normalized_mandate = normalized_identity(&institution.mandate);
-        let named_candidate_count = candidate_names
-            .iter()
-            .filter(|name| normalized_identity_contains(&normalized_mandate, name))
-            .count();
-        let mandate_is_specific = mandate_sources
-            .iter()
-            .any(|source_id| source_document_names_institution(source_id, &institution.name))
-            || (normalized_identity_contains(
-                &normalized_mandate,
-                &normalized_identity(&institution.name),
-            ) && named_candidate_count == 1);
-        if !mandate_is_specific {
-            grounding_gaps.push(format!(
-                "{} mandate was neither self-naming nor quoted from that institution's dedicated source document",
-                institution.name
-            ));
-            omitted_names.push(institution.name);
-            continue;
-        }
-        institution.evidence_receipt_ids = mandate_sources
+        let evidence_receipt_ids: Vec<String> = claim_sources
             .into_iter()
             .flat_map(|source_id| {
                 receipt_ids_by_source
@@ -1439,12 +1570,16 @@ fn ground_global_agency_catalog(
             .collect::<BTreeSet<_>>()
             .into_iter()
             .collect();
-        if institution.evidence_receipt_ids.is_empty() {
+        if evidence_receipt_ids.is_empty() {
             return Err(anyhow!(
                 "grounded remote institution has no exact evidence receipt"
             ));
         }
-        admitted.push(institution);
+        admitted.push(GroundedRemoteInstitution {
+            name: institution.name,
+            supporting_claims: valid_claims,
+            evidence_receipt_ids,
+        });
     }
     if admitted.len() > 32 {
         let overflow = admitted.len() - 32;
@@ -1456,14 +1591,19 @@ fn ground_global_agency_catalog(
             "{overflow} additional source-grounded institutions were omitted at this horizon because the remote agency catalog is capped at 32; they remain available for on-demand compilation."
         ));
     }
-    catalog.institutions = admitted;
     if !omitted_names.is_empty() {
         catalog.gaps.push(format!(
-            "{} remote agency candidates were omitted because their mandates could not be bound to witnesses naming them; exact rejection details remain in the private model-stage receipt.",
+            "{} remote agency candidates were omitted because no supporting claim could be bound to institution-specific evidence; exact rejection details remain in the private model-stage receipt.",
             omitted_names.len()
         ));
     }
-    Ok((catalog, grounding_gaps))
+    Ok((
+        GroundedGlobalAgencyCatalog {
+            institutions: admitted,
+            gaps: catalog.gaps,
+        },
+        grounding_gaps,
+    ))
 }
 
 fn matching_agency_claim_sources<'a>(
@@ -1519,6 +1659,67 @@ fn source_document_names_institution(source_id: &str, institution_name: &str) ->
     normalized_identity(stem) == normalized_identity(institution_name)
 }
 
+fn validate_doctrine_catalog(
+    grounded: &[GroundedRemoteInstitution],
+    synthesized: &StrategicDoctrineCatalog,
+) -> Result<()> {
+    let expected = grounded
+        .iter()
+        .map(|i| i.name.as_str())
+        .collect::<BTreeSet<_>>();
+    let actual = synthesized
+        .institutions
+        .iter()
+        .map(|i| i.name.as_str())
+        .collect::<BTreeSet<_>>();
+    if synthesized.institutions.len() != grounded.len() || actual != expected {
+        return Err(anyhow!(
+            "strategic doctrine synthesis must cover every grounded institution exactly once"
+        ));
+    }
+    if synthesized.institutions.iter().any(|i| {
+        i.strategic_doctrine.trim().is_empty() || i.strategic_doctrine.chars().count() > 600
+    }) {
+        return Err(anyhow!(
+            "strategic doctrine must contain 1 to 600 characters"
+        ));
+    }
+    Ok(())
+}
+
+fn validate_doctrine_verification(
+    grounded: &[GroundedRemoteInstitution],
+    verification: &StrategicDoctrineVerification,
+) -> Result<()> {
+    let expected = grounded
+        .iter()
+        .map(|i| i.name.as_str())
+        .collect::<BTreeSet<_>>();
+    let actual = verification
+        .verdicts
+        .iter()
+        .map(|i| i.name.as_str())
+        .collect::<BTreeSet<_>>();
+    if verification.verdicts.len() != grounded.len() || actual != expected {
+        return Err(anyhow!(
+            "strategic doctrine verification must cover every grounded institution exactly once"
+        ));
+    }
+    let rejected = verification
+        .verdicts
+        .iter()
+        .filter(|v| !v.supported)
+        .map(|v| format!("{}: {}", v.name, v.rationale))
+        .collect::<Vec<_>>();
+    if !rejected.is_empty() {
+        return Err(anyhow!(
+            "strategic doctrine exceeded its evidence: {}",
+            rejected.join("; ")
+        ));
+    }
+    Ok(())
+}
+
 fn merge_global_agency_catalog(
     seed: &mut CompiledSeed,
     catalog: CompiledGlobalAgencyCatalog,
@@ -1547,7 +1748,7 @@ fn merge_global_agency_catalog(
             id: id.clone(),
             name: institution.name,
             resources: vec![],
-            goals: vec![institution.mandate],
+            goals: vec![institution.strategic_doctrine],
             posture: "No branch-local posture has been established.".into(),
         });
         remote_evidence.insert(id, institution.evidence_receipt_ids);
@@ -2674,9 +2875,22 @@ mod tests {
                 "global_agency_compile" => serde_json::json!({
                     "institutions":[{
                         "name":"Fixture Council",
-                        "mandate":"The Fixture Council maintains the shared route."
+                        "supporting_claims":["The Fixture Council maintains the shared route."]
                     }],
                     "gaps":[]
+                }).to_string(),
+                "global_agency_doctrine_synthesis" => serde_json::json!({
+                    "institutions":[{
+                        "name":"Fixture Council",
+                        "strategic_doctrine":"Maintain the shared route as a durable civic responsibility."
+                    }]
+                }).to_string(),
+                "global_agency_doctrine_verification" => serde_json::json!({
+                    "verdicts":[{
+                        "name":"Fixture Council",
+                        "supported":true,
+                        "rationale":"The doctrine restates the exact maintenance claim without adding posture or capability."
+                    }]
                 }).to_string(),
                 "world_openings" => serde_json::json!({"openings":[
                     {"id":"a","title":"Ash","era":"early","place":"ring","pressure":"strike","player_hook":"work","evidence_receipt_ids":[]},
@@ -2928,6 +3142,8 @@ mod tests {
                 "custom_retrieval_plan",
                 "evidence_relevance",
                 "global_agency_compile",
+                "global_agency_doctrine_synthesis",
+                "global_agency_doctrine_verification",
                 "world_compile",
                 "agency_compile"
             ]
@@ -3189,11 +3405,12 @@ mod tests {
             }],
             retrieved_at: Utc::now(),
         }];
-        let valid = CompiledGlobalAgencyCatalog {
-            institutions: vec![CompiledRemoteInstitution {
+        let valid = ExtractedGlobalAgencyCatalog {
+            institutions: vec![ExtractedRemoteInstitution {
                 name: "Pan-Solar Consortium".into(),
-                mandate: "Pan-Solar Consortium coordinates interplanetary logistics.".into(),
-                evidence_receipt_ids: vec![],
+                supporting_claims: vec![
+                    "Pan-Solar Consortium coordinates interplanetary logistics.".into(),
+                ],
             }],
             gaps: vec![],
         };
@@ -3205,9 +3422,15 @@ mod tests {
         );
         assert!(gaps.is_empty());
 
-        let mut invented = valid;
-        invented.institutions[0].mandate =
-            "Pan-Solar Consortium secretly controls every government.".into();
+        let invented = ExtractedGlobalAgencyCatalog {
+            institutions: vec![ExtractedRemoteInstitution {
+                name: "Pan-Solar Consortium".into(),
+                supporting_claims: vec![
+                    "Pan-Solar Consortium secretly controls every government.".into(),
+                ],
+            }],
+            gaps: vec![],
+        };
         let (grounded, gaps) = ground_global_agency_catalog(invented, &receipts).unwrap();
         assert!(grounded.institutions.is_empty());
         assert_eq!(gaps.len(), 1);
@@ -3235,12 +3458,11 @@ mod tests {
             }],
             retrieved_at: Utc::now(),
         }];
-        let catalog = CompiledGlobalAgencyCatalog {
+        let catalog = ExtractedGlobalAgencyCatalog {
             institutions: (0..33)
-                .map(|index| CompiledRemoteInstitution {
+                .map(|index| ExtractedRemoteInstitution {
                     name: format!("Institution {index}"),
-                    mandate: format!("Institution {index} protects route {index}."),
-                    evidence_receipt_ids: vec![],
+                    supporting_claims: vec![format!("Institution {index} protects route {index}.")],
                 })
                 .collect(),
             gaps: vec![],
@@ -3260,8 +3482,37 @@ mod tests {
 
     #[test]
     fn global_agency_schema_allows_bounded_pre_grounding_candidates() {
-        let schema = serde_json::to_value(schema_for!(CompiledGlobalAgencyCatalog)).unwrap();
+        let schema = serde_json::to_value(schema_for!(ExtractedGlobalAgencyCatalog)).unwrap();
         assert_eq!(schema["properties"]["institutions"]["maxItems"], 64);
+    }
+
+    #[test]
+    fn strategic_doctrine_requires_exact_coverage_and_semantic_acceptance() {
+        let grounded = vec![GroundedRemoteInstitution {
+            name: "Fixture Council".into(),
+            supporting_claims: vec!["The Fixture Council maintains the route.".into()],
+            evidence_receipt_ids: vec!["vault:council".into()],
+        }];
+        let doctrine = StrategicDoctrineCatalog {
+            institutions: vec![SynthesizedRemoteInstitution {
+                name: "Fixture Council".into(),
+                strategic_doctrine: "Maintain the route as a durable responsibility.".into(),
+            }],
+        };
+        validate_doctrine_catalog(&grounded, &doctrine).unwrap();
+        let rejected = StrategicDoctrineVerification {
+            verdicts: vec![StrategicDoctrineVerdict {
+                name: "Fixture Council".into(),
+                supported: false,
+                rationale: "The doctrine invented territorial control.".into(),
+            }],
+        };
+        assert!(
+            validate_doctrine_verification(&grounded, &rejected)
+                .unwrap_err()
+                .to_string()
+                .contains("exceeded its evidence")
+        );
     }
 
     #[test]
@@ -3283,14 +3534,13 @@ mod tests {
             }],
             retrieved_at: Utc::now(),
         }];
-        let catalog = CompiledGlobalAgencyCatalog {
+        let catalog = ExtractedGlobalAgencyCatalog {
             institutions: ["Disciplinists", "Pragmatists", "Bio-Purists"]
                 .into_iter()
-                .map(|name| CompiledRemoteInstitution {
+                .map(|name| ExtractedRemoteInstitution {
                     name: name.into(),
-                    mandate: "Characteristic movements: Disciplinists, Pragmatists, selected Bio-Purists."
-                        .into(),
-                    evidence_receipt_ids: vec![],
+                    supporting_claims: vec!["Characteristic movements: Disciplinists, Pragmatists, selected Bio-Purists."
+                        .into()],
                 })
                 .collect(),
             gaps: vec![],

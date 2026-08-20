@@ -791,10 +791,13 @@ required ticks before the player's next action.
 
 The compiler no longer confuses a local roster with a global agency skeleton.
 Local and remote retrieval run concurrently. Only direct evidence enters the
-local seed; a separate Flash lane proposes coarse remote institutions with one
-short mandate string each. Deterministic code binds that mandate to a witness
-which also names the institution, omits unsupported candidates into approval
-coverage gaps, and builds explicit-unknown six-axis remote profiles. The Pro
+local seed; a separate Flash pipeline extracts one to three exact claims for
+each coarse remote institution. Deterministic code binds those claims to
+institution-specific witnesses and caps the grounded catalog before a second
+stage synthesizes strategic doctrine. An independent verifier prevents
+unsupported doctrine from becoming a goal. Claims and receipts remain evidence;
+doctrine is simulation state. Unsupported candidates become approval coverage
+gaps, and the compiler builds explicit-unknown six-axis remote profiles. The Pro
 agency compiler sees only locally materialized subjects. Live witness
 `F:\GameCult\GhostlightDungeon\acceptance\compiler-20260817-165127\result.json`
 completed in 43.35 seconds with five first-attempt-valid stages, admitted one

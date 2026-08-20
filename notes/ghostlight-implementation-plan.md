@@ -38,9 +38,12 @@ provider attempts expose prompt/completion/cache usage and exact local failures;
 stable prefixes precede dynamic context; world and agency compilation are
 separate stages; Projectors receive situation state while Interpreters receive
 exact permissions; deterministic cell bindings are attached by the runtime.
-Remote agency compilation is a separate non-causal Flash lane: exact mandate
-strings are bound to witnesses locally, rejected candidates become coverage
-gaps, and deterministic coarse profiles keep unknown facets unknown. The Pro
+Remote agency compilation is a separate non-causal Flash pipeline: extraction
+proposes exact institution-specific claims, local code binds them to witnesses,
+and only grounded candidates receive synthesized strategic doctrine. A separate
+semantic verifier must accept every doctrine against those claims before it can
+become a coarse goal. Rejected candidates become coverage gaps, and deterministic
+remote profiles keep unknown facets unknown. The Pro
 agency stage no longer spends output tokens restating remote profiles.
 
 Strategic activity outcomes now have their own authority between attempt
