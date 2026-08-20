@@ -4,11 +4,9 @@ use axum::{
     http::{HeaderMap, HeaderValue, StatusCode, header},
     middleware,
     middleware::Next,
-    response::{IntoResponse, Redirect, Response},
+    response::{IntoResponse, Response},
     routing::{get, post},
 };
-#[cfg(windows)]
-use ghostlight_dungeon::windows_secret::unprotect_machine_utf8;
 use ghostlight_dungeon::{
     assessor::ActionAssessor,
     compiler::{
@@ -46,7 +44,7 @@ use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
 mod heimdall;
-use heimdall::HeimdallClient;
+use heimdall::{BackendCallback, HeimdallClient};
 
 #[derive(Clone)]
 struct AppState {
@@ -129,17 +127,9 @@ struct ProviderParallelismRequest {
     provider_parallelism: u8,
 }
 
-#[derive(Deserialize)]
-struct HeimdallRedeemRequest {
-    completion_code: String,
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 struct AuthState {
     schema: String,
-    unused_invite_hashes: BTreeSet<String>,
-    #[serde(default)]
-    provisioned_invite_hashes: BTreeSet<String>,
     session_hashes: BTreeSet<String>,
     #[serde(default)]
     session_aliases: BTreeMap<String, String>,
@@ -147,6 +137,16 @@ struct AuthState {
     session_campaigns: BTreeMap<String, uuid::Uuid>,
     #[serde(default)]
     session_campaign_ids: BTreeMap<String, BTreeSet<uuid::Uuid>>,
+    #[serde(default)]
+    heimdall_attempts: BTreeMap<String, HeimdallAuthAttempt>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct HeimdallAuthAttempt {
+    expires_at_unix: u64,
+    status: String,
+    account_session_hash: Option<String>,
+    error: Option<String>,
 }
 
 struct AuthOwner {
@@ -176,21 +176,6 @@ impl AuthOwner {
     }
 }
 
-fn provision_invite_hashes(state: &mut AuthState, supplied: &BTreeSet<String>) -> bool {
-    let new_hashes: BTreeSet<String> = supplied
-        .difference(&state.provisioned_invite_hashes)
-        .cloned()
-        .collect();
-    if new_hashes.is_empty() {
-        return false;
-    }
-    state.unused_invite_hashes.extend(new_hashes);
-    state
-        .provisioned_invite_hashes
-        .extend(supplied.iter().cloned());
-    true
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -202,55 +187,18 @@ async fn main() -> anyhow::Result<()> {
     migrate_default_campaign(&runtime_root)?;
     let registry = CampaignRegistry::new(runtime_root.join("campaigns"))?;
     registry.load_existing().await?;
-    let invite_blob = runtime_root.join("secrets/invites.dpapi");
-    #[cfg(windows)]
-    let invite_material = if invite_blob.is_file() {
-        unprotect_machine_utf8(&invite_blob)?
-    } else {
-        std::env::var("GHOSTLIGHT_INVITES").map_err(|_| {
-            anyhow::anyhow!(
-                "protected invite blob is missing; run the privileged GhostlightDungeon setup"
-            )
-        })?
-    };
-    #[cfg(not(windows))]
-    let invite_material = std::env::var("GHOSTLIGHT_INVITES")
-        .map_err(|_| anyhow::anyhow!("GHOSTLIGHT_INVITES is required outside Windows"))?;
-    let invite_tokens: BTreeSet<String> = invite_material
-        .split(',')
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_owned)
-        .collect();
-    if invite_tokens.is_empty() || invite_tokens.len() > 128 {
-        return Err(anyhow::anyhow!(
-            "GhostlightDungeon requires between 1 and 128 distinct invite tokens"
-        ));
-    }
-    let supplied_invite_hashes: BTreeSet<String> = invite_tokens
-        .iter()
-        .map(|token| secret_hash(token))
-        .collect();
     std::fs::create_dir_all(runtime_root.join("service"))?;
     let auth_store = CampaignStore::open(runtime_root.join("service/auth.cc"))?;
     let (auth_row, auth_state) = match auth_store.load::<AuthState>("auth_state.v1", "primary")? {
-        Some((row, mut state)) => {
-            if !provision_invite_hashes(&mut state, &supplied_invite_hashes) {
-                (row, state)
-            } else {
-                let next_row = auth_store.replace(&row, "ghostlight.auth_state.v1", &state)?;
-                (next_row, state)
-            }
-        }
+        Some((row, state)) => (row, state),
         None => {
             let state = AuthState {
                 schema: "ghostlight.auth_state.v1".into(),
-                unused_invite_hashes: supplied_invite_hashes.clone(),
-                provisioned_invite_hashes: supplied_invite_hashes,
                 session_hashes: BTreeSet::new(),
                 session_aliases: BTreeMap::new(),
                 session_campaigns: BTreeMap::new(),
                 session_campaign_ids: BTreeMap::new(),
+                heimdall_attempts: BTreeMap::new(),
             };
             let row = auth_store.insert(
                 "auth_state.v1",
@@ -309,7 +257,7 @@ async fn main() -> anyhow::Result<()> {
             row: auth_row,
             state: auth_state,
         })),
-        heimdall: Arc::new(HeimdallClient::public_demo()?),
+        heimdall: Arc::new(HeimdallClient::from_env()?),
         deepseek_status,
         compiler,
         assessor,
@@ -389,39 +337,163 @@ fn app_router(state: AppState, web_root: PathBuf) -> Router {
 
     Router::new()
         .route("/health", get(health))
-        .route("/invite/{token}", get(invite))
         .route("/api/auth/heimdall/start", post(heimdall_start))
-        .route("/api/auth/heimdall/redeem", post(heimdall_redeem))
+        .route("/api/auth/heimdall/callback", post(heimdall_callback))
+        .route(
+            "/api/auth/heimdall/attempt/{attempt_id}",
+            get(heimdall_attempt),
+        )
+        .route(
+            "/api/auth/heimdall/attempt/{attempt_id}/adopt",
+            post(heimdall_adopt),
+        )
         .merge(protected_api)
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state)
 }
 
 async fn heimdall_start(State(state): State<AppState>) -> Response {
-    match state.heimdall.start().await {
-        Ok(start) => {
-            Json(serde_json::json!({"authorization_url": start.authorization_url})).into_response()
+    let attempt_id = uuid::Uuid::new_v4().simple().to_string();
+    let now = unix_time_seconds();
+    {
+        let mut auth = state.auth.lock().await;
+        let mut next_state = auth.state.clone();
+        prune_heimdall_attempts(&mut next_state, now);
+        next_state.heimdall_attempts.insert(
+            attempt_id.clone(),
+            HeimdallAuthAttempt {
+                expires_at_unix: now + 600,
+                status: "pending".into(),
+                account_session_hash: None,
+                error: None,
+            },
+        );
+        if let Err(error) = auth.commit(next_state) {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
         }
-        Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
+    }
+    match state.heimdall.start(&attempt_id).await {
+        Ok(start) => Json(serde_json::json!({
+            "attempt_id": attempt_id,
+            "authorization_url": start.authorization_url
+        }))
+        .into_response(),
+        Err(error) => {
+            let message = error.to_string();
+            let mut auth = state.auth.lock().await;
+            let mut next_state = auth.state.clone();
+            if let Some(attempt) = next_state.heimdall_attempts.get_mut(&attempt_id) {
+                attempt.status = "failed".into();
+                attempt.error = Some("Heimdall could not start Discord sign-in".into());
+            }
+            if let Err(commit_error) = auth.commit(next_state) {
+                return (StatusCode::INTERNAL_SERVER_ERROR, commit_error.to_string())
+                    .into_response();
+            }
+            (StatusCode::BAD_GATEWAY, message).into_response()
+        }
     }
 }
 
-async fn heimdall_redeem(
+async fn heimdall_callback(
     State(state): State<AppState>,
-    Json(request): Json<HeimdallRedeemRequest>,
+    Json(callback): Json<BackendCallback>,
 ) -> Response {
-    if request.completion_code.len() > 1024 || request.completion_code.trim().is_empty() {
-        return (StatusCode::BAD_REQUEST, "invalid completion code").into_response();
+    if callback.attempt_id.len() > 128 || callback.attempt_id.trim().is_empty() {
+        return (StatusCode::BAD_REQUEST, "invalid Heimdall attempt id").into_response();
     }
-    let claims = match state.heimdall.redeem(request.completion_code.trim()).await {
+    if let Err(error) = state.heimdall.validate_callback_envelope(&callback) {
+        return (StatusCode::UNAUTHORIZED, error.to_string()).into_response();
+    }
+    let now = unix_time_seconds();
+    {
+        let auth = state.auth.lock().await;
+        let Some(attempt) = auth.state.heimdall_attempts.get(&callback.attempt_id) else {
+            return (StatusCode::NOT_FOUND, "unknown Heimdall attempt").into_response();
+        };
+        if attempt.expires_at_unix < now || attempt.status != "pending" {
+            return (StatusCode::CONFLICT, "Heimdall attempt is not pending").into_response();
+        }
+    }
+    if callback.status != "success" {
+        let mut auth = state.auth.lock().await;
+        let mut next_state = auth.state.clone();
+        if let Some(attempt) = next_state.heimdall_attempts.get_mut(&callback.attempt_id) {
+            attempt.status = "failed".into();
+            attempt.error = Some(
+                callback
+                    .error_description
+                    .clone()
+                    .or(callback.error.clone())
+                    .unwrap_or_else(|| "Discord membership was not admitted".into()),
+            );
+        }
+        return match auth.commit(next_state) {
+            Ok(()) => StatusCode::NO_CONTENT.into_response(),
+            Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+        };
+    }
+    let claims = match state.heimdall.verify_callback(&callback).await {
         Ok(claims) => claims,
         Err(error) => return (StatusCode::UNAUTHORIZED, error.to_string()).into_response(),
     };
     let account_session = secret_hash(&format!("heimdall-account:{}", claims.account_id));
+    let mut auth = state.auth.lock().await;
+    let mut next_state = auth.state.clone();
+    let Some(attempt) = next_state.heimdall_attempts.get_mut(&callback.attempt_id) else {
+        return (StatusCode::NOT_FOUND, "unknown Heimdall attempt").into_response();
+    };
+    if attempt.expires_at_unix < now || attempt.status != "pending" {
+        return (StatusCode::CONFLICT, "Heimdall attempt is not pending").into_response();
+    }
+    attempt.status = "succeeded".into();
+    attempt.account_session_hash = Some(account_session);
+    match auth.commit(next_state) {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+    }
+}
+
+async fn heimdall_attempt(
+    Path(attempt_id): Path<String>,
+    State(state): State<AppState>,
+) -> Response {
+    let auth = state.auth.lock().await;
+    let Some(attempt) = auth.state.heimdall_attempts.get(&attempt_id) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if attempt.expires_at_unix < unix_time_seconds() {
+        return StatusCode::GONE.into_response();
+    }
+    Json(serde_json::json!({
+        "status": attempt.status,
+        "error": attempt.error,
+    }))
+    .into_response()
+}
+
+async fn heimdall_adopt(Path(attempt_id): Path<String>, State(state): State<AppState>) -> Response {
+    let now = unix_time_seconds();
     let raw_session = uuid::Uuid::new_v4().to_string();
     let alias_hash = secret_hash(&raw_session);
     let mut auth = state.auth.lock().await;
     let mut next_state = auth.state.clone();
+    let Some(attempt) = next_state.heimdall_attempts.remove(&attempt_id) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if attempt.expires_at_unix < now {
+        return StatusCode::GONE.into_response();
+    }
+    if attempt.status != "succeeded" {
+        return (StatusCode::CONFLICT, "Heimdall attempt has not succeeded").into_response();
+    }
+    let Some(account_session) = attempt.account_session_hash else {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Heimdall attempt lost account authority",
+        )
+            .into_response();
+    };
     next_state.session_hashes.insert(account_session.clone());
     next_state
         .session_aliases
@@ -438,6 +510,19 @@ async fn heimdall_redeem(
         .unwrap(),
     );
     response
+}
+
+fn unix_time_seconds() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+}
+
+fn prune_heimdall_attempts(state: &mut AuthState, now: u64) {
+    state
+        .heimdall_attempts
+        .retain(|_, attempt| attempt.expires_at_unix >= now);
 }
 
 async fn require_api_authentication(
@@ -457,34 +542,6 @@ async fn health(State(state): State<AppState>) -> Response {
         Ok(value) => Json(value).into_response(),
         Err(error) => (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response(),
     }
-}
-
-async fn invite(Path(token): Path<String>, State(state): State<AppState>) -> Response {
-    let mut auth = state.auth.lock().await;
-    let invite_hash = secret_hash(&token);
-    if !auth.state.unused_invite_hashes.contains(&invite_hash) {
-        return (StatusCode::UNAUTHORIZED, "invalid or consumed invite").into_response();
-    }
-    let session = uuid::Uuid::new_v4().to_string();
-    let mut next_state = auth.state.clone();
-    next_state.unused_invite_hashes.remove(&invite_hash);
-    next_state.session_hashes.insert(secret_hash(&session));
-    match auth.commit(next_state) {
-        Ok(()) => {}
-        Err(error) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
-        }
-    }
-    drop(auth);
-    let mut response = Redirect::to("/").into_response();
-    response.headers_mut().insert(
-        header::SET_COOKIE,
-        HeaderValue::from_str(&format!(
-            "ghostlight_session={session}; HttpOnly; SameSite=Strict; Path=/"
-        ))
-        .unwrap(),
-    );
-    response
 }
 
 async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response {
@@ -2566,12 +2623,11 @@ mod tests {
         let auth_store = CampaignStore::open(root.join("auth.cc")).unwrap();
         let auth_state = AuthState {
             schema: "ghostlight.auth_state.v1".into(),
-            unused_invite_hashes: BTreeSet::new(),
-            provisioned_invite_hashes: BTreeSet::new(),
             session_hashes: BTreeSet::new(),
             session_aliases: BTreeMap::new(),
             session_campaigns: BTreeMap::new(),
             session_campaign_ids: BTreeMap::new(),
+            heimdall_attempts: BTreeMap::new(),
         };
         let row = auth_store
             .insert(
@@ -2674,6 +2730,77 @@ mod tests {
             authenticated_session(&headers, &state).await,
             Some(account_session)
         );
+    }
+
+    #[tokio::test]
+    async fn completed_heimdall_attempt_is_single_use_session_authority() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        {
+            let mut auth = state.auth.lock().await;
+            let mut next = auth.state.clone();
+            next.heimdall_attempts.insert(
+                "attempt-one".into(),
+                HeimdallAuthAttempt {
+                    expires_at_unix: unix_time_seconds() + 60,
+                    status: "succeeded".into(),
+                    account_session_hash: Some("account-authority".into()),
+                    error: None,
+                },
+            );
+            auth.commit(next).unwrap();
+        }
+
+        let router = app_router(state.clone(), dir.path().join("web"));
+        let adopted = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/auth/heimdall/attempt/attempt-one/adopt")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(adopted.status(), StatusCode::OK);
+        let cookie = adopted.headers()[header::SET_COOKIE].to_str().unwrap();
+        assert!(cookie.contains("HttpOnly"));
+        assert!(cookie.contains("Secure"));
+        assert!(
+            state
+                .auth
+                .lock()
+                .await
+                .state
+                .session_hashes
+                .contains("account-authority")
+        );
+
+        let replay = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/auth/heimdall/attempt/attempt-one/adopt")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(replay.status(), StatusCode::NOT_FOUND);
+
+        let retired_invite = router
+            .oneshot(
+                Request::builder()
+                    .uri("/invite/old-authority")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(retired_invite.status(), StatusCode::OK);
+        assert!(retired_invite.headers().get(header::SET_COOKIE).is_none());
     }
 
     #[test]
@@ -2948,8 +3075,6 @@ mod tests {
         let auth_store = CampaignStore::open(dir.path().join("auth.cc")).unwrap();
         let auth_state = AuthState {
             schema: "ghostlight.auth_state.v1".into(),
-            unused_invite_hashes: BTreeSet::new(),
-            provisioned_invite_hashes: BTreeSet::new(),
             session_hashes: BTreeSet::from(["left".into(), "right".into()]),
             session_aliases: BTreeMap::new(),
             session_campaigns: BTreeMap::from([
@@ -2960,6 +3085,7 @@ mod tests {
                 ("left".into(), BTreeSet::from([left.id])),
                 ("right".into(), BTreeSet::from([right.id])),
             ]),
+            heimdall_attempts: BTreeMap::new(),
         };
         let row = auth_store
             .insert(
@@ -3009,12 +3135,11 @@ mod tests {
         let store = CampaignStore::open(dir.path().join("auth.cc")).unwrap();
         let original = AuthState {
             schema: "ghostlight.auth_state.v1".into(),
-            unused_invite_hashes: BTreeSet::from(["invite".into()]),
-            provisioned_invite_hashes: BTreeSet::from(["invite".into()]),
             session_hashes: BTreeSet::new(),
             session_aliases: BTreeMap::new(),
             session_campaigns: BTreeMap::new(),
             session_campaign_ids: BTreeMap::new(),
+            heimdall_attempts: BTreeMap::new(),
         };
         let row = store
             .insert(
@@ -3037,34 +3162,10 @@ mod tests {
             .unwrap();
 
         let mut rejected = original.clone();
-        rejected.unused_invite_hashes.clear();
         rejected.session_hashes.insert("phantom".into());
         assert!(owner.commit(rejected).is_err());
-        assert_eq!(
-            owner.state.unused_invite_hashes,
-            original.unused_invite_hashes
-        );
         assert_eq!(owner.state.session_hashes, original.session_hashes);
         assert_eq!(owner.row, row);
-    }
-
-    #[test]
-    fn invite_provisioning_adds_new_hashes_without_resurrecting_consumed_ones() {
-        let mut state = AuthState {
-            schema: "ghostlight.auth_state.v1".into(),
-            unused_invite_hashes: BTreeSet::new(),
-            provisioned_invite_hashes: BTreeSet::from(["consumed".into()]),
-            session_hashes: BTreeSet::new(),
-            session_aliases: BTreeMap::new(),
-            session_campaigns: BTreeMap::new(),
-            session_campaign_ids: BTreeMap::new(),
-        };
-        let supplied = BTreeSet::from(["consumed".into(), "fresh".into()]);
-
-        assert!(provision_invite_hashes(&mut state, &supplied));
-        assert_eq!(state.unused_invite_hashes, BTreeSet::from(["fresh".into()]));
-        assert!(!provision_invite_hashes(&mut state, &supplied));
-        assert_eq!(state.unused_invite_hashes, BTreeSet::from(["fresh".into()]));
     }
 
     #[tokio::test]

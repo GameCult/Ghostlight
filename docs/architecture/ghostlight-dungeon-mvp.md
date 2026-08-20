@@ -51,11 +51,13 @@ institutions, two clocks, explicit gaps, and branch assumptions. It remained
 an uncommitted revision-0 preview with `requires_approval: true` until the
 tester explicitly approved it.
 
-Heimdall owns public identity and Discord OAuth. The browser receives a
-one-time completion code rather than a provider token. Ghostlight redeems that
-code server-to-server, verifies the EdDSA `aud=ghostlight` access claim against
-Heimdall's published JWKS, and maps the account to stable app-local campaign
-authority. Only hashed local session aliases enter `service/auth.cc`.
+Heimdall owns public identity, Discord OAuth, and the KLTST guild-role decision.
+Ghostlight creates a short-lived login attempt and asks Heimdall for a trusted
+backend callback. Heimdall returns the result and token directly to Ghostlight;
+the browser can only poll and adopt that completed attempt. Ghostlight verifies
+the EdDSA `aud=ghostlight` access claim against Heimdall's published JWKS, maps
+the account to stable app-local campaign authority, and discards the provider
+token. Only hashed local session aliases enter `service/auth.cc`.
 
 ## Body and faculty map
 

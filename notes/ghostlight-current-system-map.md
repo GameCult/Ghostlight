@@ -324,8 +324,10 @@ session authority; an invalid session receives `401` before JSON parsing,
 schema rejection, campaign lookup, inference, or mutation. Handlers repeat the
 session lookup where they need the session identity, so revocation between the
 perimeter check and a handler cannot leave stale authority alive. Public
-`/health`, single-use `/invite/{token}`, and static browser assets remain
-outside this middleware. Regressions prove malformed anonymous JSON is refused
+`/health`, the Heimdall login-attempt boundary, and static browser assets remain
+outside this middleware. Login attempts carry no campaign authority: only a
+JWKS-verified successful Heimdall callback can bind one to an account, and only
+one browser adoption can mint its HttpOnly session alias. Regressions prove malformed anonymous JSON is refused
 at the perimeter while the same malformed body under a valid session reaches
 the ordinary `400` extractor response.
 

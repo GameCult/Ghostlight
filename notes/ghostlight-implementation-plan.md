@@ -69,9 +69,9 @@ impossible and receipted d20 actions, grounded narration, strategic cells, and a
 cover used 20,760 prompt tokens and 14.38 seconds, with 13 of 13 stages valid on
 their first attempt, two material institutional consequences, exact constituent
 authority, and no player mutation. Authenticated surface and lifecycle
-acceptance now cover spoiler-safe literal HTTP responses, separate invite
-ownership, single-use invite rejection, fork/reset/export, four persisted
-campaigns, and exact-commit restart. Live priority cancels in-flight scheduler
+acceptance now cover spoiler-safe literal HTTP responses, Heimdall-account
+campaign isolation, fork/reset/export, four persisted campaigns, and
+exact-commit restart. Live priority cancels in-flight scheduler
 inference and excludes its commit gate.
 
 The revised provider-backed Gestalt golden now passes across four waves and
@@ -85,10 +85,10 @@ inert outcome resolver.
 
 Release truth, authenticated compiler/player HTTP journeys, restart continuity,
 and the strict multiresolution refugee-return golden now pass against immutable
-builds. The next gate is visual browser inspection of the served interface with
-a temporary invite, followed by supervised human play. Browser credential
-transmission requires explicit operator approval and must end with invitation
-rotation. Treat player confusion, dramatic flatness, composite consequences,
+builds. The next gate is visual browser inspection through Heimdall's KLTST
+Discord-role admission, followed by supervised human play. The browser never
+receives the Heimdall access token; it adopts a server-verified login attempt
+into an HttpOnly Ghostlight session. Treat player confusion, dramatic flatness, composite consequences,
 and token-heavy low-consequence stages as evidence about missing context or
 misplaced authority. Keep the independent semantic outcome verifier selective:
 it checks custody transfers, relation shifts, and named-member private deltas,

@@ -133,7 +133,7 @@ function renderCommandReceipt(body: any) {
 }
 
 function showAuthenticationGate() {
-  const message = "Sign in through Heimdall to enter the public demo.";
+  const message = "Sign in through Heimdall to enter the KLTST playtest.";
   status.textContent = message;
   compiler.hidden = true;
   composer.hidden = true;
@@ -143,9 +143,9 @@ function showAuthenticationGate() {
   host.hidden = false;
   const gate = node("article", undefined, "card");
   gate.append(
-    node("h2", "Ghostlight Dungeon public demo"),
+    node("h2", "Ghostlight Dungeon playtest"),
     node("p", message),
-    node("p", "Heimdall uses Discord only to establish your GameCult identity. Ghostlight keeps your campaigns isolated from every other account.", "quiet"),
+    node("p", "Access requires membership in the KLTST Discord role. Heimdall checks that role, then Ghostlight keeps your campaigns isolated from every other account.", "quiet"),
   );
   const login = node("button", "Continue with Discord") as HTMLButtonElement;
   login.type = "button";
@@ -157,24 +157,30 @@ function showAuthenticationGate() {
 async function startHeimdallLogin() {
   const response = await fetch("/api/auth/heimdall/start", { method: "POST" });
   const body = await decodeResponse(response);
-  if (!response.ok || typeof body?.authorization_url !== "string") {
+  if (!response.ok || typeof body?.authorization_url !== "string" || typeof body?.attempt_id !== "string") {
     throw new ServerResponseFailure(responseError(body, "Heimdall could not start Discord sign-in."));
   }
-  window.location.assign(body.authorization_url);
+  const popup = window.open(body.authorization_url, "ghostlight-heimdall", "popup,width=560,height=760");
+  if (!popup) throw new Error("Allow pop-ups for Ghostlight so Heimdall can complete Discord sign-in.");
+  await pollHeimdallAttempt(body.attempt_id);
 }
 
-async function redeemHeimdallReturn() {
-  const fragment = new URLSearchParams(window.location.hash.slice(1));
-  const completionCode = fragment.get("heimdall_completion_code");
-  if (!completionCode) return;
-  const response = await fetch("/api/auth/heimdall/redeem", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ completion_code: completionCode }),
-  });
-  const body = await decodeResponse(response);
-  history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
-  if (!response.ok) throw new ServerResponseFailure(responseError(body, "Heimdall sign-in could not be adopted."));
+async function pollHeimdallAttempt(attemptId: string) {
+  const deadline = Date.now() + 10 * 60_000;
+  while (Date.now() < deadline) {
+    await new Promise(resolve => window.setTimeout(resolve, 900));
+    const response = await fetch(`/api/auth/heimdall/attempt/${encodeURIComponent(attemptId)}`, { cache: "no-store" });
+    const body = await decodeResponse(response);
+    if (!response.ok) throw new ServerResponseFailure(responseError(body, "Heimdall sign-in expired."));
+    if (body?.status === "pending") continue;
+    if (body?.status !== "succeeded") throw new Error(String(body?.error ?? "Your Discord account does not have Ghostlight playtest access."));
+    const adopted = await fetch(`/api/auth/heimdall/attempt/${encodeURIComponent(attemptId)}/adopt`, { method: "POST" });
+    const adoptedBody = await decodeResponse(adopted);
+    if (!adopted.ok) throw new ServerResponseFailure(responseError(adoptedBody, "Ghostlight could not adopt the Heimdall session."));
+    await refresh();
+    return;
+  }
+  throw new Error("Heimdall sign-in timed out. Try again when you are ready.");
 }
 
 async function refresh() {
@@ -483,4 +489,4 @@ document.querySelector<HTMLButtonElement>("#load-operator")!.addEventListener("c
     renderEveSurface(surface, document.querySelector<HTMLElement>("#operator-output")!, { body: document.body, clientId: "ghostlight.operator", statusElement: status });
   });
 });
-void redeemHeimdallReturn().then(refresh).catch(reportClientFailure);
+void refresh().catch(reportClientFailure);

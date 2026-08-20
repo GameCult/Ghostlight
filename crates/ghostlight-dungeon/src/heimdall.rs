@@ -10,6 +10,9 @@ pub struct HeimdallClient {
     client: Client,
     base_url: String,
     public_app_url: String,
+    callback_url: String,
+    discord_guild_id: String,
+    discord_role_id: String,
 }
 
 #[derive(Serialize)]
@@ -19,12 +22,24 @@ struct StartRequest<'a> {
     mode: &'a str,
     return_to: &'a str,
     handoff: Handoff<'a>,
-    requested_scopes: [&'a str; 1],
+    requested_scopes: [&'a str; 2],
+    entitlement_policy: DiscordRolePolicy<'a>,
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct Handoff<'a> {
     kind: &'a str,
+    attempt_id: &'a str,
+    callback_url: &'a str,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DiscordRolePolicy<'a> {
+    kind: &'a str,
+    guild_id: &'a str,
+    allowed_role_ids: [&'a str; 1],
 }
 
 #[derive(Deserialize)]
@@ -33,17 +48,21 @@ pub struct StartResponse {
     pub authorization_url: String,
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RedeemRequest<'a> {
-    completion_code: &'a str,
-}
-
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RedeemResponse {
-    access_token: String,
-    shared_capabilities: Vec<String>,
+pub struct BackendCallback {
+    pub source: String,
+    pub kind: String,
+    pub handoff_kind: String,
+    pub attempt_id: String,
+    pub status: String,
+    pub provider: String,
+    pub app_slug: String,
+    pub mode: String,
+    pub return_to: String,
+    pub access_token: Option<String>,
+    pub error: Option<String>,
+    pub error_description: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -62,7 +81,7 @@ pub struct AppClaim {
 }
 
 impl HeimdallClient {
-    pub fn public_demo() -> anyhow::Result<Self> {
+    pub fn from_env() -> anyhow::Result<Self> {
         Ok(Self {
             client: Client::builder()
                 .timeout(std::time::Duration::from_secs(10))
@@ -73,6 +92,11 @@ impl HeimdallClient {
                 .into(),
             public_app_url: std::env::var("GHOSTLIGHT_PUBLIC_APP_URL")
                 .unwrap_or_else(|_| "https://yggdrasil.gamecult.org/ghostlight/".into()),
+            callback_url: std::env::var("GHOSTLIGHT_HEIMDALL_CALLBACK_URL").unwrap_or_else(|_| {
+                "https://yggdrasil.gamecult.org/ghostlight/api/auth/heimdall/callback".into()
+            }),
+            discord_guild_id: required_env("GHOSTLIGHT_DISCORD_GUILD_ID")?,
+            discord_role_id: required_env("GHOSTLIGHT_DISCORD_ROLE_ID")?,
         })
     }
 
@@ -82,10 +106,13 @@ impl HeimdallClient {
             client: Client::new(),
             base_url: "https://heimdall.invalid".into(),
             public_app_url: "https://ghostlight.invalid/".into(),
+            callback_url: "https://ghostlight.invalid/api/auth/heimdall/callback".into(),
+            discord_guild_id: "guild-kltst".into(),
+            discord_role_id: "role-kltst".into(),
         }
     }
 
-    pub async fn start(&self) -> anyhow::Result<StartResponse> {
+    pub async fn start(&self, attempt_id: &str) -> anyhow::Result<StartResponse> {
         self.client
             .post(format!("{}/v1/oauth/discord/start", self.base_url))
             .json(&StartRequest {
@@ -93,9 +120,16 @@ impl HeimdallClient {
                 mode: "sign_in",
                 return_to: &self.public_app_url,
                 handoff: Handoff {
-                    kind: "browser_completion",
+                    kind: "backend_callback",
+                    attempt_id,
+                    callback_url: &self.callback_url,
                 },
-                requested_scopes: ["identify"],
+                requested_scopes: ["identify", "guilds.members.read"],
+                entitlement_policy: DiscordRolePolicy {
+                    kind: "discord_role_access",
+                    guild_id: &self.discord_guild_id,
+                    allowed_role_ids: [&self.discord_role_id],
+                },
             })
             .send()
             .await?
@@ -105,28 +139,35 @@ impl HeimdallClient {
             .context("Heimdall start response was malformed")
     }
 
-    pub async fn redeem(&self, completion_code: &str) -> anyhow::Result<AccessClaims> {
-        let redeemed: RedeemResponse = self
-            .client
-            .post(format!(
-                "{}/v1/apps/{APP_SLUG}/auth-completions/redeem",
-                self.base_url
-            ))
-            .json(&RedeemRequest { completion_code })
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await
-            .context("Heimdall redeem response was malformed")?;
-        if !redeemed
-            .shared_capabilities
-            .iter()
-            .any(|value| value == "app_access")
-        {
-            bail!("Heimdall did not grant Ghostlight app_access");
+    pub async fn verify_callback(
+        &self,
+        callback: &BackendCallback,
+    ) -> anyhow::Result<AccessClaims> {
+        self.validate_callback_envelope(callback)?;
+        if callback.status != "success" {
+            bail!("Heimdall callback did not grant Ghostlight access");
         }
-        self.verify(&redeemed.access_token).await
+        self.verify(
+            callback
+                .access_token
+                .as_deref()
+                .context("Heimdall success callback omitted its access token")?,
+        )
+        .await
+    }
+
+    pub fn validate_callback_envelope(&self, callback: &BackendCallback) -> anyhow::Result<()> {
+        if callback.source != "heimdall"
+            || callback.kind != "oauth_result"
+            || callback.handoff_kind != "backend_callback"
+            || callback.provider != "discord"
+            || callback.app_slug != APP_SLUG
+            || callback.mode != "sign_in"
+            || callback.return_to != self.public_app_url
+        {
+            bail!("Heimdall callback did not match the Ghostlight login contract");
+        }
+        Ok(())
     }
 
     async fn verify(&self, token: &str) -> anyhow::Result<AccessClaims> {
@@ -161,4 +202,13 @@ impl HeimdallClient {
         }
         Ok(claims)
     }
+}
+
+fn required_env(name: &str) -> anyhow::Result<String> {
+    let value = std::env::var(name).with_context(|| format!("{name} is required"))?;
+    let value = value.trim();
+    if value.is_empty() {
+        bail!("{name} must not be empty");
+    }
+    Ok(value.to_owned())
 }
