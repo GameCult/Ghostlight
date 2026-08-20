@@ -160,9 +160,8 @@ async function startHeimdallLogin() {
   if (!response.ok || typeof body?.authorization_url !== "string" || typeof body?.attempt_id !== "string") {
     throw new ServerResponseFailure(responseError(body, "Heimdall could not start Discord sign-in."));
   }
-  const popup = window.open(body.authorization_url, "ghostlight-heimdall", "popup,width=560,height=760");
-  if (!popup) throw new Error("Allow pop-ups for Ghostlight so Heimdall can complete Discord sign-in.");
-  await pollHeimdallAttempt(body.attempt_id);
+  sessionStorage.setItem("ghostlight_heimdall_attempt", body.attempt_id);
+  window.location.assign(body.authorization_url);
 }
 
 async function pollHeimdallAttempt(attemptId: string) {
@@ -173,14 +172,24 @@ async function pollHeimdallAttempt(attemptId: string) {
     const body = await decodeResponse(response);
     if (!response.ok) throw new ServerResponseFailure(responseError(body, "Heimdall sign-in expired."));
     if (body?.status === "pending") continue;
-    if (body?.status !== "succeeded") throw new Error(String(body?.error ?? "Your Discord account does not have Ghostlight playtest access."));
+    if (body?.status !== "succeeded") {
+      sessionStorage.removeItem("ghostlight_heimdall_attempt");
+      throw new Error(String(body?.error ?? "Your Discord account does not have Ghostlight playtest access."));
+    }
     const adopted = await fetch(`/api/auth/heimdall/attempt/${encodeURIComponent(attemptId)}/adopt`, { method: "POST" });
     const adoptedBody = await decodeResponse(adopted);
     if (!adopted.ok) throw new ServerResponseFailure(responseError(adoptedBody, "Ghostlight could not adopt the Heimdall session."));
+    sessionStorage.removeItem("ghostlight_heimdall_attempt");
     await refresh();
     return;
   }
+  sessionStorage.removeItem("ghostlight_heimdall_attempt");
   throw new Error("Heimdall sign-in timed out. Try again when you are ready.");
+}
+
+async function resumeHeimdallLogin() {
+  const attemptId = sessionStorage.getItem("ghostlight_heimdall_attempt");
+  if (attemptId) await pollHeimdallAttempt(attemptId);
 }
 
 async function refresh() {
@@ -489,4 +498,4 @@ document.querySelector<HTMLButtonElement>("#load-operator")!.addEventListener("c
     renderEveSurface(surface, document.querySelector<HTMLElement>("#operator-output")!, { body: document.body, clientId: "ghostlight.operator", statusElement: status });
   });
 });
-void refresh().catch(reportClientFailure);
+void refresh().then(resumeHeimdallLogin).catch(reportClientFailure);
