@@ -1017,6 +1017,11 @@ impl WorldCompiler {
                 });
         }
         let expected: BTreeSet<_> = source_briefs.keys().cloned().collect();
+        let authority_by_source = receipts
+            .iter()
+            .flat_map(|receipt| receipt.witnesses.iter())
+            .map(|witness| (witness.source_id.clone(), witness.authority_lane.clone()))
+            .collect::<BTreeMap<_, _>>();
         // Keep the provider schema stable across campaigns for prefix-cache reuse.
         // Exact membership and cardinality belong to the local validator below.
         let schema = serde_json::to_value(schema_for!(EvidenceUsePlan))?;
@@ -1063,6 +1068,20 @@ impl WorldCompiler {
                             "evidence classifier must cover every exact source once with a rationale"
                         ));
                     }
+                    if let Some(item) = plan.coverage.iter().find(|item| {
+                        item.lane == EvidenceUseLane::DirectSeed
+                            && authority_by_source
+                                .get(&item.source_id)
+                                .is_some_and(|lane| !authority_allows_direct_seed(lane))
+                    }) {
+                        return Err(anyhow!(
+                            "source {} belongs to authority lane {} and cannot seed a new branch directly",
+                            item.source_id,
+                            authority_by_source
+                                .get(&item.source_id)
+                                .expect("source coverage was validated")
+                        ));
+                    }
                     Ok(plan.coverage)
                 });
             let mut receipt = output.receipt;
@@ -1093,15 +1112,16 @@ impl WorldCompiler {
         start: &CustomStart,
         receipts: &[VaultEvidenceReceipt],
     ) -> Result<(CompiledGlobalAgencyCatalog, Vec<ModelStageReceipt>)> {
+        let receipts = canonical_worldbuilding_receipts(receipts);
         let schema = serde_json::to_value(schema_for!(CompiledGlobalAgencyCatalog))?;
         let base_prompt = format!(
             "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nBuild the coarse remote strategic agency catalog for the requested historical horizon. This is a different authority lane from local world compilation: it may establish durable institutions, movements, governments, corporations, or other collective powers, but it must never import a story-specific cast, incident, clock, location state, capability inventory, or current branch posture. Include every major power and strategically distinct movement explicitly supported as relevant to this horizon by the supplied witnesses, up to 32 institutions. Do not emit an institution from a mere index link: omit it unless one supplied witness both names it and contains a durable mandate. For each admitted institution, copy its exact displayed name. mandate must be one short contiguous quotation, at most 320 characters, from that witness establishing a durable purpose, interest, or pressure it can act on. Copy the quotation exactly; do not paraphrase or identify its source because deterministic code binds it to the actual witness. Summarize classes of omitted institutions in gaps rather than emitting one gap per name. Return no narrative analysis. Fine resources and capabilities compile on demand only when the institution becomes causally relevant.\nHORIZON:\n{}\nREQUESTED PLACE (relevance only; not local authority):\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(&schema)?,
             start.when,
             start.where_,
-            bounded_evidence_text(receipts, 1_200),
+            bounded_evidence_text(&receipts, 1_200),
         );
-        let source_receipt_ids = receipt_ids(receipts);
+        let source_receipt_ids = receipt_ids(&receipts);
         let mut stage_receipts = Vec::new();
         let mut correction = String::new();
         for attempt in 0..2 {
@@ -1126,7 +1146,7 @@ impl WorldCompiler {
                 .and_then(|value| {
                     serde_json::from_value::<CompiledGlobalAgencyCatalog>(value).map_err(Into::into)
                 })
-                .and_then(|catalog| ground_global_agency_catalog(catalog, receipts));
+                .and_then(|catalog| ground_global_agency_catalog(catalog, &receipts));
             let mut receipt = output.receipt;
             match candidate {
                 Ok((catalog, grounding_gaps)) => {
@@ -1253,6 +1273,31 @@ fn global_agency_queries(start: &CustomStart) -> Vec<String> {
             "strategic specialist organizations populations regions and information channels during {horizon}"
         ),
     ]
+}
+
+fn authority_allows_direct_seed(authority_lane: &str) -> bool {
+    matches!(
+        authority_lane,
+        "aetheria.canon_worldbuilding" | "aetheria.vault_document" | "AetheriaLore"
+    )
+}
+
+fn canonical_worldbuilding_receipts(
+    receipts: &[VaultEvidenceReceipt],
+) -> Vec<VaultEvidenceReceipt> {
+    receipts
+        .iter()
+        .filter_map(|receipt| {
+            let mut filtered = receipt.clone();
+            filtered.witnesses.retain(|witness| {
+                matches!(
+                    witness.authority_lane.as_str(),
+                    "aetheria.canon_worldbuilding" | "aetheria.vault_document" | "AetheriaLore"
+                )
+            });
+            (!filtered.witnesses.is_empty()).then_some(filtered)
+        })
+        .collect()
 }
 
 fn bounded_evidence_text(receipts: &[VaultEvidenceReceipt], max_chars: usize) -> String {
@@ -1689,6 +1734,7 @@ fn direct_seed_evidence_text(
         .filter_map(|(receipt_id, witness)| {
             let use_plan = coverage.get(witness.source_id.as_str())?;
             if use_plan.lane != EvidenceUseLane::DirectSeed
+                || !authority_allows_direct_seed(&witness.authority_lane)
                 || !seen.insert((
                     witness.source_id.clone(),
                     witness.exact_locator.clone(),
@@ -1723,10 +1769,10 @@ fn receipt_ids_for_coverage(
     receipts
         .iter()
         .filter(|receipt| {
-            receipt
-                .witnesses
-                .iter()
-                .any(|witness| included_sources.contains(witness.source_id.as_str()))
+            receipt.witnesses.iter().any(|witness| {
+                included_sources.contains(witness.source_id.as_str())
+                    && authority_allows_direct_seed(&witness.authority_lane)
+            })
         })
         .map(|receipt| receipt.id.clone())
         .collect()
@@ -3009,6 +3055,62 @@ mod tests {
             receipt_ids_for_coverage(&receipts, &coverage),
             vec!["vault:direct"]
         );
+    }
+
+    #[test]
+    fn narrative_and_fixture_documents_cannot_seed_a_new_branch() {
+        let make_receipt = |id: &str, lane: &str, excerpt: &str| VaultEvidenceReceipt {
+            schema: "ghostlight.vault_evidence_receipt.v1".into(),
+            id: format!("vault:{id}"),
+            provider: "fixture".into(),
+            query_hash: format!("sha256:{id}"),
+            witnesses: vec![SourceWitness {
+                source_id: format!("AetheriaLore:{id}"),
+                exact_locator: id.into(),
+                content_hash: format!("sha256:{id}"),
+                excerpt: excerpt.into(),
+                authority_lane: lane.into(),
+                temporal_scope: "fixture".into(),
+            }],
+            retrieved_at: Utc::now(),
+        };
+        let receipts = vec![
+            make_receipt(
+                "mars.md",
+                "aetheria.canon_worldbuilding",
+                "Zhestokost holds fortified nodes on Mars.",
+            ),
+            make_receipt(
+                "first-exodus.md",
+                "aetheria.legacy_story",
+                "Blackbox Aviary 3C contains Kesh and Dr. Maela Voss.",
+            ),
+            make_receipt(
+                "corvid.branch.json",
+                "aetheria.fixture_artifact",
+                "The interactive fixture repeats Blackbox Aviary 3C.",
+            ),
+        ];
+        let coverage = receipts
+            .iter()
+            .map(|receipt| EvidenceCoverage {
+                source_id: receipt.witnesses[0].source_id.clone(),
+                lane: EvidenceUseLane::DirectSeed,
+                rationale: "classifier proposed direct use".into(),
+            })
+            .collect::<Vec<_>>();
+
+        let text = direct_seed_evidence_text(&receipts, &coverage);
+        assert!(text.contains("Zhestokost holds fortified nodes on Mars"));
+        assert!(!text.contains("Blackbox Aviary 3C"));
+        assert_eq!(
+            receipt_ids_for_coverage(&receipts, &coverage),
+            vec!["vault:mars.md"]
+        );
+
+        let global = canonical_worldbuilding_receipts(&receipts);
+        assert_eq!(global.len(), 1);
+        assert_eq!(global[0].id, "vault:mars.md");
     }
 
     #[test]

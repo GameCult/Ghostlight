@@ -126,7 +126,10 @@ mod tests {
             .unwrap();
         assert_eq!(result.witnesses[0].exact_locator, "place.md:7-9");
         assert!(result.witnesses[0].content_hash.starts_with("sha256:"));
-        assert_eq!(result.witnesses[0].authority_lane, "AetheriaLore");
+        assert_eq!(
+            result.witnesses[0].authority_lane,
+            "aetheria.vault_document"
+        );
     }
 
     #[tokio::test]
@@ -184,7 +187,7 @@ mod tests {
             "John keeps the forge.\nThe road takes six hours."
         );
         assert_eq!(witness.exact_locator, "forge.md");
-        assert_eq!(witness.authority_lane, "AetheriaLore");
+        assert_eq!(witness.authority_lane, "aetheria.vault_document");
         assert_eq!(
             witness.content_hash,
             format!("sha256:{:x}", Sha256::digest(witness.excerpt.as_bytes()))
@@ -205,6 +208,30 @@ mod tests {
             .unwrap();
         assert_eq!(witness.excerpt, "first\nsecond");
         assert_eq!(witness.exact_locator, "forge.md:1-4");
+    }
+
+    #[test]
+    fn aetheria_paths_preserve_document_authority() {
+        assert_eq!(
+            authority_lane_for_path("Aetheria/Worldbuilding/Factions/Corvid.md"),
+            "aetheria.canon_worldbuilding"
+        );
+        assert_eq!(
+            authority_lane_for_path("Aetheria/Fiction/The Burden of Proof.md"),
+            "aetheria.canonical_fiction"
+        );
+        assert_eq!(
+            authority_lane_for_path("Aetheria/Stories/Corvid Collective First Exodus.md"),
+            "aetheria.legacy_story"
+        );
+        assert_eq!(
+            authority_lane_for_path("Aetheria/static/interactive/corvid.branch.json"),
+            "aetheria.fixture_artifact"
+        );
+        assert_eq!(
+            authority_lane_for_path("Aetheria/Brainstorming/Stories/draft.md"),
+            "aetheria.draft_working"
+        );
     }
 }
 #[async_trait]
@@ -283,11 +310,7 @@ impl VaultProvider for VoidBotMcpVault {
             exact_locator,
             content_hash: format!("sha256:{:x}", Sha256::digest(excerpt.as_bytes())),
             excerpt,
-            authority_lane: value
-                .get("repoName")
-                .and_then(|v| v.as_str())
-                .unwrap_or("source_context")
-                .into(),
+            authority_lane: authority_lane_for_path(path).into(),
             temporal_scope: "unspecified".into(),
         })
     }
@@ -317,11 +340,7 @@ impl VaultProvider for VoidBotMcpVault {
             exact_locator: path.into(),
             content_hash: format!("sha256:{:x}", Sha256::digest(content.as_bytes())),
             excerpt: content.into(),
-            authority_lane: value
-                .get("repoName")
-                .and_then(|v| v.as_str())
-                .unwrap_or("source_archive")
-                .into(),
+            authority_lane: authority_lane_for_path(path).into(),
             temporal_scope: value
                 .get("lastModifiedAt")
                 .and_then(|v| v.as_str())
@@ -356,9 +375,35 @@ fn witness_from_result(item: &serde_json::Value, query: &VaultQuery) -> Result<S
         exact_locator: locator,
         content_hash: format!("sha256:{:x}", Sha256::digest(excerpt.as_bytes())),
         excerpt: excerpt.into(),
-        authority_lane: query.authority_lanes.join(","),
+        authority_lane: authority_lane_for_path(
+            item.get("path")
+                .and_then(|value| value.as_str())
+                .unwrap_or(source_id),
+        )
+        .into(),
         temporal_scope: query.temporal_scope.clone(),
     })
+}
+
+/// Classify source authority at the Vault boundary. Downstream models receive a
+/// typed document role instead of having to infer authority from prose.
+fn authority_lane_for_path(path: &str) -> &'static str {
+    let normalized = path.replace('\\', "/").to_ascii_lowercase();
+    if normalized.contains("/static/interactive/") {
+        "aetheria.fixture_artifact"
+    } else if normalized.contains("/brainstorming/") {
+        "aetheria.draft_working"
+    } else if normalized.contains("/game design/") {
+        "aetheria.design_reference"
+    } else if normalized.contains("/fiction/") {
+        "aetheria.canonical_fiction"
+    } else if normalized.contains("/stories/") {
+        "aetheria.legacy_story"
+    } else if normalized.contains("/worldbuilding/") {
+        "aetheria.canon_worldbuilding"
+    } else {
+        "aetheria.vault_document"
+    }
 }
 
 fn receipt(
