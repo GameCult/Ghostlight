@@ -371,6 +371,12 @@ they do not become canonical institutions or canon-candidate records. Admitted
 remote institutions receive deterministic coarse profiles with distinct
 authority and explicit unknown facets. The Pro agency stage profiles only local
 actors, populations, and institutions where semantic subdivision is useful.
+The model schema permits a bounded pool of 64 candidates so provider overage
+and ungrounded index fragments can reach local judgment. Exact grounding runs
+before the 32-institution simulation capacity is applied; excess grounded
+candidates become an approval-visible on-demand-compilation gap. Raw proposal
+count therefore cannot consume canonical capacity or abort an otherwise valid
+world compile.
 
 The Aetheria Vault adapter derives document authority from the exact source
 path before any model sees a witness. `Worldbuilding` is reusable canon;

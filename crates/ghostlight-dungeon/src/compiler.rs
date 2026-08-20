@@ -155,7 +155,10 @@ struct CompiledRemoteInstitution {
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CompiledGlobalAgencyCatalog {
-    #[schemars(length(max = 32))]
+    // The model proposes a bounded candidate pool. Local grounding owns the
+    // actual 32-cell admission limit because unsupported index fragments must
+    // not consume canonical agency capacity.
+    #[schemars(length(max = 64))]
     institutions: Vec<CompiledRemoteInstitution>,
     gaps: Vec<String>,
 }
@@ -1332,8 +1335,10 @@ fn ground_global_agency_catalog(
     mut catalog: CompiledGlobalAgencyCatalog,
     receipts: &[VaultEvidenceReceipt],
 ) -> Result<(CompiledGlobalAgencyCatalog, Vec<String>)> {
-    if catalog.institutions.len() > 32 {
-        return Err(anyhow!("global agency catalog exceeds 32 institutions"));
+    if catalog.institutions.len() > 64 {
+        return Err(anyhow!(
+            "global agency candidate pool exceeds 64 institutions"
+        ));
     }
     if catalog.institutions.is_empty() && catalog.gaps.is_empty() {
         return Err(anyhow!(
@@ -1436,6 +1441,16 @@ fn ground_global_agency_catalog(
             ));
         }
         admitted.push(institution);
+    }
+    if admitted.len() > 32 {
+        let overflow = admitted.len() - 32;
+        admitted.truncate(32);
+        grounding_gaps.push(format!(
+            "{overflow} grounded remote agency candidates exceeded the 32-institution simulation catalog capacity"
+        ));
+        catalog.gaps.push(format!(
+            "{overflow} additional source-grounded institutions were omitted at this horizon because the remote agency catalog is capped at 32; they remain available for on-demand compilation."
+        ));
     }
     catalog.institutions = admitted;
     if !omitted_names.is_empty() {
@@ -3161,6 +3176,56 @@ mod tests {
         assert!(grounded.institutions.is_empty());
         assert_eq!(gaps.len(), 1);
         assert!(grounded.gaps[0].contains("1 remote agency candidates"));
+    }
+
+    #[test]
+    fn global_agency_capacity_applies_after_grounding() {
+        let excerpt = (0..33)
+            .map(|index| format!("Institution {index} protects route {index}."))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let receipts = vec![VaultEvidenceReceipt {
+            schema: "ghostlight.vault_evidence_receipt.v1".into(),
+            id: "vault:many-powers".into(),
+            provider: "fixture".into(),
+            query_hash: "sha256:many-powers".into(),
+            witnesses: vec![SourceWitness {
+                source_id: "AetheriaLore:many-powers.md".into(),
+                exact_locator: "many-powers.md:1-33".into(),
+                content_hash: "sha256:many-powers".into(),
+                excerpt,
+                authority_lane: "aetheria.canon_worldbuilding".into(),
+                temporal_scope: "fixture".into(),
+            }],
+            retrieved_at: Utc::now(),
+        }];
+        let catalog = CompiledGlobalAgencyCatalog {
+            institutions: (0..33)
+                .map(|index| CompiledRemoteInstitution {
+                    name: format!("Institution {index}"),
+                    mandate: format!("Institution {index} protects route {index}."),
+                    evidence_receipt_ids: vec![],
+                })
+                .collect(),
+            gaps: vec![],
+        };
+
+        let (grounded, private_gaps) = ground_global_agency_catalog(catalog, &receipts).unwrap();
+        assert_eq!(grounded.institutions.len(), 32);
+        assert_eq!(grounded.institutions[0].name, "Institution 0");
+        assert_eq!(grounded.institutions[31].name, "Institution 31");
+        assert!(grounded.gaps.iter().any(|gap| gap.contains("capped at 32")));
+        assert!(
+            private_gaps
+                .iter()
+                .any(|gap| gap.contains("exceeded the 32-institution"))
+        );
+    }
+
+    #[test]
+    fn global_agency_schema_allows_bounded_pre_grounding_candidates() {
+        let schema = serde_json::to_value(schema_for!(CompiledGlobalAgencyCatalog)).unwrap();
+        assert_eq!(schema["properties"]["institutions"]["maxItems"], 64);
     }
 
     #[test]
