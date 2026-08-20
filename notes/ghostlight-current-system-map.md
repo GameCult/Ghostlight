@@ -376,7 +376,10 @@ and ungrounded index fragments can reach local judgment. Exact grounding runs
 before the 32-institution simulation capacity is applied; excess grounded
 candidates become an approval-visible on-demand-compilation gap. Raw proposal
 count therefore cannot consume canonical capacity or abort an otherwise valid
-world compile.
+world compile. A mandate is institution-specific only when its quotation names
+exactly that candidate or comes from the candidate's dedicated source document;
+shared index headings, category descriptions, cross-faction lists, and orphaned
+sentence fragments are rejected rather than becoming goals.
 
 The Aetheria Vault adapter derives document authority from the exact source
 path before any model sees a witness. `Worldbuilding` is reusable canon;

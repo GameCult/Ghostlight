@@ -1118,7 +1118,7 @@ impl WorldCompiler {
         let receipts = canonical_worldbuilding_receipts(receipts);
         let schema = serde_json::to_value(schema_for!(CompiledGlobalAgencyCatalog))?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nBuild the coarse remote strategic agency catalog for the requested historical horizon. This is a different authority lane from local world compilation: it may establish durable institutions, movements, governments, corporations, or other collective powers, but it must never import a story-specific cast, incident, clock, location state, capability inventory, or current branch posture. Include every major power and strategically distinct movement explicitly supported as relevant to this horizon by the supplied witnesses, up to 32 institutions. Do not emit an institution from a mere index link: omit it unless one supplied witness both names it and contains a durable mandate. For each admitted institution, copy its exact displayed name. mandate must be one short contiguous quotation, at most 320 characters, from that witness establishing a durable purpose, interest, or pressure it can act on. Copy the quotation exactly; do not paraphrase or identify its source because deterministic code binds it to the actual witness. Summarize classes of omitted institutions in gaps rather than emitting one gap per name. Return no narrative analysis. Fine resources and capabilities compile on demand only when the institution becomes causally relevant.\nHORIZON:\n{}\nREQUESTED PLACE (relevance only; not local authority):\n{}\nEVIDENCE:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nBuild the coarse remote strategic agency catalog for the requested historical horizon. This is a different authority lane from local world compilation: it may establish durable institutions, movements, governments, corporations, or other collective powers, but it must never import a story-specific cast, incident, clock, location state, capability inventory, or current branch posture. Include every major power and strategically distinct movement explicitly supported as relevant to this horizon by the supplied witnesses, up to 32 institutions. Do not emit an institution from a mere index link: omit it unless one supplied witness contains a durable institution-specific mandate. For each admitted institution, copy its exact displayed name. mandate must be one short contiguous quotation, at most 320 characters, from a source document dedicated to that institution, or a quotation which itself names the institution while establishing a durable purpose, interest, or pressure it can act on. Never reuse a shared index heading, category description, movement list, or sentence fragment as several institutions' mandates. Copy the quotation exactly; do not paraphrase or identify its source because deterministic code binds it to the actual witness. Summarize classes of omitted institutions in gaps rather than emitting one gap per name. Return no narrative analysis. Fine resources and capabilities compile on demand only when the institution becomes causally relevant.\nHORIZON:\n{}\nREQUESTED PLACE (relevance only; not local authority):\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(&schema)?,
             start.when,
             start.where_,
@@ -1392,13 +1392,12 @@ fn ground_global_agency_catalog(
     let mut admitted = Vec::new();
     let mut grounding_gaps = Vec::new();
     let mut omitted_names = Vec::new();
+    let candidate_names = catalog
+        .institutions
+        .iter()
+        .map(|institution| normalized_identity(&institution.name))
+        .collect::<Vec<_>>();
     for mut institution in std::mem::take(&mut catalog.institutions) {
-        let normalized_name = institution
-            .name
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ")
-            .to_lowercase();
         let mandate_sources = matching_agency_claim_sources(&institution.mandate, &by_source)?;
         if mandate_sources.is_empty() {
             grounding_gaps.push(format!(
@@ -1408,16 +1407,21 @@ fn ground_global_agency_catalog(
             omitted_names.push(institution.name);
             continue;
         }
-        let mandate_source_names_institution = mandate_sources.iter().any(|source_id| {
-            by_source
-                .get(source_id)
-                .into_iter()
-                .flatten()
-                .any(|witness| witness.to_lowercase().contains(&normalized_name))
-        });
-        if !mandate_source_names_institution {
+        let normalized_mandate = normalized_identity(&institution.mandate);
+        let named_candidate_count = candidate_names
+            .iter()
+            .filter(|name| normalized_identity_contains(&normalized_mandate, name))
+            .count();
+        let mandate_is_specific = mandate_sources
+            .iter()
+            .any(|source_id| source_document_names_institution(source_id, &institution.name))
+            || (normalized_identity_contains(
+                &normalized_mandate,
+                &normalized_identity(&institution.name),
+            ) && named_candidate_count == 1);
+        if !mandate_is_specific {
             grounding_gaps.push(format!(
-                "{} mandate witnesses did not name that institution",
+                "{} mandate was neither self-naming nor quoted from that institution's dedicated source document",
                 institution.name
             ));
             omitted_names.push(institution.name);
@@ -1481,6 +1485,38 @@ fn matching_agency_claim_sources<'a>(
         .map(|(source_id, _)| *source_id)
         .collect::<Vec<_>>();
     Ok(matches)
+}
+
+fn normalized_identity(value: &str) -> String {
+    value
+        .chars()
+        .map(|character| {
+            if character.is_alphanumeric() {
+                character.to_ascii_lowercase()
+            } else {
+                ' '
+            }
+        })
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn normalized_identity_contains(normalized_text: &str, normalized_name: &str) -> bool {
+    !normalized_name.is_empty()
+        && format!(" {normalized_text} ").contains(&format!(" {normalized_name} "))
+}
+
+fn source_document_names_institution(source_id: &str, institution_name: &str) -> bool {
+    let path = source_id
+        .split_once(':')
+        .map_or(source_id, |(_, path)| path);
+    let file_name = path.rsplit(['/', '\\']).next().unwrap_or(path);
+    let stem = file_name
+        .rsplit_once('.')
+        .map_or(file_name, |(stem, _)| stem);
+    normalized_identity(stem) == normalized_identity(institution_name)
 }
 
 fn merge_global_agency_catalog(
@@ -3226,6 +3262,55 @@ mod tests {
     fn global_agency_schema_allows_bounded_pre_grounding_candidates() {
         let schema = serde_json::to_value(schema_for!(CompiledGlobalAgencyCatalog)).unwrap();
         assert_eq!(schema["properties"]["institutions"]["maxItems"], 64);
+    }
+
+    #[test]
+    fn shared_index_language_cannot_masquerade_as_an_institution_mandate() {
+        let receipts = vec![VaultEvidenceReceipt {
+            schema: "ghostlight.vault_evidence_receipt.v1".into(),
+            id: "vault:movement-index".into(),
+            provider: "fixture".into(),
+            query_hash: "sha256:movement-index".into(),
+            witnesses: vec![SourceWitness {
+                source_id: "AetheriaLore:Aetheria/Worldbuilding/Movements/index.md".into(),
+                exact_locator: "Movements/index.md:1-4".into(),
+                content_hash: "sha256:movement-index".into(),
+                excerpt:
+                    "Characteristic movements: Disciplinists, Pragmatists, selected Bio-Purists."
+                        .into(),
+                authority_lane: "aetheria.canon_worldbuilding".into(),
+                temporal_scope: "fixture".into(),
+            }],
+            retrieved_at: Utc::now(),
+        }];
+        let catalog = CompiledGlobalAgencyCatalog {
+            institutions: ["Disciplinists", "Pragmatists", "Bio-Purists"]
+                .into_iter()
+                .map(|name| CompiledRemoteInstitution {
+                    name: name.into(),
+                    mandate: "Characteristic movements: Disciplinists, Pragmatists, selected Bio-Purists."
+                        .into(),
+                    evidence_receipt_ids: vec![],
+                })
+                .collect(),
+            gaps: vec![],
+        };
+
+        let (grounded, private_gaps) = ground_global_agency_catalog(catalog, &receipts).unwrap();
+        assert!(grounded.institutions.is_empty());
+        assert!(private_gaps.iter().any(|gap| gap.contains("Pragmatists")));
+    }
+
+    #[test]
+    fn dedicated_institution_document_may_supply_a_non_self_naming_tagline() {
+        assert!(source_document_names_institution(
+            "AetheriaLore:Aetheria/Worldbuilding/Factions/Powers/Major/Sol Dominion.md",
+            "Sol Dominion"
+        ));
+        assert!(!source_document_names_institution(
+            "AetheriaLore:Aetheria/Worldbuilding/Factions/Powers/Major/index.md",
+            "Sol Dominion"
+        ));
     }
 
     #[test]
