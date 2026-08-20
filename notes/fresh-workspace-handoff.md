@@ -728,8 +728,8 @@ steering surfaces unless the user explicitly asks for archaeology.
 
 ## Current Next Action
 
-The Persona extraction and Epiphany handback are complete. The current local
-candidate is an acceptance-hardening pass, not the older deployed release. It
+The Persona extraction and Epiphany handback are complete. The deployed
+Starfire release is `f8c515129ce73a03aea2bc5ae23a00d1ee5ed781`. It
 adds per-attempt DeepSeek usage/cache/error receipts, splits world and agency
 compilation, minimizes Projector/Persona/Interpreter context by authority, makes
 cell identity/membership/revisions runtime-derived, and prevents demand-model
@@ -749,6 +749,20 @@ evidence into direct/background/excluded lanes before compilation, admits only
 direct source text to the causal world seed, and narrows narration to the latest
 causal turn. Browser strings use text nodes and the laboratory inputs have
 programmatic labels.
+
+A later human compiler trial exposed a fourth authority failure: a request for
+Mars in Zhestokost space reproduced the location and cast of the Corvid First
+Exodus fixture. VoidBot had labeled Worldbuilding, old Stories, generated Ink,
+and site artifacts with the same requested repo lane, so the evidence model
+could promote a fixture into `direct_seed`. The deployed repair derives typed
+authority from source paths at the Vault boundary, locally forbids narrative,
+draft, design, and fixture lanes from seeding new branches, and filters global
+agency through the same canonical witness set. A live regression request for a
+Corvid courier in late-Pre-Elysium Zhestokost Mars produced Cargo Bay, Service
+Tunnels, and Zhestokost Waystation 7; it contained no Blackbox Aviary, Kesh,
+Maela Voss, or First Exodus string. The preview retained honest layout and cast
+gaps and cited the promoted Corvid naming canon. Evidence lives at
+`F:\GameCult\GhostlightDungeon\acceptance\mars-zhestokost-authority-20260820`.
 
 The first clean-seed diagnostic then spent its correction attempt on a verbatim
 stake/knowledge mismatch. The assessor now deterministically appends each
@@ -795,9 +809,10 @@ outcomes, zero rejected pulses, exact member binding, no player mutation, and
 Mira's persistent identity across consolidation. High-risk custody, relation,
 and named-member effects receive an independent same-snapshot semantic verdict;
 ordinary preparations remain deterministically bounded without paying that
-model tax. The next action is to commit this exact candidate, deploy its
-optimized immutable build, and repeat authenticated browser/restart/persistence
-checks against the served commit before the two-tester playtest.
+model tax. Human playtesting may continue against the served commit. Nightwing
+needs a reboot before the next large Vault reindex: its NVIDIA userspace is
+`580.173` while the loaded kernel module is `580.159.03`, causing Ollama to
+report `size_vram: 0` and embed on CPU.
 
 The pre-human surface audit found that snapshot-bound assessment, destination,
 and fission approvals were appended to long-lived forms. Recompilation could

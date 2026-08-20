@@ -372,6 +372,19 @@ remote institutions receive deterministic coarse profiles with distinct
 authority and explicit unknown facets. The Pro agency stage profiles only local
 actors, populations, and institutions where semantic subdivision is useful.
 
+The Aetheria Vault adapter derives document authority from the exact source
+path before any model sees a witness. `Worldbuilding` is reusable canon;
+published `Fiction` and legacy `Stories` are historical reference; static
+interactive output is a fixture artifact; `Brainstorming` is working draft;
+and `Game Design` is design reference. Only reusable canon may enter a new
+branch's `direct_seed` lane or the global-agency compiler. The classifier may
+further narrow canon by relevance, but it cannot promote a lower-authority
+document. Direct-seed projection and receipt selection repeat this local guard,
+so a malformed or stale classifier output cannot smuggle a story cast into the
+world seed. The live AetheriaLore retrieval archive is correspondingly bounded
+to `Aetheria/Worldbuilding/`; durable facts discovered through fiction must be
+promoted into Worldbuilding before they become reusable campaign canon.
+
 Compiler, expansion, fission, fork, and reset routes follow the same projection
 rule. Approval previews expose the public decision surface—topology, cast,
 pressures, player role, source-use coverage, gaps, and assumptions—without raw
