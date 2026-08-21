@@ -505,6 +505,7 @@ impl DeepSeekPort {
     }
 
     #[cfg(windows)]
+    #[cfg(windows)]
     pub fn from_machine_dpapi(path: impl AsRef<std::path::Path>) -> Result<Self> {
         Ok(Self::new(crate::windows_secret::unprotect_machine_utf8(
             path,

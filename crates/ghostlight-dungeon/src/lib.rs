@@ -22,6 +22,7 @@ pub mod surface;
 pub mod turn;
 pub mod vault;
 #[cfg(windows)]
+#[cfg(windows)]
 pub mod windows_secret;
 
 pub use kernel::{KernelError, WorldKernel};
