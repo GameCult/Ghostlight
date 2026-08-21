@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
     let secret = std::env::var_os("GHOSTLIGHT_DEEPSEEK_BLOB")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon\secrets\deepseek.dpapi"));
-    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_machine_dpapi(secret)?);
+    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_runtime_secret(secret)?);
     let compiler = WorldCompiler::new(
         Arc::new(VoidBotMcpVault::starfire_loopback()),
         model,

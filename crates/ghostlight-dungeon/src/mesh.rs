@@ -40,6 +40,23 @@ pub const PROVIDER_ID: &str = "gamecult.ghostlight.dungeon";
 pub const HEALTH_KEY: &str = "ghostlight:dungeon:health";
 pub const ADVERTISEMENT_KEY: &str = "eve:provider:gamecult.ghostlight.dungeon";
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MeshRuntimeIdentity {
+    pub runtime_id: String,
+    pub service_id: String,
+    pub located_service: String,
+}
+
+impl Default for MeshRuntimeIdentity {
+    fn default() -> Self {
+        Self {
+            runtime_id: "ghostlight-dungeon-starfire".into(),
+            service_id: "ghostlight-dungeon-starfire".into(),
+            located_service: "starfire".into(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct CampaignMeshSnapshot {
     pub campaign: Campaign,
@@ -131,16 +148,26 @@ cultmesh_rs::cultmesh_documents!(GhostlightDocuments {
 pub struct MeshPublisher {
     node: Arc<Mutex<CultMeshNode>>,
     remote: Option<RemoteReplication>,
+    identity: MeshRuntimeIdentity,
 }
 
 #[derive(Clone)]
 struct RemoteReplication {
     target: SocketAddr,
+    runtime_id: String,
     pending: Arc<(Mutex<Option<Vec<cultnet_rs::CultNetMessage>>>, Condvar)>,
 }
 
 impl MeshPublisher {
     pub fn open(store_path: impl AsRef<Path>, rudp_target: Option<SocketAddr>) -> Result<Self> {
+        Self::open_with_identity(store_path, rudp_target, MeshRuntimeIdentity::default())
+    }
+
+    pub fn open_with_identity(
+        store_path: impl AsRef<Path>,
+        rudp_target: Option<SocketAddr>,
+        identity: MeshRuntimeIdentity,
+    ) -> Result<Self> {
         if let Some(parent) = store_path.as_ref().parent() {
             std::fs::create_dir_all(parent)?;
         }
@@ -148,14 +175,16 @@ impl MeshPublisher {
             store_path,
             GhostlightDocuments,
             CultMeshNodeOptions {
-                runtime_id: "ghostlight-dungeon-starfire".into(),
+                runtime_id: identity.runtime_id.clone(),
                 pull_on_start: true,
             },
         )?;
-        let remote = rudp_target.map(RemoteReplication::start);
+        let remote =
+            rudp_target.map(|target| RemoteReplication::start(target, identity.runtime_id.clone()));
         Ok(Self {
             node: Arc::new(Mutex::new(node)),
             remote,
+            identity,
         })
     }
 
@@ -175,7 +204,7 @@ impl MeshPublisher {
             "deepseek":deepseek_status,
             "scheduler":{"live_turn_pressure":live_turn_pressure},
             "updatedAtUtc":updated_at,
-            "runtime":"ghostlight-dungeon-starfire",
+            "runtime":self.identity.runtime_id.as_str(),
             "commit":option_env!("GHOSTLIGHT_BUILD_COMMIT").unwrap_or("development")
         });
         let schema_ids = vec![
@@ -269,11 +298,11 @@ impl MeshPublisher {
         let advertisement = json!({
             "schema":"gamecult.eve.provider_advertisement.v1",
             "providerId":PROVIDER_ID,
-            "serviceId":"ghostlight-dungeon-starfire",
+            "serviceId":self.identity.service_id.as_str(),
             "verseId":"gamecult.private",
             "rootVerse":"gamecult",
             "canonicalService":"ghostlight-dungeon",
-            "locatedService":"starfire",
+            "locatedService":self.identity.located_service.as_str(),
             "cultMeshAddress":"cultmesh://gamecult.private/ghostlight/providers/dungeon",
             "title":"GhostlightDungeon",
             "kind":"narrative.simulation",
@@ -497,12 +526,13 @@ impl MeshPublisher {
 }
 
 impl RemoteReplication {
-    fn start(target: SocketAddr) -> Self {
+    fn start(target: SocketAddr, runtime_id: String) -> Self {
         let pending = Arc::new((
             Mutex::new(None::<Vec<cultnet_rs::CultNetMessage>>),
             Condvar::new(),
         ));
         let worker_pending = pending.clone();
+        let worker_runtime_id = runtime_id.clone();
         thread::Builder::new()
             .name("ghostlight-odin-rudp".into())
             .spawn(move || loop {
@@ -519,7 +549,7 @@ impl RemoteReplication {
                 if messages.is_empty() {
                     continue;
                 }
-                let options = remote_options(target);
+                let options = remote_options(target, &worker_runtime_id);
                 if let Err(error) = publish_cultnet_messages_to_rudp_catalog(&messages, options) {
                     tracing::warn!(
                         document_count = messages.len(),
@@ -530,11 +560,15 @@ impl RemoteReplication {
                 }
             })
             .expect("Ghostlight RUDP replication worker must start");
-        Self { target, pending }
+        Self {
+            target,
+            runtime_id,
+            pending,
+        }
     }
 
     fn options(&self) -> CultMeshRudpDocumentPublishOptions {
-        remote_options(self.target)
+        remote_options(self.target, &self.runtime_id)
     }
 
     fn enqueue(&self, messages: Vec<cultnet_rs::CultNetMessage>) {
@@ -545,9 +579,8 @@ impl RemoteReplication {
     }
 }
 
-fn remote_options(target: SocketAddr) -> CultMeshRudpDocumentPublishOptions {
-    let mut options =
-        CultMeshRudpDocumentPublishOptions::odin(target, "ghostlight-dungeon-starfire");
+fn remote_options(target: SocketAddr, runtime_id: &str) -> CultMeshRudpDocumentPublishOptions {
+    let mut options = CultMeshRudpDocumentPublishOptions::odin(target, runtime_id);
     options.source_agent_id = Some(PROVIDER_ID.into());
     options.source_role = Some("narrative-simulation".into());
     options.tags = vec!["ghostlight".into(), "eve".into(), "private".into()];

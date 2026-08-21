@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
     let campaign = action_campaign();
     let store = CampaignStore::open(root.join("campaign.cc"))?;
     store.create_campaign(&campaign, &[], &[])?;
-    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_machine_dpapi(secret)?);
+    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_runtime_secret(secret)?);
     let assessor = ActionAssessor::new(model.clone(), "deepseek-v4-pro");
     let kernel = WorldKernel::start(store.clone());
     let started = Instant::now();

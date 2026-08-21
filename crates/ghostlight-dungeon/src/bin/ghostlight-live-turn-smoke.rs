@@ -38,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
     let campaign = four_actor_campaign();
     let store = CampaignStore::open(root.join("campaign.cc"))?;
     store.create_campaign(&campaign, &[], &[])?;
-    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_machine_dpapi(secret)?);
+    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_runtime_secret(secret)?);
     let engine = PersonaProjectionEngine {
         model,
         permit: Arc::new(SnapshotPermit::new(store.clone(), campaign.id, 0)),

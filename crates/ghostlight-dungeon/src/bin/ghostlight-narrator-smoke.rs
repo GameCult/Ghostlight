@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
         .load::<Campaign>("campaign.v1", &campaign_id)?
         .map(|(_, value)| value)
         .ok_or_else(|| anyhow::anyhow!("campaign disappeared"))?;
-    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_machine_dpapi(secret)?);
+    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_runtime_secret(secret)?);
     let narrator = Narrator {
         model,
         model_name: "deepseek-v4-pro".into(),

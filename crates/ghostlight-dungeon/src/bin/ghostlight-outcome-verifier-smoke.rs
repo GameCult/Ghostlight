@@ -137,7 +137,7 @@ async fn main() -> anyhow::Result<()> {
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon\secrets\deepseek.dpapi"));
     let model: Arc<dyn ModelPort> = Arc::new(ObservedModel {
-        inner: DeepSeekPort::from_machine_dpapi(secret)?,
+        inner: DeepSeekPort::from_runtime_secret(secret)?,
         calls: calls.clone(),
     });
     let started = Instant::now();

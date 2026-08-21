@@ -204,7 +204,7 @@ async fn main() -> anyhow::Result<()> {
     let kernel = WorldKernel::start(store.clone());
     let model_calls = Arc::new(std::sync::Mutex::new(Vec::new()));
     let model: Arc<dyn ModelPort> = Arc::new(LiveFireModelRecorder {
-        inner: DeepSeekPort::from_machine_dpapi(secret)?,
+        inner: DeepSeekPort::from_runtime_secret(secret)?,
         calls: model_calls.clone(),
     });
     let started = Instant::now();

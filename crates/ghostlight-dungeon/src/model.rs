@@ -511,6 +511,27 @@ impl DeepSeekPort {
         )?))
     }
 
+    pub fn from_utf8_secret_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        let bytes = Zeroizing::new(std::fs::read(path.as_ref())?);
+        let secret = std::str::from_utf8(bytes.as_slice())?.trim().to_owned();
+        if secret.is_empty() {
+            anyhow::bail!("DeepSeek credential file is empty");
+        }
+        Ok(Self::new(secret))
+    }
+
+    pub fn from_runtime_secret(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        #[cfg(windows)]
+        if path
+            .as_ref()
+            .extension()
+            .is_some_and(|value| value == "dpapi")
+        {
+            return Self::from_machine_dpapi(path);
+        }
+        Self::from_utf8_secret_file(path)
+    }
+
     async fn run_with_observation(
         &self,
         request: &ModelStageRequest,

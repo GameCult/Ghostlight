@@ -20,8 +20,9 @@ use ghostlight_dungeon::{
         RejectedProposalReceipt, WorldCommand,
     },
     gestalt::GestaltPresencePlanner,
+    idunn_health::{GHOSTLIGHT_IDUNN_HEALTH_CONTRACT, IdunnHealthPublisher},
     kernel::{CommandResult, KernelError},
-    mesh::{CampaignMeshSnapshot, MeshPublisher, SessionZeroMeshSnapshot},
+    mesh::{CampaignMeshSnapshot, MeshPublisher, MeshRuntimeIdentity, SessionZeroMeshSnapshot},
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     narrator::Narrator,
     persistence::CampaignStore,
@@ -253,7 +254,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
     let runtime_root = std::env::var_os("GHOSTLIGHT_DUNGEON_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon"));
+        .unwrap_or_else(default_runtime_root);
     migrate_default_campaign(&runtime_root)?;
     let registry = CampaignRegistry::new(runtime_root.join("campaigns"))?;
     registry.load_existing().await?;
@@ -282,10 +283,12 @@ async fn main() -> anyhow::Result<()> {
         }
     };
     migrate_legacy_campaign_memberships(&registry, &auth_state).await?;
-    let secret_path = runtime_root.join("secrets/deepseek.dpapi");
+    let secret_path = std::env::var_os("GHOSTLIGHT_DEEPSEEK_CREDENTIAL")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| runtime_root.join("secrets/deepseek.dpapi"));
     let (deepseek_status, compiler, assessor, shared_model) = if secret_path.is_file() {
         let provider: Arc<dyn ModelPort> =
-            Arc::new(DeepSeekPort::from_machine_dpapi(&secret_path)?);
+            Arc::new(DeepSeekPort::from_runtime_secret(&secret_path)?);
         let probe = run_validated_stage(
             provider.as_ref(),
             &ModelStageRequest {
@@ -299,11 +302,20 @@ async fn main() -> anyhow::Result<()> {
                 max_output_tokens: Some(16),
             },
         )
-        .await?;
+        .await;
+        let deepseek_status = match probe {
+            Ok(probe) => format!("ready:{}", probe.receipt.output_hash),
+            Err(error) => {
+                tracing::warn!(%error, "DeepSeek startup probe failed; runtime remains available");
+                "degraded:startup-probe-failed".into()
+            }
+        };
+        let vault_endpoint = std::env::var("GHOSTLIGHT_VAULT_MCP_URL")
+            .unwrap_or_else(|_| "http://127.0.0.1:17875/mcp".into());
         (
-            format!("ready:{}", probe.receipt.output_hash),
+            deepseek_status,
             Some(Arc::new(WorldCompiler::new(
-                Arc::new(VoidBotMcpVault::starfire_loopback()),
+                Arc::new(VoidBotMcpVault::new(vault_endpoint)),
                 provider.clone(),
                 "deepseek-v4-flash",
                 "deepseek-v4-pro",
@@ -321,7 +333,39 @@ async fn main() -> anyhow::Result<()> {
         .ok()
         .map(|value| value.parse())
         .transpose()?;
-    let mesh = MeshPublisher::open(runtime_root.join("service/mesh.cc"), mesh_target)?;
+    let mesh_identity = MeshRuntimeIdentity {
+        runtime_id: std::env::var("GHOSTLIGHT_RUNTIME_ID")
+            .unwrap_or_else(|_| "ghostlight-dungeon-starfire".into()),
+        service_id: std::env::var("GHOSTLIGHT_SERVICE_ID")
+            .unwrap_or_else(|_| "ghostlight-dungeon-starfire".into()),
+        located_service: std::env::var("GHOSTLIGHT_LOCATED_SERVICE")
+            .unwrap_or_else(|_| "starfire".into()),
+    };
+    let mesh = MeshPublisher::open_with_identity(
+        runtime_root.join("service/mesh.cc"),
+        mesh_target,
+        mesh_identity.clone(),
+    )?;
+    let idunn_health =
+        std::env::var("GHOSTLIGHT_IDUNN_RUDP")
+            .ok()
+            .map(|endpoint| -> anyhow::Result<IdunnHealthPublisher> {
+                let identity_store = std::env::var_os("GHOSTLIGHT_IDUNN_HEALTH_IDENTITY")
+                .map(PathBuf::from)
+                .ok_or_else(|| anyhow::anyhow!(
+                    "GHOSTLIGHT_IDUNN_HEALTH_IDENTITY is required with GHOSTLIGHT_IDUNN_RUDP"
+                ))?;
+                Ok(IdunnHealthPublisher::open(
+                    endpoint.parse()?,
+                    std::env::var("GHOSTLIGHT_IDUNN_DAEMON")
+                        .unwrap_or_else(|_| "yggdrasil-ghostlight".into()),
+                    mesh_identity.runtime_id.clone(),
+                    std::env::var("GHOSTLIGHT_IDUNN_HEALTH_CONTRACT")
+                        .unwrap_or_else(|_| GHOSTLIGHT_IDUNN_HEALTH_CONTRACT.into()),
+                    identity_store,
+                )?)
+            })
+            .transpose()?;
     let session_zero_director = shared_model.as_ref().map(|model| {
         Arc::new(SessionZeroDirector::new(
             model.clone(),
@@ -367,12 +411,33 @@ async fn main() -> anyhow::Result<()> {
         .parse()?;
     let listener = tokio::net::TcpListener::bind(address).await?;
     tracing::info!(%address, "GhostlightDungeon listening");
+    if let Some(mut publisher) = idunn_health {
+        tokio::task::spawn_blocking(move || {
+            loop {
+                if let Err(error) = publisher.publish("active", "world-kernel-serving") {
+                    tracing::warn!(%error, "signed Idunn health publication failed");
+                }
+                std::thread::sleep(std::time::Duration::from_secs(10));
+            }
+        });
+    }
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
     .await?;
     Ok(())
+}
+
+fn default_runtime_root() -> PathBuf {
+    #[cfg(windows)]
+    {
+        PathBuf::from(r"F:\GameCult\GhostlightDungeon")
+    }
+    #[cfg(not(windows))]
+    {
+        PathBuf::from("/var/lib/gamecult/ghostlight-dungeon")
+    }
 }
 
 fn app_router(state: AppState, web_root: PathBuf) -> Router {
