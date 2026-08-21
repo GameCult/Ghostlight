@@ -40,40 +40,46 @@ multiresolution agency graph for keeping large settings active at finite cost.
 Ghostlight Dungeon is implemented and deployed as a private Starfire-hosted
 playtest harness. The current acceptance surface covers:
 
-- source-grounded world compilation with approval previews;
+- persistent DM-led Session Zero with shared/private channels, typed contracts,
+  private boundaries, character bargains, digest-bound unanimous approval, and
+  atomic publication;
+- source-grounded world compilation from an approved brief, with evidence gaps
+  returned to negotiation instead of borrowing a nearby story;
 - persistent campaigns, forks, resets, exports, and Heimdall-account-isolated sessions;
 - parallel affected-character Projector/Persona/Interpreter waves;
 - impossible-action refusal, assessed stakes, server-side rolls, and receipted
   commits;
 - strategic clocks, away-time catch-up, institution activity, migration, and
   information-channel-aware news;
-- connected cohesive and arena simulation covers at budgets from 1 to 32;
+- bounded shared-scene co-op for up to eight Heimdall members, with exact
+  member→actor authority, actor-filtered surfaces, unanimous time/budget
+  governance, and no player puppeting or PvP mutation;
+- connected cohesive and arena simulation covers at budgets from 1 to 128;
 - Gestalt materialisation, folding, member deltas, migration, and later
   rematerialisation of the same person;
 - atomic rejection of malformed, stale, or semantically invalid model waves;
 - provider, token, cache, latency, validation, state-version, and build receipts;
 - exact-build deployment and restart verification on Starfire.
 
-The immediate forge work is pressure-testing whether multiresolution Gestalts
-produce satisfying setting-wide activity, callbacks, and surprises per token,
-then running the two-tester paid-alpha path. The public site is provisional;
-checkout is not live.
+The immediate forge work is fixture, canary, and human pressure testing of
+Session Zero privacy/publication and bounded co-op alongside the existing
+multiresolution Gestalt agency tests. The public site is provisional; checkout
+is not live.
 
-## Multiplayer Intention
+## Bounded Co-op
 
-The first paid alpha remains single-player. Multiplayer is an intended extension
-of the existing authority model, not a separate chat mode.
+Campaign creation now supports one to eight authenticated players. One
+`SessionZeroKernel` owns negotiation; after unanimous approval, one
+`WorldKernel` owns the shared campaign. Membership binds each account to one
+exact actor, and every player receives an actor-filtered Eve projection.
 
-A campaign will continue to have one `WorldKernel`. Authenticated human sessions
-will control distinct canonical actors, and every human or Persona proposal will
-enter the same campaign mailbox. Each player receives a perception-specific
-narrative projection; private knowledge is never unioned into a party prompt.
-Splitting the party therefore changes occupancy and perception without creating
-contradictory copies of the world.
-
-The durable intention and unresolved social-policy questions are recorded in
-[`docs/architecture/ghostlight-dungeon-multiplayer-intention.md`](docs/architecture/ghostlight-dungeon-multiplayer-intention.md).
-It does not expand the current MVP acceptance promise.
+This milestone is intentionally one shared scene with sequential public
+actions. PvP, split parties, private in-play actions, delegation, late joining,
+and simultaneous declarations remain closed until their consent and governance
+contracts exist. See
+[`docs/architecture/ghostlight-dungeon-session-zero.md`](docs/architecture/ghostlight-dungeon-session-zero.md)
+and the longer-term
+[`multiplayer intention`](docs/architecture/ghostlight-dungeon-multiplayer-intention.md).
 
 ## Lore Vault Product Intention
 
@@ -90,6 +96,7 @@ Custom tenant import is not yet part of the deployed tester harness.
 The shortest reliable re-entry path is:
 
 - [`docs/architecture/ghostlight-dungeon-mvp.md`](docs/architecture/ghostlight-dungeon-mvp.md): runtime authority, compiler, action loop, persistence, hosting, and security;
+- [`docs/architecture/ghostlight-dungeon-session-zero.md`](docs/architecture/ghostlight-dungeon-session-zero.md): campaign negotiation, privacy, publication, membership, and bounded co-op;
 - [`docs/architecture/ghostlight-multiresolution-agency.md`](docs/architecture/ghostlight-multiresolution-agency.md): dynamic Gestalt partitioning, cohesive and arena cells, fairness, and atomic strategic waves;
 - [`notes/ghostlight-current-system-map.md`](notes/ghostlight-current-system-map.md): current implemented pipeline;
 - [`notes/ghostlight-implementation-plan.md`](notes/ghostlight-implementation-plan.md): live sequence and next pressure tests;

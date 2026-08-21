@@ -13,6 +13,7 @@ use crate::{
         cell_action_digest, cell_action_limit, default_demand, plan_cover, plan_receipt,
         select_resolution_wave, validate_and_resolve_wave, validate_demand,
     },
+    session_zero::{AggregatedBoundary, CampaignContract},
 };
 use anyhow::{Context, Result, anyhow};
 use chrono::{DateTime, Utc};
@@ -55,7 +56,23 @@ pub async fn propose_resolution_wave(
     permit: Arc<dyn ExecutionPermit>,
     campaign: &Campaign,
 ) -> Result<StrategicResolutionOutput> {
-    let (demand, mut stages) = project_resolution_demand(model.as_ref(), campaign).await;
+    propose_resolution_wave_with_policy(model, permit, campaign, None, &[]).await
+}
+
+pub async fn propose_resolution_wave_with_policy(
+    model: Arc<dyn ModelPort>,
+    permit: Arc<dyn ExecutionPermit>,
+    campaign: &Campaign,
+    campaign_contract: Option<&CampaignContract>,
+    aggregate_boundaries: &[AggregatedBoundary],
+) -> Result<StrategicResolutionOutput> {
+    let (demand, mut stages) = project_resolution_demand(
+        model.as_ref(),
+        campaign,
+        campaign_contract,
+        aggregate_boundaries,
+    )
+    .await;
     let cover = plan_cover(campaign, demand)?;
     let receipt = plan_receipt(campaign, &cover);
     let outcome_model = model.clone();
@@ -66,6 +83,8 @@ pub async fn propose_resolution_wave(
         projector_model: "deepseek-v4-flash".into(),
         persona_model: "deepseek-v4-flash".into(),
         interpreter_model: "deepseek-v4-flash".into(),
+        campaign_contract: campaign_contract.cloned(),
+        aggregate_boundaries: aggregate_boundaries.to_vec(),
     };
     let semaphore = Arc::new(tokio::sync::Semaphore::new(usize::from(
         campaign.resolution_policy.provider_parallelism.max(1),
@@ -185,6 +204,8 @@ pub async fn propose_resolution_wave(
 async fn project_resolution_demand(
     model: &dyn ModelPort,
     campaign: &Campaign,
+    campaign_contract: Option<&CampaignContract>,
+    aggregate_boundaries: &[AggregatedBoundary],
 ) -> (ResolutionDemand, Vec<ModelStageOutput>) {
     let fallback = || {
         campaign
@@ -213,6 +234,8 @@ async fn project_resolution_demand(
             "consequence":clock.consequence,
         })).collect::<Vec<_>>(),
         "agency_summary": agency_summary,
+        "campaign_contract":campaign_contract,
+        "aggregate_content_boundaries":aggregate_boundaries,
     });
     let mut schema = match serde_json::to_value(schema_for!(DemandProjection)) {
         Ok(value) => value,

@@ -838,7 +838,7 @@ fn validate_effect(
         } => {
             if from_subject_id != source
                 || !target_set.contains(to_subject_id)
-                || to_subject_id == &campaign.player_actor_id
+                || is_human_controlled_actor(campaign, to_subject_id)
                 || !can_hold_resources(campaign, to_subject_id)
                 || !subject_resources(campaign, source)?.contains(resource)
                 || contains_normalized(&subject_resources(campaign, to_subject_id)?, resource)
@@ -1067,7 +1067,7 @@ fn action_context(
     let resource_recipient_ids = targets
         .iter()
         .filter(|target| {
-            *target != &campaign.player_actor_id && can_hold_resources(campaign, target)
+            !is_human_controlled_actor(campaign, target) && can_hold_resources(campaign, target)
         })
         .cloned()
         .collect();
@@ -1138,7 +1138,7 @@ fn admissible_effect_kinds(
                 | StrategicActivityKind::Coordinate
         )
         && targets.iter().any(|target| {
-            target != &campaign.player_actor_id && can_hold_resources(campaign, target)
+            !is_human_controlled_actor(campaign, target) && can_hold_resources(campaign, target)
         })
     {
         kinds.push(OutcomeEffectKind::ResourceTransferred);
@@ -1358,6 +1358,14 @@ pub fn can_hold_resources(campaign: &Campaign, subject_id: &str) -> bool {
         || campaign.gestalts.contains_key(subject_id)
         || campaign.institutions.contains_key(subject_id)
         || campaign.actors.contains_key(subject_id)
+}
+
+fn is_human_controlled_actor(campaign: &Campaign, subject_id: &str) -> bool {
+    subject_id == campaign.player_actor_id
+        || campaign
+            .agency_profiles
+            .get(subject_id)
+            .is_some_and(|profile| !profile.simulation_eligible)
 }
 
 fn activity_parts(

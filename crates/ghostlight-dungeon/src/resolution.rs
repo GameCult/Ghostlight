@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, VecDeque};
 
 pub const MIN_ACTIVE_CELL_BUDGET: u8 = 1;
-pub const MAX_ACTIVE_CELL_BUDGET: u8 = 32;
+pub const MAX_ACTIVE_CELL_BUDGET: u8 = 128;
 pub const MAX_PROVIDER_PARALLELISM: u8 = 32;
 
 #[derive(Clone, Debug)]
@@ -1815,7 +1815,7 @@ fn validate_cell_proposal(
     cell: &SimulationCell,
     proposal: &CellActionProposal,
 ) -> Result<()> {
-    if proposal.subject_id == campaign.player_actor_id
+    if is_human_controlled_actor(campaign, &proposal.subject_id)
         || proposal.intent.trim().is_empty()
         || proposal.intended_effect.trim().is_empty()
         || !(0..=100).contains(&proposal.priority)
@@ -1969,7 +1969,7 @@ fn cell_contains_attributed_subject(
     cell: &SimulationCell,
     subject_id: &str,
 ) -> bool {
-    if subject_id == campaign.player_actor_id {
+    if is_human_controlled_actor(campaign, subject_id) {
         return false;
     }
     if let Some(member_id) = subject_id.strip_prefix("member:") {
@@ -1979,6 +1979,14 @@ fn cell_contains_attributed_subject(
             .is_some_and(|member| cell.subject_ids.contains(&member.gestalt_id));
     }
     cell.subject_ids.contains(subject_id)
+}
+
+fn is_human_controlled_actor(campaign: &Campaign, subject_id: &str) -> bool {
+    subject_id == campaign.player_actor_id
+        || campaign
+            .agency_profiles
+            .get(subject_id)
+            .is_some_and(|profile| !profile.simulation_eligible)
 }
 
 pub fn substantive_text_change(current: &str, candidate: &str) -> bool {

@@ -2,9 +2,12 @@
 
 ## Status
 
-Multiplayer is an intended post-single-player extension. It is not part of the
-current MVP acceptance promise, subscription contract, or deployed tester
-surface.
+Bounded cooperative multiplayer is implemented in the current MVP: one to
+eight authenticated players complete Session Zero and begin in one shared
+scene with sequential public actions, actor-filtered surfaces, pooled
+Persona-cell entitlements, and unanimous time, travel, and budget governance.
+The broader model in this document remains the direction for split parties,
+private play actions, simultaneous declarations, delegation, and PvP.
 
 The existing simulation is already shaped around multiple bounded actors. The
 extension should expose that anatomy to multiple human controllers without
@@ -14,9 +17,8 @@ creating a second world authority or a special multiplayer simulation loop.
 
 Let several human-controlled characters inhabit one persistent campaign while
 preserving the same spatial, epistemic, causal, and commit invariants as solo
-play. Players may share a scene, split across locations, keep secrets, arrive
-late, miss events, and rejoin without receiving contradictory reconstructions
-of the world.
+play. The implemented milestone keeps the party together. Split locations,
+late joining, and private in-play actions remain future governance work.
 
 ## Authority map
 
@@ -33,9 +35,10 @@ of the world.
 - **Forbidden writers:** browsers, sessions, party leaders, Personas,
   Interpreters, narrators, initiative, and realtime transports cannot commit or
   repair campaign state.
-- **Shared path:** solo commands, multiplayer commands, waits, travel,
-  simultaneous-action windows, NPC reactions, scheduler ticks, reconnects, and
-  imports use the same `WorldCommand → validate → atomic commit` primitive.
+- **Shared path:** solo commands, bounded multiplayer commands, unanimous waits
+  and travel, NPC reactions, scheduler ticks, and reconnects use the same
+  `WorldCommand → validate → atomic commit` primitive. Future simultaneous
+  windows must join this path too.
 - **Cut line:** do not add a parallel room-state store, party prompt, shared
   narrator memory, or multiplayer-only mutation path.
 
@@ -80,9 +83,10 @@ initiative, or commit validation.
 - Simultaneously submitted incompatible attempts resolve from one snapshot and
   one deterministic initiative/conflict pass. Arrival order at HTTP or CultNet
   transport is not fictional initiative.
-- Player count does not multiply the background Persona-cell budget. Resolution
-  policy belongs to the campaign; directly engaged player characters may create
-  the same explicit mandatory-cell overage as other foreground actors.
+- Each active member contributes the allowance returned by the entitlement
+  port. The campaign pool is capped by the operator ceiling of 128. Human
+  actors occupy mandatory cells without Persona inference; provider request
+  concurrency remains independent of the chosen cover.
 - Reconnect and replay derive the player's view from committed receipts and
   perception rules. A client cache cannot repair or override the kernel.
 - One malformed, stale, or unauthorized participant proposal cannot partially
@@ -109,11 +113,11 @@ typed, persisted, inspectable, and enforced at command admission.
 
 ## Product sequence
 
-1. Prove the solo paid-alpha loop and multiresolution setting agency.
-2. Add campaign membership and exact actor-control assignments without changing
-   world mutation.
-3. Support two cooperative players in one scene with perception-specific output.
-4. Support split locations, private communication, disconnect, and reconnect.
+1. Prove the solo loop and multiresolution setting agency. **Complete.**
+2. Add campaign membership and exact actor-control assignments. **Complete.**
+3. Support up to eight cooperative players in one scene with actor-specific
+   output and unanimous group governance. **Complete in this milestone.**
+4. Support split locations, private communication, departure, and late joining.
 5. Add snapshot-bound simultaneous declaration windows.
 6. Admit adversarial actions only after consent and governance policy is typed
    and tested.

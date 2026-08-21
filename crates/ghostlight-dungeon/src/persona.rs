@@ -1,4 +1,5 @@
 use crate::model::{ModelPort, ModelStageRequest, run_validated_stage};
+use crate::session_zero::{AggregatedBoundary, CampaignContract};
 use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 use ghostlight_persona_projection::{
@@ -740,6 +741,8 @@ pub struct CellProjectionEngine {
     pub projector_model: String,
     pub persona_model: String,
     pub interpreter_model: String,
+    pub campaign_contract: Option<CampaignContract>,
+    pub aggregate_boundaries: Vec<AggregatedBoundary>,
 }
 
 impl CellProjectionEngine {
@@ -748,6 +751,10 @@ impl CellProjectionEngine {
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_projector")
             .await?;
         let projector_context = serde_json::to_string(&cell_projector_context(&slice))?;
+        let campaign_policy = serde_json::to_string(&serde_json::json!({
+            "campaign_contract":self.campaign_contract,
+            "aggregate_content_boundaries":self.aggregate_boundaries,
+        }))?;
         let visible_stimulus = slice
             .perceived_events
             .iter()
@@ -783,7 +790,7 @@ impl CellProjectionEngine {
             model: self.projector_model.clone(),
             snapshot_binding: slice.snapshot_binding.clone(),
             lived_stream: format!(
-                "<!-- membrane:{MEMBRANE_SCHEMA}:cell-projector -->\nYou are a private cell Projector. Convert only the permitted typed context and visible stimulus into compact lived narrative segments. Each segment belongs to exactly one supplied subject_id and contains only that subject's perceptions, memories, wants, fears, knowledge, and explicit uncertainty. Mentioned outsiders remain external observations: never give them an internal viewpoint. Do not choose actions or claim world effects. Omit decorative recap. Return between {} and {perspective_limit} unique segments; do not narrate every ordinary constituent. Include every exact subject ID in REQUIRED PERSPECTIVE OWNERS, because each named member exception or debt focus has an actionable decision that must not disappear inside the aggregate. Put detail_focus_subject_id first when present. Spend any remaining slots only on subjects facing a materially different decision in this horizon.\n\nREQUIRED PERSPECTIVE OWNERS:\n{}\n\nReturn exactly one JSON object matching this stable shape:\n{CELL_PROJECTION_OUTPUT_CONTRACT}\n\nDomain guidance:\n{mode_guidance}\n\nIdentity:\n{}\n\nPermitted typed context:\n{projector_context}\n\nVisible stimulus:\n{visible_stimulus}\n\nUse no more than {word_budget} narrative words across all segments.",
+                "<!-- membrane:{MEMBRANE_SCHEMA}:cell-projector -->\nYou are a private cell Projector. Convert only the permitted typed context and visible stimulus into compact lived narrative segments. Each segment belongs to exactly one supplied subject_id and contains only that subject's perceptions, memories, wants, fears, knowledge, and explicit uncertainty. Mentioned outsiders remain external observations: never give them an internal viewpoint. Campaign policy constrains what may become simulation content, but is never actor knowledge: omit line topics, keep veil topics off-screen, and introduce no ask_first topic. Do not narrativize or reveal the policy itself. Do not choose actions or claim world effects. Omit decorative recap. Return between {} and {perspective_limit} unique segments; do not narrate every ordinary constituent. Include every exact subject ID in REQUIRED PERSPECTIVE OWNERS, because each named member exception or debt focus has an actionable decision that must not disappear inside the aggregate. Put detail_focus_subject_id first when present. Spend any remaining slots only on subjects facing a materially different decision in this horizon.\n\nREQUIRED PERSPECTIVE OWNERS:\n{}\n\nReturn exactly one JSON object matching this stable shape:\n{CELL_PROJECTION_OUTPUT_CONTRACT}\n\nCAMPAIGN POLICY:\n{campaign_policy}\n\nDomain guidance:\n{mode_guidance}\n\nIdentity:\n{}\n\nPermitted typed context:\n{projector_context}\n\nVisible stimulus:\n{visible_stimulus}\n\nUse no more than {word_budget} narrative words across all segments.",
                 required_projection_subject_ids.len().max(1),
                 serde_json::to_string(&required_projection_subject_ids)?,
                 slice.cell_id
@@ -874,6 +881,9 @@ impl CellProjectionEngine {
             ),
             slice.max_actions
         );
+        let permission_guidance = format!(
+            "{permission_guidance} Campaign policy is a hard output boundary, not actor knowledge. Emit no action, inaction rationale, pressure, migration, posture, or activity that introduces a line topic, depicts a veil topic on-screen, or introduces an ask_first topic. Never reveal boundary attribution. CAMPAIGN POLICY: {campaign_policy}"
+        );
         let mut request = ModelStageRequest {
             stage: "cell_interpreter".into(),
             model: self.interpreter_model.clone(),
@@ -929,6 +939,7 @@ impl CellProjectionEngine {
                                 "typed_effect":action.effect,
                             })).collect::<Vec<_>>(),
                             "subject_names":slice.constituents.iter().map(|subject|(&subject.subject_id, &subject.name)).chain(slice.member_exceptions.iter().map(|member|(&member.subject_id, &member.name))).collect::<BTreeMap<_,_>>(),
+                            "campaign_policy":serde_json::from_str::<serde_json::Value>(&campaign_policy)?,
                         });
                         let verifier_binding = cell_effect_verification_binding(
                             &slice.snapshot_binding,
@@ -1920,6 +1931,8 @@ mod tests {
             projector_model: "flash".into(),
             persona_model: "flash".into(),
             interpreter_model: "flash".into(),
+            campaign_contract: None,
+            aggregate_boundaries: vec![],
         };
         let output = engine.execute(fixture_cell_slice()).await.unwrap();
         assert!(model.saw_rejected_appraisal.load(Ordering::SeqCst));
@@ -2036,6 +2049,8 @@ mod tests {
             projector_model: "flash".into(),
             persona_model: "flash".into(),
             interpreter_model: "flash".into(),
+            campaign_contract: None,
+            aggregate_boundaries: vec![],
         }
         .execute(fixture_cell_slice())
         .await

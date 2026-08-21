@@ -23,6 +23,31 @@ impl Narrator {
         let location = &campaign.locations[&player.location_id];
         let recent_events: Vec<_> = campaign.events.iter().rev().take(4).cloned().collect();
         let latest_turn = campaign.transcript.last().cloned();
+        let publication = store
+            .load::<crate::session_zero::PublishedSessionZeroSeed>(
+                "session_zero_publication.v1",
+                &campaign.id.to_string(),
+            )?
+            .map(|(_, value)| value);
+        let active_boundaries = store
+            .load::<crate::session_zero::ActiveContractBoundaryPolicy>(
+                "active_contract_boundary_policy.v1",
+                &campaign.id.to_string(),
+            )?
+            .map(|(_, value)| value);
+        let aggregate_boundaries = active_boundaries
+            .filter(|active| {
+                publication.as_ref().is_none_or(|published| {
+                    active.review_session_zero_id != published.session_zero_id
+                })
+            })
+            .map(|active| active.aggregate_boundaries)
+            .or_else(|| {
+                publication
+                    .as_ref()
+                    .map(|value| value.approved_brief.aggregate_boundaries.clone())
+            })
+            .unwrap_or_default();
         let visible_actors: Vec<_> = campaign
             .actors
             .values()
@@ -45,6 +70,8 @@ impl Narrator {
             "visible_actors": visible_actors,
             "latest_events": recent_events,
             "latest_committed_turn": latest_turn,
+            "campaign_contract": publication.as_ref().map(|value| &value.contract),
+            "aggregate_content_boundaries": aggregate_boundaries,
         });
         let output = run_validated_stage(
             self.model.as_ref(),
@@ -56,7 +83,7 @@ impl Narrator {
                     campaign.id, campaign.revision
                 ),
                 lived_stream: format!(
-                    "Narrate only latest_committed_turn and any latest_events it directly caused, in concrete, concise second-person interactive-fiction prose. Location, time, and visible actors are grounding constraints, not a request to restate every field. Do not repeat older setup, list routes, or recap unrelated world state. Do not mention JSON, state, commits, revisions, or the source representation. Every environmental noun, sensory adjective, object state, action, and consequence must be traceable to the supplied JSON. Do not invent lighting, temperature, sound, motion, posture, dialogue, private thoughts, expertise, geography, findings, or outcomes. It is better to be spare than to fabricate texture. Emit prose only.\n\n{}",
+                    "Narrate only latest_committed_turn and any latest_events it directly caused, in concrete, concise second-person interactive-fiction prose. The campaign contract governs tone, pacing, focus, consequences, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first permits no new depiction without a current explicit player acceptance. Never expose boundary attribution. Location, time, and visible actors are grounding constraints, not a request to restate every field. Do not repeat older setup, list routes, or recap unrelated world state. Do not mention JSON, state, commits, revisions, or the source representation. Every environmental noun, sensory adjective, object state, action, and consequence must be traceable to the supplied JSON. Do not invent lighting, temperature, sound, motion, posture, dialogue, private thoughts, expertise, geography, findings, or outcomes. It is better to be spare than to fabricate texture. Emit prose only.\n\n{}",
                     serde_json::to_string(&public_slice)?
                 ),
                 output_schema: None,

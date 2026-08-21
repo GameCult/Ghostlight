@@ -8,6 +8,14 @@ use crate::{
 use serde_json::{Value, json};
 
 pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -> Value {
+    player_surface_for_actor(campaign, &campaign.player_actor_id, narrations)
+}
+
+pub fn player_surface_for_actor(
+    campaign: &Campaign,
+    viewer_actor_id: &str,
+    narrations: &[NarrationProjection],
+) -> Value {
     let interface_version = campaign
         .revision
         .saturating_mul(1_000_000_000_000)
@@ -19,7 +27,7 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
         )
         .saturating_add(campaign.resolution_policy.provider_configuration_epoch);
     let story = story_nodes(campaign, narrations);
-    let player = &campaign.actors[&campaign.player_actor_id];
+    let player = &campaign.actors[viewer_actor_id];
     let location = &campaign.locations[&player.location_id];
     let relationships = if player.relationships.is_empty() {
         "none".into()
@@ -65,7 +73,7 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
         relationships,
         join(&player.knowledge)
     );
-    let news=campaign.news.iter().map(|item|json!({"id":item.id,"kind":"text","props":{"value":format!("[{}] {}",item.channel,item.headline)},"children":[]})).collect::<Vec<_>>();
+    let news=campaign.news.iter().filter(|item| player.knowledge.contains(&item.channel)).map(|item|json!({"id":item.id,"kind":"text","props":{"value":format!("[{}] {}",item.channel,item.headline)},"children":[]})).collect::<Vec<_>>();
     let effective_budget = campaign
         .resolution_cover
         .as_ref()
@@ -75,8 +83,9 @@ pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -
       "type":"surface-state", "schema":"gamecult.eve.surface.v1", "providerId":"gamecult.ghostlight.dungeon",
       "providerKind":"narrative.simulation", "title":campaign.name, "version":interface_version,
       "world_revision":campaign.revision,
-      "player_actor_id":campaign.player_actor_id,
+      "viewer_actor_id":viewer_actor_id,
       "player_location_id":player.location_id,
+      "reachable_destinations":location.routes.iter().filter_map(|(destination_id,route)|campaign.locations.get(destination_id).map(|destination|json!({"id":destination_id,"name":destination.name,"travel_minutes":route.travel_minutes,"distance":route.distance}))).collect::<Vec<_>>(),
       "resolution":{
         "policy":campaign.resolution_policy,
         "effective_budget":effective_budget,
@@ -330,7 +339,7 @@ mod tests {
 
         let surface = player_surface(&campaign, &[]);
 
-        assert_eq!(surface["player_actor_id"], "pilot-nyx");
+        assert_eq!(surface["viewer_actor_id"], "pilot-nyx");
         assert_eq!(surface["player_location_id"], "center");
         assert!(
             serde_json::to_string(&surface)
@@ -365,6 +374,12 @@ mod tests {
             event_ids: vec!["event:public".into()],
             reliability: "direct institutional channel".into(),
         });
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .knowledge
+            .insert("public bulletin".into());
         campaign.resolution_pins.insert(
             "secret-pin".into(),
             crate::domain::ResolutionPin {

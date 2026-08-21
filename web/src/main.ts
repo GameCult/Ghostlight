@@ -2,500 +2,256 @@ import { renderEveSurface } from "@gamecult/eve-browser-lowering";
 import "@gamecult/eve-browser-lowering/styles.css";
 import "./style.css";
 
-const host = document.querySelector<HTMLElement>("#surface")!;
-const status = document.querySelector<HTMLElement>("#status")!;
-const receipt = document.querySelector<HTMLElement>("#receipt")!;
-const compiler = document.querySelector<HTMLElement>("#compiler")!;
-const composer = document.querySelector<HTMLFormElement>("#composer")!;
-const destinationForm = document.querySelector<HTMLFormElement>("#destination-form")!;
-const compilerResults = document.querySelector<HTMLElement>("#compiler-results")!;
-const campaignLab = document.querySelector<HTMLElement>("#campaign-lab")!;
-const campaignList = document.querySelector<HTMLElement>("#campaign-list")!;
-const operatorLab = document.querySelector<HTMLDetailsElement>("#operator-lab")!;
-operatorLab.hidden = !["127.0.0.1", "localhost", "::1"].includes(window.location.hostname);
+const $ = <T extends Element>(selector: string) => document.querySelector<T>(selector)!;
+const status = $("#status") as HTMLElement;
+const entry = $("#entry") as HTMLElement;
+const sessionRoot = $("#session-zero") as HTMLElement;
+const surfaceHost = $("#surface") as HTMLElement;
+const playControls = $("#play-controls") as HTMLElement;
+const receipt = $("#receipt") as HTMLElement;
 let revision = 0;
-let playerActorId = "";
 let resolutionEpoch = 0;
-let providerConfigurationEpoch = 0;
-let requestInFlight = false;
-const controlsDisabledByRequest = new Set<HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>();
+let viewerActorId = "";
+let sessionId = "";
+let viewerMemberId = "";
+let activeChannel = "shared:table";
+let currentSurface: any = null;
+let requestActive = false;
 
-class ServerResponseFailure extends Error {}
+class ServerFailure extends Error {}
 
-async function withInteractionLock<T>(work: () => Promise<T>): Promise<T> {
-  if (requestInFlight) throw new Error("A Ghostlight request is already in progress.");
-  requestInFlight = true;
-  document.body.setAttribute("aria-busy", "true");
-  for (const control of document.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("button, input, textarea, select")) {
-    if (!control.disabled) {
-      control.disabled = true;
-      controlsDisabledByRequest.add(control);
-    }
-  }
-  try {
-    return await work();
-  } finally {
-    for (const control of controlsDisabledByRequest) control.disabled = false;
-    controlsDisabledByRequest.clear();
-    document.body.removeAttribute("aria-busy");
-    requestInFlight = false;
-  }
-}
-
-function node<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  text?: string,
-  className?: string,
-): HTMLElementTagNameMap[K] {
+function el<K extends keyof HTMLElementTagNameMap>(tag: K, text?: string, className?: string) {
   const value = document.createElement(tag);
   if (text !== undefined) value.textContent = text;
   if (className) value.className = className;
   return value;
 }
 
-function showSummary(title: string, lines: string[]) {
-  const children: HTMLElement[] = [node("h3", title)];
-  for (const line of lines.filter(Boolean)) children.push(node("p", line));
-  receipt.replaceChildren(...children);
-  receipt.hidden = false;
-}
-
-async function decodeResponse(response: Response): Promise<any> {
+async function decode(response: Response) {
   if (response.status === 204) return null;
-  const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.includes("json")) return response.json();
-  return response.text();
+  return (response.headers.get("content-type") ?? "").includes("json") ? response.json() : response.text();
 }
 
-function responseError(value: any, fallback: string): string {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (value && typeof value.error === "string" && value.error.trim()) return value.error.trim();
-  return fallback;
+function errorText(body: any, fallback: string) {
+  if (typeof body === "string" && body.trim()) return body.trim();
+  return typeof body?.error === "string" ? body.error : fallback;
 }
 
-function reportClientFailure(reason: unknown) {
-  const message = reason instanceof Error && reason.message.trim()
-    ? reason.message.trim()
-    : "The Ghostlight connection failed before a response arrived.";
+async function post(path: string, body: unknown) {
+  if (requestActive) throw new Error("Another table command is still being admitted.");
+  requestActive = true;
+  document.body.setAttribute("aria-busy", "true");
+  try {
+    const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const value = await decode(response);
+    if (!response.ok) throw new ServerFailure(errorText(value, "The server refused the command."));
+    return value;
+  } finally {
+    requestActive = false;
+    document.body.removeAttribute("aria-busy");
+  }
+}
+
+function showError(reason: unknown) {
+  const message = reason instanceof Error ? reason.message : "The connection failed.";
   status.textContent = message;
-  if (reason instanceof ServerResponseFailure) {
-    showSummary("Request refused", [message, "The server returned an error response. Refresh campaign state before retrying."]);
-    return;
-  }
-  showSummary("Request did not complete", [message, "The server remains authoritative. Refresh the campaign before retrying; the lost response may have followed a commit."]);
+  receipt.hidden = false;
+  receipt.replaceChildren(el("h2", reason instanceof ServerFailure ? "Request refused" : "Request interrupted"), el("p", message), el("p", "The server remains authoritative. Refresh before retrying.", "quiet"));
 }
 
-window.addEventListener("unhandledrejection", event => {
-  event.preventDefault();
-  reportClientFailure(event.reason);
-});
-
-function renderCommandReceipt(body: any) {
-  if (body?.kind === "assessed") {
-    const assessment = body.assessment;
-    const children: HTMLElement[] = [node("h3", assessment.admissible ? "Action assessment" : "That attempt is not possible")];
-    if (assessment.admissible) {
-      children.push(node("p", `DC ${assessment.dc} · modifier ${assessment.modifier_total >= 0 ? "+" : ""}${assessment.modifier_total}`));
-      const modifiers = node("ul");
-      for (const modifier of assessment.modifiers ?? []) {
-        modifiers.append(node("li", `${modifier.label}: ${modifier.value >= 0 ? "+" : ""}${modifier.value}`));
-      }
-      children.push(modifiers);
-      children.push(node("p", `Strong/success: ${assessment.success_stake}`));
-      children.push(node("p", `Mixed: ${assessment.mixed_stake}`));
-      children.push(node("p", `Failure: ${assessment.failure_stake}`));
-      children.push(node("p", `Effect ceiling: ${assessment.effect_ceiling}`, "quiet"));
-    } else {
-      children.push(node("p", assessment.missing_permission ?? "The attempt has no admissible path from current state."));
-      for (const bargain of assessment.bargains ?? []) children.push(node("p", `Possible bargain: ${bargain}`));
-    }
-    receipt.replaceChildren(...children);
-    receipt.hidden = false;
-    return;
-  }
-  if (body?.kind === "committed") {
-    const roll = body.receipt?.roll;
-    if (roll) {
-      const outcome = String(roll.outcome).replaceAll("_", " ");
-      showSummary(outcome.charAt(0).toUpperCase() + outcome.slice(1), [
-        `d20 ${roll.d20} ${roll.modifier_total >= 0 ? "+" : "−"} ${Math.abs(roll.modifier_total)} = ${roll.total} against DC ${roll.dc}`,
-      ]);
-    } else {
-      showSummary("World advanced", [`Revision ${body.revision}`]);
-    }
-    return;
-  }
-  if (body?.kind === "resolution_updated") {
-    showSummary("World resolution updated", [`Resolution epoch ${body.receipt?.resolution_epoch ?? "advanced"}`]);
-    return;
-  }
-  showSummary("Command result", [body?.error ?? "The world returned no player-facing detail."]);
-}
+window.addEventListener("unhandledrejection", event => { event.preventDefault(); showError(event.reason); });
 
 function showAuthenticationGate() {
-  const message = "Sign in through Heimdall to enter the KLTST playtest.";
-  status.textContent = message;
-  compiler.hidden = true;
-  composer.hidden = true;
-  destinationForm.hidden = true;
-  campaignLab.hidden = true;
-  receipt.hidden = true;
-  host.hidden = false;
-  const gate = node("article", undefined, "card");
-  gate.append(
-    node("h2", "Ghostlight Dungeon playtest"),
-    node("p", message),
-    node("p", "Access requires membership in the KLTST Discord role. Heimdall checks that role, then Ghostlight keeps your campaigns isolated from every other account.", "quiet"),
-  );
-  const login = node("button", "Continue with Discord") as HTMLButtonElement;
-  login.type = "button";
-  login.addEventListener("click", () => { void startHeimdallLogin().catch(reportClientFailure); });
-  gate.append(login);
-  host.replaceChildren(gate);
+  entry.hidden = true; sessionRoot.hidden = true; playControls.hidden = true; surfaceHost.hidden = false;
+  const card = el("article", undefined, "card");
+  card.append(el("h2", "Ghostlight Dungeon playtest"), el("p", "Sign in through Heimdall with an eligible Discord account."));
+  const button = el("button", "Continue with Discord");
+  button.addEventListener("click", () => void startLogin().catch(showError));
+  card.append(button);
+  surfaceHost.replaceChildren(card);
 }
 
-async function startHeimdallLogin() {
+async function startLogin() {
   const response = await fetch("/api/auth/heimdall/start", { method: "POST" });
-  const body = await decodeResponse(response);
-  if (!response.ok || typeof body?.authorization_url !== "string" || typeof body?.attempt_id !== "string") {
-    throw new ServerResponseFailure(responseError(body, "Heimdall could not start Discord sign-in."));
-  }
+  const body = await decode(response);
+  if (!response.ok) throw new ServerFailure(errorText(body, "Heimdall could not begin sign-in."));
   sessionStorage.setItem("ghostlight_heimdall_attempt", body.attempt_id);
   window.location.assign(body.authorization_url);
 }
 
-async function pollHeimdallAttempt(attemptId: string) {
-  const deadline = Date.now() + 10 * 60_000;
+async function resumeLogin() {
+  const attempt = sessionStorage.getItem("ghostlight_heimdall_attempt");
+  if (!attempt) return;
+  const deadline = Date.now() + 600_000;
   while (Date.now() < deadline) {
     await new Promise(resolve => window.setTimeout(resolve, 900));
-    const response = await fetch(`/api/auth/heimdall/attempt/${encodeURIComponent(attemptId)}`, { cache: "no-store" });
-    const body = await decodeResponse(response);
-    if (!response.ok) throw new ServerResponseFailure(responseError(body, "Heimdall sign-in expired."));
-    if (body?.status === "pending") continue;
-    if (body?.status !== "succeeded") {
-      sessionStorage.removeItem("ghostlight_heimdall_attempt");
-      throw new Error(String(body?.error ?? "Your Discord account does not have Ghostlight playtest access."));
-    }
-    const adopted = await fetch(`/api/auth/heimdall/attempt/${encodeURIComponent(attemptId)}/adopt`, { method: "POST" });
-    const adoptedBody = await decodeResponse(adopted);
-    if (!adopted.ok) throw new ServerResponseFailure(responseError(adoptedBody, "Ghostlight could not adopt the Heimdall session."));
+    const response = await fetch(`/api/auth/heimdall/attempt/${encodeURIComponent(attempt)}`, { cache: "no-store" });
+    const body = await decode(response);
+    if (!response.ok) throw new ServerFailure(errorText(body, "Heimdall sign-in expired."));
+    if (body.status === "pending") continue;
+    if (body.status !== "succeeded") throw new ServerFailure(body.error ?? "Discord access was not admitted.");
+    const adopted = await fetch(`/api/auth/heimdall/attempt/${encodeURIComponent(attempt)}/adopt`, { method: "POST" });
+    if (!adopted.ok) throw new ServerFailure(errorText(await decode(adopted), "Heimdall session adoption failed."));
     sessionStorage.removeItem("ghostlight_heimdall_attempt");
-    await refresh();
     return;
   }
-  sessionStorage.removeItem("ghostlight_heimdall_attempt");
-  throw new Error("Heimdall sign-in timed out. Try again when you are ready.");
-}
-
-async function resumeHeimdallLogin() {
-  const attemptId = sessionStorage.getItem("ghostlight_heimdall_attempt");
-  if (attemptId) await pollHeimdallAttempt(attemptId);
+  throw new Error("Heimdall sign-in timed out.");
 }
 
 async function refresh() {
-  const response = await fetch("/api/surface");
-  if (response.status === 401) { showAuthenticationGate(); return; }
-  const surface = await decodeResponse(response);
-  if (!response.ok) {
-    status.textContent = responseError(surface, "The campaign surface is temporarily unavailable.");
-    return;
+  const response = await fetch("/api/surface", { cache: "no-store" });
+  if (response.status === 401) return showAuthenticationGate();
+  const surface = await decode(response);
+  if (!response.ok) throw new ServerFailure(errorText(surface, "The table surface is unavailable."));
+  currentSurface = surface;
+  if (surface.surface_id === "ghostlight.session-zero-entry") return renderEntry();
+  if (surface.session_zero) return renderSession(surface.session_zero);
+  renderCampaign(surface);
+}
+
+function renderEntry() {
+  status.textContent = "No campaign is selected. Begin or join a Session Zero.";
+  entry.hidden = false; sessionRoot.hidden = true; surfaceHost.hidden = true; playControls.hidden = true;
+  const invite = new URLSearchParams(location.search).get("invite");
+  if (invite) ($("#join-token") as HTMLInputElement).value = invite;
+}
+
+function pairs(target: HTMLElement, fields: Record<string, unknown>) {
+  target.replaceChildren();
+  for (const [label, raw] of Object.entries(fields)) {
+    const value = Array.isArray(raw) ? raw.join(" · ") : String(raw || "Not decided yet");
+    target.append(el("dt", label.replaceAll("_", " ")), el("dd", value));
   }
-  const needsCompilation = surface.surface_id === "ghostlight.compiler";
-  compiler.hidden = !needsCompilation; composer.hidden = needsCompilation; destinationForm.hidden = needsCompilation; host.hidden = needsCompilation; campaignLab.hidden = needsCompilation;
-  if (needsCompilation) { status.textContent = "No campaign exists. Retrieve the Vault and approve a world seed."; return; }
-  revision = Number(surface.world_revision ?? surface.version ?? 0);
-  playerActorId = String(surface.player_actor_id ?? "");
-  if (!playerActorId) throw new Error("Campaign surface omitted its canonical player actor ID.");
-  const playerLocationId = String(surface.player_location_id ?? "");
-  if (!playerLocationId) throw new Error("Campaign surface omitted its canonical player location ID.");
-  document.querySelector<HTMLInputElement>("#destination-origin")!.value = playerLocationId;
-  resolutionEpoch = Number(surface.resolution?.policy?.resolution_epoch ?? 0);
-  providerConfigurationEpoch = Number(surface.resolution?.policy?.provider_configuration_epoch ?? 0);
+}
+
+function renderSession(session: any) {
+  entry.hidden = true; sessionRoot.hidden = false; surfaceHost.hidden = true; playControls.hidden = true;
+  sessionId = session.id; revision = Number(session.revision); viewerMemberId = session.viewer_member_id;
+  if (!session.channels.some((channel: any) => channel.id === activeChannel)) activeChannel = "shared:table";
+  $("#session-title").textContent = currentSurface.title;
+  $("#session-state").textContent = `${String(session.status).replaceAll("_", " ")} · revision ${revision}`;
+  status.textContent = session.status === "compiling" ? "The DM is compiling the agreed brief. You can leave this page." : "Session Zero is persistent. Conversation is not world truth until unanimous publication.";
+  const shared = activeChannel === "shared:table";
+  $("#tab-shared").setAttribute("aria-pressed", String(shared));
+  $("#tab-private").setAttribute("aria-pressed", String(!shared));
+  const channel = session.channels.find((item: any) => item.id === activeChannel) ?? session.channels[0];
+  const transcript = $("#session-transcript"); transcript.replaceChildren();
+  for (const message of channel?.messages ?? []) {
+    const item = el("li", undefined, `message ${message.speaker}`);
+    item.append(el("strong", message.speaker === "dm" ? "DM" : message.speaker === "system" ? "Table" : "Player"), el("p", message.text));
+    transcript.append(item);
+  }
+  const roster = $("#roster"); roster.replaceChildren();
+  for (const member of session.public_party) {
+    const row = el("p", `${member.approved ? "Ready" : "Not ready"} · ${member.display_name} as ${member.name || "undecided"}${member.is_host ? " · host" : ""}`);
+    if (session.viewer_is_host && !session.roster_locked && !member.is_host) {
+      const remove = el("button", "Remove");
+      remove.addEventListener("click", async () => { await post(`/api/session-zero/${sessionId}/remove-member`, { expected_revision: revision, member_id: member.member_id }); await refresh(); });
+      row.append(" ", remove);
+    }
+    roster.append(row);
+  }
+  $("#cell-pool").textContent = `${session.pooled_cell_allowance} pooled active Persona cells · ${session.active_members}/8 players`;
+  pairs($("#contract-ledger"), session.contract);
+  pairs($("#character-ledger"), session.private_character);
+  const boundaryList = $("#boundary-list"); boundaryList.replaceChildren(...session.private_boundaries.map((boundary: any) => {
+    const item = el("li", `${boundary.level.replaceAll("_", " ")} · ${boundary.topic} `);
+    const remove = el("button", "Remove"); remove.addEventListener("click", async () => { await post(`/api/session-zero/${sessionId}/boundary/${encodeURIComponent(boundary.id)}/remove`, { expected_revision: revision }); await refresh(); }); item.append(remove); return item;
+  }));
+  const decisions = $("#decision-list"); decisions.replaceChildren();
+  for (const decision of session.decisions.filter((item: any) => !item.resolved)) {
+    const card = el("article", undefined, "decision");
+    card.append(el("h4", decision.prompt), el("p", decision.proposed_resolution));
+    const accept = el("button", "Accept"); accept.addEventListener("click", () => void decide(decision.id, true));
+    const counter = el("button", "Counter"); counter.addEventListener("click", async () => { const text = window.prompt("What should the DM propose instead?", decision.proposed_resolution); if (!text?.trim()) return; await post(`/api/session-zero/${sessionId}/decision`, { expected_revision: revision, decision_id: decision.id, accept: false, counter: text.trim() }); await refresh(); });
+    const discuss = el("button", "Discuss"); discuss.addEventListener("click", () => { ($("#session-message") as HTMLTextAreaElement).value = `I'd like to discuss: ${decision.prompt}`; ($("#session-message") as HTMLTextAreaElement).focus(); });
+    card.append(accept, counter, discuss); decisions.append(card);
+  }
+  const review = $("#review-card") as HTMLElement; review.hidden = !session.preview;
+  if (session.preview) {
+    const content = $("#review-content"); content.replaceChildren(el("p", session.preview.title));
+    if (session.preview.branch_assumptions?.length) content.append(el("p", `Branch-local assumptions: ${session.preview.branch_assumptions.join("; ")}`));
+    content.append(el("p", `${Object.keys(session.preview.topology ?? {}).length} locations · ${Object.keys(session.preview.institutions ?? {}).length} institutions · ${Object.keys(session.preview.clocks ?? {}).length} clocks`));
+  }
+  const host = Boolean(session.viewer_is_host);
+  ($("#invite-form") as HTMLFormElement).hidden = !host || session.roster_locked;
+  ($("#lock-roster") as HTMLButtonElement).disabled = !host || session.roster_locked;
+  ($("#compile-session") as HTMLButtonElement).disabled = !host || !session.roster_locked || ["compiling", "review", "published"].includes(session.status);
+  ($("#approve-session") as HTMLButtonElement).disabled = session.status !== "review" || session.approved;
+  ($("#publish-session") as HTMLButtonElement).disabled = !host || !session.publish_ready;
+}
+
+function renderCampaign(surface: any) {
+  entry.hidden = true; sessionRoot.hidden = true; surfaceHost.hidden = false; playControls.hidden = false;
+  revision = Number(surface.world_revision); resolutionEpoch = Number(surface.resolution?.policy?.resolution_epoch ?? 0); viewerActorId = surface.viewer_actor_id;
+  if (!viewerActorId) throw new Error("Actor-filtered campaign surface omitted the viewer actor binding.");
+  renderEveSurface(surface, surfaceHost, { body: document.body, clientId: "ghostlight.browser", statusElement: status });
+  status.textContent = `World revision ${revision}. Your surface contains only ${viewerActorId}'s permitted state.`;
   const budget = Number(surface.resolution?.policy?.active_cell_budget ?? 8);
-  const budgetInput = document.querySelector<HTMLInputElement>("#active-cell-budget")!;
-  budgetInput.value = String(budget);
-  document.querySelector<HTMLOutputElement>("#active-cell-budget-value")!.value = String(budget);
-  document.querySelector<HTMLElement>("#resolution-status")!.textContent = `${surface.resolution?.effective_budget ?? budget} effective cells · ${surface.resolution?.mandatory_overage ?? 0} temporary overage · epoch ${resolutionEpoch}`;
-  const providerParallelism = Number(surface.resolution?.policy?.provider_parallelism ?? 8);
-  document.querySelector<HTMLInputElement>("#provider-parallelism")!.value = String(providerParallelism);
-  document.querySelector<HTMLOutputElement>("#provider-parallelism-value")!.value = String(providerParallelism);
-  const fissionParent = document.querySelector<HTMLSelectElement>("#fission-parent")!;
-  fissionParent.replaceChildren(...(surface.resolution?.fission_targets ?? []).map((target: any) => {
-    const option = node("option", `${target.name} · ${target.id}`);
-    option.value = target.id;
-    return option;
+  ($("#active-cell-budget") as HTMLInputElement).value = String(budget); ($("#active-cell-budget-value") as HTMLOutputElement).value = String(budget);
+  const travelSelect = $("#travel-destination") as HTMLSelectElement;
+  travelSelect.replaceChildren(...(surface.reachable_destinations ?? []).map((destination: any) => {
+    const option = document.createElement("option"); option.value = destination.id; option.textContent = `${destination.name} · ${destination.travel_minutes} minutes`; return option;
   }));
-  document.querySelector<HTMLFormElement>("#fission-form")!.hidden = fissionParent.options.length === 0;
-  renderEveSurface(surface, host, { body: document.body, clientId: "ghostlight.browser", statusElement: status });
-  const campaignsResponse = await fetch("/api/campaigns");
-  const campaigns = await decodeResponse(campaignsResponse);
-  if (!campaignsResponse.ok) {
-    status.textContent = responseError(campaigns, "The campaign list is temporarily unavailable.");
-    return;
-  }
-  campaignList.replaceChildren(...campaigns.campaigns.map((item: any) => {
-    const button = node("button", `${item.selected ? "●" : "○"} ${item.name} · revision ${item.revision}`);
-    button.type = "button";
-    button.disabled = Boolean(item.selected);
-    if (!item.selected) button.addEventListener("click", async () => { await compilerMutation(`/api/campaigns/select/${item.id}`, {}); });
-    return button;
-  }));
+  renderGovernance(surface.governance ?? {});
 }
 
-async function compilerRequest(path: string, body: unknown) {
-  status.textContent = "Retrieving evidence and compiling…";
-  const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-  const value = await decodeResponse(response);
-  if (!response.ok) {
-    status.textContent = responseError(value, "Compilation failed");
-    throw new ServerResponseFailure(status.textContent);
-  }
-  return value;
+function renderGovernance(governance: any) {
+  const timeForm = $("#time-form") as HTMLFormElement;
+  const travelForm = $("#travel-form") as HTMLFormElement;
+  const budgetForm = $("#resolution-form") as HTMLFormElement;
+  const pendingTime = governance.time_proposals?.[0];
+  const pendingTravel = governance.travel_proposals?.[0];
+  const pendingBudget = governance.cell_budget_proposals?.[0];
+  const timeButton = timeForm.querySelector("button")!;
+  const travelButton = travelForm.querySelector("button")!;
+  const budgetButton = budgetForm.querySelector("button")!;
+  timeButton.textContent = pendingTime ? `Approve ${pendingTime.minutes} minute advance (${pendingTime.approvals.length}/${governance.active_member_count})` : "Propose time";
+  travelButton.textContent = pendingTravel ? `Approve group travel (${pendingTravel.approvals.length}/${governance.active_member_count})` : "Propose travel";
+  budgetButton.textContent = pendingBudget ? `Approve ${pendingBudget.active_cell_budget} cells (${pendingBudget.approvals.length}/${governance.active_member_count})` : "Propose budget";
+  timeForm.dataset.proposalId = pendingTime?.id ?? ""; travelForm.dataset.proposalId = pendingTravel?.id ?? ""; budgetForm.dataset.proposalId = pendingBudget?.id ?? "";
 }
 
-async function compilerPost(path: string, body: unknown) {
-  return withInteractionLock(() => compilerRequest(path, body));
+async function decide(decisionId: string, accept: boolean) {
+  await post(`/api/session-zero/${sessionId}/decision`, { expected_revision: revision, decision_id: decisionId, accept, counter: null }); await refresh();
 }
 
-async function compilerMutation(path: string, body: unknown) {
-  return withInteractionLock(async () => {
-    const value = await compilerRequest(path, body);
-    await refresh();
-    return value;
-  });
+function showCommand(body: any) {
+  receipt.hidden = false;
+  if (body.kind === "assessed") {
+    const a = body.assessment; receipt.replaceChildren(el("h2", a.admissible ? `Assessment · DC ${a.dc}` : "Attempt not admitted"), el("p", a.admissible ? `Success: ${a.success_stake}` : a.missing_permission));
+    if (a.admissible) { const confirm = el("button", "Confirm server roll"); confirm.addEventListener("click", () => void sendWorld({ type: "attempt", actor_id: viewerActorId, assessment_digest: a.digest })); receipt.append(confirm); }
+  } else if (body.kind?.includes("pending")) receipt.replaceChildren(el("h2", "Waiting for the table"), el("p", "The proposal is revision-bound and will commit only after every active member approves."));
+  else receipt.replaceChildren(el("h2", "World committed"), el("p", body.receipt?.roll ? `d20 ${body.receipt.roll.d20} · ${String(body.receipt.roll.outcome).replaceAll("_", " ")}` : `Revision ${body.revision ?? revision}`));
 }
 
-function showCards(items: any[], action: string, choose: (item: any) => void) {
-  const cards = node("div", undefined, "cards");
-  items.forEach((item, index) => {
-    const card = node("article", undefined, "card");
-    card.append(node("h3", item.title ?? item.name), node("p", item.player_hook ?? item.premise));
-    if (item.era) card.append(node("p", `${item.era} · ${item.place} · ${item.pressure}`));
-    const button = node("button", action);
-    button.type = "button";
-    button.addEventListener("click", () => choose(items[index]));
-    card.append(button);
-    cards.append(card);
-  });
-  compilerResults.replaceChildren(cards);
-}
+async function sendWorld(command: unknown) { const body = await post("/api/command", command); showCommand(body); await refresh(); return body; }
 
-function appendDetailList(parent: HTMLElement, summary: string, lines: string[]) {
-  const details = node("details");
-  details.append(node("summary", summary));
-  const list = node("ul");
-  for (const line of lines) list.append(node("li", line));
-  if (lines.length === 0) list.append(node("li", "None declared."));
-  details.append(list);
-  parent.append(details);
-}
+$("#session-entry-form").addEventListener("submit", async event => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)); delete data.mode; await post("/api/session-zero", data); await refresh(); });
+$("#join-form").addEventListener("submit", async event => { event.preventDefault(); const token = ($("#join-token") as HTMLInputElement).value.trim(); await post(`/api/session-zero/join/${encodeURIComponent(token)}`, { display_name: ($("#join-name") as HTMLInputElement).value.trim() }); history.replaceState({}, "", location.pathname); await refresh(); });
+$("#tab-shared").addEventListener("click", () => { activeChannel = "shared:table"; renderSession(currentSurface.session_zero); });
+$("#tab-private").addEventListener("click", () => { activeChannel = `private:${viewerMemberId}`; renderSession(currentSurface.session_zero); });
+$("#session-message-form").addEventListener("submit", async event => { event.preventDefault(); const input = $("#session-message") as HTMLTextAreaElement; await post(`/api/session-zero/${sessionId}/message`, { expected_revision: revision, channel_id: activeChannel, text: input.value.trim() }); input.value = ""; status.textContent = "Your message is durable. The DM is considering it."; await refresh(); });
+$("#invite-form").addEventListener("submit", async event => { event.preventDefault(); const body = await post(`/api/session-zero/${sessionId}/invites`, { count: Number(($(
+  "#invite-count") as HTMLInputElement).value) }); const output = $("#invite-output"); output.replaceChildren(); for (const token of body.invite_tokens) { const url = `${location.origin}${location.pathname}?invite=${encodeURIComponent(token)}`; const p = el("p"); const link = el("a", url); link.href = url; p.append(link); output.append(p); } await refresh(); });
+$("#boundary-form").addEventListener("submit", async event => { event.preventDefault(); await post(`/api/session-zero/${sessionId}/boundary`, { expected_revision: revision, boundary_id: null, topic: ($("#boundary-topic") as HTMLInputElement).value.trim(), level: ($("#boundary-level") as HTMLSelectElement).value }); ($("#boundary-topic") as HTMLInputElement).value = ""; await refresh(); });
+$("#lock-roster").addEventListener("click", async () => { await post(`/api/session-zero/${sessionId}/lock`, { expected_revision: revision }); await refresh(); });
+$("#compile-session").addEventListener("click", async () => { await post(`/api/session-zero/${sessionId}/compile`, { expected_revision: revision }); await refresh(); });
+$("#approve-session").addEventListener("click", async () => { await post(`/api/session-zero/${sessionId}/approve`, { expected_revision: revision }); await refresh(); });
+$("#publish-session").addEventListener("click", async () => { await post(`/api/session-zero/${sessionId}/publish`, { expected_revision: revision }); await refresh(); });
+$("#composer").addEventListener("submit", async event => { event.preventDefault(); const description = ($("#attempt") as HTMLTextAreaElement).value.trim(); const intended = ($("#intended-effect") as HTMLInputElement).value.trim(); if (!intended) return void (status.textContent = "Name the uncertain effect, or use Speak."); await sendWorld({ type: "assess", expected_revision: revision, intent: { actor_id: viewerActorId, description, intended_effect: intended } }); });
+$("#speak").addEventListener("click", async () => { const input = $("#attempt") as HTMLTextAreaElement; await sendWorld({ type: "speak", expected_revision: revision, actor_id: viewerActorId, text: input.value.trim(), intended_effect: null }); input.value = ""; });
+$("#contract-review").addEventListener("click", async () => { await post("/api/campaigns/contract-review", {}); await refresh(); });
+$("#active-cell-budget").addEventListener("input", event => { ($("#active-cell-budget-value") as HTMLOutputElement).value = (event.currentTarget as HTMLInputElement).value; });
+$("#time-form").addEventListener("submit", async event => { event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const id = form.dataset.proposalId; const body = id ? await post(`/api/governance/time/${encodeURIComponent(id)}/approve`, { expected_revision: revision }) : await post("/api/governance/time", { expected_revision: revision, minutes: Number(($(
+  "#time-minutes") as HTMLInputElement).value) }); showCommand(body); await refresh(); });
+$("#travel-form").addEventListener("submit", async event => { event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const id = form.dataset.proposalId; const destination = ($("#travel-destination") as HTMLSelectElement).value; if (!id && !destination) return void (status.textContent = "No reachable destination is compiled from this scene."); const body = id ? await post(`/api/governance/travel/${encodeURIComponent(id)}/approve`, { expected_revision: revision }) : await post("/api/governance/travel", { expected_revision: revision, destination_location_id: destination }); showCommand(body); await refresh(); });
+$("#resolution-form").addEventListener("submit", async event => { event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const id = form.dataset.proposalId; const body = id ? await post(`/api/governance/cell-budget/${encodeURIComponent(id)}/approve`, { expected_revision: revision }) : await post("/api/governance/cell-budget", { expected_revision: revision, expected_resolution_epoch: resolutionEpoch, active_cell_budget: Number(($(
+  "#active-cell-budget") as HTMLInputElement).value) }); showCommand(body); await refresh(); });
 
-document.querySelector<HTMLFormElement>("#suggest-form")!.addEventListener("submit", async event => {
-  event.preventDefault();
-  const result = await compilerPost("/api/compiler/openings", { setting: document.querySelector<HTMLInputElement>("#setting")!.value, constraints: [] });
-  showCards(result.openings, "Choose opening", async opening => {
-    const roles = await compilerPost("/api/compiler/roles", { opening_id: opening.id });
-    showCards(roles.roles, "Choose role", async role => showPreview(await compilerPost("/api/compiler/selected", { campaign_name: opening.title, opening_id: opening.id, role_id: role.id })));
-  });
-});
+const events = new EventSource("/api/events");
+let refreshQueued = false;
+events.addEventListener("revision", () => { if (refreshQueued) return; refreshQueued = true; window.setTimeout(() => { refreshQueued = false; void refresh().catch(showError); }, 100); });
+events.onerror = () => { status.textContent = "Realtime revision notices are reconnecting; the server remains authoritative."; };
 
-document.querySelector<HTMLFormElement>("#custom-form")!.addEventListener("submit", async event => { event.preventDefault(); await showPreview(await compilerPost("/api/compiler/custom", Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)))); });
-
-async function showPreview(result: any) {
-  const preview = result.preview;
-  const coverage = Array.isArray(preview.evidence_coverage) ? preview.evidence_coverage : [];
-  const evidenceCounts = coverage.reduce((counts: Record<string, number>, item: any) => {
-    const lane = String(item?.lane ?? "excluded");
-    counts[lane] = (counts[lane] ?? 0) + 1;
-    return counts;
-  }, {});
-  const card = node("article", undefined, "card");
-  card.append(
-    node("h3", preview.title),
-    node("p", preview.opening ?? ""),
-    node("p", `${preview.locations?.length ?? 0} locations · ${(preview.cast?.length ?? 0) + 1} actors · ${preview.institutions?.length ?? 0} institutions`),
-    node("p", preview.gaps.length ? `Material gaps: ${preview.gaps.join("; ")}` : "No declared material gaps.", "warning"),
-    node("p", `Branch assumptions: ${preview.branch_assumptions.join("; ") || "none"}`),
-    node("p", coverage.length
-      ? `Evidence use: ${evidenceCounts.direct_seed ?? 0} direct · ${evidenceCounts.setting_background ?? 0} background · ${evidenceCounts.excluded ?? 0} excluded`
-      : "Evidence use: no retrieved sources were admitted to this seed.", "quiet"),
-  );
-  const role = preview.player_role ?? {};
-  appendDetailList(card, `Player role · ${role.name ?? "unnamed"}`, [
-    `Starts at ${role.location_id ?? "an unspecified location"}`,
-    ...(role.capabilities ?? []).map((value: string) => `Capability: ${value}`),
-    ...(role.equipment ?? []).map((value: string) => `Equipment: ${value}`),
-    ...(role.conditions ?? []).map((value: string) => `Condition: ${value}`),
-    ...(role.obligations ?? []).map((value: string) => `Obligation: ${value}`),
-  ]);
-  appendDetailList(card, `Initial topology · ${preview.locations?.length ?? 0} locations`, (preview.locations ?? []).map((location: any) => {
-    const routes = Object.keys(location.routes ?? {});
-    return `${location.name} · ${location.id}${location.container_id ? ` · inside ${location.container_id}` : ""}${routes.length ? ` · routes to ${routes.join(", ")}` : " · no compiled route"}`;
-  }));
-  appendDetailList(card, `Present cast · ${preview.cast?.length ?? 0}`, (preview.cast ?? []).map((actor: any) => `${actor.name} · ${actor.id} · at ${actor.location_id}`));
-  appendDetailList(card, `Institutions · ${preview.institutions?.length ?? 0}`, (preview.institutions ?? []).map((institution: any) => `${institution.name} · ${institution.id}`));
-  appendDetailList(card, `Populations · ${preview.populations?.length ?? 0}`, (preview.populations ?? []).map((population: any) => `${population.name} · ${population.id} · at ${population.home_location_id}`));
-  appendDetailList(card, `World clocks · ${preview.clocks?.length ?? 0}`, (preview.clocks ?? []).map((clock: any) => `${clock.name} · ${clock.progress}/${clock.threshold} · ${clock.trigger}`));
-  appendDetailList(card, `Evidence coverage · ${coverage.length}`, coverage.map((item: any) => `${item.source_id} · ${String(item.lane).replaceAll("_", " ")} · ${item.rationale}`));
-  const approve = node("button", "Approve and enter");
-  approve.type = "button";
-  approve.addEventListener("click", async () => { await compilerMutation(`/api/compiler/approve/${result.preview_id}`, {}); });
-  card.append(approve);
-  compilerResults.replaceChildren(card);
-  status.textContent = "Preview compiled. Nothing has entered world state yet.";
-}
-
-async function send(command: unknown) { return withInteractionLock(async () => { status.textContent = "The world is considering the command…"; const response = await fetch("/api/command", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(command) }); const body = await decodeResponse(response); if (!response.ok) { const message = responseError(body, "The command was refused."); showSummary("Command refused", [message]); status.textContent = message; await refresh(); return body; } renderCommandReceipt(body); await refresh(); return body; }); }
-function installAssessment(result: any) {
-  if (result?.kind !== "assessed") return;
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = result.assessment.admissible ? "Confirm server roll" : "Revise attempt";
-  button.addEventListener("click", async () => {
-    if (!result.assessment.admissible) {
-      document.querySelector<HTMLTextAreaElement>("#attempt")!.focus();
-      return;
-    }
-    const attempted = await send({ type: "attempt", assessment_digest: result.assessment.digest });
-    // A stale preview is compiled again against the new revision. It still
-    // requires explicit confirmation; the server never rebases or auto-rolls it.
-    installAssessment(attempted);
-  });
-  // The receipt is the sole owner of a pending confirmation. A newer
-  // assessment or any other command receipt replaces this button together
-  // with the snapshot it represents.
-  receipt.append(button);
-}
-composer.addEventListener("submit", async event => {
-  event.preventDefault();
-  const description = document.querySelector<HTMLTextAreaElement>("#attempt")!.value.trim();
-  const effectInput = document.querySelector<HTMLInputElement>("#intended-effect")!;
-  const intendedEffect = effectInput.value.trim();
-  if (!description) return;
-  if (!intendedEffect) {
-    status.textContent = "Describe the uncertain outcome you want assessed, or use Speak for words that need no roll.";
-    effectInput.focus();
-    return;
-  }
-  installAssessment(await send({
-    type: "assess",
-    expected_revision: revision,
-    intent: { actor_id: playerActorId, description, intended_effect: intendedEffect },
-  }));
-});
-document.querySelector<HTMLButtonElement>("#speak")!.addEventListener("click", async () => {
-  const speechInput = document.querySelector<HTMLTextAreaElement>("#attempt")!;
-  const text = speechInput.value.trim();
-  if (!text) {
-    status.textContent = "Write what your character says first.";
-    speechInput.focus();
-    return;
-  }
-  const result = await send({
-    type: "speak",
-    expected_revision: revision,
-    actor_id: playerActorId,
-    text,
-    intended_effect: null,
-  });
-  if (result?.kind === "committed") speechInput.value = "";
-});
-document.querySelector<HTMLButtonElement>("#wait")!.addEventListener("click", () => void send({ type: "wait", expected_revision: revision, minutes: 60 }));
-document.querySelector<HTMLInputElement>("#active-cell-budget")!.addEventListener("input", event => {
-  document.querySelector<HTMLOutputElement>("#active-cell-budget-value")!.value = (event.currentTarget as HTMLInputElement).value;
-});
-document.querySelector<HTMLFormElement>("#resolution-form")!.addEventListener("submit", async event => {
-  event.preventDefault();
-  await send({
-    type: "set_resolution_budget",
-    expected_revision: revision,
-    expected_resolution_epoch: resolutionEpoch,
-    active_cell_budget: Number(document.querySelector<HTMLInputElement>("#active-cell-budget")!.value),
-  });
-});
-document.querySelector<HTMLInputElement>("#provider-parallelism")!.addEventListener("input", event => {
-  document.querySelector<HTMLOutputElement>("#provider-parallelism-value")!.value = (event.currentTarget as HTMLInputElement).value;
-});
-document.querySelector<HTMLFormElement>("#provider-parallelism-form")!.addEventListener("submit", async event => {
-  event.preventDefault();
-  await withInteractionLock(async () => {
-    status.textContent = "Applying the provider concurrency limit…";
-    const response = await fetch("/api/operator/provider-parallelism", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        expected_provider_configuration_epoch: providerConfigurationEpoch,
-        provider_parallelism: Number(document.querySelector<HTMLInputElement>("#provider-parallelism")!.value),
-      }),
-    });
-    const body = await decodeResponse(response);
-    const failure = responseError(body, "The operator limit was refused.");
-    showSummary(response.ok ? "Provider concurrency updated" : "Provider concurrency refused", [response.ok ? `Parallel requests: ${body?.receipt?.provider_parallelism ?? body?.provider_parallelism ?? "updated"}` : failure]);
-    if (!response.ok) status.textContent = failure;
-    await refresh();
-  });
-});
-destinationForm.addEventListener("submit", async event => {
-  event.preventDefault();
-  const result = await compilerPost("/api/compiler/destination", Object.fromEntries(new FormData(destinationForm)));
-  const preview = result.preview;
-  showSummary("Destination preview", (preview.gaps ?? []).map((gap: string) => `Material gap: ${gap}`));
-  appendDetailList(receipt, `Compiled topology · ${preview.locations?.length ?? 0} locations`, (preview.locations ?? []).map((location: any) => {
-    const routes = Object.keys(location.routes ?? {});
-    const features = [...(location.persistent_features ?? [])];
-    return `${location.name} · ${location.id}${location.container_id ? ` · inside ${location.container_id}` : ""}${routes.length ? ` · routes to ${routes.join(", ")}` : " · no compiled route"}${features.length ? ` · ${features.join(", ")}` : ""}`;
-  }));
-  status.textContent = "Destination preview compiled; topology is unchanged until approval.";
-  const button = node("button", "Approve destination");
-  button.type = "button";
-  button.addEventListener("click", async () => {
-    await compilerMutation(`/api/compiler/destination/approve/${result.preview_id}`, {});
-    button.remove();
-  });
-  receipt.append(button);
-});
-document.querySelector<HTMLFormElement>("#fission-form")!.addEventListener("submit", async event => {
-  event.preventDefault();
-  const data = new FormData(event.currentTarget as HTMLFormElement);
-  const cuts = String(data.get("requested_partition_values") ?? "").split(",").map(value => value.trim()).filter(Boolean);
-  if (cuts.length > 16 || cuts.some(value => [...value].length > 160)) {
-    status.textContent = "Use at most 16 named cuts, with at most 160 characters in each cut.";
-    document.querySelector<HTMLInputElement>("#fission-values")!.focus();
-    return;
-  }
-  const result = await compilerPost("/api/compiler/gestalt/fission", {
-    parent_gestalt_id: data.get("parent_gestalt_id"),
-    partition_axis: data.get("partition_axis"),
-    requested_partition_values: cuts,
-    reason: data.get("reason"),
-  });
-  showSummary("Population fission preview", [
-    ...(result.preview?.gaps ?? []).map((gap: string) => `Material gap: ${gap}`),
-  ]);
-  appendDetailList(receipt, `Canonical child leaves · ${result.preview?.children?.length ?? 0}`, (result.preview?.children ?? []).map((child: any) => `${child.name} · ${child.id} · ${child.partition_value ?? "other/unknown"} · at ${child.home_location_id}`));
-  status.textContent = "Fission preview compiled. Canonical leaves are unchanged until approval.";
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = "Approve population fission";
-  button.addEventListener("click", async () => {
-    await compilerMutation(`/api/compiler/gestalt/fission/approve/${result.preview_id}`, {});
-    button.remove();
-  });
-  receipt.append(button);
-});
-document.querySelector<HTMLFormElement>("#fork-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerMutation("/api/campaigns/fork",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));});
-document.querySelector<HTMLFormElement>("#reset-form")!.addEventListener("submit",async event=>{event.preventDefault();await compilerMutation("/api/campaigns/reset",Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement)));});
-document.querySelector<HTMLButtonElement>("#load-operator")!.addEventListener("click", async () => {
-  await withInteractionLock(async () => {
-    const response = await fetch("/api/operator");
-    const surface = await decodeResponse(response);
-    if (!response.ok) {
-      const message = responseError(surface, "The operator surface is unavailable.");
-      showSummary("Operator inspector refused", [message]);
-      status.textContent = message;
-      return;
-    }
-    renderEveSurface(surface, document.querySelector<HTMLElement>("#operator-output")!, { body: document.body, clientId: "ghostlight.operator", statusElement: status });
-  });
-});
-void refresh().then(resumeHeimdallLogin).catch(reportClientFailure);
+void resumeLogin().then(refresh).catch(showError);

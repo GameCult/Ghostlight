@@ -12,7 +12,14 @@ use crate::{
         WorldActionProposal, WorldClock, WorldCommitReceipt, WorldCompilePreview, WorldFact,
     },
     model::ModelStageReceipt,
-    surface::{operator_surface, player_surface},
+    session_zero::{
+        ActiveContractBoundaryPolicy, ApprovedCampaignBrief, CampaignContract, CampaignDmPersona,
+        CampaignGovernance, CampaignMembership, CellBudgetProposal, CharacterDraft,
+        ContentBoundary, ExtraordinaryPermission, GroupTravelProposal, SessionZeroApproval,
+        SessionZeroChannel, SessionZeroDecision, SessionZeroDelta, SessionZeroMember,
+        SessionZeroMessage, SessionZeroState, TimeAdvanceProposal,
+    },
+    surface::{operator_surface, player_surface, player_surface_for_actor},
 };
 use anyhow::Result;
 use chrono::Utc;
@@ -36,6 +43,7 @@ pub const ADVERTISEMENT_KEY: &str = "eve:provider:gamecult.ghostlight.dungeon";
 #[derive(Clone)]
 pub struct CampaignMeshSnapshot {
     pub campaign: Campaign,
+    pub membership: Option<CampaignMembership>,
     pub narrations: Vec<NarrationProjection>,
     pub evidence: Vec<VaultEvidenceReceipt>,
     pub commits: Vec<WorldCommitReceipt>,
@@ -47,6 +55,13 @@ pub struct CampaignMeshSnapshot {
     pub cell_appraisals: Vec<CellAppraisal>,
     pub activity_outcomes: Vec<StrategicActivityOutcome>,
     pub resolution_controls: Vec<ResolutionControlReceipt>,
+}
+
+#[derive(Clone)]
+pub struct SessionZeroMeshSnapshot {
+    pub session_zero_id: uuid::Uuid,
+    pub member_id: String,
+    pub surface: Value,
 }
 
 #[derive(Clone, Debug, PartialEq, DatabaseEntry)]
@@ -147,6 +162,7 @@ impl MeshPublisher {
     pub fn publish_snapshot(
         &self,
         campaigns: &[CampaignMeshSnapshot],
+        session_zeros: &[SessionZeroMeshSnapshot],
         deepseek_status: &str,
         live_turn_pressure: usize,
     ) -> Result<Value> {
@@ -155,6 +171,7 @@ impl MeshPublisher {
             "schema":"ghostlight.service_health.v1",
             "status":"ok",
             "campaigns":campaigns.len(),
+            "sessionZeros":session_zeros.len(),
             "deepseek":deepseek_status,
             "scheduler":{"live_turn_pressure":live_turn_pressure},
             "updatedAtUtc":updated_at,
@@ -179,6 +196,25 @@ impl MeshPublisher {
             "ghostlight.member_migration.v1",
             "ghostlight.news_issue.v1",
             "ghostlight.canon_candidate.v1",
+            "ghostlight.session_zero.v1",
+            "ghostlight.session_zero_member.v1",
+            "ghostlight.session_zero_message.v1",
+            "ghostlight.session_zero_channel.v1",
+            "ghostlight.campaign_contract.v1",
+            "ghostlight.character_draft.v1",
+            "ghostlight.content_boundary.v1",
+            "ghostlight.active_contract_boundary_policy.v1",
+            "ghostlight.session_zero_decision.v1",
+            "ghostlight.session_zero_delta.v1",
+            "ghostlight.session_zero_approval.v1",
+            "ghostlight.approved_campaign_brief.v1",
+            "ghostlight.campaign_dm_persona.v1",
+            "ghostlight.campaign_membership.v1",
+            "ghostlight.campaign_governance.v1",
+            "ghostlight.extraordinary_permission.v1",
+            "ghostlight.time_advance_proposal.v1",
+            "ghostlight.group_travel_proposal.v1",
+            "ghostlight.cell_budget_proposal.v1",
         ];
         let catalog = json!({
             "schema":"ghostlight.schema_catalog.v1",
@@ -186,23 +222,29 @@ impl MeshPublisher {
             "schemas":schema_catalog(),
             "updatedAtUtc":updated_at
         });
-        let surfaces = campaigns
+        let mut surfaces = campaigns
             .iter()
             .flat_map(|snapshot| {
                 let campaign = &snapshot.campaign;
-                [
-                    json!({
+                let mut values = snapshot.membership.as_ref().map_or_else(
+                    || vec![json!({
                         "schema":"gamecult.eve.surface.v1",
                         "surfaceId":format!("ghostlight.campaign.{}",campaign.id),
                         "key":format!("eve:surface:ghostlight.campaign.{}",campaign.id),
-                        "transport":"cultmesh-record",
-                        "status":"available",
-                        "audience":"authenticated-player",
-                        "mode":"interactive",
-                        "surfaceKind":"interactive-world",
-                        "interactionModel":"provider-command-receipts"
-                    }),
-                    json!({
+                        "transport":"cultmesh-record","status":"available",
+                        "audience":"legacy-owner","mode":"interactive",
+                        "surfaceKind":"interactive-world","interactionModel":"provider-command-receipts"
+                    })],
+                    |membership| membership.members.values().filter(|member|member.active).map(|member|json!({
+                        "schema":"gamecult.eve.surface.v1",
+                        "surfaceId":format!("ghostlight.campaign.{}.{}",campaign.id,member.member_id),
+                        "key":format!("eve:surface:ghostlight.campaign.{}.{}",campaign.id,member.member_id),
+                        "transport":"cultmesh-record","status":"available",
+                        "audience":member.member_id,"mode":"interactive",
+                        "surfaceKind":"actor-filtered-interactive-world","interactionModel":"provider-command-receipts"
+                    })).collect()
+                );
+                values.push(json!({
                         "schema":"gamecult.eve.surface.v1",
                         "surfaceId":format!("ghostlight.operator.{}",campaign.id),
                         "key":format!("eve:operator:ghostlight.campaign.{}",campaign.id),
@@ -212,10 +254,18 @@ impl MeshPublisher {
                         "mode":"inspect",
                         "surfaceKind":"operator-inspector",
                         "interactionModel":"read-only-receipt-inspection"
-                    }),
-                ]
+                    }));
+                values
             })
             .collect::<Vec<_>>();
+        surfaces.extend(session_zeros.iter().map(|snapshot| json!({
+            "schema":"gamecult.eve.surface.v1",
+            "surfaceId":format!("ghostlight.session-zero.{}.{}",snapshot.session_zero_id,snapshot.member_id),
+            "key":format!("eve:surface:ghostlight.session-zero.{}.{}",snapshot.session_zero_id,snapshot.member_id),
+            "transport":"cultmesh-record","status":"available",
+            "audience":snapshot.member_id,"mode":"interactive",
+            "surfaceKind":"actor-filtered-session-zero","interactionModel":"provider-command-receipts"
+        })));
         let advertisement = json!({
             "schema":"gamecult.eve.provider_advertisement.v1",
             "providerId":PROVIDER_ID,
@@ -274,16 +324,62 @@ impl MeshPublisher {
                 )
                 .saturating_add(campaign.resolution_policy.provider_configuration_epoch)
                 as i64;
-            let surface = player_surface(campaign, &snapshot.narrations);
-            let key = format!("eve:surface:ghostlight.campaign.{}", campaign.id);
-            self.put_and_stage(
-                &mut node,
-                &key,
-                &EveSurfaceRecord {
-                    value: surface.clone(),
-                },
-                &mut remote_messages,
-            )?;
+            if let Some(membership) = &snapshot.membership {
+                for member in membership.members.values().filter(|member| member.active) {
+                    let surface =
+                        player_surface_for_actor(campaign, &member.actor_id, &snapshot.narrations);
+                    let key = format!(
+                        "eve:surface:ghostlight.campaign.{}.{}",
+                        campaign.id, member.member_id
+                    );
+                    self.put_and_stage(
+                        &mut node,
+                        &key,
+                        &EveSurfaceRecord { value: surface },
+                        &mut remote_messages,
+                    )?;
+                    self.put_and_stage(
+                        &mut node,
+                        format!(
+                            "eve:surface-state:ghostlight.campaign.{}.{}",
+                            campaign.id, member.member_id
+                        ),
+                        &EveSurfaceStateRecord {
+                            provider_id: PROVIDER_ID.into(),
+                            title: campaign.name.clone(),
+                            version: interface_version,
+                            updated_at: updated_at.clone(),
+                            surface: player_surface_for_actor(
+                                campaign,
+                                &member.actor_id,
+                                &snapshot.narrations,
+                            ),
+                        },
+                        &mut remote_messages,
+                    )?;
+                }
+            } else {
+                let surface = player_surface(campaign, &snapshot.narrations);
+                let key = format!("eve:surface:ghostlight.campaign.{}", campaign.id);
+                self.put_and_stage(
+                    &mut node,
+                    &key,
+                    &EveSurfaceRecord { value: surface },
+                    &mut remote_messages,
+                )?;
+                self.put_and_stage(
+                    &mut node,
+                    format!("eve:surface-state:ghostlight.campaign.{}", campaign.id),
+                    &EveSurfaceStateRecord {
+                        provider_id: PROVIDER_ID.into(),
+                        title: campaign.name.clone(),
+                        version: interface_version,
+                        updated_at: updated_at.clone(),
+                        surface: player_surface(campaign, &snapshot.narrations),
+                    },
+                    &mut remote_messages,
+                )?;
+            }
             let operator = operator_surface(
                 campaign,
                 &snapshot.evidence,
@@ -318,15 +414,35 @@ impl MeshPublisher {
                 },
                 &mut remote_messages,
             )?;
+        }
+        for snapshot in session_zeros {
+            let key = format!(
+                "eve:surface:ghostlight.session-zero.{}.{}",
+                snapshot.session_zero_id, snapshot.member_id
+            );
             self.put_and_stage(
                 &mut node,
-                format!("eve:surface-state:ghostlight.campaign.{}", campaign.id),
+                &key,
+                &EveSurfaceRecord {
+                    value: snapshot.surface.clone(),
+                },
+                &mut remote_messages,
+            )?;
+            self.put_and_stage(
+                &mut node,
+                format!(
+                    "eve:surface-state:ghostlight.session-zero.{}.{}",
+                    snapshot.session_zero_id, snapshot.member_id
+                ),
                 &EveSurfaceStateRecord {
                     provider_id: PROVIDER_ID.into(),
-                    title: campaign.name.clone(),
-                    version: interface_version,
+                    title: snapshot.surface["title"]
+                        .as_str()
+                        .unwrap_or("Session Zero")
+                        .into(),
+                    version: snapshot.surface["version"].as_i64().unwrap_or_default(),
                     updated_at: updated_at.clone(),
-                    surface,
+                    surface: snapshot.surface.clone(),
                 },
                 &mut remote_messages,
             )?;
@@ -481,6 +597,25 @@ fn schema_catalog() -> Value {
         "ghostlight.cell_appraisal.v1": schemars::schema_for!(CellAppraisal),
         "ghostlight.cell_action_proposal.v1": schemars::schema_for!(CellActionProposal),
         "ghostlight.gestalt_fission_preview.v1": schemars::schema_for!(GestaltFissionPreview)
+        ,"ghostlight.session_zero.v1": schemars::schema_for!(SessionZeroState),
+        "ghostlight.session_zero_member.v1": schemars::schema_for!(SessionZeroMember),
+        "ghostlight.session_zero_message.v1": schemars::schema_for!(SessionZeroMessage),
+        "ghostlight.session_zero_channel.v1": schemars::schema_for!(SessionZeroChannel),
+        "ghostlight.campaign_contract.v1": schemars::schema_for!(CampaignContract),
+        "ghostlight.character_draft.v1": schemars::schema_for!(CharacterDraft),
+        "ghostlight.content_boundary.v1": schemars::schema_for!(ContentBoundary),
+        "ghostlight.active_contract_boundary_policy.v1": schemars::schema_for!(ActiveContractBoundaryPolicy),
+        "ghostlight.session_zero_decision.v1": schemars::schema_for!(SessionZeroDecision),
+        "ghostlight.session_zero_delta.v1": schemars::schema_for!(SessionZeroDelta),
+        "ghostlight.session_zero_approval.v1": schemars::schema_for!(SessionZeroApproval),
+        "ghostlight.approved_campaign_brief.v1": schemars::schema_for!(ApprovedCampaignBrief),
+        "ghostlight.campaign_dm_persona.v1": schemars::schema_for!(CampaignDmPersona),
+        "ghostlight.campaign_membership.v1": schemars::schema_for!(CampaignMembership),
+        "ghostlight.campaign_governance.v1": schemars::schema_for!(CampaignGovernance),
+        "ghostlight.extraordinary_permission.v1": schemars::schema_for!(ExtraordinaryPermission),
+        "ghostlight.time_advance_proposal.v1": schemars::schema_for!(TimeAdvanceProposal),
+        "ghostlight.group_travel_proposal.v1": schemars::schema_for!(GroupTravelProposal),
+        "ghostlight.cell_budget_proposal.v1": schemars::schema_for!(CellBudgetProposal)
     });
     let schemas = catalog
         .as_object_mut()
@@ -512,7 +647,9 @@ mod tests {
     fn health_is_read_from_the_same_typed_mesh_record_that_is_published() {
         let temp = tempdir().unwrap();
         let publisher = MeshPublisher::open(temp.path().join("mesh.cc"), None).unwrap();
-        let written = publisher.publish_snapshot(&[], "fixture-ready", 2).unwrap();
+        let written = publisher
+            .publish_snapshot(&[], &[], "fixture-ready", 2)
+            .unwrap();
         assert_eq!(publisher.health().unwrap(), written);
         assert_eq!(written["scheduler"]["live_turn_pressure"], 2);
         let catalog = publisher
@@ -549,7 +686,7 @@ mod tests {
 
         let started = std::time::Instant::now();
         let written = publisher
-            .publish_snapshot(&[], "fixture-ready", 0)
+            .publish_snapshot(&[], &[], "fixture-ready", 0)
             .expect("local projection remains writable while rendezvous is unavailable");
 
         assert!(

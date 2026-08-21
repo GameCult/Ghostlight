@@ -33,6 +33,40 @@ per-campaign WorldKernel mailbox is the sole canonical writer. Ghostlight owns
 the generalized Projector → Persona → Interpreter organ; Epiphany retains her
 canonical Persona mind and will consume the shared organ through an adapter.
 
+### 2026-08-21 Session Zero / bounded co-op cut
+
+The current checkout adds a separate pre-world owner: `SessionZeroKernel` is
+the sole writer for persistent shared/private conversation, roster, invitations,
+typed contract, private character drafts, boundaries, decisions, approvals,
+DM Persona, and compilation review. WorldKernel receives nothing until every
+active player approves the current shared digest and their private character
+digest and the host publishes. Publication stages and atomically exposes one
+campaign store containing the seed, membership, contract, DM Persona, approved
+brief, approvals, exact evidence, receipts, and final seed digest.
+
+One to eight authenticated players are implemented in bounded shared-scene
+co-op. `campaign_membership.v1` is actor custody. Surfaces, knowledge, news,
+ledgers, assessment, and roll confirmation derive from the caller's exact
+actor. Human actors cannot run Persona inference or strategic/scheduler moves.
+PvP, split-party effects, and unilateral co-op waits are rejected by the kernel.
+Time, group travel, and pooled Persona-cell budget changes require unanimous
+revision-bound approval and commit once. Provider concurrency is separate.
+
+Grounded openings and roles are inline Session Zero decisions, not compiler
+forms. The compiler consumes `approved_campaign_brief.v1`, not the transcript.
+A launched campaign may enter revision-bound Contract Review; unanimous
+publication can amend forward-looking contract, permissions, and approved
+ledger fields but cannot rewrite actor custody, locations, topology, knowledge,
+memories, canon, or history. Tightened private boundaries become anonymous
+live aggregate policy immediately; relaxation waits for unanimous publication.
+Narration, assessment, resolution demand, cell projection/interpretation, and
+semantic verification now receive the approved contract and aggregate policy.
+
+Do not confuse checkout truth with deployment truth. The immutable release
+listed below remains live until this change passes full tests, is committed,
+pushed, built, and activated through Idunn. Deployment evidence belongs in
+`gamecult-ops` and the state map, not in optimistic prose.
+
 The hosted MVP is implemented and live on Starfire. Ghostlight owns the
 generalized projection membrane; Epiphany consumes its pinned crate while
 retaining her own Mind and consequence authority. The Rust daemon now owns
@@ -75,13 +109,12 @@ populations never merge; only the derived simulation cover does. Budget/pin
 changes use `resolution_epoch`, provider parallelism uses its own configuration
 epoch, and neither advances fictional time.
 
-The paid-alpha scope remains single-player, but single-player is not a kernel
-invariant. `docs/architecture/ghostlight-dungeon-multiplayer-intention.md`
-records the intended later extension: multiple authenticated humans control
-distinct actors through the same mailbox, perception gates, initiative, and
-atomic WorldKernel commit path. It introduces no party prompt, room-state
-authority, or current implementation work. The forge remains focused on proving
-that multiresolution Gestalts preserve agency and produce satisfying surprises.
+The current forge gate includes bounded co-op. The remaining multiplayer
+intention covers split parties, private in-play commands, simultaneous windows,
+delegation, late joining, departure, PvP, and group lifecycle governance. It
+introduces no party prompt or room-state authority. The forge remains focused
+on proving that multiresolution Gestalts preserve agency and produce satisfying
+surprises under several human foreground actors.
 
 The current acceptance candidate adds a bounded population activity vocabulary
 for preparation, coordination, investigation, recruitment, obstruction,

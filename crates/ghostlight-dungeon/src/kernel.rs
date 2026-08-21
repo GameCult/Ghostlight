@@ -1,6 +1,9 @@
 use crate::d20::{capped_modifier, receipt};
 use crate::domain::*;
 use crate::persistence::CampaignStore;
+use crate::session_zero::{
+    CampaignMembership, CellBudgetProposal, GroupTravelProposal, TimeAdvanceProposal,
+};
 use chrono::{Duration, Utc};
 use rand::Rng;
 use sha2::{Digest, Sha256};
@@ -47,6 +50,18 @@ pub enum CommandResult {
     ResolutionUpdated {
         campaign: Campaign,
         receipt: ResolutionControlReceipt,
+    },
+    GovernancePending {
+        campaign: Campaign,
+        proposal: TimeAdvanceProposal,
+    },
+    TravelGovernancePending {
+        campaign: Campaign,
+        proposal: GroupTravelProposal,
+    },
+    ResolutionGovernancePending {
+        campaign: Campaign,
+        proposal: CellBudgetProposal,
     },
 }
 
@@ -157,6 +172,12 @@ fn execute(
                     ] {
                         crate::assessor::validate_effect(&campaign, actor, effect, stake)
                             .map_err(|error| KernelError::Invalid(error.to_string()))?;
+                        validate_bounded_coop_effect(
+                            store,
+                            &campaign,
+                            &assessment.intent.actor_id,
+                            effect,
+                        )?;
                     }
                     assessment
                 }
@@ -165,11 +186,19 @@ fn execute(
             assessments.insert(assessment.digest.clone(), assessment.clone());
             Ok(CommandResult::Assessed { assessment })
         }
-        WorldCommand::Attempt { assessment_digest } => {
+        WorldCommand::Attempt {
+            actor_id,
+            assessment_digest,
+        } => {
             let assessment = assessments
                 .get(&assessment_digest)
                 .cloned()
                 .ok_or(KernelError::UnknownAssessment)?;
+            if assessment.intent.actor_id != actor_id {
+                return Err(KernelError::Invalid(
+                    "assessment belongs to another actor".into(),
+                ));
+            }
             if assessment.revision != campaign.revision || assessment.expires_at < Utc::now() {
                 assessments.remove(&assessment_digest);
                 return Err(KernelError::StaleAssessment {
@@ -208,7 +237,7 @@ fn execute(
                 &mut campaign,
                 std::iter::once(assessment.intent.actor_id.as_str()),
             );
-            if assessment.intent.actor_id == campaign.player_actor_id {
+            if is_human_controlled_actor(&campaign, &assessment.intent.actor_id) {
                 campaign.last_player_activity = Utc::now();
                 campaign.away_ticks_processed = 0;
                 campaign.pending_ticks = 0;
@@ -253,7 +282,7 @@ fn execute(
                 &mut campaign,
                 std::iter::once(actor_id.as_str()),
             );
-            if actor_id == campaign.player_actor_id {
+            if is_human_controlled_actor(&campaign, &actor_id) {
                 campaign.last_player_activity = Utc::now();
                 campaign.away_ticks_processed = 0;
                 campaign.pending_ticks = 0;
@@ -275,6 +304,223 @@ fn execute(
             campaign.away_ticks_processed = 0;
             campaign.pending_ticks = 0;
             commit(store, row, campaign, "wait", None)
+        }
+        WorldCommand::ProposeTimeAdvance {
+            expected_revision,
+            member_id,
+            minutes,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            if minutes == 0 || minutes > 1_440 {
+                return Err(KernelError::Invalid(
+                    "time advance must be between 1 and 1440 minutes".into(),
+                ));
+            }
+            let membership = load_campaign_membership(store, campaign.id)?;
+            require_active_member(&membership, &member_id)?;
+            if store
+                .load_all::<TimeAdvanceProposal>("time_advance_proposal.v1")
+                .map_err(persist)?
+                .into_iter()
+                .any(|proposal| {
+                    !proposal.committed && proposal.expected_world_revision == campaign.revision
+                })
+            {
+                return Err(KernelError::Invalid(
+                    "a time-advance proposal is already pending at this revision".into(),
+                ));
+            }
+            let proposal_id = format!("time:{}", uuid::Uuid::new_v4().simple());
+            let proposal = TimeAdvanceProposal {
+                schema: "ghostlight.time_advance_proposal.v1".into(),
+                id: proposal_id.clone(),
+                campaign_id: campaign.id,
+                expected_world_revision: campaign.revision,
+                minutes,
+                proposer_member_id: member_id.clone(),
+                approvals: BTreeSet::from([member_id]),
+                committed: false,
+            };
+            let proposal_row = store
+                .insert(
+                    "time_advance_proposal.v1",
+                    "ghostlight.time_advance_proposal.v1",
+                    &proposal_id,
+                    &proposal,
+                )
+                .map_err(persist)?;
+            if active_member_ids(&membership) == proposal.approvals {
+                commit_governed_time_advance(store, row, campaign, proposal_row, proposal)
+            } else {
+                Ok(CommandResult::GovernancePending { campaign, proposal })
+            }
+        }
+        WorldCommand::ApproveTimeAdvance {
+            expected_revision,
+            proposal_id,
+            member_id,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            let membership = load_campaign_membership(store, campaign.id)?;
+            require_active_member(&membership, &member_id)?;
+            let (proposal_row, mut proposal) = store
+                .load::<TimeAdvanceProposal>("time_advance_proposal.v1", &proposal_id)
+                .map_err(persist)?
+                .ok_or_else(|| KernelError::Invalid("time proposal does not exist".into()))?;
+            if proposal.committed
+                || proposal.campaign_id != campaign.id
+                || proposal.expected_world_revision != campaign.revision
+            {
+                return Err(KernelError::Invalid(
+                    "time proposal is committed, stale, or belongs to another campaign".into(),
+                ));
+            }
+            if !proposal.approvals.insert(member_id) {
+                return Err(KernelError::Invalid(
+                    "member already approved this time proposal".into(),
+                ));
+            }
+            if active_member_ids(&membership) == proposal.approvals {
+                commit_governed_time_advance(store, row, campaign, proposal_row, proposal)
+            } else {
+                store
+                    .replace(
+                        &proposal_row,
+                        "ghostlight.time_advance_proposal.v1",
+                        &proposal,
+                    )
+                    .map_err(persist)?;
+                Ok(CommandResult::GovernancePending { campaign, proposal })
+            }
+        }
+        WorldCommand::ProposeGroupTravel {
+            expected_revision,
+            member_id,
+            destination_location_id,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            let membership = load_campaign_membership(store, campaign.id)?;
+            let member = require_active_member(&membership, &member_id)?;
+            let origin_location_id = campaign
+                .actors
+                .get(&member.actor_id)
+                .ok_or_else(|| KernelError::Invalid("member actor is missing".into()))?
+                .location_id
+                .clone();
+            if membership
+                .members
+                .values()
+                .filter(|item| item.active)
+                .any(|item| {
+                    campaign
+                        .actors
+                        .get(&item.actor_id)
+                        .is_none_or(|actor| actor.location_id != origin_location_id)
+                })
+            {
+                return Err(KernelError::Invalid(
+                    "group travel requires every player to occupy the same scene".into(),
+                ));
+            }
+            let route = campaign
+                .locations
+                .get(&origin_location_id)
+                .and_then(|location| location.routes.get(&destination_location_id))
+                .ok_or_else(|| {
+                    KernelError::Invalid("destination is not directly reachable".into())
+                })?;
+            if store
+                .load_all::<GroupTravelProposal>("group_travel_proposal.v1")
+                .map_err(persist)?
+                .into_iter()
+                .any(|proposal| {
+                    !proposal.committed && proposal.expected_world_revision == campaign.revision
+                })
+            {
+                return Err(KernelError::Invalid(
+                    "a group-travel proposal is already pending at this revision".into(),
+                ));
+            }
+            let proposal_id = format!("travel:{}", uuid::Uuid::new_v4().simple());
+            let proposal = GroupTravelProposal {
+                schema: "ghostlight.group_travel_proposal.v1".into(),
+                id: proposal_id.clone(),
+                campaign_id: campaign.id,
+                expected_world_revision: campaign.revision,
+                origin_location_id,
+                destination_location_id,
+                travel_minutes: route.travel_minutes,
+                proposer_member_id: member_id.clone(),
+                approvals: BTreeSet::from([member_id]),
+                committed: false,
+            };
+            let proposal_row = store
+                .insert(
+                    "group_travel_proposal.v1",
+                    "ghostlight.group_travel_proposal.v1",
+                    &proposal_id,
+                    &proposal,
+                )
+                .map_err(persist)?;
+            if active_member_ids(&membership) == proposal.approvals {
+                commit_governed_group_travel(
+                    store,
+                    row,
+                    campaign,
+                    proposal_row,
+                    proposal,
+                    &membership,
+                )
+            } else {
+                Ok(CommandResult::TravelGovernancePending { campaign, proposal })
+            }
+        }
+        WorldCommand::ApproveGroupTravel {
+            expected_revision,
+            proposal_id,
+            member_id,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            let membership = load_campaign_membership(store, campaign.id)?;
+            require_active_member(&membership, &member_id)?;
+            let (proposal_row, mut proposal) = store
+                .load::<GroupTravelProposal>("group_travel_proposal.v1", &proposal_id)
+                .map_err(persist)?
+                .ok_or_else(|| {
+                    KernelError::Invalid("group-travel proposal does not exist".into())
+                })?;
+            if proposal.committed
+                || proposal.campaign_id != campaign.id
+                || proposal.expected_world_revision != campaign.revision
+            {
+                return Err(KernelError::Invalid(
+                    "group-travel proposal is committed, stale, or belongs elsewhere".into(),
+                ));
+            }
+            if !proposal.approvals.insert(member_id) {
+                return Err(KernelError::Invalid(
+                    "member already approved this group-travel proposal".into(),
+                ));
+            }
+            if active_member_ids(&membership) == proposal.approvals {
+                commit_governed_group_travel(
+                    store,
+                    row,
+                    campaign,
+                    proposal_row,
+                    proposal,
+                    &membership,
+                )
+            } else {
+                store
+                    .replace(
+                        &proposal_row,
+                        "ghostlight.group_travel_proposal.v1",
+                        &proposal,
+                    )
+                    .map_err(persist)?;
+                Ok(CommandResult::TravelGovernancePending { campaign, proposal })
+            }
         }
         WorldCommand::SetResolutionBudget {
             expected_revision,
@@ -302,6 +548,106 @@ fn execute(
                 previous_epoch,
                 "set_active_cell_budget",
             )
+        }
+        WorldCommand::ProposeResolutionBudget {
+            expected_revision,
+            expected_resolution_epoch,
+            member_id,
+            active_cell_budget,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            require_resolution_epoch(&campaign, expected_resolution_epoch)?;
+            let membership = load_campaign_membership(store, campaign.id)?;
+            require_active_member(&membership, &member_id)?;
+            if active_cell_budget == 0
+                || active_cell_budget > membership.pooled_cell_allowance()
+                || active_cell_budget == campaign.resolution_policy.active_cell_budget
+            {
+                return Err(KernelError::Invalid(
+                    "cell budget must change and remain within the pooled allowance".into(),
+                ));
+            }
+            if store
+                .load_all::<CellBudgetProposal>("cell_budget_proposal.v1")
+                .map_err(persist)?
+                .into_iter()
+                .any(|proposal| {
+                    !proposal.committed
+                        && proposal.expected_world_revision == campaign.revision
+                        && proposal.expected_resolution_epoch
+                            == campaign.resolution_policy.resolution_epoch
+                })
+            {
+                return Err(KernelError::Invalid(
+                    "a cell-budget proposal is already pending at this boundary".into(),
+                ));
+            }
+            let proposal_id = format!("cell-budget:{}", uuid::Uuid::new_v4().simple());
+            let proposal = CellBudgetProposal {
+                schema: "ghostlight.cell_budget_proposal.v1".into(),
+                id: proposal_id.clone(),
+                campaign_id: campaign.id,
+                expected_world_revision: campaign.revision,
+                expected_resolution_epoch: campaign.resolution_policy.resolution_epoch,
+                active_cell_budget,
+                proposer_member_id: member_id.clone(),
+                approvals: BTreeSet::from([member_id]),
+                committed: false,
+            };
+            let proposal_row = store
+                .insert(
+                    "cell_budget_proposal.v1",
+                    "ghostlight.cell_budget_proposal.v1",
+                    &proposal_id,
+                    &proposal,
+                )
+                .map_err(persist)?;
+            if active_member_ids(&membership) == proposal.approvals {
+                commit_governed_cell_budget(store, row, campaign, proposal_row, proposal)
+            } else {
+                Ok(CommandResult::ResolutionGovernancePending { campaign, proposal })
+            }
+        }
+        WorldCommand::ApproveResolutionBudget {
+            expected_revision,
+            proposal_id,
+            member_id,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            let membership = load_campaign_membership(store, campaign.id)?;
+            require_active_member(&membership, &member_id)?;
+            let (proposal_row, mut proposal) = store
+                .load::<CellBudgetProposal>("cell_budget_proposal.v1", &proposal_id)
+                .map_err(persist)?
+                .ok_or_else(|| {
+                    KernelError::Invalid("cell-budget proposal does not exist".into())
+                })?;
+            if proposal.committed
+                || proposal.campaign_id != campaign.id
+                || proposal.expected_world_revision != campaign.revision
+                || proposal.expected_resolution_epoch != campaign.resolution_policy.resolution_epoch
+            {
+                return Err(KernelError::Invalid(
+                    "cell-budget proposal is committed, stale, or belongs elsewhere".into(),
+                ));
+            }
+            if !proposal.approvals.insert(member_id) {
+                return Err(KernelError::Invalid(
+                    "member already approved this cell-budget proposal".into(),
+                ));
+            }
+            if active_member_ids(&membership) == proposal.approvals {
+                commit_governed_cell_budget(store, row, campaign, proposal_row, proposal)
+            } else {
+                store
+                    .replace(
+                        &proposal_row,
+                        "ghostlight.cell_budget_proposal.v1",
+                        &proposal,
+                    )
+                    .map_err(persist)?;
+                Ok(CommandResult::ResolutionGovernancePending { campaign, proposal })
+            }
         }
         WorldCommand::SetProviderParallelism {
             expected_revision,
@@ -547,15 +893,10 @@ fn execute(
                 campaign.resolution_cover = Some(wave.cover.clone());
             }
             campaign.strategic_tick_count = campaign.strategic_tick_count.saturating_add(1);
-            let player = campaign.actors.get(&campaign.player_actor_id);
             for event in &tick_events {
-                let accessible = event
-                    .public_channels
-                    .iter()
-                    .find(|channel| player.is_some_and(|actor| actor.knowledge.contains(*channel)));
-                if let Some(channel) = accessible {
+                for channel in &event.public_channels {
                     campaign.news.push(crate::domain::NewsIssue {
-                        id: format!("news:{}", event.id),
+                        id: format!("news:{}:{}", event.id, stable_channel_id(channel)),
                         at: campaign.world_time,
                         channel: channel.clone(),
                         headline: event.summary.clone(),
@@ -833,6 +1174,7 @@ fn execute(
             ] {
                 crate::assessor::validate_effect(&campaign, actor, effect, stake)
                     .map_err(|error| KernelError::Invalid(error.to_string()))?;
+                validate_bounded_coop_effect(store, &campaign, &proposal.actor_id, effect)?;
             }
             let actor_name = actor.name.clone();
             let actor_location = actor.location_id.clone();
@@ -1270,6 +1612,14 @@ fn require_revision(c: &Campaign, expected: u64) -> Result<(), KernelError> {
     }
 }
 
+fn is_human_controlled_actor(campaign: &Campaign, actor_id: &str) -> bool {
+    actor_id == campaign.player_actor_id
+        || campaign
+            .agency_profiles
+            .get(actor_id)
+            .is_some_and(|profile| !profile.simulation_eligible)
+}
+
 fn require_resolution_epoch(c: &Campaign, expected: u64) -> Result<(), KernelError> {
     if c.resolution_policy.resolution_epoch != expected {
         return Err(KernelError::Invalid(format!(
@@ -1614,9 +1964,9 @@ fn apply_strategic_tick_plan(
                 "actor moves twice in one strategic tick".into(),
             ));
         }
-        if action.actor_id == campaign.player_actor_id {
+        if is_human_controlled_actor(campaign, &action.actor_id) {
             return Err(KernelError::Invalid(
-                "strategic simulation cannot puppet the player".into(),
+                "strategic simulation cannot puppet a human-controlled actor".into(),
             ));
         }
         validate_public_channels(&action.public_channels)?;
@@ -2454,6 +2804,223 @@ fn commit(
         )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
+}
+
+fn load_campaign_membership(
+    store: &CampaignStore,
+    campaign_id: uuid::Uuid,
+) -> Result<CampaignMembership, KernelError> {
+    store
+        .load::<CampaignMembership>("campaign_membership.v1", &campaign_id.to_string())
+        .map_err(persist)?
+        .map(|(_, membership)| membership)
+        .ok_or_else(|| KernelError::Invalid("campaign membership is missing".into()))
+}
+
+fn optional_campaign_membership(
+    store: &CampaignStore,
+    campaign_id: uuid::Uuid,
+) -> Result<Option<CampaignMembership>, KernelError> {
+    store
+        .load::<CampaignMembership>("campaign_membership.v1", &campaign_id.to_string())
+        .map_err(persist)
+        .map(|value| value.map(|(_, membership)| membership))
+}
+
+fn validate_bounded_coop_effect(
+    store: &CampaignStore,
+    campaign: &Campaign,
+    acting_actor_id: &str,
+    effect: &WorldEffectDelta,
+) -> Result<(), KernelError> {
+    let Some(membership) = optional_campaign_membership(store, campaign.id)? else {
+        return Ok(());
+    };
+    let controlled = membership.controlled_actor_ids();
+    if controlled.len() < 2 || !controlled.contains(acting_actor_id) {
+        return Ok(());
+    }
+    if !effect.actor_moves.is_empty() {
+        return Err(KernelError::Invalid(
+            "co-op travel requires a unanimous group-travel proposal".into(),
+        ));
+    }
+    let mut protected_targets = BTreeSet::new();
+    protected_targets.extend(effect.actor_conditions.keys().cloned());
+    protected_targets.extend(effect.actor_knowledge_additions.keys().cloned());
+    protected_targets.extend(effect.actor_relationship_updates.keys().cloned());
+    if protected_targets
+        .iter()
+        .any(|target| target != acting_actor_id && controlled.contains(target))
+    {
+        return Err(KernelError::Invalid(
+            "player-versus-player effects are unsupported in bounded co-op".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn stable_channel_id(channel: &str) -> String {
+    format!("{:x}", Sha256::digest(channel.as_bytes()))[..12].to_string()
+}
+
+fn require_active_member<'a>(
+    membership: &'a CampaignMembership,
+    member_id: &str,
+) -> Result<&'a crate::session_zero::CampaignMember, KernelError> {
+    membership
+        .members
+        .get(member_id)
+        .filter(|member| member.active)
+        .ok_or_else(|| KernelError::Invalid("campaign member is not active".into()))
+}
+
+fn active_member_ids(membership: &CampaignMembership) -> BTreeSet<String> {
+    membership
+        .members
+        .values()
+        .filter(|member| member.active)
+        .map(|member| member.member_id.clone())
+        .collect()
+}
+
+fn commit_governed_time_advance(
+    store: &CampaignStore,
+    campaign_row: cultcache_legacy::CultCacheEnvelope,
+    mut campaign: Campaign,
+    proposal_row: cultcache_legacy::CultCacheEnvelope,
+    mut proposal: TimeAdvanceProposal,
+) -> Result<CommandResult, KernelError> {
+    campaign.world_time += Duration::minutes(i64::from(proposal.minutes));
+    campaign.last_player_activity = Utc::now();
+    campaign.away_ticks_processed = 0;
+    campaign.pending_ticks = 0;
+    crate::resolution::ensure_agency_profiles(&mut campaign);
+    let previous_revision = campaign.revision;
+    campaign.revision = campaign.revision.saturating_add(1);
+    proposal.committed = true;
+    let receipt = WorldCommitReceipt {
+        schema: "ghostlight.world_commit_receipt.v1".into(),
+        campaign_id: campaign.id,
+        previous_revision,
+        revision: campaign.revision,
+        command_kind: "unanimous_time_advance".into(),
+        committed_at: Utc::now(),
+        roll: None,
+    };
+    store
+        .commit_time_advance(&campaign_row, &campaign, &proposal_row, &proposal, &receipt)
+        .map_err(persist)?;
+    Ok(CommandResult::Committed { campaign, receipt })
+}
+
+fn commit_governed_group_travel(
+    store: &CampaignStore,
+    campaign_row: cultcache_legacy::CultCacheEnvelope,
+    mut campaign: Campaign,
+    proposal_row: cultcache_legacy::CultCacheEnvelope,
+    mut proposal: GroupTravelProposal,
+    membership: &CampaignMembership,
+) -> Result<CommandResult, KernelError> {
+    let active_actor_ids = membership.controlled_actor_ids();
+    if active_actor_ids.iter().any(|actor_id| {
+        campaign
+            .actors
+            .get(actor_id)
+            .is_none_or(|actor| actor.location_id != proposal.origin_location_id)
+    }) {
+        return Err(KernelError::Invalid(
+            "group-travel proposal no longer matches the shared scene".into(),
+        ));
+    }
+    let route_minutes = campaign
+        .locations
+        .get(&proposal.origin_location_id)
+        .and_then(|location| location.routes.get(&proposal.destination_location_id))
+        .map(|route| route.travel_minutes)
+        .ok_or_else(|| KernelError::Invalid("group-travel route no longer exists".into()))?;
+    if route_minutes != proposal.travel_minutes {
+        return Err(KernelError::Invalid(
+            "group-travel route changed after proposal".into(),
+        ));
+    }
+    for actor_id in &active_actor_ids {
+        campaign
+            .actors
+            .get_mut(actor_id)
+            .expect("active actor was checked")
+            .location_id = proposal.destination_location_id.clone();
+    }
+    campaign.world_time += Duration::minutes(i64::from(route_minutes));
+    campaign.last_player_activity = Utc::now();
+    campaign.away_ticks_processed = 0;
+    campaign.pending_ticks = 0;
+    let previous_revision = campaign.revision;
+    campaign.revision = campaign.revision.saturating_add(1);
+    campaign.events.push(Event {
+        id: format!("group-travel:{}", campaign.revision),
+        at: campaign.world_time,
+        kind: "group_travel".into(),
+        summary: format!(
+            "The party travels from {} to {}.",
+            proposal.origin_location_id, proposal.destination_location_id
+        ),
+        actor_ids: active_actor_ids.into_iter().collect(),
+        institution_ids: vec![],
+        gestalt_ids: vec![],
+        location_ids: vec![
+            proposal.origin_location_id.clone(),
+            proposal.destination_location_id.clone(),
+        ],
+        public_channels: vec![],
+    });
+    proposal.committed = true;
+    let receipt = WorldCommitReceipt {
+        schema: "ghostlight.world_commit_receipt.v1".into(),
+        campaign_id: campaign.id,
+        previous_revision,
+        revision: campaign.revision,
+        command_kind: "unanimous_group_travel".into(),
+        committed_at: Utc::now(),
+        roll: None,
+    };
+    store
+        .commit_group_travel(&campaign_row, &campaign, &proposal_row, &proposal, &receipt)
+        .map_err(persist)?;
+    Ok(CommandResult::Committed { campaign, receipt })
+}
+
+fn commit_governed_cell_budget(
+    store: &CampaignStore,
+    campaign_row: cultcache_legacy::CultCacheEnvelope,
+    mut campaign: Campaign,
+    proposal_row: cultcache_legacy::CultCacheEnvelope,
+    mut proposal: CellBudgetProposal,
+) -> Result<CommandResult, KernelError> {
+    let previous_epoch = campaign.resolution_policy.resolution_epoch;
+    campaign.resolution_policy.active_cell_budget = proposal.active_cell_budget;
+    campaign.resolution_policy.pending_active_cell_budget = None;
+    campaign.resolution_policy.resolution_epoch = previous_epoch.saturating_add(1);
+    campaign.resolution_cover = None;
+    crate::resolution::validate_policy(&campaign.resolution_policy)
+        .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    proposal.committed = true;
+    let receipt = ResolutionControlReceipt {
+        schema: "ghostlight.resolution_control_receipt.v1".into(),
+        campaign_id: campaign.id,
+        world_revision: campaign.revision,
+        previous_resolution_epoch: previous_epoch,
+        resolution_epoch: campaign.resolution_policy.resolution_epoch,
+        provider_configuration_epoch: campaign.resolution_policy.provider_configuration_epoch,
+        operation: "unanimous_set_active_cell_budget".into(),
+        active_cell_budget: campaign.resolution_policy.active_cell_budget,
+        pin_ids: campaign.resolution_pins.keys().cloned().collect(),
+        committed_at: Utc::now(),
+    };
+    store
+        .commit_cell_budget(&campaign_row, &campaign, &proposal_row, &proposal, &receipt)
+        .map_err(persist)?;
+    Ok(CommandResult::ResolutionUpdated { campaign, receipt })
 }
 
 fn commit_with_records(
@@ -3868,6 +4435,7 @@ mod tests {
         assert_eq!(before.revision, 0);
         let result = kernel
             .command(WorldCommand::Attempt {
+                actor_id: "player".into(),
                 assessment_digest: assessment.digest,
             })
             .await
@@ -3922,6 +4490,7 @@ mod tests {
             .unwrap();
         let error = kernel
             .command(WorldCommand::Attempt {
+                actor_id: "player".into(),
                 assessment_digest: assessment.digest,
             })
             .await
@@ -3940,7 +4509,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn strategic_tick_moves_institutions_but_news_respects_access() {
+    async fn strategic_tick_persists_channel_news_without_using_legacy_host_as_truth() {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let kernel = WorldKernel::start(store.clone());
@@ -3977,7 +4546,8 @@ mod tests {
             panic!("expected commit")
         };
         assert_eq!(campaign.events.len(), 1);
-        assert!(campaign.news.is_empty());
+        assert_eq!(campaign.news.len(), 1);
+        assert_eq!(campaign.news[0].channel, "institution:board");
         assert_eq!(campaign.away_ticks_processed, 1);
         assert!(campaign.institutions["board"].posture.contains("acting"));
         let ticks = store
@@ -4703,6 +5273,7 @@ mod tests {
             .unwrap();
         kernel
             .command(WorldCommand::Attempt {
+                actor_id: "player".into(),
                 assessment_digest: valid.digest,
             })
             .await
@@ -5359,5 +5930,205 @@ mod tests {
             .1;
         assert_eq!(after, before);
         assert!(store.keys("strategic_tick.v1").unwrap().is_empty());
+    }
+
+    fn two_player_membership(campaign: &mut Campaign) -> CampaignMembership {
+        let mut guest = campaign.actors["player"].clone();
+        guest.id = "guest".into();
+        guest.name = "Guest".into();
+        campaign.actors.insert(guest.id.clone(), guest);
+        crate::resolution::ensure_agency_profiles(campaign);
+        campaign
+            .agency_profiles
+            .get_mut("player")
+            .unwrap()
+            .simulation_eligible = false;
+        campaign
+            .agency_profiles
+            .get_mut("guest")
+            .unwrap()
+            .simulation_eligible = false;
+        CampaignMembership {
+            schema: "ghostlight.campaign_membership.v1".into(),
+            campaign_id: campaign.id,
+            governance_epoch: 0,
+            host_member_id: "member:host".into(),
+            members: BTreeMap::from([
+                (
+                    "member:host".into(),
+                    crate::session_zero::CampaignMember {
+                        member_id: "member:host".into(),
+                        account_hash: "account:host".into(),
+                        display_name: "Host".into(),
+                        actor_id: "player".into(),
+                        is_host: true,
+                        active: true,
+                        cell_allowance: 8,
+                    },
+                ),
+                (
+                    "member:guest".into(),
+                    crate::session_zero::CampaignMember {
+                        member_id: "member:guest".into(),
+                        account_hash: "account:guest".into(),
+                        display_name: "Guest".into(),
+                        actor_id: "guest".into(),
+                        is_host: false,
+                        active: true,
+                        cell_allowance: 8,
+                    },
+                ),
+            ]),
+            extraordinary_permissions: BTreeMap::new(),
+        }
+    }
+
+    #[tokio::test]
+    async fn group_travel_moves_every_member_once_after_unanimous_revision_bound_approval() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let mut seed = campaign();
+        seed.locations.insert(
+            "harbor".into(),
+            Location {
+                id: "harbor".into(),
+                name: "Harbor".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec!["stone quay".into()],
+            },
+        );
+        seed.locations.get_mut("room").unwrap().routes.insert(
+            "harbor".into(),
+            Route {
+                destination_id: "harbor".into(),
+                distance: "nearby".into(),
+                travel_minutes: 20,
+            },
+        );
+        let membership = two_player_membership(&mut seed);
+        let campaign_id = seed.id;
+        let start_time = seed.world_time;
+        let kernel = WorldKernel::start(store.clone());
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        store
+            .insert(
+                "campaign_membership.v1",
+                "ghostlight.campaign_membership.v1",
+                &campaign_id.to_string(),
+                &membership,
+            )
+            .unwrap();
+        let pending = kernel
+            .command(WorldCommand::ProposeGroupTravel {
+                expected_revision: 0,
+                member_id: "member:host".into(),
+                destination_location_id: "harbor".into(),
+            })
+            .await
+            .unwrap();
+        let CommandResult::TravelGovernancePending { proposal, campaign } = pending else {
+            panic!("first approval committed a two-member proposal")
+        };
+        assert_eq!(campaign.revision, 0);
+        assert_eq!(campaign.actors["player"].location_id, "room");
+        let proposal_id = proposal.id;
+        let committed = kernel
+            .command(WorldCommand::ApproveGroupTravel {
+                expected_revision: 0,
+                proposal_id: proposal_id.clone(),
+                member_id: "member:guest".into(),
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, receipt } = committed else {
+            panic!("unanimous travel did not commit")
+        };
+        assert_eq!(receipt.command_kind, "unanimous_group_travel");
+        assert_eq!(campaign.revision, 1);
+        assert_eq!(campaign.world_time, start_time + Duration::minutes(20));
+        assert_eq!(campaign.actors["player"].location_id, "harbor");
+        assert_eq!(campaign.actors["guest"].location_id, "harbor");
+        assert!(
+            kernel
+                .command(WorldCommand::ApproveGroupTravel {
+                    expected_revision: 0,
+                    proposal_id,
+                    member_id: "member:guest".into(),
+                })
+                .await
+                .is_err()
+        );
+        assert_eq!(
+            store
+                .load::<Campaign>("campaign.v1", &campaign_id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .revision,
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn kernel_rejects_player_effects_against_another_controlled_actor() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let mut seed = campaign();
+        let membership = two_player_membership(&mut seed);
+        let kernel = WorldKernel::start(store.clone());
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        store
+            .insert(
+                "campaign_membership.v1",
+                "ghostlight.campaign_membership.v1",
+                &seed.id.to_string(),
+                &membership,
+            )
+            .unwrap();
+        let intent = ActionIntent {
+            actor_id: "player".into(),
+            description: "shove Guest".into(),
+            intended_effect: "make Guest prone".into(),
+        };
+        let mut assessment = assess(&seed, intent.clone());
+        assessment.success_effect.actor_conditions.insert(
+            "guest".into(),
+            ConditionDelta {
+                add: BTreeSet::from(["prone".into()]),
+                remove: BTreeSet::new(),
+            },
+        );
+        assessment.digest = crate::assessor::assessment_digest(&assessment).unwrap();
+        let error = kernel
+            .command(WorldCommand::Assess {
+                expected_revision: 0,
+                intent,
+                proposal: Some(assessment),
+            })
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("player-versus-player"));
+        let stored = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(stored.revision, 0);
+        assert!(!stored.actors["guest"].conditions.contains("prone"));
     }
 }

@@ -1,5 +1,12 @@
 # GhostlightDungeon MVP — Starfire-Hosted AI Dungeon Master
 
+> Historical foundation plan. Campaign creation and multiplayer authority are
+> superseded by
+> [`docs/architecture/ghostlight-dungeon-session-zero.md`](../docs/architecture/ghostlight-dungeon-session-zero.md).
+> This document remains the original product and world-simulation brief; its
+> single-player compiler forms and 1–32 budget wording are not the live runtime
+> contract.
+
 ## Summary
 
 Build `GhostlightDungeon` inside `GameCult/Ghostlight`: a persistent, Vault-grounded, single-player narrative simulation with a private web chat interface for two testers.

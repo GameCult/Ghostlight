@@ -1,0 +1,2874 @@
+use crate::{
+    domain::{ActorState, Campaign, EvidenceCoverage, WorldCompilePreview},
+    model::{ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage},
+    persistence::CampaignStore,
+};
+use anyhow::{Result, anyhow};
+use chrono::{DateTime, Duration, Utc};
+use schemars::{JsonSchema, schema_for};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+use tokio::sync::{RwLock, mpsc, oneshot};
+use uuid::Uuid;
+
+pub const MAX_SESSION_ZERO_MEMBERS: usize = 8;
+pub const FIXTURE_CELL_ALLOWANCE: u8 = 8;
+pub const OPERATOR_CELL_CEILING: u8 = 128;
+
+pub trait EntitlementPort: Send + Sync {
+    fn persona_cell_allowance(&self, account_hash: &str) -> u8;
+}
+
+#[derive(Default)]
+pub struct FixtureEntitlementPort;
+
+impl EntitlementPort for FixtureEntitlementPort {
+    fn persona_cell_allowance(&self, _account_hash: &str) -> u8 {
+        FIXTURE_CELL_ALLOWANCE
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SessionZeroStatus {
+    Drafting,
+    RosterLocked,
+    Compiling,
+    Review,
+    Published,
+    Archived,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SessionZeroChannelKind {
+    SharedTable,
+    PrivateDm,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SessionZeroSpeakerKind {
+    Player,
+    Dm,
+    System,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum BoundaryLevel {
+    AskFirst,
+    Veil,
+    Line,
+}
+
+impl BoundaryLevel {
+    fn severity(&self) -> u8 {
+        match self {
+            Self::AskFirst => 1,
+            Self::Veil => 2,
+            Self::Line => 3,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct ContentBoundary {
+    pub schema: String,
+    pub id: String,
+    pub owner_member_id: String,
+    pub topic: String,
+    pub normalized_topic: String,
+    pub level: BoundaryLevel,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct AggregatedBoundary {
+    pub normalized_topic: String,
+    pub display_topic: String,
+    pub level: BoundaryLevel,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct ActiveContractBoundaryPolicy {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub review_session_zero_id: Uuid,
+    pub aggregate_boundaries: Vec<AggregatedBoundary>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, Default)]
+pub struct CampaignContract {
+    pub schema: String,
+    pub vault_provider: String,
+    pub campaign_name: String,
+    pub premise: String,
+    pub canon_horizon: String,
+    pub starting_where: String,
+    pub starting_when: String,
+    pub starting_pressure: String,
+    pub desired_goal: String,
+    pub tone: Vec<String>,
+    pub themes: Vec<String>,
+    pub pacing: String,
+    pub consequence_style: String,
+    pub narrative_focus: String,
+    pub party_bonds: Vec<String>,
+    pub internal_tension: String,
+    pub dm_style: String,
+    pub time_advance_policy: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct ExtraordinaryPermission {
+    pub schema: String,
+    pub id: String,
+    pub actor_id: String,
+    pub name: String,
+    pub reliable_scope: String,
+    pub prerequisites: Vec<String>,
+    pub costs: Vec<String>,
+    pub limits: Vec<String>,
+    pub exposure: Vec<String>,
+    pub effect_ceiling: String,
+    pub evidence_receipt_ids: Vec<String>,
+    pub branch_local: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, Default)]
+pub struct CharacterDraft {
+    pub schema: String,
+    pub member_id: String,
+    pub actor_id: String,
+    pub name: String,
+    pub public_premise: String,
+    pub private_history: Vec<String>,
+    pub secrets: Vec<String>,
+    pub capabilities: Vec<String>,
+    pub knowledge: Vec<String>,
+    pub equipment: Vec<String>,
+    pub relationships: BTreeMap<String, String>,
+    pub obligations: Vec<String>,
+    pub vulnerabilities: Vec<String>,
+    pub goals: Vec<String>,
+    pub extraordinary_permissions: Vec<ExtraordinaryPermission>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct SessionZeroMember {
+    pub schema: String,
+    pub id: String,
+    #[schemars(skip)]
+    pub account_hash: String,
+    pub display_name: String,
+    pub is_host: bool,
+    pub active: bool,
+    pub cell_allowance: u8,
+    pub joined_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct SessionZeroChannel {
+    pub schema: String,
+    pub id: String,
+    pub kind: SessionZeroChannelKind,
+    pub member_id: Option<String>,
+    pub revision: u64,
+    pub message_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct SessionZeroMessage {
+    pub schema: String,
+    pub id: String,
+    pub channel_id: String,
+    pub author_member_id: Option<String>,
+    pub speaker: SessionZeroSpeakerKind,
+    pub text: String,
+    pub session_revision: u64,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct SessionZeroDecision {
+    pub schema: String,
+    pub id: String,
+    pub owner_member_id: Option<String>,
+    pub prompt: String,
+    pub proposed_resolution: String,
+    #[serde(default)]
+    pub proposed_extraordinary_permission: Option<ExtraordinaryPermission>,
+    #[serde(default)]
+    pub proposed_contract_patch: Option<CampaignContractPatch>,
+    #[serde(default)]
+    pub proposed_character_patch: Option<CharacterDraftPatch>,
+    #[serde(default)]
+    pub evidence_receipt_ids: Vec<String>,
+    pub material: bool,
+    pub resolved: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct SessionZeroApproval {
+    pub schema: String,
+    pub member_id: String,
+    pub shared_digest: String,
+    pub character_digest: String,
+    pub approved_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct SessionZeroInvite {
+    pub schema: String,
+    pub id: String,
+    #[schemars(skip)]
+    pub token_hash: String,
+    pub expires_at: DateTime<Utc>,
+    pub consumed_by_member_id: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct CampaignDmPersona {
+    pub schema: String,
+    pub id: String,
+    pub name: String,
+    pub voice: String,
+    pub shared_memories: Vec<String>,
+    pub private_member_memories: BTreeMap<String, Vec<String>>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct CampaignMember {
+    pub member_id: String,
+    #[schemars(skip)]
+    pub account_hash: String,
+    pub display_name: String,
+    pub actor_id: String,
+    pub is_host: bool,
+    pub active: bool,
+    pub cell_allowance: u8,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct CampaignMembership {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub governance_epoch: u64,
+    pub host_member_id: String,
+    pub members: BTreeMap<String, CampaignMember>,
+    pub extraordinary_permissions: BTreeMap<String, Vec<ExtraordinaryPermission>>,
+}
+
+impl CampaignMembership {
+    pub fn member_for_account(&self, account_hash: &str) -> Option<&CampaignMember> {
+        self.members
+            .values()
+            .find(|member| member.active && member.account_hash == account_hash)
+    }
+
+    pub fn controlled_actor_ids(&self) -> BTreeSet<String> {
+        self.members
+            .values()
+            .filter(|member| member.active)
+            .map(|member| member.actor_id.clone())
+            .collect()
+    }
+
+    pub fn pooled_cell_allowance(&self) -> u8 {
+        self.members
+            .values()
+            .filter(|member| member.active)
+            .fold(0_u8, |total, member| {
+                total.saturating_add(member.cell_allowance)
+            })
+            .min(OPERATOR_CELL_CEILING)
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct CampaignGovernance {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub governance_epoch: u64,
+    pub time_advance_policy: String,
+    pub pooled_cell_ceiling: u8,
+    pub cooperative_shared_scene_only: bool,
+    pub pvp_enabled: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct TimeAdvanceProposal {
+    pub schema: String,
+    pub id: String,
+    pub campaign_id: Uuid,
+    pub expected_world_revision: u64,
+    pub minutes: u32,
+    pub proposer_member_id: String,
+    pub approvals: BTreeSet<String>,
+    pub committed: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct GroupTravelProposal {
+    pub schema: String,
+    pub id: String,
+    pub campaign_id: Uuid,
+    pub expected_world_revision: u64,
+    pub origin_location_id: String,
+    pub destination_location_id: String,
+    pub travel_minutes: u32,
+    pub proposer_member_id: String,
+    pub approvals: BTreeSet<String>,
+    pub committed: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct CellBudgetProposal {
+    pub schema: String,
+    pub id: String,
+    pub campaign_id: Uuid,
+    pub expected_world_revision: u64,
+    pub expected_resolution_epoch: u64,
+    pub active_cell_budget: u8,
+    pub proposer_member_id: String,
+    pub approvals: BTreeSet<String>,
+    pub committed: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct PublishedSessionZeroSeed {
+    pub schema: String,
+    pub session_zero_id: Uuid,
+    pub approved_seed_digest: String,
+    pub contract: CampaignContract,
+    pub membership: CampaignMembership,
+    pub governance: CampaignGovernance,
+    pub dm_persona: CampaignDmPersona,
+    pub approvals: Vec<SessionZeroApproval>,
+    pub approved_brief: ApprovedCampaignBrief,
+    #[serde(default)]
+    pub boundaries: Vec<ContentBoundary>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct ApprovedCampaignBrief {
+    pub schema: String,
+    pub session_zero_id: Uuid,
+    pub host_member_id: String,
+    pub contract: CampaignContract,
+    pub aggregate_boundaries: Vec<AggregatedBoundary>,
+    pub characters: Vec<CharacterDraft>,
+    pub member_actor_ids: BTreeMap<String, String>,
+    pub shared_digest: String,
+    pub character_digests: BTreeMap<String, String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, Default)]
+pub struct CampaignContractPatch {
+    pub premise: Option<String>,
+    pub canon_horizon: Option<String>,
+    pub starting_where: Option<String>,
+    pub starting_when: Option<String>,
+    pub starting_pressure: Option<String>,
+    pub desired_goal: Option<String>,
+    pub tone: Option<Vec<String>>,
+    pub themes: Option<Vec<String>>,
+    pub pacing: Option<String>,
+    pub consequence_style: Option<String>,
+    pub narrative_focus: Option<String>,
+    pub party_bonds: Option<Vec<String>>,
+    pub internal_tension: Option<String>,
+    pub dm_style: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, Default)]
+pub struct CharacterDraftPatch {
+    pub name: Option<String>,
+    pub public_premise: Option<String>,
+    pub private_history_add: Vec<String>,
+    pub secrets_add: Vec<String>,
+    pub capabilities_add: Vec<String>,
+    pub knowledge_add: Vec<String>,
+    pub equipment_add: Vec<String>,
+    pub relationships: BTreeMap<String, String>,
+    pub obligations_add: Vec<String>,
+    pub vulnerabilities_add: Vec<String>,
+    pub goals_add: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+pub struct SessionZeroDelta {
+    pub contract_patch: CampaignContractPatch,
+    pub character_patch: Option<CharacterDraftPatch>,
+    pub decisions: Vec<SessionZeroDecision>,
+    pub dm_speech: String,
+    pub suggested_replies: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct SessionZeroState {
+    pub schema: String,
+    pub id: Uuid,
+    pub name: String,
+    pub status: SessionZeroStatus,
+    pub revision: u64,
+    pub shared_epoch: u64,
+    pub boundary_epoch: u64,
+    pub host_member_id: String,
+    pub roster_locked: bool,
+    pub members: BTreeMap<String, SessionZeroMember>,
+    pub channels: BTreeMap<String, SessionZeroChannel>,
+    pub messages: BTreeMap<String, SessionZeroMessage>,
+    pub contract: CampaignContract,
+    pub character_drafts: BTreeMap<String, CharacterDraft>,
+    pub character_epochs: BTreeMap<String, u64>,
+    pub boundaries: BTreeMap<String, ContentBoundary>,
+    pub aggregate_boundaries: Vec<AggregatedBoundary>,
+    pub decisions: BTreeMap<String, SessionZeroDecision>,
+    pub approvals: BTreeMap<String, SessionZeroApproval>,
+    pub invites: BTreeMap<String, SessionZeroInvite>,
+    pub dm_persona: CampaignDmPersona,
+    pub preview: Option<WorldCompilePreview>,
+    pub preview_model_receipts: Vec<ModelStageReceipt>,
+    pub preview_evidence_coverage: Vec<EvidenceCoverage>,
+    pub preview_shared_digest: Option<String>,
+    pub preview_character_digests: BTreeMap<String, String>,
+    pub published_campaign_id: Option<Uuid>,
+    pub published_seed_digest: Option<String>,
+    #[serde(default)]
+    pub review_campaign_id: Option<Uuid>,
+    #[serde(default)]
+    pub review_world_revision: Option<u64>,
+    #[serde(default)]
+    pub inherited_aggregate_boundaries: Vec<AggregatedBoundary>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl SessionZeroState {
+    pub fn new(
+        name: String,
+        vault_provider: String,
+        account_hash: String,
+        display_name: String,
+    ) -> Result<Self> {
+        Self::new_with_allowance(
+            name,
+            vault_provider,
+            account_hash,
+            display_name,
+            FIXTURE_CELL_ALLOWANCE,
+        )
+    }
+
+    pub fn new_with_allowance(
+        name: String,
+        vault_provider: String,
+        account_hash: String,
+        display_name: String,
+        cell_allowance: u8,
+    ) -> Result<Self> {
+        validate_bounded("session name", &name, 1, 80)?;
+        validate_bounded("vault provider", &vault_provider, 1, 120)?;
+        validate_bounded("display name", &display_name, 1, 80)?;
+        if cell_allowance == 0 || cell_allowance > OPERATOR_CELL_CEILING {
+            return Err(anyhow!("Persona-cell entitlement is out of range"));
+        }
+        let id = Uuid::new_v4();
+        let member_id = format!("member:{}", Uuid::new_v4().simple());
+        let now = Utc::now();
+        let mut members = BTreeMap::new();
+        members.insert(
+            member_id.clone(),
+            SessionZeroMember {
+                schema: "ghostlight.session_zero_member.v1".into(),
+                id: member_id.clone(),
+                account_hash,
+                display_name: display_name.clone(),
+                is_host: true,
+                active: true,
+                cell_allowance,
+                joined_at: now,
+            },
+        );
+        let shared_id = "shared:table".to_string();
+        let private_id = format!("private:{member_id}");
+        let channels = BTreeMap::from([
+            (
+                shared_id.clone(),
+                SessionZeroChannel {
+                    schema: "ghostlight.session_zero_channel.v1".into(),
+                    id: shared_id,
+                    kind: SessionZeroChannelKind::SharedTable,
+                    member_id: None,
+                    revision: 0,
+                    message_ids: vec![],
+                },
+            ),
+            (
+                private_id.clone(),
+                SessionZeroChannel {
+                    schema: "ghostlight.session_zero_channel.v1".into(),
+                    id: private_id,
+                    kind: SessionZeroChannelKind::PrivateDm,
+                    member_id: Some(member_id.clone()),
+                    revision: 0,
+                    message_ids: vec![],
+                },
+            ),
+        ]);
+        let actor_id = format!("player:{}", Uuid::new_v4().simple());
+        Ok(Self {
+            schema: "ghostlight.session_zero.v1".into(),
+            id,
+            name: name.clone(),
+            status: SessionZeroStatus::Drafting,
+            revision: 0,
+            shared_epoch: 0,
+            boundary_epoch: 0,
+            host_member_id: member_id.clone(),
+            roster_locked: false,
+            members,
+            channels,
+            messages: BTreeMap::new(),
+            contract: CampaignContract {
+                schema: "ghostlight.campaign_contract.v1".into(),
+                vault_provider,
+                campaign_name: name,
+                time_advance_policy: "unanimous".into(),
+                ..CampaignContract::default()
+            },
+            character_drafts: BTreeMap::from([(
+                member_id.clone(),
+                CharacterDraft {
+                    schema: "ghostlight.character_draft.v1".into(),
+                    member_id: member_id.clone(),
+                    actor_id,
+                    name: display_name,
+                    ..CharacterDraft::default()
+                },
+            )]),
+            character_epochs: BTreeMap::from([(member_id.clone(), 0)]),
+            boundaries: BTreeMap::new(),
+            aggregate_boundaries: vec![],
+            decisions: BTreeMap::new(),
+            approvals: BTreeMap::new(),
+            invites: BTreeMap::new(),
+            dm_persona: CampaignDmPersona {
+                schema: "ghostlight.campaign_dm_persona.v1".into(),
+                id: format!("dm:{}", id.simple()),
+                name: "Ghostlight".into(),
+                voice: "Curious, candid, fiction-first, and willing to negotiate for meaningful stakes.".into(),
+                shared_memories: vec![],
+                private_member_memories: BTreeMap::new(),
+            },
+            preview: None,
+            preview_model_receipts: vec![],
+            preview_evidence_coverage: vec![],
+            preview_shared_digest: None,
+            preview_character_digests: BTreeMap::new(),
+            published_campaign_id: None,
+            published_seed_digest: None,
+            review_campaign_id: None,
+            review_world_revision: None,
+            inherited_aggregate_boundaries: vec![],
+            created_at: now,
+            updated_at: now,
+        })
+    }
+
+    pub fn for_contract_review(
+        campaign: &Campaign,
+        membership: &CampaignMembership,
+        contract: CampaignContract,
+        dm_persona: CampaignDmPersona,
+        previous_brief: Option<&ApprovedCampaignBrief>,
+        boundaries: Vec<ContentBoundary>,
+    ) -> Result<Self> {
+        if membership.campaign_id != campaign.id {
+            return Err(anyhow!(
+                "contract review membership targets another campaign"
+            ));
+        }
+        let id = Uuid::new_v4();
+        let now = Utc::now();
+        let mut members = BTreeMap::new();
+        let mut channels = BTreeMap::from([(
+            "shared:table".to_string(),
+            SessionZeroChannel {
+                schema: "ghostlight.session_zero_channel.v1".into(),
+                id: "shared:table".into(),
+                kind: SessionZeroChannelKind::SharedTable,
+                member_id: None,
+                revision: 0,
+                message_ids: vec![],
+            },
+        )]);
+        let mut character_drafts = BTreeMap::new();
+        let mut character_epochs = BTreeMap::new();
+        for member in membership.members.values().filter(|member| member.active) {
+            let actor = campaign
+                .actors
+                .get(&member.actor_id)
+                .ok_or_else(|| anyhow!("campaign member actor is missing"))?;
+            let previous = previous_brief.and_then(|brief| {
+                brief
+                    .characters
+                    .iter()
+                    .find(|draft| draft.actor_id == member.actor_id)
+            });
+            members.insert(
+                member.member_id.clone(),
+                SessionZeroMember {
+                    schema: "ghostlight.session_zero_member.v1".into(),
+                    id: member.member_id.clone(),
+                    account_hash: member.account_hash.clone(),
+                    display_name: member.display_name.clone(),
+                    is_host: member.is_host,
+                    active: true,
+                    cell_allowance: member.cell_allowance,
+                    joined_at: now,
+                },
+            );
+            let channel_id = format!("private:{}", member.member_id);
+            channels.insert(
+                channel_id.clone(),
+                SessionZeroChannel {
+                    schema: "ghostlight.session_zero_channel.v1".into(),
+                    id: channel_id,
+                    kind: SessionZeroChannelKind::PrivateDm,
+                    member_id: Some(member.member_id.clone()),
+                    revision: 0,
+                    message_ids: vec![],
+                },
+            );
+            character_drafts.insert(
+                member.member_id.clone(),
+                CharacterDraft {
+                    schema: "ghostlight.character_draft.v1".into(),
+                    member_id: member.member_id.clone(),
+                    actor_id: member.actor_id.clone(),
+                    name: actor.name.clone(),
+                    public_premise: previous
+                        .map(|value| value.public_premise.clone())
+                        .unwrap_or_default(),
+                    private_history: previous
+                        .map(|value| value.private_history.clone())
+                        .unwrap_or_else(|| actor.memories.clone()),
+                    secrets: previous
+                        .map(|value| value.secrets.clone())
+                        .unwrap_or_default(),
+                    capabilities: actor.capabilities.iter().cloned().collect(),
+                    knowledge: actor.knowledge.iter().cloned().collect(),
+                    equipment: actor.equipment.iter().cloned().collect(),
+                    relationships: actor.relationships.clone(),
+                    obligations: actor.obligations.iter().cloned().collect(),
+                    vulnerabilities: actor.conditions.iter().cloned().collect(),
+                    goals: actor.goals.clone(),
+                    extraordinary_permissions: membership
+                        .extraordinary_permissions
+                        .get(&member.actor_id)
+                        .cloned()
+                        .unwrap_or_default(),
+                },
+            );
+            character_epochs.insert(member.member_id.clone(), 0);
+        }
+        let exact_boundaries = boundaries
+            .into_iter()
+            .map(|boundary| (boundary.id.clone(), boundary))
+            .collect::<BTreeMap<_, _>>();
+        let inherited_aggregate_boundaries = previous_brief
+            .map(|brief| brief.aggregate_boundaries.clone())
+            .unwrap_or_default();
+        let aggregate_boundaries =
+            aggregate_boundaries_with_inherited(&exact_boundaries, &inherited_aggregate_boundaries);
+        Ok(Self {
+            schema: "ghostlight.session_zero.v1".into(),
+            id,
+            name: format!("{} — Contract Review", campaign.name),
+            status: SessionZeroStatus::RosterLocked,
+            revision: 0,
+            shared_epoch: 0,
+            boundary_epoch: 0,
+            host_member_id: membership.host_member_id.clone(),
+            roster_locked: true,
+            members,
+            channels,
+            messages: BTreeMap::new(),
+            contract,
+            character_drafts,
+            character_epochs,
+            boundaries: exact_boundaries,
+            aggregate_boundaries,
+            decisions: BTreeMap::new(),
+            approvals: BTreeMap::new(),
+            invites: BTreeMap::new(),
+            dm_persona,
+            preview: None,
+            preview_model_receipts: vec![],
+            preview_evidence_coverage: vec![],
+            preview_shared_digest: None,
+            preview_character_digests: BTreeMap::new(),
+            published_campaign_id: None,
+            published_seed_digest: None,
+            review_campaign_id: Some(campaign.id),
+            review_world_revision: Some(campaign.revision),
+            inherited_aggregate_boundaries,
+            created_at: now,
+            updated_at: now,
+        })
+    }
+
+    pub fn member_for_account(&self, account_hash: &str) -> Option<&SessionZeroMember> {
+        self.members
+            .values()
+            .find(|member| member.active && member.account_hash == account_hash)
+    }
+
+    pub fn shared_digest(&self) -> Result<String> {
+        digest(&(
+            &self.contract,
+            &self.aggregate_boundaries,
+            self.members
+                .values()
+                .filter(|member| member.active)
+                .map(|member| {
+                    let draft = &self.character_drafts[&member.id];
+                    (
+                        &member.id,
+                        &member.display_name,
+                        &draft.name,
+                        &draft.public_premise,
+                    )
+                })
+                .collect::<Vec<_>>(),
+        ))
+    }
+
+    pub fn character_digest(&self, member_id: &str) -> Result<String> {
+        let draft = self
+            .character_drafts
+            .get(member_id)
+            .ok_or_else(|| anyhow!("character draft is missing"))?;
+        let boundaries = self
+            .boundaries
+            .values()
+            .filter(|boundary| boundary.owner_member_id == member_id)
+            .collect::<Vec<_>>();
+        digest(&(draft, boundaries))
+    }
+
+    pub fn pooled_cell_allowance(&self) -> u8 {
+        self.members
+            .values()
+            .filter(|member| member.active)
+            .fold(0_u8, |total, member| {
+                total.saturating_add(member.cell_allowance)
+            })
+            .min(OPERATOR_CELL_CEILING)
+    }
+
+    pub fn approved_brief(&self) -> Result<ApprovedCampaignBrief> {
+        if self.status != SessionZeroStatus::Review || self.preview.is_none() {
+            return Err(anyhow!("session zero has no final review preview"));
+        }
+        let brief = self.compilation_brief()?;
+        for member in self.members.values().filter(|member| member.active) {
+            let character_digest = self.character_digest(&member.id)?;
+            let approval = self
+                .approvals
+                .get(&member.id)
+                .ok_or_else(|| anyhow!("{} has not approved", member.display_name))?;
+            if approval.shared_digest != brief.shared_digest
+                || approval.character_digest != character_digest
+            {
+                return Err(anyhow!("{} approval is stale", member.display_name));
+            }
+        }
+        Ok(brief)
+    }
+
+    pub fn compilation_brief(&self) -> Result<ApprovedCampaignBrief> {
+        if !self.roster_locked {
+            return Err(anyhow!("roster must be locked before compilation"));
+        }
+        if self
+            .decisions
+            .values()
+            .any(|decision| decision.material && !decision.resolved)
+        {
+            return Err(anyhow!("material decisions remain unresolved"));
+        }
+        let shared_digest = self.shared_digest()?;
+        let active = self
+            .members
+            .values()
+            .filter(|member| member.active)
+            .collect::<Vec<_>>();
+        let mut character_digests = BTreeMap::new();
+        let mut characters = Vec::new();
+        let mut member_actor_ids = BTreeMap::new();
+        for member in active {
+            let character_digest = self.character_digest(&member.id)?;
+            character_digests.insert(member.id.clone(), character_digest);
+            let draft = self.character_drafts[&member.id].clone();
+            member_actor_ids.insert(member.id.clone(), draft.actor_id.clone());
+            characters.push(draft);
+        }
+        Ok(ApprovedCampaignBrief {
+            schema: "ghostlight.approved_campaign_brief.v1".into(),
+            session_zero_id: self.id,
+            host_member_id: self.host_member_id.clone(),
+            contract: self.contract.clone(),
+            aggregate_boundaries: self.aggregate_boundaries.clone(),
+            characters,
+            member_actor_ids,
+            shared_digest,
+            character_digests,
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum SessionZeroCommand {
+    CreateInvites {
+        actor_account_hash: String,
+        count: u8,
+    },
+    Join {
+        token: String,
+        account_hash: String,
+        display_name: String,
+        cell_allowance: u8,
+    },
+    Leave {
+        actor_account_hash: String,
+        expected_revision: u64,
+    },
+    RemoveMember {
+        actor_account_hash: String,
+        expected_revision: u64,
+        member_id: String,
+    },
+    PostPlayerMessage {
+        actor_account_hash: String,
+        expected_revision: u64,
+        channel_id: String,
+        text: String,
+    },
+    ApplyDmTurn {
+        expected_component_epoch: u64,
+        expected_channel_revision: u64,
+        channel_id: String,
+        member_id: Option<String>,
+        delta: SessionZeroDelta,
+        model_receipts: Vec<ModelStageReceipt>,
+    },
+    SetBoundary {
+        actor_account_hash: String,
+        expected_revision: u64,
+        boundary_id: Option<String>,
+        topic: String,
+        normalized_topic: String,
+        level: BoundaryLevel,
+    },
+    RemoveBoundary {
+        actor_account_hash: String,
+        expected_revision: u64,
+        boundary_id: String,
+    },
+    ResolveDecision {
+        actor_account_hash: String,
+        expected_revision: u64,
+        decision_id: String,
+        accept: bool,
+        counter: Option<String>,
+    },
+    LockRoster {
+        actor_account_hash: String,
+        expected_revision: u64,
+    },
+    BeginCompilation {
+        actor_account_hash: String,
+        expected_revision: u64,
+    },
+    InstallPreview {
+        expected_revision: u64,
+        preview: WorldCompilePreview,
+        model_receipts: Vec<ModelStageReceipt>,
+    },
+    CompilationFailed {
+        expected_revision: u64,
+        message: String,
+    },
+    Approve {
+        actor_account_hash: String,
+        expected_revision: u64,
+    },
+    MarkPublished {
+        actor_account_hash: String,
+        expected_revision: u64,
+        campaign_id: Uuid,
+        seed_digest: String,
+    },
+    Archive {
+        actor_account_hash: String,
+        expected_revision: u64,
+    },
+}
+
+#[derive(Clone, Debug)]
+pub struct SessionZeroCommandResult {
+    pub state: SessionZeroState,
+    pub invite_tokens: Vec<String>,
+}
+
+#[derive(Clone)]
+pub struct SessionZeroKernel {
+    tx: mpsc::Sender<KernelRequest>,
+}
+
+struct KernelRequest {
+    command: SessionZeroCommand,
+    reply: oneshot::Sender<Result<SessionZeroCommandResult>>,
+}
+
+impl SessionZeroKernel {
+    pub fn initialize(store: &CampaignStore, state: &SessionZeroState) -> Result<()> {
+        if !store.keys("session_zero.v1")?.is_empty() {
+            return Err(anyhow!("session zero store is not empty"));
+        }
+        store.insert(
+            "session_zero.v1",
+            "ghostlight.session_zero.v1",
+            &state.id.to_string(),
+            state,
+        )?;
+        Ok(())
+    }
+
+    pub fn start(store: CampaignStore, state_id: Uuid) -> Self {
+        let (tx, mut rx) = mpsc::channel::<KernelRequest>(64);
+        tokio::spawn(async move {
+            while let Some(request) = rx.recv().await {
+                let result = execute(&store, state_id, request.command);
+                let _ = request.reply.send(result);
+            }
+        });
+        Self { tx }
+    }
+
+    pub async fn command(&self, command: SessionZeroCommand) -> Result<SessionZeroCommandResult> {
+        let (reply, receive) = oneshot::channel();
+        self.tx
+            .send(KernelRequest { command, reply })
+            .await
+            .map_err(|_| anyhow!("session zero kernel stopped"))?;
+        receive
+            .await
+            .map_err(|_| anyhow!("session zero kernel stopped"))?
+    }
+}
+
+#[derive(Clone)]
+pub struct SessionZeroRuntime {
+    pub store: CampaignStore,
+    pub kernel: SessionZeroKernel,
+}
+
+#[derive(Clone)]
+pub struct SessionZeroRegistry {
+    root: PathBuf,
+    runtimes: Arc<RwLock<BTreeMap<Uuid, SessionZeroRuntime>>>,
+}
+
+impl SessionZeroRegistry {
+    pub fn new(root: impl AsRef<Path>) -> Result<Self> {
+        let root = root.as_ref().to_path_buf();
+        fs::create_dir_all(&root)?;
+        Ok(Self {
+            root,
+            runtimes: Arc::new(RwLock::new(BTreeMap::new())),
+        })
+    }
+
+    pub async fn load_existing(&self) -> Result<()> {
+        let mut found = BTreeMap::new();
+        for entry in fs::read_dir(&self.root)? {
+            let entry = entry?;
+            let Ok(id) = Uuid::parse_str(&entry.file_name().to_string_lossy()) else {
+                continue;
+            };
+            let path = entry.path().join("session-zero.cc");
+            if !path.is_file() {
+                continue;
+            }
+            let store = CampaignStore::open(path)?;
+            let keys = store.keys("session_zero.v1")?;
+            if keys != vec![id.to_string()] {
+                return Err(anyhow!(
+                    "session zero directory must contain its one matching state row"
+                ));
+            }
+            found.insert(
+                id,
+                SessionZeroRuntime {
+                    kernel: SessionZeroKernel::start(store.clone(), id),
+                    store,
+                },
+            );
+        }
+        *self.runtimes.write().await = found;
+        Ok(())
+    }
+
+    pub async fn create(&self, state: SessionZeroState) -> Result<SessionZeroRuntime> {
+        if self.runtimes.read().await.contains_key(&state.id) {
+            return Err(anyhow!("session zero already exists"));
+        }
+        let directory = self.root.join(state.id.to_string());
+        if directory.exists() {
+            return Err(anyhow!("session zero directory already exists"));
+        }
+        let staging = self
+            .root
+            .join(format!(".creating-{}-{}", state.id, Uuid::new_v4()));
+        fs::create_dir(&staging)?;
+        let prepared = (|| -> Result<()> {
+            let store = CampaignStore::open(staging.join("session-zero.cc"))?;
+            SessionZeroKernel::initialize(&store, &state)?;
+            drop(store);
+            fs::rename(&staging, &directory)?;
+            Ok(())
+        })();
+        if let Err(error) = prepared {
+            cleanup_staging(&self.root, &staging);
+            return Err(error);
+        }
+        let store = CampaignStore::open(directory.join("session-zero.cc"))?;
+        let runtime = SessionZeroRuntime {
+            kernel: SessionZeroKernel::start(store.clone(), state.id),
+            store,
+        };
+        self.runtimes
+            .write()
+            .await
+            .insert(state.id, runtime.clone());
+        Ok(runtime)
+    }
+
+    pub async fn runtime(&self, id: Uuid) -> Result<SessionZeroRuntime> {
+        self.runtimes
+            .read()
+            .await
+            .get(&id)
+            .cloned()
+            .ok_or_else(|| anyhow!("session zero runtime is not loaded"))
+    }
+
+    pub async fn list(&self) -> Vec<Uuid> {
+        self.runtimes.read().await.keys().copied().collect()
+    }
+
+    pub async fn snapshot(&self, id: Uuid) -> Result<SessionZeroState> {
+        let runtime = self.runtime(id).await?;
+        runtime
+            .store
+            .load::<SessionZeroState>("session_zero.v1", &id.to_string())?
+            .map(|(_, state)| state)
+            .ok_or_else(|| anyhow!("session zero state vanished"))
+    }
+
+    pub async fn session_for_account(&self, account_hash: &str) -> Result<Option<Uuid>> {
+        let runtimes = self.runtimes.read().await.clone();
+        let mut matches = Vec::new();
+        for (id, runtime) in runtimes {
+            let Some((_, state)) = runtime
+                .store
+                .load::<SessionZeroState>("session_zero.v1", &id.to_string())?
+            else {
+                continue;
+            };
+            if state.status != SessionZeroStatus::Archived
+                && state.member_for_account(account_hash).is_some()
+            {
+                matches.push((state.created_at, id));
+            }
+        }
+        matches.sort();
+        Ok(matches.last().map(|(_, id)| *id))
+    }
+
+    pub async fn session_for_invite(&self, token: &str) -> Result<Option<Uuid>> {
+        let wanted = secret_hash(token);
+        let runtimes = self.runtimes.read().await.clone();
+        for (id, runtime) in runtimes {
+            let Some((_, state)) = runtime
+                .store
+                .load::<SessionZeroState>("session_zero.v1", &id.to_string())?
+            else {
+                continue;
+            };
+            if state.invites.values().any(|invite| {
+                invite.token_hash == wanted
+                    && invite.consumed_by_member_id.is_none()
+                    && invite.expires_at > Utc::now()
+            }) {
+                return Ok(Some(id));
+            }
+        }
+        Ok(None)
+    }
+
+    pub async fn active_contract_review_for_account(
+        &self,
+        account_hash: &str,
+    ) -> Result<Option<Uuid>> {
+        let runtimes = self.runtimes.read().await.clone();
+        let mut matches = Vec::new();
+        for (id, runtime) in runtimes {
+            let Some((_, state)) = runtime
+                .store
+                .load::<SessionZeroState>("session_zero.v1", &id.to_string())?
+            else {
+                continue;
+            };
+            if state.review_campaign_id.is_some()
+                && !matches!(
+                    state.status,
+                    SessionZeroStatus::Published | SessionZeroStatus::Archived
+                )
+                && state.member_for_account(account_hash).is_some()
+            {
+                matches.push((state.created_at, id));
+            }
+        }
+        matches.sort();
+        Ok(matches.last().map(|(_, id)| *id))
+    }
+}
+
+fn cleanup_staging(root: &Path, staging: &Path) {
+    let safe = staging.parent() == Some(root)
+        && staging
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.starts_with(".creating-"));
+    if safe && staging.exists() {
+        let _ = fs::remove_dir_all(staging);
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+struct ProjectedLivedStream {
+    lived_stream: String,
+}
+
+#[derive(Clone)]
+pub struct SessionZeroDirector {
+    model: Arc<dyn ModelPort>,
+    projector_model: String,
+    persona_model: String,
+    interpreter_model: String,
+}
+
+impl SessionZeroDirector {
+    pub fn new(
+        model: Arc<dyn ModelPort>,
+        projector_model: impl Into<String>,
+        persona_model: impl Into<String>,
+        interpreter_model: impl Into<String>,
+    ) -> Self {
+        Self {
+            model,
+            projector_model: projector_model.into(),
+            persona_model: persona_model.into(),
+            interpreter_model: interpreter_model.into(),
+        }
+    }
+
+    pub async fn respond(
+        &self,
+        state: &SessionZeroState,
+        channel_id: &str,
+        member_id: Option<&str>,
+    ) -> Result<(SessionZeroDelta, Vec<ModelStageReceipt>)> {
+        require_channel_access_by_member(state, channel_id, member_id)?;
+        let permitted = permitted_dm_context(state, channel_id, member_id)?;
+        let binding = format!(
+            "session-zero:{}:revision:{}:channel:{}",
+            state.id, state.revision, channel_id
+        );
+        let projector = run_validated_stage(
+            self.model.as_ref(),
+            &ModelStageRequest {
+                stage: "session_zero_projector".into(),
+                model: self.projector_model.clone(),
+                snapshot_binding: binding.clone(),
+                lived_stream: format!(
+                    "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, and authorship. Never invent state. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\nReturn JSON only.\n\nPERMITTED CONTEXT:\n{}",
+                    serde_json::to_string(&permitted)?
+                ),
+                output_schema: Some(serde_json::to_value(schema_for!(ProjectedLivedStream))?),
+                source_receipt_ids: vec![],
+                temperature: Some(0.0),
+                max_output_tokens: Some(1800),
+            },
+        )
+        .await?;
+        let lived: ProjectedLivedStream = serde_json::from_value(
+            projector
+                .structured
+                .clone()
+                .ok_or_else(|| anyhow!("projector omitted structured output"))?,
+        )?;
+        let persona = run_validated_stage(
+            self.model.as_ref(),
+            &ModelStageRequest {
+                stage: "session_zero_dm_persona".into(),
+                model: self.persona_model.clone(),
+                snapshot_binding: binding.clone(),
+                lived_stream: format!(
+                    "You are {}. {} Lead a candid, collaborative Session Zero. Ask only the most useful next questions; synthesize choices; preserve the player's premise while negotiating costs and limits that create stakes. Do not claim changes are accepted. Speak naturally, with no schema or machine-state language.\n\n{}",
+                    state.dm_persona.name, state.dm_persona.voice, lived.lived_stream
+                ),
+                output_schema: None,
+                source_receipt_ids: vec![],
+                temperature: Some(0.7),
+                max_output_tokens: Some(1200),
+            },
+        )
+        .await?;
+        let interpreter = run_validated_stage(
+            self.model.as_ref(),
+            &ModelStageRequest {
+                stage: "session_zero_interpreter".into(),
+                model: self.interpreter_model.clone(),
+                snapshot_binding: binding,
+                lived_stream: format!(
+                    "Extract a typed proposal from the DM response against the permitted context. Copy DM speech faithfully into dm_speech. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Return JSON only.\n\nPERMITTED CONTEXT:\n{}\n\nDM RESPONSE:\n{}",
+                    serde_json::to_string(&permitted)?, persona.narrative
+                ),
+                output_schema: Some(serde_json::to_value(schema_for!(SessionZeroDelta))?),
+                source_receipt_ids: vec![],
+                temperature: Some(0.0),
+                max_output_tokens: Some(1800),
+            },
+        )
+        .await?;
+        let delta: SessionZeroDelta = serde_json::from_value(
+            interpreter
+                .structured
+                .clone()
+                .ok_or_else(|| anyhow!("interpreter omitted structured output"))?,
+        )?;
+        validate_dm_delta(state, channel_id, member_id, &delta)?;
+        Ok((
+            delta,
+            vec![projector.receipt, persona.receipt, interpreter.receipt],
+        ))
+    }
+}
+
+fn require_channel_access_by_member(
+    state: &SessionZeroState,
+    channel_id: &str,
+    member_id: Option<&str>,
+) -> Result<()> {
+    let channel = state
+        .channels
+        .get(channel_id)
+        .ok_or_else(|| anyhow!("channel does not exist"))?;
+    match channel.kind {
+        SessionZeroChannelKind::SharedTable => Ok(()),
+        SessionZeroChannelKind::PrivateDm if channel.member_id.as_deref() == member_id => Ok(()),
+        SessionZeroChannelKind::PrivateDm => Err(anyhow!("private channel access denied")),
+    }
+}
+
+fn public_character_projection(draft: &CharacterDraft) -> serde_json::Value {
+    serde_json::json!({
+        "member_id": draft.member_id,
+        "actor_id": draft.actor_id,
+        "name": draft.name,
+        "public_premise": draft.public_premise,
+    })
+}
+
+fn permitted_dm_context(
+    state: &SessionZeroState,
+    channel_id: &str,
+    member_id: Option<&str>,
+) -> Result<serde_json::Value> {
+    let channel = state
+        .channels
+        .get(channel_id)
+        .ok_or_else(|| anyhow!("channel does not exist"))?;
+    let recent_messages = channel
+        .message_ids
+        .iter()
+        .rev()
+        .take(16)
+        .rev()
+        .filter_map(|id| state.messages.get(id))
+        .map(|message| {
+            serde_json::json!({
+                "speaker": message.speaker,
+                "author_member_id": message.author_member_id,
+                "text": message.text,
+            })
+        })
+        .collect::<Vec<_>>();
+    let public_party = state
+        .members
+        .values()
+        .filter(|member| member.active)
+        .map(|member| public_character_projection(&state.character_drafts[&member.id]))
+        .collect::<Vec<_>>();
+    let visible_decisions = state
+        .decisions
+        .values()
+        .filter(|decision| {
+            decision.owner_member_id.is_none() || decision.owner_member_id.as_deref() == member_id
+        })
+        .collect::<Vec<_>>();
+    let mut value = serde_json::json!({
+        "session_id": state.id,
+        "revision": state.revision,
+        "shared_epoch": state.shared_epoch,
+        "boundary_epoch": state.boundary_epoch,
+        "status": state.status,
+        "contract": state.contract,
+        "aggregate_boundaries": state.aggregate_boundaries,
+        "public_party": public_party,
+        "unresolved_decisions": visible_decisions,
+        "recent_messages": recent_messages,
+        "evidence_coverage": state.preview_evidence_coverage,
+    });
+    if channel.kind == SessionZeroChannelKind::PrivateDm {
+        let member_id = member_id.ok_or_else(|| anyhow!("private member is missing"))?;
+        value["private_character"] = serde_json::to_value(
+            state
+                .character_drafts
+                .get(member_id)
+                .ok_or_else(|| anyhow!("private character draft is missing"))?,
+        )?;
+        value["private_boundaries"] = serde_json::to_value(
+            state
+                .boundaries
+                .values()
+                .filter(|boundary| boundary.owner_member_id == member_id)
+                .collect::<Vec<_>>(),
+        )?;
+    }
+    Ok(value)
+}
+
+pub fn session_zero_surface(
+    state: &SessionZeroState,
+    account_hash: &str,
+) -> Result<serde_json::Value> {
+    let member = state
+        .member_for_account(account_hash)
+        .ok_or_else(|| anyhow!("session zero membership required"))?;
+    let channels = state
+        .channels
+        .values()
+        .filter(|channel| {
+            channel.kind == SessionZeroChannelKind::SharedTable
+                || channel.member_id.as_deref() == Some(member.id.as_str())
+        })
+        .map(|channel| {
+            let messages = channel
+                .message_ids
+                .iter()
+                .filter_map(|id| state.messages.get(id))
+                .collect::<Vec<_>>();
+            serde_json::json!({
+                "id": channel.id,
+                "kind": channel.kind,
+                "revision": channel.revision,
+                "messages": messages,
+            })
+        })
+        .collect::<Vec<_>>();
+    let public_party = state
+        .members
+        .values()
+        .filter(|candidate| candidate.active)
+        .map(|candidate| {
+            let draft = &state.character_drafts[&candidate.id];
+            serde_json::json!({
+                "member_id": candidate.id,
+                "display_name": candidate.display_name,
+                "is_host": candidate.is_host,
+                "name": draft.name,
+                "public_premise": draft.public_premise,
+                "approved": state.approvals.contains_key(&candidate.id),
+            })
+        })
+        .collect::<Vec<_>>();
+    let private_boundaries = state
+        .boundaries
+        .values()
+        .filter(|boundary| boundary.owner_member_id == member.id)
+        .collect::<Vec<_>>();
+    let visible_decisions = state
+        .decisions
+        .values()
+        .filter(|decision| {
+            decision.owner_member_id.is_none()
+                || decision.owner_member_id.as_deref() == Some(member.id.as_str())
+        })
+        .collect::<Vec<_>>();
+    let private_preview = state.preview.as_ref().map(|preview| {
+        serde_json::json!({
+            "title": preview.title,
+            "gaps": preview.gaps,
+            "branch_assumptions": preview.branch_assumptions,
+            "topology": preview.campaign.locations,
+            "institutions": preview.campaign.institutions,
+            "clocks": preview.campaign.clocks,
+        })
+    });
+    let roster_summary = state
+        .members
+        .values()
+        .filter(|candidate| candidate.active)
+        .map(|candidate| {
+            format!(
+                "{} · {}{}",
+                candidate.display_name,
+                if state.approvals.contains_key(&candidate.id) {
+                    "ready"
+                } else {
+                    "not ready"
+                },
+                if candidate.is_host { " · host" } else { "" }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let contract_summary = format!(
+        "Premise: {}\nWhere: {}\nWhen: {}\nPressure: {}\nGoal: {}\nTone: {}",
+        state.contract.premise,
+        state.contract.starting_where,
+        state.contract.starting_when,
+        state.contract.starting_pressure,
+        state.contract.desired_goal,
+        state.contract.tone.join(", ")
+    );
+    let character = &state.character_drafts[&member.id];
+    let character_summary = format!(
+        "{}\n{}\nCapabilities: {}\nObligations: {}\nVulnerabilities: {}",
+        character.name,
+        character.public_premise,
+        character.capabilities.join(", "),
+        character.obligations.join(", "),
+        character.vulnerabilities.join(", ")
+    );
+    Ok(serde_json::json!({
+        "type": "surface-state",
+        "schema": "gamecult.eve.surface.v1",
+        "providerId": "gamecult.ghostlight.dungeon.session-zero",
+        "providerKind": "narrative.session-zero",
+        "title": state.name,
+        "version": state.revision,
+        "session_zero": {
+            "id": state.id,
+            "status": state.status,
+            "revision": state.revision,
+            "roster_locked": state.roster_locked,
+            "viewer_member_id": member.id,
+            "viewer_is_host": member.is_host,
+            "active_members": public_party.len(),
+            "pooled_cell_allowance": state.pooled_cell_allowance(),
+            "contract": state.contract,
+            "aggregate_boundaries": state.aggregate_boundaries,
+            "public_party": public_party,
+            "private_character": state.character_drafts[&member.id],
+            "private_boundaries": private_boundaries,
+            "decisions": visible_decisions,
+            "channels": channels,
+            "preview": private_preview,
+            "shared_digest": state.shared_digest()?,
+            "character_digest": state.character_digest(&member.id)?,
+            "approved": state.approvals.contains_key(&member.id),
+            "publish_ready": state.approved_brief().is_ok(),
+        },
+        "surface": {
+            "id": format!("ghostlight.session-zero.{}", state.id),
+            "root": {
+                "id": "session-zero.root",
+                "kind": "surface",
+                "props": {},
+                "children": [
+                    {"id":"session-zero.status","kind":"card","props":{"title":format!("{} · revision {}", session_status_label(&state.status), state.revision)},"children":[]},
+                    {"id":"session-zero.roster","kind":"card","props":{"title":format!("Roster · {} pooled cells",state.pooled_cell_allowance())},"children":[{"id":"session-zero.roster.text","kind":"text","props":{"value":roster_summary},"children":[]}]},
+                    {"id":"session-zero.contract","kind":"card","props":{"title":"Campaign contract"},"children":[{"id":"session-zero.contract.text","kind":"text","props":{"value":contract_summary},"children":[]}]},
+                    {"id":"session-zero.character","kind":"card","props":{"title":"Your private character"},"children":[{"id":"session-zero.character.text","kind":"text","props":{"value":character_summary},"children":[]}]}
+                ]
+            },
+            "styles": {"tokens": {
+                "colorBackground": "#0c1110",
+                "colorPanel": "#17201d",
+                "colorText": "#e8e1cf",
+                "colorMuted": "#9aa69f",
+                "colorAccent": "#d49b58"
+            }}
+        },
+        "commands": [
+            {"id":"session-zero.message","schema":"gamecult.eve.command.v1"},
+            {"id":"session-zero.boundary","schema":"gamecult.eve.command.v1"},
+            {"id":"session-zero.decision","schema":"gamecult.eve.command.v1"},
+            {"id":"session-zero.approve","schema":"gamecult.eve.command.v1"}
+        ]
+    }))
+}
+
+fn session_status_label(status: &SessionZeroStatus) -> &'static str {
+    match status {
+        SessionZeroStatus::Drafting => "Drafting",
+        SessionZeroStatus::RosterLocked => "Roster locked",
+        SessionZeroStatus::Compiling => "Compiling",
+        SessionZeroStatus::Review => "Review",
+        SessionZeroStatus::Published => "Published",
+        SessionZeroStatus::Archived => "Archived",
+    }
+}
+
+fn execute(
+    store: &CampaignStore,
+    state_id: Uuid,
+    command: SessionZeroCommand,
+) -> Result<SessionZeroCommandResult> {
+    let key = state_id.to_string();
+    let (row, mut state) = store
+        .load::<SessionZeroState>("session_zero.v1", &key)?
+        .ok_or_else(|| anyhow!("session zero state vanished"))?;
+    let mut invite_tokens = Vec::new();
+    match command {
+        SessionZeroCommand::CreateInvites {
+            actor_account_hash,
+            count,
+        } => {
+            require_host(&state, &actor_account_hash)?;
+            if state.roster_locked {
+                return Err(anyhow!("roster is locked"));
+            }
+            let available = MAX_SESSION_ZERO_MEMBERS.saturating_sub(
+                state
+                    .members
+                    .values()
+                    .filter(|member| member.active)
+                    .count(),
+            );
+            let count = usize::from(count);
+            if count == 0 || count > available {
+                return Err(anyhow!("invite count exceeds available seats"));
+            }
+            for _ in 0..count {
+                let token = Uuid::new_v4().simple().to_string();
+                let token_hash = secret_hash(&token);
+                let id = format!("invite:{}", Uuid::new_v4().simple());
+                state.invites.insert(
+                    id.clone(),
+                    SessionZeroInvite {
+                        schema: "ghostlight.session_zero_invite.v1".into(),
+                        id,
+                        token_hash,
+                        expires_at: Utc::now() + Duration::days(7),
+                        consumed_by_member_id: None,
+                    },
+                );
+                invite_tokens.push(token);
+            }
+        }
+        SessionZeroCommand::Join {
+            token,
+            account_hash,
+            display_name,
+            cell_allowance,
+        } => {
+            if state.roster_locked {
+                return Err(anyhow!("roster is locked"));
+            }
+            if state.member_for_account(&account_hash).is_some() {
+                return Err(anyhow!("account is already a member"));
+            }
+            if state
+                .members
+                .values()
+                .filter(|member| member.active)
+                .count()
+                >= MAX_SESSION_ZERO_MEMBERS
+            {
+                return Err(anyhow!("session zero is full"));
+            }
+            validate_bounded("display name", &display_name, 1, 80)?;
+            if cell_allowance == 0 || cell_allowance > OPERATOR_CELL_CEILING {
+                return Err(anyhow!("Persona-cell entitlement is out of range"));
+            }
+            let token_hash = secret_hash(&token);
+            let invite = state
+                .invites
+                .values_mut()
+                .find(|invite| {
+                    invite.token_hash == token_hash
+                        && invite.expires_at > Utc::now()
+                        && invite.consumed_by_member_id.is_none()
+                })
+                .ok_or_else(|| anyhow!("invite is invalid, expired, or consumed"))?;
+            let member_id = format!("member:{}", Uuid::new_v4().simple());
+            invite.consumed_by_member_id = Some(member_id.clone());
+            state.members.insert(
+                member_id.clone(),
+                SessionZeroMember {
+                    schema: "ghostlight.session_zero_member.v1".into(),
+                    id: member_id.clone(),
+                    account_hash,
+                    display_name: display_name.clone(),
+                    is_host: false,
+                    active: true,
+                    cell_allowance,
+                    joined_at: Utc::now(),
+                },
+            );
+            let channel_id = format!("private:{member_id}");
+            state.channels.insert(
+                channel_id.clone(),
+                SessionZeroChannel {
+                    schema: "ghostlight.session_zero_channel.v1".into(),
+                    id: channel_id,
+                    kind: SessionZeroChannelKind::PrivateDm,
+                    member_id: Some(member_id.clone()),
+                    revision: 0,
+                    message_ids: vec![],
+                },
+            );
+            state.character_drafts.insert(
+                member_id.clone(),
+                CharacterDraft {
+                    schema: "ghostlight.character_draft.v1".into(),
+                    member_id: member_id.clone(),
+                    actor_id: format!("player:{}", Uuid::new_v4().simple()),
+                    name: display_name,
+                    ..CharacterDraft::default()
+                },
+            );
+            state.character_epochs.insert(member_id, 0);
+            shared_changed(&mut state);
+        }
+        SessionZeroCommand::Leave {
+            actor_account_hash,
+            expected_revision,
+        } => {
+            require_revision(&state, expected_revision)?;
+            if state.roster_locked {
+                return Err(anyhow!("roster is locked"));
+            }
+            let member_id = state
+                .member_for_account(&actor_account_hash)
+                .ok_or_else(|| anyhow!("account is not a member"))?
+                .id
+                .clone();
+            if member_id == state.host_member_id {
+                return Err(anyhow!(
+                    "the host must archive rather than abandon the draft"
+                ));
+            }
+            state
+                .members
+                .get_mut(&member_id)
+                .expect("member exists")
+                .active = false;
+            state.approvals.remove(&member_id);
+            shared_changed(&mut state);
+        }
+        SessionZeroCommand::RemoveMember {
+            actor_account_hash,
+            expected_revision,
+            member_id,
+        } => {
+            require_revision(&state, expected_revision)?;
+            require_host(&state, &actor_account_hash)?;
+            if state.roster_locked {
+                return Err(anyhow!("roster is locked"));
+            }
+            if member_id == state.host_member_id {
+                return Err(anyhow!("the host cannot remove themselves"));
+            }
+            let member = state
+                .members
+                .get_mut(&member_id)
+                .ok_or_else(|| anyhow!("member does not exist"))?;
+            if !member.active {
+                return Err(anyhow!("member has already left"));
+            }
+            member.active = false;
+            state.approvals.remove(&member_id);
+            shared_changed(&mut state);
+        }
+        SessionZeroCommand::PostPlayerMessage {
+            actor_account_hash,
+            expected_revision,
+            channel_id,
+            text,
+        } => {
+            require_revision(&state, expected_revision)?;
+            validate_bounded("session zero message", &text, 1, 4_000)?;
+            let member = state
+                .member_for_account(&actor_account_hash)
+                .ok_or_else(|| anyhow!("account is not a member"))?
+                .clone();
+            require_channel_access(&state, &member.id, &channel_id)?;
+            append_message(
+                &mut state,
+                channel_id,
+                Some(member.id),
+                SessionZeroSpeakerKind::Player,
+                text,
+            )?;
+        }
+        SessionZeroCommand::ApplyDmTurn {
+            expected_component_epoch,
+            expected_channel_revision,
+            channel_id,
+            member_id,
+            delta,
+            model_receipts,
+        } => {
+            let channel = state
+                .channels
+                .get(&channel_id)
+                .ok_or_else(|| anyhow!("session zero channel is missing"))?;
+            if channel.revision != expected_channel_revision {
+                return Err(anyhow!("stale Session Zero channel projection"));
+            }
+            let live_component_epoch = match channel.kind {
+                SessionZeroChannelKind::SharedTable => state.shared_epoch,
+                SessionZeroChannelKind::PrivateDm => *state
+                    .character_epochs
+                    .get(
+                        member_id
+                            .as_deref()
+                            .ok_or_else(|| anyhow!("private member is missing"))?,
+                    )
+                    .ok_or_else(|| anyhow!("private character epoch is missing"))?,
+            };
+            if live_component_epoch != expected_component_epoch {
+                return Err(anyhow!("stale Session Zero component projection"));
+            }
+            validate_dm_delta(&state, &channel_id, member_id.as_deref(), &delta)?;
+            let contract_changed = delta.contract_patch != CampaignContractPatch::default();
+            let decisions_changed = !delta.decisions.is_empty();
+            apply_contract_patch(&mut state.contract, delta.contract_patch);
+            if let Some(patch) = delta.character_patch {
+                let owner = member_id.as_deref().ok_or_else(|| {
+                    anyhow!("shared DM turn cannot mutate private character state")
+                })?;
+                let draft = state
+                    .character_drafts
+                    .get_mut(owner)
+                    .ok_or_else(|| anyhow!("character draft is missing"))?;
+                apply_character_patch(draft, patch);
+                character_changed(&mut state, owner);
+            }
+            for mut decision in delta.decisions {
+                if decision.id.trim().is_empty() {
+                    decision.id = format!("decision:{}", Uuid::new_v4().simple());
+                }
+                state.decisions.insert(decision.id.clone(), decision);
+            }
+            if contract_changed || (decisions_changed && member_id.is_none()) {
+                shared_changed(&mut state);
+            } else if decisions_changed && let Some(owner) = member_id.as_deref() {
+                character_changed(&mut state, owner);
+            }
+            if !delta.dm_speech.trim().is_empty() {
+                append_message(
+                    &mut state,
+                    channel_id,
+                    None,
+                    SessionZeroSpeakerKind::Dm,
+                    delta.dm_speech,
+                )?;
+            }
+            state.preview_model_receipts.extend(model_receipts);
+        }
+        SessionZeroCommand::SetBoundary {
+            actor_account_hash,
+            expected_revision,
+            boundary_id,
+            topic,
+            normalized_topic,
+            level,
+        } => {
+            require_revision(&state, expected_revision)?;
+            validate_bounded("boundary topic", &topic, 1, 300)?;
+            validate_bounded("normalized boundary topic", &normalized_topic, 1, 160)?;
+            let member_id = state
+                .member_for_account(&actor_account_hash)
+                .ok_or_else(|| anyhow!("account is not a member"))?
+                .id
+                .clone();
+            let id = boundary_id.unwrap_or_else(|| format!("boundary:{}", Uuid::new_v4().simple()));
+            if let Some(existing) = state.boundaries.get(&id)
+                && existing.owner_member_id != member_id
+            {
+                return Err(anyhow!("only the boundary owner may change it"));
+            }
+            let now = Utc::now();
+            let created_at = state
+                .boundaries
+                .get(&id)
+                .map_or(now, |value| value.created_at);
+            state.boundaries.insert(
+                id.clone(),
+                ContentBoundary {
+                    schema: "ghostlight.content_boundary.v1".into(),
+                    id,
+                    owner_member_id: member_id.clone(),
+                    topic,
+                    normalized_topic,
+                    level,
+                    created_at,
+                    updated_at: now,
+                },
+            );
+            let before = state.aggregate_boundaries.clone();
+            state.aggregate_boundaries = aggregate_boundaries_with_inherited(
+                &state.boundaries,
+                &state.inherited_aggregate_boundaries,
+            );
+            state.boundary_epoch = state.boundary_epoch.saturating_add(1);
+            state.approvals.remove(&member_id);
+            if before != state.aggregate_boundaries {
+                shared_changed(&mut state);
+            } else {
+                retire_preview(&mut state);
+            }
+        }
+        SessionZeroCommand::RemoveBoundary {
+            actor_account_hash,
+            expected_revision,
+            boundary_id,
+        } => {
+            require_revision(&state, expected_revision)?;
+            let member_id = state
+                .member_for_account(&actor_account_hash)
+                .ok_or_else(|| anyhow!("account is not a member"))?
+                .id
+                .clone();
+            let existing = state
+                .boundaries
+                .get(&boundary_id)
+                .ok_or_else(|| anyhow!("boundary does not exist"))?;
+            if existing.owner_member_id != member_id {
+                return Err(anyhow!("only the boundary owner may remove it"));
+            }
+            let before = state.aggregate_boundaries.clone();
+            state.boundaries.remove(&boundary_id);
+            state.aggregate_boundaries = aggregate_boundaries_with_inherited(
+                &state.boundaries,
+                &state.inherited_aggregate_boundaries,
+            );
+            state.boundary_epoch = state.boundary_epoch.saturating_add(1);
+            state.approvals.remove(&member_id);
+            if before != state.aggregate_boundaries {
+                shared_changed(&mut state);
+            } else {
+                retire_preview(&mut state);
+            }
+        }
+        SessionZeroCommand::ResolveDecision {
+            actor_account_hash,
+            expected_revision,
+            decision_id,
+            accept,
+            counter,
+        } => {
+            require_revision(&state, expected_revision)?;
+            let member_id = state
+                .member_for_account(&actor_account_hash)
+                .ok_or_else(|| anyhow!("account is not a member"))?
+                .id
+                .clone();
+            let decision = state
+                .decisions
+                .get(&decision_id)
+                .cloned()
+                .ok_or_else(|| anyhow!("decision is missing"))?;
+            if decision.resolved {
+                return Err(anyhow!("decision is already resolved"));
+            }
+            if decision
+                .owner_member_id
+                .as_deref()
+                .is_some_and(|owner| owner != member_id)
+            {
+                return Err(anyhow!("decision belongs to another member"));
+            }
+            if accept {
+                if let Some(patch) = decision.proposed_contract_patch.clone() {
+                    if decision.owner_member_id.is_some() {
+                        return Err(anyhow!(
+                            "a private decision cannot amend the shared campaign contract"
+                        ));
+                    }
+                    apply_contract_patch(&mut state.contract, patch);
+                    shared_changed(&mut state);
+                }
+                if let Some(permission) = decision.proposed_extraordinary_permission.clone() {
+                    if decision.owner_member_id.as_deref() != Some(member_id.as_str()) {
+                        return Err(anyhow!(
+                            "extraordinary permission must belong to the accepting player"
+                        ));
+                    }
+                    let draft = state
+                        .character_drafts
+                        .get_mut(&member_id)
+                        .ok_or_else(|| anyhow!("character draft is missing"))?;
+                    if permission.actor_id != draft.actor_id {
+                        return Err(anyhow!("extraordinary permission targets another actor"));
+                    }
+                    if permission.name.trim().is_empty()
+                        || permission.reliable_scope.trim().is_empty()
+                        || permission.effect_ceiling.trim().is_empty()
+                    {
+                        return Err(anyhow!("extraordinary permission is incomplete"));
+                    }
+                    draft
+                        .extraordinary_permissions
+                        .retain(|existing| existing.id != permission.id);
+                    draft.extraordinary_permissions.push(permission);
+                    character_changed(&mut state, &member_id);
+                }
+                if let Some(patch) = decision.proposed_character_patch.clone() {
+                    if decision.owner_member_id.as_deref() != Some(member_id.as_str()) {
+                        return Err(anyhow!(
+                            "character proposal must belong to the accepting player"
+                        ));
+                    }
+                    let draft = state
+                        .character_drafts
+                        .get_mut(&member_id)
+                        .ok_or_else(|| anyhow!("character draft is missing"))?;
+                    apply_character_patch(draft, patch);
+                    character_changed(&mut state, &member_id);
+                }
+                state
+                    .decisions
+                    .get_mut(&decision_id)
+                    .expect("decision was just validated")
+                    .resolved = true;
+            } else {
+                let proposed_resolution = counter
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| anyhow!("counterproposal is required"))?;
+                let decision = state
+                    .decisions
+                    .get_mut(&decision_id)
+                    .expect("decision was just validated");
+                decision.proposed_resolution = proposed_resolution;
+                decision.resolved = false;
+            }
+            retire_preview(&mut state);
+        }
+        SessionZeroCommand::LockRoster {
+            actor_account_hash,
+            expected_revision,
+        } => {
+            require_revision(&state, expected_revision)?;
+            require_host(&state, &actor_account_hash)?;
+            if state
+                .members
+                .values()
+                .filter(|member| member.active)
+                .count()
+                == 0
+            {
+                return Err(anyhow!("roster cannot be empty"));
+            }
+            state.roster_locked = true;
+            state.status = SessionZeroStatus::RosterLocked;
+            shared_changed(&mut state);
+        }
+        SessionZeroCommand::BeginCompilation {
+            actor_account_hash,
+            expected_revision,
+        } => {
+            require_revision(&state, expected_revision)?;
+            require_host(&state, &actor_account_hash)?;
+            state.compilation_brief()?;
+            state.status = SessionZeroStatus::Compiling;
+        }
+        SessionZeroCommand::InstallPreview {
+            expected_revision,
+            preview,
+            model_receipts,
+        } => {
+            require_revision(&state, expected_revision)?;
+            if !state.roster_locked {
+                return Err(anyhow!("roster must be locked before compilation"));
+            }
+            if state
+                .decisions
+                .values()
+                .any(|decision| decision.material && !decision.resolved)
+            {
+                return Err(anyhow!("material decisions remain unresolved"));
+            }
+            if !preview.gaps.is_empty() {
+                state.preview_evidence_coverage = preview.evidence_coverage.clone();
+                state.preview_model_receipts.extend(model_receipts);
+                append_message(
+                    &mut state,
+                    "shared:table".into(),
+                    None,
+                    SessionZeroSpeakerKind::Dm,
+                    format!(
+                        "The Vault cannot yet ground these material parts of the opening:\n- {}\n\nLet's resolve them explicitly before I compile again.",
+                        preview.gaps.join("\n- ")
+                    ),
+                )?;
+                retire_preview(&mut state);
+                state.status = SessionZeroStatus::Drafting;
+            } else {
+                state.preview_shared_digest = Some(state.shared_digest()?);
+                state.preview_character_digests.clear();
+                for member in state.members.values().filter(|member| member.active) {
+                    state
+                        .preview_character_digests
+                        .insert(member.id.clone(), state.character_digest(&member.id)?);
+                }
+                state.preview_evidence_coverage = preview.evidence_coverage.clone();
+                state.preview = Some(preview);
+                state.preview_model_receipts.extend(model_receipts);
+                state.status = SessionZeroStatus::Review;
+            }
+        }
+        SessionZeroCommand::CompilationFailed {
+            expected_revision,
+            message,
+        } => {
+            require_revision(&state, expected_revision)?;
+            validate_bounded("compilation failure", &message, 1, 4_000)?;
+            state.status = SessionZeroStatus::Drafting;
+            append_message(
+                &mut state,
+                "shared:table".into(),
+                None,
+                SessionZeroSpeakerKind::Dm,
+                format!(
+                    "The world seed did not pass compilation safely: {message}\n\nNo campaign state was published. Let's revise the draft and try again."
+                ),
+            )?;
+        }
+        SessionZeroCommand::Approve {
+            actor_account_hash,
+            expected_revision,
+        } => {
+            require_revision(&state, expected_revision)?;
+            if state.status != SessionZeroStatus::Review || state.preview.is_none() {
+                return Err(anyhow!("there is no final preview to approve"));
+            }
+            let member = state
+                .member_for_account(&actor_account_hash)
+                .ok_or_else(|| anyhow!("account is not a member"))?;
+            let member_id = member.id.clone();
+            let shared_digest = state.shared_digest()?;
+            let character_digest = state.character_digest(&member_id)?;
+            if state.preview_shared_digest.as_deref() != Some(shared_digest.as_str())
+                || state.preview_character_digests.get(&member_id) != Some(&character_digest)
+            {
+                return Err(anyhow!("preview is stale"));
+            }
+            state.approvals.insert(
+                member_id.clone(),
+                SessionZeroApproval {
+                    schema: "ghostlight.session_zero_approval.v1".into(),
+                    member_id,
+                    shared_digest,
+                    character_digest,
+                    approved_at: Utc::now(),
+                },
+            );
+        }
+        SessionZeroCommand::MarkPublished {
+            actor_account_hash,
+            expected_revision,
+            campaign_id,
+            seed_digest,
+        } => {
+            require_revision(&state, expected_revision)?;
+            require_host(&state, &actor_account_hash)?;
+            let _ = state.approved_brief()?;
+            if let (Some(existing_campaign), Some(existing_digest)) = (
+                state.published_campaign_id,
+                state.published_seed_digest.as_ref(),
+            ) {
+                if existing_campaign != campaign_id || existing_digest != &seed_digest {
+                    return Err(anyhow!("session zero was published with another seed"));
+                }
+            }
+            state.published_campaign_id = Some(campaign_id);
+            state.published_seed_digest = Some(seed_digest);
+            state.status = SessionZeroStatus::Published;
+        }
+        SessionZeroCommand::Archive {
+            actor_account_hash,
+            expected_revision,
+        } => {
+            require_revision(&state, expected_revision)?;
+            require_host(&state, &actor_account_hash)?;
+            state.status = SessionZeroStatus::Archived;
+        }
+    }
+    state.revision = state.revision.saturating_add(1);
+    state.updated_at = Utc::now();
+    store.replace(&row, "ghostlight.session_zero.v1", &state)?;
+    Ok(SessionZeroCommandResult {
+        state,
+        invite_tokens,
+    })
+}
+
+fn append_message(
+    state: &mut SessionZeroState,
+    channel_id: String,
+    author_member_id: Option<String>,
+    speaker: SessionZeroSpeakerKind,
+    text: String,
+) -> Result<()> {
+    let channel = state
+        .channels
+        .get_mut(&channel_id)
+        .ok_or_else(|| anyhow!("session zero channel is missing"))?;
+    let id = format!("message:{}", Uuid::new_v4().simple());
+    state.messages.insert(
+        id.clone(),
+        SessionZeroMessage {
+            schema: "ghostlight.session_zero_message.v1".into(),
+            id: id.clone(),
+            channel_id,
+            author_member_id,
+            speaker,
+            text,
+            session_revision: state.revision,
+            created_at: Utc::now(),
+        },
+    );
+    channel.message_ids.push(id);
+    channel.revision = channel.revision.saturating_add(1);
+    Ok(())
+}
+
+fn validate_dm_delta(
+    state: &SessionZeroState,
+    channel_id: &str,
+    member_id: Option<&str>,
+    delta: &SessionZeroDelta,
+) -> Result<()> {
+    let channel = state
+        .channels
+        .get(channel_id)
+        .ok_or_else(|| anyhow!("session zero channel is missing"))?;
+    match channel.kind {
+        SessionZeroChannelKind::SharedTable => {
+            if member_id.is_some() || delta.character_patch.is_some() {
+                return Err(anyhow!(
+                    "shared DM turn cannot mutate private character state"
+                ));
+            }
+            if delta.decisions.iter().any(|decision| {
+                decision.owner_member_id.is_some()
+                    || decision.proposed_character_patch.is_some()
+                    || decision.proposed_extraordinary_permission.is_some()
+            }) {
+                return Err(anyhow!(
+                    "shared DM decisions cannot mutate private character state"
+                ));
+            }
+        }
+        SessionZeroChannelKind::PrivateDm => {
+            if channel.member_id.as_deref() != member_id {
+                return Err(anyhow!("private DM turn owner mismatch"));
+            }
+            if contract_patch_changes_shared(&delta.contract_patch) {
+                return Err(anyhow!("private DM turn cannot mutate the shared contract"));
+            }
+            if delta.decisions.iter().any(|decision| {
+                decision.owner_member_id.as_deref() != member_id
+                    || decision.proposed_contract_patch.is_some()
+            }) {
+                return Err(anyhow!(
+                    "private DM decisions must belong to that player and cannot amend the shared contract"
+                ));
+            }
+        }
+    }
+    validate_bounded("DM speech", &delta.dm_speech, 0, 6_000)?;
+    for reply in &delta.suggested_replies {
+        validate_bounded("suggested reply", reply, 1, 500)?;
+    }
+    let mut ids = BTreeSet::new();
+    for decision in &delta.decisions {
+        validate_bounded("decision ID", &decision.id, 1, 240)?;
+        validate_bounded("decision prompt", &decision.prompt, 1, 1_000)?;
+        validate_bounded(
+            "decision proposed resolution",
+            &decision.proposed_resolution,
+            1,
+            2_000,
+        )?;
+        if !ids.insert(decision.id.clone()) || state.decisions.contains_key(&decision.id) {
+            return Err(anyhow!("DM turn contains a duplicate decision ID"));
+        }
+    }
+    Ok(())
+}
+
+fn contract_patch_changes_shared(patch: &CampaignContractPatch) -> bool {
+    patch != &CampaignContractPatch::default()
+}
+
+fn apply_contract_patch(contract: &mut CampaignContract, patch: CampaignContractPatch) {
+    macro_rules! apply {
+        ($field:ident) => {
+            if let Some(value) = patch.$field {
+                contract.$field = value;
+            }
+        };
+    }
+    apply!(premise);
+    apply!(canon_horizon);
+    apply!(starting_where);
+    apply!(starting_when);
+    apply!(starting_pressure);
+    apply!(desired_goal);
+    apply!(tone);
+    apply!(themes);
+    apply!(pacing);
+    apply!(consequence_style);
+    apply!(narrative_focus);
+    apply!(party_bonds);
+    apply!(internal_tension);
+    apply!(dm_style);
+}
+
+fn apply_character_patch(draft: &mut CharacterDraft, patch: CharacterDraftPatch) {
+    if let Some(value) = patch.name {
+        draft.name = value;
+    }
+    if let Some(value) = patch.public_premise {
+        draft.public_premise = value;
+    }
+    extend_unique(&mut draft.private_history, patch.private_history_add);
+    extend_unique(&mut draft.secrets, patch.secrets_add);
+    extend_unique(&mut draft.capabilities, patch.capabilities_add);
+    extend_unique(&mut draft.knowledge, patch.knowledge_add);
+    extend_unique(&mut draft.equipment, patch.equipment_add);
+    draft.relationships.extend(patch.relationships);
+    extend_unique(&mut draft.obligations, patch.obligations_add);
+    extend_unique(&mut draft.vulnerabilities, patch.vulnerabilities_add);
+    extend_unique(&mut draft.goals, patch.goals_add);
+}
+
+fn extend_unique(target: &mut Vec<String>, values: Vec<String>) {
+    for value in values {
+        if !value.trim().is_empty() && !target.contains(&value) {
+            target.push(value);
+        }
+    }
+}
+
+#[cfg(test)]
+fn aggregate_boundaries(boundaries: &BTreeMap<String, ContentBoundary>) -> Vec<AggregatedBoundary> {
+    aggregate_boundaries_with_inherited(boundaries, &[])
+}
+
+fn aggregate_boundaries_with_inherited(
+    boundaries: &BTreeMap<String, ContentBoundary>,
+    inherited: &[AggregatedBoundary],
+) -> Vec<AggregatedBoundary> {
+    let mut by_topic = BTreeMap::<String, AggregatedBoundary>::new();
+    for boundary in inherited {
+        by_topic.insert(boundary.normalized_topic.clone(), boundary.clone());
+    }
+    for boundary in boundaries.values() {
+        let entry = by_topic
+            .entry(boundary.normalized_topic.clone())
+            .or_insert_with(|| AggregatedBoundary {
+                normalized_topic: boundary.normalized_topic.clone(),
+                display_topic: boundary.topic.clone(),
+                level: boundary.level.clone(),
+            });
+        if boundary.level.severity() > entry.level.severity() {
+            entry.level = boundary.level.clone();
+            entry.display_topic = boundary.topic.clone();
+        }
+    }
+    by_topic.into_values().collect()
+}
+
+fn require_channel_access(
+    state: &SessionZeroState,
+    member_id: &str,
+    channel_id: &str,
+) -> Result<()> {
+    let channel = state
+        .channels
+        .get(channel_id)
+        .ok_or_else(|| anyhow!("session zero channel is missing"))?;
+    if channel.kind == SessionZeroChannelKind::PrivateDm
+        && channel.member_id.as_deref() != Some(member_id)
+    {
+        return Err(anyhow!("private channel belongs to another member"));
+    }
+    Ok(())
+}
+
+fn require_host(state: &SessionZeroState, account_hash: &str) -> Result<()> {
+    let member = state
+        .member_for_account(account_hash)
+        .ok_or_else(|| anyhow!("account is not a member"))?;
+    if member.id != state.host_member_id || !member.is_host {
+        return Err(anyhow!("only the host may perform this command"));
+    }
+    Ok(())
+}
+
+fn require_revision(state: &SessionZeroState, expected: u64) -> Result<()> {
+    if state.revision != expected {
+        return Err(anyhow!("stale session zero revision"));
+    }
+    Ok(())
+}
+
+fn shared_changed(state: &mut SessionZeroState) {
+    state.shared_epoch = state.shared_epoch.saturating_add(1);
+    state.approvals.clear();
+    retire_preview(state);
+}
+
+fn character_changed(state: &mut SessionZeroState, member_id: &str) {
+    let epoch = state
+        .character_epochs
+        .entry(member_id.to_string())
+        .or_default();
+    *epoch = epoch.saturating_add(1);
+    state.approvals.remove(member_id);
+    retire_preview(state);
+}
+
+fn retire_preview(state: &mut SessionZeroState) {
+    state.preview = None;
+    state.preview_shared_digest = None;
+    state.preview_character_digests.clear();
+    if state.roster_locked {
+        state.status = SessionZeroStatus::RosterLocked;
+    } else {
+        state.status = SessionZeroStatus::Drafting;
+    }
+}
+
+pub fn membership_from_session(
+    state: &SessionZeroState,
+    campaign_id: Uuid,
+) -> Result<CampaignMembership> {
+    let brief = state.approved_brief()?;
+    let mut members = BTreeMap::new();
+    for member in state.members.values().filter(|member| member.active) {
+        let actor_id = brief
+            .member_actor_ids
+            .get(&member.id)
+            .ok_or_else(|| anyhow!("approved character has no actor binding"))?
+            .clone();
+        members.insert(
+            member.id.clone(),
+            CampaignMember {
+                member_id: member.id.clone(),
+                account_hash: member.account_hash.clone(),
+                display_name: member.display_name.clone(),
+                actor_id,
+                is_host: member.is_host,
+                active: true,
+                cell_allowance: member.cell_allowance,
+            },
+        );
+    }
+    let extraordinary_permissions = brief
+        .characters
+        .iter()
+        .map(|character| {
+            (
+                character.actor_id.clone(),
+                character.extraordinary_permissions.clone(),
+            )
+        })
+        .collect();
+    Ok(CampaignMembership {
+        schema: "ghostlight.campaign_membership.v1".into(),
+        campaign_id,
+        governance_epoch: 0,
+        host_member_id: state.host_member_id.clone(),
+        members,
+        extraordinary_permissions,
+    })
+}
+
+pub fn publication_from_session(
+    state: &SessionZeroState,
+    campaign_id: Uuid,
+) -> Result<PublishedSessionZeroSeed> {
+    let approved_brief = state.approved_brief()?;
+    let membership = membership_from_session(state, campaign_id)?;
+    let approved_seed_digest =
+        digest(&(campaign_id, &approved_brief, &membership, &state.dm_persona))?;
+    Ok(PublishedSessionZeroSeed {
+        schema: "ghostlight.published_session_zero_seed.v1".into(),
+        session_zero_id: state.id,
+        approved_seed_digest,
+        contract: state.contract.clone(),
+        membership,
+        governance: CampaignGovernance {
+            schema: "ghostlight.campaign_governance.v1".into(),
+            campaign_id,
+            governance_epoch: 0,
+            time_advance_policy: "unanimous".into(),
+            pooled_cell_ceiling: state.pooled_cell_allowance(),
+            cooperative_shared_scene_only: true,
+            pvp_enabled: false,
+        },
+        dm_persona: state.dm_persona.clone(),
+        approvals: state.approvals.values().cloned().collect(),
+        approved_brief,
+        boundaries: state.boundaries.values().cloned().collect(),
+    })
+}
+
+pub fn actor_from_character(draft: &CharacterDraft, location_id: String) -> ActorState {
+    ActorState {
+        id: draft.actor_id.clone(),
+        name: draft.name.clone(),
+        location_id,
+        capabilities: draft.capabilities.iter().cloned().collect(),
+        knowledge: draft.knowledge.iter().cloned().collect(),
+        equipment: draft.equipment.iter().cloned().collect(),
+        conditions: draft.vulnerabilities.iter().cloned().collect(),
+        obligations: draft.obligations.iter().cloned().collect(),
+        relationships: draft.relationships.clone(),
+        goals: draft.goals.clone(),
+        memories: draft
+            .private_history
+            .iter()
+            .chain(&draft.secrets)
+            .cloned()
+            .collect(),
+    }
+}
+
+pub fn seed_digest<T: Serialize>(value: &T) -> Result<String> {
+    digest(value)
+}
+
+fn digest<T: Serialize>(value: &T) -> Result<String> {
+    let bytes = rmp_serde::to_vec_named(value)?;
+    Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
+}
+
+fn secret_hash(value: &str) -> String {
+    format!("sha256:{:x}", Sha256::digest(value.as_bytes()))
+}
+
+fn validate_bounded(label: &str, value: &str, min: usize, max: usize) -> Result<()> {
+    let count = value.chars().count();
+    if count < min
+        || count > max
+        || value
+            .chars()
+            .any(|c| c.is_control() && !matches!(c, '\n' | '\r' | '\t'))
+    {
+        return Err(anyhow!(
+            "{label} must contain {min} to {max} safe characters"
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn state() -> SessionZeroState {
+        SessionZeroState::new(
+            "The Long Way Home".into(),
+            "aetheria".into(),
+            "account:host".into(),
+            "Host".into(),
+        )
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn private_channels_and_boundaries_preserve_ownership() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let initial = state();
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store.clone(), initial.id);
+        let invite = kernel
+            .command(SessionZeroCommand::CreateInvites {
+                actor_account_hash: "account:host".into(),
+                count: 1,
+            })
+            .await
+            .unwrap();
+        let joined = kernel
+            .command(SessionZeroCommand::Join {
+                token: invite.invite_tokens[0].clone(),
+                account_hash: "account:guest".into(),
+                display_name: "Guest".into(),
+                cell_allowance: FIXTURE_CELL_ALLOWANCE,
+            })
+            .await
+            .unwrap();
+        let guest = joined.state.member_for_account("account:guest").unwrap();
+        let private = format!("private:{}", guest.id);
+        let error = kernel
+            .command(SessionZeroCommand::PostPlayerMessage {
+                actor_account_hash: "account:host".into(),
+                expected_revision: joined.state.revision,
+                channel_id: private,
+                text: "I should not see this room.".into(),
+            })
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("belongs to another member"));
+
+        let bounded = kernel
+            .command(SessionZeroCommand::SetBoundary {
+                actor_account_hash: "account:guest".into(),
+                expected_revision: joined.state.revision,
+                boundary_id: None,
+                topic: "Graphic eye injury".into(),
+                normalized_topic: "eye injury".into(),
+                level: BoundaryLevel::Line,
+            })
+            .await
+            .unwrap();
+        assert_eq!(bounded.state.aggregate_boundaries.len(), 1);
+        let encoded = serde_json::to_string(&bounded.state.aggregate_boundaries).unwrap();
+        assert!(!encoded.contains(&guest.id));
+        assert!(!encoded.contains("account:guest"));
+    }
+
+    #[test]
+    fn strictest_boundary_wins_without_attribution() {
+        let now = Utc::now();
+        let boundaries = BTreeMap::from([
+            (
+                "a".into(),
+                ContentBoundary {
+                    schema: "ghostlight.content_boundary.v1".into(),
+                    id: "a".into(),
+                    owner_member_id: "one".into(),
+                    topic: "Spiders".into(),
+                    normalized_topic: "spiders".into(),
+                    level: BoundaryLevel::AskFirst,
+                    created_at: now,
+                    updated_at: now,
+                },
+            ),
+            (
+                "b".into(),
+                ContentBoundary {
+                    schema: "ghostlight.content_boundary.v1".into(),
+                    id: "b".into(),
+                    owner_member_id: "two".into(),
+                    topic: "Spiders".into(),
+                    normalized_topic: "spiders".into(),
+                    level: BoundaryLevel::Veil,
+                    created_at: now,
+                    updated_at: now,
+                },
+            ),
+        ]);
+        let aggregate = aggregate_boundaries(&boundaries);
+        assert_eq!(aggregate[0].level, BoundaryLevel::Veil);
+        assert!(!serde_json::to_string(&aggregate).unwrap().contains("two"));
+    }
+
+    #[test]
+    fn pooled_allowance_is_bounded_by_operator_ceiling() {
+        let mut state = state();
+        for index in 0..7 {
+            let id = format!("member:{index}");
+            state.members.insert(
+                id.clone(),
+                SessionZeroMember {
+                    schema: "ghostlight.session_zero_member.v1".into(),
+                    id,
+                    account_hash: format!("account:{index}"),
+                    display_name: format!("P{index}"),
+                    is_host: false,
+                    active: true,
+                    cell_allowance: 32,
+                    joined_at: Utc::now(),
+                },
+            );
+        }
+        assert_eq!(state.pooled_cell_allowance(), OPERATOR_CELL_CEILING);
+    }
+
+    #[tokio::test]
+    async fn actor_filtered_surface_never_projects_other_private_state_or_account_hashes() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let mut initial = state();
+        let host_id = initial.host_member_id.clone();
+        initial.character_drafts.get_mut(&host_id).unwrap().secrets =
+            vec!["HOST-ONLY-CIPHER-ORCHID".into()];
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, initial.id);
+        let invite = kernel
+            .command(SessionZeroCommand::CreateInvites {
+                actor_account_hash: "account:host".into(),
+                count: 1,
+            })
+            .await
+            .unwrap();
+        let joined = kernel
+            .command(SessionZeroCommand::Join {
+                token: invite.invite_tokens[0].clone(),
+                account_hash: "account:guest".into(),
+                display_name: "Guest".into(),
+                cell_allowance: FIXTURE_CELL_ALLOWANCE,
+            })
+            .await
+            .unwrap();
+        let encoded =
+            serde_json::to_string(&session_zero_surface(&joined.state, "account:guest").unwrap())
+                .unwrap();
+        assert!(!encoded.contains("HOST-ONLY-CIPHER-ORCHID"));
+        assert!(!encoded.contains("account:host"));
+        assert!(!encoded.contains("account:guest"));
+        assert!(!encoded.contains("token_hash"));
+        let member_schema = serde_json::to_string(&schema_for!(SessionZeroMember)).unwrap();
+        assert!(!member_schema.contains("account_hash"));
+    }
+
+    #[tokio::test]
+    async fn independent_private_dm_outputs_commit_across_unrelated_global_revisions() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let initial = state();
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, initial.id);
+        let invite = kernel
+            .command(SessionZeroCommand::CreateInvites {
+                actor_account_hash: "account:host".into(),
+                count: 1,
+            })
+            .await
+            .unwrap();
+        let joined = kernel
+            .command(SessionZeroCommand::Join {
+                token: invite.invite_tokens[0].clone(),
+                account_hash: "account:guest".into(),
+                display_name: "Guest".into(),
+                cell_allowance: FIXTURE_CELL_ALLOWANCE,
+            })
+            .await
+            .unwrap();
+        let host_id = joined.state.host_member_id.clone();
+        let guest_id = joined
+            .state
+            .member_for_account("account:guest")
+            .unwrap()
+            .id
+            .clone();
+        let host_channel = format!("private:{host_id}");
+        let guest_channel = format!("private:{guest_id}");
+        let host_message = kernel
+            .command(SessionZeroCommand::PostPlayerMessage {
+                actor_account_hash: "account:host".into(),
+                expected_revision: joined.state.revision,
+                channel_id: host_channel.clone(),
+                text: "I want a debt to the harbor guild.".into(),
+            })
+            .await
+            .unwrap();
+        let both_messages = kernel
+            .command(SessionZeroCommand::PostPlayerMessage {
+                actor_account_hash: "account:guest".into(),
+                expected_revision: host_message.state.revision,
+                channel_id: guest_channel.clone(),
+                text: "I want to find my missing sibling.".into(),
+            })
+            .await
+            .unwrap();
+        let private_delta = |goal: &str| SessionZeroDelta {
+            character_patch: Some(CharacterDraftPatch {
+                goals_add: vec![goal.into()],
+                ..Default::default()
+            }),
+            dm_speech: format!("Let's make {goal} concrete."),
+            ..Default::default()
+        };
+        let host_applied = kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: 0,
+                expected_channel_revision: 1,
+                channel_id: host_channel,
+                member_id: Some(host_id.clone()),
+                delta: private_delta("repay the harbor guild"),
+                model_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        assert!(host_applied.state.revision > both_messages.state.revision);
+        let guest_applied = kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: 0,
+                expected_channel_revision: 1,
+                channel_id: guest_channel,
+                member_id: Some(guest_id.clone()),
+                delta: private_delta("find my missing sibling"),
+                model_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        assert!(
+            guest_applied.state.character_drafts[&host_id]
+                .goals
+                .contains(&"repay the harbor guild".into())
+        );
+        assert!(
+            guest_applied.state.character_drafts[&guest_id]
+                .goals
+                .contains(&"find my missing sibling".into())
+        );
+    }
+
+    #[tokio::test]
+    async fn material_character_bargain_is_inert_until_its_owner_accepts() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let initial = state();
+        let member_id = initial.host_member_id.clone();
+        let actor_id = initial.character_drafts[&member_id].actor_id.clone();
+        let state_id = initial.id;
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, state_id);
+        let decision_id = "decision:dangerous-gift".to_string();
+        let proposed = ExtraordinaryPermission {
+            schema: "ghostlight.extraordinary_permission.v1".into(),
+            id: "permission:storm-step".into(),
+            actor_id,
+            name: "Storm step".into(),
+            reliable_scope: "Cross one visible gap in a flash of lightning".into(),
+            prerequisites: vec!["A charged storm is overhead".into()],
+            costs: vec!["Become visibly marked by the storm".into()],
+            limits: vec!["Cannot carry another person".into()],
+            exposure: vec!["Grounding wards can detect the transit".into()],
+            effect_ceiling: "Movement only; never bypasses a sealed ward".into(),
+            evidence_receipt_ids: vec![],
+            branch_local: true,
+        };
+        let proposed_turn = kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: 0,
+                expected_channel_revision: 0,
+                channel_id: format!("private:{member_id}"),
+                member_id: Some(member_id.clone()),
+                delta: SessionZeroDelta {
+                    decisions: vec![SessionZeroDecision {
+                        schema: "ghostlight.session_zero_decision.v1".into(),
+                        id: decision_id.clone(),
+                        owner_member_id: Some(member_id.clone()),
+                        prompt: "Accept Storm step with these limits?".into(),
+                        proposed_resolution: "Grant the bounded permission.".into(),
+                        proposed_extraordinary_permission: Some(proposed.clone()),
+                        proposed_contract_patch: None,
+                        proposed_character_patch: None,
+                        evidence_receipt_ids: vec![],
+                        material: true,
+                        resolved: false,
+                    }],
+                    dm_speech: "This power needs a cost and a ceiling.".into(),
+                    ..Default::default()
+                },
+                model_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        assert!(
+            proposed_turn.state.character_drafts[&member_id]
+                .extraordinary_permissions
+                .is_empty()
+        );
+
+        let accepted = kernel
+            .command(SessionZeroCommand::ResolveDecision {
+                actor_account_hash: "account:host".into(),
+                expected_revision: proposed_turn.state.revision,
+                decision_id,
+                accept: true,
+                counter: None,
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            accepted.state.character_drafts[&member_id].extraordinary_permissions,
+            vec![proposed]
+        );
+    }
+
+    #[tokio::test]
+    async fn malformed_shared_dm_delta_cannot_cross_private_authority() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let initial = state();
+        let state_id = initial.id;
+        let before = initial.clone();
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store.clone(), state_id);
+        let result = kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: 0,
+                expected_channel_revision: 0,
+                channel_id: "shared:table".into(),
+                member_id: None,
+                delta: SessionZeroDelta {
+                    character_patch: Some(CharacterDraftPatch {
+                        secrets_add: vec!["leaked private history".into()],
+                        ..Default::default()
+                    }),
+                    dm_speech: "This must not commit.".into(),
+                    ..Default::default()
+                },
+                model_receipts: vec![],
+            })
+            .await;
+        assert!(result.is_err());
+        let persisted = store
+            .load::<SessionZeroState>("session_zero.v1", &state_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(persisted, before);
+    }
+}

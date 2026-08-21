@@ -73,7 +73,11 @@ pub async fn appraise_present(
         .actors
         .values()
         .filter(|actor| {
-            actor.id != campaign.player_actor_id && actor.location_id == player.location_id
+            actor.location_id == player.location_id
+                && campaign
+                    .agency_profiles
+                    .get(&actor.id)
+                    .is_none_or(|profile| profile.simulation_eligible)
         })
         .cloned()
         .collect();

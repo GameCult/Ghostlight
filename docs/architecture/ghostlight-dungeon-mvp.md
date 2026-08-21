@@ -2,11 +2,11 @@
 
 ## Objective
 
-GhostlightDungeon is a persistent single-player narrative simulation grounded
-in a source-owned worldbuilding Vault. It gives the world stable geography,
-bounded knowledge, durable actors and institutions, explicit consequence, and
-motion beyond the player's attention. The player describes attempts. The world
-decides what is possible, what is opposed, and what changes.
+GhostlightDungeon is a persistent solo and bounded-co-op narrative simulation
+grounded in a source-owned worldbuilding Vault. It gives the world stable
+geography, bounded knowledge, durable actors and institutions, explicit
+consequence, and motion beyond the players' attention. Players describe
+attempts. The world decides what is possible, what is opposed, and what changes.
 
 The MVP runs as a Rust daemon on Starfire and publishes a private Eve/CultUI
 surface for two invited testers. Aetheria is the bundled setting adapter. The
@@ -17,32 +17,34 @@ evidence and regression scenarios. They do not own runtime state or commits.
 
 ## Implementation frontier
 
-The Rust runtime now contains the first honest world-compiler seam:
+The Rust runtime contains a Session Zero-owned world-compiler seam:
 
 - `VaultProvider` search results become exact, hashed evidence witnesses from
   VoidBot's live streamable MCP response shape;
 - opening generation requires exactly three distinct eras, places, and
-  pressures;
-- role generation requires exactly three grounded roles;
+  pressures and installs them as shared Session Zero decisions;
+- role generation requires exactly three grounded roles and installs them in
+  each player's private channel;
 - custom compilation emits a bounded typed campaign, evidence receipts, gaps,
   branch assumptions, and an approval-required preview;
 - custom compilation classifies every exact witness as direct seed, setting
   background, or excluded before world generation, so a nearby story cannot
   donate its cast, incident, clocks, or institutional posture to a new branch;
 - a separate Flash-model lane uses two stable broad retrieval queries to
-  compile a coarse remote agency catalog in parallel with local evidence
-  classification. It admits only a proper name plus one short mandate that
-  deterministic code can bind verbatim to a witness naming that institution;
+  extract witnessed remote institutions in parallel with local evidence
+  classification. A Pro synthesis stage turns exact supporting claims into a
+  concise strategic doctrine; local verification rejects unsupported doctrine;
 - remote institutions begin with deterministic six-axis profiles: their own
   authority boundary and explicit unknown geography, ideology, economic role,
   body, and information scope. Fine resources, channels, relations, and current
   posture compile only when causal relevance supplies evidence for them;
 - deterministic seed validation rejects missing occupancy, dangling or
   zero-time routes, invalid containment, invalid clocks, and missing players;
-- approval alone submits `CreateCampaign`, which atomically stores the campaign
-  and the exact Vault receipts in the campaign `.cc` store.
+- unanimous current-digest approval plus explicit host publication atomically
+  stores campaign, membership, contract, DM Persona, approved brief, exact
+  Vault receipts, model receipts, and approval evidence in the campaign `.cc`.
 
-The hosted compiler now exposes generated openings, grounded role selection,
+The Session Zero DM exposes generated openings, grounded role selection,
 unrestricted custom starts, approval-gated material gaps, exact-document
 witnesses, on-demand destination expansion, and persistent canon candidates.
 A live custom-start acceptance run on 2026-08-16 consumed 30 VoidBot witnesses
@@ -63,7 +65,7 @@ token. Only hashed local session aliases enter `service/auth.cc`.
 
 | Faculty | Owner | Body | Authority |
 | --- | --- | --- | --- |
-| Self | `WorldKernel` campaign mailbox | One campaign `.cc` store | Orders commands and owns the campaign revision |
+| Self | `SessionZeroKernel` / `WorldKernel` mailboxes | One draft `.cc` / one campaign `.cc` | Own draft negotiation or canonical world revision, never both |
 | Eyes | `VaultProvider` and actor perception slices | VoidBot MCP receipts, topology, occupancy, knowledge | Retrieves and witnesses; never commits world truth |
 | Modeling | World compiler and action assessor | Typed campaign snapshot | Proposes topology, facts, affordances, DC, stakes, and gaps |
 | Imagination | Persona and world proposal stages | Private narrative projections | Proposes speech, private deltas, reactions, and actions |
@@ -514,12 +516,13 @@ boundaries. It is not load-bearing runtime state.
 ### Campaign registry and session authority
 
 - **Owner:** the service `CampaignRegistry` owns the mapping from authenticated
-  session hash to selected campaign ID and from campaign ID to its sole
+  account hash to selected campaign ID and from campaign ID to its sole
   `CampaignRuntime` (`CampaignStore` plus `WorldKernel` mailbox).
 - **Inputs:** persisted hashed session authority, named campaign lifecycle
   commands, runtime-root inventory, and exact campaign IDs.
-- **Outputs:** one selected single-player runtime per session, isolated campaign
-  `.cc` paths, lifecycle receipts, and immutable export bundles.
+- **Outputs:** one selected campaign runtime per entitled member, exact
+  member-to-actor bindings, isolated campaign `.cc` paths, and lifecycle
+  receipts. Group fork/reset/export remains disabled pending consent policy.
 - **Derived state:** browser selection, campaign lists, filenames, download
   responses, and operator cards are projections of registry/control state.
 - **Forbidden writers:** route handlers, invite cookies, filesystem discovery,
@@ -555,12 +558,13 @@ exact evidence receipts used by the campaign, never vectors or a rival index.
 Compilation is staged and approval-gated:
 
 ```text
-opening request
+Begin Session Zero
   -> retrieval plan
   -> local exact evidence receipts || stable remote-agency retrieval
-  -> source-use classification || witnessed remote mandate extraction
-  -> three distinct openings or custom opening
-  -> three grounded roles or custom role
+  -> source-use classification || witnessed remote institution extraction
+  -> three distinct opening decisions or custom discussion
+  -> three private role decisions or custom character negotiation
+  -> typed campaign contract + private character drafts + exact approvals
   -> direct-evidence bounded region + deterministic coarse remote profiles
   -> semantic agency profiles only for locally materialized subjects
   -> coverage/gap/assumption preview
@@ -578,14 +582,12 @@ not enter the world-seed prompt; excluded evidence is likewise absent. This
 separation preserves provenance without making retrieved adjacency into
 fictional causality.
 
-The remote catalog is not a back door into the local seed. Its model output may
-propose at most 32 institutions and one short mandate string for each. Local
-code locates that string in the supplied witnesses and requires the same source
-to name the institution. Unsupported entries are omitted and summarized as
-approval-preview coverage gaps; their exact rejection reasons remain in the
-private model-stage receipt. They do not become campaign canon candidates.
-This lets the campaign represent distant powers without importing another
-story's current cast or incident.
+The remote catalog is not a back door into the local seed. Extraction proposes
+named institutions plus exact supporting claims. Synthesis writes one concise
+strategic doctrine from those claims, and a separate verifier must accept it.
+Unsupported or oversized entries become approval-preview gaps rather than
+institutions. This lets the campaign represent distant powers without importing
+another story's current cast, incident, or arbitrary excerpt as behavior.
 
 The coarse profile is intentionally sparse. Asking the Pro agency compiler to
 repeat six semantic axes for every remote power exhausted output tokens while
@@ -690,17 +692,18 @@ and model-stage state belongs to the authenticated operator projection only.
 Player and model strings enter the DOM through text nodes rather than HTML
 insertion, and all laboratory inputs have programmatic labels.
 
-The same rule covers compiler and campaign-management routes. Opening and role
-responses contain selectable suggestions, not retrieval/model receipts. An
-approval preview contains the promised topology, public cast, institutions,
-populations, clocks, player-role ledger, evidence-use coverage, gaps, and branch
-assumptions without private goals, memories, relationships, raw evidence, or a
-serialized campaign. Approval, expansion, fission, fork, and reset return small
-public receipts; their internal command results remain inside the daemon.
+The same rule covers Session Zero and campaign-management routes. Opening and
+role suggestions are filtered typed decisions inside shared or private
+channels; raw retrieval/model receipts remain private. The review projection
+contains promised topology, institutions, populations, clocks, evidence-use
+coverage, gaps, branch assumptions, and only the current viewer's private
+character state. Publication, expansion, and fission return small public
+receipts. Group fork/reset/export is rejected until its consent policy exists.
 
-The player surface includes compilation, transcript, composer, Assess/Attempt,
-roll confirmation, Wait, character ledger, current place/time/pressure, news,
-campaign management, fork/reset/export, and optional operator inspection.
+The player surface includes Session Zero channels and ledgers, transcript,
+composer, Assess/Attempt, roll confirmation, actor-specific character/news
+state, unanimous time/travel/budget proposals, Contract Review, and optional
+operator inspection.
 CultMesh state is the source of the UI projection. HTTP health is a probe over
 the same service-state document.
 
@@ -769,15 +772,13 @@ Live model allocation:
 
 ## Hosting and security
 
-The daemon serves the embedded browser bundle on TCP 8831. Firewall scope is
-Starfire's private LAN and `10.77.0.0/24`; there is no public listener or
-Yggdrasil web gateway. Provisioned single-use invites establish separate HttpOnly
-sessions. Campaigns remain single-player in the MVP. This is a product-scope
-constraint, not a WorldKernel identity: the intended post-solo extension maps
-multiple authenticated members to distinct player-controlled actors while all
-commands continue through the same campaign mailbox and atomic commit path.
-`ghostlight-dungeon-multiplayer-intention.md` owns that future authority map;
-it does not expand the current acceptance gate.
+The daemon serves the embedded browser bundle on TCP 8831. Public access is
+lowered through the existing Heimdall-authenticated `/ghostlight/` reverse
+proxy path; the application does not add a rival identity system. One to eight
+members map to distinct player-controlled actors while every command continues
+through the same campaign mailbox and atomic commit path. The bounded milestone
+keeps the party in one scene; the multiplayer-intention document owns the
+remaining split-party and social-governance work.
 
 The MVP runs as a normal detached process under the Starfire operator account.
 The launcher records the PID, exact executable path, release commit, and logs;

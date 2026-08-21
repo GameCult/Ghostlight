@@ -9,6 +9,7 @@ use crate::{
         ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage,
         run_validated_stage_with_timeout,
     },
+    session_zero::{ApprovedCampaignBrief, actor_from_character},
     vault::{VaultProvider, VaultQuery},
 };
 use anyhow::{Result, anyhow};
@@ -577,6 +578,123 @@ impl WorldCompiler {
             },
             model_receipts,
         ))
+    }
+
+    pub async fn compile_approved_brief(
+        &self,
+        brief: &ApprovedCampaignBrief,
+    ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
+        if brief.characters.is_empty() || brief.characters.len() > 8 {
+            return Err(anyhow!(
+                "approved campaign brief must contain one to eight characters"
+            ));
+        }
+        let host_actor_id = brief
+            .member_actor_ids
+            .get(&brief.host_member_id)
+            .ok_or_else(|| anyhow!("approved campaign brief has no host actor binding"))?
+            .clone();
+        let public_party = brief
+            .characters
+            .iter()
+            .map(|character| format!("{} — {}", character.name, character.public_premise))
+            .collect::<Vec<_>>()
+            .join("; ");
+        let mut compiled = self
+            .compile_custom(CustomStart {
+                campaign_name: brief.contract.campaign_name.clone(),
+                who: format!(
+                    "A cooperative party whose public starting identities are: {public_party}. Private histories, secrets, and individual knowledge are deliberately withheld from world generation."
+                ),
+                where_: brief.contract.starting_where.clone(),
+                when: format!(
+                    "{}; canon horizon: {}",
+                    brief.contract.starting_when, brief.contract.canon_horizon
+                ),
+                goal: format!(
+                    "{}; opening pressure: {}; premise: {}",
+                    brief.contract.desired_goal,
+                    brief.contract.starting_pressure,
+                    brief.contract.premise
+                ),
+            })
+            .await?;
+        let campaign = &mut compiled.0.campaign;
+        let generated_player_id = campaign.player_actor_id.clone();
+        let starting_location = campaign
+            .actors
+            .get(&generated_player_id)
+            .ok_or_else(|| anyhow!("compiled campaign lost its provisional player"))?
+            .location_id
+            .clone();
+        campaign.actors.remove(&generated_player_id);
+        campaign.agency_profiles.remove(&generated_player_id);
+        campaign.agency_relations.retain(|_, relation| {
+            relation.from_subject_id != generated_player_id
+                && relation.to_subject_id != generated_player_id
+        });
+        for actor in campaign.actors.values_mut() {
+            actor.relationships.remove(&generated_player_id);
+        }
+        let member_actor_ids = brief
+            .member_actor_ids
+            .values()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        if member_actor_ids.len() != brief.characters.len() {
+            return Err(anyhow!("approved characters must have unique actor IDs"));
+        }
+        for character in &brief.characters {
+            if brief.member_actor_ids.get(&character.member_id) != Some(&character.actor_id) {
+                return Err(anyhow!("character and membership actor binding disagree"));
+            }
+            if campaign.actors.contains_key(&character.actor_id) {
+                return Err(anyhow!("approved actor ID collides with compiled cast"));
+            }
+            let mut actor = actor_from_character(character, starting_location.clone());
+            actor.relationships = actor
+                .relationships
+                .into_iter()
+                .map(|(subject, relationship)| {
+                    let resolved = brief
+                        .member_actor_ids
+                        .get(&subject)
+                        .cloned()
+                        .unwrap_or(subject);
+                    (resolved, relationship)
+                })
+                .collect();
+            if actor
+                .relationships
+                .keys()
+                .any(|id| !member_actor_ids.contains(id) && !campaign.institutions.contains_key(id))
+            {
+                return Err(anyhow!(
+                    "character relationship refers to an unknown member, actor, or institution"
+                ));
+            }
+            campaign.actors.insert(actor.id.clone(), actor);
+        }
+        campaign.player_actor_id = host_actor_id;
+        campaign.name = brief.contract.campaign_name.clone();
+        campaign.resolution_policy.active_cell_budget =
+            (brief.characters.len() as u8).saturating_mul(8).min(128);
+        campaign.resolution_cover = None;
+        crate::resolution::ensure_agency_profiles(campaign);
+        for actor_id in member_actor_ids {
+            let profile = campaign
+                .agency_profiles
+                .get_mut(&actor_id)
+                .ok_or_else(|| anyhow!("approved actor has no agency profile"))?;
+            profile.simulation_eligible = false;
+        }
+        validate_campaign_seed(campaign)?;
+        validate_opening_playability(campaign)?;
+        compiled.0.branch_assumptions.push(format!(
+            "Campaign contract approved in Session Zero {} at shared digest {}.",
+            brief.session_zero_id, brief.shared_digest
+        ));
+        Ok(compiled)
     }
 
     pub async fn compile_selected(
@@ -2524,23 +2642,38 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
     }
     crate::resolution::validate_policy(&c.resolution_policy)?;
     crate::resolution::validate_pins(c, &c.resolution_pins)?;
-    let expected_profiles: BTreeSet<_> = c
+    let canonical_subjects = c
         .actors
         .keys()
-        .filter(|id| *id != &c.player_actor_id)
-        .chain(c.institutions.keys())
-        .chain(c.gestalts.keys())
-        .cloned()
-        .collect();
-    let actual_profiles: BTreeSet<_> = c
-        .agency_profiles
-        .values()
-        .filter(|profile| profile.active_leaf && profile.simulation_eligible)
-        .map(|profile| profile.subject_id.clone())
-        .collect();
-    if expected_profiles != actual_profiles {
+        .map(|id| (id, AgencySubjectKind::Actor))
+        .chain(
+            c.institutions
+                .keys()
+                .map(|id| (id, AgencySubjectKind::Institution)),
+        )
+        .chain(c.gestalts.keys().map(|id| (id, AgencySubjectKind::Gestalt)));
+    for (subject_id, expected_kind) in canonical_subjects {
+        let Some(profile) = c.agency_profiles.get(subject_id) else {
+            return Err(anyhow!(
+                "campaign agency skeleton has incomplete subject coverage: {subject_id}"
+            ));
+        };
+        if profile.subject_id != *subject_id || profile.subject_kind != expected_kind {
+            return Err(anyhow!(
+                "campaign agency profile does not match canonical subject {subject_id}"
+            ));
+        }
+    }
+    if let Some(profile) = c.agency_profiles.values().find(|profile| {
+        profile.active_leaf
+            && profile.simulation_eligible
+            && !c.actors.contains_key(&profile.subject_id)
+            && !c.institutions.contains_key(&profile.subject_id)
+            && !c.gestalts.contains_key(&profile.subject_id)
+    }) {
         return Err(anyhow!(
-            "campaign agency skeleton has incomplete subject coverage"
+            "active agency profile refers to unknown canonical subject {}",
+            profile.subject_id
         ));
     }
     let relationship_targets = c

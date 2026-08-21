@@ -8,6 +8,24 @@ seams remain regression evidence only.
 
 ## GhostlightDungeon target flow
 
+Campaign creation now has its own pre-world authority:
+
+```text
+Heimdall member messages
+  -> SessionZeroKernel durable shared/private conversation
+  -> Projector -> persistent DM Persona -> Interpreter proposals
+  -> typed contract, private character drafts, boundaries, decisions
+  -> roster lock -> approved_campaign_brief.v1 -> Vault compiler
+  -> evidence-gap conversation or digest-bound final review
+  -> every player approves shared + own private digest
+  -> one staging CultCache batch + atomic directory exposure
+  -> campaign_membership.v1 binds each member to one exact actor
+```
+
+`WorldKernel` receives no draft state. The transcript is never replayed into the
+compiler. Account and invitation hashes remain persistence-only; shared model
+turns, browser surfaces, schemas, and CultMesh records cannot see them.
+
 ```text
 Vault evidence receipts + typed campaign snapshot
   -> permissioned projection
@@ -23,13 +41,18 @@ Vault evidence receipts + typed campaign snapshot
 Ghostlight owns the generalized projection organ. Epiphany and other consumers
 own their canonical Persona state and consequence commits.
 
-The current player surface assigns one human session to one single-player
-campaign. That is product scope, not kernel identity. The intended multiplayer
-extension maps authenticated campaign members to distinct canonical actors and
-routes every human command through this same mailbox and WorldKernel. Each
-player receives an actor-permitted narrative projection; no party prompt or
-shared client state becomes a second world authority. The bounded intention is
-mapped in `docs/architecture/ghostlight-dungeon-multiplayer-intention.md`.
+The current checkout admits one to eight campaign members into one shared
+scene. `campaign_membership.v1` maps each authenticated account to one exact
+actor; HTTP, Eve, assessment confirmation, and CultMesh publication derive from
+that binding. Human actors are excluded from Persona and strategic control.
+Sequential public actions are accepted; PvP and split-party movement are
+rejected. Time, group travel, and pooled cell-budget changes require unanimous
+revision-bound approval. Post-launch Contract Review reuses the Session Zero
+kernel against an exact world revision and commits approved amendments in one
+campaign batch without rewriting location, topology, knowledge, memory, or
+history. The authority map is
+`docs/architecture/ghostlight-dungeon-session-zero.md`; later multiplayer work
+remains in `docs/architecture/ghostlight-dungeon-multiplayer-intention.md`.
 
 Build provenance has one owner: `crates/ghostlight-dungeon/build.rs` binds the
 exact source commit into the binary. Its inputs are either the release tool's
@@ -160,11 +183,10 @@ key and target while the complete local snapshot persists and HTTP serves that
 same typed health and Eve state.
 
 Opening retrieval deliberately covers early, transitional, and late historical
-frames. Suggestions receive one same-evidence semantic correction with exact
-collided values when the local distinctness invariant rejects the first typed
-set; roles use the same bounded correction for duplicate names or premises.
-Both rejected and accepted receipts remain private while the browser receives
-only public suggestions. Invite rotation is owned by
+frames. These pure retrieval/compiler functions now serve the Session Zero DM;
+they are not browser-owned creation routes or transient preview maps. Generated
+suggestions enter the typed draft for discussion and use the same final brief as
+custom premises. Both rejected and accepted receipts remain private. Invite rotation is owned by
 the deployment boundary: it replaces the protected token set and clears the
 persisted auth authority together while the daemon is stopped. Campaign stores
 survive; old sessions deliberately do not.
@@ -398,27 +420,25 @@ world seed. The live AetheriaLore retrieval archive is correspondingly bounded
 to `Aetheria/Worldbuilding/`; durable facts discovered through fiction must be
 promoted into Worldbuilding before they become reusable campaign canon.
 
-Compiler, expansion, fission, fork, and reset routes follow the same projection
-rule. Approval previews expose the public decision surface—topology, cast,
-pressures, player role, source-use coverage, gaps, and assumptions—without raw
-campaign, evidence, model receipts, private goals, memories, or relationships.
-Generated openings and roles are session-scoped server-owned candidates. The
-browser receives their display projections and returns only an opening ID or
-role ID; it cannot echo a rewritten candidate back into compilation. Role
-selection must resolve against the same session and opening. The selected
-role's validated capabilities and obligations are then bound deterministically
-into the player actor and named as a branch assumption, while the opening/role
-evidence and model receipts are carried into the approval preview. Candidate
-IDs, text, list sizes, and evidence references receive local validation before
-they can become selectable. Restart may expire these noncanonical suggestions;
-it cannot silently reconstruct or substitute them.
+Session Zero compilation, expansion, and fission follow the same projection
+rule. Review projections expose topology, pressures, source-use coverage, gaps,
+assumptions, public party cards, and only the current viewer's private ledger.
+Generated openings are shared typed decisions; accepting one amends the draft
+for discussion and triggers three grounded role decisions in each private DM
+channel. Custom starts and characters use the same draft. The browser returns
+only decision commands and cannot echo a rewritten candidate into compilation.
+Candidate IDs, text, list sizes, and evidence references receive local
+validation. Suggestion retrieval and model receipts remain in the Session Zero
+store; publication compiles the unanimously approved brief, never the
+conversation transcript.
 
-Campaign publication has a separate discoverability boundary. Registry create,
-fork, reset, and compiler approval initialize a new `.cc` store under a
+Campaign publication has a separate discoverability boundary. Session Zero
+publication and solo lifecycle operations initialize a new `.cc` store under a
 non-UUID `.creating-*` directory. The CreateCampaign command validates the
-seed, then atomically commits campaign state, approved seed, Vault manifest,
-evidence, model receipts, canon candidates, and the creation lifecycle receipt
-in one CultCache batch. Only that complete store is renamed into the UUID
+seed, then atomically commits campaign state, approved seed, membership,
+contract, DM Persona, approvals, Vault manifest, evidence, model receipts,
+canon candidates, and the creation lifecycle receipt in one CultCache batch.
+Only that complete store is renamed into the UUID
 namespace and admitted to the live registry. Failed initialization removes its
 exact staging directory and cannot poison daemon reload. Approval previews are
 retained until campaign publication, session selection, and reload all succeed;
@@ -648,9 +668,9 @@ paths as active state surfaces.
 
 ## Missing Or Incomplete Organs
 
-- World compiler browser flow, selected-opening/role path, live provider
-  acceptance, material-gap approval, on-demand destination expansion, and
-  canon-candidate persistence
+- Contract-governed split parties, private in-play actions, delegation,
+  simultaneous declaration windows, PvP, late joining, permanent departure,
+  and group fork/reset/export
 - Deterministic speaker-local input slicer
 - Full prompt renderer
 - Classifier/appraiser pipeline

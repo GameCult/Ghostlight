@@ -68,6 +68,7 @@ async fn main() -> anyhow::Result<()> {
     };
     let impossible_error = kernel
         .command(WorldCommand::Attempt {
+            actor_id: "player".into(),
             assessment_digest: admitted_impossible.digest,
         })
         .await
@@ -116,6 +117,7 @@ async fn main() -> anyhow::Result<()> {
     };
     let attempt = kernel
         .command(WorldCommand::Attempt {
+            actor_id: "player".into(),
             assessment_digest: admitted_feasible.digest,
         })
         .await?;

@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 pub mod assessor;
 pub mod compiler;
 pub mod d20;
@@ -14,6 +16,7 @@ pub mod persona;
 pub mod registry;
 pub mod resolution;
 pub mod scheduler;
+pub mod session_zero;
 pub mod surface;
 pub mod turn;
 pub mod vault;

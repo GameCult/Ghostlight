@@ -3,6 +3,7 @@ use crate::{
     kernel::WorldKernel,
     model::ModelStageReceipt,
     persistence::CampaignStore,
+    session_zero::PublishedSessionZeroSeed,
 };
 use anyhow::{Result, anyhow};
 use chrono::Utc;
@@ -118,6 +119,104 @@ impl CampaignRegistry {
     ) -> Result<CampaignRuntime> {
         self.create_with_lifecycle(campaign, evidence, model_receipts, None)
             .await
+    }
+
+    pub async fn publish_session_zero(
+        &self,
+        mut campaign: Campaign,
+        evidence: Vec<VaultEvidenceReceipt>,
+        model_receipts: Vec<ModelStageReceipt>,
+        publication: PublishedSessionZeroSeed,
+    ) -> Result<CampaignRuntime> {
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        crate::compiler::validate_campaign_seed(&campaign)?;
+        if publication
+            .membership
+            .controlled_actor_ids()
+            .iter()
+            .any(|actor_id| {
+                !campaign.actors.contains_key(actor_id)
+                    || campaign
+                        .agency_profiles
+                        .get(actor_id)
+                        .is_none_or(|profile| profile.simulation_eligible)
+            })
+        {
+            return Err(anyhow!(
+                "every campaign member must bind an existing human-protected actor"
+            ));
+        }
+        if let Ok(existing) = self.runtime(campaign.id).await {
+            let stored = existing
+                .store
+                .load::<PublishedSessionZeroSeed>(
+                    "session_zero_publication.v1",
+                    &campaign.id.to_string(),
+                )?
+                .map(|(_, value)| value);
+            return match stored {
+                Some(stored) if stored.approved_seed_digest == publication.approved_seed_digest => {
+                    Ok(existing)
+                }
+                _ => Err(anyhow!(
+                    "campaign id is already published from another seed"
+                )),
+            };
+        }
+        let directory = self.root.join(campaign.id.to_string());
+        if directory.exists() {
+            let store = CampaignStore::open(directory.join("campaign.cc"))?;
+            let stored = store
+                .load::<PublishedSessionZeroSeed>(
+                    "session_zero_publication.v1",
+                    &campaign.id.to_string(),
+                )?
+                .map(|(_, value)| value);
+            if stored.as_ref().is_some_and(|stored| {
+                stored.approved_seed_digest == publication.approved_seed_digest
+            }) {
+                let runtime = CampaignRuntime {
+                    kernel: WorldKernel::start(store.clone()),
+                    store,
+                };
+                self.runtimes
+                    .write()
+                    .await
+                    .insert(campaign.id, runtime.clone());
+                return Ok(runtime);
+            }
+            return Err(anyhow!("campaign directory belongs to another seed"));
+        }
+        let staging = self
+            .root
+            .join(format!(".creating-{}-{}", campaign.id, Uuid::new_v4()));
+        fs::create_dir(&staging)?;
+        let prepared = (|| -> Result<()> {
+            let store = CampaignStore::open(staging.join("campaign.cc"))?;
+            store.create_session_zero_campaign(
+                &campaign,
+                &evidence,
+                &model_receipts,
+                &publication,
+            )?;
+            drop(store);
+            fs::rename(&staging, &directory)?;
+            Ok(())
+        })();
+        if let Err(error) = prepared {
+            cleanup_staging_directory(&self.root, &staging);
+            return Err(error);
+        }
+        let store = CampaignStore::open(directory.join("campaign.cc"))?;
+        let runtime = CampaignRuntime {
+            kernel: WorldKernel::start(store.clone()),
+            store,
+        };
+        self.runtimes
+            .write()
+            .await
+            .insert(campaign.id, runtime.clone());
+        Ok(runtime)
     }
 
     async fn create_with_lifecycle(
@@ -319,7 +418,11 @@ fn validated_branch_name(name: String) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{ActorState, BranchOrigin, Location};
+    use crate::domain::{ActorState, BranchOrigin, Location, WorldCommitReceipt};
+    use crate::session_zero::{
+        ApprovedCampaignBrief, CampaignContract, CampaignDmPersona, CampaignGovernance,
+        CampaignMember, CampaignMembership, CharacterDraft,
+    };
     use std::collections::{BTreeMap, BTreeSet};
 
     fn seed(name: &str) -> Campaign {
@@ -379,6 +482,76 @@ mod tests {
             resolution_pins: BTreeMap::new(),
             resolution_cover: None,
             strategic_tick_count: 0,
+        }
+    }
+
+    fn publication(campaign: &Campaign, seed_digest: &str) -> PublishedSessionZeroSeed {
+        let member_id = "member:host".to_string();
+        let mut contract = CampaignContract::default();
+        contract.campaign_name = campaign.name.clone();
+        contract.vault_provider = "fixture".into();
+        let character = CharacterDraft {
+            schema: "ghostlight.character_draft.v1".into(),
+            member_id: member_id.clone(),
+            actor_id: campaign.player_actor_id.clone(),
+            name: campaign.actors[&campaign.player_actor_id].name.clone(),
+            ..CharacterDraft::default()
+        };
+        let membership = CampaignMembership {
+            schema: "ghostlight.campaign_membership.v1".into(),
+            campaign_id: campaign.id,
+            governance_epoch: 0,
+            host_member_id: member_id.clone(),
+            members: BTreeMap::from([(
+                member_id.clone(),
+                CampaignMember {
+                    member_id: member_id.clone(),
+                    account_hash: "account:host".into(),
+                    display_name: "Host".into(),
+                    actor_id: campaign.player_actor_id.clone(),
+                    is_host: true,
+                    active: true,
+                    cell_allowance: 8,
+                },
+            )]),
+            extraordinary_permissions: BTreeMap::new(),
+        };
+        PublishedSessionZeroSeed {
+            schema: "ghostlight.published_session_zero_seed.v1".into(),
+            session_zero_id: Uuid::new_v4(),
+            approved_seed_digest: seed_digest.into(),
+            contract: contract.clone(),
+            membership: membership.clone(),
+            governance: CampaignGovernance {
+                schema: "ghostlight.campaign_governance.v1".into(),
+                campaign_id: campaign.id,
+                governance_epoch: 0,
+                time_advance_policy: "unanimous".into(),
+                pooled_cell_ceiling: 8,
+                cooperative_shared_scene_only: true,
+                pvp_enabled: false,
+            },
+            dm_persona: CampaignDmPersona {
+                schema: "ghostlight.campaign_dm_persona.v1".into(),
+                id: "dm:test".into(),
+                name: "Ghostlight".into(),
+                voice: "Candid".into(),
+                shared_memories: vec![],
+                private_member_memories: BTreeMap::new(),
+            },
+            approvals: vec![],
+            approved_brief: ApprovedCampaignBrief {
+                schema: "ghostlight.approved_campaign_brief.v1".into(),
+                session_zero_id: Uuid::new_v4(),
+                host_member_id: member_id.clone(),
+                contract,
+                aggregate_boundaries: vec![],
+                characters: vec![character],
+                member_actor_ids: BTreeMap::from([(member_id, campaign.player_actor_id.clone())]),
+                shared_digest: "sha256:shared".into(),
+                character_digests: BTreeMap::new(),
+            },
+            boundaries: vec![],
         }
     }
 
@@ -553,6 +726,154 @@ mod tests {
         assert!(result.is_err());
         assert!(registry.list().await.is_empty());
         assert_eq!(std::fs::read_dir(&root).unwrap().count(), 0);
+    }
+
+    #[tokio::test]
+    async fn session_zero_publication_is_atomic_complete_and_digest_idempotent() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("campaigns");
+        let registry = CampaignRegistry::new(&root).unwrap();
+        let campaign = seed("Approved seed");
+        let approved = publication(&campaign, "sha256:approved");
+
+        let first = registry
+            .publish_session_zero(campaign.clone(), vec![], vec![], approved.clone())
+            .await
+            .unwrap();
+        for document_type in [
+            "campaign.v1",
+            "session_zero_publication.v1",
+            "campaign_membership.v1",
+            "campaign_contract.v1",
+            "campaign_governance.v1",
+            "campaign_dm_persona.v1",
+            "approved_campaign_brief.v1",
+        ] {
+            assert_eq!(first.store.keys(document_type).unwrap().len(), 1);
+        }
+        assert_eq!(registry.list().await, vec![campaign.id]);
+        assert!(std::fs::read_dir(&root).unwrap().all(|entry| {
+            !entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .starts_with(".creating-")
+        }));
+
+        let recovered = registry
+            .publish_session_zero(campaign.clone(), vec![], vec![], approved)
+            .await
+            .unwrap();
+        assert_eq!(
+            recovered.store.keys("campaign.v1").unwrap(),
+            vec![campaign.id.to_string()]
+        );
+
+        let conflicting = publication(&campaign, "sha256:different");
+        assert!(
+            registry
+                .publish_session_zero(campaign, vec![], vec![], conflicting)
+                .await
+                .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn contract_review_replaces_all_governance_rows_in_one_cas() {
+        let dir = tempfile::tempdir().unwrap();
+        let registry = CampaignRegistry::new(dir.path().join("campaigns")).unwrap();
+        let campaign = seed("Reviewable seed");
+        let original_publication = publication(&campaign, "sha256:original");
+        let runtime = registry
+            .publish_session_zero(
+                campaign.clone(),
+                vec![],
+                vec![],
+                original_publication.clone(),
+            )
+            .await
+            .unwrap();
+        let (campaign_row, mut next_campaign) = runtime
+            .store
+            .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+            .unwrap()
+            .unwrap();
+        next_campaign.revision = 1;
+        let mut reviewed = original_publication;
+        reviewed.approved_seed_digest = "sha256:reviewed".into();
+        reviewed.contract.pacing = "deliberate".into();
+        reviewed.approved_brief.contract = reviewed.contract.clone();
+        reviewed.membership.governance_epoch = 1;
+        reviewed.governance.governance_epoch = 1;
+        reviewed.dm_persona.voice = "Patient and exact".into();
+        let receipt = WorldCommitReceipt {
+            schema: "ghostlight.world_commit_receipt.v1".into(),
+            campaign_id: campaign.id,
+            previous_revision: 0,
+            revision: 1,
+            command_kind: "unanimous_contract_review".into(),
+            committed_at: Utc::now(),
+            roll: None,
+        };
+
+        runtime
+            .store
+            .commit_contract_review(&campaign_row, &next_campaign, &reviewed, &receipt)
+            .unwrap();
+        assert_eq!(
+            runtime
+                .store
+                .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .revision,
+            1
+        );
+        assert_eq!(
+            runtime
+                .store
+                .load::<CampaignContract>("campaign_contract.v1", &campaign.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .pacing,
+            "deliberate"
+        );
+        assert_eq!(
+            runtime
+                .store
+                .load::<CampaignDmPersona>("campaign_dm_persona.v1", "dm:test")
+                .unwrap()
+                .unwrap()
+                .1
+                .voice,
+            "Patient and exact"
+        );
+
+        let mut impossible_second = reviewed;
+        impossible_second.contract.pacing = "frantic".into();
+        assert!(
+            runtime
+                .store
+                .commit_contract_review(
+                    &campaign_row,
+                    &next_campaign,
+                    &impossible_second,
+                    &receipt,
+                )
+                .is_err()
+        );
+        assert_eq!(
+            runtime
+                .store
+                .load::<CampaignContract>("campaign_contract.v1", &campaign.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .pacing,
+            "deliberate"
+        );
     }
 
     #[tokio::test]

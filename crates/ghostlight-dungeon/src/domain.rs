@@ -879,11 +879,32 @@ pub enum WorldCommand {
         proposal: Option<ActionAssessment>,
     },
     Attempt {
+        actor_id: String,
         assessment_digest: String,
     },
     Wait {
         expected_revision: u64,
         minutes: u32,
+    },
+    ProposeTimeAdvance {
+        expected_revision: u64,
+        member_id: String,
+        minutes: u32,
+    },
+    ApproveTimeAdvance {
+        expected_revision: u64,
+        proposal_id: String,
+        member_id: String,
+    },
+    ProposeGroupTravel {
+        expected_revision: u64,
+        member_id: String,
+        destination_location_id: String,
+    },
+    ApproveGroupTravel {
+        expected_revision: u64,
+        proposal_id: String,
+        member_id: String,
     },
     AdvanceStrategicTick {
         expected_revision: u64,
@@ -899,6 +920,17 @@ pub enum WorldCommand {
         expected_revision: u64,
         expected_resolution_epoch: u64,
         active_cell_budget: u8,
+    },
+    ProposeResolutionBudget {
+        expected_revision: u64,
+        expected_resolution_epoch: u64,
+        member_id: String,
+        active_cell_budget: u8,
+    },
+    ApproveResolutionBudget {
+        expected_revision: u64,
+        proposal_id: String,
+        member_id: String,
     },
     SetProviderParallelism {
         expected_revision: u64,

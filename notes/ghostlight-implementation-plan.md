@@ -15,17 +15,20 @@ revision and now gives Persona only one lived narrative stream; Epiphany keeps
 her canonical Persona mind, receipts, effect admission, brakes, and external
 consequence authority.
 
-The hosted runtime owns compiler approval, exact VoidBot evidence, campaign
-mailboxes, fiction-first d20 resolution, parallel Persona appraisal, narration,
-reversible gestalt materialization, isolated sessions/campaigns, CultMesh/Eve
-publication, and away-time scheduling. Strategic ticks now project six-axis
+The hosted runtime owns persistent DM-led Session Zero, exact VoidBot evidence,
+campaign mailboxes, fiction-first d20 resolution, parallel Persona appraisal,
+narration, reversible gestalt materialization, actor-bound membership,
+CultMesh/Eve publication, and away-time scheduling. One to eight authenticated
+players negotiate one shared contract and private character states before the
+host can atomically publish an unanimously approved seed. Strategic ticks now project six-axis
 pressure, select a connected budgeted cover over the global agency skeleton,
 and run one private Ghostlight Persona membrane per cohesive or arena cell. The
 WorldKernel admits the whole cell wave atomically and forbids player puppeting,
 synthetic arena actors, borrowed secrets, invented IDs, unreachable movement,
 and unbounded information or population-pressure edits. The laboratory exposes
-a 1–32 player budget, persistent pins, approval-gated gestalt fission, graph and
-cover receipts, and a separate operator provider-concurrency limit. The
+a pooled 1–128 campaign cell budget supplied by a player entitlement port,
+persistent pins, approval-gated gestalt fission, graph and cover receipts, and
+a separate operator provider-concurrency limit. The
 specific authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`.
 The accepted implementation is hosted on Starfire as immutable release
@@ -119,13 +122,25 @@ spoiler disclosure let the player bypass discovery before approving the seed.
 The approval surface retains topology, cast, institutions, populations, clocks,
 role capabilities, evidence coverage, gaps, and branch assumptions.
 
-Multiplayer remains outside the current paid-alpha gate but is now an explicit
-architectural intention. Do not fork the simulation into a multiplayer room
-model. After the solo product and Gestalt agency are proven, extend campaign
-membership so authenticated humans control distinct canonical actors through
-the existing mailbox, perception gates, initiative, and atomic commit path. The
-authority map and unresolved consent/governance questions live in
+Bounded cooperative multiplayer is now part of the current forge gate. It uses
+campaign membership rather than a room model: distinct authenticated humans
+control exact canonical actors through the existing mailbox, perception gates,
+and atomic commit path. The implemented boundary is one shared scene,
+sequential public actions, actor-specific surfaces, no PvP, and unanimous
+time/travel/cell-budget changes. Split parties, private in-play actions,
+delegation, simultaneous declarations, late joining, and group lifecycle
+operations remain outside the gate. The authority map and remaining social
+governance live in
 `docs/architecture/ghostlight-dungeon-multiplayer-intention.md`.
+
+Session Zero replaces direct compiler forms as campaign-creation authority.
+Grounded openings and roles are inline typed DM decisions; custom premises use
+the same draft. The compiler consumes only `approved_campaign_brief.v1`, and
+publication batches campaign, membership, contract, persistent DM Persona,
+approvals, evidence, and seed digest before discovery. Post-launch Contract
+Review reuses the same negotiation machinery against an exact world revision;
+it can amend forward-looking contract and actor ledger fields but cannot rewrite
+membership custody, locations, topology, knowledge, memories, or history.
 
 ## Prior research-program phase
 

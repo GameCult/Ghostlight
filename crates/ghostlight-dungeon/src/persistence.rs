@@ -3,6 +3,9 @@ use crate::domain::{
     ResolutionWaveCommit, StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest,
     WorldCommitReceipt,
 };
+use crate::session_zero::{
+    CellBudgetProposal, GroupTravelProposal, PublishedSessionZeroSeed, TimeAdvanceProposal,
+};
 use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
 use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
@@ -48,16 +51,20 @@ impl CampaignStore {
         kind: &str,
         key: &str,
     ) -> Result<Option<(CultCacheEnvelope, T)>> {
-        let row = self
-            .inner
-            .pull_all()?
-            .into_iter()
-            .find(|r| r.r#type == kind && r.key == key);
+        let row = self.load_envelope(kind, key)?;
         row.map(|r| {
             let value = rmp_serde::from_slice(&r.payload).context("decode CultCache row")?;
             Ok((r, value))
         })
         .transpose()
+    }
+
+    fn load_envelope(&self, kind: &str, key: &str) -> Result<Option<CultCacheEnvelope>> {
+        Ok(self
+            .inner
+            .pull_all()?
+            .into_iter()
+            .find(|row| row.r#type == kind && row.key == key))
     }
 
     pub fn insert<T: Serialize>(
@@ -79,6 +86,31 @@ impl CampaignStore {
         campaign: &Campaign,
         receipts: &[VaultEvidenceReceipt],
         model_receipts: &[crate::model::ModelStageReceipt],
+    ) -> Result<CultCacheEnvelope> {
+        self.create_campaign_rows(campaign, receipts, model_receipts, None)
+    }
+
+    pub fn create_session_zero_campaign(
+        &self,
+        campaign: &Campaign,
+        receipts: &[VaultEvidenceReceipt],
+        model_receipts: &[crate::model::ModelStageReceipt],
+        publication: &PublishedSessionZeroSeed,
+    ) -> Result<CultCacheEnvelope> {
+        if publication.membership.campaign_id != campaign.id
+            || publication.governance.campaign_id != campaign.id
+        {
+            return Err(anyhow!("Session Zero publication targets another campaign"));
+        }
+        self.create_campaign_rows(campaign, receipts, model_receipts, Some(publication))
+    }
+
+    fn create_campaign_rows(
+        &self,
+        campaign: &Campaign,
+        receipts: &[VaultEvidenceReceipt],
+        model_receipts: &[crate::model::ModelStageReceipt],
+        publication: Option<&PublishedSessionZeroSeed>,
     ) -> Result<CultCacheEnvelope> {
         let campaign_row = envelope(
             "campaign.v1",
@@ -137,6 +169,60 @@ impl CampaignStore {
                 created_at: Utc::now(),
             },
         )?);
+        if let Some(publication) = publication {
+            rows.push(envelope(
+                "session_zero_publication.v1",
+                "ghostlight.published_session_zero_seed.v1",
+                &campaign.id.to_string(),
+                publication,
+            )?);
+            rows.push(envelope(
+                "campaign_membership.v1",
+                "ghostlight.campaign_membership.v1",
+                &campaign.id.to_string(),
+                &publication.membership,
+            )?);
+            rows.push(envelope(
+                "campaign_contract.v1",
+                "ghostlight.campaign_contract.v1",
+                &campaign.id.to_string(),
+                &publication.contract,
+            )?);
+            rows.push(envelope(
+                "campaign_governance.v1",
+                "ghostlight.campaign_governance.v1",
+                &campaign.id.to_string(),
+                &publication.governance,
+            )?);
+            rows.push(envelope(
+                "campaign_dm_persona.v1",
+                "ghostlight.campaign_dm_persona.v1",
+                &publication.dm_persona.id,
+                &publication.dm_persona,
+            )?);
+            rows.push(envelope(
+                "approved_campaign_brief.v1",
+                "ghostlight.approved_campaign_brief.v1",
+                &campaign.id.to_string(),
+                &publication.approved_brief,
+            )?);
+            for approval in &publication.approvals {
+                rows.push(envelope(
+                    "session_zero_approval.v1",
+                    "ghostlight.session_zero_approval.v1",
+                    &approval.member_id,
+                    approval,
+                )?);
+            }
+            for boundary in &publication.boundaries {
+                rows.push(envelope(
+                    "content_boundary.v1",
+                    "ghostlight.content_boundary.v1",
+                    &boundary.id,
+                    boundary,
+                )?);
+            }
+        }
         if !self.inner.compare_and_swap_batch(&[], rows)? {
             return Err(anyhow!("campaign store is not empty"));
         }
@@ -198,6 +284,217 @@ impl CampaignStore {
             return Err(anyhow!("stale CultCache snapshot"));
         }
         Ok(next_row)
+    }
+
+    pub fn commit_time_advance(
+        &self,
+        expected_campaign: &CultCacheEnvelope,
+        next_campaign: &Campaign,
+        expected_proposal: &CultCacheEnvelope,
+        next_proposal: &TimeAdvanceProposal,
+        receipt: &WorldCommitReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        let next_campaign_row = envelope(
+            &expected_campaign.r#type,
+            "ghostlight.campaign.v1",
+            &expected_campaign.key,
+            next_campaign,
+        )?;
+        let next_proposal_row = envelope(
+            &expected_proposal.r#type,
+            "ghostlight.time_advance_proposal.v1",
+            &expected_proposal.key,
+            next_proposal,
+        )?;
+        let rows = vec![
+            next_campaign_row.clone(),
+            next_proposal_row,
+            envelope(
+                "world_commit_receipt.v1",
+                "ghostlight.world_commit_receipt.v1",
+                &format!("{}-{}", next_campaign.id, next_campaign.revision),
+                receipt,
+            )?,
+        ];
+        if !self.inner.compare_and_swap_batch(
+            &[expected_campaign.clone(), expected_proposal.clone()],
+            rows,
+        )? {
+            return Err(anyhow!("stale campaign or time-advance proposal"));
+        }
+        Ok(next_campaign_row)
+    }
+
+    pub fn commit_group_travel(
+        &self,
+        expected_campaign: &CultCacheEnvelope,
+        next_campaign: &Campaign,
+        expected_proposal: &CultCacheEnvelope,
+        next_proposal: &GroupTravelProposal,
+        receipt: &WorldCommitReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        let next_campaign_row = envelope(
+            &expected_campaign.r#type,
+            "ghostlight.campaign.v1",
+            &expected_campaign.key,
+            next_campaign,
+        )?;
+        let next_proposal_row = envelope(
+            &expected_proposal.r#type,
+            "ghostlight.group_travel_proposal.v1",
+            &expected_proposal.key,
+            next_proposal,
+        )?;
+        let rows = vec![
+            next_campaign_row.clone(),
+            next_proposal_row,
+            envelope(
+                "world_commit_receipt.v1",
+                "ghostlight.world_commit_receipt.v1",
+                &format!("{}-{}", next_campaign.id, next_campaign.revision),
+                receipt,
+            )?,
+        ];
+        if !self.inner.compare_and_swap_batch(
+            &[expected_campaign.clone(), expected_proposal.clone()],
+            rows,
+        )? {
+            return Err(anyhow!("stale campaign or group-travel proposal"));
+        }
+        Ok(next_campaign_row)
+    }
+
+    pub fn commit_cell_budget(
+        &self,
+        expected_campaign: &CultCacheEnvelope,
+        next_campaign: &Campaign,
+        expected_proposal: &CultCacheEnvelope,
+        next_proposal: &CellBudgetProposal,
+        receipt: &ResolutionControlReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        let next_campaign_row = envelope(
+            &expected_campaign.r#type,
+            "ghostlight.campaign.v1",
+            &expected_campaign.key,
+            next_campaign,
+        )?;
+        let rows = vec![
+            next_campaign_row.clone(),
+            envelope(
+                &expected_proposal.r#type,
+                "ghostlight.cell_budget_proposal.v1",
+                &expected_proposal.key,
+                next_proposal,
+            )?,
+            envelope(
+                "resolution_control_receipt.v1",
+                "ghostlight.resolution_control_receipt.v1",
+                &format!(
+                    "{}:{}:{}",
+                    receipt.campaign_id, receipt.operation, receipt.resolution_epoch
+                ),
+                receipt,
+            )?,
+        ];
+        if !self.inner.compare_and_swap_batch(
+            &[expected_campaign.clone(), expected_proposal.clone()],
+            rows,
+        )? {
+            return Err(anyhow!("stale campaign or cell-budget proposal"));
+        }
+        Ok(next_campaign_row)
+    }
+
+    pub fn commit_contract_review(
+        &self,
+        expected_campaign: &CultCacheEnvelope,
+        next_campaign: &Campaign,
+        publication: &PublishedSessionZeroSeed,
+        receipt: &WorldCommitReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        let campaign_key = next_campaign.id.to_string();
+        let required = [
+            "session_zero_publication.v1",
+            "campaign_contract.v1",
+            "campaign_membership.v1",
+            "campaign_governance.v1",
+            "approved_campaign_brief.v1",
+        ];
+        let mut expected_rows = vec![expected_campaign.clone()];
+        for kind in required {
+            let row = self
+                .load_envelope(kind, &campaign_key)?
+                .ok_or_else(|| anyhow!("contract review requires {kind}"))?;
+            expected_rows.push(row);
+        }
+        let dm_row = self
+            .load_envelope("campaign_dm_persona.v1", &publication.dm_persona.id)?
+            .ok_or_else(|| anyhow!("contract review requires campaign DM state"))?;
+        expected_rows.push(dm_row);
+
+        let next_campaign_row = envelope(
+            &expected_campaign.r#type,
+            "ghostlight.campaign.v1",
+            &expected_campaign.key,
+            next_campaign,
+        )?;
+        let mut rows = vec![
+            next_campaign_row.clone(),
+            envelope(
+                "session_zero_publication.v1",
+                "ghostlight.published_session_zero_seed.v1",
+                &campaign_key,
+                publication,
+            )?,
+            envelope(
+                "campaign_contract.v1",
+                "ghostlight.campaign_contract.v1",
+                &campaign_key,
+                &publication.contract,
+            )?,
+            envelope(
+                "campaign_membership.v1",
+                "ghostlight.campaign_membership.v1",
+                &campaign_key,
+                &publication.membership,
+            )?,
+            envelope(
+                "campaign_governance.v1",
+                "ghostlight.campaign_governance.v1",
+                &campaign_key,
+                &publication.governance,
+            )?,
+            envelope(
+                "campaign_dm_persona.v1",
+                "ghostlight.campaign_dm_persona.v1",
+                &publication.dm_persona.id,
+                &publication.dm_persona,
+            )?,
+            envelope(
+                "approved_campaign_brief.v1",
+                "ghostlight.approved_campaign_brief.v1",
+                &campaign_key,
+                &publication.approved_brief,
+            )?,
+            envelope(
+                "world_commit_receipt.v1",
+                "ghostlight.world_commit_receipt.v1",
+                &format!("{}-{}", next_campaign.id, next_campaign.revision),
+                receipt,
+            )?,
+        ];
+        for approval in &publication.approvals {
+            rows.push(envelope(
+                "session_zero_approval.v1",
+                "ghostlight.session_zero_approval.v1",
+                &format!("{}:{}", publication.session_zero_id, approval.member_id),
+                approval,
+            )?);
+        }
+        if !self.inner.compare_and_swap_batch(&expected_rows, rows)? {
+            return Err(anyhow!("stale campaign contract review"));
+        }
+        Ok(next_campaign_row)
     }
 
     pub fn append_world_commit<T: Serialize, R: Serialize>(

@@ -4,28 +4,35 @@ use axum::{
     http::{HeaderMap, HeaderValue, StatusCode, header},
     middleware,
     middleware::Next,
-    response::{IntoResponse, Response},
+    response::{
+        IntoResponse, Response,
+        sse::{Event as SseEvent, KeepAlive, Sse},
+    },
     routing::{get, post},
 };
+#[cfg(test)]
+use ghostlight_dungeon::domain::WorldCompilePreview;
 use ghostlight_dungeon::{
     assessor::ActionAssessor,
-    compiler::{
-        CustomStart, GestaltFissionRequest, OpeningRequest, OpeningSuggestion, RoleSuggestion,
-        SelectedStart, SuggestedOpenings, SuggestedRoles, WorldCompiler,
-    },
+    compiler::{GestaltFissionRequest, OpeningRequest, OpeningSuggestion, WorldCompiler},
     domain::{
         ActionIntent, Campaign, GestaltFissionPreview, NarrationProjection, RegionExpansionPreview,
-        RejectedProposalReceipt, WorldCommand, WorldCompilePreview,
+        RejectedProposalReceipt, WorldCommand,
     },
     gestalt::GestaltPresencePlanner,
     kernel::{CommandResult, KernelError},
-    mesh::{CampaignMeshSnapshot, MeshPublisher},
+    mesh::{CampaignMeshSnapshot, MeshPublisher, SessionZeroMeshSnapshot},
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     narrator::Narrator,
     persistence::CampaignStore,
     persona::PersonaProjectionEngine,
     registry::{CampaignRegistry, CampaignRuntime},
-    surface::player_surface,
+    session_zero::{
+        BoundaryLevel, EntitlementPort, FixtureEntitlementPort, SessionZeroCommand,
+        SessionZeroDirector, SessionZeroRegistry, SessionZeroState, publication_from_session,
+        session_zero_surface,
+    },
+    surface::player_surface_for_actor,
     turn::{SnapshotPermit, appraise_present},
     vault::VoidBotMcpVault,
 };
@@ -34,6 +41,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, BTreeSet},
+    convert::Infallible,
     net::SocketAddr,
     path::PathBuf,
     sync::Arc,
@@ -49,6 +57,9 @@ use heimdall::{BackendCallback, HeimdallClient};
 #[derive(Clone)]
 struct AppState {
     registry: CampaignRegistry,
+    session_zeros: SessionZeroRegistry,
+    session_zero_director: Option<Arc<SessionZeroDirector>>,
+    entitlements: Arc<dyn EntitlementPort>,
     runtime_root: PathBuf,
     auth: Arc<Mutex<AuthOwner>>,
     heimdall: Arc<HeimdallClient>,
@@ -56,9 +67,6 @@ struct AppState {
     compiler: Option<Arc<WorldCompiler>>,
     assessor: Option<Arc<ActionAssessor>>,
     model: Option<Arc<dyn ModelPort>>,
-    compile_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<WorldCompilePreview>>>>,
-    opening_suggestions: Arc<Mutex<BTreeMap<String, SuggestedOpenings>>>,
-    role_suggestions: Arc<Mutex<BTreeMap<String, OwnedRoleSuggestions>>>,
     expansion_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<RegionExpansionPreview>>>>,
     fission_previews: Arc<Mutex<BTreeMap<String, OwnedFissionPreview>>>,
     live_turns: Arc<AtomicUsize>,
@@ -103,28 +111,80 @@ struct OwnedFissionPreview {
     model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
 }
 
-#[derive(Clone)]
-struct OwnedRoleSuggestions {
-    opening_id: String,
-    value: SuggestedRoles,
-}
-
-#[derive(Deserialize)]
-struct OpeningSelectionRequest {
-    opening_id: String,
-}
-
-#[derive(Deserialize)]
-struct SelectedStartRequest {
-    campaign_name: String,
-    opening_id: String,
-    role_id: String,
-}
-
 #[derive(Deserialize)]
 struct ProviderParallelismRequest {
     expected_provider_configuration_epoch: u64,
     provider_parallelism: u8,
+}
+
+#[derive(Deserialize)]
+struct BeginSessionZeroRequest {
+    name: String,
+    vault_provider: String,
+    display_name: String,
+}
+
+#[derive(Deserialize)]
+struct SessionZeroInviteRequest {
+    count: u8,
+}
+
+#[derive(Deserialize)]
+struct JoinSessionZeroRequest {
+    display_name: String,
+}
+
+#[derive(Deserialize)]
+struct SessionZeroMessageRequest {
+    expected_revision: u64,
+    channel_id: String,
+    text: String,
+}
+
+#[derive(Deserialize)]
+struct SessionZeroBoundaryRequest {
+    expected_revision: u64,
+    boundary_id: Option<String>,
+    topic: String,
+    level: BoundaryLevel,
+}
+
+#[derive(Deserialize)]
+struct SessionZeroDecisionRequest {
+    expected_revision: u64,
+    decision_id: String,
+    accept: bool,
+    counter: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct SessionZeroMemberRequest {
+    expected_revision: u64,
+    member_id: String,
+}
+
+#[derive(Deserialize)]
+struct SessionZeroRevisionRequest {
+    expected_revision: u64,
+}
+
+#[derive(Deserialize)]
+struct TimeAdvanceRequest {
+    expected_revision: u64,
+    minutes: u32,
+}
+
+#[derive(Deserialize)]
+struct GroupTravelRequest {
+    expected_revision: u64,
+    destination_location_id: String,
+}
+
+#[derive(Deserialize)]
+struct CellBudgetRequest {
+    expected_revision: u64,
+    expected_resolution_epoch: u64,
+    active_cell_budget: u8,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -147,6 +207,16 @@ struct HeimdallAuthAttempt {
     status: String,
     account_session_hash: Option<String>,
     error: Option<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct GovernanceMigrationReceipt {
+    schema: String,
+    campaign_id: uuid::Uuid,
+    status: String,
+    account_hashes: Vec<String>,
+    actor_id: String,
+    created_at: chrono::DateTime<chrono::Utc>,
 }
 
 struct AuthOwner {
@@ -187,6 +257,8 @@ async fn main() -> anyhow::Result<()> {
     migrate_default_campaign(&runtime_root)?;
     let registry = CampaignRegistry::new(runtime_root.join("campaigns"))?;
     registry.load_existing().await?;
+    let session_zeros = SessionZeroRegistry::new(runtime_root.join("session-zero"))?;
+    session_zeros.load_existing().await?;
     std::fs::create_dir_all(runtime_root.join("service"))?;
     let auth_store = CampaignStore::open(runtime_root.join("service/auth.cc"))?;
     let (auth_row, auth_state) = match auth_store.load::<AuthState>("auth_state.v1", "primary")? {
@@ -209,6 +281,7 @@ async fn main() -> anyhow::Result<()> {
             (row, state)
         }
     };
+    migrate_legacy_campaign_memberships(&registry, &auth_state).await?;
     let secret_path = runtime_root.join("secrets/deepseek.dpapi");
     let (deepseek_status, compiler, assessor, shared_model) = if secret_path.is_file() {
         let provider: Arc<dyn ModelPort> =
@@ -249,8 +322,19 @@ async fn main() -> anyhow::Result<()> {
         .map(|value| value.parse())
         .transpose()?;
     let mesh = MeshPublisher::open(runtime_root.join("service/mesh.cc"), mesh_target)?;
+    let session_zero_director = shared_model.as_ref().map(|model| {
+        Arc::new(SessionZeroDirector::new(
+            model.clone(),
+            "deepseek-v4-flash",
+            "deepseek-v4-pro",
+            "deepseek-v4-flash",
+        ))
+    });
     let state = AppState {
         registry,
+        session_zeros,
+        session_zero_director,
+        entitlements: Arc::new(FixtureEntitlementPort),
         runtime_root,
         auth: Arc::new(Mutex::new(AuthOwner {
             store: auth_store,
@@ -262,9 +346,6 @@ async fn main() -> anyhow::Result<()> {
         compiler,
         assessor,
         model: shared_model,
-        compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
-        opening_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
-        role_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
         expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
         fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
         live_turns: Arc::new(AtomicUsize::new(0)),
@@ -297,11 +378,57 @@ async fn main() -> anyhow::Result<()> {
 fn app_router(state: AppState, web_root: PathBuf) -> Router {
     let protected_api = Router::new()
         .route("/api/surface", get(surface))
-        .route("/api/compiler/openings", post(compile_openings))
-        .route("/api/compiler/roles", post(compile_roles))
-        .route("/api/compiler/selected", post(compile_selected))
-        .route("/api/compiler/custom", post(compile_custom))
-        .route("/api/compiler/approve/{preview_id}", post(approve_preview))
+        .route("/api/events", get(revision_events))
+        .route("/api/session-zero", post(begin_session_zero))
+        .route(
+            "/api/session-zero/{session_id}/surface",
+            get(session_zero_surface_route),
+        )
+        .route(
+            "/api/session-zero/{session_id}/invites",
+            post(create_session_zero_invites),
+        )
+        .route("/api/session-zero/join/{token}", post(join_session_zero))
+        .route(
+            "/api/session-zero/{session_id}/message",
+            post(post_session_zero_message),
+        )
+        .route(
+            "/api/session-zero/{session_id}/boundary",
+            post(set_session_zero_boundary),
+        )
+        .route(
+            "/api/session-zero/{session_id}/boundary/{boundary_id}/remove",
+            post(remove_session_zero_boundary),
+        )
+        .route(
+            "/api/session-zero/{session_id}/leave",
+            post(leave_session_zero),
+        )
+        .route(
+            "/api/session-zero/{session_id}/remove-member",
+            post(remove_session_zero_member),
+        )
+        .route(
+            "/api/session-zero/{session_id}/decision",
+            post(resolve_session_zero_decision),
+        )
+        .route(
+            "/api/session-zero/{session_id}/lock",
+            post(lock_session_zero_roster),
+        )
+        .route(
+            "/api/session-zero/{session_id}/compile",
+            post(compile_session_zero),
+        )
+        .route(
+            "/api/session-zero/{session_id}/approve",
+            post(approve_session_zero),
+        )
+        .route(
+            "/api/session-zero/{session_id}/publish",
+            post(publish_session_zero),
+        )
         .route("/api/compiler/destination", post(compile_destination))
         .route(
             "/api/compiler/destination/approve/{preview_id}",
@@ -313,6 +440,21 @@ fn app_router(state: AppState, web_root: PathBuf) -> Router {
             post(approve_fission),
         )
         .route("/api/command", post(command))
+        .route("/api/governance/time", post(propose_time_advance))
+        .route(
+            "/api/governance/time/{proposal_id}/approve",
+            post(approve_time_advance),
+        )
+        .route("/api/governance/travel", post(propose_group_travel))
+        .route(
+            "/api/governance/travel/{proposal_id}/approve",
+            post(approve_group_travel),
+        )
+        .route("/api/governance/cell-budget", post(propose_cell_budget))
+        .route(
+            "/api/governance/cell-budget/{proposal_id}/approve",
+            post(approve_cell_budget),
+        )
         .route("/api/campaigns", get(campaigns))
         .route(
             "/api/campaigns/select/{campaign_id}",
@@ -321,6 +463,10 @@ fn app_router(state: AppState, web_root: PathBuf) -> Router {
         .route("/api/campaigns/fork", post(fork_campaign))
         .route("/api/campaigns/reset", post(reset_campaign))
         .route("/api/campaigns/export", get(export_campaign))
+        .route(
+            "/api/campaigns/contract-review",
+            post(begin_contract_review),
+        )
         .route(
             "/api/campaigns/canon-candidates.md",
             get(export_canon_candidates_markdown),
@@ -544,18 +690,1226 @@ async fn health(State(state): State<AppState>) -> Response {
     }
 }
 
+async fn begin_session_zero(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<BeginSessionZeroRequest>,
+) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let allowance = state.entitlements.persona_cell_allowance(&account_hash);
+    match SessionZeroState::new_with_allowance(
+        request.name,
+        request.vault_provider,
+        account_hash.clone(),
+        request.display_name,
+        allowance,
+    ) {
+        Ok(session_zero) => {
+            let id = session_zero.id;
+            match state.session_zeros.create(session_zero).await {
+                Ok(runtime) => match state.session_zeros.snapshot(id).await {
+                    Ok(snapshot) => match session_zero_surface(&snapshot, &account_hash) {
+                        Ok(surface) => {
+                            if let Some(compiler) = state.compiler.clone() {
+                                let mesh_state = state.clone();
+                                tokio::spawn(async move {
+                                    if let Err(error) = populate_opening_suggestions(
+                                        compiler,
+                                        runtime,
+                                        snapshot,
+                                        mesh_state.clone(),
+                                    )
+                                    .await
+                                    {
+                                        tracing::warn!(%error, "inline Session Zero opening suggestions failed without draft mutation");
+                                    }
+                                });
+                            }
+                            schedule_mesh_refresh(&state);
+                            (StatusCode::CREATED, Json(surface)).into_response()
+                        }
+                        Err(error) => {
+                            (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                        }
+                    },
+                    Err(error) => {
+                        (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                    }
+                },
+                Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+            }
+        }
+        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
+    }
+}
+
+async fn populate_opening_suggestions(
+    compiler: Arc<WorldCompiler>,
+    runtime: ghostlight_dungeon::session_zero::SessionZeroRuntime,
+    snapshot: SessionZeroState,
+    state: AppState,
+) -> anyhow::Result<()> {
+    let suggestions = compiler
+        .suggest_openings(OpeningRequest {
+            setting: snapshot.contract.vault_provider.clone(),
+            constraints: vec![format!(
+                "Offer source-grounded possibilities for the Session Zero draft named {}. They are discussion proposals, not accepted world truth.",
+                snapshot.name
+            )],
+        })
+        .await?;
+    for receipt in &suggestions.evidence_receipts {
+        if runtime
+            .store
+            .load::<ghostlight_dungeon::domain::VaultEvidenceReceipt>(
+                "vault_evidence_receipt.v1",
+                &receipt.id,
+            )?
+            .is_none()
+        {
+            runtime.store.insert(
+                "vault_evidence_receipt.v1",
+                "ghostlight.vault_evidence_receipt.v1",
+                &receipt.id,
+                receipt,
+            )?;
+        }
+    }
+    let decisions = suggestions
+        .openings
+        .iter()
+        .map(
+            |opening| ghostlight_dungeon::session_zero::SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: format!("opening:{}", opening.id),
+                owner_member_id: None,
+                prompt: format!(
+                    "Use '{}' as the starting frame for further Session Zero discussion?",
+                    opening.title
+                ),
+                proposed_resolution: format!(
+                    "{} — {} at {}, under pressure from {}. Player hook: {}",
+                    opening.title,
+                    opening.era,
+                    opening.place,
+                    opening.pressure,
+                    opening.player_hook
+                ),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: Some(
+                    ghostlight_dungeon::session_zero::CampaignContractPatch {
+                        premise: Some(opening.player_hook.clone()),
+                        starting_where: Some(opening.place.clone()),
+                        starting_when: Some(opening.era.clone()),
+                        starting_pressure: Some(opening.pressure.clone()),
+                        ..Default::default()
+                    },
+                ),
+                proposed_character_patch: None,
+                evidence_receipt_ids: opening.evidence_receipt_ids.clone(),
+                material: true,
+                resolved: false,
+            },
+        )
+        .collect::<Vec<_>>();
+    let dm_speech = format!(
+        "I found three Vault-grounded starting frames. They are invitations, not decrees:\n{}\nChoose one to place it into our typed draft for discussion, counter it, or ignore all three and describe your own start.",
+        suggestions
+            .openings
+            .iter()
+            .map(|opening| format!(
+                "• {} — {} · {} · {}",
+                opening.title, opening.era, opening.place, opening.pressure
+            ))
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+    let mut model_receipts = suggestions.model_receipts;
+    model_receipts.push(suggestions.retrieval_receipt);
+    runtime
+        .kernel
+        .command(SessionZeroCommand::ApplyDmTurn {
+            expected_component_epoch: snapshot.shared_epoch,
+            expected_channel_revision: snapshot.channels["shared:table"].revision,
+            channel_id: "shared:table".into(),
+            member_id: None,
+            delta: ghostlight_dungeon::session_zero::SessionZeroDelta {
+                contract_patch: Default::default(),
+                character_patch: None,
+                decisions,
+                dm_speech,
+                suggested_replies: vec![
+                    "Let's discuss the first opening.".into(),
+                    "Show me what evidence supports these.".into(),
+                    "I want a fully custom start.".into(),
+                ],
+            },
+            model_receipts,
+        })
+        .await?;
+    schedule_mesh_refresh(&state);
+    Ok(())
+}
+
+fn accepted_opening_suggestion(
+    state: &SessionZeroState,
+    decision_id: &str,
+) -> Option<OpeningSuggestion> {
+    let decision = state.decisions.get(decision_id)?;
+    if !decision.resolved || !decision_id.starts_with("opening:") {
+        return None;
+    }
+    let patch = decision.proposed_contract_patch.as_ref()?;
+    Some(OpeningSuggestion {
+        id: decision_id.trim_start_matches("opening:").to_string(),
+        title: decision
+            .proposed_resolution
+            .split(" — ")
+            .next()
+            .unwrap_or("Suggested opening")
+            .to_string(),
+        era: patch.starting_when.clone()?,
+        place: patch.starting_where.clone()?,
+        pressure: patch.starting_pressure.clone()?,
+        player_hook: patch.premise.clone()?,
+        evidence_receipt_ids: decision.evidence_receipt_ids.clone(),
+    })
+}
+
+async fn populate_role_suggestions(
+    compiler: Arc<WorldCompiler>,
+    runtime: ghostlight_dungeon::session_zero::SessionZeroRuntime,
+    snapshot: SessionZeroState,
+    opening: OpeningSuggestion,
+    state: AppState,
+) -> anyhow::Result<()> {
+    let suggestions = compiler.suggest_roles(&opening).await?;
+    for receipt in &suggestions.evidence_receipts {
+        if runtime
+            .store
+            .load::<ghostlight_dungeon::domain::VaultEvidenceReceipt>(
+                "vault_evidence_receipt.v1",
+                &receipt.id,
+            )?
+            .is_none()
+        {
+            runtime.store.insert(
+                "vault_evidence_receipt.v1",
+                "ghostlight.vault_evidence_receipt.v1",
+                &receipt.id,
+                receipt,
+            )?;
+        }
+    }
+    let mut receipts = suggestions.model_receipts;
+    receipts.push(suggestions.retrieval_receipt);
+    let active_members = snapshot
+        .members
+        .values()
+        .filter(|member| member.active)
+        .cloned()
+        .collect::<Vec<_>>();
+    for (index, member) in active_members.into_iter().enumerate() {
+        let channel_id = format!("private:{}", member.id);
+        let decisions = suggestions
+            .roles
+            .iter()
+            .map(
+                |role| ghostlight_dungeon::session_zero::SessionZeroDecision {
+                    schema: "ghostlight.session_zero_decision.v1".into(),
+                    id: format!("role:{}:{}", member.id, role.id),
+                    owner_member_id: Some(member.id.clone()),
+                    prompt: format!(
+                        "Use '{}' as a starting character premise for further negotiation?",
+                        role.name
+                    ),
+                    proposed_resolution: format!("{} — {}", role.name, role.premise),
+                    proposed_extraordinary_permission: None,
+                    proposed_contract_patch: None,
+                    proposed_character_patch: Some(
+                        ghostlight_dungeon::session_zero::CharacterDraftPatch {
+                            name: Some(role.name.clone()),
+                            public_premise: Some(role.premise.clone()),
+                            capabilities_add: role.capabilities.clone(),
+                            obligations_add: role.obligations.clone(),
+                            ..Default::default()
+                        },
+                    ),
+                    evidence_receipt_ids: role.evidence_receipt_ids.clone(),
+                    material: true,
+                    resolved: false,
+                },
+            )
+            .collect();
+        runtime
+            .kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: snapshot.character_epochs[&member.id],
+                expected_channel_revision: snapshot.channels[&channel_id].revision,
+                channel_id,
+                member_id: Some(member.id.clone()),
+                delta: ghostlight_dungeon::session_zero::SessionZeroDelta {
+                    contract_patch: Default::default(),
+                    character_patch: None,
+                    decisions,
+                    dm_speech: format!(
+                        "For {}, I found three source-grounded roles inside the chosen opening. Pick one to put it into your private draft for negotiation, counter it, or build your own.",
+                        member.display_name
+                    ),
+                    suggested_replies: vec![
+                        "Let's negotiate the first role.".into(),
+                        "I want a custom character.".into(),
+                    ],
+                },
+                model_receipts: if index == 0 { receipts.clone() } else { vec![] },
+            })
+            .await?;
+    }
+    schedule_mesh_refresh(&state);
+    Ok(())
+}
+
+async fn session_zero_surface_route(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    match state.session_zeros.snapshot(session_id).await {
+        Ok(snapshot) => match session_zero_surface(&snapshot, &account_hash) {
+            Ok(surface) => Json(surface).into_response(),
+            Err(error) => (StatusCode::FORBIDDEN, error.to_string()).into_response(),
+        },
+        Err(error) => (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    }
+}
+
+async fn create_session_zero_invites(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroInviteRequest>,
+) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match state.session_zeros.runtime(session_id).await {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    match runtime
+        .kernel
+        .command(SessionZeroCommand::CreateInvites {
+            actor_account_hash: account_hash,
+            count: request.count,
+        })
+        .await
+    {
+        Ok(result) => {
+            schedule_mesh_refresh(&state);
+            Json(serde_json::json!({
+                "session_zero_id": session_id,
+                "revision": result.state.revision,
+                "invite_tokens": result.invite_tokens,
+            }))
+            .into_response()
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
+async fn join_session_zero(
+    Path(token): Path<String>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<JoinSessionZeroRequest>,
+) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let session_id = match state.session_zeros.session_for_invite(&token).await {
+        Ok(Some(value)) => value,
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                "invite is invalid, expired, or consumed",
+            )
+                .into_response();
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let runtime = match state.session_zeros.runtime(session_id).await {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    match runtime
+        .kernel
+        .command(SessionZeroCommand::Join {
+            token,
+            account_hash: account_hash.clone(),
+            display_name: request.display_name,
+            cell_allowance: state.entitlements.persona_cell_allowance(&account_hash),
+        })
+        .await
+    {
+        Ok(result) => {
+            schedule_mesh_refresh(&state);
+            match session_zero_surface(&result.state, &account_hash) {
+                Ok(surface) => (StatusCode::CREATED, Json(surface)).into_response(),
+                Err(error) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                }
+            }
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
+async fn post_session_zero_message(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroMessageRequest>,
+) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match state.session_zeros.runtime(session_id).await {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    let channel_id = request.channel_id.clone();
+    let result = match runtime
+        .kernel
+        .command(SessionZeroCommand::PostPlayerMessage {
+            actor_account_hash: account_hash.clone(),
+            expected_revision: request.expected_revision,
+            channel_id: channel_id.clone(),
+            text: request.text,
+        })
+        .await
+    {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::CONFLICT, error.to_string()).into_response(),
+    };
+    let member_id = result
+        .state
+        .member_for_account(&account_hash)
+        .map(|member| member.id.clone());
+    let channel = result.state.channels.get(&channel_id).cloned();
+    if let (Some(director), Some(channel)) = (state.session_zero_director.clone(), channel) {
+        let private_member = if channel.kind
+            == ghostlight_dungeon::session_zero::SessionZeroChannelKind::PrivateDm
+        {
+            member_id.clone()
+        } else {
+            None
+        };
+        let component_epoch = private_member
+            .as_ref()
+            .and_then(|id| result.state.character_epochs.get(id).copied())
+            .unwrap_or(result.state.shared_epoch);
+        let snapshot = result.state.clone();
+        let kernel = runtime.kernel.clone();
+        let mesh_state = state.clone();
+        tokio::spawn(async move {
+            match director
+                .respond(&snapshot, &channel_id, private_member.as_deref())
+                .await
+            {
+                Ok((delta, receipts)) => {
+                    if let Err(error) = kernel
+                        .command(SessionZeroCommand::ApplyDmTurn {
+                            expected_component_epoch: component_epoch,
+                            expected_channel_revision: channel.revision,
+                            channel_id,
+                            member_id: private_member,
+                            delta,
+                            model_receipts: receipts,
+                        })
+                        .await
+                    {
+                        tracing::info!(%error, "stale or invalid Session Zero DM proposal discarded");
+                    } else {
+                        schedule_mesh_refresh(&mesh_state);
+                    }
+                }
+                Err(error) => {
+                    tracing::warn!(%error, "Session Zero DM inference failed without mutation")
+                }
+            }
+        });
+    }
+    schedule_mesh_refresh(&state);
+    (
+        StatusCode::ACCEPTED,
+        Json(serde_json::json!({
+            "schema": "ghostlight.session_zero_progress.v1",
+            "session_zero_id": session_id,
+            "revision": result.state.revision,
+            "status": "player_message_committed",
+        })),
+    )
+        .into_response()
+}
+
+async fn set_session_zero_boundary(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroBoundaryRequest>,
+) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match state.session_zeros.runtime(session_id).await {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    let normalized_topic = request.topic.trim().to_lowercase();
+    match runtime
+        .kernel
+        .command(SessionZeroCommand::SetBoundary {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+            boundary_id: request.boundary_id,
+            topic: request.topic,
+            normalized_topic,
+            level: request.level,
+        })
+        .await
+    {
+        Ok(result) => {
+            if let Err(error) =
+                mirror_contract_review_boundary_tightening(&state, &result.state).await
+            {
+                return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+            }
+            schedule_mesh_refresh(&state);
+            Json(serde_json::json!({"revision":result.state.revision,"aggregate_boundaries":result.state.aggregate_boundaries})).into_response()
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
+async fn mirror_contract_review_boundary_tightening(
+    state: &AppState,
+    review: &SessionZeroState,
+) -> anyhow::Result<()> {
+    let Some(campaign_id) = review.review_campaign_id else {
+        return Ok(());
+    };
+    let runtime = state.registry.runtime(campaign_id).await?;
+    let publication = runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::PublishedSessionZeroSeed>(
+            "session_zero_publication.v1",
+            &campaign_id.to_string(),
+        )?
+        .map(|(_, value)| value)
+        .ok_or_else(|| anyhow::anyhow!("campaign publication state is missing"))?;
+    let existing = runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::ActiveContractBoundaryPolicy>(
+            "active_contract_boundary_policy.v1",
+            &campaign_id.to_string(),
+        )?;
+    let mut strictest =
+        BTreeMap::<String, ghostlight_dungeon::session_zero::AggregatedBoundary>::new();
+    for boundary in publication
+        .approved_brief
+        .aggregate_boundaries
+        .iter()
+        .chain(
+            existing
+                .as_ref()
+                .into_iter()
+                .flat_map(|(_, policy)| policy.aggregate_boundaries.iter()),
+        )
+        .chain(review.aggregate_boundaries.iter())
+    {
+        let severity = |level: &BoundaryLevel| match level {
+            BoundaryLevel::AskFirst => 1,
+            BoundaryLevel::Veil => 2,
+            BoundaryLevel::Line => 3,
+        };
+        let entry = strictest
+            .entry(boundary.normalized_topic.clone())
+            .or_insert_with(|| boundary.clone());
+        if severity(&boundary.level) > severity(&entry.level) {
+            *entry = boundary.clone();
+        }
+    }
+    let policy = ghostlight_dungeon::session_zero::ActiveContractBoundaryPolicy {
+        schema: "ghostlight.active_contract_boundary_policy.v1".into(),
+        campaign_id,
+        review_session_zero_id: review.id,
+        aggregate_boundaries: strictest.into_values().collect(),
+        updated_at: chrono::Utc::now(),
+    };
+    if let Some((row, _)) = existing {
+        runtime.store.replace(
+            &row,
+            "ghostlight.active_contract_boundary_policy.v1",
+            &policy,
+        )?;
+    } else {
+        runtime.store.insert(
+            "active_contract_boundary_policy.v1",
+            "ghostlight.active_contract_boundary_policy.v1",
+            &campaign_id.to_string(),
+            &policy,
+        )?;
+    }
+    Ok(())
+}
+
+async fn remove_session_zero_boundary(
+    Path((session_id, boundary_id)): Path<(uuid::Uuid, String)>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    session_zero_simple_command(&headers, &state, session_id, |account_hash| {
+        SessionZeroCommand::RemoveBoundary {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+            boundary_id,
+        }
+    })
+    .await
+}
+
+async fn leave_session_zero(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    session_zero_simple_command(&headers, &state, session_id, |account_hash| {
+        SessionZeroCommand::Leave {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+        }
+    })
+    .await
+}
+
+async fn remove_session_zero_member(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroMemberRequest>,
+) -> Response {
+    session_zero_simple_command(&headers, &state, session_id, |account_hash| {
+        SessionZeroCommand::RemoveMember {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+            member_id: request.member_id,
+        }
+    })
+    .await
+}
+
+async fn resolve_session_zero_decision(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroDecisionRequest>,
+) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match state.session_zeros.runtime(session_id).await {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    let decision_id = request.decision_id.clone();
+    let accepted = request.accept;
+    match runtime
+        .kernel
+        .command(SessionZeroCommand::ResolveDecision {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+            decision_id: request.decision_id,
+            accept: request.accept,
+            counter: request.counter,
+        })
+        .await
+    {
+        Ok(result) => {
+            if accepted
+                && let Some(opening) = accepted_opening_suggestion(&result.state, &decision_id)
+                && let Some(compiler) = state.compiler.clone()
+            {
+                let role_runtime = runtime.clone();
+                let role_state = state.clone();
+                let role_snapshot = result.state.clone();
+                tokio::spawn(async move {
+                    if let Err(error) = populate_role_suggestions(
+                        compiler,
+                        role_runtime,
+                        role_snapshot,
+                        opening,
+                        role_state.clone(),
+                    )
+                    .await
+                    {
+                        tracing::warn!(%error, "inline Session Zero role suggestions failed without draft mutation");
+                    }
+                });
+            }
+            schedule_mesh_refresh(&state);
+            Json(serde_json::json!({"revision":result.state.revision,"decisions":result.state.decisions})).into_response()
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
+async fn lock_session_zero_roster(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    session_zero_simple_command(&headers, &state, session_id, |account_hash| {
+        SessionZeroCommand::LockRoster {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+        }
+    })
+    .await
+}
+
+async fn compile_session_zero(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match state.session_zeros.runtime(session_id).await {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    let started = match runtime
+        .kernel
+        .command(SessionZeroCommand::BeginCompilation {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+        })
+        .await
+    {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::CONFLICT, error.to_string()).into_response(),
+    };
+    let brief = match started.state.compilation_brief() {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
+    };
+    let expected_revision = started.state.revision;
+    if let Some(campaign_id) = started.state.review_campaign_id {
+        let campaign_runtime = match state.registry.runtime(campaign_id).await {
+            Ok(value) => value,
+            Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+        };
+        let campaign = match load_campaign(&campaign_runtime.store) {
+            Ok(value) => value,
+            Err(error) => {
+                return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+            }
+        };
+        if Some(campaign.revision) != started.state.review_world_revision {
+            let _ = runtime
+                .kernel
+                .command(SessionZeroCommand::CompilationFailed {
+                    expected_revision,
+                    message: "The world changed during Contract Review. Start a fresh review against the current revision.".into(),
+                })
+                .await;
+            return (
+                StatusCode::CONFLICT,
+                "contract review world revision is stale",
+            )
+                .into_response();
+        }
+        let evidence_receipts = campaign_runtime
+            .store
+            .load_all::<ghostlight_dungeon::domain::VaultEvidenceReceipt>(
+                "vault_evidence_receipt.v1",
+            )
+            .unwrap_or_default();
+        let preview = ghostlight_dungeon::domain::WorldCompilePreview {
+            schema: "ghostlight.world_compile_preview.v1".into(),
+            title: format!("{} — Contract Review", campaign.name),
+            campaign,
+            evidence_receipts,
+            evidence_coverage: vec![],
+            gaps: vec![],
+            branch_assumptions: vec![
+                "Contract Review amends forward-looking governance and approved character projections; established events, canon, knowledge, and geometry remain unchanged.".into(),
+            ],
+            requires_approval: true,
+        };
+        return match runtime
+            .kernel
+            .command(SessionZeroCommand::InstallPreview {
+                expected_revision,
+                preview,
+                model_receipts: vec![],
+            })
+            .await
+        {
+            Ok(result) => {
+                schedule_mesh_refresh(&state);
+                (
+                    StatusCode::ACCEPTED,
+                    Json(serde_json::json!({
+                        "schema":"ghostlight.session_zero_progress.v1",
+                        "session_zero_id":session_id,
+                        "revision":result.state.revision,
+                        "status":"review"
+                    })),
+                )
+                    .into_response()
+            }
+            Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+        };
+    }
+    let Some(compiler) = state.compiler.clone() else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "world compiler is unavailable",
+        )
+            .into_response();
+    };
+    let kernel = runtime.kernel.clone();
+    let mesh_state = state.clone();
+    tokio::spawn(async move {
+        match compiler.compile_approved_brief(&brief).await {
+            Ok((preview, receipts)) => {
+                if let Err(error) = kernel
+                    .command(SessionZeroCommand::InstallPreview {
+                        expected_revision,
+                        preview,
+                        model_receipts: receipts,
+                    })
+                    .await
+                {
+                    tracing::info!(%error, "stale Session Zero compilation discarded");
+                } else {
+                    schedule_mesh_refresh(&mesh_state);
+                }
+            }
+            Err(error) => {
+                let message = error.to_string();
+                if let Err(commit_error) = kernel
+                    .command(SessionZeroCommand::CompilationFailed {
+                        expected_revision,
+                        message,
+                    })
+                    .await
+                {
+                    tracing::info!(%commit_error, "stale Session Zero compiler failure discarded");
+                } else {
+                    schedule_mesh_refresh(&mesh_state);
+                }
+            }
+        }
+    });
+    (
+        StatusCode::ACCEPTED,
+        Json(serde_json::json!({
+            "schema":"ghostlight.session_zero_progress.v1",
+            "session_zero_id":session_id,
+            "revision":expected_revision,
+            "status":"compiling"
+        })),
+    )
+        .into_response()
+}
+
+async fn approve_session_zero(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    session_zero_simple_command(&headers, &state, session_id, |account_hash| {
+        SessionZeroCommand::Approve {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+        }
+    })
+    .await
+}
+
+async fn publish_session_zero(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match state.session_zeros.runtime(session_id).await {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    let snapshot = match state.session_zeros.snapshot(session_id).await {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    if snapshot.revision != request.expected_revision {
+        return (StatusCode::CONFLICT, "stale Session Zero revision").into_response();
+    }
+    if let Some(campaign_id) = snapshot.published_campaign_id {
+        return Json(serde_json::json!({"campaign_id":campaign_id,"status":"published"}))
+            .into_response();
+    }
+    let member = match snapshot.member_for_account(&account_hash) {
+        Some(value) if value.is_host => value,
+        _ => return StatusCode::FORBIDDEN.into_response(),
+    };
+    if let Some(campaign_id) = snapshot.review_campaign_id {
+        let campaign_runtime = match state.registry.runtime(campaign_id).await {
+            Ok(value) => value,
+            Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+        };
+        let existing_publication = campaign_runtime
+            .store
+            .load::<ghostlight_dungeon::session_zero::PublishedSessionZeroSeed>(
+                "session_zero_publication.v1",
+                &campaign_id.to_string(),
+            )
+            .ok()
+            .flatten()
+            .map(|(_, value)| value);
+        let review_result = if existing_publication
+            .as_ref()
+            .is_some_and(|publication| publication.session_zero_id == snapshot.id)
+        {
+            let publication = existing_publication.unwrap();
+            Ok((
+                publication.approved_seed_digest,
+                publication
+                    .membership
+                    .members
+                    .values()
+                    .map(|member| member.account_hash.clone())
+                    .collect::<Vec<_>>(),
+            ))
+        } else {
+            commit_contract_review(&campaign_runtime, &snapshot)
+        };
+        let (seed_digest, member_accounts) = match review_result {
+            Ok(value) => value,
+            Err(error) => return (StatusCode::CONFLICT, error.to_string()).into_response(),
+        };
+        for member_account in member_accounts {
+            if let Err(error) = select_campaign(&state, &member_account, campaign_id).await {
+                tracing::warn!(%error, %campaign_id, "contract-review campaign selection failed");
+            }
+        }
+        return match runtime
+            .kernel
+            .command(SessionZeroCommand::MarkPublished {
+                actor_account_hash: member.account_hash.clone(),
+                expected_revision: snapshot.revision,
+                campaign_id,
+                seed_digest,
+            })
+            .await
+        {
+            Ok(_) => {
+                if let Err(error) = refresh_mesh(&state).await {
+                    tracing::warn!(%error, "Contract Review mesh refresh failed");
+                }
+                Json(serde_json::json!({"campaign_id":campaign_id,"status":"contract_updated"}))
+                    .into_response()
+            }
+            Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+        };
+    }
+    let Some(preview) = snapshot.preview.clone() else {
+        return (StatusCode::CONFLICT, "final preview is missing").into_response();
+    };
+    let publication = match publication_from_session(&snapshot, preview.campaign.id) {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::CONFLICT, error.to_string()).into_response(),
+    };
+    let seed_digest = publication.approved_seed_digest.clone();
+    let member_accounts = publication
+        .membership
+        .members
+        .values()
+        .map(|value| value.account_hash.clone())
+        .collect::<Vec<_>>();
+    let campaign_id = preview.campaign.id;
+    let published = state
+        .registry
+        .publish_session_zero(
+            preview.campaign,
+            preview.evidence_receipts,
+            snapshot.preview_model_receipts.clone(),
+            publication,
+        )
+        .await;
+    if let Err(error) = published {
+        return (StatusCode::CONFLICT, error.to_string()).into_response();
+    }
+    for member_account in member_accounts {
+        if let Err(error) = select_campaign(&state, &member_account, campaign_id).await {
+            tracing::warn!(%error, %campaign_id, "published member campaign selection failed");
+        }
+    }
+    match runtime
+        .kernel
+        .command(SessionZeroCommand::MarkPublished {
+            actor_account_hash: member.account_hash.clone(),
+            expected_revision: snapshot.revision,
+            campaign_id,
+            seed_digest,
+        })
+        .await
+    {
+        Ok(_) => {
+            if let Err(error) = refresh_mesh(&state).await {
+                tracing::warn!(%error, "Session Zero publication mesh refresh failed");
+            }
+            Json(serde_json::json!({"campaign_id":campaign_id,"status":"published"}))
+                .into_response()
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
+fn commit_contract_review(
+    runtime: &CampaignRuntime,
+    snapshot: &SessionZeroState,
+) -> anyhow::Result<(String, Vec<String>)> {
+    let campaign_id = snapshot
+        .review_campaign_id
+        .ok_or_else(|| anyhow::anyhow!("not a Contract Review"))?;
+    let (campaign_row, mut campaign) = runtime
+        .store
+        .load::<Campaign>("campaign.v1", &campaign_id.to_string())?
+        .ok_or_else(|| anyhow::anyhow!("reviewed campaign vanished"))?;
+    if Some(campaign.revision) != snapshot.review_world_revision {
+        anyhow::bail!(
+            "the world changed after Contract Review began; start a fresh review against revision {}",
+            campaign.revision
+        );
+    }
+    let (_, baseline_membership) = runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+            "campaign_membership.v1",
+            &campaign_id.to_string(),
+        )?
+        .ok_or_else(|| anyhow::anyhow!("campaign membership vanished"))?;
+    let (_, baseline_contract) = runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::CampaignContract>(
+            "campaign_contract.v1",
+            &campaign_id.to_string(),
+        )?
+        .ok_or_else(|| anyhow::anyhow!("campaign contract vanished"))?;
+    if snapshot.contract.vault_provider != baseline_contract.vault_provider
+        || snapshot.contract.canon_horizon != baseline_contract.canon_horizon
+        || snapshot.contract.starting_where != baseline_contract.starting_where
+        || snapshot.contract.starting_when != baseline_contract.starting_when
+    {
+        anyhow::bail!(
+            "Contract Review cannot rewrite the Vault, canon horizon, starting time, or established geometry"
+        );
+    }
+    let mut publication = publication_from_session(snapshot, campaign_id)?;
+    let baseline_bindings = baseline_membership
+        .members
+        .iter()
+        .map(|(id, member)| (id, (&member.account_hash, &member.actor_id, member.active)))
+        .collect::<BTreeMap<_, _>>();
+    let proposed_bindings = publication
+        .membership
+        .members
+        .iter()
+        .map(|(id, member)| (id, (&member.account_hash, &member.actor_id, member.active)))
+        .collect::<BTreeMap<_, _>>();
+    if baseline_bindings != proposed_bindings
+        || baseline_membership.host_member_id != publication.membership.host_member_id
+    {
+        anyhow::bail!("Contract Review cannot change campaign membership or actor custody");
+    }
+    for draft in &publication.approved_brief.characters {
+        if draft.relationships.keys().any(|target| {
+            !campaign.actors.contains_key(target)
+                && !campaign.institutions.contains_key(target)
+                && !campaign.gestalts.contains_key(target)
+        }) {
+            anyhow::bail!("character amendment cites an unknown relationship target");
+        }
+        let actor = campaign
+            .actors
+            .get_mut(&draft.actor_id)
+            .ok_or_else(|| anyhow::anyhow!("approved character actor vanished"))?;
+        actor.name = draft.name.clone();
+        actor.capabilities = draft.capabilities.iter().cloned().collect();
+        actor.equipment = draft.equipment.iter().cloned().collect();
+        actor.conditions = draft.vulnerabilities.iter().cloned().collect();
+        actor.obligations = draft.obligations.iter().cloned().collect();
+        actor.relationships = draft.relationships.clone();
+        actor.goals = draft.goals.clone();
+        // Location, knowledge, and memories are established world/history state.
+        // The review draft may discuss them, but this command cannot rewrite them.
+    }
+    let next_governance_epoch = baseline_membership.governance_epoch.saturating_add(1);
+    publication.membership.governance_epoch = next_governance_epoch;
+    publication.governance.governance_epoch = next_governance_epoch;
+    publication.approved_seed_digest = ghostlight_dungeon::session_zero::seed_digest(&(
+        campaign_id,
+        &publication.approved_brief,
+        &publication.membership,
+        &publication.governance,
+        &publication.contract,
+        &publication.dm_persona,
+        &publication.boundaries,
+    ))?;
+    let previous_revision = campaign.revision;
+    campaign.revision = campaign.revision.saturating_add(1);
+    campaign.events.push(ghostlight_dungeon::domain::Event {
+        id: format!("contract-review:{}", campaign.revision),
+        at: campaign.world_time,
+        kind: "contract_review".into(),
+        summary: "The table unanimously adopts a revised campaign contract.".into(),
+        actor_ids: vec![],
+        institution_ids: vec![],
+        gestalt_ids: vec![],
+        location_ids: vec![],
+        public_channels: vec![],
+    });
+    let receipt = ghostlight_dungeon::domain::WorldCommitReceipt {
+        schema: "ghostlight.world_commit_receipt.v1".into(),
+        campaign_id,
+        previous_revision,
+        revision: campaign.revision,
+        command_kind: "unanimous_contract_review".into(),
+        committed_at: chrono::Utc::now(),
+        roll: None,
+    };
+    runtime
+        .store
+        .commit_contract_review(&campaign_row, &campaign, &publication, &receipt)?;
+    Ok((
+        publication.approved_seed_digest,
+        publication
+            .membership
+            .members
+            .values()
+            .map(|member| member.account_hash.clone())
+            .collect(),
+    ))
+}
+
+async fn session_zero_simple_command(
+    headers: &HeaderMap,
+    state: &AppState,
+    session_id: uuid::Uuid,
+    make: impl FnOnce(String) -> SessionZeroCommand,
+) -> Response {
+    let account_hash = match authenticated_session(headers, state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match state.session_zeros.runtime(session_id).await {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    match runtime.kernel.command(make(account_hash.clone())).await {
+        Ok(result) => {
+            schedule_mesh_refresh(state);
+            match session_zero_surface(&result.state, &account_hash) {
+                Ok(surface) => Json(surface).into_response(),
+                Err(error) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                }
+            }
+        }
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
 async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response {
     let session = match authenticated_session(&headers, &state).await {
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
+    match state
+        .session_zeros
+        .active_contract_review_for_account(&session)
+        .await
+    {
+        Ok(Some(id)) => {
+            return match state
+                .session_zeros
+                .snapshot(id)
+                .await
+                .and_then(|snapshot| session_zero_surface(&snapshot, &session))
+            {
+                Ok(surface) => Json(surface).into_response(),
+                Err(error) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                }
+            };
+        }
+        Ok(None) => {}
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    }
     let runtime = match session_runtime(&state, &session).await {
         Ok(Some(value)) => value,
-        Ok(None) => return Json(serde_json::json!({"schema":"gamecult.eve.surface.v1","surface_id":"ghostlight.compiler","version":0,"title":"Compile a world","layout":{"kind":"stack","children":[]}})).into_response(),
-        Err(error) => return (StatusCode::INTERNAL_SERVER_ERROR,error.to_string()).into_response(),
+        Ok(None) => {
+            return match state.session_zeros.session_for_account(&session).await {
+                Ok(Some(id)) => match state.session_zeros.snapshot(id).await.and_then(|snapshot| session_zero_surface(&snapshot, &session)) {
+                    Ok(surface) => Json(surface).into_response(),
+                    Err(error) => (StatusCode::INTERNAL_SERVER_ERROR,error.to_string()).into_response(),
+                },
+                Ok(None) => Json(serde_json::json!({"schema":"gamecult.eve.surface.v1","surface_id":"ghostlight.session-zero-entry","version":0,"title":"Begin Session Zero","layout":{"kind":"stack","children":[]}})).into_response(),
+                Err(error) => (StatusCode::INTERNAL_SERVER_ERROR,error.to_string()).into_response(),
+            };
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
     };
     match load_campaign(&runtime.store) {
         Ok(campaign) => {
+            let viewer_actor_id =
+                match campaign_member_for_account(&runtime.store, &campaign, &session) {
+                    Ok(value) => value.actor_id,
+                    Err(error) => {
+                        return (StatusCode::FORBIDDEN, error.to_string()).into_response();
+                    }
+                };
             let mut narrations = runtime
                 .store
                 .keys("narration_projection.v1")
@@ -572,386 +1926,112 @@ async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response 
                 .filter(|value| value.campaign_id == campaign.id)
                 .collect::<Vec<_>>();
             narrations.sort_by_key(|value| value.source_revision);
-            Json(player_surface(&campaign, &narrations)).into_response()
+            let mut projected = player_surface_for_actor(&campaign, &viewer_actor_id, &narrations);
+            if let Ok(Some((_, membership))) = runtime
+                .store
+                .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+                "campaign_membership.v1",
+                &campaign.id.to_string(),
+            ) {
+                let viewer_member_id = membership
+                    .member_for_account(&session)
+                    .map(|member| member.member_id.clone());
+                let time_proposals = runtime
+                    .store
+                    .load_all::<ghostlight_dungeon::session_zero::TimeAdvanceProposal>(
+                        "time_advance_proposal.v1",
+                    )
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter(|proposal| {
+                        !proposal.committed && proposal.expected_world_revision == campaign.revision
+                    })
+                    .collect::<Vec<_>>();
+                let travel_proposals = runtime
+                    .store
+                    .load_all::<ghostlight_dungeon::session_zero::GroupTravelProposal>(
+                        "group_travel_proposal.v1",
+                    )
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter(|proposal| {
+                        !proposal.committed && proposal.expected_world_revision == campaign.revision
+                    })
+                    .collect::<Vec<_>>();
+                let cell_budget_proposals = runtime
+                    .store
+                    .load_all::<ghostlight_dungeon::session_zero::CellBudgetProposal>(
+                        "cell_budget_proposal.v1",
+                    )
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter(|proposal| {
+                        !proposal.committed
+                            && proposal.expected_world_revision == campaign.revision
+                            && proposal.expected_resolution_epoch
+                                == campaign.resolution_policy.resolution_epoch
+                    })
+                    .collect::<Vec<_>>();
+                projected["governance"] = serde_json::json!({
+                    "viewer_member_id":viewer_member_id,
+                    "active_member_count":membership.members.values().filter(|member|member.active).count(),
+                    "pooled_cell_allowance":membership.pooled_cell_allowance(),
+                    "time_proposals":time_proposals,
+                    "travel_proposals":travel_proposals,
+                    "cell_budget_proposals":cell_budget_proposals,
+                });
+            }
+            Json(projected).into_response()
         }
         Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
     }
 }
 
-async fn compile_openings(
-    headers: HeaderMap,
-    State(state): State<AppState>,
-    Json(request): Json<OpeningRequest>,
-) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
+async fn revision_events(headers: HeaderMap, State(state): State<AppState>) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let _live = LiveTurnGuard::enter(&state).await;
-    let Some(compiler) = &state.compiler else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "DeepSeek credential is unavailable",
-        )
-            .into_response();
-    };
-    match compiler.suggest_openings(request).await {
-        Ok(value) => {
-            state
-                .opening_suggestions
-                .lock()
-                .await
-                .insert(session.clone(), value.clone());
-            state.role_suggestions.lock().await.remove(&session);
-            Json(opening_suggestions_projection(&value)).into_response()
-        }
-        Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
-    }
-}
-
-async fn compile_custom(
-    headers: HeaderMap,
-    State(state): State<AppState>,
-    Json(request): Json<CustomStart>,
-) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let _live = LiveTurnGuard::enter(&state).await;
-    if session_runtime(&state, &session)
-        .await
-        .ok()
-        .flatten()
-        .is_some()
-    {
-        return (
-            StatusCode::CONFLICT,
-            "session already has a selected campaign",
-        )
-            .into_response();
-    }
-    let Some(compiler) = &state.compiler else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "DeepSeek credential is unavailable",
-        )
-            .into_response();
-    };
-    store_preview(&state, session, compiler.compile_custom(request).await).await
-}
-
-async fn compile_roles(
-    headers: HeaderMap,
-    State(state): State<AppState>,
-    Json(request): Json<OpeningSelectionRequest>,
-) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let opening = state
-        .opening_suggestions
-        .lock()
-        .await
-        .get(&session)
-        .and_then(|suggestions| {
-            suggestions
-                .openings
-                .iter()
-                .find(|opening| opening.id == request.opening_id)
-                .cloned()
-        });
-    let Some(opening) = opening else {
-        return (
-            StatusCode::CONFLICT,
-            "opening selection is missing, expired, or not owned by this session",
-        )
-            .into_response();
-    };
-    let _live = LiveTurnGuard::enter(&state).await;
-    let Some(compiler) = &state.compiler else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "DeepSeek credential is unavailable",
-        )
-            .into_response();
-    };
-    match compiler.suggest_roles(&opening).await {
-        Ok(value) => {
-            state.role_suggestions.lock().await.insert(
-                session,
-                OwnedRoleSuggestions {
-                    opening_id: opening.id,
-                    value: value.clone(),
+    let stream = async_stream::stream! {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(2));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        let mut previous = None::<String>;
+        loop {
+            interval.tick().await;
+            let notice = match session_runtime(&state, &account_hash).await {
+                Ok(Some(runtime)) => load_campaign(&runtime.store).ok().map(|campaign| {
+                    serde_json::json!({
+                        "kind":"campaign",
+                        "id":campaign.id,
+                        "revision":campaign.revision,
+                        "resolution_epoch":campaign.resolution_policy.resolution_epoch,
+                        "provider_configuration_epoch":campaign.resolution_policy.provider_configuration_epoch,
+                    })
+                }),
+                Ok(None) => match state.session_zeros.session_for_account(&account_hash).await {
+                    Ok(Some(id)) => state.session_zeros.snapshot(id).await.ok().map(|session| {
+                        serde_json::json!({"kind":"session_zero","id":id,"revision":session.revision})
+                    }),
+                    _ => Some(serde_json::json!({"kind":"entry","revision":0})),
                 },
-            );
-            Json(role_suggestions_projection(&value)).into_response()
-        }
-        Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
-    }
-}
-
-async fn compile_selected(
-    headers: HeaderMap,
-    State(state): State<AppState>,
-    Json(request): Json<SelectedStartRequest>,
-) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let _live = LiveTurnGuard::enter(&state).await;
-    if session_runtime(&state, &session)
-        .await
-        .ok()
-        .flatten()
-        .is_some()
-    {
-        return (
-            StatusCode::CONFLICT,
-            "session already has a selected campaign",
-        )
-            .into_response();
-    }
-    let Some(compiler) = &state.compiler else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "DeepSeek credential is unavailable",
-        )
-            .into_response();
-    };
-    let opening_bundle = state
-        .opening_suggestions
-        .lock()
-        .await
-        .get(&session)
-        .cloned();
-    let role_bundle = state.role_suggestions.lock().await.get(&session).cloned();
-    let Some(opening_bundle) = opening_bundle else {
-        return (
-            StatusCode::CONFLICT,
-            "opening selection is missing or expired",
-        )
-            .into_response();
-    };
-    let Some(role_bundle) = role_bundle.filter(|roles| roles.opening_id == request.opening_id)
-    else {
-        return (
-            StatusCode::CONFLICT,
-            "role selection is missing, expired, or belongs to another opening",
-        )
-            .into_response();
-    };
-    let selected = match resolve_selected_start(
-        request,
-        &opening_bundle.openings,
-        &role_bundle.opening_id,
-        &role_bundle.value.roles,
-    ) {
-        Ok(value) => value,
-        Err(error) => return (StatusCode::CONFLICT, error).into_response(),
-    };
-    let result = compiler
-        .compile_selected(selected)
-        .await
-        .map(|value| enrich_selected_preview(value, &opening_bundle, &role_bundle.value));
-    store_preview(&state, session, result).await
-}
-
-fn resolve_selected_start(
-    request: SelectedStartRequest,
-    openings: &[OpeningSuggestion],
-    role_opening_id: &str,
-    roles: &[RoleSuggestion],
-) -> Result<SelectedStart, &'static str> {
-    if role_opening_id != request.opening_id {
-        return Err("selected role belongs to another opening");
-    }
-    let opening = openings
-        .iter()
-        .find(|opening| opening.id == request.opening_id)
-        .cloned()
-        .ok_or("selected opening is not owned by this session")?;
-    let role = roles
-        .iter()
-        .find(|role| role.id == request.role_id)
-        .cloned()
-        .ok_or("selected role is not owned by this session")?;
-    Ok(SelectedStart {
-        campaign_name: request.campaign_name,
-        opening,
-        role,
-    })
-}
-
-fn enrich_selected_preview(
-    (mut preview, mut compile_receipts): (
-        WorldCompilePreview,
-        Vec<ghostlight_dungeon::model::ModelStageReceipt>,
-    ),
-    openings: &SuggestedOpenings,
-    roles: &SuggestedRoles,
-) -> (
-    WorldCompilePreview,
-    Vec<ghostlight_dungeon::model::ModelStageReceipt>,
-) {
-    let mut known_evidence = preview
-        .evidence_receipts
-        .iter()
-        .map(|receipt| receipt.id.clone())
-        .collect::<BTreeSet<_>>();
-    for receipt in openings
-        .evidence_receipts
-        .iter()
-        .chain(&roles.evidence_receipts)
-    {
-        if known_evidence.insert(receipt.id.clone()) {
-            for source_id in receipt
-                .witnesses
-                .iter()
-                .map(|witness| witness.source_id.clone())
-                .chain(std::iter::once(receipt.id.clone()).filter(|_| receipt.witnesses.is_empty()))
-            {
-                preview.evidence_coverage.push(ghostlight_dungeon::domain::EvidenceCoverage {
-                    source_id,
-                    lane: ghostlight_dungeon::domain::EvidenceUseLane::SettingBackground,
-                    rationale: "Used to generate the selected opening or player role; not admitted as direct causal world evidence.".into(),
-                });
+                Err(_) => None,
+            };
+            let Some(notice) = notice else { continue };
+            let encoded = notice.to_string();
+            if previous.as_deref() == Some(encoded.as_str()) {
+                continue;
             }
-            preview.evidence_receipts.push(receipt.clone());
+            previous = Some(encoded.clone());
+            yield Ok::<SseEvent, Infallible>(SseEvent::default().event("revision").data(encoded));
         }
-    }
-    let mut known_model_receipts = compile_receipts
-        .iter()
-        .map(|receipt| receipt.receipt_hash.clone())
-        .collect::<BTreeSet<_>>();
-    for receipt in std::iter::once(&openings.retrieval_receipt)
-        .chain(&openings.model_receipts)
-        .chain(std::iter::once(&roles.retrieval_receipt))
-        .chain(&roles.model_receipts)
-    {
-        if known_model_receipts.insert(receipt.receipt_hash.clone()) {
-            compile_receipts.push(receipt.clone());
-        }
-    }
-    (preview, compile_receipts)
-}
-
-async fn store_preview(
-    state: &AppState,
-    session_hash: String,
-    result: anyhow::Result<(
-        WorldCompilePreview,
-        Vec<ghostlight_dungeon::model::ModelStageReceipt>,
-    )>,
-) -> Response {
-    match result {
-        Ok((preview, model_receipts)) => {
-            let id = uuid::Uuid::new_v4().to_string();
-            let mut previews = state.compile_previews.lock().await;
-            previews.retain(|_, existing| existing.session_hash != session_hash);
-            previews.insert(
-                id.clone(),
-                OwnedPreview {
-                    session_hash,
-                    value: preview.clone(),
-                    model_receipts: model_receipts.clone(),
-                },
-            );
-            Json(serde_json::json!({
-                "preview_id":id,
-                "preview":world_compile_preview_projection(&preview),
-            }))
-            .into_response()
-        }
-        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
-    }
-}
-
-async fn approve_preview(
-    Path(preview_id): Path<String>,
-    headers: HeaderMap,
-    State(state): State<AppState>,
-) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let _live = LiveTurnGuard::enter(&state).await;
-    let previews = state.compile_previews.lock().await;
-    let Some(owned) = previews.get(&preview_id).cloned() else {
-        return (StatusCode::NOT_FOUND, "preview missing or already consumed").into_response();
-    };
-    if owned.session_hash != session {
-        return StatusCode::FORBIDDEN.into_response();
-    }
-    drop(previews);
-    let preview = owned.value;
-    let model_receipts = owned.model_receipts;
-    let campaign_id = preview.campaign.id;
-    match create_or_recover_preview_campaign(&state, &preview, model_receipts).await {
-        Ok(runtime) => match select_campaign(&state, &session, campaign_id).await {
-            Ok(()) => match load_campaign(&runtime.store) {
-                Ok(campaign) => {
-                    state.compile_previews.lock().await.remove(&preview_id);
-                    if let Err(error) = refresh_mesh(&state).await {
-                        tracing::warn!(%error, "campaign approval CultMesh publication failed");
-                    }
-                    Json(player_command_projection(
-                        &CommandResult::Created { campaign },
-                        None,
-                    ))
-                    .into_response()
-                }
-                Err(error) => {
-                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
-                }
-            },
-            Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
-        },
-        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
-    }
-}
-
-async fn create_or_recover_preview_campaign(
-    state: &AppState,
-    preview: &WorldCompilePreview,
-    model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
-) -> anyhow::Result<CampaignRuntime> {
-    let campaign_id = preview.campaign.id;
-    let runtime = match state.registry.runtime(campaign_id).await {
-        Ok(runtime) => runtime,
-        Err(_) => match state
-            .registry
-            .create(
-                preview.campaign.clone(),
-                preview.evidence_receipts.clone(),
-                model_receipts,
-            )
-            .await
-        {
-            Ok(runtime) => runtime,
-            Err(create_error) => state
-                .registry
-                .runtime(campaign_id)
-                .await
-                .map_err(|_| create_error)?,
-        },
-    };
-    let persisted_seed = runtime
-        .store
-        .load::<Campaign>("campaign_seed.v1", &campaign_id.to_string())?
-        .ok_or_else(|| anyhow::anyhow!("published campaign has no approved seed"))?
-        .1;
-    let mut expected_seed = preview.campaign.clone();
-    ghostlight_dungeon::resolution::ensure_agency_profiles(&mut expected_seed);
-    if persisted_seed != expected_seed {
-        return Err(anyhow::anyhow!(
-            "published campaign id belongs to a different approval preview"
-        ));
-    }
-    Ok(runtime)
+    Sse::new(stream)
+        .keep_alive(
+            KeepAlive::new()
+                .interval(std::time::Duration::from_secs(15))
+                .text("revision-heartbeat"),
+        )
+        .into_response()
 }
 
 #[derive(Deserialize)]
@@ -1184,7 +2264,29 @@ async fn resolve_npc_initiative(
         description: proposal.intent.clone(),
         intended_effect: proposal.intended_effect.clone(),
     };
-    let (assessment, receipt) = assessor.assess(campaign, intent).await?;
+    let (contract, boundaries) = campaign_model_policy(&runtime.store, campaign.id);
+    let permissions = runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+            "campaign_membership.v1",
+            &campaign.id.to_string(),
+        )?
+        .and_then(|(_, membership)| {
+            membership
+                .extraordinary_permissions
+                .get(&intent.actor_id)
+                .cloned()
+        })
+        .unwrap_or_default();
+    let (assessment, receipt) = assessor
+        .assess_with_context(
+            campaign,
+            intent,
+            &permissions,
+            contract.as_ref(),
+            &boundaries,
+        )
+        .await?;
     let _ = runtime.store.insert(
         "persona_stage_receipt.v1",
         "ghostlight.persona_stage_receipt.v1",
@@ -1238,6 +2340,144 @@ async fn publish_latest_narration(
     Ok(Some(projection))
 }
 
+async fn propose_time_advance(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<TimeAdvanceRequest>,
+) -> Response {
+    governed_campaign_command(&headers, &state, |member| {
+        WorldCommand::ProposeTimeAdvance {
+            expected_revision: request.expected_revision,
+            member_id: member.member_id,
+            minutes: request.minutes,
+        }
+    })
+    .await
+}
+
+async fn approve_time_advance(
+    Path(proposal_id): Path<String>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    governed_campaign_command(&headers, &state, |member| {
+        WorldCommand::ApproveTimeAdvance {
+            expected_revision: request.expected_revision,
+            proposal_id,
+            member_id: member.member_id,
+        }
+    })
+    .await
+}
+
+async fn propose_group_travel(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<GroupTravelRequest>,
+) -> Response {
+    governed_campaign_command(&headers, &state, |member| {
+        WorldCommand::ProposeGroupTravel {
+            expected_revision: request.expected_revision,
+            member_id: member.member_id,
+            destination_location_id: request.destination_location_id,
+        }
+    })
+    .await
+}
+
+async fn approve_group_travel(
+    Path(proposal_id): Path<String>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    governed_campaign_command(&headers, &state, |member| {
+        WorldCommand::ApproveGroupTravel {
+            expected_revision: request.expected_revision,
+            proposal_id,
+            member_id: member.member_id,
+        }
+    })
+    .await
+}
+
+async fn propose_cell_budget(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<CellBudgetRequest>,
+) -> Response {
+    governed_campaign_command(&headers, &state, |member| {
+        WorldCommand::ProposeResolutionBudget {
+            expected_revision: request.expected_revision,
+            expected_resolution_epoch: request.expected_resolution_epoch,
+            member_id: member.member_id,
+            active_cell_budget: request.active_cell_budget,
+        }
+    })
+    .await
+}
+
+async fn approve_cell_budget(
+    Path(proposal_id): Path<String>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    governed_campaign_command(&headers, &state, |member| {
+        WorldCommand::ApproveResolutionBudget {
+            expected_revision: request.expected_revision,
+            proposal_id,
+            member_id: member.member_id,
+        }
+    })
+    .await
+}
+
+async fn governed_campaign_command(
+    headers: &HeaderMap,
+    state: &AppState,
+    make: impl FnOnce(ghostlight_dungeon::session_zero::CampaignMember) -> WorldCommand,
+) -> Response {
+    let account_hash = match authenticated_session(headers, state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let runtime = match session_runtime(state, &account_hash).await {
+        Ok(Some(value)) => value,
+        Ok(None) => return (StatusCode::NOT_FOUND, "session has no campaign").into_response(),
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let campaign = match load_campaign(&runtime.store) {
+        Ok(value) => value,
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let member = match campaign_member_for_account(&runtime.store, &campaign, &account_hash) {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::FORBIDDEN, error.to_string()).into_response(),
+    };
+    match runtime.kernel.command(make(member)).await {
+        Ok(result) => {
+            if matches!(result, CommandResult::Committed { .. })
+                && let Err(error) = refresh_mesh(state).await
+            {
+                tracing::warn!(%error, "governed time advance mesh refresh failed");
+            }
+            Json(player_command_projection(&result, None)).into_response()
+        }
+        Err(KernelError::Stale { expected, actual }) => (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({"error":"stale revision","expected":expected,"actual":actual})),
+        )
+            .into_response(),
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
 async fn command(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -1269,8 +2509,8 @@ async fn command(
                 .into_response();
         }
     };
-    let player_id = match load_campaign(&runtime.store) {
-        Ok(campaign) => campaign.player_actor_id,
+    let admission_campaign = match load_campaign(&runtime.store) {
+        Ok(campaign) => campaign,
         Err(error) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -1281,6 +2521,68 @@ async fn command(
                 .into_response();
         }
     };
+    let player_id = match campaign_member_for_account(&runtime.store, &admission_campaign, &session)
+    {
+        Ok(member) => member.actor_id,
+        Err(error) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(ErrorBody {
+                    error: error.to_string(),
+                }),
+            )
+                .into_response();
+        }
+    };
+    let campaign_membership = runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+            "campaign_membership.v1",
+            &admission_campaign.id.to_string(),
+        )
+        .ok()
+        .flatten()
+        .map(|(_, membership)| membership);
+    let cooperative_member_count = campaign_membership
+        .as_ref()
+        .map(|membership| {
+            membership
+                .members
+                .values()
+                .filter(|member| member.active)
+                .count()
+        })
+        .unwrap_or(1);
+    if cooperative_member_count > 1
+        && matches!(
+            command,
+            WorldCommand::Wait { .. } | WorldCommand::SetResolutionBudget { .. }
+        )
+    {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(ErrorBody {
+                error: "co-op time and Persona-cell budget changes require unanimous governance"
+                    .into(),
+            }),
+        )
+            .into_response();
+    }
+    if let WorldCommand::SetResolutionBudget {
+        active_cell_budget, ..
+    } = &command
+        && campaign_membership
+            .as_ref()
+            .is_some_and(|membership| *active_cell_budget > membership.pooled_cell_allowance())
+    {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(ErrorBody {
+                error: "requested Persona-cell budget exceeds the campaign entitlement pool".into(),
+            }),
+        )
+            .into_response();
+    }
     if !player_http_command_allowed(&command, &player_id) {
         return (
             StatusCode::FORBIDDEN,
@@ -1335,8 +2637,81 @@ async fn command(
                         .into_response();
                 }
             };
-            match assessor.assess(&campaign, intent.clone()).await {
+            let extraordinary_permissions = runtime
+                .store
+                .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+                    "campaign_membership.v1",
+                    &campaign.id.to_string(),
+                )
+                .ok()
+                .flatten()
+                .and_then(|(_, membership)| {
+                    membership
+                        .extraordinary_permissions
+                        .get(&intent.actor_id)
+                        .cloned()
+                })
+                .unwrap_or_default();
+            let (contract, boundaries) = campaign_model_policy(&runtime.store, campaign.id);
+            match assessor
+                .assess_with_context(
+                    &campaign,
+                    intent.clone(),
+                    &extraordinary_permissions,
+                    contract.as_ref(),
+                    &boundaries,
+                )
+                .await
+            {
                 Ok((assessment, receipt)) => {
+                    if let Ok(Some((_, membership))) =
+                        runtime
+                            .store
+                            .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+                                "campaign_membership.v1",
+                                &campaign.id.to_string(),
+                            )
+                        && membership
+                            .members
+                            .values()
+                            .filter(|member| member.active)
+                            .count()
+                            > 1
+                    {
+                        let controlled = membership.controlled_actor_ids();
+                        if assessment_effects(&assessment)
+                            .any(|effect| !effect.actor_moves.is_empty())
+                        {
+                            return (
+                                StatusCode::UNPROCESSABLE_ENTITY,
+                                Json(ErrorBody {
+                                    error:
+                                        "group travel requires a unanimous revision-bound proposal"
+                                            .into(),
+                                }),
+                            )
+                                .into_response();
+                        }
+                        if assessment_effects(&assessment).any(|effect| {
+                            effect
+                                .actor_conditions
+                                .keys()
+                                .chain(effect.actor_knowledge_additions.keys())
+                                .chain(effect.actor_relationship_updates.keys())
+                                .any(|target| {
+                                    target != &intent.actor_id && controlled.contains(target)
+                                })
+                        }) {
+                            return (
+                                StatusCode::UNPROCESSABLE_ENTITY,
+                                Json(ErrorBody {
+                                    error: "effects on another player character are unsupported"
+                                        .into(),
+                                }),
+                            )
+                                .into_response();
+                        }
+                    }
                     let _ = runtime.store.insert(
                         "persona_stage_receipt.v1",
                         "ghostlight.persona_stage_receipt.v1",
@@ -1568,7 +2943,33 @@ async fn command(
                             .into_response();
                     }
                 };
-                match assessor.assess(&campaign, intent.clone()).await {
+                let membership = runtime
+                    .store
+                    .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+                        "campaign_membership.v1",
+                        &campaign.id.to_string(),
+                    )
+                    .ok()
+                    .flatten()
+                    .map(|(_, value)| value);
+                let permissions = membership
+                    .as_ref()
+                    .and_then(|membership| {
+                        membership.extraordinary_permissions.get(&intent.actor_id)
+                    })
+                    .cloned()
+                    .unwrap_or_default();
+                let (contract, boundaries) = campaign_model_policy(&runtime.store, campaign.id);
+                match assessor
+                    .assess_with_context(
+                        &campaign,
+                        intent.clone(),
+                        &permissions,
+                        contract.as_ref(),
+                        &boundaries,
+                    )
+                    .await
+                {
                     Ok((assessment, receipt)) => {
                         let _ = runtime.store.insert(
                             "persona_stage_receipt.v1",
@@ -1636,14 +3037,19 @@ async fn command(
     }
 }
 
-fn opening_suggestions_projection(value: &SuggestedOpenings) -> serde_json::Value {
-    serde_json::json!({"openings":value.openings})
+fn assessment_effects(
+    assessment: &ghostlight_dungeon::domain::ActionAssessment,
+) -> impl Iterator<Item = &ghostlight_dungeon::domain::WorldEffectDelta> {
+    [
+        &assessment.strong_effect,
+        &assessment.success_effect,
+        &assessment.mixed_effect,
+        &assessment.failure_effect,
+    ]
+    .into_iter()
 }
 
-fn role_suggestions_projection(value: &SuggestedRoles) -> serde_json::Value {
-    serde_json::json!({"roles":value.roles})
-}
-
+#[cfg(test)]
 fn world_compile_preview_projection(preview: &WorldCompilePreview) -> serde_json::Value {
     let campaign = &preview.campaign;
     let player = &campaign.actors[&campaign.player_actor_id];
@@ -1792,6 +3198,18 @@ fn player_command_projection(
         CommandResult::Created { .. } => serde_json::json!({
             "kind":"created",
         }),
+        CommandResult::GovernancePending { proposal, .. } => serde_json::json!({
+            "kind":"governance_pending",
+            "proposal":proposal,
+        }),
+        CommandResult::TravelGovernancePending { proposal, .. } => serde_json::json!({
+            "kind":"travel_governance_pending",
+            "proposal":proposal,
+        }),
+        CommandResult::ResolutionGovernancePending { proposal, .. } => serde_json::json!({
+            "kind":"resolution_governance_pending",
+            "proposal":proposal,
+        }),
     }
 }
 
@@ -1801,10 +3219,16 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         WorldCommand::Assess {
             intent, proposal, ..
         } => intent.actor_id == player_actor_id && proposal.is_none(),
-        WorldCommand::Attempt { .. }
-        | WorldCommand::Wait { .. }
-        | WorldCommand::SetResolutionBudget { .. } => true,
+        WorldCommand::Attempt { actor_id, .. } if actor_id == player_actor_id => true,
+        WorldCommand::Attempt { .. } => false,
+        WorldCommand::Wait { .. } | WorldCommand::SetResolutionBudget { .. } => true,
         WorldCommand::CreateCampaign { .. }
+        | WorldCommand::ProposeTimeAdvance { .. }
+        | WorldCommand::ApproveTimeAdvance { .. }
+        | WorldCommand::ProposeGroupTravel { .. }
+        | WorldCommand::ApproveGroupTravel { .. }
+        | WorldCommand::ProposeResolutionBudget { .. }
+        | WorldCommand::ApproveResolutionBudget { .. }
         | WorldCommand::AdvanceStrategicTick { .. }
         | WorldCommand::ExpandRegion { .. }
         | WorldCommand::MaterializeGestaltMember { .. }
@@ -1845,16 +3269,16 @@ fn validate_player_http_command(command: &WorldCommand) -> Result<(), String> {
             bounded("action description", &intent.description, 4_000)?;
             bounded("intended effect", &intent.intended_effect, 1_000)
         }
-        WorldCommand::Attempt { assessment_digest } => {
-            bounded("assessment digest", assessment_digest, 160)
-        }
+        WorldCommand::Attempt {
+            assessment_digest, ..
+        } => bounded("assessment digest", assessment_digest, 160),
         WorldCommand::Wait { minutes, .. } if *minutes == 0 || *minutes > 1_440 => {
             Err("wait duration must be between 1 and 1440 minutes".into())
         }
         WorldCommand::SetResolutionBudget {
             active_cell_budget, ..
-        } if !(1..=32).contains(active_cell_budget) => {
-            Err("active Persona-cell budget must be between 1 and 32".into())
+        } if !(1..=128).contains(active_cell_budget) => {
+            Err("active Persona-cell budget must be between 1 and 128".into())
         }
         _ => Ok(()),
     }
@@ -1924,6 +3348,13 @@ async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
             .collect::<Vec<_>>();
         narrations.sort_by_key(|value| value.source_revision);
         snapshots.push(CampaignMeshSnapshot {
+            membership: runtime
+                .store
+                .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+                    "campaign_membership.v1",
+                    &campaign.id.to_string(),
+                )?
+                .map(|(_, membership)| membership),
             campaign,
             narrations,
             evidence: runtime.store.load_all("vault_evidence_receipt.v1")?,
@@ -1940,11 +3371,33 @@ async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
             resolution_controls: runtime.store.load_all("resolution_control_receipt.v1")?,
         });
     }
+    let mut session_zero_snapshots = Vec::new();
+    for id in state.session_zeros.list().await {
+        let session_zero = state.session_zeros.snapshot(id).await?;
+        for member in session_zero.members.values().filter(|member| member.active) {
+            session_zero_snapshots.push(SessionZeroMeshSnapshot {
+                session_zero_id: id,
+                member_id: member.id.clone(),
+                surface: session_zero_surface(&session_zero, &member.account_hash)?,
+            });
+        }
+    }
     let publisher = state.mesh.clone();
     let deepseek = state.deepseek_status.clone();
     let pressure = state.live_turns.load(Ordering::SeqCst);
-    tokio::task::spawn_blocking(move || publisher.publish_snapshot(&snapshots, &deepseek, pressure))
-        .await?
+    tokio::task::spawn_blocking(move || {
+        publisher.publish_snapshot(&snapshots, &session_zero_snapshots, &deepseek, pressure)
+    })
+    .await?
+}
+
+fn schedule_mesh_refresh(state: &AppState) {
+    let state = state.clone();
+    tokio::spawn(async move {
+        if let Err(error) = refresh_mesh(&state).await {
+            tracing::warn!(%error, "asynchronous CultMesh refresh failed");
+        }
+    });
 }
 
 #[derive(Deserialize)]
@@ -2012,6 +3465,127 @@ async fn select_campaign_route(
     }
 }
 
+async fn begin_contract_review(headers: HeaderMap, State(state): State<AppState>) -> Response {
+    let account_hash = match authenticated_session(&headers, &state).await {
+        Some(value) => value,
+        None => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    if let Ok(Some(id)) = state
+        .session_zeros
+        .active_contract_review_for_account(&account_hash)
+        .await
+    {
+        return match state
+            .session_zeros
+            .snapshot(id)
+            .await
+            .and_then(|snapshot| session_zero_surface(&snapshot, &account_hash))
+        {
+            Ok(surface) => Json(surface).into_response(),
+            Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+        };
+    }
+    let runtime = match session_runtime(&state, &account_hash).await {
+        Ok(Some(value)) => value,
+        Ok(None) => return (StatusCode::NOT_FOUND, "session has no campaign").into_response(),
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let campaign = match load_campaign(&runtime.store) {
+        Ok(value) => value,
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let membership = match runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+            "campaign_membership.v1",
+            &campaign.id.to_string(),
+        ) {
+        Ok(Some((_, value))) if value.member_for_account(&account_hash).is_some() => value,
+        Ok(_) => return StatusCode::FORBIDDEN.into_response(),
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let contract = match runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::CampaignContract>(
+            "campaign_contract.v1",
+            &campaign.id.to_string(),
+        ) {
+        Ok(Some((_, value))) => value,
+        Ok(None) => {
+            return (
+                StatusCode::CONFLICT,
+                "campaign has no Session Zero contract",
+            )
+                .into_response();
+        }
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let dm_persona = match runtime
+        .store
+        .load_all::<ghostlight_dungeon::session_zero::CampaignDmPersona>("campaign_dm_persona.v1")
+    {
+        Ok(values) if values.len() == 1 => values.into_iter().next().unwrap(),
+        Ok(_) => return (StatusCode::CONFLICT, "campaign DM state is ambiguous").into_response(),
+        Err(error) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    };
+    let previous_brief = runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::ApprovedCampaignBrief>(
+            "approved_campaign_brief.v1",
+            &campaign.id.to_string(),
+        )
+        .ok()
+        .flatten()
+        .map(|(_, value)| value);
+    let boundaries = runtime
+        .store
+        .load::<ghostlight_dungeon::session_zero::PublishedSessionZeroSeed>(
+            "session_zero_publication.v1",
+            &campaign.id.to_string(),
+        )
+        .ok()
+        .flatten()
+        .map(|(_, value)| value.boundaries)
+        .unwrap_or_default();
+    let review = match SessionZeroState::for_contract_review(
+        &campaign,
+        &membership,
+        contract,
+        dm_persona,
+        previous_brief.as_ref(),
+        boundaries,
+    ) {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::CONFLICT, error.to_string()).into_response(),
+    };
+    let id = review.id;
+    match state.session_zeros.create(review).await {
+        Ok(_) => match state
+            .session_zeros
+            .snapshot(id)
+            .await
+            .and_then(|snapshot| session_zero_surface(&snapshot, &account_hash))
+        {
+            Ok(surface) => {
+                schedule_mesh_refresh(&state);
+                (StatusCode::CREATED, Json(surface)).into_response()
+            }
+            Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+        },
+        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
+    }
+}
+
 async fn fork_campaign(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -2033,6 +3607,17 @@ async fn fork_campaign(
         Some(value) => value,
         None => return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response(),
     };
+    let source_runtime = match state.registry.runtime(source).await {
+        Ok(runtime) => runtime,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    if campaign_is_group(&source_runtime.store, source) {
+        return (
+            StatusCode::CONFLICT,
+            "fork is disabled for co-op campaigns until departure and ownership governance exist",
+        )
+            .into_response();
+    }
     match state.registry.fork(source, request.name).await {
         Ok(runtime) => {
             let campaign = match load_campaign(&runtime.store) {
@@ -2078,6 +3663,17 @@ async fn reset_campaign(
         Some(value) => value,
         None => return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response(),
     };
+    let source_runtime = match state.registry.runtime(source).await {
+        Ok(runtime) => runtime,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    if campaign_is_group(&source_runtime.store, source) {
+        return (
+            StatusCode::CONFLICT,
+            "reset is disabled for co-op campaigns until unanimous lifecycle governance exists",
+        )
+            .into_response();
+    }
     match state.registry.reset(source, request.name).await {
         Ok(runtime) => {
             let campaign = match load_campaign(&runtime.store) {
@@ -2119,6 +3715,17 @@ async fn export_campaign(headers: HeaderMap, State(state): State<AppState>) -> R
         Some(value) => value,
         None => return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response(),
     };
+    let runtime = match state.registry.runtime(campaign_id).await {
+        Ok(runtime) => runtime,
+        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    };
+    if campaign_is_group(&runtime.store, campaign_id) {
+        return (
+            StatusCode::CONFLICT,
+            "export is disabled for co-op campaigns until private-state consent governance exists",
+        )
+            .into_response();
+    }
     match state
         .registry
         .export(campaign_id, state.runtime_root.join("exports"))
@@ -2145,6 +3752,24 @@ async fn export_campaign(headers: HeaderMap, State(state): State<AppState>) -> R
         },
         Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
     }
+}
+
+fn campaign_is_group(store: &CampaignStore, campaign_id: uuid::Uuid) -> bool {
+    store
+        .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+            "campaign_membership.v1",
+            &campaign_id.to_string(),
+        )
+        .ok()
+        .flatten()
+        .is_some_and(|(_, membership)| {
+            membership
+                .members
+                .values()
+                .filter(|member| member.active)
+                .count()
+                > 1
+        })
 }
 
 async fn export_canon_candidates_markdown(
@@ -2344,13 +3969,17 @@ async fn process_due_ticks(
             campaign.revision,
             campaign.resolution_policy.resolution_epoch,
         ));
+        let (campaign_contract, aggregate_boundaries) =
+            campaign_model_policy(&runtime.store, campaign.id);
         let Some(output) = await_background_work(
             state,
             yield_to_live_turns,
-            ghostlight_dungeon::scheduler::propose_resolution_wave(
+            ghostlight_dungeon::scheduler::propose_resolution_wave_with_policy(
                 model.clone(),
                 permit,
                 &campaign,
+                campaign_contract.as_ref(),
+                &aggregate_boundaries,
             ),
         )
         .await?
@@ -2519,6 +4148,162 @@ fn load_campaign(store: &CampaignStore) -> anyhow::Result<Campaign> {
         .ok_or_else(|| anyhow::anyhow!("campaign missing"))
 }
 
+fn campaign_model_policy(
+    store: &CampaignStore,
+    campaign_id: uuid::Uuid,
+) -> (
+    Option<ghostlight_dungeon::session_zero::CampaignContract>,
+    Vec<ghostlight_dungeon::session_zero::AggregatedBoundary>,
+) {
+    let publication = store
+        .load::<ghostlight_dungeon::session_zero::PublishedSessionZeroSeed>(
+            "session_zero_publication.v1",
+            &campaign_id.to_string(),
+        )
+        .ok()
+        .flatten()
+        .map(|(_, publication)| publication);
+    let Some(publication) = publication else {
+        return (None, vec![]);
+    };
+    let mut boundaries = publication.approved_brief.aggregate_boundaries.clone();
+    if let Some((_, active)) = store
+        .load::<ghostlight_dungeon::session_zero::ActiveContractBoundaryPolicy>(
+            "active_contract_boundary_policy.v1",
+            &campaign_id.to_string(),
+        )
+        .ok()
+        .flatten()
+        && active.review_session_zero_id != publication.session_zero_id
+    {
+        boundaries = active.aggregate_boundaries;
+    }
+    (Some(publication.contract), boundaries)
+}
+
+async fn migrate_legacy_campaign_memberships(
+    registry: &CampaignRegistry,
+    auth: &AuthState,
+) -> anyhow::Result<()> {
+    let mut owners = BTreeMap::<uuid::Uuid, BTreeSet<String>>::new();
+    for (account_hash, campaign_id) in &auth.session_campaigns {
+        owners
+            .entry(*campaign_id)
+            .or_default()
+            .insert(account_hash.clone());
+    }
+    for (account_hash, campaign_ids) in &auth.session_campaign_ids {
+        for campaign_id in campaign_ids {
+            owners
+                .entry(*campaign_id)
+                .or_default()
+                .insert(account_hash.clone());
+        }
+    }
+    for campaign_id in registry.list().await {
+        let runtime = registry.runtime(campaign_id).await?;
+        if runtime
+            .store
+            .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+                "campaign_membership.v1",
+                &campaign_id.to_string(),
+            )?
+            .is_some()
+        {
+            continue;
+        }
+        let campaign = load_campaign(&runtime.store)?;
+        let account_hashes = owners
+            .get(&campaign_id)
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let receipt = GovernanceMigrationReceipt {
+            schema: "ghostlight.governance_migration_receipt.v1".into(),
+            campaign_id,
+            status: if account_hashes.len() == 1 {
+                "migrated".into()
+            } else {
+                "quarantined_ambiguous_owner".into()
+            },
+            account_hashes: account_hashes.clone(),
+            actor_id: campaign.player_actor_id.clone(),
+            created_at: chrono::Utc::now(),
+        };
+        if account_hashes.len() == 1 {
+            let member_id = format!("member:{}", uuid::Uuid::new_v4().simple());
+            let membership = ghostlight_dungeon::session_zero::CampaignMembership {
+                schema: "ghostlight.campaign_membership.v1".into(),
+                campaign_id,
+                governance_epoch: 0,
+                host_member_id: member_id.clone(),
+                members: BTreeMap::from([(
+                    member_id.clone(),
+                    ghostlight_dungeon::session_zero::CampaignMember {
+                        member_id,
+                        account_hash: account_hashes[0].clone(),
+                        display_name: "Player".into(),
+                        actor_id: campaign.player_actor_id.clone(),
+                        is_host: true,
+                        active: true,
+                        cell_allowance: 8,
+                    },
+                )]),
+                extraordinary_permissions: BTreeMap::new(),
+            };
+            runtime.store.insert(
+                "campaign_membership.v1",
+                "ghostlight.campaign_membership.v1",
+                &campaign_id.to_string(),
+                &membership,
+            )?;
+            runtime.store.insert(
+                "campaign_governance.v1",
+                "ghostlight.campaign_governance.v1",
+                &campaign_id.to_string(),
+                &ghostlight_dungeon::session_zero::CampaignGovernance {
+                    schema: "ghostlight.campaign_governance.v1".into(),
+                    campaign_id,
+                    governance_epoch: 0,
+                    time_advance_policy: "unanimous".into(),
+                    pooled_cell_ceiling: 8,
+                    cooperative_shared_scene_only: true,
+                    pvp_enabled: false,
+                },
+            )?;
+        }
+        let _ = runtime.store.insert(
+            "governance_migration_receipt.v1",
+            "ghostlight.governance_migration_receipt.v1",
+            &campaign_id.to_string(),
+            &receipt,
+        );
+    }
+    Ok(())
+}
+
+fn campaign_member_for_account(
+    store: &CampaignStore,
+    campaign: &Campaign,
+    account_hash: &str,
+) -> anyhow::Result<ghostlight_dungeon::session_zero::CampaignMember> {
+    if let Some((_, membership)) = store
+        .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
+            "campaign_membership.v1",
+            &campaign.id.to_string(),
+        )?
+    {
+        return membership
+            .member_for_account(account_hash)
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("account is not a campaign member"));
+    }
+    Err(anyhow::anyhow!(
+        "campaign membership is missing or quarantined for operator review"
+    ))
+}
+
 fn migrate_default_campaign(runtime_root: &std::path::Path) -> anyhow::Result<()> {
     let legacy_directory = runtime_root.join("campaigns/default");
     let legacy_store_path = legacy_directory.join("campaign.cc");
@@ -2639,6 +4424,9 @@ mod tests {
             .unwrap();
         AppState {
             registry,
+            session_zeros: SessionZeroRegistry::new(root.join("session-zero")).unwrap(),
+            session_zero_director: None,
+            entitlements: Arc::new(FixtureEntitlementPort),
             runtime_root: root.into(),
             auth: Arc::new(Mutex::new(AuthOwner {
                 store: auth_store,
@@ -2650,9 +4438,6 @@ mod tests {
             compiler: None,
             assessor: None,
             model: None,
-            compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
-            opening_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
-            role_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
             expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
             fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
             live_turns: Arc::new(AtomicUsize::new(0)),
@@ -2803,188 +4588,6 @@ mod tests {
         assert!(retired_invite.headers().get(header::SET_COOKIE).is_none());
     }
 
-    #[test]
-    fn generated_start_selection_uses_only_server_owned_ids() {
-        let opening = OpeningSuggestion {
-            id: "opening-a".into(),
-            title: "Opening A".into(),
-            era: "fixture".into(),
-            place: "yard".into(),
-            pressure: "strike".into(),
-            player_hook: "choose".into(),
-            evidence_receipt_ids: vec![],
-        };
-        let role = RoleSuggestion {
-            id: "role-a".into(),
-            name: "Courier".into(),
-            premise: "Carry the message.".into(),
-            capabilities: vec!["route knowledge".into()],
-            obligations: vec!["deliver the message".into()],
-            evidence_receipt_ids: vec![],
-        };
-        let selected = resolve_selected_start(
-            SelectedStartRequest {
-                campaign_name: "Campaign".into(),
-                opening_id: opening.id.clone(),
-                role_id: role.id.clone(),
-            },
-            std::slice::from_ref(&opening),
-            &opening.id,
-            std::slice::from_ref(&role),
-        )
-        .unwrap();
-        assert_eq!(selected.opening, opening);
-        assert_eq!(selected.role, role);
-
-        assert!(
-            resolve_selected_start(
-                SelectedStartRequest {
-                    campaign_name: "Campaign".into(),
-                    opening_id: "forged-opening".into(),
-                    role_id: "role-a".into(),
-                },
-                std::slice::from_ref(&selected.opening),
-                &selected.opening.id,
-                std::slice::from_ref(&selected.role),
-            )
-            .is_err()
-        );
-        assert!(
-            resolve_selected_start(
-                SelectedStartRequest {
-                    campaign_name: "Campaign".into(),
-                    opening_id: selected.opening.id.clone(),
-                    role_id: "forged-role".into(),
-                },
-                std::slice::from_ref(&selected.opening),
-                &selected.opening.id,
-                std::slice::from_ref(&selected.role),
-            )
-            .is_err()
-        );
-    }
-
-    #[tokio::test]
-    async fn failed_campaign_approval_keeps_its_retryable_preview() {
-        let dir = tempfile::tempdir().unwrap();
-        let state = empty_app_state(dir.path());
-        let session = "valid-session";
-        let session_hash = secret_hash(session);
-        state
-            .auth
-            .lock()
-            .await
-            .state
-            .session_hashes
-            .insert(session_hash.clone());
-        let mut campaign = seed("Invalid preview");
-        campaign
-            .actors
-            .get_mut(&campaign.player_actor_id)
-            .unwrap()
-            .location_id = "missing".into();
-        let preview_id = "preview".to_owned();
-        state.compile_previews.lock().await.insert(
-            preview_id.clone(),
-            OwnedPreview {
-                session_hash,
-                value: WorldCompilePreview {
-                    schema: "ghostlight.world_compile_preview.v1".into(),
-                    title: "Invalid preview".into(),
-                    campaign,
-                    evidence_receipts: vec![],
-                    evidence_coverage: vec![],
-                    gaps: vec![],
-                    branch_assumptions: vec![],
-                    requires_approval: true,
-                },
-                model_receipts: vec![],
-            },
-        );
-        let app = app_router(state.clone(), dir.path().join("web"));
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri(format!("/api/compiler/approve/{preview_id}"))
-                    .header(header::COOKIE, format!("ghostlight_session={session}"))
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::CONFLICT);
-        assert!(
-            state
-                .compile_previews
-                .lock()
-                .await
-                .contains_key(&preview_id)
-        );
-        assert!(state.registry.list().await.is_empty());
-    }
-
-    #[tokio::test]
-    async fn valid_campaign_approval_accepts_the_registry_normalized_seed() {
-        let dir = tempfile::tempdir().unwrap();
-        let state = empty_app_state(dir.path());
-        let session = "valid-session";
-        let session_hash = secret_hash(session);
-        {
-            let mut auth = state.auth.lock().await;
-            let mut authorized = auth.state.clone();
-            authorized.session_hashes.insert(session_hash.clone());
-            auth.commit(authorized).unwrap();
-        }
-        let campaign = seed("Valid preview");
-        assert!(campaign.agency_profiles.is_empty());
-        let campaign_id = campaign.id;
-        let preview_id = "valid-preview".to_owned();
-        state.compile_previews.lock().await.insert(
-            preview_id.clone(),
-            OwnedPreview {
-                session_hash: session_hash.clone(),
-                value: WorldCompilePreview {
-                    schema: "ghostlight.world_compile_preview.v1".into(),
-                    title: "Valid preview".into(),
-                    campaign,
-                    evidence_receipts: vec![],
-                    evidence_coverage: vec![],
-                    gaps: vec![],
-                    branch_assumptions: vec![],
-                    requires_approval: true,
-                },
-                model_receipts: vec![],
-            },
-        );
-        let app = app_router(state.clone(), dir.path().join("web"));
-
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri(format!("/api/compiler/approve/{preview_id}"))
-                    .header(header::COOKIE, format!("ghostlight_session={session}"))
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-        assert!(
-            !state
-                .compile_previews
-                .lock()
-                .await
-                .contains_key(&preview_id)
-        );
-        assert_eq!(state.registry.list().await, vec![campaign_id]);
-        let auth = state.auth.lock().await;
-        assert_eq!(auth.state.session_campaigns[&session_hash], campaign_id);
-        assert!(auth.state.session_campaign_ids[&session_hash].contains(&campaign_id));
-    }
-
     #[tokio::test]
     async fn live_turn_cancels_background_inference_and_excludes_its_commit_gate() {
         let dir = tempfile::tempdir().unwrap();
@@ -3097,6 +4700,9 @@ mod tests {
             .unwrap();
         let state = AppState {
             registry,
+            session_zeros: SessionZeroRegistry::new(dir.path().join("session-zero")).unwrap(),
+            session_zero_director: None,
+            entitlements: Arc::new(FixtureEntitlementPort),
             runtime_root: dir.path().into(),
             auth: Arc::new(Mutex::new(AuthOwner {
                 store: auth_store,
@@ -3108,9 +4714,6 @@ mod tests {
             compiler: None,
             assessor: None,
             model: None,
-            compile_previews: Arc::new(Mutex::new(BTreeMap::new())),
-            opening_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
-            role_suggestions: Arc::new(Mutex::new(BTreeMap::new())),
             expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
             fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
             live_turns: Arc::new(AtomicUsize::new(0)),
@@ -3284,7 +4887,7 @@ mod tests {
             validate_player_http_command(&WorldCommand::SetResolutionBudget {
                 expected_revision: 0,
                 expected_resolution_epoch: 0,
-                active_cell_budget: 33,
+                active_cell_budget: 129,
             })
             .is_err()
         );
@@ -3417,37 +5020,5 @@ mod tests {
         ] {
             assert!(!encoded.contains(private_key), "leaked {private_key}");
         }
-    }
-
-    #[tokio::test]
-    async fn compiling_a_new_world_preview_retires_only_that_sessions_old_preview() {
-        let dir = tempfile::tempdir().unwrap();
-        let state = empty_app_state(dir.path());
-        let preview = |name: &str| WorldCompilePreview {
-            schema: "ghostlight.world_compile_preview.v1".into(),
-            title: name.into(),
-            campaign: seed(name),
-            evidence_receipts: vec![],
-            evidence_coverage: vec![],
-            gaps: vec![],
-            branch_assumptions: vec![],
-            requires_approval: true,
-        };
-
-        let _ = store_preview(&state, "left".into(), Ok((preview("old"), vec![]))).await;
-        let _ = store_preview(&state, "right".into(), Ok((preview("other"), vec![]))).await;
-        let _ = store_preview(&state, "left".into(), Ok((preview("new"), vec![]))).await;
-
-        let previews = state.compile_previews.lock().await;
-        assert_eq!(previews.len(), 2);
-        assert_eq!(
-            previews
-                .values()
-                .filter(|owned| owned.session_hash == "left")
-                .map(|owned| owned.value.title.as_str())
-                .collect::<Vec<_>>(),
-            vec!["new"]
-        );
-        assert!(previews.values().any(|owned| owned.session_hash == "right"));
     }
 }
