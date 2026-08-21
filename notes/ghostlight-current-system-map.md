@@ -214,11 +214,15 @@ Starfire currently serves immutable release
 with rollback `531d4d44bb749201b668ea06a27eef2ee7cdda12`.
 
 Local CultMesh publication and HTTP readiness do not wait for Odin. Remote
-replication is coalesced into one asynchronous RUDP batch. On 2026-08-21 the
-WireGuard route to `10.77.0.1` was healthy, but port `17871` was Idunn's
-loopback-only provider-query socket rather than a network Odin RUDP listener.
-Ghostlight therefore retains its canonical local CultMesh/Eve projection and
-emits one bounded publication warning without losing local state or liveness.
+replication is coalesced into one asynchronous RUDP batch. Netcup's Vienna
+network incident explains the transient Yggdrasil reachability loss observed
+on 2026-08-21; Netcup reported full recovery at 17:37 CEST while continuing to
+observe the site. After network recovery, SSH, WireGuard, the supervised tunnel,
+and public Ghostlight health were reachable. The separate Odin continuity fault
+remains: `odin-coordinator-1` and its `10.77.0.1:17871` listener are absent,
+while Idunn's unrelated provider-query socket remains loopback-only. Ghostlight
+therefore retains its canonical local CultMesh/Eve projection and emits one
+bounded publication warning without losing local state or liveness.
 
 The deployed Session Zero canary survived two exact-build restarts with its
 private store intact. Heimdall completed a real KLTST Discord round trip and
