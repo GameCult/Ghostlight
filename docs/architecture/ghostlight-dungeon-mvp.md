@@ -8,9 +8,11 @@ geography, bounded knowledge, durable actors and institutions, explicit
 consequence, and motion beyond the players' attention. Players describe
 attempts. The world decides what is possible, what is opposed, and what changes.
 
-The MVP runs as a Rust daemon on Starfire and publishes a private Eve/CultUI
-surface for two invited testers. Aetheria is the bundled setting adapter. The
-core world, Persona, and Vault contracts remain setting-neutral.
+The MVP runs as a native Rust daemon on Yggdrasil and publishes a
+Heimdall-authenticated Eve/CultUI surface for one to eight campaign members.
+Idunn owns daemon continuity and Odin owns Verse discovery; neither can mutate
+campaign state. Aetheria is the bundled setting adapter. The core world,
+Persona, and Vault contracts remain setting-neutral.
 
 Ghostlight's existing v0 schemas and Pallas, Lucent, and Corvid fixtures are
 evidence and regression scenarios. They do not own runtime state or commits.
@@ -552,7 +554,7 @@ submits ticks to each campaign's own mailbox.
 
 `VaultProvider` exposes source search, surrounding context, exact documents,
 source witnesses, authority lanes, and temporal scope. The Aetheria adapter
-calls VoidBot's canonical MCP retrieval endpoint at Starfire loopback. It stores
+calls VoidBot's canonical MCP retrieval endpoint at Yggdrasil loopback. It stores
 exact evidence receipts used by the campaign, never vectors or a rival index.
 
 Compilation is staged and approval-gated:
@@ -780,18 +782,20 @@ through the same campaign mailbox and atomic commit path. The bounded milestone
 keeps the party in one scene; the multiplayer-intention document owns the
 remaining split-party and social-governance work.
 
-The MVP runs as a normal detached process under the Starfire operator account.
-The launcher records the PID, exact executable path, release commit, and logs;
-the stop path refuses an executable mismatch. Runtime ACLs permit the operator,
-SYSTEM, and administrators. Setup reads the DeepSeek key once and writes a
-machine-scoped DPAPI secret. The key is absent from source, arguments, logs,
-environment projections, and exports.
+The MVP runs as `ghostlight:ghostlight` under native
+`ghostlight-dungeon.service`. Idunn admits its signed typed health and owns
+same-release restart continuity; its deployment brake governs mutation of the
+installed artifact, not ordinary survival. Runtime directories are restricted
+to the service identity and administrators. Setup installs the DeepSeek key as
+a systemd encrypted credential bound to the exact credential name. The key is
+absent from source, arguments, logs, environment projections, and exports.
 
 Releases are immutable directories built from exact commits. Activation is an
 atomic pointer switch, recorded in CultCache, and the rollback runbook lives in
-`gamecult-ops`. The MVP process does not automatically survive logout or reboot.
-Task Scheduler may be added when tester availability makes that useful; native
-Windows service machinery is outside the MVP.
+`gamecult-ops`. Systemd starts the admitted release at boot and restarts that
+same installed body through Idunn continuity. Changing the artifact,
+configuration, schema, unit, or authority binding remains a separate
+deployment operation.
 
 The binary owns its build provenance. Release tooling injects the clean-tree
 commit through `GHOSTLIGHT_BUILD_COMMIT`; local builds derive it from Git while
@@ -801,10 +805,11 @@ Launchers and manifests may verify it but may not rewrite it. Activation is
 rejected unless checkout HEAD, embedded commit, immutable manifest, binary
 hash, and the running health projection agree.
 
-Live VoidBot integration uses the independently verified Yggdrasil host and the
-restored Starfire loopback crossing at `127.0.0.1:17875/mcp`. The repaired
-tunnel task uses the live `F:\Projects` body. Retired local VoidBot/Qdrant
-writers stay retired.
+Live VoidBot integration is host-local on Yggdrasil at
+`127.0.0.1:17875/mcp`. VoidBot remains the Vault retrieval owner; Ghostlight
+stores exact evidence receipts rather than a rival index. Odin provides
+discovery at `10.77.0.1:17871`. The old Starfire crossing is no longer a live
+runtime dependency, and Starfire's retired VoidBot/Qdrant writers stay retired.
 
 ## Public contracts
 
@@ -863,10 +868,11 @@ The UI consumes existing `gamecult.eve.surface.v1` and
 7. Add the VoidBot and DeepSeek production adapters without granting either
    commit authority.
 8. Publish the CultMesh/Eve surface and thin authenticated browser host.
-9. Add detached-process launch/stop, DPAPI setup, release activation, firewall,
-   and rollback tooling under the correct repository owners.
+9. Add native systemd lifecycle, encrypted-credential setup, release
+   activation, reverse-proxy, and rollback tooling under the correct repository
+   owners.
 10. Run fixture regressions, invariant fault tests, browser acceptance, and the
-    final Starfire deployment smoke.
+    final native Yggdrasil deployment smoke.
 
 ## Acceptance and negative proof
 

@@ -31,11 +31,13 @@ persistent pins, approval-gated gestalt fission, graph and cover receipts, and
 a separate operator provider-concurrency limit. The
 specific authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`.
-The accepted implementation is hosted on Starfire as immutable release
-`2b059da2edfec5f8db216ecd92df94687103f1cc`. Exact checkout, embedded commit,
-release manifest, binary hash, process, typed health, CultMesh store, persisted
-campaign, DeepSeek startup inference, VoidBot retrieval, private-LAN access,
-WireGuard access, and unauthenticated rejection agree. This pass makes model
+The accepted implementation is hosted natively on Yggdrasil as immutable
+release `10b638e45756e5210aaee1efb5dcf74dbebf83c0`. Exact checkout,
+embedded commit, release manifest, binary hash, systemd process, typed health,
+CultMesh store, seven migrated campaigns, one Session Zero draft, DeepSeek
+startup inference, local VoidBot retrieval, public Heimdall path, restart
+recovery, and unauthenticated rejection agree. Idunn owns continuity and Odin
+owns discovery; neither owns campaign mutation. This pass makes model
 work inspectable and cheaper:
 provider attempts expose prompt/completion/cache usage and exact local failures;
 stable prefixes precede dynamic context; world and agency compilation are

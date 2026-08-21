@@ -66,7 +66,17 @@ Deployment truth is the immutable release named below. Operational ownership
 and rollback commands remain in `gamecult-ops`; this handoff records only the
 application witness needed for re-entry.
 
-The hosted MVP is implemented and live on Starfire. Ghostlight owns the
+### 2026-08-21 native Yggdrasil cutover
+
+Yggdrasil is the current production body. Historical Starfire deployment
+entries below are acceptance lineage, not live topology. The state migration
+copied seven campaign stores, one Session Zero store, and service auth while
+preserving Yggdrasil's native mesh and provider-health identities. Nginx now
+routes `/ghostlight/` to the native loopback service; the Starfire writer was
+stopped before exposure. Restore from the old body only through the documented
+rollback transaction—never by starting both writers.
+
+The hosted MVP is implemented and live natively on Yggdrasil. Ghostlight owns the
 generalized projection membrane; Epiphany consumes its pinned crate while
 retaining her own Mind and consequence authority. The Rust daemon now owns
 VoidBot-grounded compilation and approval, stable topology, campaign mailboxes,
@@ -82,13 +92,15 @@ foundation checklist below. Existing Ghostlight fixtures remain regression
 evidence.
 
 The active immutable release is
-`2b059da2edfec5f8db216ecd92df94687103f1cc`, binary SHA-256
-`e78a6c3b9520630e3342f93d48ebf9ebdf9497c5556d41859526b71839ab97b2`.
-Manifest, process, typed health, persisted campaign count, CultMesh store,
-DeepSeek startup inference, and VoidBot retrieval agree. Periwinkle proved the
-private-LAN route and unauthenticated 401; Raven and Yggdrasil independently
-proved WireGuard. Exact firewall and rollback truth remains owned by
-`gamecult-ops/runbooks/ghostlight-dungeon-starfire.md`.
+`10b638e45756e5210aaee1efb5dcf74dbebf83c0`, binary SHA-256
+`327c93b0cddd6b344f85e14e24be51688d74a58e1ea22dd42393b81b07f48f7a`,
+with Eve release `076d2124ed476cdaeff540c9d24c2d4fb57d04cf`. Manifest, embedded
+commit, systemd process, typed health, seven migrated campaigns, one Session
+Zero draft, CultMesh store, DeepSeek startup inference, local VoidBot retrieval,
+and restart recovery agree. Yggdrasil nginx serves `/ghostlight/`; anonymous
+campaign access returns 401. The Starfire writer is stopped. Idunn owns native
+continuity and Odin owns RUDP discovery. Exact firewall, deployment, migration,
+and rollback truth remains owned by `gamecult-ops`.
 
 The full workspace passes 161 core and 15 daemon tests plus strict TypeScript
 and Vite release builds. The public crossing returns 200, unauthenticated state

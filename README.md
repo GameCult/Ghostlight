@@ -37,8 +37,10 @@ multiresolution agency graph for keeping large settings active at finite cost.
 
 ## Current Status
 
-Ghostlight Dungeon is implemented and deployed as a Starfire-hosted,
-Heimdall-gated playtest harness. The current acceptance surface covers:
+Ghostlight Dungeon is implemented and deployed as a native Yggdrasil,
+Heimdall-gated playtest harness. Idunn owns daemon continuity, Odin owns Verse
+discovery, and the application remains the sole owner of campaign truth. The
+current acceptance surface covers:
 
 - persistent DM-led Session Zero with shared/private channels, typed contracts,
   private boundaries, character bargains, digest-bound unanimous approval, and
@@ -59,7 +61,8 @@ Heimdall-gated playtest harness. The current acceptance surface covers:
   rematerialisation of the same person;
 - atomic rejection of malformed, stale, or semantically invalid model waves;
 - provider, token, cache, latency, validation, state-version, and build receipts;
-- exact-build deployment and restart verification on Starfire.
+- exact-build deployment, state migration, public cutover, and restart
+  verification on Yggdrasil.
 
 The remaining forge gate is multi-account human pressure testing of Session
 Zero privacy/publication and bounded co-op alongside continued

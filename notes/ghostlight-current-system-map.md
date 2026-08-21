@@ -2,9 +2,10 @@
 
 GhostlightDungeon is the active hosted runtime. Its authority map is
 `docs/architecture/ghostlight-dungeon-mvp.md`. The implemented Rust daemon,
-CultCache campaign stores, CultMesh/Eve surfaces, browser lowerer, and Starfire
-process/release scripts are the live machine; the older validated artifact
-seams remain regression evidence only.
+CultCache campaign stores, CultMesh/Eve surfaces, browser lowerer, native
+Yggdrasil systemd body, Idunn continuity target, and Odin discovery crossing
+are the live machine; the older validated artifact seams remain regression
+evidence only.
 
 ## GhostlightDungeon target flow
 
@@ -208,21 +209,27 @@ and operator inspection; the browser cannot reveal them before discovery.
 
 ## Current acceptance body
 
-Starfire currently serves immutable release
-`2b059da2edfec5f8db216ecd92df94687103f1cc`, executable SHA-256
-`e78a6c3b9520630e3342f93d48ebf9ebdf9497c5556d41859526b71839ab97b2`,
-with rollback `531d4d44bb749201b668ea06a27eef2ee7cdda12`.
+Yggdrasil currently serves native immutable release
+`10b638e45756e5210aaee1efb5dcf74dbebf83c0`, executable SHA-256
+`327c93b0cddd6b344f85e14e24be51688d74a58e1ea22dd42393b81b07f48f7a`,
+with Eve release `076d2124ed476cdaeff540c9d24c2d4fb57d04cf`. The service runs as
+`ghostlight:ghostlight` under `ghostlight-dungeon.service`; typed health,
+manifest, embedded commit, executable hash, seven imported campaigns, one
+Session Zero draft, DeepSeek readiness, and restart recovery agree.
+
+The public `/ghostlight/` path terminates on Yggdrasil nginx and proxies the
+native loopback listener at `127.0.0.1:8831`. Anonymous campaign access returns
+401. The previous Starfire writer is stopped; its process and tunnel are no
+longer live authority. The migration copied campaign, Session Zero, and auth
+stores while preserving Yggdrasil's native mesh and provider-health identities.
 
 Local CultMesh publication and HTTP readiness do not wait for Odin. Remote
-replication is coalesced into one asynchronous RUDP batch. Netcup's Vienna
-network incident explains the transient Yggdrasil reachability loss observed
-on 2026-08-21; Netcup reported full recovery at 17:37 CEST while continuing to
-observe the site. After network recovery, SSH, WireGuard, the supervised tunnel,
-and public Ghostlight health were reachable. The separate Odin continuity fault
-remains: `odin-coordinator-1` and its `10.77.0.1:17871` listener are absent,
-while Idunn's unrelated provider-query socket remains loopback-only. Ghostlight
-therefore retains its canonical local CultMesh/Eve projection and emits one
-bounded publication warning without losing local state or liveness.
+replication is coalesced into one asynchronous RUDP batch. Odin's coordinator
+is healthy on Yggdrasil and owns RUDP discovery at `10.77.0.1:17871`; Idunn
+admits signed Ghostlight health and owns same-release continuity independently
+of its deployment brake. VoidBot's canonical MCP service is local to the host
+at `127.0.0.1:17875/mcp`, so live retrieval no longer depends on a Starfire
+reverse tunnel.
 
 The deployed Session Zero canary survived two exact-build restarts with its
 private store intact. Heimdall completed a real KLTST Discord round trip and
