@@ -32,7 +32,7 @@ a separate operator provider-concurrency limit. The
 specific authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`.
 The accepted implementation is hosted on Starfire as immutable release
-`7916ab04936ba962720cfbf4af1b83f9aa8d8b24`. Exact checkout, embedded commit,
+`2b059da2edfec5f8db216ecd92df94687103f1cc`. Exact checkout, embedded commit,
 release manifest, binary hash, process, typed health, CultMesh store, persisted
 campaign, DeepSeek startup inference, VoidBot retrieval, private-LAN access,
 WireGuard access, and unauthenticated rejection agree. This pass makes model
@@ -91,8 +91,9 @@ inert outcome resolver.
 
 Release truth, authenticated compiler/player HTTP journeys, restart continuity,
 and the strict multiresolution refugee-return golden now pass against immutable
-builds. The next gate is visual browser inspection through Heimdall's KLTST
-Discord-role admission, followed by supervised human play. The browser never
+builds. Visual browser inspection and a real Heimdall KLTST Discord admission
+now pass. The next gate is separate-account two-player and eight-player
+Session Zero/shared-scene pressure, followed by supervised human play. The browser never
 receives the Heimdall access token; it adopts a server-verified login attempt
 into an HttpOnly Ghostlight session. Treat player confusion, dramatic flatness, composite consequences,
 and token-heavy low-consequence stages as evidence about missing context or
@@ -106,8 +107,9 @@ population-owned resource moved to one exact colocated recipient only after a
 separate Flash verdict accepted the causal match; the source campaign snapshot
 remained unchanged during resolution. The witness also removed one avoidable
 provider retry by making the `resource_recipient_ids` input to
-`other_subject_id` output mapping explicit. The remaining release gate is the
-authenticated browser journey after rebuilding and deploying this exact commit.
+`other_subject_id` output mapping explicit. The remaining rollout gate is
+multi-account co-op pressure; one browser cannot prove cross-account privacy
+or unanimity.
 
 The live scheduler audit also removed an empty-agency failure loop. A campaign
 with clocks but no simulatable NPC, institution, or population now advances

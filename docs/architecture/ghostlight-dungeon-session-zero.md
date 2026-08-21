@@ -55,6 +55,17 @@ are absent from JSON Schemas, browser projections, CultMesh surfaces, and model
 contexts. Actor-specific campaign surfaces use random campaign member IDs and
 the exact assigned actor.
 
+The structured Projector and Interpreter receive their exact stable JSON
+Schema before any dynamic context. DeepSeek's JSON mode constrains syntax but
+does not communicate the application schema by itself. The Interpreter emits
+only new deltas from the current DM response; it cannot restate existing draft
+fields or unresolved decisions as new proposals. Stable schema-first prefixes
+also preserve provider cache reuse. Empty, malformed, schema-invalid, or stale
+outputs cannot change the typed draft. If both same-snapshot attempts fail,
+the kernel may append a fixed local DM notice to the conversation while leaving
+contract, characters, decisions, boundaries, approvals, and model receipts
+unchanged.
+
 ## Approval and publication
 
 The host locks the roster before compilation. Material unresolved decisions

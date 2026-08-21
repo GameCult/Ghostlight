@@ -37,8 +37,8 @@ multiresolution agency graph for keeping large settings active at finite cost.
 
 ## Current Status
 
-Ghostlight Dungeon is implemented and deployed as a private Starfire-hosted
-playtest harness. The current acceptance surface covers:
+Ghostlight Dungeon is implemented and deployed as a Starfire-hosted,
+Heimdall-gated playtest harness. The current acceptance surface covers:
 
 - persistent DM-led Session Zero with shared/private channels, typed contracts,
   private boundaries, character bargains, digest-bound unanimous approval, and
@@ -61,10 +61,10 @@ playtest harness. The current acceptance surface covers:
 - provider, token, cache, latency, validation, state-version, and build receipts;
 - exact-build deployment and restart verification on Starfire.
 
-The immediate forge work is fixture, canary, and human pressure testing of
-Session Zero privacy/publication and bounded co-op alongside the existing
-multiresolution Gestalt agency tests. The public site is provisional; checkout
-is not live.
+The remaining forge gate is multi-account human pressure testing of Session
+Zero privacy/publication and bounded co-op alongside continued
+multiresolution Gestalt agency pressure. The public site is provisional;
+checkout is not live.
 
 ## Bounded Co-op
 

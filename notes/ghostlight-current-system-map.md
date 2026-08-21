@@ -209,15 +209,26 @@ and operator inspection; the browser cannot reveal them before discovery.
 ## Current acceptance body
 
 Starfire currently serves immutable release
-`b76bb5a8936624513fd0cd5e46d4d9ab11c3a517`, executable SHA-256
-`41928dbe73bb3e4a75e3a468d8a2c7ce725254621d17faa8a565ea526b2a3296`,
-with rollback `12a704a508f2be1f4eee96acd46fe0dd9369b81c`.
+`2b059da2edfec5f8db216ecd92df94687103f1cc`, executable SHA-256
+`e78a6c3b9520630e3342f93d48ebf9ebdf9497c5556d41859526b71839ab97b2`,
+with rollback `531d4d44bb749201b668ea06a27eef2ee7cdda12`.
 
 Local CultMesh publication and HTTP readiness do not wait for Odin. Remote
-replication is coalesced into one asynchronous RUDP batch. On 2026-08-18 the
-canonical Yggdrasil endpoint `10.77.0.1:17871` had no listener; the live daemon
-became healthy in 2.803 seconds and then emitted one acknowledged-failure
-warning for its 19-document batch without losing local state or liveness.
+replication is coalesced into one asynchronous RUDP batch. On 2026-08-21 the
+WireGuard route to `10.77.0.1` was healthy, but port `17871` was Idunn's
+loopback-only provider-query socket rather than a network Odin RUDP listener.
+Ghostlight therefore retains its canonical local CultMesh/Eve projection and
+emits one bounded publication warning without losing local state or liveness.
+
+The deployed Session Zero canary survived two exact-build restarts with its
+private store intact. Heimdall completed a real KLTST Discord round trip and
+adopted one HttpOnly Ghostlight session. Aetheria retrieval produced three
+grounded opening decisions. Live DM inference initially exposed that JSON mode
+had not been given the Interpreter's application schema; the repaired release
+places exact stable schemas before dynamic context, emits only new deltas, and
+produced a coherent Mars/Zhestokost follow-up without borrowing First Exodus
+state. A forced malformed-output path displayed a local retry notice while the
+typed contract remained unchanged.
 
 Authenticated acceptance against the exact release has proved generated
 opening/role/approval compilation, a nonliteral canonical player actor ID,

@@ -62,10 +62,9 @@ live aggregate policy immediately; relaxation waits for unanimous publication.
 Narration, assessment, resolution demand, cell projection/interpretation, and
 semantic verification now receive the approved contract and aggregate policy.
 
-Do not confuse checkout truth with deployment truth. The immutable release
-listed below remains live until this change passes full tests, is committed,
-pushed, built, and activated through Idunn. Deployment evidence belongs in
-`gamecult-ops` and the state map, not in optimistic prose.
+Deployment truth is the immutable release named below. Operational ownership
+and rollback commands remain in `gamecult-ops`; this handoff records only the
+application witness needed for re-entry.
 
 The hosted MVP is implemented and live on Starfire. Ghostlight owns the
 generalized projection membrane; Epiphany consumes its pinned crate while
@@ -83,13 +82,23 @@ foundation checklist below. Existing Ghostlight fixtures remain regression
 evidence.
 
 The active immutable release is
-`b76bb5a8936624513fd0cd5e46d4d9ab11c3a517`, binary SHA-256
-`41928dbe73bb3e4a75e3a468d8a2c7ce725254621d17faa8a565ea526b2a3296`.
+`2b059da2edfec5f8db216ecd92df94687103f1cc`, binary SHA-256
+`e78a6c3b9520630e3342f93d48ebf9ebdf9497c5556d41859526b71839ab97b2`.
 Manifest, process, typed health, persisted campaign count, CultMesh store,
 DeepSeek startup inference, and VoidBot retrieval agree. Periwinkle proved the
 private-LAN route and unauthenticated 401; Raven and Yggdrasil independently
 proved WireGuard. Exact firewall and rollback truth remains owned by
 `gamecult-ops/runbooks/ghostlight-dungeon-starfire.md`.
+
+The full workspace passes 161 core and 15 daemon tests plus strict TypeScript
+and Vite release builds. The public crossing returns 200, unauthenticated state
+returns 401, and a real Heimdall/KLTST Discord flow reaches the authenticated
+Session Zero entry. One persistent canary generated three Vault-grounded
+opening decisions, survived release restarts, exposed malformed Interpreter
+JSON without draft mutation, displayed the fixed local failure notice, and
+then completed a schema-aware DM turn about a Mars/Zhestokost political
+campaign. Multi-account two-player and eight-player human smokes remain; do not
+claim those were performed by one authenticated browser.
 
 The accepted runtime lineage passes the authenticated generated-start and committed
 player journey: canonical nonliteral player identity, private assessment,
@@ -99,9 +108,10 @@ The strict nested refugee golden now passes without a retry: Mira retains an
 individual perspective inside a budget-one rival arena, migrates across two
 depth-two population lineages, survives three further background waves with
 her exact delta intact, and is automatically promoted as the same person when
-the player later returns. The remaining human-test gate is rendered browser
-inspection using a temporary invite, which requires explicit approval to send
-that credential through the in-app browser; rotate invitations afterward.
+the player later returns. The remaining human-test gate is separate
+authenticated people joining one draft and then one bounded shared-scene
+campaign. Session Zero invitation links are seven-day, single-use admission
+only; Heimdall still owns account identity.
 
 The multiresolution authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`. Canonical people and
