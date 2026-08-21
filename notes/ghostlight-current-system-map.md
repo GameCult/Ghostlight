@@ -231,6 +231,40 @@ of its deployment brake. VoidBot's canonical MCP service is local to the host
 at `127.0.0.1:17875/mcp`, so live retrieval no longer depends on a Starfire
 reverse tunnel.
 
+### Deployment, discovery, and adjacent capacity
+
+Idunn and Odin currently run from exact source
+`745e01093c59882ed098b7515ef8921d55fbed15`. Idunn is the only deployment and
+daemon-survival authority; Odin is the discovery/rendezvous authority. Their
+health or availability never grants either organ a campaign write path.
+Idunn's runtime health clock preserves milliseconds, so same-second signed
+health samples no longer oscillate into false "health vanished" transitions.
+
+Release admission is based on the newest executable- or build-affecting commit
+reachable from the admitted ref. Documentation, notes, state receipts, and
+root Markdown are not executable release selectors. The root actuator proves
+that the selected commit is an ancestor of the admitted ref before activation,
+then verifies the exact installed witness. Consequently documentation/state-only
+commit `91e70d4e40252bc6864851867e45d61096fdf011` does not displace live
+executable `10b638e45756e5210aaee1efb5dcf74dbebf83c0`.
+
+Epiphany is adjacent capacity, not part of Ghostlight's campaign authority and
+not required by the current DeepSeek-backed runtime. Epiphany source
+`ebc0ffe4f341154d1902f9afe86f0a87f150179c` passed its locked tests and was
+sealed as immutable package
+`sha256-bb76728653b8e2e872b4da47f917abe4233fd6d4ae1fd573c5971c7db3922a5c`
+with witness
+`4d8350fac61f90d32a2b8067731308ec3e3672a42804db29c680b0fc68ab9adc`.
+Idunn stopped the deployment before publication because the Bifrost operator
+runtime identity/substrate and resident Self Codex credentials were absent.
+Epiphany's deployment brake remains engaged, its units are inactive and
+disabled, no `deployment.env` or signed runtime health was published, and
+`/srv/epiphany/app/current` remains recovery release
+`267a0257a4938d80d34b7807c66aa5f550b50f2c`. The next Epiphany attempt must be
+one Idunn-owned transaction after those prerequisites exist; passive watcher
+tasks and cross-task exclusivity messages are not an operational control
+plane.
+
 The deployed Session Zero canary survived two exact-build restarts with its
 private store intact. Heimdall completed a real KLTST Discord round trip and
 adopted one HttpOnly Ghostlight session. Aetheria retrieval produced three

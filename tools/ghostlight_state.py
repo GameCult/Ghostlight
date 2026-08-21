@@ -6,7 +6,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from ghostlight_state_store import append_evidence, load_branches, save_branches
+from ghostlight_state_store import (
+    append_evidence,
+    load_branches,
+    migrate_legacy_evidence,
+    save_branches,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -107,6 +112,12 @@ def cmd_add_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_migrate_evidence(_: argparse.Namespace) -> int:
+    imported = migrate_legacy_evidence()
+    print(f"Imported {imported} legacy evidence record(s) into CultCache.")
+    return 0
+
+
 def cmd_add_branch(args: argparse.Namespace) -> int:
     data = load_branches()
     branches = data.setdefault("branches", [])
@@ -157,6 +168,12 @@ def build_parser() -> argparse.ArgumentParser:
     evidence_parser.add_argument("--note", required=True)
     evidence_parser.add_argument("--branch")
     evidence_parser.set_defaults(func=cmd_add_evidence)
+
+    migrate_evidence_parser = subparsers.add_parser(
+        "migrate-evidence",
+        help="Import legacy JSONL evidence missing from the CultCache authority.",
+    )
+    migrate_evidence_parser.set_defaults(func=cmd_migrate_evidence)
 
     add_branch_parser = subparsers.add_parser(
         "add-branch", help="Create a new active branch entry."

@@ -51,6 +51,17 @@ become a coarse goal. Rejected candidates become coverage gaps, and deterministi
 remote profiles keep unknown facets unknown. The Pro
 agency stage no longer spends output tokens restating remote profiles.
 
+The current control plane runs Idunn and Odin from exact source
+`745e01093c59882ed098b7515ef8921d55fbed15`. Idunn's release selector admits
+the newest executable/build-affecting commit reachable from a configured ref,
+so later documentation and state-only commits do not churn the deployed body.
+Epiphany source `ebc0ffe4f341154d1902f9afe86f0a87f150179c` is tested and sealed,
+but is not deployed: Idunn correctly stopped before publication because the
+Bifrost operator substrate and resident Self credentials are missing.
+Ghostlight does not wait on that adjacent capacity. The immediate product gate
+remains the separate-account two-player Session Zero/shared-scene canary,
+followed by the eight-account privacy and unanimity smoke.
+
 Strategic activity outcomes now have their own authority between attempt
 selection and commit. One batched Flash resolver receives only selected
 digest-bound attempts plus exact legal consequence handles. It emits one

@@ -100,6 +100,26 @@ def append_evidence(record: dict[str, Any]) -> None:
     _export_evidence(cache)
 
 
+def migrate_legacy_evidence() -> int:
+    """Import legacy JSONL records that predate the CultCache authority cut."""
+    cache = open_state_cache()
+    existing = cache.get_all(EVIDENCE_DOC)
+    existing_payloads = {
+        json.dumps(record, ensure_ascii=True, sort_keys=True) for record in existing
+    }
+    imported = 0
+    for record in _read_jsonl(EVIDENCE_PATH):
+        payload = json.dumps(record, ensure_ascii=True, sort_keys=True)
+        if payload in existing_payloads:
+            continue
+        key = _evidence_key(record, len(existing) + imported)
+        cache.put(EVIDENCE_DOC, key, record)
+        existing_payloads.add(payload)
+        imported += 1
+    _export_evidence(cache)
+    return imported
+
+
 def _bootstrap_if_needed(cache: CultCache) -> None:
     changed = False
     if cache.get_global(BRANCHES_DOC) is None and BRANCHES_PATH.exists():
