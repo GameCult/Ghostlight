@@ -1209,6 +1209,7 @@ impl SessionZeroDirector {
             "session-zero:{}:revision:{}:channel:{}",
             state.id, state.revision, channel_id
         );
+        let projector_schema = serde_json::to_value(schema_for!(ProjectedLivedStream))?;
         let projector = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -1216,10 +1217,11 @@ impl SessionZeroDirector {
                 model: self.projector_model.clone(),
                 snapshot_binding: binding.clone(),
                 lived_stream: format!(
-                    "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, and authorship. Never invent state. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\nReturn JSON only.\n\nPERMITTED CONTEXT:\n{}",
+                    "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, and authorship. Never invent state. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\nReturn one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}",
+                    serde_json::to_string(&projector_schema)?,
                     serde_json::to_string(&permitted)?
                 ),
-                output_schema: Some(serde_json::to_value(schema_for!(ProjectedLivedStream))?),
+                output_schema: Some(projector_schema),
                 source_receipt_ids: vec![],
                 temperature: Some(0.0),
                 max_output_tokens: Some(1800),
@@ -1249,6 +1251,7 @@ impl SessionZeroDirector {
             },
         )
         .await?;
+        let interpreter_schema = serde_json::to_value(schema_for!(SessionZeroDelta))?;
         let interpreter = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -1256,13 +1259,14 @@ impl SessionZeroDirector {
                 model: self.interpreter_model.clone(),
                 snapshot_binding: binding,
                 lived_stream: format!(
-                    "Extract a typed proposal from the DM response against the permitted context. Copy DM speech faithfully into dm_speech. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Return JSON only.\n\nPERMITTED CONTEXT:\n{}\n\nDM RESPONSE:\n{}",
+                    "Extract only NEW typed changes proposed by the DM response. Never copy current contract fields or existing unresolved decisions into the delta. Copy DM speech faithfully into dm_speech. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
+                    serde_json::to_string(&interpreter_schema)?,
                     serde_json::to_string(&permitted)?, persona.narrative
                 ),
-                output_schema: Some(serde_json::to_value(schema_for!(SessionZeroDelta))?),
+                output_schema: Some(interpreter_schema),
                 source_receipt_ids: vec![],
                 temperature: Some(0.0),
-                max_output_tokens: Some(1800),
+                max_output_tokens: Some(2600),
             },
         )
         .await?;
@@ -2510,7 +2514,51 @@ fn validate_bounded(label: &str, value: &str, min: usize, max: usize) -> Result<
 #[cfg(test)]
 mod tests {
     use super::*;
+    use async_trait::async_trait;
     use tempfile::tempdir;
+
+    struct SchemaAwareDirectorModel;
+
+    #[async_trait]
+    impl ModelPort for SchemaAwareDirectorModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "session_zero_projector" => {
+                    let schema = request
+                        .lived_stream
+                        .find("OUTPUT JSON SCHEMA:")
+                        .expect("projector must receive its exact output contract");
+                    let dynamic = request
+                        .lived_stream
+                        .find("DYNAMIC PERMITTED CONTEXT:")
+                        .expect("projector must receive permitted state");
+                    assert!(schema < dynamic);
+                    Ok(r#"{"lived_stream":"The player wants a serious political campaign on Mars, but tone, character, and stakes remain open."}"#.into())
+                }
+                "session_zero_dm_persona" => Ok(
+                    "Mars under Zhestokost pressure gives us a strong frame. Which kind of pressure should dominate, and who are you inside it?"
+                        .into(),
+                ),
+                "session_zero_interpreter" => {
+                    let schema = request
+                        .lived_stream
+                        .find("OUTPUT JSON SCHEMA:")
+                        .expect("interpreter must receive its exact output contract");
+                    let dynamic = request
+                        .lived_stream
+                        .find("DYNAMIC PERMITTED CONTEXT:")
+                        .expect("interpreter must receive permitted state");
+                    assert!(schema < dynamic);
+                    Ok(r#"{"contract_patch":{"starting_where":"Mars in Zhestokost space","tone":["serious","political"]},"character_patch":null,"decisions":[],"dm_speech":"Mars under Zhestokost pressure gives us a strong frame. Which kind of pressure should dominate, and who are you inside it?","suggested_replies":[]}"#.into())
+                }
+                stage => panic!("unexpected Session Zero model stage {stage}"),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
 
     fn state() -> SessionZeroState {
         SessionZeroState::new(
@@ -2520,6 +2568,26 @@ mod tests {
             "Host".into(),
         )
         .unwrap()
+    }
+
+    #[tokio::test]
+    async fn director_receives_stable_output_contracts_before_dynamic_context() {
+        let director = SessionZeroDirector::new(
+            Arc::new(SchemaAwareDirectorModel),
+            "projector",
+            "persona",
+            "interpreter",
+        );
+        let (delta, receipts) = director
+            .respond(&state(), "shared:table", None)
+            .await
+            .unwrap();
+        assert_eq!(
+            delta.contract_patch.starting_where.as_deref(),
+            Some("Mars in Zhestokost space")
+        );
+        assert_eq!(delta.contract_patch.tone.unwrap(), ["serious", "political"]);
+        assert_eq!(receipts.len(), 3);
     }
 
     #[tokio::test]
