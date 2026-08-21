@@ -2764,6 +2764,66 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn local_dm_failure_notice_changes_only_the_conversation() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let initial = state();
+        let state_id = initial.id;
+        let channel_id = "shared:table".to_string();
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, state_id);
+        let posted = kernel
+            .command(SessionZeroCommand::PostPlayerMessage {
+                actor_account_hash: "account:host".into(),
+                expected_revision: initial.revision,
+                channel_id: channel_id.clone(),
+                text: "Please try this turn.".into(),
+            })
+            .await
+            .unwrap();
+        let before = posted.state.clone();
+
+        let noticed = kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: before.shared_epoch,
+                expected_channel_revision: before.channels[&channel_id].revision,
+                channel_id: channel_id.clone(),
+                member_id: None,
+                delta: SessionZeroDelta {
+                    dm_speech: "I couldn't finish that response. No draft state changed.".into(),
+                    ..Default::default()
+                },
+                model_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(noticed.state.contract, before.contract);
+        assert_eq!(noticed.state.character_drafts, before.character_drafts);
+        assert_eq!(noticed.state.decisions, before.decisions);
+        assert_eq!(noticed.state.boundaries, before.boundaries);
+        assert_eq!(noticed.state.shared_epoch, before.shared_epoch);
+        assert_eq!(noticed.state.character_epochs, before.character_epochs);
+        assert_eq!(
+            noticed.state.preview_model_receipts,
+            before.preview_model_receipts
+        );
+        assert_eq!(noticed.state.revision, before.revision + 1);
+        assert_eq!(
+            noticed.state.channels[&channel_id].revision,
+            before.channels[&channel_id].revision + 1
+        );
+        let last_message_id = noticed.state.channels[&channel_id]
+            .message_ids
+            .last()
+            .unwrap();
+        assert_eq!(
+            noticed.state.messages[last_message_id].speaker,
+            SessionZeroSpeakerKind::Dm
+        );
+    }
+
+    #[tokio::test]
     async fn material_character_bargain_is_inert_until_its_owner_accepts() {
         let dir = tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();

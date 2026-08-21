@@ -1146,7 +1146,26 @@ async fn post_session_zero_message(
                     }
                 }
                 Err(error) => {
-                    tracing::warn!(%error, "Session Zero DM inference failed without mutation")
+                    tracing::warn!(%error, "Session Zero DM inference failed without draft mutation");
+                    let failure = ghostlight_dungeon::session_zero::SessionZeroDelta {
+                        dm_speech: "I couldn't finish that response. Your message is safely recorded and no draft state changed; please retry or rephrase when you're ready.".into(),
+                        ..Default::default()
+                    };
+                    if let Err(stale) = kernel
+                        .command(SessionZeroCommand::ApplyDmTurn {
+                            expected_component_epoch: component_epoch,
+                            expected_channel_revision: channel.revision,
+                            channel_id,
+                            member_id: private_member,
+                            delta: failure,
+                            model_receipts: Vec::new(),
+                        })
+                        .await
+                    {
+                        tracing::info!(%stale, "stale Session Zero DM failure notice discarded");
+                    } else {
+                        schedule_mesh_refresh(&mesh_state);
+                    }
                 }
             }
         });
