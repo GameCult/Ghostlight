@@ -38,9 +38,10 @@ typed proposals only after every stage validates against the same component
 epoch. Interpreter failure therefore commits neither prose nor draft state.
 
 Material negotiation has one typed path. Accept applies the exact proposal
-stored in the decision. Counter clears every typed payload from that decision,
-records the player's counter in its shared or private durable channel, removes
-the Accept control, and leaves compilation blocked. The DM may replace it only
+stored in the decision. Counter preserves that proposal as an inert, visible
+audit and replacement basis, records the player's counter in its shared or
+private durable channel, removes the Accept control, and leaves compilation
+blocked. The DM may replace it only
 through a same-epoch `ApplyDmTurn` containing a fresh material decision; the
 replacement and retirement of the pending counter commit atomically. Stale,
 empty, malformed, or failed counter responses leave the counter pending and the
@@ -49,9 +50,12 @@ Retry is an inference launch against that persisted counter and exact unchanged
 snapshot. It owns no state transition; a replacement still commits only through
 `ApplyDmTurn` at the original component and channel epochs.
 For a counter replacement, the target decision ID enters the stage binding and
-permitted Projector/Interpreter context. Unrelated decisions are omitted from
-that inference turn, so the model receives the same exact task the kernel later
-validates.
+the Projector/Interpreter receive only the target, its retired typed payload,
+the exact counter, and aggregate safety policy. Conversation history, party,
+contract, and unrelated private state are omitted. Legacy counters created by
+the payload-erasing build receive one bounded current-state basis. The kernel
+accepts exactly one same-lane decision with stable permission identity and no
+direct patch, so unrelated output cannot retire the counter.
 
 An acceptance card is also a typed-state claim. New Interpreter decisions must
 carry a non-empty contract, character, or extraordinary-permission payload;

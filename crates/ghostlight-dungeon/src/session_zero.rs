@@ -1359,7 +1359,7 @@ impl SessionZeroDirector {
                 model: self.interpreter_model.clone(),
                 snapshot_binding: binding,
                 lived_stream: format!(
-                    "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. If turn_focus is present, emit exactly one fresh decision for that counter with the required owner and materiality; do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
+                    "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation during ordinary conversation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. If turn_focus is present, it is the one exception: use countered_decision as the exact basis, preserve its unchanged typed fields, apply the pending counter, and emit exactly one fresh decision with the required owner and materiality. Do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
                     serde_json::to_string(&interpreter_schema)?,
                     serde_json::to_string(&interpreter_context)?,
                     serde_json::to_string(&persona.narrative)?
@@ -1453,6 +1453,37 @@ fn permitted_dm_context(
         .channels
         .get(channel_id)
         .ok_or_else(|| anyhow!("channel does not exist"))?;
+    if let Some(decision_id) = supersedes_countered_decision_id {
+        let turn_focus = counter_replacement_focus(state, member_id, Some(decision_id))?
+            .expect("a supplied countered decision produces a turn focus");
+        let countered_decision = state
+            .decisions
+            .get(decision_id)
+            .expect("the counter focus validated the decision");
+        let mut value = serde_json::json!({
+            "session_id": state.id,
+            "revision": state.revision,
+            "channel_kind": channel.kind,
+            "member_id": member_id,
+            "aggregate_boundaries": state.aggregate_boundaries,
+            "turn_focus": turn_focus,
+            "countered_decision": countered_decision,
+        });
+        if !decision_has_typed_payload(countered_decision) {
+            if channel.kind == SessionZeroChannelKind::PrivateDm {
+                let member_id = member_id.ok_or_else(|| anyhow!("private member is missing"))?;
+                value["legacy_replacement_basis"] = serde_json::to_value(
+                    state
+                        .character_drafts
+                        .get(member_id)
+                        .ok_or_else(|| anyhow!("private character draft is missing"))?,
+                )?;
+            } else {
+                value["legacy_replacement_basis"] = serde_json::to_value(&state.contract)?;
+            }
+        }
+        return Ok(value);
+    }
     let recent_messages = channel
         .message_ids
         .iter()
@@ -1474,9 +1505,7 @@ fn permitted_dm_context(
         .filter(|member| member.active)
         .map(|member| public_character_projection(&state.character_drafts[&member.id]))
         .collect::<Vec<_>>();
-    let turn_focus = counter_replacement_focus(state, member_id, supersedes_countered_decision_id)?;
-    let visible_decisions =
-        visible_decisions_for_turn(state, member_id, supersedes_countered_decision_id)?;
+    let visible_decisions = visible_decisions_for_turn(state, member_id, None)?;
     let mut value = serde_json::json!({
         "session_id": state.id,
         "revision": state.revision,
@@ -1487,7 +1516,7 @@ fn permitted_dm_context(
         "aggregate_boundaries": state.aggregate_boundaries,
         "public_party": public_party,
         "unresolved_decisions": visible_decisions,
-        "turn_focus": turn_focus,
+        "turn_focus": null,
         "recent_messages": recent_messages,
         "evidence_coverage": state.preview_evidence_coverage,
     });
@@ -1535,15 +1564,41 @@ fn permitted_interpreter_context(
         .channels
         .get(channel_id)
         .ok_or_else(|| anyhow!("channel does not exist"))?;
-    let turn_focus = counter_replacement_focus(state, member_id, supersedes_countered_decision_id)?;
-    let visible_decisions =
-        visible_decisions_for_turn(state, member_id, supersedes_countered_decision_id)?;
+    if let Some(decision_id) = supersedes_countered_decision_id {
+        let turn_focus = counter_replacement_focus(state, member_id, Some(decision_id))?
+            .expect("a supplied countered decision produces a turn focus");
+        let countered_decision = state
+            .decisions
+            .get(decision_id)
+            .expect("the counter focus validated the decision");
+        let mut value = serde_json::json!({
+            "channel_kind": channel.kind,
+            "member_id": member_id,
+            "turn_focus": turn_focus,
+            "countered_decision": countered_decision,
+        });
+        if !decision_has_typed_payload(countered_decision) {
+            if channel.kind == SessionZeroChannelKind::PrivateDm {
+                let member_id = member_id.ok_or_else(|| anyhow!("private member is missing"))?;
+                value["legacy_replacement_basis"] = serde_json::to_value(
+                    state
+                        .character_drafts
+                        .get(member_id)
+                        .ok_or_else(|| anyhow!("private character draft is missing"))?,
+                )?;
+            } else {
+                value["legacy_replacement_basis"] = serde_json::to_value(&state.contract)?;
+            }
+        }
+        return Ok(value);
+    }
+    let visible_decisions = visible_decisions_for_turn(state, member_id, None)?;
     let mut value = serde_json::json!({
         "channel_kind": channel.kind,
         "member_id": member_id,
         "current_contract": state.contract,
         "existing_visible_decisions": visible_decisions,
-        "turn_focus": turn_focus,
+        "turn_focus": null,
     });
     if channel.kind == SessionZeroChannelKind::PrivateDm {
         let member_id = member_id.ok_or_else(|| anyhow!("private member is missing"))?;
@@ -1962,7 +2017,7 @@ pub fn session_zero_surface(
             decision_children.push(serde_json::json!({
                 "id":format!("session-zero.decision.{}.typed-payload",decision.id),
                 "kind":"text",
-                "props":{"value":format!("Exact typed change:\n{payload_summary}")},
+                "props":{"value":format!("{}:\n{payload_summary}", if decision.pending_counter.is_some() { "Retired typed change" } else { "Exact typed change" })},
                 "children":[]
             }));
         }
@@ -2433,15 +2488,7 @@ fn execute(
                 if countered.owner_member_id.as_deref() != member_id.as_deref() {
                     return Err(anyhow!("countered decision channel owner mismatch"));
                 }
-                if !delta.decisions.iter().any(|replacement| {
-                    !replacement.resolved
-                        && replacement.owner_member_id.as_deref() == member_id.as_deref()
-                        && (!countered.material || replacement.material)
-                }) {
-                    return Err(anyhow!(
-                        "counter response must contain a fresh decision with the required materiality"
-                    ));
-                }
+                validate_counter_replacement(countered, member_id.as_deref(), &delta)?;
             }
             let contract_changed = delta.contract_patch != CampaignContractPatch::default();
             let decisions_changed = !delta.decisions.is_empty();
@@ -2677,9 +2724,6 @@ fn execute(
                     .get_mut(&decision_id)
                     .expect("decision was just validated");
                 decision.pending_counter = Some(proposed_resolution.clone());
-                decision.proposed_extraordinary_permission = None;
-                decision.proposed_contract_patch = None;
-                decision.proposed_character_patch = None;
                 decision.resolved = false;
                 append_message(
                     &mut state,
@@ -2970,6 +3014,55 @@ fn decision_has_typed_payload(decision: &SessionZeroDecision) -> bool {
             .proposed_character_patch
             .as_ref()
             .is_some_and(|patch| patch != &CharacterDraftPatch::default())
+}
+
+fn validate_counter_replacement(
+    countered: &SessionZeroDecision,
+    member_id: Option<&str>,
+    delta: &SessionZeroDelta,
+) -> Result<()> {
+    if delta.contract_patch != CampaignContractPatch::default()
+        || delta.character_patch.is_some()
+        || delta.decisions.len() != 1
+    {
+        return Err(anyhow!(
+            "counter response must contain exactly one fresh decision and no direct state patch"
+        ));
+    }
+    let replacement = &delta.decisions[0];
+    if replacement.resolved
+        || replacement.owner_member_id.as_deref() != member_id
+        || replacement.material != countered.material
+    {
+        return Err(anyhow!(
+            "counter response must preserve the decision owner and materiality"
+        ));
+    }
+    if decision_has_typed_payload(countered) {
+        if decision_payload_lanes(replacement) != decision_payload_lanes(countered) {
+            return Err(anyhow!(
+                "counter response must replace the same typed state lane"
+            ));
+        }
+        if let (Some(previous), Some(next)) = (
+            countered.proposed_extraordinary_permission.as_ref(),
+            replacement.proposed_extraordinary_permission.as_ref(),
+        ) && (previous.id != next.id || previous.actor_id != next.actor_id)
+        {
+            return Err(anyhow!(
+                "counter response cannot change extraordinary permission identity or actor"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn decision_payload_lanes(decision: &SessionZeroDecision) -> [bool; 3] {
+    [
+        decision.proposed_extraordinary_permission.is_some(),
+        decision.proposed_contract_patch.is_some(),
+        decision.proposed_character_patch.is_some(),
+    ]
 }
 
 fn contract_patch_changes_shared(patch: &CampaignContractPatch) -> bool {
@@ -3411,14 +3504,26 @@ mod tests {
                 material: true,
                 resolved: false,
             };
-        draft.decisions.insert(
+        let mut target = decision(
             target_id.clone(),
-            decision(
-                target_id.clone(),
-                "Replace the memory cost?",
-                Some("Ordinary contamination fades with rest.".into()),
-            ),
+            "Replace the memory cost?",
+            Some("Ordinary contamination fades with rest.".into()),
         );
+        target.proposed_extraordinary_permission = Some(ExtraordinaryPermission {
+            schema: "ghostlight.extraordinary_permission.v1".into(),
+            id: "permission:fork-memory".into(),
+            actor_id: draft.character_drafts[&host_id].actor_id.clone(),
+            name: "Fork-memory synchronization".into(),
+            reliable_scope: "One willing nearby mind".into(),
+            prerequisites: vec!["Fresh consent".into()],
+            costs: vec!["Borrowed memories do not fully leave".into()],
+            limits: vec!["No unwilling reading".into()],
+            exposure: vec!["Traceable synchronization signature".into()],
+            effect_ceiling: "Bounded memory and procedural-skill sharing".into(),
+            evidence_receipt_ids: vec![],
+            branch_local: false,
+        });
+        draft.decisions.insert(target_id.clone(), target);
         draft.decisions.insert(
             "decision:unrelated".into(),
             decision(
@@ -3445,17 +3550,45 @@ mod tests {
             assert!(encoded.contains("counter_replacement"));
             assert!(encoded.contains("exactly one fresh unresolved decision"));
             assert!(!encoded.contains("UNRELATED-DECISION-MARKER"));
+            assert!(
+                encoded.len() < 6_000,
+                "focused context was {} bytes",
+                encoded.len()
+            );
+            assert!(context.get("recent_messages").is_none());
+            assert!(context.get("recent_shared_messages").is_none());
+            assert!(context.get("private_character").is_none());
+            assert!(context.get("current_private_character").is_none());
+            assert_eq!(context["countered_decision"]["id"], target_id);
         }
-        assert_eq!(
-            projected["unresolved_decisions"].as_array().unwrap().len(),
-            1
-        );
-        assert_eq!(
-            extraction["existing_visible_decisions"]
-                .as_array()
-                .unwrap()
-                .len(),
-            1
+
+        let mut legacy = draft.clone();
+        let accepted_permission = legacy.decisions[&target_id]
+            .proposed_extraordinary_permission
+            .clone()
+            .unwrap();
+        legacy
+            .character_drafts
+            .get_mut(&host_id)
+            .unwrap()
+            .extraordinary_permissions
+            .push(accepted_permission);
+        legacy
+            .decisions
+            .get_mut(&target_id)
+            .unwrap()
+            .proposed_extraordinary_permission = None;
+        let legacy_context =
+            permitted_dm_context(&legacy, &private_channel, Some(&host_id), Some(&target_id))
+                .unwrap();
+        let legacy_encoded = serde_json::to_string(&legacy_context).unwrap();
+        assert!(legacy_encoded.contains("legacy_replacement_basis"));
+        assert!(legacy_encoded.contains("permission:fork-memory"));
+        assert!(!legacy_encoded.contains("UNRELATED-DECISION-MARKER"));
+        assert!(
+            legacy_encoded.len() < 8_000,
+            "legacy focused context was {} bytes",
+            legacy_encoded.len()
         );
     }
 
@@ -4100,7 +4233,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn counterproposal_retires_stale_payload_until_fresh_typed_decision_arrives() {
+    async fn counterproposal_preserves_inert_payload_until_fresh_typed_decision_arrives() {
         let dir = tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
         let mut initial = state();
@@ -4158,7 +4291,14 @@ mod tests {
             .unwrap();
         let pending = &countered.state.decisions[&original_decision_id];
         assert_eq!(pending.pending_counter.as_deref(), Some(counter_text));
-        assert!(pending.proposed_extraordinary_permission.is_none());
+        assert_eq!(
+            pending
+                .proposed_extraordinary_permission
+                .as_ref()
+                .unwrap()
+                .id,
+            "permission:fork-memory:original"
+        );
         assert!(pending.proposed_contract_patch.is_none());
         assert!(pending.proposed_character_patch.is_none());
         assert!(!pending.resolved);
@@ -4176,6 +4316,7 @@ mod tests {
             serde_json::to_string(&session_zero_surface(&countered.state, "account:host").unwrap())
                 .unwrap();
         assert!(pending_surface.contains("Counterproposal recorded"));
+        assert!(pending_surface.contains("Retired typed change"));
         assert!(!pending_surface.contains(&format!(
             "session-zero.decision.{original_decision_id}.accept"
         )));
@@ -4223,8 +4364,82 @@ mod tests {
         assert!(
             rejected_replacement
                 .to_string()
-                .contains("required materiality")
+                .contains("exactly one fresh decision")
         );
+        assert_eq!(
+            store
+                .load::<SessionZeroState>("session_zero.v1", &state_id.to_string())
+                .unwrap()
+                .unwrap()
+                .1,
+            before_rejected_accept
+        );
+
+        let wrong_lane = kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: countered.state.character_epochs[&member_id],
+                expected_channel_revision: countered.state.channels[&private_channel].revision,
+                channel_id: private_channel.clone(),
+                member_id: Some(member_id.clone()),
+                supersedes_countered_decision_id: Some(original_decision_id.clone()),
+                delta: SessionZeroDelta {
+                    decisions: vec![SessionZeroDecision {
+                        schema: "ghostlight.session_zero_decision.v1".into(),
+                        id: "decision:wrong-lane".into(),
+                        owner_member_id: Some(member_id.clone()),
+                        prompt: "Replace the ability with a goal?".into(),
+                        proposed_resolution: "This is not the countered state lane.".into(),
+                        proposed_extraordinary_permission: None,
+                        proposed_contract_patch: None,
+                        proposed_character_patch: Some(CharacterDraftPatch {
+                            goals_add: vec!["Wrong replacement lane".into()],
+                            ..Default::default()
+                        }),
+                        evidence_receipt_ids: vec![],
+                        pending_counter: None,
+                        material: true,
+                        resolved: false,
+                    }],
+                    ..Default::default()
+                },
+                model_receipts: vec![],
+            })
+            .await
+            .unwrap_err();
+        assert!(wrong_lane.to_string().contains("same typed state lane"));
+
+        let wrong_identity = kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: countered.state.character_epochs[&member_id],
+                expected_channel_revision: countered.state.channels[&private_channel].revision,
+                channel_id: private_channel.clone(),
+                member_id: Some(member_id.clone()),
+                supersedes_countered_decision_id: Some(original_decision_id.clone()),
+                delta: SessionZeroDelta {
+                    decisions: vec![SessionZeroDecision {
+                        schema: "ghostlight.session_zero_decision.v1".into(),
+                        id: "decision:wrong-permission-identity".into(),
+                        owner_member_id: Some(member_id.clone()),
+                        prompt: "Accept a different permission?".into(),
+                        proposed_resolution: counter_text.into(),
+                        proposed_extraordinary_permission: Some(permission(
+                            "permission:fork-memory:impostor",
+                            vec!["Intense synchronization can leave scars".into()],
+                        )),
+                        proposed_contract_patch: None,
+                        proposed_character_patch: None,
+                        evidence_receipt_ids: vec![],
+                        pending_counter: None,
+                        material: true,
+                        resolved: false,
+                    }],
+                    ..Default::default()
+                },
+                model_receipts: vec![],
+            })
+            .await
+            .unwrap_err();
+        assert!(wrong_identity.to_string().contains("permission identity"));
         assert_eq!(
             store
                 .load::<SessionZeroState>("session_zero.v1", &state_id.to_string())
@@ -4236,7 +4451,7 @@ mod tests {
 
         let replacement_decision_id = "decision:fork-memory:revised".to_string();
         let revised_permission = permission(
-            "permission:fork-memory:revised",
+            "permission:fork-memory:original",
             vec![
                 "Migraines and memory contamination".into(),
                 "Intense synchronization can leave permanent associative scars".into(),
