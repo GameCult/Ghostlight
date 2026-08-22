@@ -583,9 +583,13 @@ not stale suggestion materiality, owns that gate.
 Custom starts and characters use the same draft. The browser returns
 only decision commands and cannot echo a rewritten candidate into compilation.
 Candidate IDs, text, list sizes, and evidence references receive local
-validation. Suggestion retrieval and model receipts remain in the Session Zero
-store; publication compiles the unanimously approved brief, never the
-conversation transcript.
+validation. Suggestion retrieval and every committed model invocation remain
+in the Session Zero audit, including repeated calls with the same semantic
+receipt hash but different attempt telemetry. A separate active-preview receipt
+set is replaced by each successful compiler transaction and cleared when that
+preview is retired. Publication carries only that exact proof set; it never
+treats DM turns or superseded compiler runs as evidence for the approved seed,
+and it never compiles the conversation transcript.
 
 Gap-bearing compiler results are retained as exact non-canonical previews while
 Session Zero returns to drafting. The host can move that exact preview into
@@ -646,6 +650,11 @@ exact staging directory and cannot poison daemon reload. Approval previews are
 retained until campaign publication, session selection, and reload all succeed;
 a retry may recover only an already-published store whose exact seed equals the
 preview. It cannot adopt a colliding campaign ID with different state.
+Legacy Session Zero stores that used the preview receipt field as an append-only
+audit migrate on registry load. The complete list remains audit history and the
+final compiler transaction becomes the active proof set. This replacement is
+idempotent and does not advance Session Zero revision, epochs, or fictional
+time.
 The browser composer preserves the assessment contract's distinction between
 the character's described act or speech and the effect the player wants it to
 cause. The receipt panel is the sole owner of the current assessment,

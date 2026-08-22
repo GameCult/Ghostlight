@@ -472,6 +472,9 @@ pub struct SessionZeroState {
     pub invites: BTreeMap<String, SessionZeroInvite>,
     pub dm_persona: CampaignDmPersona,
     pub preview: Option<WorldCompilePreview>,
+    #[serde(default)]
+    pub model_receipts: Vec<ModelStageReceipt>,
+    #[serde(default)]
     pub preview_model_receipts: Vec<ModelStageReceipt>,
     pub preview_evidence_coverage: Vec<EvidenceCoverage>,
     pub preview_shared_digest: Option<String>,
@@ -606,6 +609,7 @@ impl SessionZeroState {
                 private_member_memories: BTreeMap::new(),
             },
             preview: None,
+            model_receipts: vec![],
             preview_model_receipts: vec![],
             preview_evidence_coverage: vec![],
             preview_shared_digest: None,
@@ -749,6 +753,7 @@ impl SessionZeroState {
             invites: BTreeMap::new(),
             dm_persona,
             preview: None,
+            model_receipts: vec![],
             preview_model_receipts: vec![],
             preview_evidence_coverage: vec![],
             preview_shared_digest: None,
@@ -1145,7 +1150,9 @@ impl SessionZeroRegistry {
             let (row, mut state) = store
                 .load::<SessionZeroState>("session_zero.v1", &id.to_string())?
                 .ok_or_else(|| anyhow!("session zero state vanished during load"))?;
-            if demote_legacy_nonmaterial_decisions(&mut state) {
+            let changed = demote_legacy_nonmaterial_decisions(&mut state)
+                | migrate_legacy_model_receipts(&mut state);
+            if changed {
                 store.replace(&row, "ghostlight.session_zero.v1", &state)?;
             }
             found.insert(
@@ -3144,7 +3151,7 @@ fn execute(
                     delta.dm_speech,
                 )?;
             }
-            state.preview_model_receipts.extend(model_receipts);
+            state.model_receipts.extend(model_receipts);
         }
         SessionZeroCommand::SetBoundary {
             actor_account_hash,
@@ -3464,7 +3471,8 @@ fn execute(
                     .insert(member.id.clone(), state.character_digest(&member.id)?);
             }
             state.preview_evidence_coverage = preview.evidence_coverage.clone();
-            state.preview_model_receipts.extend(model_receipts);
+            state.preview_model_receipts.clone_from(&model_receipts);
+            state.model_receipts.extend(model_receipts);
             let has_gaps = !preview.gaps.is_empty();
             let gap_text = preview.gaps.join("\n- ");
             state.preview = Some(preview);
@@ -3707,6 +3715,30 @@ fn demote_legacy_nonmaterial_decisions(state: &mut SessionZeroState) -> bool {
     changed
 }
 
+fn migrate_legacy_model_receipts(state: &mut SessionZeroState) -> bool {
+    if !state.model_receipts.is_empty() || state.preview_model_receipts.is_empty() {
+        return false;
+    }
+    let legacy = std::mem::take(&mut state.preview_model_receipts);
+    if state.preview.is_some()
+        && state.review_campaign_id.is_none()
+        && let Some(current_start) = legacy
+            .iter()
+            .rposition(|receipt| receipt.stage == "custom_retrieval_plan")
+        && let Some(current_end) = legacy
+            .iter()
+            .enumerate()
+            .skip(current_start)
+            .filter(|(_, receipt)| receipt.stage == "agency_compile")
+            .map(|(index, _)| index)
+            .next_back()
+    {
+        state.preview_model_receipts = legacy[current_start..=current_end].to_vec();
+    }
+    state.model_receipts = legacy;
+    true
+}
+
 fn validate_counter_replacement(
     countered: &SessionZeroDecision,
     member_id: Option<&str>,
@@ -3891,6 +3923,7 @@ fn character_changed(state: &mut SessionZeroState, member_id: &str) {
 
 fn retire_preview(state: &mut SessionZeroState) {
     state.preview = None;
+    state.preview_model_receipts.clear();
     state.preview_shared_digest = None;
     state.preview_character_digests.clear();
     if state.roster_locked {
@@ -4190,6 +4223,117 @@ mod tests {
         character.goals = vec!["Get the convoy through".into()];
         character.obligations = vec!["A life-debt to the quartermaster".into()];
         draft
+    }
+
+    fn model_receipt(stage: &str, receipt_hash: &str, latency_ms: u64) -> ModelStageReceipt {
+        ModelStageReceipt {
+            schema: "ghostlight.persona_stage_receipt.v1".into(),
+            receipt_hash: receipt_hash.into(),
+            provider: "fixture".into(),
+            model: "fixture-model".into(),
+            stage: stage.into(),
+            snapshot_binding: "fixture-snapshot".into(),
+            request_hash: format!("request:{stage}"),
+            output_hash: format!("output:{stage}"),
+            source_receipt_ids: vec![],
+            latency_ms,
+            validation_result: "valid".into(),
+            local_validation_error: None,
+            input_chars: 100,
+            output_chars: 20,
+            provider_attempts: vec![],
+        }
+    }
+
+    #[tokio::test]
+    async fn session_zero_keeps_inference_history_separate_from_active_preview_proof() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let mut initial = compilable_state();
+        initial.roster_locked = true;
+        initial.status = SessionZeroStatus::Compiling;
+        let repeated_a = model_receipt("session_zero_dm_persona", "receipt:repeated", 10);
+        let repeated_b = model_receipt("session_zero_dm_persona", "receipt:repeated", 20);
+        initial.model_receipts = vec![repeated_a.clone(), repeated_b.clone()];
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, initial.id);
+        let current = model_receipt("custom_retrieval_plan", "receipt:current", 30);
+        let installed = kernel
+            .command(SessionZeroCommand::InstallPreview {
+                expected_revision: initial.revision,
+                preview: WorldCompilePreview {
+                    schema: "ghostlight.world_compile_preview.v1".into(),
+                    title: "Current preview".into(),
+                    campaign: crate::resolution::tests::campaign(2, 1),
+                    evidence_receipts: vec![],
+                    evidence_coverage: vec![],
+                    gaps: vec![],
+                    branch_assumptions: vec![],
+                    requires_approval: true,
+                },
+                model_receipts: vec![current.clone()],
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(
+            installed.state.model_receipts,
+            [repeated_a, repeated_b, current.clone()]
+        );
+        assert_eq!(installed.state.preview_model_receipts, [current]);
+
+        let compiling = kernel
+            .command(SessionZeroCommand::BeginCompilation {
+                actor_account_hash: "account:host".into(),
+                expected_revision: installed.state.revision,
+            })
+            .await
+            .unwrap();
+        assert!(compiling.state.preview_model_receipts.is_empty());
+        assert_eq!(compiling.state.model_receipts.len(), 3);
+    }
+
+    #[test]
+    fn legacy_receipt_layout_migrates_without_changing_session_revision() {
+        let mut draft = compilable_state();
+        draft.status = SessionZeroStatus::Review;
+        draft.preview = Some(WorldCompilePreview {
+            schema: "ghostlight.world_compile_preview.v1".into(),
+            title: "Current preview".into(),
+            campaign: crate::resolution::tests::campaign(2, 1),
+            evidence_receipts: vec![],
+            evidence_coverage: vec![],
+            gaps: vec![],
+            branch_assumptions: vec![],
+            requires_approval: true,
+        });
+        let old = model_receipt("custom_retrieval_plan", "receipt:old-plan", 10);
+        let old_world = model_receipt("world_compile", "receipt:old-world", 20);
+        let current = model_receipt("custom_retrieval_plan", "receipt:current-plan", 30);
+        let current_world = model_receipt("world_compile", "receipt:current-world", 40);
+        let current_agency = model_receipt("agency_compile", "receipt:current-agency", 50);
+        let trailing_dm = model_receipt("session_zero_dm_persona", "receipt:later-dm", 60);
+        let legacy = vec![
+            old,
+            old_world,
+            current.clone(),
+            current_world.clone(),
+            current_agency.clone(),
+            trailing_dm,
+        ];
+        draft.preview_model_receipts.clone_from(&legacy);
+        let revision = draft.revision;
+        let status = draft.status.clone();
+
+        assert!(migrate_legacy_model_receipts(&mut draft));
+        assert_eq!(draft.model_receipts, legacy);
+        assert_eq!(
+            draft.preview_model_receipts,
+            [current, current_world, current_agency]
+        );
+        assert_eq!(draft.revision, revision);
+        assert_eq!(draft.status, status);
+        assert!(!migrate_legacy_model_receipts(&mut draft));
     }
 
     #[tokio::test]
@@ -4788,6 +4932,70 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn registry_load_persists_legacy_receipt_ownership_migration() {
+        let root = tempdir().unwrap();
+        let mut draft = compilable_state();
+        let id = draft.id;
+        let revision = draft.revision;
+        draft.status = SessionZeroStatus::Review;
+        draft.preview = Some(WorldCompilePreview {
+            schema: "ghostlight.world_compile_preview.v1".into(),
+            title: "Current preview".into(),
+            campaign: crate::resolution::tests::campaign(2, 1),
+            evidence_receipts: vec![],
+            evidence_coverage: vec![],
+            gaps: vec![],
+            branch_assumptions: vec![],
+            requires_approval: true,
+        });
+        let old = model_receipt("world_compile", "receipt:old-world", 10);
+        let current_plan = model_receipt("custom_retrieval_plan", "receipt:current-plan", 20);
+        let current_world = model_receipt("world_compile", "receipt:current-world", 30);
+        let current_agency = model_receipt("agency_compile", "receipt:current-agency", 40);
+        draft.preview_model_receipts = vec![
+            old.clone(),
+            current_plan.clone(),
+            current_world.clone(),
+            current_agency.clone(),
+        ];
+        let directory = root.path().join(id.to_string());
+        fs::create_dir(&directory).unwrap();
+        let store = CampaignStore::open(directory.join("session-zero.cc")).unwrap();
+        SessionZeroKernel::initialize(&store, &draft).unwrap();
+        drop(store);
+
+        let registry = SessionZeroRegistry::new(root.path()).unwrap();
+        registry.load_existing().await.unwrap();
+        let loaded = registry.snapshot(id).await.unwrap();
+        assert_eq!(loaded.revision, revision);
+        assert_eq!(
+            loaded.model_receipts,
+            [
+                old,
+                current_plan.clone(),
+                current_world.clone(),
+                current_agency.clone()
+            ]
+        );
+        assert_eq!(
+            loaded.preview_model_receipts,
+            [current_plan, current_world, current_agency]
+        );
+
+        let runtime = registry.runtime(id).await.unwrap();
+        let (_, persisted) = runtime
+            .store
+            .load::<SessionZeroState>("session_zero.v1", &id.to_string())
+            .unwrap()
+            .unwrap();
+        assert_eq!(persisted.model_receipts, loaded.model_receipts);
+        assert_eq!(
+            persisted.preview_model_receipts,
+            loaded.preview_model_receipts
+        );
+    }
+
+    #[tokio::test]
     async fn actor_filtered_surface_never_projects_other_private_state_or_account_hashes() {
         let dir = tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
@@ -4967,9 +5175,14 @@ mod tests {
         let mut initial = compilable_state();
         initial.roster_locked = true;
         initial.status = SessionZeroStatus::Compiling;
+        initial.model_receipts = vec![
+            model_receipt("global_agency_doctrine_synthesis", "receipt:repeated", 10),
+            model_receipt("global_agency_doctrine_synthesis", "receipt:repeated", 20),
+        ];
         SessionZeroKernel::initialize(&store, &initial).unwrap();
         let kernel = SessionZeroKernel::start(store, initial.id);
         let gap = "The requested clinic district is branch-local.".to_owned();
+        let current_receipt = model_receipt("custom_retrieval_plan", "receipt:current-preview", 30);
         let preview = WorldCompilePreview {
             schema: "ghostlight.world_compile_preview.v1".into(),
             title: "Hellas clinic pressure".into(),
@@ -4984,7 +5197,7 @@ mod tests {
             .command(SessionZeroCommand::InstallPreview {
                 expected_revision: initial.revision,
                 preview,
-                model_receipts: vec![],
+                model_receipts: vec![current_receipt.clone()],
             })
             .await
             .unwrap();
@@ -5034,6 +5247,26 @@ mod tests {
         .unwrap();
         assert_eq!(publication.approved_world_preview_digest, exact_digest);
         assert_eq!(publication.approved_evidence_gaps, [gap]);
+        assert_eq!(approved.state.model_receipts.len(), 3);
+        assert_eq!(
+            approved.state.preview_model_receipts,
+            [current_receipt.clone()]
+        );
+        let published_store =
+            CampaignStore::open(dir.path().join("published-campaign.cc")).unwrap();
+        let published_campaign = approved.state.preview.as_ref().unwrap();
+        published_store
+            .create_session_zero_campaign(
+                &published_campaign.campaign,
+                &published_campaign.evidence_receipts,
+                &approved.state.preview_model_receipts,
+                &publication,
+            )
+            .unwrap();
+        assert_eq!(
+            published_store.keys("persona_stage_receipt.v1").unwrap(),
+            [current_receipt.storage_key()]
+        );
 
         let mut substituted = approved.state;
         substituted.preview.as_mut().unwrap().title = "A different world".into();
@@ -5291,6 +5524,7 @@ mod tests {
             .await
             .unwrap();
         let before = posted.state.clone();
+        let receipt = model_receipt("session_zero_dm_persona", "receipt:dm-notice", 10);
 
         let noticed = kernel
             .command(SessionZeroCommand::ApplyDmTurn {
@@ -5303,7 +5537,7 @@ mod tests {
                     dm_speech: "I couldn't finish that response. No draft state changed.".into(),
                     ..Default::default()
                 },
-                model_receipts: vec![],
+                model_receipts: vec![receipt.clone()],
             })
             .await
             .unwrap();
@@ -5314,6 +5548,7 @@ mod tests {
         assert_eq!(noticed.state.boundaries, before.boundaries);
         assert_eq!(noticed.state.shared_epoch, before.shared_epoch);
         assert_eq!(noticed.state.character_epochs, before.character_epochs);
+        assert_eq!(noticed.state.model_receipts, [receipt]);
         assert_eq!(
             noticed.state.preview_model_receipts,
             before.preview_model_receipts

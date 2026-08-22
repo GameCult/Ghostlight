@@ -31,6 +31,11 @@ persistent pins, approval-gated gestalt fission, graph and cover receipts, and
 a separate operator provider-concurrency limit. The
 specific authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`.
+Session Zero model custody is split by purpose: every committed invocation is
+retained in the audit for cost and failure analysis, while only the exact
+compiler transaction behind the current preview is eligible for campaign
+publication. Superseded previews and ordinary DM turns cannot contaminate the
+seed proof set.
 
 The current interface cut makes that Eve publication the browser's actual
 product boundary. `ghostlight.play` is one stable actor-filtered surface across

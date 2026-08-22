@@ -17,6 +17,15 @@ shared/private channels, messages, contract, private character drafts,
 boundaries, decisions, approvals, DM Persona, evidence coverage, compilation
 preview, and publication receipt.
 
+The store keeps two deliberately different model-receipt collections. The
+inference audit contains every committed invocation, including two calls whose
+semantic receipt hashes match but whose latency or provider-attempt telemetry
+differs. The active-preview proof set contains only the compiler transaction
+that produced the currently retained preview. Replacing or retiring a preview
+clears that proof set without erasing the audit. A campaign publication carries
+only the active proof set; historical DM turns and superseded compiler runs do
+not become evidence for a seed they did not produce.
+
 Player messages are durable conversation, not campaign facts. Projector, DM
 Persona, Interpreter, retrieval, and compilation stages return proposals. Only
 the kernel may change the draft.
@@ -174,6 +183,14 @@ Publication persists the approved preview digest and exact accepted gap and
 assumption lists beside the campaign seed. Substituting any preview makes every
 prior approval stale. Relevant edits retire the preview and invalidate the
 affected approvals. The host has no override.
+
+Pre-cut Session Zero stores used one receipt list for both meanings. Registry
+load migrates that list without advancing Session Zero revision or fictional
+time: all entries become audit history, while an extant world-seed preview
+receives the bounded final compiler transaction from its last
+`custom_retrieval_plan` through `agency_compile` as its exact proof set. Later
+conversation receipts and Contract Review previews are excluded. The migration
+is an atomic CultCache replacement and is idempotent on restart.
 
 Accepted extraordinary bargains become typed permissions. Later assessment
 receives their exact scope, prerequisites, costs, limits, exposure, evidence,

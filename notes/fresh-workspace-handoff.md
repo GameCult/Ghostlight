@@ -44,6 +44,8 @@ rewrite.
 
 - `SessionZeroKernel` is the sole owner of pre-publication drafts, members,
   channels, boundaries, decisions, approvals, and the final approved digest.
+  It separately owns the complete model-invocation audit and the exact active
+  preview proof set; campaign publication may consume only the latter.
 - Each campaign `WorldKernel` mailbox is the sole owner of canonical world state
   and revision. Player commands, NPC proposals, ticks, travel, waits, imports,
   reloads, and contract amendments share its validated atomic commit path.
