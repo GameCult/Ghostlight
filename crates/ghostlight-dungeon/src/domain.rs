@@ -104,7 +104,8 @@ pub struct ActorState {
 pub struct RelationshipState {
     pub schema: String,
     pub actor_id: String,
-    pub other_actor_id: String,
+    #[serde(alias = "other_actor_id")]
+    pub other_subject_id: String,
     pub description: String,
     pub source_revision: u64,
 }

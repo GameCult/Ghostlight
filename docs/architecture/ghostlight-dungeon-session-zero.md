@@ -145,6 +145,18 @@ The compiler receives an `approved_campaign_brief.v1`, not
 the transcript. Private character history and secrets are withheld from world
 generation; after the grounded seed validates, Ghostlight locally replaces the
 provisional compiler player with the exact approved actors at one shared start.
+Approved relationships cross that membrane by identity, not by free-form map
+key. A relationship naming another approved player resolves to that player's
+exact actor ID. An otherwise unresolved named person receives a stable,
+server-generated relationship-anchor actor ID; the compiler must materialize
+that exact actor and name in the seed, but it never receives the private
+relationship description and may not reveal the anchor in opening narration
+merely because the private ledger requires their existence. The owning player
+sees the compiled subject, placement, and relationship during private review.
+Their final approval therefore covers the compiler's placement without
+exposing it to the table. Actors may also hold directional relationships to an
+exact institution, Gestalt, or named Gestalt member. Such a relationship grants
+no knowledge, resource, membership, or collective authority.
 If compilation fails before a preview is installed, the roster remains locked
 and the typed brief remains authoritative. A host whose current brief still
 passes the readiness gate receives the Compile action again; retrying uses the

@@ -2078,6 +2078,74 @@ fn display_decision_payload(decision: &SessionZeroDecision) -> String {
     sections.join("\n")
 }
 
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct PrivateRelationshipSubjectProjection {
+    target_id: String,
+    subject_kind: String,
+    name: String,
+    location_id: Option<String>,
+    location_name: Option<String>,
+    relationship: String,
+}
+
+fn private_relationship_subjects(
+    preview: &WorldCompilePreview,
+    actor_id: &str,
+) -> Vec<PrivateRelationshipSubjectProjection> {
+    let campaign = &preview.campaign;
+    let Some(actor) = campaign.actors.get(actor_id) else {
+        return Vec::new();
+    };
+
+    actor
+        .relationships
+        .iter()
+        .map(|(target_id, description)| {
+            let (subject_kind, name, location_id) =
+                if let Some(target) = campaign.actors.get(target_id) {
+                    (
+                        "actor",
+                        target.name.as_str(),
+                        Some(target.location_id.as_str()),
+                    )
+                } else if let Some(target) = campaign.institutions.get(target_id) {
+                    ("institution", target.name.as_str(), None)
+                } else if let Some(target) = campaign.gestalts.get(target_id) {
+                    (
+                        "gestalt",
+                        target.name.as_str(),
+                        Some(target.home_location_id.as_str()),
+                    )
+                } else if let Some(member_id) = target_id.strip_prefix("member:") {
+                    if let Some(target) = campaign.gestalt_members.get(member_id) {
+                        let location_id = target.last_location_id.as_deref().or_else(|| {
+                            campaign
+                                .gestalts
+                                .get(&target.gestalt_id)
+                                .map(|gestalt| gestalt.home_location_id.as_str())
+                        });
+                        ("gestalt_member", target.name.as_str(), location_id)
+                    } else {
+                        ("unknown", target_id.as_str(), None)
+                    }
+                } else {
+                    ("unknown", target_id.as_str(), None)
+                };
+            let location_name = location_id
+                .and_then(|id| campaign.locations.get(id))
+                .map(|location| location.name.as_str());
+            PrivateRelationshipSubjectProjection {
+                target_id: target_id.clone(),
+                subject_kind: subject_kind.into(),
+                name: name.into(),
+                location_id: location_id.map(str::to_owned),
+                location_name: location_name.map(str::to_owned),
+                relationship: description.clone(),
+            }
+        })
+        .collect()
+}
+
 pub fn session_zero_surface(
     state: &SessionZeroState,
     account_hash: &str,
@@ -2135,6 +2203,12 @@ pub fn session_zero_surface(
                 || decision.owner_member_id.as_deref() == Some(member.id.as_str())
         })
         .collect::<Vec<_>>();
+    let character = &state.character_drafts[&member.id];
+    let relationship_subjects = state
+        .preview
+        .as_ref()
+        .map(|preview| private_relationship_subjects(preview, &character.actor_id))
+        .unwrap_or_default();
     let private_preview = state.preview.as_ref().map(|preview| {
         serde_json::json!({
             "title": preview.title,
@@ -2143,6 +2217,7 @@ pub fn session_zero_surface(
             "topology": preview.campaign.locations,
             "institutions": preview.campaign.institutions,
             "clocks": preview.campaign.clocks,
+            "relationship_subjects": relationship_subjects,
         })
     });
     let roster_summary = state
@@ -2172,7 +2247,6 @@ pub fn session_zero_surface(
         state.contract.desired_goal,
         state.contract.tone.join(", ")
     );
-    let character = &state.character_drafts[&member.id];
     let character_summary = display_character_ledger(character);
     let shared_channel_id = state
         .channels
@@ -2361,6 +2435,35 @@ pub fn session_zero_surface(
         ));
     }
     if state.status == SessionZeroStatus::Review {
+        if !relationship_subjects.is_empty() {
+            let relationship_summary = relationship_subjects
+                .iter()
+                .map(|subject| {
+                    let location = subject
+                        .location_name
+                        .as_deref()
+                        .or(subject.location_id.as_deref())
+                        .map(|value| format!(" · located at {value}"))
+                        .unwrap_or_default();
+                    format!(
+                        "{} · {}{}\n{}",
+                        subject.name, subject.subject_kind, location, subject.relationship
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n\n");
+            children.push(serde_json::json!({
+                "id":"session-zero.private-relationship-subjects",
+                "kind":"card",
+                "props":{"title":"Your private compiled relationships"},
+                "children":[{
+                    "id":"session-zero.private-relationship-subjects.text",
+                    "kind":"text",
+                    "props":{"value":relationship_summary},
+                    "children":[]
+                }]
+            }));
+        }
         children.push(command_control(
             "session-zero.approve",
             if state.approvals.contains_key(&member.id) {
@@ -4387,6 +4490,64 @@ mod tests {
         assert!(!encoded.contains("token_hash"));
         let member_schema = serde_json::to_string(&schema_for!(SessionZeroMember)).unwrap();
         assert!(!member_schema.contains("account_hash"));
+    }
+
+    #[test]
+    fn private_preview_projects_exact_relationship_subjects_for_player_approval() {
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        let mut quartermaster = campaign.actors["player"].clone();
+        quartermaster.id = "relationship-anchor:quartermaster".into();
+        quartermaster.name = "convoy quartermaster".into();
+        campaign
+            .actors
+            .insert(quartermaster.id.clone(), quartermaster);
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .relationships
+            .insert(
+                "relationship-anchor:quartermaster".into(),
+                "owes them a life-debt".into(),
+            );
+        let preview = WorldCompilePreview {
+            schema: "ghostlight.world_compile_preview.v1".into(),
+            title: "Private relationship witness".into(),
+            campaign,
+            evidence_receipts: vec![],
+            evidence_coverage: vec![],
+            gaps: vec![],
+            branch_assumptions: vec![],
+            requires_approval: true,
+        };
+
+        let subjects = private_relationship_subjects(&preview, "player");
+        assert_eq!(subjects.len(), 1);
+        assert_eq!(subjects[0].subject_kind, "actor");
+        assert_eq!(subjects[0].name, "convoy quartermaster");
+        assert_eq!(subjects[0].location_id.as_deref(), Some("center"));
+        assert_eq!(subjects[0].location_name.as_deref(), Some("Center"));
+        assert_eq!(subjects[0].relationship, "owes them a life-debt");
+        assert!(private_relationship_subjects(&preview, "not-the-player").is_empty());
+
+        let mut draft = state();
+        let actor_id = draft.character_drafts[&draft.host_member_id]
+            .actor_id
+            .clone();
+        let mut projected_preview = preview;
+        let mut player = projected_preview.campaign.actors.remove("player").unwrap();
+        player.id = actor_id.clone();
+        projected_preview.campaign.player_actor_id = actor_id.clone();
+        projected_preview.campaign.actors.insert(actor_id, player);
+        draft.preview = Some(projected_preview);
+        draft.status = SessionZeroStatus::Review;
+        let surface = serde_json::to_string(
+            &session_zero_surface(&draft, "account:host").expect("owner surface"),
+        )
+        .unwrap();
+        assert!(surface.contains("Your private compiled relationships"));
+        assert!(surface.contains("convoy quartermaster"));
+        assert!(surface.contains("owes them a life-debt"));
     }
 
     #[test]

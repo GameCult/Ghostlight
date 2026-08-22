@@ -587,6 +587,18 @@ validation. Suggestion retrieval and model receipts remain in the Session Zero
 store; publication compiles the unanimously approved brief, never the
 conversation transcript.
 
+Private character relationships now cross compilation through a typed identity
+membrane. Exact player references bind to their approved actor IDs. Each
+otherwise unresolved named person gets a stable server-generated
+`relationship-anchor:*` actor ID; the world compiler receives only that exact
+ID and approved display name, must include the actor in the candidate, and does
+not receive the private relationship description. Actor, institution, Gestalt,
+and `member:*` IDs are all legal directional relationship targets, but those
+links never union knowledge or authority. Only the owning member's review
+surface projects the compiled target, placement, and private description before
+approval. A shared branch assumption exposes the number of materialized private
+subjects, never their identities or relationship details.
+
 Roster lock is not readiness. Before world compilation the kernel checks the
 typed contract's core play frame and each active character's minimum actionable
 shape. Transcript-only detail, blank contract fields, or a character with no

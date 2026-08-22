@@ -59,6 +59,18 @@ pub struct CustomStart {
     pub goal: String,
 }
 
+#[derive(Clone, Debug, Serialize, PartialEq)]
+struct RequiredRelationshipActor {
+    id: String,
+    name: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct ApprovedRelationshipPlan {
+    anchors: Vec<RequiredRelationshipActor>,
+    targets: BTreeMap<(String, String), String>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct SelectedStart {
     pub campaign_name: String,
@@ -417,11 +429,21 @@ impl WorldCompiler {
         &self,
         start: CustomStart,
     ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
+        self.compile_custom_with_relationship_actors(start, &[])
+            .await
+    }
+
+    async fn compile_custom_with_relationship_actors(
+        &self,
+        start: CustomStart,
+        required_relationship_actors: &[RequiredRelationshipActor],
+    ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
         validate_user_text("campaign name", &start.campaign_name, 80)?;
         validate_user_text("player identity", &start.who, 500)?;
         validate_user_text("starting location", &start.where_, 500)?;
         validate_user_text("starting time", &start.when, 500)?;
         validate_user_text("player goal", &start.goal, 1_000)?;
+        validate_required_relationship_actor_inputs(required_relationship_actors)?;
         let (queries, retrieval_receipt) = self
             .plan_queries(
                 "custom_retrieval_plan",
@@ -445,12 +467,13 @@ impl WorldCompiler {
         let (global_catalog, global_catalog_receipts) = global_catalog?;
         let scoped_evidence = direct_seed_evidence_text(&receipts, &evidence_coverage);
         let shared_prefix = format!(
-            "SOURCE-GROUNDED WORLD COMPILATION\nSTART:\n{}\nSCOPED EVIDENCE:\n{}\n\n",
+            "SOURCE-GROUNDED WORLD COMPILATION\nSTART:\n{}\nPRIVATE RELATIONSHIP ACTOR ANCHORS:\n{}\nSCOPED EVIDENCE:\n{}\n\n",
             serde_json::to_string(&start)?,
+            serde_json::to_string(required_relationship_actors)?,
             scoped_evidence
         );
         let base_prompt = format!(
-            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor or institution IDs declared in this candidate, never display names, roles, groups, or location IDs. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. PRIVATE RELATIONSHIP ACTOR ANCHORS carry only player-approved existence and display names: include every one as an ordinary actor with its exact id and name, give it a plausible supplied location, and do not mention its existence or relationship in opening_narration merely because it appears in that private list. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -471,6 +494,7 @@ impl WorldCompiler {
             match seed_to_campaign(seed.clone(), &receipts).and_then(|campaign| {
                 validate_campaign_seed(&campaign)?;
                 validate_opening_playability(&campaign)?;
+                validate_required_relationship_actors(&campaign, required_relationship_actors)?;
                 Ok(campaign)
             }) {
                 Ok(_) => break seed,
@@ -506,6 +530,7 @@ impl WorldCompiler {
         apply_coarse_remote_agency_profiles(&mut campaign, &remote_institution_evidence)?;
         validate_campaign_seed(&campaign)?;
         validate_opening_playability(&campaign)?;
+        validate_required_relationship_actors(&campaign, required_relationship_actors)?;
         let subject_briefs = agency_subject_briefs(&campaign, &remote_institution_ids);
         let modeled_subject_ids = subject_briefs
             .iter()
@@ -600,24 +625,28 @@ impl WorldCompiler {
             .map(|character| format!("{} — {}", character.name, character.public_premise))
             .collect::<Vec<_>>()
             .join("; ");
+        let relationship_plan = approved_relationship_plan(brief)?;
         let mut compiled = self
-            .compile_custom(CustomStart {
-                campaign_name: brief.contract.campaign_name.clone(),
-                who: format!(
-                    "A cooperative party whose public starting identities are: {public_party}. Private histories, secrets, and individual knowledge are deliberately withheld from world generation."
-                ),
-                where_: brief.contract.starting_where.clone(),
-                when: format!(
-                    "{}; canon horizon: {}",
-                    brief.contract.starting_when, brief.contract.canon_horizon
-                ),
-                goal: format!(
-                    "{}; opening pressure: {}; premise: {}",
-                    brief.contract.desired_goal,
-                    brief.contract.starting_pressure,
-                    brief.contract.premise
-                ),
-            })
+            .compile_custom_with_relationship_actors(
+                CustomStart {
+                    campaign_name: brief.contract.campaign_name.clone(),
+                    who: format!(
+                        "A cooperative party whose public starting identities are: {public_party}. Private histories, secrets, and individual knowledge are deliberately withheld from world generation."
+                    ),
+                    where_: brief.contract.starting_where.clone(),
+                    when: format!(
+                        "{}; canon horizon: {}",
+                        brief.contract.starting_when, brief.contract.canon_horizon
+                    ),
+                    goal: format!(
+                        "{}; opening pressure: {}; premise: {}",
+                        brief.contract.desired_goal,
+                        brief.contract.starting_pressure,
+                        brief.contract.premise
+                    ),
+                },
+                &relationship_plan.anchors,
+            )
             .await?;
         let campaign = &mut compiled.0.campaign;
         let generated_player_id = campaign.player_actor_id.clone();
@@ -644,6 +673,8 @@ impl WorldCompiler {
         if member_actor_ids.len() != brief.characters.len() {
             return Err(anyhow!("approved characters must have unique actor IDs"));
         }
+        let mut approved_relationship_targets = canonical_relationship_subject_ids(campaign);
+        approved_relationship_targets.extend(member_actor_ids.iter().cloned());
         for character in &brief.characters {
             if brief.member_actor_ids.get(&character.member_id) != Some(&character.actor_id) {
                 return Err(anyhow!("character and membership actor binding disagree"));
@@ -656,21 +687,23 @@ impl WorldCompiler {
                 .relationships
                 .into_iter()
                 .map(|(subject, relationship)| {
-                    let resolved = brief
-                        .member_actor_ids
-                        .get(&subject)
+                    let resolved = relationship_plan
+                        .targets
+                        .get(&(character.member_id.clone(), subject.clone()))
                         .cloned()
-                        .unwrap_or(subject);
-                    (resolved, relationship)
+                        .ok_or_else(|| {
+                            anyhow!("approved character relationship lost its compiled subject")
+                        })?;
+                    Ok((resolved, relationship))
                 })
-                .collect();
+                .collect::<Result<BTreeMap<_, _>>>()?;
             if actor
                 .relationships
                 .keys()
-                .any(|id| !member_actor_ids.contains(id) && !campaign.institutions.contains_key(id))
+                .any(|id| !approved_relationship_targets.contains(id))
             {
                 return Err(anyhow!(
-                    "character relationship refers to an unknown member, actor, or institution"
+                    "character relationship refers to an unknown canonical subject"
                 ));
             }
             campaign.actors.insert(actor.id.clone(), actor);
@@ -694,6 +727,12 @@ impl WorldCompiler {
             "Campaign contract approved in Session Zero {} at shared digest {}.",
             brief.session_zero_id, brief.shared_digest
         ));
+        if !relationship_plan.anchors.is_empty() {
+            compiled.0.branch_assumptions.push(format!(
+                "{} private player-approved relationship subject(s) were materialized without exposing their relationship details to the shared opening.",
+                relationship_plan.anchors.len()
+            ));
+        }
         Ok(compiled)
     }
 
@@ -1490,6 +1529,123 @@ fn validate_user_text(label: &str, value: &str, max_chars: usize) -> Result<()> 
         ));
     }
     Ok(())
+}
+
+fn approved_relationship_plan(brief: &ApprovedCampaignBrief) -> Result<ApprovedRelationshipPlan> {
+    let mut character_names = BTreeMap::<String, Vec<String>>::new();
+    for character in &brief.characters {
+        character_names
+            .entry(normalized_identity(&character.name))
+            .or_default()
+            .push(character.actor_id.clone());
+    }
+    let member_actor_ids = brief
+        .member_actor_ids
+        .values()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let mut anchors = BTreeMap::<String, RequiredRelationshipActor>::new();
+    let mut anchor_norms = BTreeMap::<String, String>::new();
+    let mut targets = BTreeMap::new();
+    for character in &brief.characters {
+        for subject in character.relationships.keys() {
+            validate_user_text("relationship subject", subject, 160)?;
+            let normalized = normalized_identity(subject);
+            let target = if let Some(actor_id) = brief.member_actor_ids.get(subject) {
+                actor_id.clone()
+            } else if member_actor_ids.contains(subject) {
+                subject.clone()
+            } else if let Some(matches) = character_names.get(&normalized).filter(|v| v.len() == 1)
+            {
+                matches[0].clone()
+            } else {
+                let digest = format!(
+                    "{:x}",
+                    Sha256::digest(format!("private-relationship-actor\0{normalized}").as_bytes())
+                );
+                let id = format!("relationship-anchor:{}", &digest[..20]);
+                if let Some(previous) = anchor_norms.insert(id.clone(), normalized.clone())
+                    && previous != normalized
+                {
+                    return Err(anyhow!("relationship anchor ID collision"));
+                }
+                anchors
+                    .entry(id.clone())
+                    .or_insert_with(|| RequiredRelationshipActor {
+                        id: id.clone(),
+                        name: subject.trim().to_owned(),
+                    });
+                id
+            };
+            targets.insert((character.member_id.clone(), subject.clone()), target);
+        }
+    }
+    Ok(ApprovedRelationshipPlan {
+        anchors: anchors.into_values().collect(),
+        targets,
+    })
+}
+
+fn validate_required_relationship_actor_inputs(
+    anchors: &[RequiredRelationshipActor],
+) -> Result<()> {
+    if anchors.len() > 64 {
+        return Err(anyhow!(
+            "approved campaign brief cannot require more than 64 relationship actors"
+        ));
+    }
+    let mut ids = BTreeSet::new();
+    for anchor in anchors {
+        validate_user_text("relationship actor name", &anchor.name, 160)?;
+        if !anchor.id.starts_with("relationship-anchor:")
+            || anchor.id.chars().count() > 80
+            || !ids.insert(anchor.id.clone())
+        {
+            return Err(anyhow!(
+                "relationship actors require unique server-generated IDs"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_required_relationship_actors(
+    campaign: &Campaign,
+    anchors: &[RequiredRelationshipActor],
+) -> Result<()> {
+    let rejected = anchors
+        .iter()
+        .filter(|anchor| {
+            campaign
+                .actors
+                .get(&anchor.id)
+                .is_none_or(|actor| actor.name != anchor.name)
+        })
+        .map(|anchor| anchor.id.clone())
+        .collect::<Vec<_>>();
+    if !rejected.is_empty() {
+        return Err(anyhow!(
+            "world seed must contain every private relationship actor with its exact server ID and player-approved name; rejected anchors={rejected:?}"
+        ));
+    }
+    Ok(())
+}
+
+fn canonical_relationship_subject_ids(campaign: &Campaign) -> BTreeSet<String> {
+    let mut targets = campaign
+        .actors
+        .keys()
+        .chain(campaign.institutions.keys())
+        .chain(campaign.gestalts.keys())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    targets.extend(
+        campaign
+            .gestalt_members
+            .keys()
+            .map(|member_id| format!("member:{member_id}")),
+    );
+    targets
 }
 
 fn validate_fission_request(request: &GestaltFissionRequest) -> Result<BTreeSet<String>> {
@@ -2676,12 +2832,7 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
             profile.subject_id
         ));
     }
-    let relationship_targets = c
-        .actors
-        .keys()
-        .chain(c.institutions.keys())
-        .cloned()
-        .collect::<BTreeSet<_>>();
+    let relationship_targets = canonical_relationship_subject_ids(c);
     for actor in c.actors.values() {
         if !c.locations.contains_key(&actor.location_id) {
             return Err(anyhow!(
@@ -2700,7 +2851,7 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
             .collect::<Vec<_>>();
         if !invalid_relationships.is_empty() {
             return Err(anyhow!(
-                "actor relationships must use exact declared actor or institution IDs with non-empty descriptions; rejected relationships={invalid_relationships:?}; valid target IDs={relationship_targets:?}"
+                "actor relationships must use exact declared actor, institution, gestalt, or named-member subject IDs with non-empty descriptions; rejected relationships={invalid_relationships:?}; valid target IDs={relationship_targets:?}"
             ));
         }
     }
@@ -2838,7 +2989,12 @@ mod tests {
         request.reason = "x".repeat(501);
         assert!(validate_fission_request(&request).is_err());
     }
-    use crate::{domain::SourceWitness, model::ModelPort, vault::FixtureVault};
+    use crate::{
+        domain::SourceWitness,
+        model::ModelPort,
+        session_zero::{CampaignContract, CharacterDraft},
+        vault::FixtureVault,
+    };
     use async_trait::async_trait;
     use sha2::Digest;
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -3125,12 +3281,37 @@ mod tests {
     #[test]
     fn campaign_relationships_bind_to_canonical_subject_ids() {
         let mut campaign = crate::resolution::tests::campaign(2, 1);
+        campaign.gestalts.insert(
+            "clinic-staff".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "clinic-staff".into(),
+                name: "Clinic staff".into(),
+                version: 0,
+                home_location_id: "center".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut campaign);
         campaign
             .actors
             .get_mut("player")
             .unwrap()
             .relationships
             .insert("faction-0000".into(), "cautious contact".into());
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .relationships
+            .insert(
+                "clinic-staff".into(),
+                "trusted by the clinic collective".into(),
+            );
         validate_campaign_seed(&campaign).unwrap();
 
         campaign
@@ -3142,6 +3323,84 @@ mod tests {
         let error = validate_campaign_seed(&campaign).unwrap_err().to_string();
         assert!(error.contains("player->Faction Zero"));
         assert!(error.contains("faction-0000"));
+    }
+
+    #[test]
+    fn approved_relationships_resolve_party_members_and_materialize_stable_private_anchors() {
+        let mut sable = CharacterDraft {
+            member_id: "member-sable".into(),
+            actor_id: "actor-sable".into(),
+            name: "Sable".into(),
+            ..Default::default()
+        };
+        sable.relationships.insert(
+            "convoy quartermaster".into(),
+            "Sable owes them a life-debt".into(),
+        );
+        let mut mara = CharacterDraft {
+            member_id: "member-mara".into(),
+            actor_id: "actor-mara".into(),
+            name: "Mara".into(),
+            ..Default::default()
+        };
+        mara.relationships
+            .insert("Sable".into(), "trusted under pressure".into());
+        let brief = ApprovedCampaignBrief {
+            schema: "ghostlight.approved_campaign_brief.v1".into(),
+            session_zero_id: Uuid::new_v4(),
+            host_member_id: "member-sable".into(),
+            contract: CampaignContract::default(),
+            aggregate_boundaries: vec![],
+            characters: vec![sable, mara],
+            member_actor_ids: BTreeMap::from([
+                ("member-sable".into(), "actor-sable".into()),
+                ("member-mara".into(), "actor-mara".into()),
+            ]),
+            shared_digest: "sha256:shared".into(),
+            character_digests: BTreeMap::new(),
+        };
+
+        let first = approved_relationship_plan(&brief).unwrap();
+        let second = approved_relationship_plan(&brief).unwrap();
+        assert_eq!(first, second);
+        assert_eq!(first.anchors.len(), 1);
+        assert_eq!(first.anchors[0].name, "convoy quartermaster");
+        assert!(first.anchors[0].id.starts_with("relationship-anchor:"));
+        assert_eq!(
+            first.targets[&("member-mara".into(), "Sable".into())],
+            "actor-sable"
+        );
+        assert_eq!(
+            first.targets[&("member-sable".into(), "convoy quartermaster".into())],
+            first.anchors[0].id
+        );
+        assert!(
+            !serde_json::to_string(&first.anchors)
+                .unwrap()
+                .contains("life-debt")
+        );
+    }
+
+    #[test]
+    fn relationship_anchor_validation_requires_the_exact_actor_identity() {
+        let mut campaign = crate::resolution::tests::campaign(2, 1);
+        let anchor = RequiredRelationshipActor {
+            id: "relationship-anchor:quartermaster".into(),
+            name: "convoy quartermaster".into(),
+        };
+        let mut actor = campaign.actors["player"].clone();
+        actor.id = anchor.id.clone();
+        actor.name = anchor.name.clone();
+        campaign.actors.insert(actor.id.clone(), actor);
+        validate_required_relationship_actors(&campaign, std::slice::from_ref(&anchor)).unwrap();
+
+        campaign.actors.get_mut(&anchor.id).unwrap().name = "Somebody else".into();
+        assert!(
+            validate_required_relationship_actors(&campaign, &[anchor])
+                .unwrap_err()
+                .to_string()
+                .contains("rejected anchors")
+        );
     }
 
     #[tokio::test]
