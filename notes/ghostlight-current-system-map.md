@@ -135,13 +135,15 @@ exact campaign revision
 The model owns no tick mutation. A provider failure or invalid proposal leaves
 the campaign revision and world time untouched. Background inference checks
 live-turn pressure before launch and again before commit; return catch-up uses
-the same command path with player-turn priority.
+the same command path with player-turn priority for fictional commands.
 
 A live request also interrupts an in-flight scheduler wave. Dropping that wave
 aborts its parallel cell tasks before they can launch later Persona stages, and
 a shared/exclusive commit gate makes scheduler commit impossible while any live
 request is active. Return catch-up is intentionally exempt because it is part of
-the live request and must finish before the requested player action.
+the live request and must finish before the requested fictional action. Private
+assessment and resolution-policy edits neither advance fiction nor invoke
+catch-up.
 
 Resolution-demand focal IDs are salience hints, not partition commands. They
 cannot create mandatory singleton cells or exceed the configured budget. Cell

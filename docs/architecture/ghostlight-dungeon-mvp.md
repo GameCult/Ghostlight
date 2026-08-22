@@ -200,8 +200,9 @@ roll's selected band in the same atomic commit as the roll receipt. Narrative
 stakes describe that transition; they are no longer the transition.
 
 The scheduler may calculate pending work, but `AdvanceStrategicTick` owns the
-transition. Return catch-up invokes that same command before the next player
-action is admitted.
+transition. Return catch-up invokes that same command before the next fictional
+player action is admitted. Private assessment and resolution-policy edits do
+not enter catch-up because neither advances or enters the fiction.
 
 ### Narration projection authority
 
@@ -678,7 +679,9 @@ notification that drops the in-flight background wave future, aborting its cell
 tasks and provider requests before further stages launch. Live requests hold a
 shared commit gate; scheduler commits require the exclusive side and therefore
 cannot cross a live request. Return catch-up deliberately uses the live command
-path and completes required ticks before admitting the player's next action.
+path and completes required ticks before admitting the player's next fictional
+action. `Assess` and resolution-policy changes remain outside fictional time and
+therefore do not launch or wait for strategic simulation.
 
 ### Eve/CultMesh and browser
 

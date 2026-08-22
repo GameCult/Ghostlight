@@ -4083,13 +4083,14 @@ async fn command(
     if let Err(error) = validate_player_http_command(&command) {
         return (StatusCode::UNPROCESSABLE_ENTITY, Json(ErrorBody { error })).into_response();
     }
-    if let Err(error) = process_due_ticks(
-        &state,
-        &runtime,
-        ghostlight_dungeon::domain::TickSource::ReturnCatchUp,
-        false,
-    )
-    .await
+    if player_command_requires_return_catch_up(&command)
+        && let Err(error) = process_due_ticks(
+            &state,
+            &runtime,
+            ghostlight_dungeon::domain::TickSource::ReturnCatchUp,
+            false,
+        )
+        .await
     {
         return (
             StatusCode::CONFLICT,
@@ -4720,6 +4721,13 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::ReplaceResolutionPins { .. }
         | WorldCommand::FissionGestalt { .. } => false,
     }
+}
+
+fn player_command_requires_return_catch_up(command: &WorldCommand) -> bool {
+    matches!(
+        command,
+        WorldCommand::Speak { .. } | WorldCommand::Attempt { .. } | WorldCommand::Wait { .. }
+    )
 }
 
 fn validate_player_http_command(command: &WorldCommand) -> Result<(), String> {
@@ -6015,6 +6023,48 @@ mod tests {
                 pins: vec![],
             },
             "player",
+        ));
+    }
+
+    #[test]
+    fn only_fictional_player_commands_require_return_catch_up() {
+        assert!(player_command_requires_return_catch_up(
+            &WorldCommand::Speak {
+                expected_revision: 4,
+                actor_id: "player".into(),
+                text: "Hello.".into(),
+                intended_effect: None,
+            }
+        ));
+        assert!(player_command_requires_return_catch_up(
+            &WorldCommand::Attempt {
+                actor_id: "player".into(),
+                assessment_digest: "sha256:assessment".into(),
+            }
+        ));
+        assert!(player_command_requires_return_catch_up(
+            &WorldCommand::Wait {
+                expected_revision: 4,
+                minutes: 10,
+            }
+        ));
+        assert!(!player_command_requires_return_catch_up(
+            &WorldCommand::Assess {
+                expected_revision: 4,
+                intent: ActionIntent {
+                    actor_id: "player".into(),
+                    description: "Inspect the seal.".into(),
+                    intended_effect: "Learn whether it has authority here.".into(),
+                },
+                proposal: None,
+            }
+        ));
+        assert!(!player_command_requires_return_catch_up(
+            &WorldCommand::SetResolutionBudget {
+                expected_revision: 4,
+                expected_resolution_epoch: 2,
+                active_cell_budget: 8,
+            }
         ));
     }
 
