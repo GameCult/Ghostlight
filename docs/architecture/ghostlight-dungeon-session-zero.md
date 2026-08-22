@@ -114,7 +114,14 @@ pending decision, its retired typed payload, exact counter, and aggregate safety
 policy into the Persona's narrative stream. This exact projection needs no
 model call or model receipt; the focused turn records only Persona and
 Interpreter inference. The Interpreter separately receives the same bounded
-typed basis plus required owner and materiality. Conversation history, party
+typed basis. When the retired proposal still has one exact typed lane, the
+Interpreter emits only that replacement payload: character patch, contract
+patch, or permission terms. Ghostlight binds the fresh decision ID, owner,
+materiality, evidence, prompt, and persisted counter locally. Permission IDs,
+actor bindings, and evidence receipts are preserved from the retired proposal
+and are absent from the model's output authority. The larger union Interpreter
+remains only for ordinary conversation and pre-cut payloadless migration.
+Conversation history, party
 cards, the contract, unrelated decisions, and unrelated private character state
 are not part of the focused retry. Pre-cut decisions whose typed payload was
 erased receive one bounded current-state basis for migration only. The kernel

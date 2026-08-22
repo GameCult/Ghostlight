@@ -427,6 +427,19 @@ struct SessionZeroInterpretation {
     pub suggested_replies: Vec<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct FocusedPermissionTerms {
+    pub name: String,
+    pub reliable_scope: String,
+    pub prerequisites: Vec<String>,
+    pub costs: Vec<String>,
+    pub limits: Vec<String>,
+    pub exposure: Vec<String>,
+    pub effect_ceiling: String,
+    pub branch_local: bool,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct SessionZeroState {
     pub schema: String,
@@ -1265,6 +1278,13 @@ pub struct SessionZeroDirector {
     interpreter_model: String,
 }
 
+#[derive(Clone, Copy)]
+enum FocusedReplacementLane<'a> {
+    Permission(&'a ExtraordinaryPermission),
+    Contract,
+    Character,
+}
+
 impl SessionZeroDirector {
     pub fn new(
         model: Arc<dyn ModelPort>,
@@ -1366,39 +1386,57 @@ impl SessionZeroDirector {
         )
         .await?;
         validate_bounded("DM speech", &persona.narrative, 1, 6_000)?;
-        let interpreter_context = permitted_interpreter_context(
-            state,
-            channel_id,
-            member_id,
-            supersedes_countered_decision_id,
-        )?;
-        let mut interpreter_schema = serde_json::to_value(schema_for!(SessionZeroInterpretation))?;
-        require_typed_decision_payloads(&mut interpreter_schema)?;
-        let interpreter = run_validated_stage(
-            self.model.as_ref(),
-            &ModelStageRequest {
-                stage: "session_zero_interpreter".into(),
-                model: self.interpreter_model.clone(),
-                snapshot_binding: binding,
-                lived_stream: format!(
-                    "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation during ordinary conversation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. If turn_focus is present, it is the one exception: use countered_decision as the exact basis, preserve its unchanged typed fields, apply the pending counter, and emit exactly one fresh decision with the required owner and materiality. Do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
-                    serde_json::to_string(&interpreter_schema)?,
-                    serde_json::to_string(&interpreter_context)?,
-                    serde_json::to_string(&persona.narrative)?
-                ),
-                output_schema: Some(interpreter_schema),
-                source_receipt_ids: vec![],
-                temperature: Some(0.0),
-                max_output_tokens: Some(2600),
-            },
-        )
-        .await?;
-        let interpretation: SessionZeroInterpretation = serde_json::from_value(
-            interpreter
-                .structured
-                .clone()
-                .ok_or_else(|| anyhow!("interpreter omitted structured output"))?,
-        )?;
+        let focused = supersedes_countered_decision_id
+            .and_then(|decision_id| state.decisions.get(decision_id))
+            .and_then(|decision| focused_replacement_lane(decision).map(|lane| (decision, lane)));
+        let (interpretation, interpreter_receipt) = if let Some((decision, lane)) = focused {
+            run_focused_counter_interpreter(
+                self.model.as_ref(),
+                &self.interpreter_model,
+                &binding,
+                decision,
+                lane,
+                &lived.lived_stream,
+                &persona.narrative,
+            )
+            .await?
+        } else {
+            let interpreter_context = permitted_interpreter_context(
+                state,
+                channel_id,
+                member_id,
+                supersedes_countered_decision_id,
+            )?;
+            let mut interpreter_schema =
+                serde_json::to_value(schema_for!(SessionZeroInterpretation))?;
+            require_typed_decision_payloads(&mut interpreter_schema)?;
+            let interpreter = run_validated_stage(
+                self.model.as_ref(),
+                &ModelStageRequest {
+                    stage: "session_zero_interpreter".into(),
+                    model: self.interpreter_model.clone(),
+                    snapshot_binding: binding,
+                    lived_stream: format!(
+                        "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation during ordinary conversation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. If turn_focus is present, it is the one exception: use countered_decision as the exact basis, preserve its unchanged typed fields, apply the pending counter, and emit exactly one fresh decision with the required owner and materiality. Do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
+                        serde_json::to_string(&interpreter_schema)?,
+                        serde_json::to_string(&interpreter_context)?,
+                        serde_json::to_string(&persona.narrative)?
+                    ),
+                    output_schema: Some(interpreter_schema),
+                    source_receipt_ids: vec![],
+                    temperature: Some(0.0),
+                    max_output_tokens: Some(2600),
+                },
+            )
+            .await?;
+            let interpretation: SessionZeroInterpretation = serde_json::from_value(
+                interpreter
+                    .structured
+                    .clone()
+                    .ok_or_else(|| anyhow!("interpreter omitted structured output"))?,
+            )?;
+            (interpretation, interpreter.receipt)
+        };
         let delta = SessionZeroDelta {
             contract_patch: interpretation.contract_patch,
             character_patch: interpretation.character_patch,
@@ -1408,9 +1446,130 @@ impl SessionZeroDirector {
         };
         validate_dm_delta(state, channel_id, member_id, &delta)?;
         receipts.push(persona.receipt);
-        receipts.push(interpreter.receipt);
+        receipts.push(interpreter_receipt);
         Ok((delta, receipts))
     }
+}
+
+fn focused_replacement_lane(decision: &SessionZeroDecision) -> Option<FocusedReplacementLane<'_>> {
+    match (
+        decision.proposed_extraordinary_permission.as_ref(),
+        decision.proposed_contract_patch.as_ref(),
+        decision.proposed_character_patch.as_ref(),
+    ) {
+        (Some(permission), None, None) => Some(FocusedReplacementLane::Permission(permission)),
+        (None, Some(_), None) => Some(FocusedReplacementLane::Contract),
+        (None, None, Some(_)) => Some(FocusedReplacementLane::Character),
+        _ => None,
+    }
+}
+
+async fn run_focused_counter_interpreter(
+    model: &dyn ModelPort,
+    model_id: &str,
+    binding: &str,
+    decision: &SessionZeroDecision,
+    lane: FocusedReplacementLane<'_>,
+    exact_lived_stream: &str,
+    persona_response: &str,
+) -> Result<(SessionZeroInterpretation, ModelStageReceipt)> {
+    let (lane_name, schema, max_output_tokens) = match lane {
+        FocusedReplacementLane::Permission(_) => (
+            "extraordinary-permission terms",
+            serde_json::to_value(schema_for!(FocusedPermissionTerms))?,
+            1600,
+        ),
+        FocusedReplacementLane::Contract => (
+            "campaign-contract patch",
+            serde_json::to_value(schema_for!(CampaignContractPatch))?,
+            1200,
+        ),
+        FocusedReplacementLane::Character => (
+            "private-character patch",
+            serde_json::to_value(schema_for!(CharacterDraftPatch))?,
+            1800,
+        ),
+    };
+    let interpreter = run_validated_stage(
+        model,
+        &ModelStageRequest {
+            stage: "session_zero_interpreter".into(),
+            model: model_id.into(),
+            snapshot_binding: binding.into(),
+            lived_stream: format!(
+                "Translate the player's exact counterproposal into one replacement {lane_name}. Preserve every previous typed field the counter does not change; apply every requested removal or replacement exactly; add nothing. Ghostlight owns decision identity, owner, materiality, evidence bindings, and speech, so emit only the replacement payload described by this schema. The Persona response is social context only and cannot override the exact factual basis. Return one complete JSON object matching the schema.\n\nOUTPUT JSON SCHEMA:\n{}\n\nEXACT FACTUAL BASIS:\n{}\n\nPERSONA RESPONSE:\n{}",
+                serde_json::to_string(&schema)?,
+                exact_lived_stream,
+                serde_json::to_string(persona_response)?,
+            ),
+            output_schema: Some(schema),
+            source_receipt_ids: decision.evidence_receipt_ids.clone(),
+            temperature: Some(0.0),
+            max_output_tokens: Some(max_output_tokens),
+        },
+    )
+    .await?;
+    let structured = interpreter
+        .structured
+        .clone()
+        .ok_or_else(|| anyhow!("focused counter interpreter omitted structured output"))?;
+    let mut replacement = SessionZeroDecision {
+        schema: "ghostlight.session_zero_decision.v1".into(),
+        id: format!("decision:{}", Uuid::new_v4().simple()),
+        owner_member_id: decision.owner_member_id.clone(),
+        prompt: decision.prompt.clone(),
+        proposed_resolution: decision
+            .pending_counter
+            .clone()
+            .ok_or_else(|| anyhow!("focused counter lost its persisted replacement"))?,
+        proposed_extraordinary_permission: None,
+        proposed_contract_patch: None,
+        proposed_character_patch: None,
+        evidence_receipt_ids: decision.evidence_receipt_ids.clone(),
+        pending_counter: None,
+        material: decision.material,
+        resolved: false,
+    };
+    match lane {
+        FocusedReplacementLane::Permission(previous) => {
+            let terms: FocusedPermissionTerms = serde_json::from_value(structured)?;
+            let mut permission = previous.clone();
+            permission.name = terms.name;
+            permission.reliable_scope = terms.reliable_scope;
+            permission.prerequisites = terms.prerequisites;
+            permission.costs = terms.costs;
+            permission.limits = terms.limits;
+            permission.exposure = terms.exposure;
+            permission.effect_ceiling = terms.effect_ceiling;
+            permission.branch_local = terms.branch_local;
+            replacement.proposed_extraordinary_permission = Some(permission);
+        }
+        FocusedReplacementLane::Contract => {
+            let patch: CampaignContractPatch = serde_json::from_value(structured)?;
+            if patch == CampaignContractPatch::default() {
+                return Err(anyhow!(
+                    "focused counter interpreter returned an empty contract patch"
+                ));
+            }
+            replacement.proposed_contract_patch = Some(patch);
+        }
+        FocusedReplacementLane::Character => {
+            let patch: CharacterDraftPatch = serde_json::from_value(structured)?;
+            if patch == CharacterDraftPatch::default() {
+                return Err(anyhow!(
+                    "focused counter interpreter returned an empty character patch"
+                ));
+            }
+            replacement.proposed_character_patch = Some(patch);
+        }
+    }
+    Ok((
+        SessionZeroInterpretation {
+            decisions: vec![replacement],
+            ..Default::default()
+        },
+        interpreter.receipt,
+    ))
 }
 
 fn require_typed_decision_payloads(schema: &mut serde_json::Value) -> Result<()> {
@@ -3423,9 +3582,8 @@ mod tests {
     use tempfile::tempdir;
 
     struct SchemaAwareDirectorModel;
-    struct FocusedCounterDirectorModel {
-        owner_member_id: String,
-    }
+    struct FocusedCounterDirectorModel;
+    struct FocusedPermissionModel;
 
     const PERSONA_SPEECH: &str = "**Mars holds.** Your sung name remains ‘The last lamp carried between storms, learning each stranger by the weight they refuse to abandon.’ Does the revised contamination bargain fit Sable’s ability?";
 
@@ -3487,29 +3645,45 @@ mod tests {
                     Ok("The exact replacement is ready for your review.".into())
                 }
                 "session_zero_interpreter" => {
-                    Ok(serde_json::to_string(&SessionZeroInterpretation {
-                        decisions: vec![SessionZeroDecision {
-                            schema: "ghostlight.session_zero_decision.v1".into(),
-                            id: "decision:fresh-focused-counter".into(),
-                            owner_member_id: Some(self.owner_member_id.clone()),
-                            prompt: "Accept the exact Sable replacement?".into(),
-                            proposed_resolution: "Replace only Sable's name.".into(),
-                            proposed_extraordinary_permission: None,
-                            proposed_contract_patch: None,
-                            proposed_character_patch: Some(CharacterDraftPatch {
-                                name: Some("Sable, whose sung name remains whole".into()),
-                                ..Default::default()
-                            }),
-                            evidence_receipt_ids: vec![],
-                            pending_counter: None,
-                            material: true,
-                            resolved: false,
-                        }],
+                    assert!(request.lived_stream.contains("private-character patch"));
+                    assert!(!request.lived_stream.contains("SessionZeroDecision"));
+                    assert!(!request.lived_stream.contains("owner_member_id"));
+                    assert_eq!(request.max_output_tokens, Some(1800));
+                    Ok(serde_json::to_string(&CharacterDraftPatch {
+                        name: Some("Sable, whose sung name remains whole".into()),
                         ..Default::default()
                     })?)
                 }
                 stage => panic!("unexpected focused Session Zero model stage {stage}"),
             }
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for FocusedPermissionModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            assert_eq!(request.stage, "session_zero_interpreter");
+            assert!(
+                request
+                    .lived_stream
+                    .contains("extraordinary-permission terms")
+            );
+            assert!(!request.lived_stream.contains("permission:stable"));
+            assert!(!request.lived_stream.contains("actor:stable"));
+            Ok(serde_json::to_string(&FocusedPermissionTerms {
+                name: "Fork-memory synchronization".into(),
+                reliable_scope: "One willing nearby mind".into(),
+                prerequisites: vec!["Fresh consent".into()],
+                costs: vec!["Ordinary contamination fades with rest".into()],
+                limits: vec!["No unwilling reading".into()],
+                exposure: vec!["Traceable signature".into()],
+                effect_ceiling: "Bounded memory sharing".into(),
+                branch_local: false,
+            })?)
         }
 
         fn provider(&self) -> &'static str {
@@ -3574,9 +3748,7 @@ mod tests {
             },
         );
         let director = SessionZeroDirector::new(
-            Arc::new(FocusedCounterDirectorModel {
-                owner_member_id: host_id.clone(),
-            }),
+            Arc::new(FocusedCounterDirectorModel),
             "projector",
             "persona",
             "interpreter",
@@ -3588,11 +3760,97 @@ mod tests {
             .unwrap();
         assert_eq!(receipts.len(), 2);
         assert_eq!(
+            delta.decisions[0].owner_member_id.as_deref(),
+            Some(host_id.as_str())
+        );
+        assert!(delta.decisions[0].material);
+        assert_eq!(
             delta.decisions[0]
                 .proposed_character_patch
                 .as_ref()
                 .and_then(|patch| patch.name.as_deref()),
             Some("Sable, whose sung name remains whole")
+        );
+    }
+
+    #[tokio::test]
+    async fn focused_permission_interpreter_cannot_rewrite_identity_owner_or_evidence() {
+        let permission = ExtraordinaryPermission {
+            schema: "ghostlight.extraordinary_permission.v1".into(),
+            id: "permission:stable".into(),
+            actor_id: "actor:stable".into(),
+            name: "Fork-memory synchronization".into(),
+            reliable_scope: "One willing nearby mind".into(),
+            prerequisites: vec!["Fresh consent".into()],
+            costs: vec!["Borrowed memories do not fully leave".into()],
+            limits: vec!["No unwilling reading".into()],
+            exposure: vec!["Traceable signature".into()],
+            effect_ceiling: "Bounded memory sharing".into(),
+            evidence_receipt_ids: vec!["receipt:stable".into()],
+            branch_local: false,
+        };
+        let decision = SessionZeroDecision {
+            schema: "ghostlight.session_zero_decision.v1".into(),
+            id: "decision:old".into(),
+            owner_member_id: Some("member:stable".into()),
+            prompt: "Accept the permission?".into(),
+            proposed_resolution: "Old terms".into(),
+            proposed_extraordinary_permission: Some(permission.clone()),
+            proposed_contract_patch: None,
+            proposed_character_patch: None,
+            evidence_receipt_ids: vec!["decision-receipt:stable".into()],
+            pending_counter: Some("Ordinary contamination fades with rest.".into()),
+            material: true,
+            resolved: false,
+        };
+        let (interpretation, _) = run_focused_counter_interpreter(
+            &FocusedPermissionModel,
+            "fixture",
+            "binding",
+            &decision,
+            FocusedReplacementLane::Permission(&permission),
+            "Exact factual basis without persistence identifiers.",
+            "Please review the replacement.",
+        )
+        .await
+        .unwrap();
+        let replacement = &interpretation.decisions[0];
+        let replaced_permission = replacement
+            .proposed_extraordinary_permission
+            .as_ref()
+            .unwrap();
+        assert_eq!(replacement.owner_member_id, decision.owner_member_id);
+        assert_eq!(replacement.material, decision.material);
+        assert_eq!(
+            replacement.evidence_receipt_ids,
+            decision.evidence_receipt_ids
+        );
+        assert_eq!(replaced_permission.id, permission.id);
+        assert_eq!(replaced_permission.actor_id, permission.actor_id);
+        assert_eq!(
+            replaced_permission.evidence_receipt_ids,
+            permission.evidence_receipt_ids
+        );
+        assert_eq!(
+            replaced_permission.costs,
+            ["Ordinary contamination fades with rest"]
+        );
+    }
+
+    #[test]
+    fn focused_counter_schema_excludes_the_full_decision_union() {
+        let focused = serde_json::to_string(&schema_for!(CharacterDraftPatch)).unwrap();
+        let mut full = serde_json::to_value(schema_for!(SessionZeroInterpretation)).unwrap();
+        require_typed_decision_payloads(&mut full).unwrap();
+        let full = serde_json::to_string(&full).unwrap();
+        assert!(!focused.contains("SessionZeroDecision"));
+        assert!(!focused.contains("ExtraordinaryPermission"));
+        assert!(!focused.contains("CampaignContractPatch"));
+        assert!(
+            focused.len() * 2 < full.len(),
+            "focused schema={} bytes full union={} bytes",
+            focused.len(),
+            full.len()
         );
     }
 

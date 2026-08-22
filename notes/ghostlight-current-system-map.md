@@ -54,6 +54,11 @@ deterministic Ghostlight Projector turns only the target, retired typed payload,
 exact counter, and aggregate safety policy into the Persona's exact lived
 stream; it does not spend a model call asking another agent to paraphrase facts
 Ghostlight already owns. The Interpreter receives the same bounded typed basis.
+For an exact typed counter lane it emits only the replacement payload. Fresh
+decision identity, owner, materiality, evidence, prompt, and counter text are
+bound locally; permission identity, actor binding, and evidence cannot be
+rewritten by the model. The full decision-union Interpreter remains for
+ordinary turns and legacy payloadless migration only.
 Conversation history, party, contract, and unrelated private state are omitted.
 Legacy counters created by the payload-erasing build receive one bounded
 current-state basis. The kernel accepts exactly one same-lane decision with
