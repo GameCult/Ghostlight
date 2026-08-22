@@ -218,6 +218,9 @@ private goals or resources, populations, clocks, evidence-use rationales,
 gaps, and branch assumptions. Relationship-anchor people remain absent from
 the shared cast and appear only in their owner's private relationship card.
 Privacy is labeled in text and never conveyed only by color.
+The host may discard any non-canonical preview through a typed Session Zero
+command and continue drafting without changing the contract, characters, or
+fictional time. A retained preview never traps the table into reviewing it.
 
 An approved unresolved relationship person crosses world compilation as a
 server-owned identity anchor. The shared world compiler never receives that

@@ -1020,6 +1020,10 @@ pub enum SessionZeroCommand {
         actor_account_hash: String,
         expected_revision: u64,
     },
+    DiscardPreview {
+        actor_account_hash: String,
+        expected_revision: u64,
+    },
     InstallPreview {
         expected_revision: u64,
         preview: WorldCompilePreview,
@@ -2649,6 +2653,23 @@ pub fn session_zero_surface(
         ));
     }
     if member.is_host
+        && state.preview.is_some()
+        && matches!(
+            state.status,
+            SessionZeroStatus::Drafting
+                | SessionZeroStatus::RosterLocked
+                | SessionZeroStatus::Review
+        )
+    {
+        children.push(command_control(
+            "session-zero.discard-preview",
+            "Discard this preview and continue drafting",
+            "session_zero.preview.discard",
+            serde_json::json!({"expected_revision":state.revision}),
+            &[],
+        ));
+    }
+    if member.is_host
         && matches!(
             state.status,
             SessionZeroStatus::RosterLocked | SessionZeroStatus::Drafting
@@ -2782,6 +2803,7 @@ pub fn session_zero_surface(
             eve_command("session_zero.roster.lock", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("session_zero.compile", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("session_zero.compilation_gaps.review", "ghostlight.session_zero_revision_command.v1", &[]),
+            eve_command("session_zero.preview.discard", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("session_zero.approve", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("session_zero.publish", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("app.auth.logout", "ghostlight.app_logout.v1", &[])
@@ -3396,6 +3418,26 @@ fn execute(
                 }
             }
             state.status = SessionZeroStatus::Review;
+        }
+        SessionZeroCommand::DiscardPreview {
+            actor_account_hash,
+            expected_revision,
+        } => {
+            require_revision(&state, expected_revision)?;
+            require_host(&state, &actor_account_hash)?;
+            if state.preview.is_none() {
+                return Err(anyhow!("compiled preview is missing"));
+            }
+            if matches!(
+                state.status,
+                SessionZeroStatus::Compiling
+                    | SessionZeroStatus::Published
+                    | SessionZeroStatus::Archived
+            ) {
+                return Err(anyhow!("compiled preview cannot be discarded now"));
+            }
+            state.approvals.clear();
+            retire_preview(&mut state);
         }
         SessionZeroCommand::InstallPreview {
             expected_revision,
@@ -4956,6 +4998,7 @@ mod tests {
                 .unwrap();
         assert!(surface.contains("Evidence gaps requiring table approval"));
         assert!(surface.contains("Review this exact preview with its evidence gaps"));
+        assert!(surface.contains("Discard this preview and continue drafting"));
         assert!(!surface.contains("Compile campaign preview"));
 
         let reviewing = kernel
@@ -5002,6 +5045,50 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[tokio::test]
+    async fn host_can_discard_a_noncanonical_preview_without_changing_the_draft() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let mut initial = compilable_state();
+        initial.roster_locked = true;
+        initial.status = SessionZeroStatus::Drafting;
+        initial.preview = Some(WorldCompilePreview {
+            schema: "ghostlight.world_compile_preview.v1".into(),
+            title: "Retired candidate".into(),
+            campaign: crate::resolution::tests::campaign(2, 1),
+            evidence_receipts: vec![],
+            evidence_coverage: vec![],
+            gaps: vec!["A material gap".into()],
+            branch_assumptions: vec![],
+            requires_approval: true,
+        });
+        let original_contract = initial.contract.clone();
+        let original_character = initial.character_drafts[&initial.host_member_id].clone();
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, initial.id);
+
+        let discarded = kernel
+            .command(SessionZeroCommand::DiscardPreview {
+                actor_account_hash: "account:host".into(),
+                expected_revision: initial.revision,
+            })
+            .await
+            .unwrap();
+
+        assert!(discarded.state.preview.is_none());
+        assert_eq!(discarded.state.status, SessionZeroStatus::RosterLocked);
+        assert_eq!(discarded.state.contract, original_contract);
+        assert_eq!(
+            discarded.state.character_drafts[&discarded.state.host_member_id],
+            original_character
+        );
+        let surface =
+            serde_json::to_string(&session_zero_surface(&discarded.state, "account:host").unwrap())
+                .unwrap();
+        assert!(surface.contains("Compile campaign preview"));
+        assert!(!surface.contains("Discard this preview"));
     }
 
     #[test]

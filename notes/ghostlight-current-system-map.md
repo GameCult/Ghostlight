@@ -597,6 +597,9 @@ populations, clocks, evidence lanes, gaps, assumptions, or any other preview
 field therefore makes old approvals unusable. The Eve tree visibly lowers the
 reviewable world shape. Player JSON excludes institution resources and goals,
 and shared cast projection excludes private relationship-anchor people.
+The host can discard any non-canonical preview through the SessionZeroKernel;
+the command clears only preview state and returns the locked roster to drafting
+without editing the contract, character drafts, or fictional time.
 
 Private character relationships now cross compilation through a typed identity
 membrane. Exact player references bind to their approved actor IDs. Each
