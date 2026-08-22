@@ -152,6 +152,26 @@ struct CompiledSeed {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct PrivateRelationshipActorCandidate {
+    name: String,
+    location_id: String,
+    capabilities: BTreeSet<String>,
+    knowledge: BTreeSet<String>,
+    equipment: BTreeSet<String>,
+    conditions: BTreeSet<String>,
+    obligations: BTreeSet<String>,
+    goals: Vec<String>,
+    #[serde(default)]
+    memories: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct PrivateRelationshipActorSet {
+    #[schemars(length(max = 64))]
+    actors: Vec<PrivateRelationshipActorCandidate>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CompiledAgencySkeleton {
     agency_profiles: Vec<CompiledAgencyProfile>,
     agency_relations: Vec<CompiledAgencyRelation>,
@@ -467,13 +487,12 @@ impl WorldCompiler {
         let (global_catalog, global_catalog_receipts) = global_catalog?;
         let scoped_evidence = direct_seed_evidence_text(&receipts, &evidence_coverage);
         let shared_prefix = format!(
-            "SOURCE-GROUNDED WORLD COMPILATION\nSTART:\n{}\nPRIVATE RELATIONSHIP ACTOR ANCHORS:\n{}\nSCOPED EVIDENCE:\n{}\n\n",
+            "SOURCE-GROUNDED WORLD COMPILATION\nSTART:\n{}\nSCOPED EVIDENCE:\n{}\n\n",
             serde_json::to_string(&start)?,
-            serde_json::to_string(required_relationship_actors)?,
             scoped_evidence
         );
         let base_prompt = format!(
-            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. PRIVATE RELATIONSHIP ACTOR ANCHORS carry only player-approved existence, display names, and opaque server identity handles: include every one exactly once as an ordinary actor with its exact name, give it a plausible supplied location, and preferably copy its supplied id. The server binds the opaque id locally by exact normalized name, so never rename, omit, or duplicate an anchor. Do not mention its existence or relationship in opening_narration merely because it appears in that private list. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -490,19 +509,17 @@ impl WorldCompiler {
                 )
                 .await?;
             compiler_receipts.push(output.1);
-            let mut seed: CompiledSeed = serde_json::from_value(output.0)?;
-            let validation =
-                bind_required_relationship_actor_ids(&mut seed, required_relationship_actors)
-                    .and_then(|()| seed_to_campaign(seed.clone(), &receipts))
-                    .and_then(|campaign| {
-                        validate_campaign_seed(&campaign)?;
-                        validate_opening_playability(&campaign)?;
-                        validate_required_relationship_actors(
-                            &campaign,
-                            required_relationship_actors,
-                        )?;
-                        Ok(campaign)
-                    });
+            let seed: CompiledSeed = serde_json::from_value(output.0)?;
+            let validation = validate_shared_seed_excludes_private_relationship_subjects(
+                &seed,
+                required_relationship_actors,
+            )
+            .and_then(|()| seed_to_campaign(seed.clone(), &receipts))
+            .and_then(|campaign| {
+                validate_campaign_seed(&campaign)?;
+                validate_opening_playability(&campaign)?;
+                Ok(campaign)
+            });
             match validation {
                 Ok(_) => break seed,
                 Err(error) if compiler_receipts.len() == 1 => {
@@ -525,6 +542,23 @@ impl WorldCompiler {
                 }
             }
         };
+        let (private_relationship_actors, private_actor_receipts) = self
+            .compile_private_relationship_actors(
+                &start,
+                &seed,
+                required_relationship_actors,
+                &receipts,
+            )
+            .await?;
+        seed.actors.extend(private_relationship_actors);
+        compiler_receipts.extend(private_actor_receipts);
+        let campaign_with_private_actors = seed_to_campaign(seed.clone(), &receipts)?;
+        validate_campaign_seed(&campaign_with_private_actors)?;
+        validate_opening_playability(&campaign_with_private_actors)?;
+        validate_required_relationship_actors(
+            &campaign_with_private_actors,
+            required_relationship_actors,
+        )?;
         let (remote_institution_evidence, global_agency_gaps) =
             merge_global_agency_catalog(&mut seed, global_catalog)?;
         let remote_institution_ids = remote_institution_evidence
@@ -610,6 +644,88 @@ impl WorldCompiler {
             },
             model_receipts,
         ))
+    }
+
+    async fn compile_private_relationship_actors(
+        &self,
+        start: &CustomStart,
+        seed: &CompiledSeed,
+        anchors: &[RequiredRelationshipActor],
+        evidence_receipts: &[VaultEvidenceReceipt],
+    ) -> Result<(Vec<ActorState>, Vec<ModelStageReceipt>)> {
+        if anchors.is_empty() {
+            return Ok((Vec::new(), Vec::new()));
+        }
+        validate_required_relationship_actor_inputs(anchors)?;
+        let private_context = serde_json::json!({
+            "start": start,
+            "approved_private_subject_names": anchors.iter().map(|anchor| anchor.name.as_str()).collect::<Vec<_>>(),
+            "locations": seed.locations.iter().map(|location| serde_json::json!({
+                "id": location.id,
+                "name": location.name,
+                "container_id": location.container_id,
+                "persistent_features": location.persistent_features,
+            })).collect::<Vec<_>>(),
+            "public_institutions": seed.institutions.iter().map(|institution| serde_json::json!({
+                "id": institution.id,
+                "name": institution.name,
+                "posture": institution.posture,
+            })).collect::<Vec<_>>(),
+            "public_populations": seed.gestalts.iter().map(|gestalt| serde_json::json!({
+                "id": gestalt.id,
+                "name": gestalt.name,
+                "home_location_id": gestalt.home_location_id,
+                "pressures": gestalt.pressures,
+            })).collect::<Vec<_>>(),
+        });
+        let base_prompt = format!(
+            "PRIVATE RELATIONSHIP ACTOR COMPILATION\nThis is a private branch-local stage. Synthesize exactly one ordinary actor candidate for every approved_private_subject_name in the supplied order. Copy each name exactly. Choose one exact location id from the supplied topology and give the person only state justified by the public world frame and their approved name. Return actor candidates only: no canonical IDs, relationships, narration, facts, evidence gaps, branch assumptions, agency profiles, or changes to the public world. Do not infer the player's relationship, secret, or private history.\nCONTEXT:\n{}",
+            serde_json::to_string(&private_context)?
+        );
+        let schema = serde_json::to_value(schema_for!(PrivateRelationshipActorSet))?;
+        let sources = receipt_ids(evidence_receipts);
+        let mut receipts = Vec::new();
+        let mut correction = String::new();
+        loop {
+            let output = self
+                .structured(
+                    "private_relationship_actor_compile",
+                    "custom-start-private-relationships",
+                    &format!("{base_prompt}{correction}"),
+                    schema.clone(),
+                    sources.clone(),
+                )
+                .await
+                .map_err(|_| {
+                    anyhow!(
+                        "private relationship actor model stage failed safely; no private diagnostic was published"
+                    )
+                })?;
+            receipts.push(output.1);
+            let candidates: PrivateRelationshipActorSet = serde_json::from_value(output.0)
+                .map_err(|_| {
+                    anyhow!(
+                        "private relationship actor model stage failed safely; no private diagnostic was published"
+                    )
+                })?;
+            match materialize_private_relationship_actors(seed, anchors, candidates) {
+                Ok(actors) => return Ok((actors, receipts)),
+                Err(error) if receipts.len() == 1 => {
+                    mark_semantic_invalid(
+                        receipts.last_mut().expect("receipt was just stored"),
+                        &error,
+                    );
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS PRIVATE ACTOR CANDIDATES: {error}\nReturn one corrected complete candidate set against the same private context."
+                    );
+                }
+                Err(_) => {
+                    return Err(anyhow!(
+                        "private relationship actor compiler failed local validation after one correction; exact diagnostics remain private"
+                    ));
+                }
+            }
+        }
     }
 
     pub async fn compile_approved_brief(
@@ -1497,6 +1613,7 @@ impl WorldCompiler {
             temperature: Some(0.0),
             max_output_tokens: Some(match stage {
                 "world_compile" => 6_000,
+                "private_relationship_actor_compile" => 4_000,
                 "agency_compile" => 3_500,
                 "world_openings" => 1_800,
                 "world_roles" => 1_200,
@@ -1602,143 +1719,138 @@ fn validate_required_relationship_actor_inputs(
         ));
     }
     let mut ids = BTreeSet::new();
+    let mut names = BTreeSet::new();
     for anchor in anchors {
         validate_user_text("relationship actor name", &anchor.name, 160)?;
         if !anchor.id.starts_with("relationship-anchor:")
             || anchor.id.chars().count() > 80
             || !ids.insert(anchor.id.clone())
+            || !names.insert(normalized_identity(&anchor.name))
         {
             return Err(anyhow!(
-                "relationship actors require unique server-generated IDs"
+                "relationship actors require unique server-generated IDs and names"
             ));
         }
     }
     Ok(())
 }
 
-fn bind_required_relationship_actor_ids(
-    seed: &mut CompiledSeed,
+fn validate_shared_seed_excludes_private_relationship_subjects(
+    seed: &CompiledSeed,
     anchors: &[RequiredRelationshipActor],
 ) -> Result<()> {
-    if anchors.is_empty() {
-        return Ok(());
-    }
-    validate_required_relationship_actor_inputs(anchors)?;
-    require_unique_ids("actor", seed.actors.iter().map(|actor| actor.id.as_str()))?;
-
-    let mut bound = seed.clone();
-    let reserved_non_actor_ids = std::iter::once(bound.player.id.as_str())
-        .chain(bound.institutions.iter().map(|item| item.id.as_str()))
-        .chain(bound.gestalts.iter().map(|item| item.id.as_str()))
+    let private_names = anchors
+        .iter()
+        .map(|anchor| normalized_identity(&anchor.name))
         .collect::<BTreeSet<_>>();
-    let mut claimed_actor_indexes = BTreeSet::new();
-    let mut replacements = BTreeMap::new();
+    let collisions = seed
+        .actors
+        .iter()
+        .filter(|actor| private_names.contains(&normalized_identity(&actor.name)))
+        .map(|actor| actor.id.clone())
+        .chain(
+            seed.gestalt_members
+                .iter()
+                .filter(|member| private_names.contains(&normalized_identity(&member.name)))
+                .map(|member| format!("member:{}", member.id)),
+        )
+        .collect::<Vec<_>>();
+    if collisions.is_empty() {
+        Ok(())
+    } else {
+        Err(anyhow!(
+            "shared world candidate materialized subject IDs reserved for the separate private actor stage; omit those subjects and their derived public references: {collisions:?}"
+        ))
+    }
+}
 
-    for anchor in anchors {
-        if reserved_non_actor_ids.contains(anchor.id.as_str()) {
+fn materialize_private_relationship_actors(
+    seed: &CompiledSeed,
+    anchors: &[RequiredRelationshipActor],
+    candidates: PrivateRelationshipActorSet,
+) -> Result<Vec<ActorState>> {
+    validate_required_relationship_actor_inputs(anchors)?;
+    if candidates.actors.len() != anchors.len() {
+        return Err(anyhow!(
+            "private relationship actor compiler returned {} candidates for {} approved subjects",
+            candidates.actors.len(),
+            anchors.len()
+        ));
+    }
+    let reserved_ids = std::iter::once(seed.player.id.as_str())
+        .chain(seed.actors.iter().map(|item| item.id.as_str()))
+        .chain(seed.institutions.iter().map(|item| item.id.as_str()))
+        .chain(seed.gestalts.iter().map(|item| item.id.as_str()))
+        .chain(seed.gestalt_members.iter().map(|item| item.id.as_str()))
+        .collect::<BTreeSet<_>>();
+    let mut used_candidates = BTreeSet::new();
+    let mut actors = Vec::with_capacity(anchors.len());
+    for (anchor_index, anchor) in anchors.iter().enumerate() {
+        if reserved_ids.contains(anchor.id.as_str()) {
             return Err(anyhow!(
-                "private relationship actor identity {} collides with a non-NPC canonical subject",
+                "private relationship actor identity {} collides with an existing canonical subject",
                 anchor.id
             ));
         }
-
-        let exact = bound
+        let normalized_name = normalized_identity(&anchor.name);
+        let matches = candidates
             .actors
             .iter()
             .enumerate()
-            .filter(|(_, actor)| actor.id == anchor.id)
+            .filter(|(index, actor)| {
+                !used_candidates.contains(index)
+                    && normalized_identity(&actor.name) == normalized_name
+            })
             .map(|(index, _)| index)
             .collect::<Vec<_>>();
-        let actor_index = if let [index] = exact.as_slice() {
-            *index
-        } else if exact.len() > 1 {
-            return Err(anyhow!(
-                "private relationship actor identity {} appears more than once",
-                anchor.id
-            ));
-        } else {
-            let normalized_name = normalized_identity(&anchor.name);
-            let matches = bound
-                .actors
-                .iter()
-                .enumerate()
-                .filter(|(index, actor)| {
-                    !claimed_actor_indexes.contains(index)
-                        && normalized_identity(&actor.name) == normalized_name
-                })
-                .map(|(index, _)| index)
-                .collect::<Vec<_>>();
-            match matches.as_slice() {
-                [index] => *index,
-                [] => {
-                    return Err(anyhow!(
-                        "world seed must synthesize one ordinary actor named exactly {:?} for private relationship anchor {}",
-                        anchor.name,
-                        anchor.id
-                    ));
-                }
-                _ => {
-                    return Err(anyhow!(
-                        "world seed ambiguously synthesized {} ordinary actors named {:?} for private relationship anchor {}",
-                        matches.len(),
-                        anchor.name,
-                        anchor.id
-                    ));
-                }
-            }
-        };
-        if !claimed_actor_indexes.insert(actor_index) {
-            return Err(anyhow!(
-                "one compiled actor cannot satisfy more than one private relationship anchor"
-            ));
-        }
-
-        let actor = &mut bound.actors[actor_index];
-        let previous_id = std::mem::replace(&mut actor.id, anchor.id.clone());
-        actor.name.clone_from(&anchor.name);
-        if previous_id != anchor.id {
-            replacements.insert(previous_id, anchor.id.clone());
-        }
-    }
-
-    rekey_relationships(&mut bound.player.relationships, &replacements)?;
-    for actor in &mut bound.actors {
-        rekey_relationships(&mut actor.relationships, &replacements)?;
-    }
-    for member in &mut bound.gestalt_members {
-        rekey_relationships(&mut member.relationships, &replacements)?;
-    }
-    require_unique_ids("actor", bound.actors.iter().map(|actor| actor.id.as_str()))?;
-    *seed = bound;
-    Ok(())
-}
-
-fn rekey_relationships(
-    relationships: &mut BTreeMap<String, String>,
-    replacements: &BTreeMap<String, String>,
-) -> Result<()> {
-    for (old_id, new_id) in replacements {
-        let Some(description) = relationships.remove(old_id) else {
-            continue;
-        };
-        if let Some(existing) = relationships.get(new_id) {
-            if existing != &description {
+        let index = match matches.as_slice() {
+            [index] => *index,
+            [] => {
                 return Err(anyhow!(
-                    "relationship identity binding would merge conflicting descriptions for {new_id}"
+                    "private actor stage omitted approved subject slot {anchor_index}"
                 ));
             }
-        } else {
-            relationships.insert(new_id.clone(), description);
+            _ => {
+                return Err(anyhow!(
+                    "private actor stage returned {} ambiguous candidates for approved subject slot {anchor_index}",
+                    matches.len(),
+                ));
+            }
+        };
+        used_candidates.insert(index);
+        let candidate = &candidates.actors[index];
+        if !seed
+            .locations
+            .iter()
+            .any(|location| location.id == candidate.location_id)
+        {
+            return Err(anyhow!(
+                "private actor candidate slot {anchor_index} occupies unknown location {}",
+                candidate.location_id
+            ));
         }
+        actors.push(ActorState {
+            id: anchor.id.clone(),
+            name: anchor.name.clone(),
+            location_id: candidate.location_id.clone(),
+            capabilities: candidate.capabilities.clone(),
+            knowledge: candidate.knowledge.clone(),
+            equipment: candidate.equipment.clone(),
+            conditions: candidate.conditions.clone(),
+            obligations: candidate.obligations.clone(),
+            relationships: BTreeMap::new(),
+            goals: candidate.goals.clone(),
+            memories: candidate.memories.clone(),
+        });
     }
-    Ok(())
+    Ok(actors)
 }
 
 fn validate_required_relationship_actors(
     campaign: &Campaign,
     anchors: &[RequiredRelationshipActor],
 ) -> Result<()> {
-    let rejected = anchors
+    let rejected_count = anchors
         .iter()
         .filter(|anchor| {
             campaign
@@ -1746,11 +1858,11 @@ fn validate_required_relationship_actors(
                 .get(&anchor.id)
                 .is_none_or(|actor| actor.name != anchor.name)
         })
-        .map(|anchor| anchor.id.clone())
-        .collect::<Vec<_>>();
-    if !rejected.is_empty() {
+        .count();
+    if rejected_count > 0 {
         return Err(anyhow!(
-            "world seed must contain every private relationship actor with its exact server ID and player-approved name; rejected anchors={rejected:?}"
+            "world seed failed private relationship actor binding for {} subject(s)",
+            rejected_count
         ));
     }
     Ok(())
@@ -3145,6 +3257,95 @@ mod tests {
         saw_exact_correction: AtomicBool,
     }
 
+    struct PrivateBoundaryCompilerModel {
+        shared_stage_was_private_free: AtomicBool,
+        private_stage_was_minimal: AtomicBool,
+    }
+
+    #[async_trait]
+    impl ModelPort for PrivateBoundaryCompilerModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "world_compile" => {
+                    self.shared_stage_was_private_free.store(
+                        !request.lived_stream.contains("convoy quartermaster")
+                            && !request.lived_stream.contains("relationship-anchor:")
+                            && !request.lived_stream.contains("life-debt"),
+                        Ordering::SeqCst,
+                    );
+                }
+                "private_relationship_actor_compile" => {
+                    self.private_stage_was_minimal.store(
+                        request.lived_stream.contains("convoy quartermaster")
+                            && !request.lived_stream.contains("relationship-anchor:")
+                            && !request.lived_stream.contains("life-debt"),
+                        Ordering::SeqCst,
+                    );
+                    return Ok(serde_json::json!({
+                        "actors":[{
+                            "name":"convoy quartermaster",
+                            "location_id":"yard",
+                            "capabilities":["convoy logistics"],
+                            "knowledge":["current manifest"],
+                            "equipment":["manifest terminal"],
+                            "conditions":[],
+                            "obligations":["account for the convoy"],
+                            "goals":["supply the convoy"],
+                            "memories":[]
+                        }]
+                    })
+                    .to_string());
+                }
+                "agency_compile" => {
+                    let roster = request
+                        .lived_stream
+                        .split_once("subject roster:\n")
+                        .and_then(|(_, tail)| tail.split_once("\n\nReturn exactly"))
+                        .map(|(json, _)| json)
+                        .ok_or_else(|| anyhow!("agency prompt lost its exact subject roster"))?;
+                    let briefs: Vec<serde_json::Value> = serde_json::from_str(roster)?;
+                    let profiles = briefs
+                        .into_iter()
+                        .map(|brief| {
+                            let subject_id = brief["subject_id"].clone();
+                            let subject_kind = brief["subject_kind"].clone();
+                            serde_json::json!({
+                                "subject_id":subject_id,
+                                "subject_kind":subject_kind,
+                                "collective_authority_id":if subject_kind == "gestalt" { subject_id } else { serde_json::Value::Null },
+                                "facets":{
+                                    "geography":["unknown"],
+                                    "ideology":["unknown"],
+                                    "authority":["unknown"],
+                                    "economy_role":["unknown"],
+                                    "species_body":["unknown"],
+                                    "information":["unknown"]
+                                },
+                                "location_ids":brief["location_ids"],
+                                "information_channels":[]
+                            })
+                        })
+                        .collect::<Vec<_>>();
+                    return Ok(serde_json::json!({
+                        "agency_profiles":profiles,
+                        "agency_relations":[]
+                    })
+                    .to_string());
+                }
+                _ => {}
+            }
+            CompilerModel {
+                invalid_route: false,
+            }
+            .run(request)
+            .await
+        }
+
+        fn provider(&self) -> &'static str {
+            "private-boundary-fixture"
+        }
+    }
+
     #[async_trait]
     impl ModelPort for CorrectionAwareOpeningModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
@@ -3524,11 +3725,84 @@ mod tests {
             validate_required_relationship_actors(&campaign, &[anchor])
                 .unwrap_err()
                 .to_string()
-                .contains("rejected anchors")
+                .contains("failed private relationship actor binding")
         );
     }
 
-    fn binding_test_actor(id: &str, name: &str) -> ActorState {
+    #[tokio::test]
+    async fn approved_private_relationship_identity_never_enters_shared_world_compilation() {
+        let model = Arc::new(PrivateBoundaryCompilerModel {
+            shared_stage_was_private_free: AtomicBool::new(false),
+            private_stage_was_minimal: AtomicBool::new(false),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let mut character = CharacterDraft {
+            schema: "ghostlight.character_draft.v1".into(),
+            member_id: "member-sable".into(),
+            actor_id: "actor-sable".into(),
+            name: "Sable".into(),
+            public_premise: "A logistics mediator".into(),
+            capabilities: vec!["route planning".into()],
+            goals: vec!["keep the convoy supplied".into()],
+            ..CharacterDraft::default()
+        };
+        character.relationships.insert(
+            "convoy quartermaster".into(),
+            "Sable owes them a life-debt".into(),
+        );
+        let brief = ApprovedCampaignBrief {
+            schema: "ghostlight.approved_campaign_brief.v1".into(),
+            session_zero_id: Uuid::new_v4(),
+            host_member_id: "member-sable".into(),
+            contract: CampaignContract {
+                campaign_name: "Private boundary".into(),
+                premise: "A convoy has reached a strained logistics yard.".into(),
+                canon_horizon: "fixture".into(),
+                starting_where: "yard".into(),
+                starting_when: "now".into(),
+                starting_pressure: "The convoy needs supplies.".into(),
+                desired_goal: "Keep the convoy supplied.".into(),
+                ..CampaignContract::default()
+            },
+            aggregate_boundaries: vec![],
+            characters: vec![character],
+            member_actor_ids: BTreeMap::from([("member-sable".into(), "actor-sable".into())]),
+            shared_digest: "sha256:shared".into(),
+            character_digests: BTreeMap::new(),
+        };
+
+        let (preview, _) = compiler.compile_approved_brief(&brief).await.unwrap();
+
+        assert!(model.shared_stage_was_private_free.load(Ordering::SeqCst));
+        assert!(model.private_stage_was_minimal.load(Ordering::SeqCst));
+        assert!(
+            !preview.campaign.transcript[0]
+                .text
+                .contains("convoy quartermaster")
+        );
+        assert!(
+            !preview
+                .branch_assumptions
+                .iter()
+                .any(|assumption| assumption.contains("convoy quartermaster"))
+        );
+        let anchor = preview
+            .campaign
+            .actors
+            .values()
+            .find(|actor| actor.id.starts_with("relationship-anchor:"))
+            .unwrap();
+        assert_eq!(anchor.name, "convoy quartermaster");
+        assert_eq!(anchor.location_id, "yard");
+        assert_eq!(
+            preview.campaign.actors["actor-sable"]
+                .relationships
+                .get(&anchor.id),
+            Some(&"Sable owes them a life-debt".into())
+        );
+    }
+
+    fn private_actor_test_actor(id: &str, name: &str) -> ActorState {
         ActorState {
             id: id.into(),
             name: name.into(),
@@ -3544,14 +3818,20 @@ mod tests {
         }
     }
 
-    fn binding_test_seed() -> CompiledSeed {
+    fn private_actor_test_seed() -> CompiledSeed {
         CompiledSeed {
-            title: "Relationship binding".into(),
+            title: "Private actor compilation".into(),
             canon_cutoff: "fixture".into(),
             world_time: Utc::now(),
             tick_hours: 6,
-            player: binding_test_actor("player", "Sable"),
-            locations: vec![],
+            player: private_actor_test_actor("player", "Sable"),
+            locations: vec![Location {
+                id: "convoy-staging".into(),
+                name: "Convoy Staging".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec!["temporary shelters".into()],
+            }],
             actors: vec![],
             gestalts: vec![],
             gestalt_members: vec![],
@@ -3564,127 +3844,129 @@ mod tests {
         }
     }
 
-    #[test]
-    fn relationship_anchor_binding_rekeys_synthesized_actor_and_typed_references() {
-        let anchor = RequiredRelationshipActor {
-            id: "relationship-anchor:quartermaster".into(),
-            name: "convoy quartermaster".into(),
-        };
-        let mut seed = binding_test_seed();
-        let old_id = "actor-quartermaster";
-        let mut synthesized = binding_test_actor(old_id, "Convoy Quartermaster");
-        synthesized.capabilities.insert("convoy logistics".into());
-        synthesized.location_id = "remote-convoy".into();
-        let mut witness = binding_test_actor("actor-witness", "Witness");
-        witness
-            .relationships
-            .insert(old_id.into(), "awaits a manifest".into());
-        seed.player
-            .relationships
-            .insert(old_id.into(), "owes a life-debt".into());
-        seed.actors.extend([synthesized, witness]);
-        seed.gestalt_members.push(GestaltMemberDelta {
-            schema: "ghostlight.gestalt_member_delta.v1".into(),
-            id: "member-runner".into(),
-            gestalt_id: "convoy".into(),
-            version: 0,
-            name: "Runner".into(),
-            capability_additions: BTreeSet::new(),
-            capability_removals: BTreeSet::new(),
-            knowledge_additions: BTreeSet::new(),
-            knowledge_removals: BTreeSet::new(),
-            equipment: BTreeSet::new(),
+    fn private_actor_candidate(name: &str, location_id: &str) -> PrivateRelationshipActorCandidate {
+        PrivateRelationshipActorCandidate {
+            name: name.into(),
+            location_id: location_id.into(),
+            capabilities: BTreeSet::from(["convoy logistics".into()]),
+            knowledge: BTreeSet::from(["current convoy manifest".into()]),
+            equipment: BTreeSet::from(["manifest terminal".into()]),
             conditions: BTreeSet::new(),
-            obligations: BTreeSet::new(),
-            relationships: BTreeMap::from([(old_id.into(), "carries dispatches".into())]),
-            goals: vec![],
+            obligations: BTreeSet::from(["account for the convoy".into()]),
+            goals: vec!["get the convoy supplied".into()],
             memories: vec![],
-            last_location_id: None,
-            materialized_actor_id: None,
-            last_relevant_revision: 0,
-            relevance_lease_until_revision: 0,
-        });
-
-        bind_required_relationship_actor_ids(&mut seed, std::slice::from_ref(&anchor)).unwrap();
-
-        let bound = seed
-            .actors
-            .iter()
-            .find(|actor| actor.id == anchor.id)
-            .unwrap();
-        assert_eq!(bound.name, anchor.name);
-        assert_eq!(bound.location_id, "remote-convoy");
-        assert!(bound.capabilities.contains("convoy logistics"));
-        assert_eq!(
-            seed.player.relationships.get(&anchor.id),
-            Some(&"owes a life-debt".into())
-        );
-        assert_eq!(
-            seed.actors[1].relationships.get(&anchor.id),
-            Some(&"awaits a manifest".into())
-        );
-        assert_eq!(
-            seed.gestalt_members[0].relationships.get(&anchor.id),
-            Some(&"carries dispatches".into())
-        );
-        assert!(!seed.actors.iter().any(|actor| actor.id == old_id));
+        }
     }
 
     #[test]
-    fn relationship_anchor_binding_rejects_missing_ambiguous_and_colliding_subjects() {
+    fn private_actor_materialization_attaches_server_identity_without_model_relationships() {
         let anchor = RequiredRelationshipActor {
             id: "relationship-anchor:quartermaster".into(),
             name: "convoy quartermaster".into(),
         };
-        let mut missing = binding_test_seed();
-        let original = missing.clone();
-        assert!(
-            bind_required_relationship_actor_ids(&mut missing, std::slice::from_ref(&anchor))
-                .unwrap_err()
-                .to_string()
-                .contains("must synthesize one ordinary actor")
-        );
-        assert_eq!(missing, original);
+        let actors = materialize_private_relationship_actors(
+            &private_actor_test_seed(),
+            std::slice::from_ref(&anchor),
+            PrivateRelationshipActorSet {
+                actors: vec![private_actor_candidate(
+                    "Convoy Quartermaster",
+                    "convoy-staging",
+                )],
+            },
+        )
+        .unwrap();
 
-        let mut ambiguous = binding_test_seed();
-        ambiguous.actors.extend([
-            binding_test_actor("first", "Convoy Quartermaster"),
-            binding_test_actor("second", "convoy-quartermaster"),
-        ]);
+        assert_eq!(actors.len(), 1);
+        assert_eq!(actors[0].id, anchor.id);
+        assert_eq!(actors[0].name, anchor.name);
+        assert_eq!(actors[0].location_id, "convoy-staging");
+        assert!(actors[0].capabilities.contains("convoy logistics"));
+        assert!(actors[0].relationships.is_empty());
+    }
+
+    #[test]
+    fn private_actor_materialization_rejects_missing_ambiguous_unknown_and_colliding_state() {
+        let anchor = RequiredRelationshipActor {
+            id: "relationship-anchor:quartermaster".into(),
+            name: "convoy quartermaster".into(),
+        };
+        let seed = private_actor_test_seed();
         assert!(
-            bind_required_relationship_actor_ids(&mut ambiguous, std::slice::from_ref(&anchor))
-                .unwrap_err()
-                .to_string()
-                .contains("ambiguously synthesized")
+            materialize_private_relationship_actors(
+                &seed,
+                std::slice::from_ref(&anchor),
+                PrivateRelationshipActorSet { actors: vec![] }
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("returned 0 candidates")
         );
 
-        let mut collision = binding_test_seed();
+        assert!(
+            materialize_private_relationship_actors(
+                &seed,
+                std::slice::from_ref(&anchor),
+                PrivateRelationshipActorSet {
+                    actors: vec![
+                        private_actor_candidate("Convoy Quartermaster", "convoy-staging"),
+                        private_actor_candidate("convoy-quartermaster", "convoy-staging"),
+                    ]
+                }
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("returned 2 candidates")
+        );
+
+        let medic = RequiredRelationshipActor {
+            id: "relationship-anchor:medic".into(),
+            name: "convoy medic".into(),
+        };
+        assert!(
+            materialize_private_relationship_actors(
+                &seed,
+                &[anchor.clone(), medic],
+                PrivateRelationshipActorSet {
+                    actors: vec![
+                        private_actor_candidate("Convoy Quartermaster", "convoy-staging"),
+                        private_actor_candidate("convoy-quartermaster", "convoy-staging"),
+                    ]
+                }
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("ambiguous candidates")
+        );
+
+        let mut unknown = private_actor_candidate("convoy quartermaster", "missing");
+        assert!(
+            materialize_private_relationship_actors(
+                &seed,
+                std::slice::from_ref(&anchor),
+                PrivateRelationshipActorSet {
+                    actors: vec![unknown.clone()]
+                }
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("occupies unknown location")
+        );
+
+        unknown.location_id = "convoy-staging".into();
+        let mut collision = seed;
         collision.player.id.clone_from(&anchor.id);
-        collision
-            .actors
-            .push(binding_test_actor("candidate", "convoy quartermaster"));
         assert!(
-            bind_required_relationship_actor_ids(&mut collision, &[anchor])
-                .unwrap_err()
-                .to_string()
-                .contains("collides with a non-NPC canonical subject")
+            materialize_private_relationship_actors(
+                &collision,
+                &[anchor],
+                PrivateRelationshipActorSet {
+                    actors: vec![unknown]
+                }
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("collides with an existing canonical subject")
         );
-    }
-
-    #[test]
-    fn relationship_anchor_binding_accepts_exact_id_and_restores_approved_name() {
-        let anchor = RequiredRelationshipActor {
-            id: "relationship-anchor:quartermaster".into(),
-            name: "convoy quartermaster".into(),
-        };
-        let mut seed = binding_test_seed();
-        seed.actors
-            .push(binding_test_actor(&anchor.id, "Quartermaster (renamed)"));
-
-        bind_required_relationship_actor_ids(&mut seed, std::slice::from_ref(&anchor)).unwrap();
-
-        assert_eq!(seed.actors[0].id, anchor.id);
-        assert_eq!(seed.actors[0].name, anchor.name);
     }
 
     #[tokio::test]

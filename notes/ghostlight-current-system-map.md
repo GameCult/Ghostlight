@@ -601,18 +601,20 @@ and shared cast projection excludes private relationship-anchor people.
 Private character relationships now cross compilation through a typed identity
 membrane. Exact player references bind to their approved actor IDs. Each
 otherwise unresolved named person gets a stable server-generated
-`relationship-anchor:*` actor ID. The model receives only that identity handle
-and approved display name and must synthesize exactly one matching ordinary
-actor, but it does not own the opaque ID: after synthesis the compiler binds
-the ID locally by exact normalized name and rewrites all typed relationship
-references before validation. Omission, ambiguity, collision, or conflicting
-references reject the candidate atomically. The model does not receive the
-private relationship description. Actor, institution, Gestalt, and `member:*`
-IDs are all legal directional relationship targets, but those links never union
-knowledge or authority. Only the owning member's review surface projects the
-compiled target, placement, and private description before approval. A shared
-branch assumption exposes the number of materialized private subjects, never
-their identities or relationship details.
+`relationship-anchor:*` actor ID. A separate private actor stage receives only
+the approved display name after public topology validation; it never receives
+the opaque identity handle or relationship. The shared world compiler receives
+none of those private inputs. The private
+stage returns characterization and one exact supplied location, but has no
+schema fields for IDs, relationships, narration, facts, gaps, assumptions, or
+public-world changes. Ghostlight attaches the opaque ID locally and later binds
+the approved relationship only onto its owner's actor. Omission, ambiguity,
+unknown placement, or collision rejects the candidate atomically. Actor,
+institution, Gestalt, and `member:*` IDs are all legal directional relationship
+targets, but those links never union knowledge or authority. Only the owning
+member's review surface projects the compiled target, placement, and private
+description before approval. A shared branch assumption exposes the count of
+materialized private subjects, never their identities or relationship details.
 
 Roster lock is not readiness. Before world compilation the kernel checks the
 typed contract's core play frame and each active character's minimum actionable

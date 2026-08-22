@@ -220,14 +220,17 @@ the shared cast and appear only in their owner's private relationship card.
 Privacy is labeled in text and never conveyed only by color.
 
 An approved unresolved relationship person crosses world compilation as a
-server-owned identity anchor. The model must synthesize exactly one ordinary
-actor with the approved name and remains responsible for that person's
-location, capabilities, knowledge, equipment, obligations, and goals. The
-compiler then binds the opaque canonical ID locally by exact normalized name
-and rewrites typed relationship references before validating the candidate.
-Omission, ambiguity, ID collision, or conflicting references reject the whole
-candidate. Reproducing an opaque identity token is not Persona work and is not
-used as a test of model intelligence.
+server-owned identity anchor. The shared world compiler never receives that
+person's name, identity handle, or relationship. After the public topology is
+validated, a separate private stage receives the approved name and exact
+available locations and must synthesize exactly one ordinary actor candidate.
+It remains responsible for that person's location, capabilities, knowledge,
+equipment, obligations, and goals, but cannot emit IDs, relationships,
+narration, facts, gaps, assumptions, or public-world changes. The compiler then
+attaches the opaque canonical ID locally and the approved relationship is added
+only to its owner's actor. Omission, ambiguity, unknown placement, or ID
+collision rejects the whole candidate. Shared output cannot leak private input
+that its owning model never received.
 
 ## Inline grounded suggestions
 
