@@ -79,7 +79,10 @@ receipts unchanged.
 
 Generated opening and role suggestions are non-material decisions: the player
 may accept, counter, discuss, or ignore them without blocking a fully custom
-draft. Material decisions preserve the distinction between discussion and consent.
+draft. On daemon load, the registry demotes pre-cut generated opening records
+whose old `material` flag would otherwise veto a custom draft; this migration
+uses an exact CultCache replacement and does not advance the Session Zero
+revision or shared epoch. Material decisions preserve the distinction between discussion and consent.
 Every acceptable decision carries at least one non-empty typed contract,
 character, or extraordinary-permission payload. A question or a prose promise
 without an exact state change remains DM speech or a suggested reply; it cannot

@@ -1116,6 +1116,12 @@ impl SessionZeroRegistry {
                     "session zero directory must contain its one matching state row"
                 ));
             }
+            let (row, mut state) = store
+                .load::<SessionZeroState>("session_zero.v1", &id.to_string())?
+                .ok_or_else(|| anyhow!("session zero state vanished during load"))?;
+            if demote_legacy_optional_opening_suggestions(&mut state) {
+                store.replace(&row, "ghostlight.session_zero.v1", &state)?;
+            }
             found.insert(
                 id,
                 SessionZeroRuntime {
@@ -2231,7 +2237,7 @@ pub fn session_zero_surface(
             serde_json::json!({"expected_revision":state.revision}),
             &["topic", "level"],
         ),
-        serde_json::json!({"id":"session-zero.decision.counter","kind":"control.input.textarea","props":{"label":"Counterproposal","rows":3,"placeholder":"State the replacement you want the table or DM to consider."},"stateBindings":[local_draft_binding("counter", "string")],"children":[]}),
+        serde_json::json!({"id":"session-zero.decision.counter","kind":"control.input.textarea","props":{"label":"Counterproposal","rows":3,"maxLength":2000,"placeholder":"State the replacement you want the table or DM to consider (up to 2,000 characters)."},"stateBindings":[local_draft_binding("counter", "string")],"children":[]}),
     ];
     for boundary in &private_boundaries {
         children.push(serde_json::json!({
@@ -3258,6 +3264,24 @@ fn decision_has_typed_payload(decision: &SessionZeroDecision) -> bool {
             .is_some_and(|patch| patch != &CharacterDraftPatch::default())
 }
 
+fn demote_legacy_optional_opening_suggestions(state: &mut SessionZeroState) -> bool {
+    let mut changed = false;
+    for decision in state.decisions.values_mut() {
+        let generated_opening = decision.id.starts_with("opening:")
+            && decision.owner_member_id.is_none()
+            && decision.proposed_contract_patch.is_some()
+            && decision.prompt.starts_with("Use '")
+            && decision
+                .prompt
+                .ends_with("' as the starting frame for further Session Zero discussion?");
+        if generated_opening && decision.material {
+            decision.material = false;
+            changed = true;
+        }
+    }
+    changed
+}
+
 fn validate_counter_replacement(
     countered: &SessionZeroDecision,
     member_id: Option<&str>,
@@ -4225,6 +4249,78 @@ mod tests {
                 .to_string()
                 .contains("material decisions")
         );
+    }
+
+    #[test]
+    fn legacy_generated_openings_are_demoted_without_advancing_session_state() {
+        let mut draft = state();
+        let revision = draft.revision;
+        let shared_epoch = draft.shared_epoch;
+        draft.decisions.insert(
+            "opening:legacy".into(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "opening:legacy".into(),
+                owner_member_id: None,
+                prompt: "Use 'A Legacy Opening' as the starting frame for further Session Zero discussion?".into(),
+                proposed_resolution: "An optional generated opening.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: Some(CampaignContractPatch {
+                    starting_where: Some("Somewhere the player did not choose".into()),
+                    ..Default::default()
+                }),
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            },
+        );
+
+        assert!(demote_legacy_optional_opening_suggestions(&mut draft));
+        assert!(!draft.decisions["opening:legacy"].material);
+        assert_eq!(draft.revision, revision);
+        assert_eq!(draft.shared_epoch, shared_epoch);
+        assert!(!demote_legacy_optional_opening_suggestions(&mut draft));
+    }
+
+    #[tokio::test]
+    async fn registry_load_persists_the_legacy_opening_demotion() {
+        let root = tempdir().unwrap();
+        let mut draft = state();
+        let id = draft.id;
+        let revision = draft.revision;
+        draft.decisions.insert(
+            "opening:persisted-legacy".into(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "opening:persisted-legacy".into(),
+                owner_member_id: None,
+                prompt: "Use 'Persisted Legacy' as the starting frame for further Session Zero discussion?".into(),
+                proposed_resolution: "An old optional suggestion.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: Some(CampaignContractPatch {
+                    premise: Some("An opening the player may ignore".into()),
+                    ..Default::default()
+                }),
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            },
+        );
+        let directory = root.path().join(id.to_string());
+        fs::create_dir(&directory).unwrap();
+        let store = CampaignStore::open(directory.join("session-zero.cc")).unwrap();
+        SessionZeroKernel::initialize(&store, &draft).unwrap();
+        drop(store);
+
+        let registry = SessionZeroRegistry::new(root.path()).unwrap();
+        registry.load_existing().await.unwrap();
+        let loaded = registry.snapshot(id).await.unwrap();
+        assert!(!loaded.decisions["opening:persisted-legacy"].material);
+        assert_eq!(loaded.revision, revision);
     }
 
     #[tokio::test]

@@ -58,7 +58,10 @@ semantics. Accepted receipts may clear named drafts; rejection and stale
 conflict preserve them. An omitted clear-binding list means clear the surface's
 drafts; an explicit empty list means clear nothing. Operations that capture no
 editable bindings therefore cannot erase an unrelated composer, channel
-selection, boundary draft, or counterproposal.
+selection, boundary draft, or counterproposal. Provider-authored length limits
+lower onto editable controls before submission; Ghostlight still validates the
+same bound at ingress. Denied command receipts use an accessible alert region
+and survive authoritative surface refreshes alongside the preserved draft.
 
 ## Authentication membrane
 
