@@ -13,6 +13,7 @@ import "./style.css";
 class GhostlightEveTransport implements EveBrowserProviderTransport {
   private provider: EveProviderAdvertisement | undefined;
   private sourceVersion = 0;
+  private authenticatedSurface = false;
 
   async providerAdvertisement(): Promise<EveProviderAdvertisement> {
     this.provider = await fetchJson<EveProviderAdvertisement>("api/eve/provider");
@@ -25,7 +26,12 @@ class GhostlightEveTransport implements EveBrowserProviderTransport {
     const query = pendingInvite ? `?invite=${encodeURIComponent(pendingInvite)}` : "";
     const document = await fetchJson<EveSurfaceDocument>(`api/eve/surfaces/${encodeURIComponent(surfaceId)}${query}`);
     this.sourceVersion = Math.max(0, Math.trunc(document.version || 0));
+    this.authenticatedSurface = !containsAnonymousAccessGate(document);
     return document;
+  }
+
+  hasAuthenticatedSurface(): boolean {
+    return this.authenticatedSurface;
   }
 
   async submitCommand(intent: EveCommandIntent): Promise<unknown> {
@@ -79,6 +85,19 @@ async function fetchJson<T = any>(input: RequestInfo | URL, init?: RequestInit):
   return body as T;
 }
 
+function containsAnonymousAccessGate(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  if (Array.isArray(value)) return value.some(containsAnonymousAccessGate);
+  const node = value as Record<string, unknown>;
+  if (node.kind === "heimdall.access_gate") {
+    const props = node.props && typeof node.props === "object" && !Array.isArray(node.props)
+      ? node.props as Record<string, unknown>
+      : {};
+    return props.state === "anonymous";
+  }
+  return Object.values(node).some(containsAnonymousAccessGate);
+}
+
 function requiredElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
   if (!(element instanceof HTMLElement)) throw new Error(`Missing browser host #${id}.`);
@@ -114,8 +133,10 @@ await resumeHeimdallAccess({
   },
 });
 
-const events = new EventSource("api/eve/events");
-events.addEventListener("revision", () => void host.refresh());
-events.addEventListener("error", () => {
-  status.textContent = "Live revision notices are unavailable; your authoritative surface remains safe to refresh.";
-});
+if (api.hasAuthenticatedSurface()) {
+  const events = new EventSource("api/eve/events");
+  events.addEventListener("revision", () => void host.refresh());
+  events.addEventListener("error", () => {
+    status.textContent = "Live revision notices are unavailable; your authoritative surface remains safe to refresh.";
+  });
+}
