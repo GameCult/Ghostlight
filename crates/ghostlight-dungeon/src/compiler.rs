@@ -473,7 +473,7 @@ impl WorldCompiler {
             scoped_evidence
         );
         let base_prompt = format!(
-            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. PRIVATE RELATIONSHIP ACTOR ANCHORS carry only player-approved existence and display names: include every one as an ordinary actor with its exact id and name, give it a plausible supplied location, and do not mention its existence or relationship in opening_narration merely because it appears in that private list. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. PRIVATE RELATIONSHIP ACTOR ANCHORS carry only player-approved existence, display names, and opaque server identity handles: include every one exactly once as an ordinary actor with its exact name, give it a plausible supplied location, and preferably copy its supplied id. The server binds the opaque id locally by exact normalized name, so never rename, omit, or duplicate an anchor. Do not mention its existence or relationship in opening_narration merely because it appears in that private list. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -490,13 +490,20 @@ impl WorldCompiler {
                 )
                 .await?;
             compiler_receipts.push(output.1);
-            let seed: CompiledSeed = serde_json::from_value(output.0)?;
-            match seed_to_campaign(seed.clone(), &receipts).and_then(|campaign| {
-                validate_campaign_seed(&campaign)?;
-                validate_opening_playability(&campaign)?;
-                validate_required_relationship_actors(&campaign, required_relationship_actors)?;
-                Ok(campaign)
-            }) {
+            let mut seed: CompiledSeed = serde_json::from_value(output.0)?;
+            let validation =
+                bind_required_relationship_actor_ids(&mut seed, required_relationship_actors)
+                    .and_then(|()| seed_to_campaign(seed.clone(), &receipts))
+                    .and_then(|campaign| {
+                        validate_campaign_seed(&campaign)?;
+                        validate_opening_playability(&campaign)?;
+                        validate_required_relationship_actors(
+                            &campaign,
+                            required_relationship_actors,
+                        )?;
+                        Ok(campaign)
+                    });
+            match validation {
                 Ok(_) => break seed,
                 Err(error) if compiler_receipts.len() == 1 => {
                     mark_semantic_invalid(
@@ -1604,6 +1611,124 @@ fn validate_required_relationship_actor_inputs(
             return Err(anyhow!(
                 "relationship actors require unique server-generated IDs"
             ));
+        }
+    }
+    Ok(())
+}
+
+fn bind_required_relationship_actor_ids(
+    seed: &mut CompiledSeed,
+    anchors: &[RequiredRelationshipActor],
+) -> Result<()> {
+    if anchors.is_empty() {
+        return Ok(());
+    }
+    validate_required_relationship_actor_inputs(anchors)?;
+    require_unique_ids("actor", seed.actors.iter().map(|actor| actor.id.as_str()))?;
+
+    let mut bound = seed.clone();
+    let reserved_non_actor_ids = std::iter::once(bound.player.id.as_str())
+        .chain(bound.institutions.iter().map(|item| item.id.as_str()))
+        .chain(bound.gestalts.iter().map(|item| item.id.as_str()))
+        .collect::<BTreeSet<_>>();
+    let mut claimed_actor_indexes = BTreeSet::new();
+    let mut replacements = BTreeMap::new();
+
+    for anchor in anchors {
+        if reserved_non_actor_ids.contains(anchor.id.as_str()) {
+            return Err(anyhow!(
+                "private relationship actor identity {} collides with a non-NPC canonical subject",
+                anchor.id
+            ));
+        }
+
+        let exact = bound
+            .actors
+            .iter()
+            .enumerate()
+            .filter(|(_, actor)| actor.id == anchor.id)
+            .map(|(index, _)| index)
+            .collect::<Vec<_>>();
+        let actor_index = if let [index] = exact.as_slice() {
+            *index
+        } else if exact.len() > 1 {
+            return Err(anyhow!(
+                "private relationship actor identity {} appears more than once",
+                anchor.id
+            ));
+        } else {
+            let normalized_name = normalized_identity(&anchor.name);
+            let matches = bound
+                .actors
+                .iter()
+                .enumerate()
+                .filter(|(index, actor)| {
+                    !claimed_actor_indexes.contains(index)
+                        && normalized_identity(&actor.name) == normalized_name
+                })
+                .map(|(index, _)| index)
+                .collect::<Vec<_>>();
+            match matches.as_slice() {
+                [index] => *index,
+                [] => {
+                    return Err(anyhow!(
+                        "world seed must synthesize one ordinary actor named exactly {:?} for private relationship anchor {}",
+                        anchor.name,
+                        anchor.id
+                    ));
+                }
+                _ => {
+                    return Err(anyhow!(
+                        "world seed ambiguously synthesized {} ordinary actors named {:?} for private relationship anchor {}",
+                        matches.len(),
+                        anchor.name,
+                        anchor.id
+                    ));
+                }
+            }
+        };
+        if !claimed_actor_indexes.insert(actor_index) {
+            return Err(anyhow!(
+                "one compiled actor cannot satisfy more than one private relationship anchor"
+            ));
+        }
+
+        let actor = &mut bound.actors[actor_index];
+        let previous_id = std::mem::replace(&mut actor.id, anchor.id.clone());
+        actor.name.clone_from(&anchor.name);
+        if previous_id != anchor.id {
+            replacements.insert(previous_id, anchor.id.clone());
+        }
+    }
+
+    rekey_relationships(&mut bound.player.relationships, &replacements)?;
+    for actor in &mut bound.actors {
+        rekey_relationships(&mut actor.relationships, &replacements)?;
+    }
+    for member in &mut bound.gestalt_members {
+        rekey_relationships(&mut member.relationships, &replacements)?;
+    }
+    require_unique_ids("actor", bound.actors.iter().map(|actor| actor.id.as_str()))?;
+    *seed = bound;
+    Ok(())
+}
+
+fn rekey_relationships(
+    relationships: &mut BTreeMap<String, String>,
+    replacements: &BTreeMap<String, String>,
+) -> Result<()> {
+    for (old_id, new_id) in replacements {
+        let Some(description) = relationships.remove(old_id) else {
+            continue;
+        };
+        if let Some(existing) = relationships.get(new_id) {
+            if existing != &description {
+                return Err(anyhow!(
+                    "relationship identity binding would merge conflicting descriptions for {new_id}"
+                ));
+            }
+        } else {
+            relationships.insert(new_id.clone(), description);
         }
     }
     Ok(())
@@ -3401,6 +3526,165 @@ mod tests {
                 .to_string()
                 .contains("rejected anchors")
         );
+    }
+
+    fn binding_test_actor(id: &str, name: &str) -> ActorState {
+        ActorState {
+            id: id.into(),
+            name: name.into(),
+            location_id: "yard".into(),
+            capabilities: BTreeSet::new(),
+            knowledge: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::new(),
+            goals: vec![],
+            memories: vec![],
+        }
+    }
+
+    fn binding_test_seed() -> CompiledSeed {
+        CompiledSeed {
+            title: "Relationship binding".into(),
+            canon_cutoff: "fixture".into(),
+            world_time: Utc::now(),
+            tick_hours: 6,
+            player: binding_test_actor("player", "Sable"),
+            locations: vec![],
+            actors: vec![],
+            gestalts: vec![],
+            gestalt_members: vec![],
+            institutions: vec![],
+            clocks: vec![],
+            facts: vec![],
+            gaps: vec![],
+            branch_assumptions: vec![],
+            opening_narration: String::new(),
+        }
+    }
+
+    #[test]
+    fn relationship_anchor_binding_rekeys_synthesized_actor_and_typed_references() {
+        let anchor = RequiredRelationshipActor {
+            id: "relationship-anchor:quartermaster".into(),
+            name: "convoy quartermaster".into(),
+        };
+        let mut seed = binding_test_seed();
+        let old_id = "actor-quartermaster";
+        let mut synthesized = binding_test_actor(old_id, "Convoy Quartermaster");
+        synthesized.capabilities.insert("convoy logistics".into());
+        synthesized.location_id = "remote-convoy".into();
+        let mut witness = binding_test_actor("actor-witness", "Witness");
+        witness
+            .relationships
+            .insert(old_id.into(), "awaits a manifest".into());
+        seed.player
+            .relationships
+            .insert(old_id.into(), "owes a life-debt".into());
+        seed.actors.extend([synthesized, witness]);
+        seed.gestalt_members.push(GestaltMemberDelta {
+            schema: "ghostlight.gestalt_member_delta.v1".into(),
+            id: "member-runner".into(),
+            gestalt_id: "convoy".into(),
+            version: 0,
+            name: "Runner".into(),
+            capability_additions: BTreeSet::new(),
+            capability_removals: BTreeSet::new(),
+            knowledge_additions: BTreeSet::new(),
+            knowledge_removals: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::from([(old_id.into(), "carries dispatches".into())]),
+            goals: vec![],
+            memories: vec![],
+            last_location_id: None,
+            materialized_actor_id: None,
+            last_relevant_revision: 0,
+            relevance_lease_until_revision: 0,
+        });
+
+        bind_required_relationship_actor_ids(&mut seed, std::slice::from_ref(&anchor)).unwrap();
+
+        let bound = seed
+            .actors
+            .iter()
+            .find(|actor| actor.id == anchor.id)
+            .unwrap();
+        assert_eq!(bound.name, anchor.name);
+        assert_eq!(bound.location_id, "remote-convoy");
+        assert!(bound.capabilities.contains("convoy logistics"));
+        assert_eq!(
+            seed.player.relationships.get(&anchor.id),
+            Some(&"owes a life-debt".into())
+        );
+        assert_eq!(
+            seed.actors[1].relationships.get(&anchor.id),
+            Some(&"awaits a manifest".into())
+        );
+        assert_eq!(
+            seed.gestalt_members[0].relationships.get(&anchor.id),
+            Some(&"carries dispatches".into())
+        );
+        assert!(!seed.actors.iter().any(|actor| actor.id == old_id));
+    }
+
+    #[test]
+    fn relationship_anchor_binding_rejects_missing_ambiguous_and_colliding_subjects() {
+        let anchor = RequiredRelationshipActor {
+            id: "relationship-anchor:quartermaster".into(),
+            name: "convoy quartermaster".into(),
+        };
+        let mut missing = binding_test_seed();
+        let original = missing.clone();
+        assert!(
+            bind_required_relationship_actor_ids(&mut missing, std::slice::from_ref(&anchor))
+                .unwrap_err()
+                .to_string()
+                .contains("must synthesize one ordinary actor")
+        );
+        assert_eq!(missing, original);
+
+        let mut ambiguous = binding_test_seed();
+        ambiguous.actors.extend([
+            binding_test_actor("first", "Convoy Quartermaster"),
+            binding_test_actor("second", "convoy-quartermaster"),
+        ]);
+        assert!(
+            bind_required_relationship_actor_ids(&mut ambiguous, std::slice::from_ref(&anchor))
+                .unwrap_err()
+                .to_string()
+                .contains("ambiguously synthesized")
+        );
+
+        let mut collision = binding_test_seed();
+        collision.player.id.clone_from(&anchor.id);
+        collision
+            .actors
+            .push(binding_test_actor("candidate", "convoy quartermaster"));
+        assert!(
+            bind_required_relationship_actor_ids(&mut collision, &[anchor])
+                .unwrap_err()
+                .to_string()
+                .contains("collides with a non-NPC canonical subject")
+        );
+    }
+
+    #[test]
+    fn relationship_anchor_binding_accepts_exact_id_and_restores_approved_name() {
+        let anchor = RequiredRelationshipActor {
+            id: "relationship-anchor:quartermaster".into(),
+            name: "convoy quartermaster".into(),
+        };
+        let mut seed = binding_test_seed();
+        seed.actors
+            .push(binding_test_actor(&anchor.id, "Quartermaster (renamed)"));
+
+        bind_required_relationship_actor_ids(&mut seed, std::slice::from_ref(&anchor)).unwrap();
+
+        assert_eq!(seed.actors[0].id, anchor.id);
+        assert_eq!(seed.actors[0].name, anchor.name);
     }
 
     #[tokio::test]

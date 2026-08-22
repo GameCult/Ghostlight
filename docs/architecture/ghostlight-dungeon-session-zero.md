@@ -219,6 +219,16 @@ gaps, and branch assumptions. Relationship-anchor people remain absent from
 the shared cast and appear only in their owner's private relationship card.
 Privacy is labeled in text and never conveyed only by color.
 
+An approved unresolved relationship person crosses world compilation as a
+server-owned identity anchor. The model must synthesize exactly one ordinary
+actor with the approved name and remains responsible for that person's
+location, capabilities, knowledge, equipment, obligations, and goals. The
+compiler then binds the opaque canonical ID locally by exact normalized name
+and rewrites typed relationship references before validating the candidate.
+Omission, ambiguity, ID collision, or conflicting references reject the whole
+candidate. Reproducing an opaque identity token is not Persona work and is not
+used as a test of model intelligence.
+
 ## Inline grounded suggestions
 
 Opening and role generation is no longer a browser-owned creation flow. On a
