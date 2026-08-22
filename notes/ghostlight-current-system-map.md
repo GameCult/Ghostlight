@@ -575,10 +575,11 @@ assumptions, public party cards, and only the current viewer's private ledger.
 Generated openings are optional shared typed decisions; accepting one amends
 the draft for discussion and triggers three optional grounded role decisions in
 each private DM channel. Ignoring them cannot block a custom start or character.
-At registry load, exact legacy `opening:*` suggestion records from the pre-cut
-runtime are demoted from material to optional with a CultCache compare-and-swap;
-fictional revision and shared epoch do not move. The persisted typed draft,
-not stale suggestion materiality, owns compilation readiness.
+At registry load, exact legacy `opening:*` suggestions and payloadless question
+records from the pre-cut runtime are demoted from material to optional with a
+CultCache compare-and-swap; fictional revision and shared epoch do not move.
+Payloadless prose cannot own compilation readiness. The persisted typed draft,
+not stale suggestion materiality, owns that gate.
 Custom starts and characters use the same draft. The browser returns
 only decision commands and cannot echo a rewritten candidate into compilation.
 Candidate IDs, text, list sizes, and evidence references receive local

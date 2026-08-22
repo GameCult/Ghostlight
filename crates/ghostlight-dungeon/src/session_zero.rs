@@ -1119,7 +1119,7 @@ impl SessionZeroRegistry {
             let (row, mut state) = store
                 .load::<SessionZeroState>("session_zero.v1", &id.to_string())?
                 .ok_or_else(|| anyhow!("session zero state vanished during load"))?;
-            if demote_legacy_optional_opening_suggestions(&mut state) {
+            if demote_legacy_nonmaterial_decisions(&mut state) {
                 store.replace(&row, "ghostlight.session_zero.v1", &state)?;
             }
             found.insert(
@@ -3264,7 +3264,7 @@ fn decision_has_typed_payload(decision: &SessionZeroDecision) -> bool {
             .is_some_and(|patch| patch != &CharacterDraftPatch::default())
 }
 
-fn demote_legacy_optional_opening_suggestions(state: &mut SessionZeroState) -> bool {
+fn demote_legacy_nonmaterial_decisions(state: &mut SessionZeroState) -> bool {
     let mut changed = false;
     for decision in state.decisions.values_mut() {
         let generated_opening = decision.id.starts_with("opening:")
@@ -3274,7 +3274,8 @@ fn demote_legacy_optional_opening_suggestions(state: &mut SessionZeroState) -> b
             && decision
                 .prompt
                 .ends_with("' as the starting frame for further Session Zero discussion?");
-        if generated_opening && decision.material {
+        let payloadless_question = !decision_has_typed_payload(decision);
+        if decision.material && (generated_opening || payloadless_question) {
             decision.material = false;
             changed = true;
         }
@@ -4277,32 +4278,29 @@ mod tests {
             },
         );
 
-        assert!(demote_legacy_optional_opening_suggestions(&mut draft));
+        assert!(demote_legacy_nonmaterial_decisions(&mut draft));
         assert!(!draft.decisions["opening:legacy"].material);
         assert_eq!(draft.revision, revision);
         assert_eq!(draft.shared_epoch, shared_epoch);
-        assert!(!demote_legacy_optional_opening_suggestions(&mut draft));
+        assert!(!demote_legacy_nonmaterial_decisions(&mut draft));
     }
 
     #[tokio::test]
-    async fn registry_load_persists_the_legacy_opening_demotion() {
+    async fn registry_load_persists_the_payloadless_question_demotion() {
         let root = tempdir().unwrap();
         let mut draft = state();
         let id = draft.id;
         let revision = draft.revision;
         draft.decisions.insert(
-            "opening:persisted-legacy".into(),
+            "decision:persisted-legacy-question".into(),
             SessionZeroDecision {
                 schema: "ghostlight.session_zero_decision.v1".into(),
-                id: "opening:persisted-legacy".into(),
+                id: "decision:persisted-legacy-question".into(),
                 owner_member_id: None,
-                prompt: "Use 'Persisted Legacy' as the starting frame for further Session Zero discussion?".into(),
-                proposed_resolution: "An old optional suggestion.".into(),
+                prompt: "Which campaign aspiration should lead?".into(),
+                proposed_resolution: "Choose one of two discussion prompts.".into(),
                 proposed_extraordinary_permission: None,
-                proposed_contract_patch: Some(CampaignContractPatch {
-                    premise: Some("An opening the player may ignore".into()),
-                    ..Default::default()
-                }),
+                proposed_contract_patch: None,
                 proposed_character_patch: None,
                 evidence_receipt_ids: vec![],
                 pending_counter: None,
@@ -4319,7 +4317,7 @@ mod tests {
         let registry = SessionZeroRegistry::new(root.path()).unwrap();
         registry.load_existing().await.unwrap();
         let loaded = registry.snapshot(id).await.unwrap();
-        assert!(!loaded.decisions["opening:persisted-legacy"].material);
+        assert!(!loaded.decisions["decision:persisted-legacy-question"].material);
         assert_eq!(loaded.revision, revision);
     }
 
