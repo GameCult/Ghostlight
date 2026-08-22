@@ -733,6 +733,14 @@ Structured stages request JSON Output and then validate locally. Empty or
 malformed output gets one retry against the same snapshot. A second failure,
 timeout, retrieval outage, or stale result produces no mutation.
 
+The provider port owns its per-attempt transport deadline because queueing and
+generation throughput are properties of the selected transport, not fictional
+state or stage semantics. The default and DeepSeek deadline is 45 seconds; the
+OpenRouter test port allows 120 seconds so a congested route remains slow
+instead of being misclassified as invalid. Stage orchestration still owns the
+same-snapshot retry and local validation, and an expired attempt still produces
+no receipt or mutation.
+
 Prompt projection follows the authority boundary instead of shipping one large
 state packet to every stage:
 

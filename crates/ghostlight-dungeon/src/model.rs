@@ -117,13 +117,16 @@ pub trait ModelPort: Send + Sync {
         })
     }
     fn provider(&self) -> &'static str;
+    fn attempt_timeout(&self, _request: &ModelStageRequest) -> std::time::Duration {
+        std::time::Duration::from_secs(45)
+    }
 }
 
 pub async fn run_validated_stage(
     port: &dyn ModelPort,
     request: &ModelStageRequest,
 ) -> Result<ModelStageOutput> {
-    run_validated_stage_with_timeout(port, request, std::time::Duration::from_secs(45)).await
+    run_validated_stage_with_timeout(port, request, port.attempt_timeout(request)).await
 }
 
 pub async fn run_validated_stage_with_timeout(
@@ -304,6 +307,7 @@ mod tests {
     }
 
     struct NeverReturns;
+    struct ShortDeadlineNeverReturns;
     struct CorrectionAware {
         calls: AtomicUsize,
     }
@@ -317,6 +321,21 @@ mod tests {
 
         fn provider(&self) -> &'static str {
             "fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for ShortDeadlineNeverReturns {
+        async fn run(&self, _: &ModelStageRequest) -> Result<String> {
+            std::future::pending().await
+        }
+
+        fn provider(&self) -> &'static str {
+            "slow-fixture"
+        }
+
+        fn attempt_timeout(&self, _: &ModelStageRequest) -> std::time::Duration {
+            std::time::Duration::from_millis(5)
         }
     }
 
@@ -447,6 +466,24 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn validated_stage_uses_the_transport_owned_attempt_deadline() {
+        let request = ModelStageRequest {
+            stage: "transport-timeout-stage".into(),
+            model: "fixture".into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "fixture".into(),
+            output_schema: None,
+            source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: None,
+        };
+        let error = run_validated_stage(&ShortDeadlineNeverReturns, &request)
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("timed out"));
+    }
+
+    #[tokio::test]
     async fn receipt_hashes_the_physical_provider_model_not_the_logical_class() {
         let request = ModelStageRequest {
             stage: "startup_probe".into(),
@@ -563,6 +600,11 @@ mod tests {
         assert_eq!(body["plugins"][0]["id"], "response-healing");
         assert_eq!(body["temperature"].as_f64(), Some(0.0));
         assert!(body.get("thinking").is_none());
+        let port = OpenRouterPort::new("test-key".into(), "stealth/ox-alpha", "stealth/ox-alpha");
+        assert_eq!(
+            port.attempt_timeout(&request),
+            std::time::Duration::from_secs(120)
+        );
 
         let mut narrative = request.clone();
         narrative.output_schema = None;
@@ -881,6 +923,10 @@ impl ModelPort for OpenRouterPort {
 
     fn provider(&self) -> &'static str {
         "openrouter"
+    }
+
+    fn attempt_timeout(&self, _request: &ModelStageRequest) -> std::time::Duration {
+        std::time::Duration::from_secs(120)
     }
 }
 
