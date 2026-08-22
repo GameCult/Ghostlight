@@ -11,7 +11,7 @@ use crate::{
         StrategicTickPlan, StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest,
         WorldActionProposal, WorldClock, WorldCommitReceipt, WorldCompilePreview, WorldFact,
     },
-    model::ModelStageReceipt,
+    model::{ModelRuntimeStatus, ModelStageReceipt},
     session_zero::{
         ActiveContractBoundaryPolicy, ApprovedCampaignBrief, CampaignContract, CampaignDmPersona,
         CampaignGovernance, CampaignMembership, CellBudgetProposal, CharacterDraft,
@@ -248,7 +248,7 @@ impl MeshPublisher {
         &self,
         campaigns: &[CampaignMeshSnapshot],
         session_zeros: &[SessionZeroMeshSnapshot],
-        deepseek_status: &str,
+        model_status: &ModelRuntimeStatus,
         live_turn_pressure: usize,
     ) -> Result<Value> {
         let updated_at = Utc::now().to_rfc3339();
@@ -257,7 +257,7 @@ impl MeshPublisher {
             "status":"ok",
             "campaigns":campaigns.len(),
             "sessionZeros":session_zeros.len(),
-            "deepseek":deepseek_status,
+            "modelProvider":model_status,
             "scheduler":{"live_turn_pressure":live_turn_pressure},
             "updatedAtUtc":updated_at,
             "runtime":self.identity.runtime_id.as_str(),
@@ -638,11 +638,14 @@ mod tests {
     fn health_is_read_from_the_same_typed_mesh_record_that_is_published() {
         let temp = tempdir().unwrap();
         let publisher = MeshPublisher::open(temp.path().join("mesh.cc"), None).unwrap();
+        let model_status = fixture_model_status();
         let written = publisher
-            .publish_snapshot(&[], &[], "fixture-ready", 2)
+            .publish_snapshot(&[], &[], &model_status, 2)
             .unwrap();
         assert_eq!(publisher.health().unwrap(), written);
         assert_eq!(written["scheduler"]["live_turn_pressure"], 2);
+        assert_eq!(written["modelProvider"]["provider"], "fixture");
+        assert!(written.get("deepseek").is_none());
         let catalog = publisher
             .node
             .lock()
@@ -676,8 +679,9 @@ mod tests {
             MeshPublisher::open(temp.path().join("mesh.cc"), Some(unavailable)).unwrap();
 
         let started = std::time::Instant::now();
+        let model_status = fixture_model_status();
         let written = publisher
-            .publish_snapshot(&[], &[], "fixture-ready", 0)
+            .publish_snapshot(&[], &[], &model_status, 0)
             .expect("local projection remains writable while rendezvous is unavailable");
 
         assert!(
@@ -693,6 +697,15 @@ mod tests {
                 .get_required::<SchemaCatalogRecord>("ghostlight:schema-catalog")
                 .is_ok()
         );
+    }
+
+    fn fixture_model_status() -> ModelRuntimeStatus {
+        ModelRuntimeStatus {
+            provider: "fixture".into(),
+            fast_model: "fixture-fast".into(),
+            capable_model: "fixture-capable".into(),
+            readiness: "ready".into(),
+        }
     }
 
     #[test]

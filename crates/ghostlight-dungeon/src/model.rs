@@ -6,6 +6,18 @@ use sha2::{Digest, Sha256};
 use std::time::Instant;
 use zeroize::Zeroizing;
 
+pub const MODEL_FAST: &str = "ghostlight.fast.v1";
+pub const MODEL_CAPABLE: &str = "ghostlight.capable.v1";
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelRuntimeStatus {
+    pub provider: String,
+    pub fast_model: String,
+    pub capable_model: String,
+    pub readiness: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ModelStageRequest {
     pub stage: String,
@@ -85,6 +97,7 @@ pub struct ModelStageOutput {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ModelProviderOutput {
     pub content: String,
+    pub resolved_model: Option<String>,
     pub provider_request_id: Option<String>,
     pub system_fingerprint: Option<String>,
     pub finish_reason: Option<String>,
@@ -138,6 +151,7 @@ pub async fn run_validated_stage_with_timeout(
             })??;
         let ModelProviderOutput {
             content: output,
+            resolved_model,
             provider_request_id,
             system_fingerprint,
             finish_reason,
@@ -224,7 +238,10 @@ pub async fn run_validated_stage_with_timeout(
             .last_mut()
             .expect("attempt was just recorded")
             .local_validation_result = "valid".into();
-        let request_bytes = serde_json::to_vec(&attempt_request)?;
+        let receipt_model = resolved_model.unwrap_or_else(|| attempt_request.model.clone());
+        let mut receipted_request = attempt_request.clone();
+        receipted_request.model.clone_from(&receipt_model);
+        let request_bytes = serde_json::to_vec(&receipted_request)?;
         let provider = port.provider().to_owned();
         let request_hash = format!("sha256:{:x}", Sha256::digest(&request_bytes));
         let output_hash = format!("sha256:{:x}", Sha256::digest(output.as_bytes()));
@@ -234,7 +251,7 @@ pub async fn run_validated_stage_with_timeout(
                 format!(
                     "{}|{}|{}|{}|{}|{}",
                     provider,
-                    request.model,
+                    receipt_model,
                     request.stage,
                     request.snapshot_binding,
                     request_hash,
@@ -250,7 +267,7 @@ pub async fn run_validated_stage_with_timeout(
                 schema: "ghostlight.persona_stage_receipt.v1".into(),
                 receipt_hash,
                 provider,
-                model: request.model.clone(),
+                model: receipt_model,
                 stage: request.stage.clone(),
                 snapshot_binding: request.snapshot_binding.clone(),
                 request_hash,
@@ -285,6 +302,7 @@ mod tests {
     struct CorrectionAware {
         calls: AtomicUsize,
     }
+    struct PhysicallyRoutedModel;
 
     #[async_trait]
     impl ModelPort for NeverReturns {
@@ -326,6 +344,25 @@ mod tests {
 
         fn provider(&self) -> &'static str {
             "fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for PhysicallyRoutedModel {
+        async fn run(&self, _: &ModelStageRequest) -> Result<String> {
+            unreachable!("run_observed owns this fixture")
+        }
+
+        async fn run_observed(&self, _: &ModelStageRequest) -> Result<ModelProviderOutput> {
+            Ok(ModelProviderOutput {
+                content: "ready".into(),
+                resolved_model: Some("stealth/ox-alpha".into()),
+                ..Default::default()
+            })
+        }
+
+        fn provider(&self) -> &'static str {
+            "openrouter"
         }
     }
 
@@ -404,10 +441,39 @@ mod tests {
         assert!(error.to_string().contains("timed out"));
     }
 
+    #[tokio::test]
+    async fn receipt_hashes_the_physical_provider_model_not_the_logical_class() {
+        let request = ModelStageRequest {
+            stage: "startup_probe".into(),
+            model: MODEL_FAST.into(),
+            snapshot_binding: "service-startup".into(),
+            lived_stream: "ready?".into(),
+            output_schema: None,
+            source_receipt_ids: vec![],
+            temperature: Some(0.0),
+            max_output_tokens: Some(16),
+        };
+        let output = run_validated_stage(&PhysicallyRoutedModel, &request)
+            .await
+            .unwrap();
+        assert_eq!(output.receipt.provider, "openrouter");
+        assert_eq!(output.receipt.model, "stealth/ox-alpha");
+        let mut physical_request = request;
+        physical_request.model = "stealth/ox-alpha".into();
+        assert_eq!(
+            output.receipt.request_hash,
+            format!(
+                "sha256:{:x}",
+                Sha256::digest(serde_json::to_vec(&physical_request).unwrap())
+            )
+        );
+    }
+
     #[test]
     fn deepseek_response_preserves_usage_metadata_without_reasoning_content() {
         let output = decode_deepseek_response(&serde_json::json!({
             "id":"request-7",
+            "model":"deepseek-v4-flash",
             "system_fingerprint":"fp-live",
             "choices":[{
                 "finish_reason":"stop",
@@ -427,6 +493,7 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(output.content, "ready");
+        assert_eq!(output.resolved_model.as_deref(), Some("deepseek-v4-flash"));
         assert_eq!(output.provider_request_id.as_deref(), Some("request-7"));
         assert_eq!(output.finish_reason.as_deref(), Some("stop"));
         assert_eq!(output.token_usage.as_ref().unwrap().total_tokens, 150);
@@ -469,6 +536,62 @@ mod tests {
         assert!(narrative.get("temperature").is_none());
         assert!(narrative.get("response_format").is_none());
     }
+
+    #[test]
+    fn openrouter_requests_use_the_selected_physical_model_and_hide_reasoning() {
+        let request = ModelStageRequest {
+            stage: "interpreter".into(),
+            model: MODEL_FAST.into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "fixture".into(),
+            output_schema: Some(serde_json::json!({"type":"object"})),
+            source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: Some(321),
+        };
+        let body = openrouter_request_body(&request, "stealth/ox-alpha");
+        assert_eq!(body["model"], "stealth/ox-alpha");
+        assert_eq!(body["reasoning"]["effort"], "low");
+        assert_eq!(body["reasoning"]["exclude"], true);
+        assert_eq!(body["response_format"]["type"], "json_object");
+        assert_eq!(body["temperature"].as_f64(), Some(0.0));
+        assert!(body.get("thinking").is_none());
+
+        let mut capable = request;
+        capable.model = MODEL_CAPABLE.into();
+        assert_eq!(
+            openrouter_request_body(&capable, "stealth/ox-alpha")["reasoning"]["effort"],
+            "high"
+        );
+    }
+
+    #[test]
+    fn openrouter_response_preserves_cache_usage_without_reasoning_content() {
+        let output = decode_openai_chat_response(
+            &serde_json::json!({
+                "id":"generation-9",
+                "model":"stealth/ox-alpha",
+                "choices":[{
+                    "finish_reason":"stop",
+                    "message":{"content":"ready", "reasoning":"private"}
+                }],
+                "usage":{
+                    "prompt_tokens":120,
+                    "completion_tokens":30,
+                    "total_tokens":150,
+                    "prompt_tokens_details":{"cached_tokens":80},
+                    "completion_tokens_details":{"reasoning_tokens":0}
+                }
+            }),
+            "OpenRouter",
+        )
+        .unwrap();
+        assert_eq!(output.resolved_model.as_deref(), Some("stealth/ox-alpha"));
+        let usage = output.token_usage.as_ref().unwrap();
+        assert_eq!(usage.prompt_cache_hit_tokens, 80);
+        assert_eq!(usage.prompt_cache_miss_tokens, 40);
+        assert!(!format!("{output:?}").contains("private"));
+    }
 }
 
 #[derive(Clone)]
@@ -491,9 +614,19 @@ pub struct DeepSeekPort {
     client: reqwest::Client,
     api_key: Zeroizing<String>,
     endpoint: String,
+    fast_model: String,
+    capable_model: String,
 }
 impl DeepSeekPort {
     pub fn new(api_key: String) -> Self {
+        Self::with_models(api_key, "deepseek-v4-flash", "deepseek-v4-pro")
+    }
+
+    pub fn with_models(
+        api_key: String,
+        fast_model: impl Into<String>,
+        capable_model: impl Into<String>,
+    ) -> Self {
         Self {
             client: reqwest::Client::builder()
                 .connect_timeout(std::time::Duration::from_secs(10))
@@ -501,10 +634,11 @@ impl DeepSeekPort {
                 .expect("static DeepSeek client configuration is valid"),
             api_key: Zeroizing::new(api_key),
             endpoint: "https://api.deepseek.com/chat/completions".into(),
+            fast_model: fast_model.into(),
+            capable_model: capable_model.into(),
         }
     }
 
-    #[cfg(windows)]
     #[cfg(windows)]
     pub fn from_machine_dpapi(path: impl AsRef<std::path::Path>) -> Result<Self> {
         Ok(Self::new(crate::windows_secret::unprotect_machine_utf8(
@@ -522,22 +656,42 @@ impl DeepSeekPort {
     }
 
     pub fn from_runtime_secret(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        Self::from_runtime_secret_with_models(path, "deepseek-v4-flash", "deepseek-v4-pro")
+    }
+
+    pub fn from_runtime_secret_with_models(
+        path: impl AsRef<std::path::Path>,
+        fast_model: impl Into<String>,
+        capable_model: impl Into<String>,
+    ) -> Result<Self> {
         #[cfg(windows)]
         if path
             .as_ref()
             .extension()
             .is_some_and(|value| value == "dpapi")
         {
-            return Self::from_machine_dpapi(path);
+            return Ok(Self::with_models(
+                crate::windows_secret::unprotect_machine_utf8(path)?,
+                fast_model,
+                capable_model,
+            ));
         }
-        Self::from_utf8_secret_file(path)
+        let bytes = Zeroizing::new(std::fs::read(path.as_ref())?);
+        let secret = std::str::from_utf8(bytes.as_slice())?.trim().to_owned();
+        if secret.is_empty() {
+            anyhow::bail!("DeepSeek credential file is empty");
+        }
+        Ok(Self::with_models(secret, fast_model, capable_model))
     }
 
     async fn run_with_observation(
         &self,
         request: &ModelStageRequest,
     ) -> Result<ModelProviderOutput> {
-        let body = deepseek_request_body(request);
+        let resolved_model = resolve_model(request, &self.fast_model, &self.capable_model);
+        let mut routed_request = request.clone();
+        routed_request.model.clone_from(&resolved_model);
+        let body = deepseek_request_body(&routed_request);
         let value: serde_json::Value = self
             .client
             .post(&self.endpoint)
@@ -548,7 +702,9 @@ impl DeepSeekPort {
             .error_for_status()?
             .json()
             .await?;
-        decode_deepseek_response(&value)
+        let mut output = decode_deepseek_response(&value)?;
+        output.resolved_model = Some(resolved_model);
+        Ok(output)
     }
 }
 
@@ -584,11 +740,146 @@ impl ModelPort for DeepSeekPort {
 }
 
 fn decode_deepseek_response(value: &serde_json::Value) -> Result<ModelProviderOutput> {
+    decode_openai_chat_response(value, "DeepSeek")
+}
+
+pub struct OpenRouterPort {
+    client: reqwest::Client,
+    api_key: Zeroizing<String>,
+    endpoint: String,
+    fast_model: String,
+    capable_model: String,
+}
+
+impl OpenRouterPort {
+    pub fn new(
+        api_key: String,
+        fast_model: impl Into<String>,
+        capable_model: impl Into<String>,
+    ) -> Self {
+        Self {
+            client: reqwest::Client::builder()
+                .connect_timeout(std::time::Duration::from_secs(10))
+                .build()
+                .expect("static OpenRouter client configuration is valid"),
+            api_key: Zeroizing::new(api_key),
+            endpoint: "https://openrouter.ai/api/v1/chat/completions".into(),
+            fast_model: fast_model.into(),
+            capable_model: capable_model.into(),
+        }
+    }
+
+    pub fn from_utf8_secret_file(
+        path: impl AsRef<std::path::Path>,
+        fast_model: impl Into<String>,
+        capable_model: impl Into<String>,
+    ) -> Result<Self> {
+        let bytes = Zeroizing::new(std::fs::read(path.as_ref())?);
+        let secret = std::str::from_utf8(bytes.as_slice())?.trim().to_owned();
+        if secret.is_empty() {
+            anyhow::bail!("OpenRouter credential file is empty");
+        }
+        Ok(Self::new(secret, fast_model, capable_model))
+    }
+
+    pub fn from_runtime_secret(
+        path: impl AsRef<std::path::Path>,
+        fast_model: impl Into<String>,
+        capable_model: impl Into<String>,
+    ) -> Result<Self> {
+        #[cfg(windows)]
+        if path
+            .as_ref()
+            .extension()
+            .is_some_and(|value| value == "dpapi")
+        {
+            return Ok(Self::new(
+                crate::windows_secret::unprotect_machine_utf8(path)?,
+                fast_model,
+                capable_model,
+            ));
+        }
+        Self::from_utf8_secret_file(path, fast_model, capable_model)
+    }
+
+    async fn run_with_observation(
+        &self,
+        request: &ModelStageRequest,
+    ) -> Result<ModelProviderOutput> {
+        let resolved_model = resolve_model(request, &self.fast_model, &self.capable_model);
+        let body = openrouter_request_body(request, &resolved_model);
+        let value: serde_json::Value = self
+            .client
+            .post(&self.endpoint)
+            .bearer_auth(self.api_key.as_str())
+            .header("HTTP-Referer", "https://ghostlight.gamecult.org")
+            .header("X-Title", "Ghostlight Dungeon")
+            .json(&body)
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        let mut output = decode_openai_chat_response(&value, "OpenRouter")?;
+        output.resolved_model = Some(resolved_model);
+        Ok(output)
+    }
+}
+
+fn openrouter_request_body(request: &ModelStageRequest, resolved_model: &str) -> serde_json::Value {
+    let mut body = serde_json::json!({
+        "model": resolved_model,
+        "messages": [{"role": "user", "content": request.lived_stream}],
+        "stream": false,
+        "reasoning": {
+            "effort": if request.model == MODEL_CAPABLE { "high" } else { "low" },
+            "exclude": true
+        }
+    });
+    if request.output_schema.is_some() {
+        body["response_format"] = serde_json::json!({"type":"json_object"});
+        body["temperature"] = serde_json::json!(request.temperature.unwrap_or(0.0));
+    } else if let Some(temperature) = request.temperature {
+        body["temperature"] = serde_json::json!(temperature);
+    }
+    if let Some(max_tokens) = request.max_output_tokens {
+        body["max_tokens"] = serde_json::json!(max_tokens);
+    }
+    body
+}
+
+#[async_trait]
+impl ModelPort for OpenRouterPort {
+    async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+        Ok(self.run_with_observation(request).await?.content)
+    }
+
+    async fn run_observed(&self, request: &ModelStageRequest) -> Result<ModelProviderOutput> {
+        self.run_with_observation(request).await
+    }
+
+    fn provider(&self) -> &'static str {
+        "openrouter"
+    }
+}
+
+fn resolve_model(request: &ModelStageRequest, fast_model: &str, capable_model: &str) -> String {
+    match request.model.as_str() {
+        MODEL_FAST => fast_model.to_owned(),
+        MODEL_CAPABLE => capable_model.to_owned(),
+        explicit => explicit.to_owned(),
+    }
+}
+
+fn decode_openai_chat_response(
+    value: &serde_json::Value,
+    provider_name: &str,
+) -> Result<ModelProviderOutput> {
     let content = value
         .pointer("/choices/0/message/content")
         .and_then(|v| v.as_str())
         .map(str::to_owned)
-        .ok_or_else(|| anyhow!("DeepSeek response contained no assistant content"))?;
+        .ok_or_else(|| anyhow!("{provider_name} response contained no assistant content"))?;
     let token_usage = value
         .get("usage")
         .filter(|usage| !usage.is_null())
@@ -598,16 +889,27 @@ fn decode_deepseek_response(value: &serde_json::Value) -> Result<ModelProviderOu
             total_tokens: usage["total_tokens"].as_u64().unwrap_or_default(),
             prompt_cache_hit_tokens: usage["prompt_cache_hit_tokens"]
                 .as_u64()
+                .or_else(|| usage["prompt_tokens_details"]["cached_tokens"].as_u64())
                 .unwrap_or_default(),
-            prompt_cache_miss_tokens: usage["prompt_cache_miss_tokens"]
-                .as_u64()
-                .unwrap_or_default(),
+            prompt_cache_miss_tokens: usage["prompt_cache_miss_tokens"].as_u64().unwrap_or_else(
+                || {
+                    usage["prompt_tokens"]
+                        .as_u64()
+                        .unwrap_or_default()
+                        .saturating_sub(
+                            usage["prompt_tokens_details"]["cached_tokens"]
+                                .as_u64()
+                                .unwrap_or_default(),
+                        )
+                },
+            ),
             reasoning_tokens: usage["completion_tokens_details"]["reasoning_tokens"]
                 .as_u64()
                 .unwrap_or_default(),
         });
     Ok(ModelProviderOutput {
         content,
+        resolved_model: value["model"].as_str().map(str::to_owned),
         provider_request_id: value["id"].as_str().map(str::to_owned),
         system_fingerprint: value["system_fingerprint"].as_str().map(str::to_owned),
         finish_reason: value["choices"][0]["finish_reason"]

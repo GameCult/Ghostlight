@@ -3,7 +3,7 @@ use crate::{
         Campaign, CellActionProposal, StrategicActivityKind, StrategicActivityOutcome,
         StrategicCellEffect, StrategicOutcomeBand, StrategicOutcomeEffect, StrategicTickPlan,
     },
-    model::{ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
+    model::{MODEL_FAST, ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
     resolution::{cell_action_digest, effective_member_knowledge, subject_state_references},
 };
 use anyhow::{Result, anyhow};
@@ -155,7 +155,7 @@ pub async fn resolve_activity_outcomes(
     );
     let mut request = ModelStageRequest {
         stage: "strategic_outcome_resolver".into(),
-        model: "deepseek-v4-flash".into(),
+        model: MODEL_FAST.into(),
         snapshot_binding: binding,
         lived_stream: format!(
             "{static_contract}\n\nOUTCOME_CONTEXT:\n{}",
@@ -274,7 +274,7 @@ async fn verify_outcomes(
     );
     let request = ModelStageRequest {
         stage: "strategic_outcome_verifier".into(),
-        model: "deepseek-v4-flash".into(),
+        model: MODEL_FAST.into(),
         snapshot_binding: format!(
             "{}:verifier:{outcome_hash}",
             activity_outcome_binding(

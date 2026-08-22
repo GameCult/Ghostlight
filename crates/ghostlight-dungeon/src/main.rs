@@ -27,7 +27,10 @@ use ghostlight_dungeon::{
         CampaignMeshSnapshot, MeshPublisher, MeshRuntimeIdentity, PROVIDER_ID as EVE_PROVIDER_ID,
         SURFACE_ID as EVE_SURFACE_ID, SessionZeroMeshSnapshot,
     },
-    model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
+    model::{
+        DeepSeekPort, MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelRuntimeStatus, ModelStageRequest,
+        OpenRouterPort, run_validated_stage,
+    },
     narrator::Narrator,
     persistence::CampaignStore,
     persona::PersonaProjectionEngine,
@@ -68,7 +71,7 @@ struct AppState {
     entitlements: Arc<dyn EntitlementPort>,
     auth: Arc<Mutex<AppSessionOwner>>,
     heimdall: Arc<HeimdallClient>,
-    deepseek_status: String,
+    model_status: ModelRuntimeStatus,
     compiler: Option<Arc<WorldCompiler>>,
     assessor: Option<Arc<ActionAssessor>>,
     model: Option<Arc<dyn ModelPort>>,
@@ -255,51 +258,81 @@ async fn main() -> anyhow::Result<()> {
     for (account_hash, campaign_id) in &legacy_auth_state.session_campaigns {
         app_sessions.migrate_preference(account_hash, *campaign_id)?;
     }
-    let secret_path = std::env::var_os("GHOSTLIGHT_DEEPSEEK_CREDENTIAL")
+    let provider_name = std::env::var("GHOSTLIGHT_MODEL_PROVIDER")
+        .unwrap_or_else(|_| "deepseek".into())
+        .to_ascii_lowercase();
+    let (default_fast_model, default_capable_model, default_secret_name) =
+        match provider_name.as_str() {
+            "deepseek" => ("deepseek-v4-flash", "deepseek-v4-pro", "deepseek.dpapi"),
+            "openrouter" => ("stealth/ox-alpha", "stealth/ox-alpha", "openrouter.key"),
+            unsupported => anyhow::bail!("unsupported model provider {unsupported}"),
+        };
+    let fast_model =
+        std::env::var("GHOSTLIGHT_MODEL_FAST").unwrap_or_else(|_| default_fast_model.into());
+    let capable_model =
+        std::env::var("GHOSTLIGHT_MODEL_CAPABLE").unwrap_or_else(|_| default_capable_model.into());
+    let secret_path = std::env::var_os("GHOSTLIGHT_MODEL_CREDENTIAL")
         .map(PathBuf::from)
-        .unwrap_or_else(|| runtime_root.join("secrets/deepseek.dpapi"));
-    let (deepseek_status, compiler, assessor, shared_model) = if secret_path.is_file() {
-        let provider: Arc<dyn ModelPort> =
-            Arc::new(DeepSeekPort::from_runtime_secret(&secret_path)?);
+        .unwrap_or_else(|| runtime_root.join("secrets").join(default_secret_name));
+    let configured_status = |readiness: String| ModelRuntimeStatus {
+        provider: provider_name.clone(),
+        fast_model: fast_model.clone(),
+        capable_model: capable_model.clone(),
+        readiness,
+    };
+    let (model_status, compiler, assessor, shared_model) = if secret_path.is_file() {
+        let provider: Arc<dyn ModelPort> = match provider_name.as_str() {
+            "deepseek" => Arc::new(DeepSeekPort::from_runtime_secret_with_models(
+                &secret_path,
+                fast_model.clone(),
+                capable_model.clone(),
+            )?),
+            "openrouter" => Arc::new(OpenRouterPort::from_runtime_secret(
+                &secret_path,
+                fast_model.clone(),
+                capable_model.clone(),
+            )?),
+            _ => unreachable!("provider name was validated above"),
+        };
         let probe = run_validated_stage(
             provider.as_ref(),
             &ModelStageRequest {
                 stage: "startup_probe".into(),
-                model: "deepseek-v4-flash".into(),
+                model: MODEL_FAST.into(),
                 snapshot_binding: "service-startup".into(),
                 lived_stream: "Reply with the single word ready.".into(),
                 output_schema: None,
                 source_receipt_ids: vec![],
                 temperature: Some(0.0),
-                max_output_tokens: Some(16),
+                max_output_tokens: Some(128),
             },
         )
         .await;
-        let deepseek_status = match probe {
+        let readiness = match probe {
             Ok(probe) => format!("ready:{}", probe.receipt.output_hash),
             Err(error) => {
-                tracing::warn!(%error, "DeepSeek startup probe failed; runtime remains available");
+                tracing::warn!(provider = %provider_name, %error, "model startup probe failed; runtime remains available");
                 "degraded:startup-probe-failed".into()
             }
         };
         let vault_endpoint = std::env::var("GHOSTLIGHT_VAULT_MCP_URL")
             .unwrap_or_else(|_| "http://127.0.0.1:17875/mcp".into());
         (
-            deepseek_status,
+            configured_status(readiness),
             Some(Arc::new(WorldCompiler::new(
                 Arc::new(VoidBotMcpVault::new(vault_endpoint)),
                 provider.clone(),
-                "deepseek-v4-flash",
-                "deepseek-v4-pro",
+                MODEL_FAST,
+                MODEL_CAPABLE,
             ))),
             Some(Arc::new(ActionAssessor::new(
                 provider.clone(),
-                "deepseek-v4-pro",
+                MODEL_CAPABLE,
             ))),
             Some(provider),
         )
     } else {
-        ("missing-secret".into(), None, None, None)
+        (configured_status("missing-secret".into()), None, None, None)
     };
     let mesh_target = std::env::var("GHOSTLIGHT_ODIN_RUDP")
         .ok()
@@ -341,9 +374,9 @@ async fn main() -> anyhow::Result<()> {
     let session_zero_director = shared_model.as_ref().map(|model| {
         Arc::new(SessionZeroDirector::new(
             model.clone(),
-            "deepseek-v4-flash",
-            "deepseek-v4-pro",
-            "deepseek-v4-flash",
+            MODEL_FAST,
+            MODEL_CAPABLE,
+            MODEL_FAST,
         ))
     });
     let state = AppState {
@@ -353,7 +386,7 @@ async fn main() -> anyhow::Result<()> {
         entitlements: Arc::new(FixtureEntitlementPort),
         auth: Arc::new(Mutex::new(app_sessions)),
         heimdall: Arc::new(HeimdallClient::from_env()?),
-        deepseek_status,
+        model_status,
         compiler,
         assessor,
         model: shared_model,
@@ -3278,7 +3311,7 @@ async fn compile_destination(
     let Some(compiler) = &state.compiler else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
-            "DeepSeek credential is unavailable",
+            "Model provider credential is unavailable",
         )
             .into_response();
     };
@@ -3379,7 +3412,7 @@ async fn compile_fission(
     let Some(compiler) = &state.compiler else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
-            "DeepSeek credential is unavailable",
+            "Model provider credential is unavailable",
         )
             .into_response();
     };
@@ -3534,7 +3567,7 @@ async fn publish_latest_narration(
         .ok_or_else(|| anyhow::anyhow!("narration requires the model provider"))?;
     let narrator = Narrator {
         model: model.clone(),
-        model_name: "deepseek-v4-pro".into(),
+        model_name: MODEL_CAPABLE.into(),
     };
     let (projection, receipt) = narrator.project(&runtime.store, &campaign).await?;
     runtime.store.insert(
@@ -3832,7 +3865,7 @@ async fn command(
                 return (
                     StatusCode::SERVICE_UNAVAILABLE,
                     Json(ErrorBody {
-                        error: "DeepSeek assessor is unavailable".into(),
+                        error: "Model assessor is unavailable".into(),
                     }),
                 )
                     .into_response();
@@ -3977,7 +4010,7 @@ async fn command(
                         if !campaign.gestalts.is_empty() {
                             let planner = GestaltPresencePlanner {
                                 model: model.clone(),
-                                model_name: "deepseek-v4-flash".into(),
+                                model_name: MODEL_FAST.into(),
                             };
                             match planner.plan(campaign, &summary).await {
                                 Ok((plan, receipt)) => {
@@ -4026,9 +4059,9 @@ async fn command(
                                     reaction_campaign.id,
                                     reaction_campaign.revision,
                                 )),
-                                projector_model: "deepseek-v4-flash".into(),
-                                persona_model: "deepseek-v4-pro".into(),
-                                interpreter_model: "deepseek-v4-flash".into(),
+                                projector_model: MODEL_FAST.into(),
+                                persona_model: MODEL_CAPABLE.into(),
+                                interpreter_model: MODEL_FAST.into(),
                             };
                             match appraise_present(engine, &reaction_campaign, &summary).await {
                                 Ok(wave) if !wave.reactions.is_empty() => {
@@ -4138,7 +4171,7 @@ async fn command(
                     return (
                         StatusCode::SERVICE_UNAVAILABLE,
                         Json(ErrorBody {
-                            error: "DeepSeek assessor is unavailable".into(),
+                            error: "Model assessor is unavailable".into(),
                         }),
                     )
                         .into_response();
@@ -4586,10 +4619,10 @@ async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
         }
     }
     let publisher = state.mesh.clone();
-    let deepseek = state.deepseek_status.clone();
+    let model_status = state.model_status.clone();
     let pressure = state.live_turns.load(Ordering::SeqCst);
     tokio::task::spawn_blocking(move || {
-        publisher.publish_snapshot(&snapshots, &session_zero_snapshots, &deepseek, pressure)
+        publisher.publish_snapshot(&snapshots, &session_zero_snapshots, &model_status, pressure)
     })
     .await?
 }
@@ -5314,7 +5347,12 @@ mod tests {
             entitlements: Arc::new(FixtureEntitlementPort),
             auth: Arc::new(Mutex::new(auth)),
             heimdall: Arc::new(HeimdallClient::fixture()),
-            deepseek_status: "fixture".into(),
+            model_status: ModelRuntimeStatus {
+                provider: "fixture".into(),
+                fast_model: "fixture".into(),
+                capable_model: "fixture".into(),
+                readiness: "ready".into(),
+            },
             compiler: None,
             assessor: None,
             model: None,

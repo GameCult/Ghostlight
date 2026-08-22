@@ -3,7 +3,7 @@ use crate::{
         AgencyAxis, AgencySubjectKind, Campaign, ResolutionDemand, ResolutionWaveCommit,
         SimulationCell,
     },
-    model::{ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
+    model::{MODEL_FAST, ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
     outcome::{activity_outcome_binding, resolve_activity_outcomes},
     persona::{
         CellConstituentSlice, CellMemberSlice, CellPerceivedEventSlice, CellProjectionEngine,
@@ -80,9 +80,9 @@ pub async fn propose_resolution_wave_with_policy(
     let engine = CellProjectionEngine {
         model,
         permit,
-        projector_model: "deepseek-v4-flash".into(),
-        persona_model: "deepseek-v4-flash".into(),
-        interpreter_model: "deepseek-v4-flash".into(),
+        projector_model: MODEL_FAST.into(),
+        persona_model: MODEL_FAST.into(),
+        interpreter_model: MODEL_FAST.into(),
         campaign_contract: campaign_contract.cloned(),
         aggregate_boundaries: aggregate_boundaries.to_vec(),
     };
@@ -263,7 +263,7 @@ async fn project_resolution_demand(
     );
     let mut request = ModelStageRequest {
         stage: "resolution_demand".into(),
-        model: "deepseek-v4-flash".into(),
+        model: MODEL_FAST.into(),
         snapshot_binding: format!(
             "campaign:{}:revision:{}:resolution:{}",
             campaign.id, campaign.revision, campaign.resolution_policy.resolution_epoch
