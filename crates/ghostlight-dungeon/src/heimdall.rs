@@ -582,7 +582,7 @@ fn discover_heimdall_boundary(
             format!("{runtime_id}:heimdall-discovery"),
         );
         options.schema_ids = Some(vec!["heimdall.command_boundary.v1".into()]);
-        options.record_keys = Some(vec!["heimdall".into()]);
+        options.record_keys = Some(vec!["heimdall:command-boundary".into()]);
         let applied = node.pull_rudp_catalog_snapshot(options)?;
         if applied != 1 {
             bail!("Odin did not return exactly one Heimdall command boundary");
@@ -592,7 +592,7 @@ fn discover_heimdall_boundary(
             .snapshot()
             .into_iter()
             .find(|entry| {
-                entry.key == "heimdall"
+                entry.key == "heimdall:command-boundary"
                     && entry.r#type == "heimdall.command_boundary"
                     && entry.schema_id.as_deref() == Some("heimdall.command_boundary.v1")
             })
