@@ -58,18 +58,41 @@ the exact assigned actor.
 The structured Projector and Interpreter receive their exact stable JSON
 Schema before any dynamic context. OpenAI-compatible JSON-object modes
 constrain syntax but do not communicate the application schema by themselves.
-The Interpreter emits
-only new deltas from the current DM response; it cannot restate existing draft
-fields or unresolved decisions as new proposals. Stable schema-first prefixes
-also preserve provider cache reuse. Empty, malformed, schema-invalid, or stale
-outputs cannot change the typed draft. If both same-snapshot attempts fail,
-the kernel may append a fixed local DM notice to the conversation while leaving
-contract, characters, decisions, boundaries, approvals, and model receipts
-unchanged.
+The DM Persona owns the natural utterance. The Interpreter's model-facing
+schema has no speech field: it emits only new typed proposals and reply
+affordances, after which the runtime binds the Persona output losslessly into
+the proposed kernel delta. It cannot rewrite, summarize, or truncate the
+Persona while extracting state. The kernel still treats the three stages as
+one atomic proposal; an invalid Interpreter commits neither speech nor state.
+
+The Interpreter receives only the current contract, its channel and member
+scope, the entitled private character when applicable, visible typed decisions,
+and the exact Persona response. Transcript windows, evidence coverage,
+boundaries, and public-party narrative already served their purpose in the
+Projector and are not replayed into extraction. It cannot restate existing
+draft fields or unresolved decisions as new proposals. Stable schema-first
+prefixes preserve provider cache reuse. Empty, malformed, schema-invalid, or
+stale outputs cannot change the typed draft. If both same-snapshot attempts
+fail, the kernel may append a fixed local DM notice to the conversation while
+leaving contract, characters, decisions, boundaries, approvals, and model
+receipts unchanged.
 
 Generated opening and role suggestions are non-material decisions: the player
 may accept, counter, discuss, or ignore them without blocking a fully custom
 draft. Material decisions preserve the distinction between discussion and consent.
+Every acceptable decision carries at least one non-empty typed contract,
+character, or extraordinary-permission payload. A question or a prose promise
+without an exact state change remains DM speech or a suggested reply; it cannot
+render an Accept control, advance the draft through acceptance, or claim that
+the promised materialization occurred. The Interpreter schema enforces the
+payload before correction/retry, and the kernel rejects any legacy payloadless
+decision that reaches acceptance.
+The actor-filtered Eve projection shows that exact payload beside the DM's
+explanation before exposing Accept. Its private character ledger projects every
+player-entitled draft field, including history, secrets, knowledge, equipment,
+relationships, goals, and the complete terms of extraordinary permissions.
+Prose explains a bargain; the visible typed payload is the state the player is
+actually consenting to.
 Accept applies only the exact typed payload currently stored in the decision.
 Counter atomically removes that payload, records the player's text in the
 decision's durable channel, marks the unresolved decision as awaiting a DM

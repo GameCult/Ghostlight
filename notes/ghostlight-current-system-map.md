@@ -14,7 +14,9 @@ Campaign creation now has its own pre-world authority:
 ```text
 Heimdall member messages
   -> SessionZeroKernel durable shared/private conversation
-  -> Projector -> persistent DM Persona -> Interpreter proposals
+  -> Projector -> persistent DM Persona owns exact speech
+  -> Interpreter proposes typed draft changes, never rewritten speech
+  -> runtime binds both into one revision-bound DM turn proposal
   -> typed contract, private character drafts, boundaries, decisions
   -> roster lock -> approved_campaign_brief.v1 -> Vault compiler
   -> evidence-gap conversation or digest-bound final review
@@ -27,6 +29,14 @@ Heimdall member messages
 compiler. Account and invitation hashes remain persistence-only; shared model
 turns, browser surfaces, schemas, and CultMesh records cannot see them.
 
+Session Zero extraction is one atomic membrane with separated authorship. The
+Projector receives channel-permitted state and recent conversation; the Persona
+receives only its lived narrative and owns the complete natural DM utterance;
+the Interpreter receives a smaller typed extraction context and cannot emit a
+speech field. Ghostlight binds the exact Persona output to the Interpreter's
+typed proposals only after every stage validates against the same component
+epoch. Interpreter failure therefore commits neither prose nor draft state.
+
 Material negotiation has one typed path. Accept applies the exact proposal
 stored in the decision. Counter clears every typed payload from that decision,
 records the player's counter in its shared or private durable channel, removes
@@ -35,6 +45,18 @@ through a same-epoch `ApplyDmTurn` containing a fresh material decision; the
 replacement and retirement of the pending counter commit atomically. Stale,
 empty, malformed, or failed counter responses leave the counter pending and the
 retired payload uncommittable.
+
+An acceptance card is also a typed-state claim. New Interpreter decisions must
+carry a non-empty contract, character, or extraordinary-permission payload;
+payloadless questions remain speech. Legacy empty decisions project no Accept
+control and the kernel rejects forged acceptance without changing revision.
+This prevents polished DM prose such as “materialize the character” from
+advancing a revision while leaving the character ledger blank.
+
+The player-facing Eve surface projects the exact typed payload on every
+acceptance card and the complete actor-entitled private character draft. The DM
+summary is explanatory, never the accepted state. Other members receive only
+their own private ledger and the deliberately public party projection.
 
 ```text
 Vault evidence receipts + typed campaign snapshot

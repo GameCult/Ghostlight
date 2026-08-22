@@ -1547,6 +1547,167 @@ fn permitted_interpreter_context(
     Ok(value)
 }
 
+fn display_list(values: &[String]) -> String {
+    if values.is_empty() {
+        "—".into()
+    } else {
+        values.join("; ")
+    }
+}
+
+fn display_relationships(values: &BTreeMap<String, String>) -> String {
+    if values.is_empty() {
+        "—".into()
+    } else {
+        values
+            .iter()
+            .map(|(subject, relationship)| format!("{subject}: {relationship}"))
+            .collect::<Vec<_>>()
+            .join("; ")
+    }
+}
+
+fn display_extraordinary_permission(permission: &ExtraordinaryPermission) -> String {
+    format!(
+        "{}\n  Reliable scope: {}\n  Prerequisites: {}\n  Costs: {}\n  Limits: {}\n  Exposure: {}\n  Effect ceiling: {}\n  Branch-local: {}",
+        permission.name,
+        permission.reliable_scope,
+        display_list(&permission.prerequisites),
+        display_list(&permission.costs),
+        display_list(&permission.limits),
+        display_list(&permission.exposure),
+        permission.effect_ceiling,
+        if permission.branch_local { "yes" } else { "no" },
+    )
+}
+
+fn display_character_ledger(character: &CharacterDraft) -> String {
+    let permissions = if character.extraordinary_permissions.is_empty() {
+        "—".into()
+    } else {
+        character
+            .extraordinary_permissions
+            .iter()
+            .map(display_extraordinary_permission)
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    format!(
+        "Name: {}\nPublic premise: {}\nPrivate history: {}\nSecrets: {}\nCapabilities: {}\nKnowledge: {}\nEquipment: {}\nRelationships: {}\nObligations: {}\nVulnerabilities: {}\nGoals: {}\nExtraordinary permissions:\n{}",
+        character.name,
+        character.public_premise,
+        display_list(&character.private_history),
+        display_list(&character.secrets),
+        display_list(&character.capabilities),
+        display_list(&character.knowledge),
+        display_list(&character.equipment),
+        display_relationships(&character.relationships),
+        display_list(&character.obligations),
+        display_list(&character.vulnerabilities),
+        display_list(&character.goals),
+        permissions,
+    )
+}
+
+fn display_patch_list(values: &[String]) -> String {
+    if values.is_empty() {
+        "(empty list)".into()
+    } else {
+        values.join("; ")
+    }
+}
+
+fn display_contract_patch(patch: &CampaignContractPatch) -> String {
+    let mut lines = Vec::new();
+    macro_rules! push_string {
+        ($field:ident, $label:literal) => {
+            if let Some(value) = &patch.$field {
+                lines.push(format!(concat!($label, ": {}"), value));
+            }
+        };
+    }
+    macro_rules! push_list {
+        ($field:ident, $label:literal) => {
+            if let Some(values) = &patch.$field {
+                lines.push(format!(concat!($label, ": {}"), display_patch_list(values)));
+            }
+        };
+    }
+    push_string!(premise, "Premise");
+    push_string!(canon_horizon, "Canon horizon");
+    push_string!(starting_where, "Starting location");
+    push_string!(starting_when, "Starting time");
+    push_string!(starting_pressure, "Starting pressure");
+    push_string!(desired_goal, "Desired goal");
+    push_list!(tone, "Tone");
+    push_list!(themes, "Themes");
+    push_string!(pacing, "Pacing");
+    push_string!(consequence_style, "Consequence style");
+    push_string!(narrative_focus, "Narrative focus");
+    push_list!(party_bonds, "Party bonds");
+    push_string!(internal_tension, "Internal tension");
+    push_string!(dm_style, "DM style");
+    lines.join("\n")
+}
+
+fn display_character_patch(patch: &CharacterDraftPatch) -> String {
+    let mut lines = Vec::new();
+    if let Some(name) = &patch.name {
+        lines.push(format!("Name: {name}"));
+    }
+    if let Some(public_premise) = &patch.public_premise {
+        lines.push(format!("Public premise: {public_premise}"));
+    }
+    for (values, label) in [
+        (&patch.private_history_add, "Private history to add"),
+        (&patch.secrets_add, "Secrets to add"),
+        (&patch.capabilities_add, "Capabilities to add"),
+        (&patch.knowledge_add, "Knowledge to add"),
+        (&patch.equipment_add, "Equipment to add"),
+        (&patch.obligations_add, "Obligations to add"),
+        (&patch.vulnerabilities_add, "Vulnerabilities to add"),
+        (&patch.goals_add, "Goals to add"),
+    ] {
+        if !values.is_empty() {
+            lines.push(format!("{label}: {}", values.join("; ")));
+        }
+    }
+    if !patch.relationships.is_empty() {
+        lines.push(format!(
+            "Relationships to set: {}",
+            display_relationships(&patch.relationships)
+        ));
+    }
+    lines.join("\n")
+}
+
+fn display_decision_payload(decision: &SessionZeroDecision) -> String {
+    let mut sections = Vec::new();
+    if let Some(permission) = &decision.proposed_extraordinary_permission {
+        sections.push(format!(
+            "Extraordinary permission:\n{}",
+            display_extraordinary_permission(permission)
+        ));
+    }
+    if let Some(patch) = &decision.proposed_contract_patch
+        && patch != &CampaignContractPatch::default()
+    {
+        sections.push(format!(
+            "Campaign contract patch:\n{}",
+            display_contract_patch(patch)
+        ));
+    }
+    if let Some(patch) = &decision.proposed_character_patch
+        && patch != &CharacterDraftPatch::default()
+    {
+        sections.push(format!(
+            "Private character patch:\n{}",
+            display_character_patch(patch)
+        ));
+    }
+    sections.join("\n")
+}
+
 pub fn session_zero_surface(
     state: &SessionZeroState,
     account_hash: &str,
@@ -1642,14 +1803,7 @@ pub fn session_zero_surface(
         state.contract.tone.join(", ")
     );
     let character = &state.character_drafts[&member.id];
-    let character_summary = format!(
-        "{}\n{}\nCapabilities: {}\nObligations: {}\nVulnerabilities: {}",
-        character.name,
-        character.public_premise,
-        character.capabilities.join(", "),
-        character.obligations.join(", "),
-        character.vulnerabilities.join(", ")
-    );
+    let character_summary = display_character_ledger(character);
     let shared_channel_id = state
         .channels
         .values()
@@ -1736,6 +1890,15 @@ pub fn session_zero_surface(
             "props":{"value":decision.pending_counter.as_ref().unwrap_or(&decision.proposed_resolution)},
             "children":[]
         })];
+        let payload_summary = display_decision_payload(decision);
+        if !payload_summary.is_empty() {
+            decision_children.push(serde_json::json!({
+                "id":format!("session-zero.decision.{}.typed-payload",decision.id),
+                "kind":"text",
+                "props":{"value":format!("Exact typed change:\n{payload_summary}")},
+                "children":[]
+            }));
+        }
         if decision.pending_counter.is_some() {
             decision_children.push(serde_json::json!({
                 "id":format!("session-zero.decision.{}.pending",decision.id),
@@ -3427,6 +3590,92 @@ mod tests {
         assert!(encoded.contains("\"bindingName\":\"counter\""));
         assert!(!encoded.contains("payload.fields"));
         assert!(!encoded.contains("\"kind\":\"form\""));
+    }
+
+    #[test]
+    fn player_surface_projects_the_complete_private_ledger_and_exact_typed_change() {
+        let mut draft = state();
+        let host = draft.host_member_id.clone();
+        let actor_id = draft.character_drafts[&host].actor_id.clone();
+        let character = draft.character_drafts.get_mut(&host).unwrap();
+        character.name = "Sable".into();
+        character.public_premise = "Corvid logistics mediator".into();
+        character.private_history = vec!["FULL-SUNG-NAME-ANCHOR".into()];
+        character.secrets = vec!["FORGED-TRANSIT-CREDENTIAL".into()];
+        character.capabilities = vec!["RATION-LEDGER-RECONCILIATION".into()];
+        character.knowledge = vec!["HELLAS-SUPPLY-ROUTES".into()];
+        character.equipment = vec!["MINOR-RATION-AUDIT-SEAL".into()];
+        character
+            .relationships
+            .insert("convoy-quartermaster".into(), "LIFE-DEBT".into());
+        character.obligations = vec!["CLINIC-EXPECTS-EXCEPTIONS".into()];
+        character.vulnerabilities = vec!["TRACEABLE-SYNC-SIGNATURE".into()];
+        character.goals = vec!["KEEP-CONVOY-SUPPLIED".into()];
+        character.extraordinary_permissions = vec![ExtraordinaryPermission {
+            schema: "ghostlight.extraordinary_permission.v1".into(),
+            id: "permission:fork-memory".into(),
+            actor_id,
+            name: "FORK-MEMORY-SYNCHRONIZATION".into(),
+            reliable_scope: "ONE-WILLING-MIND-AT-CLOSE-RANGE".into(),
+            prerequisites: vec!["FRESH-CONSENT".into()],
+            costs: vec!["MIGRAINE".into()],
+            limits: vec!["NO-COMPULSION".into()],
+            exposure: vec!["TECHNICAL-SIGNATURE".into()],
+            effect_ceiling: "BOUNDED-MEMORY-OR-SKILL".into(),
+            evidence_receipt_ids: vec![],
+            branch_local: true,
+        }];
+        draft.decisions.insert(
+            "decision:sable".into(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "decision:sable".into(),
+                owner_member_id: Some(host),
+                prompt: "Materialize Sable?".into(),
+                proposed_resolution: "Record the negotiated character.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: Some(CampaignContractPatch {
+                    starting_where: Some("MARS-HELLAS-ZHESTOKOST".into()),
+                    tone: Some(vec!["COLD-INSTITUTIONAL-PRESSURE".into()]),
+                    ..Default::default()
+                }),
+                proposed_character_patch: Some(CharacterDraftPatch {
+                    goals_add: vec!["BUILD-A-DURABLE-REFUGEE-ROUTE".into()],
+                    equipment_add: vec!["COUNTERSIGNED-LEDGER".into()],
+                    ..Default::default()
+                }),
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            },
+        );
+
+        let encoded =
+            serde_json::to_string(&session_zero_surface(&draft, "account:host").unwrap()).unwrap();
+        for expected in [
+            "FULL-SUNG-NAME-ANCHOR",
+            "FORGED-TRANSIT-CREDENTIAL",
+            "RATION-LEDGER-RECONCILIATION",
+            "HELLAS-SUPPLY-ROUTES",
+            "MINOR-RATION-AUDIT-SEAL",
+            "LIFE-DEBT",
+            "CLINIC-EXPECTS-EXCEPTIONS",
+            "TRACEABLE-SYNC-SIGNATURE",
+            "KEEP-CONVOY-SUPPLIED",
+            "FORK-MEMORY-SYNCHRONIZATION",
+            "ONE-WILLING-MIND-AT-CLOSE-RANGE",
+            "MARS-HELLAS-ZHESTOKOST",
+            "COLD-INSTITUTIONAL-PRESSURE",
+            "BUILD-A-DURABLE-REFUGEE-ROUTE",
+            "COUNTERSIGNED-LEDGER",
+            "Exact typed change",
+        ] {
+            assert!(
+                encoded.contains(expected),
+                "missing player projection: {expected}"
+            );
+        }
     }
 
     #[tokio::test]

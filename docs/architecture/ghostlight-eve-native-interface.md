@@ -55,7 +55,10 @@ command. An operation captures one or more named binding values atomically.
 The browser lowerer may use an HTML form for keyboard and accessibility
 behavior. HTML form structure never enters Eve state or command payload
 semantics. Accepted receipts may clear named drafts; rejection and stale
-conflict preserve them.
+conflict preserve them. An omitted clear-binding list means clear the surface's
+drafts; an explicit empty list means clear nothing. Operations that capture no
+editable bindings therefore cannot erase an unrelated composer, channel
+selection, boundary draft, or counterproposal.
 
 ## Authentication membrane
 
