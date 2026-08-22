@@ -5064,7 +5064,7 @@ async fn refresh_due_app_sessions(state: &AppState) -> anyhow::Result<()> {
                 .revoke_cookie_hash(&candidate.cookie_hash)?;
             continue;
         }
-        let claims = match state.heimdall.verify_completion(&completion).await {
+        let claims = match state.heimdall.verify_refresh(&completion).await {
             Ok(value) => value,
             Err(error) => {
                 tracing::warn!(%error, session_id=%candidate.heimdall_session_id, "Heimdall refresh receipt failed verification");

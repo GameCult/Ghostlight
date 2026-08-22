@@ -374,22 +374,23 @@ impl HeimdallClient {
             .as_deref()
             .context("Heimdall omitted the access token")?;
         let claims = self.verify_access(token).await?;
-        let account = completion
-            .account
-            .as_ref()
-            .context("Heimdall omitted the account")?;
-        let session = completion
-            .session
-            .as_ref()
-            .context("Heimdall omitted the session")?;
-        if account.id != claims.account_id
-            || session.account_id != claims.account_id
-            || session.session_id != claims.sid
-            || session.access_revision != claims.access_revision
-            || session.app_slug != APP_SLUG
-        {
-            bail!("Heimdall completion fields disagree with its signed claim");
+        verify_claim_binding(completion, &claims, true)?;
+        Ok(claims)
+    }
+
+    pub async fn verify_refresh(
+        &self,
+        completion: &AuthCompletionReceipt,
+    ) -> anyhow::Result<AccessClaims> {
+        if completion.status != "authenticated" {
+            bail!("Heimdall refresh is not authenticated");
         }
+        let token = completion
+            .access_token
+            .as_deref()
+            .context("Heimdall refresh omitted the access token")?;
+        let claims = self.verify_access(token).await?;
+        verify_claim_binding(completion, &claims, false)?;
         Ok(claims)
     }
 
@@ -487,6 +488,35 @@ impl HeimdallClient {
         }
         open_envelope(&sealed, &self.shared_secret)
     }
+}
+
+fn verify_claim_binding(
+    completion: &AuthCompletionReceipt,
+    claims: &AccessClaims,
+    require_account_summary: bool,
+) -> anyhow::Result<()> {
+    if require_account_summary && completion.account.is_none() {
+        bail!("Heimdall omitted the account");
+    }
+    if completion
+        .account
+        .as_ref()
+        .is_some_and(|account| account.id != claims.account_id)
+    {
+        bail!("Heimdall account summary disagrees with its signed claim");
+    }
+    let session = completion
+        .session
+        .as_ref()
+        .context("Heimdall omitted the session")?;
+    if session.account_id != claims.account_id
+        || session.session_id != claims.sid
+        || session.access_revision != claims.access_revision
+        || session.app_slug != APP_SLUG
+    {
+        bail!("Heimdall session fields disagree with its signed claim");
+    }
+    Ok(())
 }
 
 fn invoke_operation(
@@ -852,6 +882,51 @@ mod tests {
                 .unwrap_err()
                 .to_string()
                 .contains("does not advertise")
+        );
+    }
+
+    #[test]
+    fn refresh_binding_uses_signed_claim_and_exact_session_without_account_summary() {
+        let claims = AccessClaims {
+            iss: "https://heimdall.invalid".into(),
+            aud: APP_SLUG.into(),
+            sub: "account-1".into(),
+            sid: "session-1".into(),
+            exp: 1,
+            typ: "heimdall_access".into(),
+            account_id: "account-1".into(),
+            access_revision: 4,
+            capabilities: vec!["app_access".into()],
+            app: AppClaim {
+                slug: APP_SLUG.into(),
+            },
+        };
+        let receipt = AuthCompletionReceipt {
+            status: "authenticated".into(),
+            handle: None,
+            error: None,
+            account: None,
+            session: Some(HeimdallSession {
+                account_id: "account-1".into(),
+                session_id: "session-1".into(),
+                app_slug: APP_SLUG.into(),
+                access_revision: 4,
+                expires_at: "2026-09-22T00:00:00Z".into(),
+            }),
+            access_token: Some("private".into()),
+            refresh_token: Some("private".into()),
+            refresh: Some(RefreshSummary {
+                expires_at: "2026-09-22T00:00:00Z".into(),
+            }),
+            shared_capabilities: vec!["app_access".into()],
+        };
+
+        verify_claim_binding(&receipt, &claims, false).unwrap();
+        assert!(
+            verify_claim_binding(&receipt, &claims, true)
+                .unwrap_err()
+                .to_string()
+                .contains("omitted the account")
         );
     }
 }
