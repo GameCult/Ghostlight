@@ -131,7 +131,7 @@ await resumeHeimdallAccess({
     }
     await host.refresh();
   },
-});
+}, { appSlug: "ghostlight" });
 
 if (api.hasAuthenticatedSurface()) {
   const events = new EventSource("api/eve/events");

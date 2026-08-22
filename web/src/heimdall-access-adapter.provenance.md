@@ -2,7 +2,7 @@
 
 - Owner: `GameCult/Heimdall`
 - Plugin: `gamecult.heimdall.access`
-- Source commit: `19e5109`
+- Source commit: `b9ab8c0`
 - Source path: `plugins/gamecult.heimdall.access/browser-adapter.ts`
 - Vendoring mode: exact semantic copy with formatting only
 

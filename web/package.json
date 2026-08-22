@@ -5,7 +5,7 @@
   "scripts": {
     "build": "npm run typecheck && vite build",
     "dev": "vite --host 127.0.0.1 --port 8832",
-    "test": "node test/static-boundary.mjs",
+    "test": "node test/static-boundary.mjs && node --experimental-strip-types --test test/heimdall-adapter.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
