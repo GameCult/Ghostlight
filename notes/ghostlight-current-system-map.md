@@ -219,16 +219,23 @@ and operator inspection; the browser cannot reveal them before discovery.
 ## Current acceptance body
 
 Yggdrasil currently serves native immutable release
-`4c04c13c144c1f6dce8af47698caafe34d6a6120`, executable SHA-256
-`24b6857c7cec92e213e8638607f90d40a03af6f75f4a4995b25aac6cd23a51f5`,
-with Eve release `6766bee7c14a47144191475e2f35b0343b647b45`. The service runs as
+`257b6429c52c796167125bd81d923a605ac065df`, executable SHA-256
+`dd50de988179818091ad53d957e53d86cb5b098911001d75fbb05252867be8d8`,
+with Eve release `23eaf32eae76204357c1406b4a7d01bcece6b815`. The service runs as
 `ghostlight:ghostlight` under `ghostlight-dungeon.service`; typed health,
 manifest, embedded commit, executable hash, seven imported campaigns, one
 Session Zero draft, OpenRouter `stealth/ox-alpha` readiness, and restart
 recovery agree. Ghostlight stages request logical fast/capable classes; the
-OpenRouter port maps both classes to the test model, uses low/high reasoning by
+OpenRouter port maps both classes to the test model, uses low/medium reasoning by
 class, excludes reasoning from responses, and receipts the resolved physical
 provider and model.
+
+The exact hosted gate passed 171 Linux package tests with zero daemon restarts.
+The active adversarial journey repaired pending-counter authority, optional
+opening/role suggestions, and pre-compiler draft completeness. Its local
+Heimdall claim then expired during a private message; the visible Discord flow
+is waiting for human reauthentication before live Mars/Hellas compilation
+continues.
 
 The public `/ghostlight/` path terminates on Yggdrasil nginx and proxies the
 native loopback listener at `127.0.0.1:8831`. Anonymous access returns the

@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-08-21
+Updated: 2026-08-22
 
 This is the compact re-entry packet. It records current authority, deployed
 truth, proof, and the next decision. Git history owns chronology; the system map
@@ -77,10 +77,10 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `4c04c13c144c1f6dce8af47698caafe34d6a6120`
+  `257b6429c52c796167125bd81d923a605ac065df`
 - Executable SHA-256:
-  `24b6857c7cec92e213e8638607f90d40a03af6f75f4a4995b25aac6cd23a51f5`
-- Eve release: `6766bee7c14a47144191475e2f35b0343b647b45`
+  `dd50de988179818091ad53d957e53d86cb5b098911001d75fbb05252867be8d8`
+- Eve release: `23eaf32eae76204357c1406b4a7d01bcece6b815`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
 - Public route: `https://yggdrasil.gamecult.org/ghostlight/`
@@ -90,20 +90,19 @@ Do not start both writers.
   fast/capable classes map to the physical model at the provider port
 - Access witness: anonymous Eve gate 200; canonical `heimdall.auth.begin`
   accepted through Odin-discovered Heimdall; no actor or campaign state in the
-  anonymous surface
+  anonymous surface. The previous local Ghostlight claim expired during the
+  current adversarial journey; Discord browser reauthentication is pending.
 
 Manifest, embedded commit, executable hash, typed health, persistent stores,
 restart recovery, public crossing, and anonymous rejection agree.
 
 ## Deployment and discovery truth
 
-Idunn is live from exact source
-`2a5cb3e08f5f5f40a12f825a9522b31e6af941af`. Odin is live from exact source
-`b4f9a2e95f0b41cebdeddc49223781d1d3c7b42a`; discovery is healthy at
-`10.77.0.1:17871`. Heimdall is live from exact source
-`1086aee01169bf60e8a492b2740db1c6f3e8cabf` and all four redacted access
-records are present in Odin's typed snapshot. Idunn's health clock preserves
-millisecond timestamps; the
+Idunn, Odin, and Heimdall release identity is operational truth owned by
+`gamecult-ops`; verify their current witnesses there rather than trusting an
+old commit copied into this handoff. At the 2026-08-22 Ghostlight witness,
+Idunn, Odin discovery, and Heimdall's private access plane were live. Idunn's
+health clock preserves millisecond timestamps; the
 former same-second false “health vanished” transitions are gone.
 
 Idunn selects the newest executable- or build-affecting commit reachable from
@@ -111,32 +110,25 @@ the admitted ref. Documentation, notes, state receipts, and root Markdown do
 not cause a deployment. The root actuator proves the selected commit is an
 ancestor of the admitted ref and verifies the exact installed witness after
 activation. Therefore later Ghostlight documentation commits do not displace
-release `4c04c13…`.
+release `257b642…`.
 
 ## Epiphany capacity gate
 
-Epiphany source `ebc0ffe4f341154d1902f9afe86f0a87f150179c` passed its locked
-test suite and was sealed as immutable package
-`sha256-bb76728653b8e2e872b4da47f917abe4233fd6d4ae1fd573c5971c7db3922a5c`
-with witness
-`4d8350fac61f90d32a2b8067731308ec3e3672a42804db29c680b0fc68ab9adc`.
-
-It is not deployed. Idunn stopped before publication because the Bifrost
-operator runtime identity/substrate and resident Self Codex credentials were
-absent. The deployment brake remains engaged, Epiphany units are inactive and
-disabled, no `deployment.env` or signed health was published, and
-`/srv/epiphany/app/current` remains recovery release
-`267a0257a4938d80d34b7807c66aa5f550b50f2c`.
-
-Ghostlight testing can proceed without Epiphany. If her swarm capacity is
-needed, provision the missing substrate and credentials through one Idunn-owned
-deployment transaction. Do not manually launch Epiphany, bypass the brake, or
-create passive watcher tasks around the operation.
+Epiphany is adjacent capacity, not a Ghostlight runtime dependency. Idunn
+reported successful admission of source
+`785213ec297a6bb784f16e1705b0431bc82faf61` on 2026-08-22, but the legacy
+`epiphany-ox4-heartbeat`, `epiphany-ox4-persona`, and `epiphany-ox4-swarm`
+units subsequently reported inactive/failed. Rehydrate in Epiphany and
+`gamecult-ops` before assuming usable swarm capacity. Do not manually launch
+her or coordinate deployment by cross-task exclusivity messages.
 
 ## Current proof
 
-- Full workspace: 161 core tests, 15 daemon tests, strict TypeScript, and Vite
-  release build passed for the accepted body.
+- Idunn's exact `257b642…` release gate passed 171 Linux package tests; the
+  daemon is healthy with zero restarts and the deployment brake re-engaged.
+- Adversarial Session Zero play proved that counters retire stale typed
+  proposals before a replacement, generated openings and roles are optional,
+  and transcript-only blank drafts cannot enter world compilation.
 - One authenticated Session Zero canary survived exact-build restarts, retrieved
   grounded Aetheria evidence, preserved typed state across malformed model
   output, and completed a Mars/Zhestokost follow-up without borrowing the First
@@ -156,11 +148,13 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 ## Next action
 
-1. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
+1. Complete Discord browser reauthentication, resume the existing Mars/Hellas
+   canary, compile the custom start, and pressure live action/continuity paths.
+2. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
-2. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
+3. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
    unanimous-approval, unanimous-time/travel, stale-command, and restart smoke.
-3. Continue human pressure on multiresolution Gestalt agency: meaningful
+4. Continue human pressure on multiresolution Gestalt agency: meaningful
    background surprises, exact attributed rival activity inside arenas,
    information boundaries, nested fission/folding, migration, and return
    encounters.
