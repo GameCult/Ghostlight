@@ -904,13 +904,14 @@ async fn complete_eve_authentication(
         ))
         .into_response();
     }
+    let refresh_expires_at = refresh.parse().unwrap_or_else(|_| Utc::now());
     let raw_cookie = match state.auth.lock().await.create_session(NewSession {
         account_id: &claims.account_id,
         heimdall_session_id: &claims.sid,
         access_revision: claims.access_revision,
         capabilities: claims.capabilities.clone(),
         access_expires_at: DateTime::from_timestamp(claims.exp as i64, 0).unwrap_or_else(Utc::now),
-        refresh_expires_at: refresh.parse().unwrap_or_else(|_| Utc::now()),
+        refresh_expires_at,
         refresh_claim: refresh_token,
     }) {
         Ok(value) => value,
@@ -940,12 +941,21 @@ async fn complete_eve_authentication(
     .into_response();
     response.headers_mut().insert(
         header::SET_COOKIE,
-        HeaderValue::from_str(&format!(
-            "ghostlight_session={raw_cookie}; HttpOnly; Secure; SameSite=Lax; Path=/ghostlight/"
-        ))
-        .unwrap(),
+        app_session_cookie(&raw_cookie, refresh_expires_at, Utc::now()),
     );
     response
+}
+
+fn app_session_cookie(
+    raw_cookie: &str,
+    refresh_expires_at: DateTime<Utc>,
+    now: DateTime<Utc>,
+) -> HeaderValue {
+    let max_age = (refresh_expires_at - now).num_seconds().max(0);
+    HeaderValue::from_str(&format!(
+        "ghostlight_session={raw_cookie}; Max-Age={max_age}; HttpOnly; Secure; SameSite=Lax; Path=/ghostlight/"
+    ))
+    .expect("Ghostlight generated an invalid app-session cookie")
 }
 
 fn validate_eve_invocation(invocation: &EveCommandInvocation) -> anyhow::Result<()> {
@@ -5030,9 +5040,10 @@ async fn refresh_due_app_sessions(state: &AppState) -> anyhow::Result<()> {
         .await
         .sessions_due_for_refresh(Utc::now(), chrono::Duration::minutes(5))?;
     for candidate in candidates {
-        let idempotency_key = format!(
-            "refresh:{}:{}",
-            candidate.heimdall_session_id, candidate.access_revision,
+        let idempotency_key = refresh_idempotency_key(
+            &candidate.heimdall_session_id,
+            candidate.access_revision,
+            &candidate.refresh_claim,
         );
         let completion = match state
             .heimdall
@@ -5094,6 +5105,15 @@ async fn refresh_due_app_sessions(state: &AppState) -> anyhow::Result<()> {
         debug_assert_eq!(session.session_id, candidate.heimdall_session_id);
     }
     Ok(())
+}
+
+fn refresh_idempotency_key(
+    heimdall_session_id: &str,
+    access_revision: u64,
+    refresh_claim: &str,
+) -> String {
+    let generation = secret_hash(&format!("heimdall-refresh-generation:{refresh_claim}"));
+    format!("refresh:{heimdall_session_id}:{access_revision}:{generation}")
 }
 
 async fn authenticated_session(headers: &HeaderMap, state: &AppState) -> Option<String> {
@@ -5512,6 +5532,30 @@ mod tests {
             authenticated_session(&headers, &state).await,
             Some(account_hash)
         );
+    }
+
+    #[test]
+    fn refresh_idempotency_tracks_the_rotating_claim_generation() {
+        let first = refresh_idempotency_key("heimdall-session", 7, "refresh-claim-one");
+        let retry = refresh_idempotency_key("heimdall-session", 7, "refresh-claim-one");
+        let rotated = refresh_idempotency_key("heimdall-session", 7, "refresh-claim-two");
+
+        assert_eq!(first, retry);
+        assert_ne!(first, rotated);
+        assert!(!first.contains("refresh-claim-one"));
+    }
+
+    #[test]
+    fn app_session_cookie_survives_browser_relaunch_until_refresh_expiry() {
+        let now = Utc::now();
+        let header = app_session_cookie("opaque-cookie", now + chrono::Duration::days(7), now);
+        let value = header.to_str().unwrap();
+
+        assert!(value.contains("Max-Age=604800"));
+        assert!(value.contains("HttpOnly"));
+        assert!(value.contains("Secure"));
+        assert!(value.contains("SameSite=Lax"));
+        assert!(value.contains("Path=/ghostlight/"));
     }
 
     #[tokio::test]
