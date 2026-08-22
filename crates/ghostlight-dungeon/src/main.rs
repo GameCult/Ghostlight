@@ -1824,7 +1824,11 @@ fn transient_result_projection(
         "title":"Ghostlight result",
         "version":source_version,
         "updatedAtUtc":Utc::now().to_rfc3339(),
-        "surface":{"id":"ghostlight.command-result","root":{"id":"ghostlight.command-result.root","kind":"card","props":{"title":"Result"},"children":children}},
+        "surface":{
+            "id":"ghostlight.command-result",
+            "root":{"id":"ghostlight.command-result.root","kind":"card","props":{"title":"Result"},"children":children},
+            "styles":{"tokens":{"colorBackground":"#0c1110","colorPanel":"#17201d","colorText":"#e8e1cf","colorMuted":"#9aa69f","colorAccent":"#d49b58"}}
+        },
         "commands":[
             eve_command_descriptor("world.attempt","ghostlight.player_action_attempt.v1",&[],"WorldKernel"),
             eve_command_descriptor("world.destination.approve","ghostlight.destination_approval.v1",&[],"WorldKernel"),
@@ -6162,6 +6166,33 @@ mod tests {
             None,
         );
         assert_eq!(created, serde_json::json!({"kind":"created"}));
+    }
+
+    #[test]
+    fn assessment_command_result_is_a_complete_eve_surface() {
+        let projection = transient_result_projection(
+            "world.assess",
+            &serde_json::json!({
+                "assessment": {
+                    "digest": "sha256:assessment",
+                    "admissible": false,
+                    "dc": 30,
+                    "modifier_total": -10,
+                    "effect_ceiling": "No effect",
+                    "success_stake": "No impossible effect occurs.",
+                    "mixed_stake": "No impossible effect occurs.",
+                    "failure_stake": "The overreach is refused.",
+                    "bargains": ["Acquire an authority that actually reaches the garrison."]
+                }
+            }),
+            4,
+        )
+        .unwrap();
+
+        assert_eq!(projection["schema"], "gamecult.eve.surface.v1");
+        assert_eq!(projection["version"], 4);
+        assert!(projection["surface"]["styles"].is_object());
+        assert!(projection["surface"]["root"]["children"].is_array());
     }
 
     #[test]
