@@ -133,7 +133,7 @@ The following may never decide or repair canonical campaign truth:
 
 - browser handlers and chat transport;
 - Eve renderers and command lowering;
-- DeepSeek responses;
+- model-provider responses;
 - Projectors, Personas, Interpreters, narrators, retrievers, rerankers, and
   verifiers;
 - initiative and reaction selection;
@@ -412,7 +412,7 @@ performs her own exact CAS.
 - **Model transport:** Ghostlight defines an async stage-runner port. Epiphany
   implements it with `EpiphanyModelRequest`, Codex/OpenAI-compatible auth,
   runtime jobs, and private model-event recovery. GhostlightDungeon implements
-  it with DeepSeek.
+  it with the selected provider port and logical fast/capable model classes.
 - **Receipts:** Ghostlight owns portable stage and terminal fields. Epiphany's
   adapter augments them with `EpiphanyReasoningBasis`, sealed decision contexts,
   brake evidence, and runtime-spine identities.
@@ -763,14 +763,19 @@ prompt, completion, cache-hit, and cache-miss tokens visible per attempt so
 acceptance can reject stages that spend heavily while producing no meaningful
 appraisal, state proposal, or player-facing consequence.
 
-Live model allocation:
+Model allocation is provider-neutral inside Ghostlight. Stages request the
+logical classes `ghostlight.fast.v1` or `ghostlight.capable.v1`; the selected
+provider port alone maps those classes to physical model IDs. Receipts record
+the resolved provider and physical model so a routing change cannot masquerade
+as the same inference. The current Yggdrasil test profile maps both classes to
+OpenRouter `stealth/ox-alpha`, using low reasoning for fast stages and high
+reasoning for capable stages. OpenRouter is instructed to exclude reasoning
+from its response, and the decoder never reads or retains that field.
 
-- `deepseek-v4-flash`, non-thinking: projection, interpretation, retrieval
-  planning/reranking, verification, and offscreen actors;
-- `deepseek-v4-pro`, non-thinking: compilation, action assessment, live
-  Personas, and narration.
-
-`reasoning_content` is neither persisted nor displayed.
+DeepSeek remains a supported provider profile: its flash model serves the fast
+class and its pro model serves the capable class with thinking disabled. A
+provider switch changes configuration and credentials, not compiler, Persona,
+Interpreter, scheduler, or kernel ownership.
 
 ## Hosting and security
 
@@ -786,9 +791,10 @@ The MVP runs as `ghostlight:ghostlight` under native
 `ghostlight-dungeon.service`. Idunn admits its signed typed health and owns
 same-release restart continuity; its deployment brake governs mutation of the
 installed artifact, not ordinary survival. Runtime directories are restricted
-to the service identity and administrators. Setup installs the DeepSeek key as
-a systemd encrypted credential bound to the exact credential name. The key is
-absent from source, arguments, logs, environment projections, and exports.
+to the service identity and administrators. Setup installs the selected model
+provider key as a root-owned `0600` systemd encrypted credential bound to the
+exact credential name. The key is absent from source, arguments, logs,
+environment projections, and exports.
 
 Releases are immutable directories built from exact commits. Activation is an
 atomic pointer switch, recorded in CultCache, and the rollback runbook lives in
@@ -865,7 +871,7 @@ The UI consumes existing `gamecult.eve.surface.v1` and
    Epiphany/Ghostlight fixtures through it.
 6. Add fixture Vault/model ports, compiler approval, actor appraisal waves, and
    away-time commands.
-7. Add the VoidBot and DeepSeek production adapters without granting either
+7. Add the VoidBot and provider-neutral model adapters without granting either
    commit authority.
 8. Publish the CultMesh/Eve surface and thin authenticated browser host.
 9. Add native systemd lifecycle, encrypted-credential setup, release

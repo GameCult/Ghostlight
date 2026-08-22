@@ -77,16 +77,17 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `b515ca90c25573005a616244143803b37f2d06ec`
+  `4c04c13c144c1f6dce8af47698caafe34d6a6120`
 - Executable SHA-256:
-  `12180e229f107285e76293d453a90ee64a5ade1a747835e633f53bf12a2b9a37`
+  `24b6857c7cec92e213e8638607f90d40a03af6f75f4a4995b25aac6cd23a51f5`
 - Eve release: `6766bee7c14a47144191475e2f35b0343b647b45`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
 - Public route: `https://yggdrasil.gamecult.org/ghostlight/`
 - Vault retrieval: local VoidBot at `127.0.0.1:17875/mcp`
 - Stored state at the last witness: seven campaigns and one Session Zero draft
-- Provider state: DeepSeek startup inference ready
+- Provider state: OpenRouter `stealth/ox-alpha` startup inference ready; logical
+  fast/capable classes map to the physical model at the provider port
 - Access witness: anonymous Eve gate 200; canonical `heimdall.auth.begin`
   accepted through Odin-discovered Heimdall; no actor or campaign state in the
   anonymous surface
@@ -110,7 +111,7 @@ the admitted ref. Documentation, notes, state receipts, and root Markdown do
 not cause a deployment. The root actuator proves the selected commit is an
 ancestor of the admitted ref and verifies the exact installed witness after
 activation. Therefore later Ghostlight documentation commits do not displace
-release `b515ca90…`.
+release `4c04c13…`.
 
 ## Epiphany capacity gate
 

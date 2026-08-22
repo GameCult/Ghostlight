@@ -56,8 +56,9 @@ contexts. Actor-specific campaign surfaces use random campaign member IDs and
 the exact assigned actor.
 
 The structured Projector and Interpreter receive their exact stable JSON
-Schema before any dynamic context. DeepSeek's JSON mode constrains syntax but
-does not communicate the application schema by itself. The Interpreter emits
+Schema before any dynamic context. OpenAI-compatible JSON-object modes
+constrain syntax but do not communicate the application schema by themselves.
+The Interpreter emits
 only new deltas from the current DM response; it cannot restate existing draft
 fields or unresolved decisions as new proposals. Stable schema-first prefixes
 also preserve provider cache reuse. Empty, malformed, schema-invalid, or stale

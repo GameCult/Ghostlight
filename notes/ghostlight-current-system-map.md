@@ -210,12 +210,16 @@ and operator inspection; the browser cannot reveal them before discovery.
 ## Current acceptance body
 
 Yggdrasil currently serves native immutable release
-`b515ca90c25573005a616244143803b37f2d06ec`, executable SHA-256
-`12180e229f107285e76293d453a90ee64a5ade1a747835e633f53bf12a2b9a37`,
+`4c04c13c144c1f6dce8af47698caafe34d6a6120`, executable SHA-256
+`24b6857c7cec92e213e8638607f90d40a03af6f75f4a4995b25aac6cd23a51f5`,
 with Eve release `6766bee7c14a47144191475e2f35b0343b647b45`. The service runs as
 `ghostlight:ghostlight` under `ghostlight-dungeon.service`; typed health,
 manifest, embedded commit, executable hash, seven imported campaigns, one
-Session Zero draft, DeepSeek readiness, and restart recovery agree.
+Session Zero draft, OpenRouter `stealth/ox-alpha` readiness, and restart
+recovery agree. Ghostlight stages request logical fast/capable classes; the
+OpenRouter port maps both classes to the test model, uses low/high reasoning by
+class, excludes reasoning from responses, and receipts the resolved physical
+provider and model.
 
 The public `/ghostlight/` path terminates on Yggdrasil nginx and proxies the
 native loopback listener at `127.0.0.1:8831`. Anonymous access returns the
@@ -260,7 +264,7 @@ begin, complete, refresh, and logout; valid local app sessions do not depend on
 an Odin round trip. No direct Heimdall endpoint remains in the Ghostlight unit.
 
 Epiphany is adjacent capacity, not part of Ghostlight's campaign authority and
-not required by the current DeepSeek-backed runtime. Epiphany source
+not required by the current provider-backed runtime. Epiphany source
 `ebc0ffe4f341154d1902f9afe86f0a87f150179c` passed its locked tests and was
 sealed as immutable package
 `sha256-bb76728653b8e2e872b4da47f917abe4233fd6d4ae1fd573c5971c7db3922a5c`

@@ -45,13 +45,13 @@ loopback CultNet command plane. Ghostlight owns hashed local sessions and
 derives campaign authority only from canonical membership. The exact cut is
 `docs/architecture/ghostlight-eve-native-interface.md`.
 The accepted implementation is hosted natively on Yggdrasil as immutable
-release `b515ca90c25573005a616244143803b37f2d06ec`. Exact checkout,
+release `4c04c13c144c1f6dce8af47698caafe34d6a6120`. Exact checkout,
 embedded commit, release manifest, binary hash, systemd process, typed health,
-CultMesh store, seven migrated campaigns, one Session Zero draft, DeepSeek
-startup inference, local VoidBot retrieval, public Heimdall path, restart
-recovery, and unauthenticated rejection agree. Idunn owns continuity and Odin
+CultMesh store, seven migrated campaigns, one Session Zero draft, OpenRouter
+`stealth/ox-alpha` startup inference, local VoidBot retrieval, public Heimdall
+path, restart recovery, and unauthenticated rejection agree. Idunn owns continuity and Odin
 owns discovery; neither owns campaign mutation. This pass makes model
-work inspectable and cheaper:
+work inspectable and provider-switchable:
 provider attempts expose prompt/completion/cache usage and exact local failures;
 stable prefixes precede dynamic context; world and agency compilation are
 separate stages; Projectors receive situation state while Interpreters receive
