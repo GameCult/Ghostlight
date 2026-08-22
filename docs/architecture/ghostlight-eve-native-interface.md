@@ -61,6 +61,12 @@ conflict preserve them.
 
 Anonymous projection contains only `heimdall.access_gate`. Its begin and
 complete operations cross Heimdall's encrypted, loopback-only CultNet boundary.
+Ghostlight first reads the redacted `heimdall:command-boundary` record from
+Odin, validates its schema, runtime, loopback route, operations, and HMAC/AES
+contract, and then invokes that discovered route. Odin does not proxy the
+command and never receives claims or completion payloads. A discovery outage
+fails new authentication closed while already-valid local Ghostlight sessions
+continue until their verified expiry.
 The browser retains only the opaque attempt handle. Discord returns to
 Heimdall; Ghostlight redeems the completion, validates the access claim and
 `app_access`, and creates a local HttpOnly session.
@@ -81,3 +87,14 @@ the selected campaign.
 `/health` remains a probe of the service's typed CultMesh health. Static assets
 contain only the provider host, transport, Heimdall adapter, status mount, and
 SSE invalidation. Hermodr is not a runtime dependency.
+
+## Live acceptance witness
+
+The Yggdrasil release at Ghostlight commit
+`b515ca90c25573005a616244143803b37f2d06ec` and Eve commit
+`6766bee7c14a47144191475e2f35b0343b647b45` serves the anonymous access gate
+through the canonical browser lowerer with no console errors. A canonical
+`heimdall.auth.begin` invocation was accepted through Odin-discovered Heimdall
+and returned only the plugin-scoped navigation receipt with advertised Discord
+and Heimdall origins. The deployed unit contains
+`GHOSTLIGHT_ODIN_RUDP=10.77.0.1:17871` and no direct Heimdall private endpoint.

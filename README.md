@@ -64,7 +64,10 @@ See
 
 Ghostlight Dungeon is implemented and deployed as a native Yggdrasil,
 Heimdall-gated playtest harness. Idunn owns daemon continuity, Odin owns Verse
-discovery, and the application remains the sole owner of campaign truth. The
+discovery, and the application remains the sole owner of campaign truth.
+Authentication commands resolve Heimdall's redacted private boundary through
+Odin; no direct route is browser- or unit-owned, and valid local sessions do
+not phone home on routine commands. The
 current acceptance surface covers:
 
 - persistent DM-led Session Zero with shared/private channels, typed contracts,

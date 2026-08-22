@@ -210,18 +210,20 @@ and operator inspection; the browser cannot reveal them before discovery.
 ## Current acceptance body
 
 Yggdrasil currently serves native immutable release
-`10b638e45756e5210aaee1efb5dcf74dbebf83c0`, executable SHA-256
-`327c93b0cddd6b344f85e14e24be51688d74a58e1ea22dd42393b81b07f48f7a`,
-with Eve release `076d2124ed476cdaeff540c9d24c2d4fb57d04cf`. The service runs as
+`b515ca90c25573005a616244143803b37f2d06ec`, executable SHA-256
+`12180e229f107285e76293d453a90ee64a5ade1a747835e633f53bf12a2b9a37`,
+with Eve release `6766bee7c14a47144191475e2f35b0343b647b45`. The service runs as
 `ghostlight:ghostlight` under `ghostlight-dungeon.service`; typed health,
 manifest, embedded commit, executable hash, seven imported campaigns, one
 Session Zero draft, DeepSeek readiness, and restart recovery agree.
 
 The public `/ghostlight/` path terminates on Yggdrasil nginx and proxies the
-native loopback listener at `127.0.0.1:8831`. Anonymous campaign access returns
-401. The previous Starfire writer is stopped; its process and tunnel are no
-longer live authority. The migration copied campaign, Session Zero, and auth
-stores while preserving Yggdrasil's native mesh and provider-health identities.
+native loopback listener at `127.0.0.1:8831`. Anonymous access returns the
+actor-free `ghostlight.play` Eve gate with `200`; actor and campaign state stay
+unavailable without an app session and canonical membership. The previous
+Starfire writer is stopped; its process and tunnel are no longer live
+authority. The migration copied campaign and Session Zero stores while
+preserving Yggdrasil's native mesh and provider-health identities.
 
 Local CultMesh publication and HTTP readiness do not wait for Odin. Remote
 replication is coalesced into one asynchronous RUDP batch. Odin's coordinator
@@ -233,9 +235,11 @@ reverse tunnel.
 
 ### Deployment, discovery, and adjacent capacity
 
-Idunn and Odin currently run from exact source
-`745e01093c59882ed098b7515ef8921d55fbed15`. Idunn is the only deployment and
-daemon-survival authority; Odin is the discovery/rendezvous authority. Their
+Idunn runs exact source `2a5cb3e08f5f5f40a12f825a9522b31e6af941af`.
+Odin runs exact source `b4f9a2e95f0b41cebdeddc49223781d1d3c7b42a` with
+CultLib `21163d83fa2670dbcc9cdd57c6c1776b33a91d62`. Idunn is the only
+deployment and daemon-survival authority; Odin is the discovery/rendezvous
+authority. Their
 health or availability never grants either organ a campaign write path.
 Idunn's runtime health clock preserves milliseconds, so same-second signed
 health samples no longer oscillate into false "health vanished" transitions.
@@ -244,9 +248,16 @@ Release admission is based on the newest executable- or build-affecting commit
 reachable from the admitted ref. Documentation, notes, state receipts, and
 root Markdown are not executable release selectors. The root actuator proves
 that the selected commit is an ancestor of the admitted ref before activation,
-then verifies the exact installed witness. Consequently documentation/state-only
-commit `91e70d4e40252bc6864851867e45d61096fdf011` does not displace live
-executable `10b638e45756e5210aaee1efb5dcf74dbebf83c0`.
+then verifies the exact installed witness. Documentation and state-only commits
+therefore cannot displace the live executable.
+
+Heimdall runs exact source `1086aee01169bf60e8a492b2740db1c6f3e8cabf`
+with CultLib `5cefa0db0079a8e3ee22f29d7b9e6e5aa60912a9`. It publishes four
+redacted typed discovery records to Odin under globally unique catalog keys:
+the provider, private command boundary, Eve access plugin, and transport
+profile. Ghostlight resolves `heimdall:command-boundary` from Odin only for
+begin, complete, refresh, and logout; valid local app sessions do not depend on
+an Odin round trip. No direct Heimdall endpoint remains in the Ghostlight unit.
 
 Epiphany is adjacent capacity, not part of Ghostlight's campaign authority and
 not required by the current DeepSeek-backed runtime. Epiphany source

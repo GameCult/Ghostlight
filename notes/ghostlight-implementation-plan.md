@@ -45,7 +45,7 @@ loopback CultNet command plane. Ghostlight owns hashed local sessions and
 derives campaign authority only from canonical membership. The exact cut is
 `docs/architecture/ghostlight-eve-native-interface.md`.
 The accepted implementation is hosted natively on Yggdrasil as immutable
-release `10b638e45756e5210aaee1efb5dcf74dbebf83c0`. Exact checkout,
+release `b515ca90c25573005a616244143803b37f2d06ec`. Exact checkout,
 embedded commit, release manifest, binary hash, systemd process, typed health,
 CultMesh store, seven migrated campaigns, one Session Zero draft, DeepSeek
 startup inference, local VoidBot retrieval, public Heimdall path, restart
@@ -64,8 +64,13 @@ become a coarse goal. Rejected candidates become coverage gaps, and deterministi
 remote profiles keep unknown facets unknown. The Pro
 agency stage no longer spends output tokens restating remote profiles.
 
-The current control plane runs Idunn and Odin from exact source
-`745e01093c59882ed098b7515ef8921d55fbed15`. Idunn's release selector admits
+The current control plane runs Idunn from exact source
+`2a5cb3e08f5f5f40a12f825a9522b31e6af941af` and Odin from exact source
+`b4f9a2e95f0b41cebdeddc49223781d1d3c7b42a`. Heimdall source
+`1086aee01169bf60e8a492b2740db1c6f3e8cabf` publishes its redacted provider,
+command boundary, plugin, and transport records into Odin. Ghostlight resolves
+the private auth route from that typed catalog; its systemd unit has no direct
+Heimdall endpoint authority. Idunn's release selector admits
 the newest executable/build-affecting commit reachable from a configured ref,
 so later documentation and state-only commits do not churn the deployed body.
 Epiphany source `ebc0ffe4f341154d1902f9afe86f0a87f150179c` is tested and sealed,
