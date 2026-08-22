@@ -49,13 +49,16 @@ retired payload uncommittable.
 Retry is an inference launch against that persisted counter and exact unchanged
 snapshot. It owns no state transition; a replacement still commits only through
 `ApplyDmTurn` at the original component and channel epochs.
-For a counter replacement, the target decision ID enters the stage binding and
-the Projector/Interpreter receive only the target, its retired typed payload,
-the exact counter, and aggregate safety policy. Conversation history, party,
-contract, and unrelated private state are omitted. Legacy counters created by
-the payload-erasing build receive one bounded current-state basis. The kernel
-accepts exactly one same-lane decision with stable permission identity and no
-direct patch, so unrelated output cannot retire the counter.
+For a counter replacement, the target decision ID enters the stage binding. A
+deterministic Ghostlight Projector turns only the target, retired typed payload,
+exact counter, and aggregate safety policy into the Persona's exact lived
+stream; it does not spend a model call asking another agent to paraphrase facts
+Ghostlight already owns. The Interpreter receives the same bounded typed basis.
+Conversation history, party, contract, and unrelated private state are omitted.
+Legacy counters created by the payload-erasing build receive one bounded
+current-state basis. The kernel accepts exactly one same-lane decision with
+stable permission identity and no direct patch, so unrelated output cannot
+retire the counter.
 
 An acceptance card is also a typed-state claim. New Interpreter decisions must
 carry a non-empty contract, character, or extraordinary-permission payload;

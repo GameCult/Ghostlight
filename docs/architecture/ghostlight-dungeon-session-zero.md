@@ -109,14 +109,17 @@ Session Zero snapshot. It does not ask the player to retype the counter, append
 a duplicate message, or advance revision merely to try inference again; only a
 later kernel-validated replacement changes state.
 The countered decision ID is also part of the model snapshot binding and
-permitted turn context. Projector and Interpreter see only that pending
-decision, its retired typed payload, exact counter, aggregate safety policy,
-required owner, and required materiality. Conversation history, party cards,
-the contract, unrelated decisions, and unrelated private character state are
-not part of the focused retry. Pre-cut decisions whose typed payload was erased
-receive one bounded current-state basis for migration only. The kernel accepts
-exactly one same-lane replacement with stable extraordinary-permission identity;
-direct patches or unrelated decisions cannot retire the counter.
+permitted turn context. A deterministic Ghostlight Projector renders that one
+pending decision, its retired typed payload, exact counter, and aggregate safety
+policy into the Persona's narrative stream. This exact projection needs no
+model call or model receipt; the focused turn records only Persona and
+Interpreter inference. The Interpreter separately receives the same bounded
+typed basis plus required owner and materiality. Conversation history, party
+cards, the contract, unrelated decisions, and unrelated private character state
+are not part of the focused retry. Pre-cut decisions whose typed payload was
+erased receive one bounded current-state basis for migration only. The kernel
+accepts exactly one same-lane replacement with stable extraordinary-permission
+identity; direct patches or unrelated decisions cannot retire the counter.
 
 ## Approval and publication
 

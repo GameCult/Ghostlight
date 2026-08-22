@@ -1301,31 +1301,50 @@ impl SessionZeroDirector {
             channel_id,
             supersedes_countered_decision_id.unwrap_or("conversation")
         );
-        let projector_schema = serde_json::to_value(schema_for!(ProjectedLivedStream))?;
-        let projector = run_validated_stage(
-            self.model.as_ref(),
-            &ModelStageRequest {
-                stage: "session_zero_projector".into(),
-                model: self.projector_model.clone(),
-                snapshot_binding: binding.clone(),
-                lived_stream: format!(
-                    "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, and authorship. Never invent state. If turn_focus is present, make that exact counter replacement the sole immediate task. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\nReturn one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}",
-                    serde_json::to_string(&projector_schema)?,
-                    serde_json::to_string(&permitted)?
-                ),
-                output_schema: Some(projector_schema),
-                source_receipt_ids: vec![],
-                temperature: Some(0.0),
-                max_output_tokens: Some(1800),
-            },
-        )
-        .await?;
-        let lived: ProjectedLivedStream = serde_json::from_value(
-            projector
-                .structured
-                .clone()
-                .ok_or_else(|| anyhow!("projector omitted structured output"))?,
-        )?;
+        let (lived, mut receipts) = if let Some(decision_id) = supersedes_countered_decision_id {
+            (
+                ProjectedLivedStream {
+                    lived_stream: project_focused_counter_lived_stream(
+                        state,
+                        member_id,
+                        decision_id,
+                    )?,
+                },
+                Vec::new(),
+            )
+        } else {
+            let projector_schema = serde_json::to_value(schema_for!(ProjectedLivedStream))?;
+            let projector = run_validated_stage(
+                self.model.as_ref(),
+                &ModelStageRequest {
+                    stage: "session_zero_projector".into(),
+                    model: self.projector_model.clone(),
+                    snapshot_binding: binding.clone(),
+                    lived_stream: format!(
+                        "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, and authorship. Never invent state. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\nReturn one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}",
+                        serde_json::to_string(&projector_schema)?,
+                        serde_json::to_string(&permitted)?
+                    ),
+                    output_schema: Some(projector_schema),
+                    source_receipt_ids: vec![],
+                    temperature: Some(0.0),
+                    max_output_tokens: Some(1800),
+                },
+            )
+            .await?;
+            let lived: ProjectedLivedStream = serde_json::from_value(
+                projector
+                    .structured
+                    .clone()
+                    .ok_or_else(|| anyhow!("projector omitted structured output"))?,
+            )?;
+            (lived, vec![projector.receipt])
+        };
+        let focused_persona_instruction = if supersedes_countered_decision_id.is_some() {
+            " The lived stream is Ghostlight's exact factual rendering of one countered typed proposal. Acknowledge the replacement briefly without restating, renaming, or adding terms; invite the player to review the typed decision."
+        } else {
+            ""
+        };
         let persona = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -1333,8 +1352,11 @@ impl SessionZeroDirector {
                 model: self.persona_model.clone(),
                 snapshot_binding: binding.clone(),
                 lived_stream: format!(
-                    "You are {}. {} Lead a candid, collaborative Session Zero. Ask only the most useful next questions; synthesize choices; preserve the player's premise while negotiating costs and limits that create stakes. When the lived stream names an exact counter replacement, resolve that task before any other decision. Do not claim changes are accepted. Speak naturally, with no schema or machine-state language.\n\n{}",
-                    state.dm_persona.name, state.dm_persona.voice, lived.lived_stream
+                    "You are {}. {} Lead a candid, collaborative Session Zero. Ask only the most useful next questions; synthesize choices; preserve the player's premise while negotiating costs and limits that create stakes. Do not claim changes are accepted. Speak naturally, with no schema or machine-state language.{}\n\n{}",
+                    state.dm_persona.name,
+                    state.dm_persona.voice,
+                    focused_persona_instruction,
+                    lived.lived_stream
                 ),
                 output_schema: None,
                 source_receipt_ids: vec![],
@@ -1385,10 +1407,9 @@ impl SessionZeroDirector {
             suggested_replies: interpretation.suggested_replies,
         };
         validate_dm_delta(state, channel_id, member_id, &delta)?;
-        Ok((
-            delta,
-            vec![projector.receipt, persona.receipt, interpreter.receipt],
-        ))
+        receipts.push(persona.receipt);
+        receipts.push(interpreter.receipt);
+        Ok((delta, receipts))
     }
 }
 
@@ -1441,6 +1462,68 @@ fn public_character_projection(draft: &CharacterDraft) -> serde_json::Value {
         "name": draft.name,
         "public_premise": draft.public_premise,
     })
+}
+
+fn project_focused_counter_lived_stream(
+    state: &SessionZeroState,
+    member_id: Option<&str>,
+    decision_id: &str,
+) -> Result<String> {
+    counter_replacement_focus(state, member_id, Some(decision_id))?
+        .ok_or_else(|| anyhow!("focused counter projection is missing its turn focus"))?;
+    let decision = state
+        .decisions
+        .get(decision_id)
+        .ok_or_else(|| anyhow!("countered decision is missing"))?;
+    let mut previous = display_decision_payload(decision);
+    if previous.trim().is_empty() {
+        previous = if let Some(member_id) = member_id {
+            format!(
+                "Legacy private character replacement basis:\n{}",
+                display_character_ledger(
+                    state
+                        .character_drafts
+                        .get(member_id)
+                        .ok_or_else(|| anyhow!("private character draft is missing"))?
+                )
+            )
+        } else {
+            format!(
+                "Legacy campaign-contract replacement basis:\nPremise: {}\nCanon horizon: {}\nStarting location: {}\nStarting time: {}\nStarting pressure: {}\nDesired goal: {}\nTone: {}\nThemes: {}\nPacing: {}\nConsequence style: {}\nNarrative focus: {}\nParty bonds: {}\nInternal tension: {}\nDM style: {}",
+                state.contract.premise,
+                state.contract.canon_horizon,
+                state.contract.starting_where,
+                state.contract.starting_when,
+                state.contract.starting_pressure,
+                state.contract.desired_goal,
+                display_list(&state.contract.tone),
+                display_list(&state.contract.themes),
+                state.contract.pacing,
+                state.contract.consequence_style,
+                state.contract.narrative_focus,
+                display_list(&state.contract.party_bonds),
+                state.contract.internal_tension,
+                state.contract.dm_style,
+            )
+        };
+    }
+    let counter = decision
+        .pending_counter
+        .as_deref()
+        .ok_or_else(|| anyhow!("countered decision has no pending counterproposal"))?;
+    let boundaries = if state.aggregate_boundaries.is_empty() {
+        "No campaign content boundaries are currently recorded.".to_owned()
+    } else {
+        state
+            .aggregate_boundaries
+            .iter()
+            .map(|boundary| format!("{}: {:?}", boundary.display_topic, boundary.level))
+            .collect::<Vec<_>>()
+            .join("; ")
+    };
+    Ok(format!(
+        "A player has rejected one material typed proposal in their Session Zero channel. Nothing is accepted yet. Resolve only this replacement and invite the player to review the fresh typed decision.\n\nPrevious typed proposal, rendered exactly:\n{previous}\n\nPlayer's exact counterproposal:\n{counter}\n\nCampaign content boundaries:\n{boundaries}"
+    ))
 }
 
 fn permitted_dm_context(
@@ -3340,6 +3423,9 @@ mod tests {
     use tempfile::tempdir;
 
     struct SchemaAwareDirectorModel;
+    struct FocusedCounterDirectorModel {
+        owner_member_id: String,
+    }
 
     const PERSONA_SPEECH: &str = "**Mars holds.** Your sung name remains ‘The last lamp carried between storms, learning each stranger by the weight they refuse to abandon.’ Does the revised contamination bargain fit Sable’s ability?";
 
@@ -3383,6 +3469,54 @@ mod tests {
         }
     }
 
+    #[async_trait]
+    impl ModelPort for FocusedCounterDirectorModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "session_zero_projector" => {
+                    panic!("focused counters use the exact deterministic projector")
+                }
+                "session_zero_dm_persona" => {
+                    assert!(request.lived_stream.contains("Previous typed proposal"));
+                    assert!(
+                        request
+                            .lived_stream
+                            .contains("Player's exact counterproposal")
+                    );
+                    assert!(!request.lived_stream.contains("\"schema\":"));
+                    Ok("The exact replacement is ready for your review.".into())
+                }
+                "session_zero_interpreter" => {
+                    Ok(serde_json::to_string(&SessionZeroInterpretation {
+                        decisions: vec![SessionZeroDecision {
+                            schema: "ghostlight.session_zero_decision.v1".into(),
+                            id: "decision:fresh-focused-counter".into(),
+                            owner_member_id: Some(self.owner_member_id.clone()),
+                            prompt: "Accept the exact Sable replacement?".into(),
+                            proposed_resolution: "Replace only Sable's name.".into(),
+                            proposed_extraordinary_permission: None,
+                            proposed_contract_patch: None,
+                            proposed_character_patch: Some(CharacterDraftPatch {
+                                name: Some("Sable, whose sung name remains whole".into()),
+                                ..Default::default()
+                            }),
+                            evidence_receipt_ids: vec![],
+                            pending_counter: None,
+                            material: true,
+                            resolved: false,
+                        }],
+                        ..Default::default()
+                    })?)
+                }
+                stage => panic!("unexpected focused Session Zero model stage {stage}"),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
     fn state() -> SessionZeroState {
         SessionZeroState::new(
             "The Long Way Home".into(),
@@ -3412,6 +3546,54 @@ mod tests {
         assert_eq!(delta.contract_patch.tone.unwrap(), ["serious", "political"]);
         assert_eq!(delta.dm_speech, PERSONA_SPEECH);
         assert_eq!(receipts.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn focused_counter_uses_exact_local_projection_before_persona_and_interpreter() {
+        let mut draft = state();
+        let host_id = draft.host_member_id.clone();
+        let target_id = "decision:focused-character".to_owned();
+        draft.decisions.insert(
+            target_id.clone(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: target_id.clone(),
+                owner_member_id: Some(host_id.clone()),
+                prompt: "Accept Sable's draft?".into(),
+                proposed_resolution: "Use the proposed character patch.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: None,
+                proposed_character_patch: Some(CharacterDraftPatch {
+                    name: Some("Sable".into()),
+                    ..Default::default()
+                }),
+                evidence_receipt_ids: vec![],
+                pending_counter: Some("Keep Sable's full sung name.".into()),
+                material: true,
+                resolved: false,
+            },
+        );
+        let director = SessionZeroDirector::new(
+            Arc::new(FocusedCounterDirectorModel {
+                owner_member_id: host_id.clone(),
+            }),
+            "projector",
+            "persona",
+            "interpreter",
+        );
+        let private_channel = format!("private:{host_id}");
+        let (delta, receipts) = director
+            .respond(&draft, &private_channel, Some(&host_id), Some(&target_id))
+            .await
+            .unwrap();
+        assert_eq!(receipts.len(), 2);
+        assert_eq!(
+            delta.decisions[0]
+                .proposed_character_patch
+                .as_ref()
+                .and_then(|patch| patch.name.as_deref()),
+            Some("Sable, whose sung name remains whole")
+        );
     }
 
     #[test]
@@ -3561,6 +3743,15 @@ mod tests {
             assert!(context.get("current_private_character").is_none());
             assert_eq!(context["countered_decision"]["id"], target_id);
         }
+        let lived =
+            project_focused_counter_lived_stream(&draft, Some(&host_id), &target_id).unwrap();
+        assert!(lived.contains("Previous typed proposal, rendered exactly"));
+        assert!(lived.contains("Borrowed memories do not fully leave"));
+        assert!(lived.contains("Player's exact counterproposal"));
+        assert!(lived.contains("Ordinary contamination fades with rest"));
+        assert!(!lived.contains("UNRELATED-DECISION-MARKER"));
+        assert!(!lived.contains("ghostlight.session_zero_decision"));
+        assert!(!lived.contains(&target_id));
 
         let mut legacy = draft.clone();
         let accepted_permission = legacy.decisions[&target_id]
@@ -3590,6 +3781,11 @@ mod tests {
             "legacy focused context was {} bytes",
             legacy_encoded.len()
         );
+        let legacy_lived =
+            project_focused_counter_lived_stream(&legacy, Some(&host_id), &target_id).unwrap();
+        assert!(legacy_lived.contains("Legacy private character replacement basis"));
+        assert!(legacy_lived.contains("Fork-memory synchronization"));
+        assert!(!legacy_lived.contains("UNRELATED-DECISION-MARKER"));
     }
 
     #[tokio::test]
