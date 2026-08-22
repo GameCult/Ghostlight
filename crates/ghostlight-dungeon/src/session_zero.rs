@@ -416,6 +416,17 @@ pub struct SessionZeroDelta {
     pub suggested_replies: Vec<String>,
 }
 
+/// Model-facing typed extraction. The Persona owns the natural DM utterance;
+/// the Interpreter may only propose typed state and reply affordances.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+#[serde(deny_unknown_fields)]
+struct SessionZeroInterpretation {
+    pub contract_patch: CampaignContractPatch,
+    pub character_patch: Option<CharacterDraftPatch>,
+    pub decisions: Vec<SessionZeroDecision>,
+    pub suggested_replies: Vec<String>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct SessionZeroState {
     pub schema: String,
@@ -1323,7 +1334,9 @@ impl SessionZeroDirector {
             },
         )
         .await?;
-        let interpreter_schema = serde_json::to_value(schema_for!(SessionZeroDelta))?;
+        validate_bounded("DM speech", &persona.narrative, 1, 6_000)?;
+        let interpreter_context = permitted_interpreter_context(state, channel_id, member_id)?;
+        let interpreter_schema = serde_json::to_value(schema_for!(SessionZeroInterpretation))?;
         let interpreter = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -1331,9 +1344,10 @@ impl SessionZeroDirector {
                 model: self.interpreter_model.clone(),
                 snapshot_binding: binding,
                 lived_stream: format!(
-                    "Extract only NEW typed changes proposed by the DM response. Never copy current contract fields or existing unresolved decisions into the delta. Copy DM speech faithfully into dm_speech. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
+                    "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
                     serde_json::to_string(&interpreter_schema)?,
-                    serde_json::to_string(&permitted)?, persona.narrative
+                    serde_json::to_string(&interpreter_context)?,
+                    serde_json::to_string(&persona.narrative)?
                 ),
                 output_schema: Some(interpreter_schema),
                 source_receipt_ids: vec![],
@@ -1342,12 +1356,19 @@ impl SessionZeroDirector {
             },
         )
         .await?;
-        let delta: SessionZeroDelta = serde_json::from_value(
+        let interpretation: SessionZeroInterpretation = serde_json::from_value(
             interpreter
                 .structured
                 .clone()
                 .ok_or_else(|| anyhow!("interpreter omitted structured output"))?,
         )?;
+        let delta = SessionZeroDelta {
+            contract_patch: interpretation.contract_patch,
+            character_patch: interpretation.character_patch,
+            decisions: interpretation.decisions,
+            dm_speech: persona.narrative,
+            suggested_replies: interpretation.suggested_replies,
+        };
         validate_dm_delta(state, channel_id, member_id, &delta)?;
         Ok((
             delta,
@@ -1460,6 +1481,40 @@ fn permitted_dm_context(
                 .values()
                 .filter(|boundary| boundary.owner_member_id == member_id)
                 .collect::<Vec<_>>(),
+        )?;
+    }
+    Ok(value)
+}
+
+fn permitted_interpreter_context(
+    state: &SessionZeroState,
+    channel_id: &str,
+    member_id: Option<&str>,
+) -> Result<serde_json::Value> {
+    let channel = state
+        .channels
+        .get(channel_id)
+        .ok_or_else(|| anyhow!("channel does not exist"))?;
+    let visible_decisions = state
+        .decisions
+        .values()
+        .filter(|decision| {
+            decision.owner_member_id.is_none() || decision.owner_member_id.as_deref() == member_id
+        })
+        .collect::<Vec<_>>();
+    let mut value = serde_json::json!({
+        "channel_kind": channel.kind,
+        "member_id": member_id,
+        "current_contract": state.contract,
+        "existing_visible_decisions": visible_decisions,
+    });
+    if channel.kind == SessionZeroChannelKind::PrivateDm {
+        let member_id = member_id.ok_or_else(|| anyhow!("private member is missing"))?;
+        value["current_private_character"] = serde_json::to_value(
+            state
+                .character_drafts
+                .get(member_id)
+                .ok_or_else(|| anyhow!("private character draft is missing"))?,
         )?;
     }
     Ok(value)
@@ -2905,6 +2960,8 @@ mod tests {
 
     struct SchemaAwareDirectorModel;
 
+    const PERSONA_SPEECH: &str = "**Mars holds.** Your sung name remains ‘The last lamp carried between storms, learning each stranger by the weight they refuse to abandon.’ Does the revised contamination bargain fit Sable’s ability?";
+
     #[async_trait]
     impl ModelPort for SchemaAwareDirectorModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
@@ -2921,10 +2978,7 @@ mod tests {
                     assert!(schema < dynamic);
                     Ok(r#"{"lived_stream":"The player wants a serious political campaign on Mars, but tone, character, and stakes remain open."}"#.into())
                 }
-                "session_zero_dm_persona" => Ok(
-                    "Mars under Zhestokost pressure gives us a strong frame. Which kind of pressure should dominate, and who are you inside it?"
-                        .into(),
-                ),
+                "session_zero_dm_persona" => Ok(PERSONA_SPEECH.into()),
                 "session_zero_interpreter" => {
                     let schema = request
                         .lived_stream
@@ -2932,10 +2986,12 @@ mod tests {
                         .expect("interpreter must receive its exact output contract");
                     let dynamic = request
                         .lived_stream
-                        .find("DYNAMIC PERMITTED CONTEXT:")
-                        .expect("interpreter must receive permitted state");
+                        .find("DYNAMIC TYPED EXTRACTION CONTEXT:")
+                        .expect("interpreter must receive bounded typed state");
                     assert!(schema < dynamic);
-                    Ok(r#"{"contract_patch":{"starting_where":"Mars in Zhestokost space","tone":["serious","political"]},"character_patch":null,"decisions":[],"dm_speech":"Mars under Zhestokost pressure gives us a strong frame. Which kind of pressure should dominate, and who are you inside it?","suggested_replies":[]}"#.into())
+                    assert!(!request.lived_stream.contains("\"dm_speech\""));
+                    assert!(!request.lived_stream.contains("\"recent_messages\""));
+                    Ok(r#"{"contract_patch":{"starting_where":"Mars in Zhestokost space","tone":["serious","political"]},"character_patch":null,"decisions":[],"suggested_replies":[]}"#.into())
                 }
                 stage => panic!("unexpected Session Zero model stage {stage}"),
             }
@@ -2973,6 +3029,7 @@ mod tests {
             Some("Mars in Zhestokost space")
         );
         assert_eq!(delta.contract_patch.tone.unwrap(), ["serious", "political"]);
+        assert_eq!(delta.dm_speech, PERSONA_SPEECH);
         assert_eq!(receipts.len(), 3);
     }
 
