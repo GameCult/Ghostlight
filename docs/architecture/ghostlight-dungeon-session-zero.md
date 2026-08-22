@@ -145,6 +145,10 @@ The compiler receives an `approved_campaign_brief.v1`, not
 the transcript. Private character history and secrets are withheld from world
 generation; after the grounded seed validates, Ghostlight locally replaces the
 provisional compiler player with the exact approved actors at one shared start.
+If compilation fails before a preview is installed, the roster remains locked
+and the typed brief remains authoritative. A host whose current brief still
+passes the readiness gate receives the Compile action again; retrying uses the
+new revision and never replays or accepts transcript prose.
 
 Evidence gaps return the draft to conversation with explicit questions. A
 review preview records shared and per-character digests. Every active player

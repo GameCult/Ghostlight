@@ -2345,7 +2345,13 @@ pub fn session_zero_surface(
             &[],
         ));
     }
-    if member.is_host && state.roster_locked && state.status == SessionZeroStatus::RosterLocked {
+    if member.is_host
+        && matches!(
+            state.status,
+            SessionZeroStatus::RosterLocked | SessionZeroStatus::Drafting
+        )
+        && state.compilation_brief().is_ok()
+    {
         children.push(command_control(
             "session-zero.compile",
             "Compile campaign preview",
@@ -3726,6 +3732,31 @@ mod tests {
         .unwrap()
     }
 
+    fn compilable_state() -> SessionZeroState {
+        let mut draft = state();
+        draft.contract.premise = "Keep a refugee clinic supplied during a political crisis.".into();
+        draft.contract.canon_horizon = "After Burden of Proof".into();
+        draft.contract.starting_where = "Hellas, Mars".into();
+        draft.contract.starting_when = "During a Zhestokost ration strike".into();
+        draft.contract.starting_pressure = "A ration strike and refugee convoy".into();
+        draft.contract.desired_goal = "Protect the clinic without becoming an informant.".into();
+        draft.contract.tone = vec!["serious political drama".into()];
+        draft.contract.pacing = "deliberate pressure with sharp turns".into();
+        draft.contract.consequence_style = "durable, low arbitrary lethality".into();
+        draft.contract.narrative_focus = "institutional leverage and human solidarity".into();
+        draft.contract.dm_style = "candid, challenging, and humane".into();
+        let character = draft
+            .character_drafts
+            .get_mut(&draft.host_member_id)
+            .unwrap();
+        character.public_premise =
+            "A Corvid logistics mediator caught between institutions.".into();
+        character.capabilities = vec!["Route planning".into()];
+        character.goals = vec!["Get the convoy through".into()];
+        character.obligations = vec!["A life-debt to the quartermaster".into()];
+        draft
+    }
+
     #[tokio::test]
     async fn director_receives_stable_output_contracts_before_dynamic_context() {
         let director = SessionZeroDirector::new(
@@ -4404,8 +4435,24 @@ mod tests {
         assert!(encoded.contains("Discuss"));
         assert!(encoded.contains("session_zero.boundary.remove"));
         assert!(encoded.contains("\"bindingName\":\"counter\""));
+        assert!(encoded.contains("\"maxLength\":2000"));
         assert!(!encoded.contains("payload.fields"));
         assert!(!encoded.contains("\"kind\":\"form\""));
+    }
+
+    #[test]
+    fn compilable_locked_draft_can_retry_after_compiler_failure() {
+        let mut draft = compilable_state();
+        draft.roster_locked = true;
+        draft.status = SessionZeroStatus::Drafting;
+        let encoded =
+            serde_json::to_string(&session_zero_surface(&draft, "account:host").unwrap()).unwrap();
+        assert!(encoded.contains("Compile campaign preview"));
+
+        draft.status = SessionZeroStatus::Compiling;
+        let encoded =
+            serde_json::to_string(&session_zero_surface(&draft, "account:host").unwrap()).unwrap();
+        assert!(!encoded.contains("Compile campaign preview"));
     }
 
     #[test]
