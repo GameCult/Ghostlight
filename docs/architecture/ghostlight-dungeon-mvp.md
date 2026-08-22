@@ -606,6 +606,13 @@ DC from 5/10/15/20/25/30, itemizes referenced context modifiers, caps their sum
 at ±10, states the effect ceiling and outcome stakes, and issues an expiring
 digest bound to the current revision.
 
+Modifier references are schema-bound to the exact evidence universe projected
+for that assessment. It includes the acting actor's state, exact co-located
+actors, supplied institutions, accessible facts, branch evidence, and accepted
+extraordinary permissions. A remote actor is not a valid modifier reference.
+The same set is shown to the assessor and enforced by local validation, so a
+model cannot invent a reference namespace or cite context it was not given.
+
 `Attempt` consumes that exact assessment. It obtains an OS-random d20 inside the
 server command path and atomically stores roll and transition. Impossible acts
 receive no roll. Natural 20 and 1 shift one band and cannot cross impossibility

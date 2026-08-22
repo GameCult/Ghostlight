@@ -93,6 +93,7 @@ impl ActionAssessor {
             .collect();
         let information_facts = available_information_facts(campaign, actor);
         let mut allowed_references = allowed_references(campaign, actor);
+        allowed_references.extend(present_actor_references(campaign, actor));
         allowed_references.extend(
             extraordinary_permissions
                 .iter()
@@ -106,15 +107,7 @@ impl ActionAssessor {
                 || intent.actor_id == campaign.player_actor_id,
         );
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
-        schema["properties"]["dc"] = serde_json::json!({
-            "type":"integer",
-            "enum":[5,10,15,20,25,30]
-        });
-        schema["$defs"]["ContextModifier"]["properties"]["value"] = serde_json::json!({
-            "type":"integer",
-            "minimum":-10,
-            "maximum":10
-        });
+        constrain_assessment_schema(&mut schema, &allowed_references)?;
         let base_prompt = format!(
             "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, leave knowledge deltas empty and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
@@ -216,6 +209,46 @@ impl ActionAssessor {
     }
 }
 
+fn constrain_assessment_schema(
+    schema: &mut serde_json::Value,
+    allowed_references: &BTreeSet<String>,
+) -> Result<()> {
+    let properties = schema
+        .pointer_mut("/properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("assessment schema has no properties"))?;
+    properties.insert(
+        "dc".into(),
+        serde_json::json!({
+            "type":"integer",
+            "enum":[5,10,15,20,25,30]
+        }),
+    );
+    let modifier_properties = schema
+        .pointer_mut("/$defs/ContextModifier/properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("assessment schema has no context modifier properties"))?;
+    modifier_properties.insert(
+        "value".into(),
+        serde_json::json!({
+            "type":"integer",
+            "minimum":-10,
+            "maximum":10
+        }),
+    );
+    modifier_properties.insert(
+        "references".into(),
+        serde_json::json!({
+            "type":"array",
+            "items":{
+                "type":"string",
+                "enum":allowed_references.iter().collect::<Vec<_>>()
+            }
+        }),
+    );
+    Ok(())
+}
+
 fn action_agency_guidance(human_controlled: bool) -> &'static str {
     if human_controlled {
         "The acting actor is player-controlled; assess the player's attempted effect without upgrading it into a completed fact."
@@ -282,6 +315,18 @@ fn allowed_references(campaign: &Campaign, actor: &crate::domain::ActorState) ->
         refs.insert(id.clone());
     }
     refs
+}
+
+fn present_actor_references(
+    campaign: &Campaign,
+    actor: &crate::domain::ActorState,
+) -> BTreeSet<String> {
+    campaign
+        .actors
+        .values()
+        .filter(|candidate| candidate.location_id == actor.location_id)
+        .map(|candidate| format!("actor:{}", candidate.id))
+        .collect()
 }
 
 fn available_information_facts(
@@ -497,6 +542,62 @@ mod tests {
         assert!(error.contains("capability:telepathy"));
         assert!(error.contains("ALLOWED REFERENCES"));
         assert!(validate_proposal(&proposal("equipment:key"), &allowed).is_ok());
+    }
+
+    #[test]
+    fn assessment_reference_schema_enumerates_exact_allowed_values() {
+        let allowed = BTreeSet::from([
+            "actor:player".into(),
+            "actor:clinic-director".into(),
+            "equipment:audit-seal".into(),
+        ]);
+        let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
+        constrain_assessment_schema(&mut schema, &allowed).unwrap();
+        let values = schema
+            .pointer("/$defs/ContextModifier/properties/references/items/enum")
+            .and_then(serde_json::Value::as_array)
+            .unwrap()
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .collect::<BTreeSet<_>>();
+        assert_eq!(
+            values,
+            BTreeSet::from([
+                "actor:player",
+                "actor:clinic-director",
+                "equipment:audit-seal"
+            ])
+        );
+    }
+
+    #[test]
+    fn assessment_references_include_present_actors_but_not_remote_actors() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = campaign.actors["player"].clone();
+        let mut nearby = acting.clone();
+        nearby.id = "clinic-director".into();
+        nearby.name = "Clinic Director".into();
+        campaign.actors.insert(nearby.id.clone(), nearby);
+        campaign.locations.insert(
+            "remote".into(),
+            crate::domain::Location {
+                id: "remote".into(),
+                name: "Remote".into(),
+                container_id: None,
+                routes: Default::default(),
+                persistent_features: vec![],
+            },
+        );
+        let mut remote = acting.clone();
+        remote.id = "remote-commander".into();
+        remote.name = "Remote Commander".into();
+        remote.location_id = "remote".into();
+        campaign.actors.insert(remote.id.clone(), remote);
+
+        let references = present_actor_references(&campaign, &acting);
+        assert!(references.contains("actor:player"));
+        assert!(references.contains("actor:clinic-director"));
+        assert!(!references.contains("actor:remote-commander"));
     }
 
     #[test]
