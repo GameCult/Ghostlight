@@ -8,6 +8,8 @@ use base64::{
     engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
 };
 use chrono::{DateTime, SecondsFormat, Utc};
+use cultcache_rs::DatabaseEntry;
+use cultmesh_rs::{CultMesh, CultMeshNodeOptions, CultMeshRudpSnapshotOptions};
 use cultnet_rs::{
     CULTNET_OPERATION_CONNECTION_ID, CultNetMessage, CultNetRudpSocketTransportConnection,
     CultNetRudpSocketTransportOptions,
@@ -35,10 +37,67 @@ pub struct HeimdallClient {
     public_app_url: String,
     discord_guild_id: String,
     discord_role_id: String,
-    private_endpoint: SocketAddr,
+    boundary_locator: HeimdallBoundaryLocator,
     runtime_id: String,
     shared_secret: String,
 }
+
+#[derive(Clone)]
+enum HeimdallBoundaryLocator {
+    Odin(SocketAddr),
+    #[cfg(test)]
+    Fixed(ResolvedHeimdallBoundary),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ResolvedHeimdallBoundary {
+    endpoint: SocketAddr,
+    daemon_id: String,
+    operations: Vec<String>,
+}
+
+#[derive(Clone, Debug, DatabaseEntry)]
+#[cultcache(
+    type = "heimdall.command_boundary",
+    schema = "heimdall.command_boundary.v1"
+)]
+struct HeimdallCommandBoundaryCatalogEntry {
+    #[cultcache(key = 0)]
+    value: serde_json::Value,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HeimdallCommandBoundaryRecord {
+    schema: String,
+    boundary_id: String,
+    daemon_id: String,
+    provider_id: String,
+    updated_at: String,
+    commands: Vec<HeimdallBoundaryCommand>,
+    private_route: HeimdallPrivateRoute,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HeimdallBoundaryCommand {
+    operation: String,
+    request_schema: String,
+    response_schema: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HeimdallPrivateRoute {
+    endpoint: String,
+    exposure: String,
+    authentication: String,
+    secret_bearing: bool,
+}
+
+cultmesh_rs::cultmesh_documents!(HeimdallDiscoveryDocuments {
+    HeimdallCommandBoundaryCatalogEntry => "heimdall.command_boundary.v1",
+});
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -171,13 +230,9 @@ pub struct AppClaim {
 
 impl HeimdallClient {
     pub fn from_env() -> anyhow::Result<Self> {
-        let private_endpoint = std::env::var("GHOSTLIGHT_HEIMDALL_PRIVATE_RUDP")
-            .unwrap_or_else(|_| "rudp://127.0.0.1:4101".into());
-        let private_endpoint = private_endpoint
-            .strip_prefix("rudp://")
-            .unwrap_or(&private_endpoint)
+        let odin_endpoint: SocketAddr = required_env("GHOSTLIGHT_ODIN_RUDP")?
             .parse()
-            .context("GHOSTLIGHT_HEIMDALL_PRIVATE_RUDP is not a socket address")?;
+            .context("GHOSTLIGHT_ODIN_RUDP is not a socket address")?;
         let secret_path = std::env::var_os("GHOSTLIGHT_HEIMDALL_APP_SECRET_FILE")
             .map(PathBuf::from)
             .context("GHOSTLIGHT_HEIMDALL_APP_SECRET_FILE is required")?;
@@ -198,7 +253,7 @@ impl HeimdallClient {
                 .unwrap_or_else(|_| "https://yggdrasil.gamecult.org/ghostlight/".into()),
             discord_guild_id: required_env("GHOSTLIGHT_DISCORD_GUILD_ID")?,
             discord_role_id: required_env("GHOSTLIGHT_DISCORD_ROLE_ID")?,
-            private_endpoint,
+            boundary_locator: HeimdallBoundaryLocator::Odin(odin_endpoint),
             runtime_id: std::env::var("GHOSTLIGHT_RUNTIME_ID")
                 .unwrap_or_else(|_| "yggdrasil-ghostlight".into()),
             shared_secret,
@@ -213,7 +268,16 @@ impl HeimdallClient {
             public_app_url: "https://ghostlight.invalid/".into(),
             discord_guild_id: "guild-kltst".into(),
             discord_role_id: "role-kltst".into(),
-            private_endpoint: "127.0.0.1:9".parse().unwrap(),
+            boundary_locator: HeimdallBoundaryLocator::Fixed(ResolvedHeimdallBoundary {
+                endpoint: "127.0.0.1:9".parse().unwrap(),
+                daemon_id: "yggdrasil-heimdall".into(),
+                operations: vec![
+                    "heimdall.auth.begin".into(),
+                    "heimdall.auth.complete".into(),
+                    "heimdall.auth.refresh".into(),
+                    "heimdall.auth.logout".into(),
+                ],
+            }),
             runtime_id: "yggdrasil-ghostlight".into(),
             shared_secret: "fixture-secret".into(),
         }
@@ -381,13 +445,20 @@ impl HeimdallClient {
             &self.shared_secret,
             payload,
         )?;
-        let endpoint = self.private_endpoint;
+        let boundary_locator = self.boundary_locator.clone();
         let runtime_id = self.runtime_id.clone();
         let operation = operation.to_owned();
         let request_payload = STANDARD.encode(rmp_serde::to_vec_named(&envelope)?);
         let transport_operation = operation.clone();
         let response = tokio::task::spawn_blocking(move || {
-            invoke_operation(endpoint, &runtime_id, &transport_operation, request_payload)
+            let boundary = boundary_locator.resolve(&runtime_id, &transport_operation)?;
+            invoke_operation(
+                boundary.endpoint,
+                &boundary.daemon_id,
+                &runtime_id,
+                &transport_operation,
+                request_payload,
+            )
         })
         .await??;
         let CultNetMessage::OperationResponse {
@@ -420,6 +491,7 @@ impl HeimdallClient {
 
 fn invoke_operation(
     endpoint: SocketAddr,
+    target_runtime_id: &str,
     runtime_id: &str,
     operation: &str,
     payload: String,
@@ -452,7 +524,7 @@ fn invoke_operation(
         payload_encoding: "messagepack-base64".into(),
         payload,
         source_runtime_id: Some(runtime_id.into()),
-        target_runtime_id: Some("yggdrasil-heimdall".into()),
+        target_runtime_id: Some(target_runtime_id.into()),
     })?;
     while Instant::now() < deadline {
         if let Some(response) = transport.receive_schema_message_once()? {
@@ -464,6 +536,120 @@ fn invoke_operation(
         transport.poll_resends()?;
     }
     bail!("Heimdall private command timed out")
+}
+
+impl HeimdallBoundaryLocator {
+    fn resolve(
+        &self,
+        runtime_id: &str,
+        operation: &str,
+    ) -> anyhow::Result<ResolvedHeimdallBoundary> {
+        let boundary = match self {
+            Self::Odin(endpoint) => discover_heimdall_boundary(*endpoint, runtime_id)?,
+            #[cfg(test)]
+            Self::Fixed(boundary) => boundary.clone(),
+        };
+        if !boundary
+            .operations
+            .iter()
+            .any(|candidate| candidate == operation)
+        {
+            bail!("Odin's Heimdall boundary does not advertise {operation}");
+        }
+        Ok(boundary)
+    }
+}
+
+fn discover_heimdall_boundary(
+    odin_endpoint: SocketAddr,
+    runtime_id: &str,
+) -> anyhow::Result<ResolvedHeimdallBoundary> {
+    let store_path = std::env::temp_dir().join(format!(
+        "ghostlight-heimdall-discovery-{}.cc",
+        uuid::Uuid::new_v4()
+    ));
+    let result = (|| {
+        let mut node = CultMesh::create_node(
+            &store_path,
+            HeimdallDiscoveryDocuments,
+            CultMeshNodeOptions {
+                runtime_id: format!("{runtime_id}:heimdall-discovery"),
+                pull_on_start: false,
+            },
+        )?;
+        let mut options = CultMeshRudpSnapshotOptions::odin(
+            odin_endpoint,
+            format!("{runtime_id}:heimdall-discovery"),
+        );
+        options.schema_ids = Some(vec!["heimdall.command_boundary.v1".into()]);
+        options.record_keys = Some(vec!["heimdall".into()]);
+        let applied = node.pull_rudp_catalog_snapshot(options)?;
+        if applied != 1 {
+            bail!("Odin did not return exactly one Heimdall command boundary");
+        }
+        let envelope = node
+            .cache()
+            .snapshot()
+            .into_iter()
+            .find(|entry| {
+                entry.key == "heimdall"
+                    && entry.r#type == "heimdall.command_boundary"
+                    && entry.schema_id.as_deref() == Some("heimdall.command_boundary.v1")
+            })
+            .context("Odin omitted the exact Heimdall command boundary envelope")?;
+        validate_heimdall_boundary(rmp_serde::from_slice(&envelope.payload)?)
+    })();
+    let _ = std::fs::remove_file(&store_path);
+    result
+}
+
+fn validate_heimdall_boundary(
+    boundary: HeimdallCommandBoundaryRecord,
+) -> anyhow::Result<ResolvedHeimdallBoundary> {
+    if boundary.schema != "heimdall.command_boundary.v1"
+        || boundary.boundary_id != "heimdall"
+        || boundary.provider_id != "heimdall"
+        || boundary.daemon_id.trim().is_empty()
+        || boundary.updated_at.trim().is_empty()
+    {
+        bail!("Odin returned a foreign or malformed Heimdall command boundary");
+    }
+    if boundary.private_route.exposure != "loopback-only"
+        || boundary.private_route.secret_bearing
+        || boundary.private_route.authentication != "app-bound HMAC + AES-256-GCM envelope"
+    {
+        bail!("Odin returned an unsafe Heimdall private route");
+    }
+    let endpoint_text = boundary
+        .private_route
+        .endpoint
+        .strip_prefix("rudp://")
+        .context("Heimdall's discovered private route is not RUDP")?;
+    let endpoint: SocketAddr = endpoint_text
+        .parse()
+        .context("Heimdall's discovered private route is not a socket address")?;
+    if !endpoint.ip().is_loopback() {
+        bail!("Heimdall's discovered private route is not loopback-only");
+    }
+    if boundary.commands.is_empty()
+        || boundary.commands.iter().any(|command| {
+            command.operation.trim().is_empty()
+                || command.request_schema.trim().is_empty()
+                || command.response_schema.trim().is_empty()
+        })
+    {
+        bail!("Heimdall's discovered command catalog is malformed");
+    }
+    let operations = boundary
+        .commands
+        .into_iter()
+        .map(|command| command.operation)
+        .collect();
+    Ok(ResolvedHeimdallBoundary {
+        endpoint,
+        daemon_id: boundary.daemon_id,
+        operations,
+    })
 }
 
 fn seal_envelope(
@@ -601,4 +787,71 @@ fn required_env(name: &str) -> anyhow::Result<String> {
         bail!("{name} must not be empty");
     }
     Ok(value.to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn boundary(endpoint: &str) -> HeimdallCommandBoundaryRecord {
+        HeimdallCommandBoundaryRecord {
+            schema: "heimdall.command_boundary.v1".into(),
+            boundary_id: "heimdall".into(),
+            daemon_id: "yggdrasil-heimdall".into(),
+            provider_id: "heimdall".into(),
+            updated_at: "2026-08-22T12:00:00.000Z".into(),
+            commands: vec![HeimdallBoundaryCommand {
+                operation: "heimdall.auth.begin".into(),
+                request_schema: "heimdall.private_command_envelope.v1".into(),
+                response_schema: "heimdall.auth_begin_receipt.v1".into(),
+            }],
+            private_route: HeimdallPrivateRoute {
+                endpoint: endpoint.into(),
+                exposure: "loopback-only".into(),
+                authentication: "app-bound HMAC + AES-256-GCM envelope".into(),
+                secret_bearing: false,
+            },
+        }
+    }
+
+    #[test]
+    fn accepts_only_the_discovered_loopback_private_boundary() {
+        let resolved = validate_heimdall_boundary(boundary("rudp://127.0.0.1:4101"))
+            .expect("canonical boundary should resolve");
+        assert_eq!(resolved.endpoint, "127.0.0.1:4101".parse().unwrap());
+        assert_eq!(resolved.daemon_id, "yggdrasil-heimdall");
+        assert_eq!(resolved.operations, vec!["heimdall.auth.begin"]);
+    }
+
+    #[test]
+    fn rejects_non_loopback_or_secret_bearing_routes() {
+        assert!(
+            validate_heimdall_boundary(boundary("rudp://10.77.0.2:4101"))
+                .unwrap_err()
+                .to_string()
+                .contains("not loopback-only")
+        );
+        let mut secret_bearing = boundary("rudp://127.0.0.1:4101");
+        secret_bearing.private_route.secret_bearing = true;
+        assert!(
+            validate_heimdall_boundary(secret_bearing)
+                .unwrap_err()
+                .to_string()
+                .contains("unsafe")
+        );
+    }
+
+    #[test]
+    fn refuses_operations_not_advertised_by_odin() {
+        let locator = HeimdallBoundaryLocator::Fixed(
+            validate_heimdall_boundary(boundary("rudp://127.0.0.1:4101")).unwrap(),
+        );
+        assert!(
+            locator
+                .resolve("ghostlight-test", "heimdall.auth.logout")
+                .unwrap_err()
+                .to_string()
+                .contains("does not advertise")
+        );
+    }
 }
