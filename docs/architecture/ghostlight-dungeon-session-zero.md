@@ -102,6 +102,10 @@ epoch; installing it and retiring the pending counter is one kernel commit.
 Until then the old decision has no Accept surface and forged acceptance fails.
 Inference failure, an irrelevant response, or a stale response leaves the
 counter unresolved and compilation blocked.
+Retry relaunches the membrane from that already persisted counter and unchanged
+Session Zero snapshot. It does not ask the player to retype the counter, append
+a duplicate message, or advance revision merely to try inference again; only a
+later kernel-validated replacement changes state.
 
 ## Approval and publication
 

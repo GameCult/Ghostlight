@@ -45,6 +45,9 @@ through a same-epoch `ApplyDmTurn` containing a fresh material decision; the
 replacement and retirement of the pending counter commit atomically. Stale,
 empty, malformed, or failed counter responses leave the counter pending and the
 retired payload uncommittable.
+Retry is an inference launch against that persisted counter and exact unchanged
+snapshot. It owns no state transition; a replacement still commits only through
+`ApplyDmTurn` at the original component and channel epochs.
 
 An acceptance card is also a typed-state claim. New Interpreter decisions must
 carry a non-empty contract, character, or extraordinary-permission payload;

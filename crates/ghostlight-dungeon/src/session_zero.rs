@@ -1911,7 +1911,7 @@ pub fn session_zero_surface(
                 "Revise / retry counter",
                 "session_zero.decision.resolve",
                 serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false}),
-                &["counter"],
+                &[],
             ));
         } else {
             if decision_has_typed_payload(decision) {

@@ -2515,6 +2515,44 @@ async fn resolve_session_zero_decision(
         Ok(value) => value,
         Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
     };
+    if !request.accept
+        && request
+            .counter
+            .as_deref()
+            .is_none_or(|counter| counter.trim().is_empty())
+    {
+        let snapshot = match state.session_zeros.snapshot(session_id).await {
+            Ok(value) => value,
+            Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+        };
+        let (channel_id, member_id) = match pending_counter_retry_target(
+            &snapshot,
+            &account_hash,
+            request.expected_revision,
+            &request.decision_id,
+        ) {
+            Ok(value) => value,
+            Err(error) => return (StatusCode::CONFLICT, error.to_string()).into_response(),
+        };
+        schedule_session_zero_dm_response(
+            &state,
+            &runtime,
+            snapshot.clone(),
+            channel_id,
+            member_id,
+            Some(request.decision_id.clone()),
+        );
+        return (
+            StatusCode::ACCEPTED,
+            Json(serde_json::json!({
+                "schema":"ghostlight.session_zero_progress.v1",
+                "session_zero_id":session_id,
+                "revision":snapshot.revision,
+                "status":"counter_retry_started",
+            })),
+        )
+            .into_response();
+    }
     let decision_id = request.decision_id.clone();
     let accepted = request.accept;
     match runtime
@@ -2573,6 +2611,50 @@ async fn resolve_session_zero_decision(
         }
         Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
     }
+}
+
+fn pending_counter_retry_target(
+    snapshot: &SessionZeroState,
+    account_hash: &str,
+    expected_revision: u64,
+    decision_id: &str,
+) -> anyhow::Result<(String, Option<String>)> {
+    if snapshot.revision != expected_revision {
+        anyhow::bail!(
+            "stale Session Zero revision: expected {}, current {}",
+            expected_revision,
+            snapshot.revision
+        );
+    }
+    let member = snapshot
+        .member_for_account(account_hash)
+        .ok_or_else(|| anyhow::anyhow!("session member is missing"))?;
+    let decision = snapshot
+        .decisions
+        .get(decision_id)
+        .ok_or_else(|| anyhow::anyhow!("decision is missing"))?;
+    if decision.resolved {
+        anyhow::bail!("decision is already resolved");
+    }
+    if decision.pending_counter.is_none() {
+        anyhow::bail!("decision has no pending counterproposal to retry");
+    }
+    if decision
+        .owner_member_id
+        .as_deref()
+        .is_some_and(|owner| owner != member.id)
+    {
+        anyhow::bail!("decision belongs to another member");
+    }
+    let member_id = decision.owner_member_id.clone();
+    let channel_id = member_id
+        .as_ref()
+        .map(|owner| format!("private:{owner}"))
+        .unwrap_or_else(|| "shared:table".into());
+    if !snapshot.channels.contains_key(&channel_id) {
+        anyhow::bail!("counterproposal channel is missing");
+    }
+    Ok((channel_id, member_id))
 }
 
 async fn lock_session_zero_roster(
@@ -5545,6 +5627,66 @@ mod tests {
         assert!(value.contains("Secure"));
         assert!(value.contains("SameSite=Lax"));
         assert!(value.contains("Path=/ghostlight/"));
+    }
+
+    #[test]
+    fn counter_retry_relaunches_from_the_persisted_snapshot_without_state_change() {
+        let mut snapshot = SessionZeroState::new(
+            "Retry witness".into(),
+            "fixture".into(),
+            "account:host".into(),
+            "Host".into(),
+        )
+        .unwrap();
+        let member_id = snapshot.host_member_id.clone();
+        snapshot.decisions.insert(
+            "decision:countered".into(),
+            ghostlight_dungeon::session_zero::SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "decision:countered".into(),
+                owner_member_id: Some(member_id.clone()),
+                prompt: "Accept this bargain?".into(),
+                proposed_resolution: "The retired proposal".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: None,
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: Some("Use the player's exact replacement.".into()),
+                material: true,
+                resolved: false,
+            },
+        );
+        let before = snapshot.clone();
+
+        assert_eq!(
+            pending_counter_retry_target(
+                &snapshot,
+                "account:host",
+                snapshot.revision,
+                "decision:countered",
+            )
+            .unwrap(),
+            (format!("private:{member_id}"), Some(member_id))
+        );
+        assert_eq!(snapshot, before);
+        assert!(
+            pending_counter_retry_target(
+                &snapshot,
+                "account:intruder",
+                snapshot.revision,
+                "decision:countered",
+            )
+            .is_err()
+        );
+        assert!(
+            pending_counter_retry_target(
+                &snapshot,
+                "account:host",
+                snapshot.revision + 1,
+                "decision:countered",
+            )
+            .is_err()
+        );
     }
 
     #[tokio::test]
