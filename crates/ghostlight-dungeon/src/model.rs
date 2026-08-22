@@ -576,7 +576,7 @@ mod tests {
         capable.model = MODEL_CAPABLE.into();
         assert_eq!(
             openrouter_request_body(&capable, "stealth/ox-alpha")["reasoning"]["effort"],
-            "high"
+            "medium"
         );
     }
 
@@ -852,7 +852,7 @@ fn openrouter_request_body(request: &ModelStageRequest, resolved_model: &str) ->
         "messages": [{"role": "user", "content": request.lived_stream}],
         "stream": false,
         "reasoning": {
-            "effort": if request.model == MODEL_CAPABLE { "high" } else { "low" },
+            "effort": if request.model == MODEL_CAPABLE { "medium" } else { "low" },
             "exclude": true
         }
     });

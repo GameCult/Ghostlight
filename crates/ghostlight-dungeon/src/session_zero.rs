@@ -1361,6 +1361,21 @@ fn permitted_dm_context(
     });
     if channel.kind == SessionZeroChannelKind::PrivateDm {
         let member_id = member_id.ok_or_else(|| anyhow!("private member is missing"))?;
+        let recent_shared_messages = state
+            .channels
+            .get("shared:table")
+            .into_iter()
+            .flat_map(|shared| shared.message_ids.iter().rev().take(8).rev())
+            .filter_map(|id| state.messages.get(id))
+            .map(|message| {
+                serde_json::json!({
+                    "speaker": message.speaker,
+                    "author_member_id": message.author_member_id,
+                    "text": message.text,
+                })
+            })
+            .collect::<Vec<_>>();
+        value["recent_shared_messages"] = serde_json::to_value(recent_shared_messages)?;
         value["private_character"] = serde_json::to_value(
             state
                 .character_drafts
@@ -2802,6 +2817,39 @@ mod tests {
         );
         assert_eq!(delta.contract_patch.tone.unwrap(), ["serious", "political"]);
         assert_eq!(receipts.len(), 3);
+    }
+
+    #[test]
+    fn private_dm_context_carries_bounded_public_session_continuity() {
+        let mut draft = state();
+        let host_id = draft.host_member_id.clone();
+        append_message(
+            &mut draft,
+            "shared:table".into(),
+            Some(host_id.clone()),
+            SessionZeroSpeakerKind::Player,
+            "The campaign begins in Hellas inside Zhestokost space.".into(),
+        )
+        .unwrap();
+        let private_channel = format!("private:{host_id}");
+        append_message(
+            &mut draft,
+            private_channel.clone(),
+            Some(host_id.clone()),
+            SessionZeroSpeakerKind::Player,
+            "I carry a forged transit credential.".into(),
+        )
+        .unwrap();
+
+        let context = permitted_dm_context(&draft, &private_channel, Some(&host_id)).unwrap();
+        let shared = serde_json::to_string(&context["recent_shared_messages"]).unwrap();
+        assert!(shared.contains("Hellas inside Zhestokost space"));
+        assert!(!shared.contains("forged transit credential"));
+        assert!(
+            serde_json::to_string(&context["recent_messages"])
+                .unwrap()
+                .contains("forged transit credential")
+        );
     }
 
     #[tokio::test]
