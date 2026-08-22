@@ -587,6 +587,17 @@ validation. Suggestion retrieval and model receipts remain in the Session Zero
 store; publication compiles the unanimously approved brief, never the
 conversation transcript.
 
+Gap-bearing compiler results are retained as exact non-canonical previews while
+Session Zero returns to drafting. The host can move that exact preview into
+review; this is not approval. Every member approval now binds the shared
+contract digest, that member's private character digest, and the complete world
+preview digest. Publication persists that digest plus the exact accepted gap
+and branch-assumption lists. Replacing topology, cast, institutions,
+populations, clocks, evidence lanes, gaps, assumptions, or any other preview
+field therefore makes old approvals unusable. The Eve tree visibly lowers the
+reviewable world shape. Player JSON excludes institution resources and goals,
+and shared cast projection excludes private relationship-anchor people.
+
 Private character relationships now cross compilation through a typed identity
 membrane. Exact player references bind to their approved actor IDs. Each
 otherwise unresolved named person gets a stable server-generated

@@ -163,10 +163,17 @@ passes the readiness gate receives the Compile action again; retrying uses the
 new revision and never replays or accepts transcript prose.
 
 Evidence gaps return the draft to conversation with explicit questions. A
-review preview records shared and per-character digests. Every active player
-must approve the current shared digest and their current private character
-digest. Relevant edits retire the preview and invalidate the affected
-approvals. The host has no override.
+gap-bearing compiler result is retained as an exact non-canonical preview while
+the session remains in `drafting`. The host may move that exact digest into
+review, or the table may revise typed state and retire it before another
+compile. Moving it to review is not approval. Every active player must approve
+the current shared digest, their current private character digest, and the
+exact world-preview digest containing topology, cast, institutions,
+populations, clocks, evidence lanes, gaps, and branch-local assumptions.
+Publication persists the approved preview digest and exact accepted gap and
+assumption lists beside the campaign seed. Substituting any preview makes every
+prior approval stale. Relevant edits retire the preview and invalidate the
+affected approvals. The host has no override.
 
 Accepted extraordinary bargains become typed permissions. Later assessment
 receives their exact scope, prerequisites, costs, limits, exposure, evidence,
@@ -205,8 +212,12 @@ transport owns no messages, drafts, ledgers, approvals, or world state.
 
 The browser exposes keyboard-operable shared/private channel tabs, live status,
 public party cards, private ledgers and boundaries, unresolved decisions,
-evidence/preview state, roster readiness, and explicit compile/approve/publish
-actions. Privacy is labeled in text and never conveyed only by color.
+roster readiness, and explicit compile/review/approve/publish actions. The Eve
+review tree visibly renders topology, non-private cast, institutions without
+private goals or resources, populations, clocks, evidence-use rationales,
+gaps, and branch assumptions. Relationship-anchor people remain absent from
+the shared cast and appear only in their owner's private relationship card.
+Privacy is labeled in text and never conveyed only by color.
 
 ## Inline grounded suggestions
 

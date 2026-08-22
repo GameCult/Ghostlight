@@ -1021,6 +1021,7 @@ fn eve_operation_schema(operation: &str) -> Option<&'static str> {
         "session_zero.leave"
         | "session_zero.roster.lock"
         | "session_zero.compile"
+        | "session_zero.compilation_gaps.review"
         | "session_zero.approve"
         | "session_zero.publish" => "ghostlight.session_zero_revision_command.v1",
         "session_zero.member.remove" => "ghostlight.session_zero_member_remove.v1",
@@ -1338,6 +1339,20 @@ async fn dispatch_eve_product_command(
             }
             Err(error) => return invalid_eve_payload(&invocation, error),
         },
+        "session_zero.compilation_gaps.review" => {
+            match decode_payload::<SessionZeroRevisionRequest>(&payload) {
+                Ok(request) => {
+                    review_session_zero_compilation_gaps(
+                        Path(session_id.unwrap()),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(request),
+                    )
+                    .await
+                }
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            }
+        }
         "session_zero.approve" => match decode_payload::<SessionZeroRevisionRequest>(&payload) {
             Ok(request) => {
                 approve_session_zero(
@@ -2842,6 +2857,21 @@ async fn approve_session_zero(
 ) -> Response {
     session_zero_simple_command(&headers, &state, session_id, |account_hash| {
         SessionZeroCommand::Approve {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+        }
+    })
+    .await
+}
+
+async fn review_session_zero_compilation_gaps(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    session_zero_simple_command(&headers, &state, session_id, |account_hash| {
+        SessionZeroCommand::ReviewCompilationGaps {
             actor_account_hash: account_hash,
             expected_revision: request.expected_revision,
         }

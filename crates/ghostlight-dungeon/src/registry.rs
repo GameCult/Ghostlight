@@ -551,6 +551,9 @@ mod tests {
                 shared_digest: "sha256:shared".into(),
                 character_digests: BTreeMap::new(),
             },
+            approved_world_preview_digest: "sha256:preview".into(),
+            approved_evidence_gaps: vec![],
+            approved_branch_assumptions: vec![],
             boundaries: vec![],
         }
     }

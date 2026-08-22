@@ -225,6 +225,8 @@ pub struct SessionZeroApproval {
     pub member_id: String,
     pub shared_digest: String,
     pub character_digest: String,
+    #[serde(default)]
+    pub world_preview_digest: String,
     pub approved_at: DateTime<Utc>,
 }
 
@@ -357,6 +359,12 @@ pub struct PublishedSessionZeroSeed {
     pub dm_persona: CampaignDmPersona,
     pub approvals: Vec<SessionZeroApproval>,
     pub approved_brief: ApprovedCampaignBrief,
+    #[serde(default)]
+    pub approved_world_preview_digest: String,
+    #[serde(default)]
+    pub approved_evidence_gaps: Vec<String>,
+    #[serde(default)]
+    pub approved_branch_assumptions: Vec<String>,
     #[serde(default)]
     pub boundaries: Vec<ContentBoundary>,
 }
@@ -794,6 +802,14 @@ impl SessionZeroState {
         digest(&(draft, boundaries))
     }
 
+    pub fn world_preview_digest(&self) -> Result<String> {
+        let preview = self
+            .preview
+            .as_ref()
+            .ok_or_else(|| anyhow!("session zero has no compiled world preview"))?;
+        digest(preview)
+    }
+
     pub fn pooled_cell_allowance(&self) -> u8 {
         self.members
             .values()
@@ -809,6 +825,7 @@ impl SessionZeroState {
             return Err(anyhow!("session zero has no final review preview"));
         }
         let brief = self.compilation_brief()?;
+        let world_preview_digest = self.world_preview_digest()?;
         for member in self.members.values().filter(|member| member.active) {
             let character_digest = self.character_digest(&member.id)?;
             let approval = self
@@ -817,6 +834,7 @@ impl SessionZeroState {
                 .ok_or_else(|| anyhow!("{} has not approved", member.display_name))?;
             if approval.shared_digest != brief.shared_digest
                 || approval.character_digest != character_digest
+                || approval.world_preview_digest != world_preview_digest
             {
                 return Err(anyhow!("{} approval is stale", member.display_name));
             }
@@ -995,6 +1013,10 @@ pub enum SessionZeroCommand {
         expected_revision: u64,
     },
     BeginCompilation {
+        actor_account_hash: String,
+        expected_revision: u64,
+    },
+    ReviewCompilationGaps {
         actor_account_hash: String,
         expected_revision: u64,
     },
@@ -2146,6 +2168,123 @@ fn private_relationship_subjects(
         .collect()
 }
 
+fn display_world_preview(
+    preview: &WorldCompilePreview,
+    player_actor_ids: &BTreeSet<String>,
+) -> String {
+    let campaign = &preview.campaign;
+    let mut sections = vec![format!("Opening: {}", preview.title)];
+    let topology = campaign
+        .locations
+        .values()
+        .map(|location| {
+            let routes = location
+                .routes
+                .values()
+                .map(|route| {
+                    format!(
+                        "{} ({}; {} minutes)",
+                        route.destination_id, route.distance, route.travel_minutes
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!(
+                "{} [{}] · within {} · routes: {} · persistent features: {}",
+                location.name,
+                location.id,
+                location.container_id.as_deref().unwrap_or("root"),
+                if routes.is_empty() { "none" } else { &routes },
+                if location.persistent_features.is_empty() {
+                    "none".into()
+                } else {
+                    location.persistent_features.join("; ")
+                }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    sections.push(format!("Topology\n{topology}"));
+
+    let cast = campaign
+        .actors
+        .values()
+        .filter(|actor| {
+            !player_actor_ids.contains(&actor.id) && !actor.id.starts_with("relationship-anchor:")
+        })
+        .map(|actor| format!("{} [{}] · {}", actor.name, actor.id, actor.location_id))
+        .collect::<Vec<_>>()
+        .join("\n");
+    sections.push(format!(
+        "Starting cast\n{}",
+        if cast.is_empty() { "none" } else { &cast }
+    ));
+
+    let institutions = campaign
+        .institutions
+        .values()
+        .map(|institution| {
+            format!(
+                "{} [{}] · posture: {}",
+                institution.name, institution.id, institution.posture
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    sections.push(format!(
+        "Institutions\n{}",
+        if institutions.is_empty() {
+            "none"
+        } else {
+            &institutions
+        }
+    ));
+
+    let populations = campaign
+        .gestalts
+        .values()
+        .map(|gestalt| {
+            format!(
+                "{} [{}] · {} · pressures: {}",
+                gestalt.name,
+                gestalt.id,
+                gestalt.home_location_id,
+                if gestalt.pressures.is_empty() {
+                    "none".into()
+                } else {
+                    gestalt.pressures.join("; ")
+                }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    sections.push(format!(
+        "Populations\n{}",
+        if populations.is_empty() {
+            "none"
+        } else {
+            &populations
+        }
+    ));
+
+    let clocks = campaign
+        .clocks
+        .values()
+        .map(|clock| {
+            format!(
+                "{} [{}] · {}/{} · consequence: {}",
+                clock.label, clock.id, clock.progress, clock.threshold, clock.consequence
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    sections.push(format!(
+        "World clocks\n{}",
+        if clocks.is_empty() { "none" } else { &clocks }
+    ));
+    sections.join("\n\n")
+}
+
 pub fn session_zero_surface(
     state: &SessionZeroState,
     account_hash: &str,
@@ -2204,6 +2343,11 @@ pub fn session_zero_surface(
         })
         .collect::<Vec<_>>();
     let character = &state.character_drafts[&member.id];
+    let player_actor_ids = state
+        .character_drafts
+        .values()
+        .map(|draft| draft.actor_id.clone())
+        .collect::<BTreeSet<_>>();
     let relationship_subjects = state
         .preview
         .as_ref()
@@ -2215,9 +2359,13 @@ pub fn session_zero_surface(
             "gaps": preview.gaps,
             "branch_assumptions": preview.branch_assumptions,
             "topology": preview.campaign.locations,
-            "institutions": preview.campaign.institutions,
+            "cast": preview.campaign.actors.values().filter(|actor| !player_actor_ids.contains(&actor.id) && !actor.id.starts_with("relationship-anchor:")).map(|actor| serde_json::json!({"id":actor.id,"name":actor.name,"location_id":actor.location_id})).collect::<Vec<_>>(),
+            "institutions": preview.campaign.institutions.values().map(|institution| serde_json::json!({"id":institution.id,"name":institution.name,"posture":institution.posture})).collect::<Vec<_>>(),
+            "populations": preview.campaign.gestalts.values().map(|gestalt| serde_json::json!({"id":gestalt.id,"name":gestalt.name,"home_location_id":gestalt.home_location_id,"pressures":gestalt.pressures})).collect::<Vec<_>>(),
             "clocks": preview.campaign.clocks,
+            "evidence_coverage": preview.evidence_coverage,
             "relationship_subjects": relationship_subjects,
+            "world_preview_digest": state.world_preview_digest().ok(),
         })
     });
     let roster_summary = state
@@ -2419,17 +2567,101 @@ pub fn session_zero_surface(
             &[],
         ));
     }
+    if let Some(preview) = state.preview.as_ref() {
+        children.push(serde_json::json!({
+            "id":"session-zero.world-preview",
+            "kind":"card",
+            "props":{"title":"Compiled world preview"},
+            "children":[{
+                "id":"session-zero.world-preview.text",
+                "kind":"text",
+                "props":{"value":display_world_preview(preview, &player_actor_ids)},
+                "children":[]
+            }]
+        }));
+        if !preview.evidence_coverage.is_empty() {
+            let evidence_summary = preview
+                .evidence_coverage
+                .iter()
+                .map(|coverage| {
+                    format!(
+                        "{} · {:?}\n{}",
+                        coverage.source_id, coverage.lane, coverage.rationale
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n\n");
+            children.push(serde_json::json!({
+                "id":"session-zero.evidence-coverage",
+                "kind":"card",
+                "props":{"title":"Vault evidence use"},
+                "children":[{
+                    "id":"session-zero.evidence-coverage.text",
+                    "kind":"text",
+                    "props":{"value":evidence_summary},
+                    "children":[]
+                }]
+            }));
+        }
+        if !preview.branch_assumptions.is_empty() {
+            children.push(serde_json::json!({
+                "id":"session-zero.branch-assumptions",
+                "kind":"card",
+                "props":{"title":"Branch-local assumptions requiring approval"},
+                "children":[{
+                    "id":"session-zero.branch-assumptions.text",
+                    "kind":"text",
+                    "props":{"value":preview.branch_assumptions.iter().map(|assumption|format!("• {assumption}")).collect::<Vec<_>>().join("\n")},
+                    "children":[]
+                }]
+            }));
+        }
+    }
+    if let Some(preview) = state.preview.as_ref()
+        && !preview.gaps.is_empty()
+    {
+        children.push(serde_json::json!({
+            "id":"session-zero.evidence-gaps",
+            "kind":"card",
+            "props":{"title":"Evidence gaps requiring table approval"},
+            "children":[{
+                "id":"session-zero.evidence-gaps.text",
+                "kind":"text",
+                "props":{"value":preview.gaps.iter().map(|gap|format!("• {gap}")).collect::<Vec<_>>().join("\n")},
+                "children":[]
+            }]
+        }));
+    }
     if member.is_host
         && matches!(
             state.status,
             SessionZeroStatus::RosterLocked | SessionZeroStatus::Drafting
         )
+        && state.preview.is_none()
         && state.compilation_brief().is_ok()
     {
         children.push(command_control(
             "session-zero.compile",
             "Compile campaign preview",
             "session_zero.compile",
+            serde_json::json!({"expected_revision":state.revision}),
+            &[],
+        ));
+    }
+    if member.is_host
+        && matches!(
+            state.status,
+            SessionZeroStatus::RosterLocked | SessionZeroStatus::Drafting
+        )
+        && state
+            .preview
+            .as_ref()
+            .is_some_and(|preview| !preview.gaps.is_empty())
+    {
+        children.push(command_control(
+            "session-zero.review-compilation-gaps",
+            "Review this exact preview with its evidence gaps",
+            "session_zero.compilation_gaps.review",
             serde_json::json!({"expected_revision":state.revision}),
             &[],
         ));
@@ -2469,7 +2701,7 @@ pub fn session_zero_surface(
             if state.approvals.contains_key(&member.id) {
                 "Approved"
             } else {
-                "Approve shared and private drafts"
+                "Approve exact world preview, shared contract, and private draft"
             },
             "session_zero.approve",
             serde_json::json!({"expected_revision":state.revision}),
@@ -2519,6 +2751,7 @@ pub fn session_zero_surface(
             "preview": private_preview,
             "shared_digest": state.shared_digest()?,
             "character_digest": state.character_digest(&member.id)?,
+            "world_preview_digest": state.world_preview_digest().ok(),
             "approved": state.approvals.contains_key(&member.id),
             "publish_ready": state.approved_brief().is_ok(),
         },
@@ -2548,6 +2781,7 @@ pub fn session_zero_surface(
             eve_command("session_zero.member.remove", "ghostlight.session_zero_member_remove.v1", &[]),
             eve_command("session_zero.roster.lock", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("session_zero.compile", "ghostlight.session_zero_revision_command.v1", &[]),
+            eve_command("session_zero.compilation_gaps.review", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("session_zero.approve", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("session_zero.publish", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("app.auth.logout", "ghostlight.app_logout.v1", &[])
@@ -3123,7 +3357,45 @@ fn execute(
             require_revision(&state, expected_revision)?;
             require_host(&state, &actor_account_hash)?;
             state.compilation_brief()?;
+            retire_preview(&mut state);
             state.status = SessionZeroStatus::Compiling;
+        }
+        SessionZeroCommand::ReviewCompilationGaps {
+            actor_account_hash,
+            expected_revision,
+        } => {
+            require_revision(&state, expected_revision)?;
+            require_host(&state, &actor_account_hash)?;
+            if !matches!(
+                state.status,
+                SessionZeroStatus::Drafting | SessionZeroStatus::RosterLocked
+            ) {
+                return Err(anyhow!("gap-bearing preview is not awaiting review"));
+            }
+            state.compilation_brief()?;
+            let preview = state
+                .preview
+                .as_ref()
+                .ok_or_else(|| anyhow!("gap-bearing preview is missing"))?;
+            if preview.gaps.is_empty() {
+                return Err(anyhow!("compiled preview has no evidence gaps to review"));
+            }
+            let shared_digest = state.shared_digest()?;
+            if state.preview_shared_digest.as_deref() != Some(shared_digest.as_str()) {
+                return Err(anyhow!(
+                    "compiled preview no longer matches the shared draft"
+                ));
+            }
+            for member in state.members.values().filter(|member| member.active) {
+                if state.preview_character_digests.get(&member.id)
+                    != Some(&state.character_digest(&member.id)?)
+                {
+                    return Err(anyhow!(
+                        "compiled preview no longer matches every character"
+                    ));
+                }
+            }
+            state.status = SessionZeroStatus::Review;
         }
         SessionZeroCommand::InstallPreview {
             expected_revision,
@@ -3141,32 +3413,31 @@ fn execute(
             {
                 return Err(anyhow!("material decisions remain unresolved"));
             }
-            if !preview.gaps.is_empty() {
-                state.preview_evidence_coverage = preview.evidence_coverage.clone();
-                state.preview_model_receipts.extend(model_receipts);
+            state.approvals.clear();
+            state.preview_shared_digest = Some(state.shared_digest()?);
+            state.preview_character_digests.clear();
+            for member in state.members.values().filter(|member| member.active) {
+                state
+                    .preview_character_digests
+                    .insert(member.id.clone(), state.character_digest(&member.id)?);
+            }
+            state.preview_evidence_coverage = preview.evidence_coverage.clone();
+            state.preview_model_receipts.extend(model_receipts);
+            let has_gaps = !preview.gaps.is_empty();
+            let gap_text = preview.gaps.join("\n- ");
+            state.preview = Some(preview);
+            if has_gaps {
                 append_message(
                     &mut state,
                     "shared:table".into(),
                     None,
                     SessionZeroSpeakerKind::Dm,
                     format!(
-                        "The Vault cannot yet ground these material parts of the opening:\n- {}\n\nLet's resolve them explicitly before I compile again.",
-                        preview.gaps.join("\n- ")
+                        "The Vault cannot yet ground these material parts of the opening:\n- {gap_text}\n\nThis exact preview is retained. The host may open it for unanimous approval as branch-local campaign material, or the table may revise the draft before compiling again."
                     ),
                 )?;
-                retire_preview(&mut state);
                 state.status = SessionZeroStatus::Drafting;
             } else {
-                state.preview_shared_digest = Some(state.shared_digest()?);
-                state.preview_character_digests.clear();
-                for member in state.members.values().filter(|member| member.active) {
-                    state
-                        .preview_character_digests
-                        .insert(member.id.clone(), state.character_digest(&member.id)?);
-                }
-                state.preview_evidence_coverage = preview.evidence_coverage.clone();
-                state.preview = Some(preview);
-                state.preview_model_receipts.extend(model_receipts);
                 state.status = SessionZeroStatus::Review;
             }
         }
@@ -3201,6 +3472,7 @@ fn execute(
             let member_id = member.id.clone();
             let shared_digest = state.shared_digest()?;
             let character_digest = state.character_digest(&member_id)?;
+            let world_preview_digest = state.world_preview_digest()?;
             if state.preview_shared_digest.as_deref() != Some(shared_digest.as_str())
                 || state.preview_character_digests.get(&member_id) != Some(&character_digest)
             {
@@ -3213,6 +3485,7 @@ fn execute(
                     member_id,
                     shared_digest,
                     character_digest,
+                    world_preview_digest,
                     approved_at: Utc::now(),
                 },
             );
@@ -3636,8 +3909,22 @@ pub fn publication_from_session(
 ) -> Result<PublishedSessionZeroSeed> {
     let approved_brief = state.approved_brief()?;
     let membership = membership_from_session(state, campaign_id)?;
-    let approved_seed_digest =
-        digest(&(campaign_id, &approved_brief, &membership, &state.dm_persona))?;
+    let preview = state
+        .preview
+        .as_ref()
+        .ok_or_else(|| anyhow!("approved world preview is missing"))?;
+    let approved_world_preview_digest = state.world_preview_digest()?;
+    let approved_evidence_gaps = preview.gaps.clone();
+    let approved_branch_assumptions = preview.branch_assumptions.clone();
+    let approved_seed_digest = digest(&(
+        campaign_id,
+        &approved_brief,
+        &membership,
+        &state.dm_persona,
+        &approved_world_preview_digest,
+        &approved_evidence_gaps,
+        &approved_branch_assumptions,
+    ))?;
     Ok(PublishedSessionZeroSeed {
         schema: "ghostlight.published_session_zero_seed.v1".into(),
         session_zero_id: state.id,
@@ -3656,6 +3943,9 @@ pub fn publication_from_session(
         dm_persona: state.dm_persona.clone(),
         approvals: state.approvals.values().cloned().collect(),
         approved_brief,
+        approved_world_preview_digest,
+        approved_evidence_gaps,
+        approved_branch_assumptions,
         boundaries: state.boundaries.values().cloned().collect(),
     })
 }
@@ -4510,6 +4800,13 @@ mod tests {
                 "relationship-anchor:quartermaster".into(),
                 "owes them a life-debt".into(),
             );
+        campaign
+            .institutions
+            .get_mut("faction-0000")
+            .unwrap()
+            .resources = vec!["OPERATOR-ONLY-RESERVE".into()];
+        campaign.institutions.get_mut("faction-0000").unwrap().goals =
+            vec!["PRIVATE-INSTITUTION-GOAL".into()];
         let preview = WorldCompilePreview {
             schema: "ghostlight.world_compile_preview.v1".into(),
             title: "Private relationship witness".into(),
@@ -4546,8 +4843,13 @@ mod tests {
         )
         .unwrap();
         assert!(surface.contains("Your private compiled relationships"));
+        assert!(surface.contains("Compiled world preview"));
+        assert!(surface.contains("Topology"));
+        assert!(surface.contains("Institutions"));
         assert!(surface.contains("convoy quartermaster"));
         assert!(surface.contains("owes them a life-debt"));
+        assert!(!surface.contains("OPERATOR-ONLY-RESERVE"));
+        assert!(!surface.contains("PRIVATE-INSTITUTION-GOAL"));
     }
 
     #[test]
@@ -4614,6 +4916,92 @@ mod tests {
         let encoded =
             serde_json::to_string(&session_zero_surface(&draft, "account:host").unwrap()).unwrap();
         assert!(!encoded.contains("Compile campaign preview"));
+    }
+
+    #[tokio::test]
+    async fn gap_preview_is_retained_and_every_approval_binds_its_exact_world_digest() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let mut initial = compilable_state();
+        initial.roster_locked = true;
+        initial.status = SessionZeroStatus::Compiling;
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, initial.id);
+        let gap = "The requested clinic district is branch-local.".to_owned();
+        let preview = WorldCompilePreview {
+            schema: "ghostlight.world_compile_preview.v1".into(),
+            title: "Hellas clinic pressure".into(),
+            campaign: crate::resolution::tests::campaign(2, 1),
+            evidence_receipts: vec![],
+            evidence_coverage: vec![],
+            gaps: vec![gap.clone()],
+            branch_assumptions: vec!["The convoy arrived this morning.".into()],
+            requires_approval: true,
+        };
+        let installed = kernel
+            .command(SessionZeroCommand::InstallPreview {
+                expected_revision: initial.revision,
+                preview,
+                model_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        assert_eq!(installed.state.status, SessionZeroStatus::Drafting);
+        assert_eq!(
+            installed.state.preview.as_ref().unwrap().gaps,
+            [gap.clone()]
+        );
+        let surface =
+            serde_json::to_string(&session_zero_surface(&installed.state, "account:host").unwrap())
+                .unwrap();
+        assert!(surface.contains("Evidence gaps requiring table approval"));
+        assert!(surface.contains("Review this exact preview with its evidence gaps"));
+        assert!(!surface.contains("Compile campaign preview"));
+
+        let reviewing = kernel
+            .command(SessionZeroCommand::ReviewCompilationGaps {
+                actor_account_hash: "account:host".into(),
+                expected_revision: installed.state.revision,
+            })
+            .await
+            .unwrap();
+        assert_eq!(reviewing.state.status, SessionZeroStatus::Review);
+        let approved = kernel
+            .command(SessionZeroCommand::Approve {
+                actor_account_hash: "account:host".into(),
+                expected_revision: reviewing.state.revision,
+            })
+            .await
+            .unwrap();
+        let exact_digest = approved.state.world_preview_digest().unwrap();
+        assert_eq!(
+            approved
+                .state
+                .approvals
+                .values()
+                .next()
+                .unwrap()
+                .world_preview_digest,
+            exact_digest
+        );
+        let publication = publication_from_session(
+            &approved.state,
+            approved.state.preview.as_ref().unwrap().campaign.id,
+        )
+        .unwrap();
+        assert_eq!(publication.approved_world_preview_digest, exact_digest);
+        assert_eq!(publication.approved_evidence_gaps, [gap]);
+
+        let mut substituted = approved.state;
+        substituted.preview.as_mut().unwrap().title = "A different world".into();
+        assert!(substituted.approved_brief().is_err());
+        assert!(
+            publication_from_session(
+                &substituted,
+                substituted.preview.as_ref().unwrap().campaign.id
+            )
+            .is_err()
+        );
     }
 
     #[test]
