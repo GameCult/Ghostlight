@@ -77,9 +77,9 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `257b6429c52c796167125bd81d923a605ac065df`
+  `41a1950f1dcb2215b07cee484151ca5f09a59a10`
 - Executable SHA-256:
-  `dd50de988179818091ad53d957e53d86cb5b098911001d75fbb05252867be8d8`
+  `b4544027e9ce19e17aae53b27abe146c96006e667c8f7d3d92b45c6545024050`
 - Eve release: `23eaf32eae76204357c1406b4a7d01bcece6b815`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -90,8 +90,12 @@ Do not start both writers.
   fast/capable classes map to the physical model at the provider port
 - Access witness: anonymous Eve gate 200; canonical `heimdall.auth.begin`
   accepted through Odin-discovered Heimdall; no actor or campaign state in the
-  anonymous surface. The previous local Ghostlight claim expired during the
-  current adversarial journey; Discord browser reauthentication is pending.
+  anonymous surface. A retained Heimdall grant completed fresh authentication,
+  and the authenticated Ghostlight app session survived exact release
+  replacement. Scheduled refresh now uses a fresh private-command identity per
+  attempt, accepts Heimdall's refresh-specific signed claim/session receipt,
+  and rotates the locally wrapped claim without returning the browser to the
+  access gate.
 
 Manifest, embedded commit, executable hash, typed health, persistent stores,
 restart recovery, public crossing, and anonymous rejection agree.
@@ -124,8 +128,14 @@ her or coordinate deployment by cross-task exclusivity messages.
 
 ## Current proof
 
-- Idunn's exact `257b642…` release gate passed 171 Linux package tests; the
+- Idunn's exact `41a1950…` release gate passed 171 Linux package tests; the
   daemon is healthy with zero restarts and the deployment brake re-engaged.
+- Live refresh pressure reproduced and removed two contract faults: reuse of a
+  private-command idempotency key across separately sealed attempts, and
+  validation of a refresh receipt as if it carried the initial-login account
+  summary. The old due session refreshed after deployment, emitted no refresh
+  failure across the next scheduler pulse, and the same browser cookie still
+  projected Session Zero revision 18 after daemon replacement.
 - Adversarial Session Zero play proved that counters retire stale typed
   proposals before a replacement, generated openings and roles are optional,
   and transcript-only blank drafts cannot enter world compilation.
@@ -148,8 +158,8 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 ## Next action
 
-1. Complete Discord browser reauthentication, resume the existing Mars/Hellas
-   canary, compile the custom start, and pressure live action/continuity paths.
+1. Resume the authenticated Mars/Hellas canary, compile the custom start, and
+   pressure live action/continuity paths.
 2. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
 3. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
