@@ -1336,7 +1336,8 @@ impl SessionZeroDirector {
         .await?;
         validate_bounded("DM speech", &persona.narrative, 1, 6_000)?;
         let interpreter_context = permitted_interpreter_context(state, channel_id, member_id)?;
-        let interpreter_schema = serde_json::to_value(schema_for!(SessionZeroInterpretation))?;
+        let mut interpreter_schema = serde_json::to_value(schema_for!(SessionZeroInterpretation))?;
+        require_typed_decision_payloads(&mut interpreter_schema)?;
         let interpreter = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -1344,7 +1345,7 @@ impl SessionZeroDirector {
                 model: self.interpreter_model.clone(),
                 snapshot_binding: binding,
                 lived_stream: format!(
-                    "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
+                    "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
                     serde_json::to_string(&interpreter_schema)?,
                     serde_json::to_string(&interpreter_context)?,
                     serde_json::to_string(&persona.narrative)?
@@ -1375,6 +1376,32 @@ impl SessionZeroDirector {
             vec![projector.receipt, persona.receipt, interpreter.receipt],
         ))
     }
+}
+
+fn require_typed_decision_payloads(schema: &mut serde_json::Value) -> Result<()> {
+    let decision_schema = schema
+        .get_mut("$defs")
+        .and_then(|defs| defs.get_mut("SessionZeroDecision"))
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("Session Zero Interpreter schema omitted its decision contract"))?;
+    decision_schema.insert(
+        "anyOf".into(),
+        serde_json::json!([
+            {
+                "required": ["proposed_extraordinary_permission"],
+                "properties": {"proposed_extraordinary_permission": {"type": "object"}}
+            },
+            {
+                "required": ["proposed_contract_patch"],
+                "properties": {"proposed_contract_patch": {"type": "object"}}
+            },
+            {
+                "required": ["proposed_character_patch"],
+                "properties": {"proposed_character_patch": {"type": "object"}}
+            }
+        ]),
+    );
+    Ok(())
 }
 
 fn require_channel_access_by_member(
@@ -1724,8 +1751,17 @@ pub fn session_zero_surface(
                 &["counter"],
             ));
         } else {
+            if decision_has_typed_payload(decision) {
+                decision_children.push(command_control(&format!("session-zero.decision.{}.accept",decision.id), "Accept", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":true,"counter":null}), &[]));
+            } else {
+                decision_children.push(serde_json::json!({
+                    "id":format!("session-zero.decision.{}.missing-payload",decision.id),
+                    "kind":"text",
+                    "props":{"value":"This discussion has no typed state change attached and cannot be accepted. Counter it or ask the DM for an exact proposal."},
+                    "children":[]
+                }));
+            }
             decision_children.extend([
-                command_control(&format!("session-zero.decision.{}.accept",decision.id), "Accept", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":true,"counter":null}), &[]),
                 command_control(&format!("session-zero.decision.{}.counter",decision.id), "Counter", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false}), &["counter"]),
                 command_control(&format!("session-zero.decision.{}.discuss",decision.id), "Discuss", "session_zero.message.send", serde_json::json!({"expected_revision":state.revision,"text":format!("I want to discuss this proposal before deciding: {}",decision.prompt)}), &["channel_id"]),
             ]);
@@ -2337,6 +2373,11 @@ fn execute(
                 if decision.pending_counter.is_some() {
                     return Err(anyhow!("counterproposal is awaiting a fresh DM decision"));
                 }
+                if !decision_has_typed_payload(&decision) {
+                    return Err(anyhow!(
+                        "decision has no typed state change to accept; discuss or counter it"
+                    ));
+                }
                 if let Some(patch) = decision.proposed_contract_patch.clone() {
                     if decision.owner_member_id.is_some() {
                         return Err(anyhow!(
@@ -2677,11 +2718,28 @@ fn validate_dm_delta(
             1,
             2_000,
         )?;
+        if !decision_has_typed_payload(decision) {
+            return Err(anyhow!(
+                "DM decision must carry a non-empty typed state change"
+            ));
+        }
         if !ids.insert(decision.id.clone()) || state.decisions.contains_key(&decision.id) {
             return Err(anyhow!("DM turn contains a duplicate decision ID"));
         }
     }
     Ok(())
+}
+
+fn decision_has_typed_payload(decision: &SessionZeroDecision) -> bool {
+    decision.proposed_extraordinary_permission.is_some()
+        || decision
+            .proposed_contract_patch
+            .as_ref()
+            .is_some_and(|patch| patch != &CampaignContractPatch::default())
+        || decision
+            .proposed_character_patch
+            .as_ref()
+            .is_some_and(|patch| patch != &CharacterDraftPatch::default())
 }
 
 fn contract_patch_changes_shared(patch: &CampaignContractPatch) -> bool {
@@ -3034,6 +3092,43 @@ mod tests {
     }
 
     #[test]
+    fn interpreter_schema_rejects_decisions_without_typed_payloads() {
+        let mut schema = serde_json::to_value(schema_for!(SessionZeroInterpretation)).unwrap();
+        require_typed_decision_payloads(&mut schema).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let decision = SessionZeroDecision {
+            schema: "ghostlight.session_zero_decision.v1".into(),
+            id: "decision:empty-promise".into(),
+            owner_member_id: None,
+            prompt: "Materialize the character?".into(),
+            proposed_resolution: "Materialize the character exactly as discussed.".into(),
+            proposed_extraordinary_permission: None,
+            proposed_contract_patch: None,
+            proposed_character_patch: None,
+            evidence_receipt_ids: vec![],
+            pending_counter: None,
+            material: true,
+            resolved: false,
+        };
+        let invalid = SessionZeroInterpretation {
+            decisions: vec![decision.clone()],
+            ..Default::default()
+        };
+        assert!(!validator.is_valid(&serde_json::to_value(invalid).unwrap()));
+
+        let mut actionable = decision;
+        actionable.proposed_character_patch = Some(CharacterDraftPatch {
+            name: Some("Sable".into()),
+            ..Default::default()
+        });
+        let valid = SessionZeroInterpretation {
+            decisions: vec![actionable],
+            ..Default::default()
+        };
+        assert!(validator.is_valid(&serde_json::to_value(valid).unwrap()));
+    }
+
+    #[test]
     fn private_dm_context_carries_bounded_public_session_continuity() {
         let mut draft = state();
         let host_id = draft.host_member_id.clone();
@@ -3311,7 +3406,10 @@ mod tests {
                 prompt: "How severe should consequences be?".into(),
                 proposed_resolution: "Consequences are durable but rarely lethal.".into(),
                 proposed_extraordinary_permission: None,
-                proposed_contract_patch: None,
+                proposed_contract_patch: Some(CampaignContractPatch {
+                    consequence_style: Some("Consequences are durable but rarely lethal.".into()),
+                    ..Default::default()
+                }),
                 proposed_character_patch: None,
                 evidence_receipt_ids: vec![],
                 pending_counter: None,
@@ -3484,6 +3582,60 @@ mod tests {
         assert_eq!(
             noticed.state.messages[last_message_id].speaker,
             SessionZeroSpeakerKind::Dm
+        );
+    }
+
+    #[tokio::test]
+    async fn payloadless_legacy_decision_cannot_be_accepted_or_claim_a_commit() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let mut initial = state();
+        let decision_id = "decision:empty-promise".to_string();
+        initial.decisions.insert(
+            decision_id.clone(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: decision_id.clone(),
+                owner_member_id: None,
+                prompt: "Materialize the character?".into(),
+                proposed_resolution: "Materialize the character exactly as discussed.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: None,
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            },
+        );
+        let before = initial.clone();
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store.clone(), initial.id);
+
+        let surface =
+            serde_json::to_string(&session_zero_surface(&initial, "account:host").unwrap())
+                .unwrap();
+        assert!(!surface.contains(&format!("session-zero.decision.{decision_id}.accept")));
+        assert!(surface.contains("has no typed state change attached"));
+
+        let error = kernel
+            .command(SessionZeroCommand::ResolveDecision {
+                actor_account_hash: "account:host".into(),
+                expected_revision: initial.revision,
+                decision_id,
+                accept: true,
+                counter: None,
+            })
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("no typed state change"));
+        assert_eq!(
+            store
+                .load::<SessionZeroState>("session_zero.v1", &initial.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1,
+            before
         );
     }
 
