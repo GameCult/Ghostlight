@@ -161,7 +161,7 @@ async fn main() -> anyhow::Result<()> {
         "cover":cover,
         "appraisals":output.wave.appraisals,
         "plan":plan,
-        "material_action_count":plan.institution_actions.len() + plan.gestalt_actions.len() + plan.gestalt_activities.len() + plan.gestalt_migrations.len() + plan.actor_moves.len() + plan.member_activities.len() + plan.member_migrations.len(),
+        "material_action_count":plan.institution_actions.len() + plan.gestalt_actions.len() + plan.gestalt_activities.len() + plan.gestalt_migrations.len() + plan.actor_moves.len() + plan.actor_activities.len() + plan.member_activities.len() + plan.member_migrations.len(),
         "explicit_inaction_count":explicit_inaction_count,
         "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
         "commit":committed,

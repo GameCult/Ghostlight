@@ -350,6 +350,11 @@ pub fn plan_activity_digests(plan: &StrategicTickPlan) -> Vec<String> {
         .iter()
         .map(|activity| activity.action_digest.clone())
         .chain(
+            plan.actor_activities
+                .iter()
+                .map(|activity| activity.action_digest.clone()),
+        )
+        .chain(
             plan.member_activities
                 .iter()
                 .map(|activity| activity.action_digest.clone()),
@@ -395,6 +400,25 @@ pub fn validate_plan_activity_outcomes(
                 },
             )
         })
+        .chain(plan.actor_activities.iter().map(|activity| {
+            (
+                activity.action_digest.clone(),
+                CellActionProposal {
+                    subject_id: activity.actor_id.clone(),
+                    intent: "committed strategic activity".into(),
+                    intended_effect: "resolve the committed strategic activity".into(),
+                    priority: 0,
+                    state_references: vec![],
+                    public_channels: activity.public_channels.clone(),
+                    effect: StrategicCellEffect::ActorActivity {
+                        actor_id: activity.actor_id.clone(),
+                        activity: activity.activity.clone(),
+                        target_subject_ids: activity.target_subject_ids.clone(),
+                        location_ids: activity.location_ids.clone(),
+                    },
+                },
+            )
+        }))
         .chain(plan.member_activities.iter().map(|activity| {
             (
                 activity.action_digest.clone(),
@@ -415,7 +439,11 @@ pub fn validate_plan_activity_outcomes(
             )
         }))
         .collect::<BTreeMap<_, _>>();
-    if synthetic.len() != plan.gestalt_activities.len() + plan.member_activities.len() {
+    if synthetic.len()
+        != plan.gestalt_activities.len()
+            + plan.actor_activities.len()
+            + plan.member_activities.len()
+    {
         return Err(anyhow!(
             "strategic activities contain duplicate action digests"
         ));
@@ -1373,6 +1401,12 @@ fn activity_parts(
 ) -> Result<(StrategicActivityKind, Vec<String>, Vec<String>)> {
     match &proposal.effect {
         StrategicCellEffect::GestaltActivity {
+            activity,
+            target_subject_ids,
+            location_ids,
+            ..
+        }
+        | StrategicCellEffect::ActorActivity {
             activity,
             target_subject_ids,
             location_ids,

@@ -1678,6 +1678,7 @@ pub fn select_resolution_wave(
         let is_activity = matches!(
             proposal.effect,
             StrategicCellEffect::GestaltActivity { .. }
+                | StrategicCellEffect::ActorActivity { .. }
                 | StrategicCellEffect::MemberActivity { .. }
         );
         let selected_activity_proposal = is_activity.then(|| proposal.clone());
@@ -1737,6 +1738,19 @@ pub fn select_resolution_wave(
                 destination_id,
                 public_channels: proposal.public_channels,
             }),
+            StrategicCellEffect::ActorActivity {
+                actor_id,
+                activity,
+                target_subject_ids,
+                location_ids,
+            } => plan.actor_activities.push(StrategicActorActivity {
+                action_digest,
+                actor_id,
+                activity,
+                target_subject_ids,
+                location_ids,
+                public_channels: proposal.public_channels,
+            }),
             StrategicCellEffect::MemberActivity {
                 member_id,
                 activity,
@@ -1783,6 +1797,7 @@ pub fn select_resolution_wave(
             + plan.gestalt_activities.len()
             + plan.gestalt_migrations.len()
             + plan.actor_moves.len()
+            + plan.actor_activities.len()
             + plan.member_activities.len()
             + plan.member_migrations.len()
             >= consequence_limit
@@ -1948,6 +1963,34 @@ fn validate_cell_proposal(
                 });
             if !reachable {
                 return Err(anyhow!("actor proposal exceeds spatial reach"));
+            }
+        }
+        StrategicCellEffect::ActorActivity {
+            actor_id,
+            activity,
+            target_subject_ids,
+            location_ids,
+        } => {
+            let actor = campaign
+                .actors
+                .get(actor_id)
+                .filter(|_| actor_id == &proposal.subject_id)
+                .ok_or_else(|| anyhow!("actor activity exceeds constituent state"))?;
+            let allowed_targets = strategic_activity_targets(campaign, actor_id);
+            let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
+            let needs_target = !activity.allows_targetless_local_attempt();
+            if target_subject_ids.len() > 4
+                || unique_targets.len() != target_subject_ids.len()
+                || target_subject_ids
+                    .iter()
+                    .any(|target| !allowed_targets.contains(target))
+                || (needs_target && target_subject_ids.is_empty())
+                || location_ids.len() != 1
+                || location_ids[0] != actor.location_id
+            {
+                return Err(anyhow!(
+                    "actor activity exceeds exact subject, graph, or location scope"
+                ));
             }
         }
         StrategicCellEffect::MemberMigration { .. } => {
@@ -2602,6 +2645,7 @@ fn proposal_target_key(proposal: &CellActionProposal) -> String {
             format!("gestalt:{}", proposal.subject_id)
         }
         StrategicCellEffect::ActorMove { actor_id, .. } => format!("actor:{actor_id}"),
+        StrategicCellEffect::ActorActivity { actor_id, .. } => format!("actor:{actor_id}"),
         StrategicCellEffect::MemberActivity { member_id, .. } => {
             format!("member:{member_id}")
         }
@@ -3109,6 +3153,59 @@ pub(crate) mod tests {
             "holding position",
             "releasing the reserve"
         ));
+    }
+
+    #[test]
+    fn canonical_actor_activity_uses_exact_actor_scope() {
+        let mut value = campaign(0, 1);
+        let mut liaison = value.actors["player"].clone();
+        liaison.id = "liaison".into();
+        liaison.name = "Liaison".into();
+        liaison.capabilities.insert("read ration ledgers".into());
+        value.actors.insert(liaison.id.clone(), liaison);
+        ensure_agency_profiles(&mut value);
+        let cell = SimulationCell {
+            schema: "ghostlight.simulation_cell.v1".into(),
+            id: "cell:liaison".into(),
+            mode: SimulationCellMode::Cohesive,
+            subject_ids: BTreeSet::from(["liaison".into()]),
+            merge_loss: MergeLoss::default(),
+            rationale: "exact actor fixture".into(),
+            lease_until_world_revision: 0,
+            lease_until_strategic_tick: 0,
+            detail_focus_subject_id: Some("liaison".into()),
+        };
+        let proposal = CellActionProposal {
+            subject_id: "liaison".into(),
+            intent: "inspect the room's ration ledger".into(),
+            intended_effect: "attempt a local investigation".into(),
+            priority: 50,
+            state_references: vec!["subject:liaison".into()],
+            public_channels: vec![],
+            effect: StrategicCellEffect::ActorActivity {
+                actor_id: "liaison".into(),
+                activity: StrategicActivityKind::Investigate,
+                target_subject_ids: vec![],
+                location_ids: vec!["center".into()],
+            },
+        };
+        validate_cell_proposal(&value, &cell, &proposal).unwrap();
+
+        let mut wrong_location = proposal.clone();
+        let StrategicCellEffect::ActorActivity { location_ids, .. } = &mut wrong_location.effect
+        else {
+            unreachable!()
+        };
+        *location_ids = vec!["somewhere-else".into()];
+        assert!(validate_cell_proposal(&value, &cell, &wrong_location).is_err());
+
+        let mut player_puppet = proposal;
+        player_puppet.subject_id = "player".into();
+        let StrategicCellEffect::ActorActivity { actor_id, .. } = &mut player_puppet.effect else {
+            unreachable!()
+        };
+        *actor_id = "player".into();
+        assert!(validate_cell_proposal(&value, &cell, &player_puppet).is_err());
     }
 
     #[test]

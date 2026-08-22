@@ -391,6 +391,14 @@ around unnamed local features remains part of the source-attributed attempt
 and does not create topology or assert arrival. A different supplied canonical
 location or population destination still requires the exact movement path.
 
+Canonical non-player actors have an `actor_activity` path for ordinary
+preparation, coordination, investigation, recruitment, obstruction, trade,
+and communication. The Interpreter binds the actor's exact ID locally;
+WorldKernel validates current location, graph targets, state references,
+channels, and human-control exclusion. Actor movement and actor activity share
+one action key, while successful consequences remain a separately resolved,
+digest-bound outcome.
+
 Salient dormant members have their own `member_activity` path for ordinary
 local attempts. It uses the same bounded verbs, the member's exact location,
 their current leaf plus explicitly related or exactly co-located targets, and

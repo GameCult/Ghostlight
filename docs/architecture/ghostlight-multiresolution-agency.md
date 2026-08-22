@@ -269,9 +269,10 @@ One wave-level strategic outcome resolver owns that missing decision. It runs
 after priority and incompatibility selection but before the command enters the
 kernel:
 
-1. Ghostlight content-addresses every selected `gestalt_activity` and
-   `member_activity` proposal. The digest binds exact source, intent, intended
-   effect, targets, locations, state references, channels, and typed activity.
+1. Ghostlight content-addresses every selected `gestalt_activity`,
+   `actor_activity`, and `member_activity` proposal. The digest binds exact
+   source, intent, intended effect, targets, locations, state references,
+   channels, and typed activity.
 2. A local context compiler supplies only those selected attempts and their
    legal consequence handles: source capabilities and holdings, exact target
    state, active incident relations, current pressures, eligible named-member
@@ -508,6 +509,16 @@ An arena cannot translate the person's attempt into a collective action, and
 the destination population cannot claim the person's voice. `member_activity`
 and `member_migration` resolve under one exact member key, so only the
 higher-priority compatible choice can commit in a wave.
+
+Canonical non-player actors use `actor_activity` for preparation,
+coordination, investigation, recruitment, obstruction, trade, and
+communication. The action is bound to the actor's exact current location,
+state references, information channels, and graph-adjacent or co-located
+targets. `actor_move` and `actor_activity` share one actor action key, so a
+cell cannot make the same person travel and act again in the same wave.
+Human-controlled actors are inadmissible in both paths. An arena may carry the
+actor's attributed proposal but cannot translate it into population speech,
+member activity, or collective authority.
 
 The Interpreter maps natural attempts narrowly: speech, offers, requests, and
 notices are communication; coordination requires an actual attempt to arrange

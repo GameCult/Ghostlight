@@ -1695,6 +1695,16 @@ fn apply_strategic_tick_plan(
             ),
         );
     }
+    for activity in &plan.actor_activities {
+        outcome_event_context.insert(
+            activity.action_digest.clone(),
+            (
+                activity.actor_id.clone(),
+                activity.location_ids.clone(),
+                activity.public_channels.clone(),
+            ),
+        );
+    }
     for activity in &plan.member_activities {
         outcome_event_context.insert(
             activity.action_digest.clone(),
@@ -2009,6 +2019,87 @@ fn apply_strategic_tick_plan(
             institution_ids: vec![],
             gestalt_ids: vec![],
             location_ids: vec![origin, action.destination_id],
+            public_channels: action.public_channels,
+        });
+    }
+
+    for action in plan.actor_activities {
+        if !seen_actors.insert(action.actor_id.clone()) {
+            return Err(KernelError::Invalid(
+                "actor acts twice in one strategic tick".into(),
+            ));
+        }
+        if is_human_controlled_actor(campaign, &action.actor_id) {
+            return Err(KernelError::Invalid(
+                "strategic simulation cannot puppet a human-controlled actor".into(),
+            ));
+        }
+        validate_public_channels(&action.public_channels)?;
+        let actor = campaign
+            .actors
+            .get(&action.actor_id)
+            .ok_or_else(|| KernelError::Invalid("strategic plan invented an actor".into()))?;
+        let allowed_targets =
+            crate::resolution::strategic_activity_targets(campaign, &action.actor_id);
+        let unique_targets = action.target_subject_ids.iter().collect::<BTreeSet<_>>();
+        let needs_target = !action.activity.allows_targetless_local_attempt();
+        if action.target_subject_ids.len() > 4
+            || unique_targets.len() != action.target_subject_ids.len()
+            || action
+                .target_subject_ids
+                .iter()
+                .any(|target| !allowed_targets.contains(target))
+            || (needs_target && action.target_subject_ids.is_empty())
+            || action.location_ids.len() != 1
+            || action.location_ids[0] != actor.location_id
+        {
+            return Err(KernelError::Invalid(
+                "strategic actor activity exceeds exact graph or location scope".into(),
+            ));
+        }
+        let target_names = action
+            .target_subject_ids
+            .iter()
+            .map(|target| agency_subject_name(campaign, target))
+            .collect::<Result<Vec<_>, _>>()?;
+        let institution_ids = action
+            .target_subject_ids
+            .iter()
+            .filter(|target| campaign.institutions.contains_key(*target))
+            .cloned()
+            .collect();
+        let mut actor_ids = vec![action.actor_id.clone()];
+        actor_ids.extend(
+            action
+                .target_subject_ids
+                .iter()
+                .filter(|target| {
+                    campaign.actors.contains_key(*target)
+                        || target.strip_prefix("member:").is_some_and(|member_id| {
+                            campaign.gestalt_members.contains_key(member_id)
+                        })
+                })
+                .cloned(),
+        );
+        actor_ids.sort();
+        actor_ids.dedup();
+        let mut gestalt_ids = action
+            .target_subject_ids
+            .iter()
+            .filter(|target| campaign.gestalts.contains_key(*target))
+            .cloned()
+            .collect::<Vec<_>>();
+        gestalt_ids.sort();
+        gestalt_ids.dedup();
+        events.push(Event {
+            id: format!("strategic:{revision}:actor-activity:{}", action.actor_id),
+            at,
+            kind: "actor_activity".into(),
+            summary: strategic_activity_summary(&actor.name, &action.activity, &target_names),
+            actor_ids,
+            institution_ids,
+            gestalt_ids,
+            location_ids: action.location_ids,
             public_channels: action.public_channels,
         });
     }
@@ -3077,6 +3168,11 @@ mod tests {
             plan.gestalt_activities
                 .iter()
                 .map(|activity| (activity.action_digest.clone(), activity.gestalt_id.clone()))
+                .chain(
+                    plan.actor_activities.iter().map(|activity| {
+                        (activity.action_digest.clone(), activity.actor_id.clone())
+                    }),
+                )
                 .chain(plan.member_activities.iter().map(|activity| {
                     (
                         activity.action_digest.clone(),
@@ -4653,6 +4749,46 @@ mod tests {
         assert_eq!(
             ticks[0].model_receipt_hash,
             Some(format!("sha256:{}", "b".repeat(64)))
+        );
+
+        let actor_activity = resolve_test_activities(crate::domain::StrategicTickPlan {
+            actor_activities: vec![crate::domain::StrategicActorActivity {
+                action_digest: test_action_digest("runner-investigates-yard"),
+                actor_id: "runner".into(),
+                activity: StrategicActivityKind::Investigate,
+                target_subject_ids: vec![],
+                location_ids: vec!["yard".into()],
+                public_channels: vec![],
+            }],
+            ..Default::default()
+        });
+        let result = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 1,
+                source: TickSource::Scheduler,
+                plan: Some(actor_activity),
+                model_receipt_hash: Some(format!("sha256:{}", "c".repeat(64))),
+                resolution_wave: None,
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!("expected commit")
+        };
+        assert_eq!(campaign.actors["runner"].location_id, "yard");
+        assert_eq!(campaign.actors["player"].location_id, "room");
+        assert!(
+            campaign
+                .events
+                .iter()
+                .any(|event| event.kind == "actor_activity"
+                    && event.actor_ids.contains(&"runner".to_owned()))
+        );
+        assert!(
+            campaign
+                .events
+                .iter()
+                .any(|event| event.kind == "strategic_activity_outcome")
         );
     }
 

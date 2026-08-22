@@ -332,6 +332,7 @@ async fn main() -> anyhow::Result<()> {
         + plan.gestalt_activities.len()
         + plan.gestalt_migrations.len()
         + plan.actor_moves.len()
+        + plan.actor_activities.len()
         + plan.member_activities.len();
     for stage in &output.stages {
         store.insert(

@@ -172,6 +172,13 @@ enum CellEffectCandidate {
     ActorMove {
         destination_id: String,
     },
+    ActorActivity {
+        activity: crate::domain::StrategicActivityKind,
+        #[serde(default)]
+        target_subject_ids: Vec<String>,
+        #[serde(default)]
+        location_ids: Vec<String>,
+    },
     MemberActivity {
         activity: crate::domain::StrategicActivityKind,
         #[serde(default)]
@@ -249,6 +256,7 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
         {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"gestalt_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
         {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"gestalt_migration"},"destination_gestalt_id":{"type":"string"}}},
         {"type":"object","required":["type","destination_id"],"properties":{"type":{"const":"actor_move"},"destination_id":{"type":"string"}}},
+        {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"actor_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":1,"items":{"type":"string"}}}},
         {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"member_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":1,"items":{"type":"string"}}}},
         {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"member_migration"},"destination_gestalt_id":{"type":"string"}}}
       ]}
@@ -726,7 +734,7 @@ fn required_projection_subject_ids(slice: &PermittedCellSlice) -> BTreeSet<Strin
 
 fn allowed_effect_type(kind: &crate::domain::AgencySubjectKind) -> &'static str {
     match kind {
-        crate::domain::AgencySubjectKind::Actor => "actor_move",
+        crate::domain::AgencySubjectKind::Actor => "actor_move_or_actor_activity",
         crate::domain::AgencySubjectKind::Institution => "institution",
         crate::domain::AgencySubjectKind::Gestalt => {
             "gestalt_pressure_or_gestalt_activity_or_gestalt_migration"
@@ -1218,6 +1226,16 @@ fn bind_cell_appraisal(
                         destination_id,
                     }
                 }
+                CellEffectCandidate::ActorActivity {
+                    activity,
+                    target_subject_ids,
+                    location_ids,
+                } => crate::domain::StrategicCellEffect::ActorActivity {
+                    actor_id: candidate.subject_id.clone(),
+                    activity,
+                    target_subject_ids,
+                    location_ids,
+                },
                 CellEffectCandidate::MemberActivity {
                     activity,
                     target_subject_ids,
@@ -1613,6 +1631,36 @@ fn validate_constituent_effect(
                     actor_id,
                     destination_id,
                     subject.reachable_destination_ids
+                ));
+            }
+        }
+        crate::domain::StrategicCellEffect::ActorActivity {
+            actor_id,
+            activity,
+            target_subject_ids,
+            location_ids,
+        } => {
+            let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
+            let needs_target = !activity.allows_targetless_local_attempt();
+            if subject.subject_kind != crate::domain::AgencySubjectKind::Actor
+                || actor_id != &subject.subject_id
+                || target_subject_ids.len() > 4
+                || unique_targets.len() != target_subject_ids.len()
+                || target_subject_ids
+                    .iter()
+                    .any(|target| !subject.activity_target_ids.contains(target))
+                || (needs_target && target_subject_ids.is_empty())
+                || location_ids.len() != 1
+                || !subject.location_ids.contains(&location_ids[0])
+            {
+                return Err(anyhow!(
+                    "actor {} proposed {:?} toward {:?} at {:?}; exact allowed targets are {:?} and exact locations are {:?}",
+                    subject.subject_id,
+                    activity,
+                    target_subject_ids,
+                    location_ids,
+                    subject.activity_target_ids,
+                    subject.location_ids
                 ));
             }
         }
@@ -2404,6 +2452,72 @@ mod tests {
         };
         *member_id = "somebody-else".into();
         assert!(validate_cell_appraisal(&slice, &stolen).is_err());
+    }
+
+    #[test]
+    fn canonical_actor_activity_stays_attributed_to_the_actor() {
+        let mut slice = fixture_cell_slice();
+        let subject = &mut slice.constituents[0];
+        subject.subject_id = "actor:liaison".into();
+        subject.subject_kind = AgencySubjectKind::Actor;
+        subject.name = "Liaison".into();
+        subject.collective_authority_id = None;
+        subject.location_ids = BTreeSet::from(["forum".into()]);
+        subject.permitted_state_references = BTreeSet::from(["subject:actor:liaison".into()]);
+        subject.activity_target_ids = BTreeSet::from(["clinic".into()]);
+        subject.current_posture = None;
+
+        let appraisal = bind_cell_appraisal(
+            &slice,
+            CellAppraisalProposal {
+                actions: vec![CellActionCandidate {
+                    subject_id: "actor:liaison".into(),
+                    intent: "ask the clinic for its shortage count".into(),
+                    intended_effect: "send the request without inventing a reply".into(),
+                    priority: 70,
+                    state_references: vec!["subject:actor:liaison".into()],
+                    public_channels: vec![],
+                    effect: CellEffectCandidate::ActorActivity {
+                        activity: crate::domain::StrategicActivityKind::Communicate,
+                        target_subject_ids: vec!["clinic".into()],
+                        location_ids: vec!["forum".into()],
+                    },
+                }],
+                inactions: vec![],
+            },
+        )
+        .unwrap();
+        validate_cell_appraisal(&slice, &appraisal).unwrap();
+        assert!(matches!(
+            &appraisal.actions[0].effect,
+            StrategicCellEffect::ActorActivity { actor_id, .. } if actor_id == "actor:liaison"
+        ));
+
+        let wrong_lane = bind_cell_appraisal(
+            &slice,
+            CellAppraisalProposal {
+                actions: vec![CellActionCandidate {
+                    subject_id: "actor:liaison".into(),
+                    intent: "ask the clinic for its shortage count".into(),
+                    intended_effect: "send the request without inventing a reply".into(),
+                    priority: 70,
+                    state_references: vec!["subject:actor:liaison".into()],
+                    public_channels: vec![],
+                    effect: CellEffectCandidate::MemberActivity {
+                        activity: crate::domain::StrategicActivityKind::Communicate,
+                        target_subject_ids: vec!["clinic".into()],
+                        location_ids: vec!["forum".into()],
+                    },
+                }],
+                inactions: vec![],
+            },
+        )
+        .unwrap_err();
+        assert!(
+            wrong_lane
+                .to_string()
+                .contains("is not a selected member exception")
+        );
     }
 
     #[test]
