@@ -1,15 +1,15 @@
+use anyhow::Context;
 use axum::{
     Json, Router,
-    extract::{ConnectInfo, Path, Request, State},
+    extract::{Path, Query, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
-    middleware,
-    middleware::Next,
     response::{
         IntoResponse, Response,
         sse::{Event as SseEvent, KeepAlive, Sse},
     },
     routing::{get, post},
 };
+use chrono::{DateTime, Utc};
 #[cfg(test)]
 use ghostlight_dungeon::domain::WorldCompilePreview;
 use ghostlight_dungeon::{
@@ -22,7 +22,11 @@ use ghostlight_dungeon::{
     gestalt::GestaltPresencePlanner,
     idunn_health::{GHOSTLIGHT_IDUNN_HEALTH_CONTRACT, IdunnHealthPublisher},
     kernel::{CommandResult, KernelError},
-    mesh::{CampaignMeshSnapshot, MeshPublisher, MeshRuntimeIdentity, SessionZeroMeshSnapshot},
+    mesh::{
+        COMMAND_BOUNDARY as EVE_COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA as EVE_RESULT_SCHEMA,
+        CampaignMeshSnapshot, MeshPublisher, MeshRuntimeIdentity, PROVIDER_ID as EVE_PROVIDER_ID,
+        SURFACE_ID as EVE_SURFACE_ID, SessionZeroMeshSnapshot,
+    },
     model::{DeepSeekPort, ModelPort, ModelStageRequest, run_validated_stage},
     narrator::Narrator,
     persistence::CampaignStore,
@@ -39,7 +43,6 @@ use ghostlight_dungeon::{
 };
 use serde::Deserialize;
 use serde::Serialize;
-use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, BTreeSet},
     convert::Infallible,
@@ -52,8 +55,10 @@ use tokio::sync::{Mutex, Notify, OwnedRwLockReadGuard, RwLock};
 use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
+mod app_session;
 mod heimdall;
-use heimdall::{BackendCallback, HeimdallClient};
+use app_session::{AppSessionOwner, CommandReservation, NewSession, RefreshedSession, secret_hash};
+use heimdall::HeimdallClient;
 
 #[derive(Clone)]
 struct AppState {
@@ -61,8 +66,7 @@ struct AppState {
     session_zeros: SessionZeroRegistry,
     session_zero_director: Option<Arc<SessionZeroDirector>>,
     entitlements: Arc<dyn EntitlementPort>,
-    runtime_root: PathBuf,
-    auth: Arc<Mutex<AuthOwner>>,
+    auth: Arc<Mutex<AppSessionOwner>>,
     heimdall: Arc<HeimdallClient>,
     deepseek_status: String,
     compiler: Option<Arc<WorldCompiler>>,
@@ -110,12 +114,6 @@ struct OwnedFissionPreview {
     value: GestaltFissionPreview,
     evidence_receipts: Vec<ghostlight_dungeon::domain::VaultEvidenceReceipt>,
     model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
-}
-
-#[derive(Deserialize)]
-struct ProviderParallelismRequest {
-    expected_provider_configuration_epoch: u64,
-    provider_parallelism: u8,
 }
 
 #[derive(Deserialize)]
@@ -189,7 +187,7 @@ struct CellBudgetRequest {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-struct AuthState {
+struct LegacyAuthState {
     schema: String,
     session_hashes: BTreeSet<String>,
     #[serde(default)]
@@ -199,15 +197,18 @@ struct AuthState {
     #[serde(default)]
     session_campaign_ids: BTreeMap<String, BTreeSet<uuid::Uuid>>,
     #[serde(default)]
-    heimdall_attempts: BTreeMap<String, HeimdallAuthAttempt>,
+    heimdall_attempts: BTreeMap<String, serde_json::Value>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-struct HeimdallAuthAttempt {
-    expires_at_unix: u64,
-    status: String,
-    account_session_hash: Option<String>,
-    error: Option<String>,
+fn empty_legacy_auth_state() -> LegacyAuthState {
+    LegacyAuthState {
+        schema: "ghostlight.auth_state.v1".into(),
+        session_hashes: BTreeSet::new(),
+        session_aliases: BTreeMap::new(),
+        session_campaigns: BTreeMap::new(),
+        session_campaign_ids: BTreeMap::new(),
+        heimdall_attempts: BTreeMap::new(),
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -218,33 +219,6 @@ struct GovernanceMigrationReceipt {
     account_hashes: Vec<String>,
     actor_id: String,
     created_at: chrono::DateTime<chrono::Utc>,
-}
-
-struct AuthOwner {
-    store: CampaignStore,
-    row: cultcache_legacy::CultCacheEnvelope,
-    state: AuthState,
-}
-
-impl AuthOwner {
-    fn commit(&mut self, next_state: AuthState) -> anyhow::Result<()> {
-        let next_row = self
-            .store
-            .replace(&self.row, "ghostlight.auth_state.v1", &next_state)?;
-        self.row = next_row;
-        self.state = next_state;
-        Ok(())
-    }
-
-    fn reload(&mut self) -> anyhow::Result<()> {
-        let (row, state) = self
-            .store
-            .load::<AuthState>("auth_state.v1", "primary")?
-            .ok_or_else(|| anyhow::anyhow!("canonical auth state is missing"))?;
-        self.row = row;
-        self.state = state;
-        Ok(())
-    }
 }
 
 #[tokio::main]
@@ -261,28 +235,26 @@ async fn main() -> anyhow::Result<()> {
     let session_zeros = SessionZeroRegistry::new(runtime_root.join("session-zero"))?;
     session_zeros.load_existing().await?;
     std::fs::create_dir_all(runtime_root.join("service"))?;
-    let auth_store = CampaignStore::open(runtime_root.join("service/auth.cc"))?;
-    let (auth_row, auth_state) = match auth_store.load::<AuthState>("auth_state.v1", "primary")? {
-        Some((row, state)) => (row, state),
-        None => {
-            let state = AuthState {
-                schema: "ghostlight.auth_state.v1".into(),
-                session_hashes: BTreeSet::new(),
-                session_aliases: BTreeMap::new(),
-                session_campaigns: BTreeMap::new(),
-                session_campaign_ids: BTreeMap::new(),
-                heimdall_attempts: BTreeMap::new(),
-            };
-            let row = auth_store.insert(
-                "auth_state.v1",
-                "ghostlight.auth_state.v1",
-                "primary",
-                &state,
-            )?;
-            (row, state)
-        }
+    let legacy_auth_path = runtime_root.join("service/auth.cc");
+    let legacy_auth_state = if legacy_auth_path.is_file() {
+        CampaignStore::open(&legacy_auth_path)?
+            .load::<LegacyAuthState>("auth_state.v1", "primary")?
+            .map(|(_, state)| state)
+            .unwrap_or_else(empty_legacy_auth_state)
+    } else {
+        empty_legacy_auth_state()
     };
-    migrate_legacy_campaign_memberships(&registry, &auth_state).await?;
+    migrate_legacy_campaign_memberships(&registry, &legacy_auth_state).await?;
+    let session_key_path = std::env::var_os("GHOSTLIGHT_SESSION_WRAPPING_KEY_FILE")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| runtime_root.join("secrets/session-wrapping.key"));
+    let mut app_sessions = AppSessionOwner::open(
+        runtime_root.join("service/app-sessions.cc"),
+        session_key_path,
+    )?;
+    for (account_hash, campaign_id) in &legacy_auth_state.session_campaigns {
+        app_sessions.migrate_preference(account_hash, *campaign_id)?;
+    }
     let secret_path = std::env::var_os("GHOSTLIGHT_DEEPSEEK_CREDENTIAL")
         .map(PathBuf::from)
         .unwrap_or_else(|| runtime_root.join("secrets/deepseek.dpapi"));
@@ -379,12 +351,7 @@ async fn main() -> anyhow::Result<()> {
         session_zeros,
         session_zero_director,
         entitlements: Arc::new(FixtureEntitlementPort),
-        runtime_root,
-        auth: Arc::new(Mutex::new(AuthOwner {
-            store: auth_store,
-            row: auth_row,
-            state: auth_state,
-        })),
+        auth: Arc::new(Mutex::new(app_sessions)),
         heimdall: Arc::new(HeimdallClient::from_env()?),
         deepseek_status,
         compiler,
@@ -399,6 +366,7 @@ async fn main() -> anyhow::Result<()> {
     };
     refresh_mesh(&state).await?;
     tokio::spawn(scheduler_loop(state.clone()));
+    tokio::spawn(app_session_refresh_loop(state.clone()));
     let release_web_root = std::env::current_exe()?
         .parent()
         .map(|parent| parent.join("web"));
@@ -441,311 +409,1350 @@ fn default_runtime_root() -> PathBuf {
 }
 
 fn app_router(state: AppState, web_root: PathBuf) -> Router {
-    let protected_api = Router::new()
-        .route("/api/surface", get(surface))
-        .route("/api/events", get(revision_events))
-        .route("/api/session-zero", post(begin_session_zero))
-        .route(
-            "/api/session-zero/{session_id}/surface",
-            get(session_zero_surface_route),
-        )
-        .route(
-            "/api/session-zero/{session_id}/invites",
-            post(create_session_zero_invites),
-        )
-        .route("/api/session-zero/join/{token}", post(join_session_zero))
-        .route(
-            "/api/session-zero/{session_id}/message",
-            post(post_session_zero_message),
-        )
-        .route(
-            "/api/session-zero/{session_id}/boundary",
-            post(set_session_zero_boundary),
-        )
-        .route(
-            "/api/session-zero/{session_id}/boundary/{boundary_id}/remove",
-            post(remove_session_zero_boundary),
-        )
-        .route(
-            "/api/session-zero/{session_id}/leave",
-            post(leave_session_zero),
-        )
-        .route(
-            "/api/session-zero/{session_id}/remove-member",
-            post(remove_session_zero_member),
-        )
-        .route(
-            "/api/session-zero/{session_id}/decision",
-            post(resolve_session_zero_decision),
-        )
-        .route(
-            "/api/session-zero/{session_id}/lock",
-            post(lock_session_zero_roster),
-        )
-        .route(
-            "/api/session-zero/{session_id}/compile",
-            post(compile_session_zero),
-        )
-        .route(
-            "/api/session-zero/{session_id}/approve",
-            post(approve_session_zero),
-        )
-        .route(
-            "/api/session-zero/{session_id}/publish",
-            post(publish_session_zero),
-        )
-        .route("/api/compiler/destination", post(compile_destination))
-        .route(
-            "/api/compiler/destination/approve/{preview_id}",
-            post(approve_destination),
-        )
-        .route("/api/compiler/gestalt/fission", post(compile_fission))
-        .route(
-            "/api/compiler/gestalt/fission/approve/{preview_id}",
-            post(approve_fission),
-        )
-        .route("/api/command", post(command))
-        .route("/api/governance/time", post(propose_time_advance))
-        .route(
-            "/api/governance/time/{proposal_id}/approve",
-            post(approve_time_advance),
-        )
-        .route("/api/governance/travel", post(propose_group_travel))
-        .route(
-            "/api/governance/travel/{proposal_id}/approve",
-            post(approve_group_travel),
-        )
-        .route("/api/governance/cell-budget", post(propose_cell_budget))
-        .route(
-            "/api/governance/cell-budget/{proposal_id}/approve",
-            post(approve_cell_budget),
-        )
-        .route("/api/campaigns", get(campaigns))
-        .route(
-            "/api/campaigns/select/{campaign_id}",
-            post(select_campaign_route),
-        )
-        .route("/api/campaigns/fork", post(fork_campaign))
-        .route("/api/campaigns/reset", post(reset_campaign))
-        .route("/api/campaigns/export", get(export_campaign))
-        .route(
-            "/api/campaigns/contract-review",
-            post(begin_contract_review),
-        )
-        .route(
-            "/api/campaigns/canon-candidates.md",
-            get(export_canon_candidates_markdown),
-        )
-        .route("/api/operator", get(operator_inspector))
-        .route(
-            "/api/operator/provider-parallelism",
-            post(set_provider_parallelism),
-        )
-        .route_layer(middleware::from_fn_with_state(
-            state.clone(),
-            require_api_authentication,
-        ));
-
     Router::new()
         .route("/health", get(health))
-        .route("/api/auth/heimdall/start", post(heimdall_start))
-        .route("/api/auth/heimdall/callback", post(heimdall_callback))
-        .route(
-            "/api/auth/heimdall/attempt/{attempt_id}",
-            get(heimdall_attempt),
-        )
-        .route(
-            "/api/auth/heimdall/attempt/{attempt_id}/adopt",
-            post(heimdall_adopt),
-        )
-        .merge(protected_api)
+        .route("/api/eve/provider", get(eve_provider))
+        .route("/api/eve/surfaces/{surface_id}", get(eve_surface))
+        .route("/api/eve/commands", post(eve_command))
+        .route("/api/eve/events", get(revision_events))
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state)
 }
 
-async fn heimdall_start(State(state): State<AppState>) -> Response {
-    let attempt_id = uuid::Uuid::new_v4().simple().to_string();
-    let now = unix_time_seconds();
-    {
-        let mut auth = state.auth.lock().await;
-        let mut next_state = auth.state.clone();
-        prune_heimdall_attempts(&mut next_state, now);
-        next_state.heimdall_attempts.insert(
-            attempt_id.clone(),
-            HeimdallAuthAttempt {
-                expires_at_unix: now + 600,
-                status: "pending".into(),
-                account_session_hash: None,
-                error: None,
-            },
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EveCommandInvocation {
+    schema: String,
+    #[serde(rename = "providerId")]
+    provider_id: String,
+    #[serde(rename = "surfaceId")]
+    surface_id: String,
+    operation: EveOperation,
+    payload: serde_json::Value,
+    #[serde(rename = "issuedAt")]
+    issued_at: String,
+    #[serde(rename = "clientId")]
+    client_id: String,
+    #[serde(rename = "commandBoundary")]
+    command_boundary: String,
+    #[serde(rename = "receiptSchema")]
+    receipt_schema: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct EveOperation {
+    operation_id: String,
+    schema_id: Option<String>,
+    idempotency_key: Option<String>,
+    #[serde(default)]
+    route_hint: EveRouteHint,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EveRouteHint {
+    source_version: Option<u64>,
+    transport: Option<String>,
+}
+
+async fn eve_provider(State(state): State<AppState>) -> Response {
+    let updated = chrono::Utc::now().to_rfc3339();
+    Json(state.mesh.provider_advertisement(&updated)).into_response()
+}
+
+async fn eve_surface(
+    Path(surface_id): Path<String>,
+    Query(query): Query<EveSurfaceQuery>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    if surface_id != EVE_SURFACE_ID {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    if authenticated_session(&headers, &state).await.is_none() {
+        return Json(anonymous_eve_surface()).into_response();
+    }
+    surface(headers, State(state), query.invite.as_deref()).await
+}
+
+#[derive(Default, Deserialize)]
+struct EveSurfaceQuery {
+    invite: Option<String>,
+}
+
+fn anonymous_eve_surface() -> serde_json::Value {
+    serde_json::json!({
+        "type":"surface-state",
+        "schema":"gamecult.eve.surface.v1",
+        "providerId":EVE_PROVIDER_ID,
+        "providerKind":"narrative.simulation",
+        "title":"Ghostlight Dungeon",
+        "version":0,
+        "updatedAtUtc":Utc::now().to_rfc3339(),
+        "surface":{"id":EVE_SURFACE_ID,"root":{
+            "id":"ghostlight.root","kind":"surface","props":{},"children":[
+                {"id":"ghostlight.access","kind":"heimdall.access_gate","props":{
+                    "state":"anonymous","title":"Enter Ghostlight","detail":"Sign in with Discord. Access currently requires the KLTST GameCult role."
+                },"children":[]},
+                {"id":"ghostlight.auth.begin","kind":"control.button","props":{
+                    "label":"Continue with Discord","command":"heimdall.auth.begin"
+                },"children":[]}
+            ]
+        },"styles":{"tokens":{"colorBackground":"#0c1110","colorPanel":"#17201d","colorText":"#e8e1cf","colorMuted":"#9aa69f","colorAccent":"#d49b58"}}},
+        "commands":[{
+            "schema":"gamecult.eve.command.v1","command":"heimdall.auth.begin",
+            "payloadSchema":"heimdall.auth_begin_command.v1",
+            "transport":"https-json","authority":"Heimdall"
+        }]
+    })
+}
+
+async fn eve_command(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(invocation): Json<EveCommandInvocation>,
+) -> Response {
+    if let Err(error) = validate_eve_invocation(&invocation) {
+        return Json(eve_result(
+            &invocation,
+            "denied",
+            error.to_string(),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    }
+    let operation = invocation.operation.operation_id.as_str();
+    if operation == "heimdall.auth.begin" {
+        return match state.heimdall.begin(invocation.operation.idempotency_key.as_deref().unwrap()).await {
+            Ok(receipt) if receipt.status == "pending"
+                && !receipt.handle.is_empty()
+                && receipt.expires_at.parse::<DateTime<Utc>>().is_ok_and(|expiry| expiry > Utc::now()) =>
+            {
+                Json(eve_result(
+                    &invocation,
+                    "accepted",
+                    "Continue authentication with Heimdall.".into(),
+                    None,
+                    Some(serde_json::json!({
+                        "pluginId":"gamecult.heimdall.access",
+                        "schemaId":"heimdall.auth_navigation_receipt.v1",
+                        "payload":{
+                            "schema":"heimdall.auth_navigation_receipt.v1",
+                            "handle":receipt.handle,
+                            "navigation":{"url":receipt.navigation.url,"allowedOrigins":receipt.navigation.allowed_origins}
+                        }
+                    })),
+                    None,
+                )).into_response()
+            }
+            Ok(_) => Json(eve_result(&invocation, "denied", "Heimdall returned an invalid authentication attempt.".into(), None, None, None)).into_response(),
+            Err(error) => Json(eve_result(&invocation, "denied", error.to_string(), None, None, None)).into_response(),
+        };
+    }
+    if operation == "heimdall.auth.complete" {
+        return complete_eve_authentication(invocation, state).await;
+    }
+    let Some(account_hash) = authenticated_session(&headers, &state).await else {
+        return Json(eve_result(
+            &invocation,
+            "denied",
+            "Authentication is required.".into(),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    };
+    if operation == "app.auth.logout" {
+        let raw = cookie_value(&headers).unwrap_or_default();
+        let logout_session = state
+            .auth
+            .lock()
+            .await
+            .session_for_logout(raw)
+            .ok()
+            .flatten();
+        let _ = state.auth.lock().await.revoke_cookie(raw);
+        if let Some(session) = logout_session {
+            let idempotency_key = format!(
+                "logout:{}:{}",
+                session.heimdall_session_id, session.access_revision
+            );
+            let heimdall = state.heimdall.clone();
+            tokio::spawn(async move {
+                match heimdall
+                    .logout(&session.refresh_claim, &idempotency_key)
+                    .await
+                {
+                    Ok(receipt)
+                        if receipt.status == "revoked"
+                            && receipt.session_id == session.heimdall_session_id
+                            && receipt.access_revision > session.access_revision
+                            && receipt.revoked_at.parse::<DateTime<Utc>>().is_ok() => {}
+                    Ok(_) => tracing::warn!(
+                        session_id = %session.heimdall_session_id,
+                        "Heimdall returned an invalid logout receipt; local session is already revoked"
+                    ),
+                    Err(error) => tracing::warn!(
+                        %error,
+                        session_id = %session.heimdall_session_id,
+                        "Heimdall logout transport failed; local session is already revoked"
+                    ),
+                }
+            });
+        }
+        let mut response = Json(eve_result(
+            &invocation,
+            "accepted",
+            "Signed out.".into(),
+            None,
+            Some(serde_json::json!({
+                "pluginId":"gamecult.heimdall.access",
+                "schemaId":"heimdall.auth_completion_status.v1",
+                "payload":{"schema":"heimdall.auth_completion_status.v1","status":"anonymous"}
+            })),
+            None,
+        ))
+        .into_response();
+        response.headers_mut().insert(
+            header::SET_COOKIE,
+            HeaderValue::from_static(
+                "ghostlight_session=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/ghostlight/",
+            ),
         );
-        if let Err(error) = auth.commit(next_state) {
+        return response;
+    }
+    let current_version = match current_eve_surface_version(&state, &account_hash).await {
+        Ok(value) => value,
+        Err(error) => {
+            return Json(eve_result(
+                &invocation,
+                "denied",
+                error.to_string(),
+                None,
+                None,
+                None,
+            ))
+            .into_response();
+        }
+    };
+    if invocation.operation.route_hint.source_version != Some(current_version) {
+        return Json(eve_result(
+            &invocation,
+            "denied",
+            format!(
+                "Stale Eve surface: expected version {current_version}. Refresh before retrying."
+            ),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    }
+    let idempotency_key = invocation.operation.idempotency_key.clone().unwrap();
+    match state.auth.lock().await.reserve_command(
+        &account_hash,
+        &idempotency_key,
+        &invocation.operation.operation_id,
+    ) {
+        Ok(CommandReservation::Cached(result)) => return Json(result).into_response(),
+        Ok(CommandReservation::Pending) => {
+            return Json(eve_result(
+                &invocation,
+                "pending",
+                "This exact operation is already reserved. Refresh authoritative state; Ghostlight will not execute it twice.".into(),
+                None,
+                None,
+                None,
+            )).into_response();
+        }
+        Ok(CommandReservation::Reserved) => {}
+        Err(error) => {
+            return Json(eve_result(
+                &invocation,
+                "denied",
+                error.to_string(),
+                None,
+                None,
+                None,
+            ))
+            .into_response();
+        }
+    }
+    let operation_id = invocation.operation.operation_id.clone();
+    let response = dispatch_eve_product_command(&headers, &state, &account_hash, invocation).await;
+    persist_reserved_eve_result(
+        &state,
+        &account_hash,
+        &idempotency_key,
+        &operation_id,
+        response,
+    )
+    .await
+}
+
+async fn persist_reserved_eve_result(
+    state: &AppState,
+    account_hash: &str,
+    idempotency_key: &str,
+    operation_id: &str,
+    response: Response,
+) -> Response {
+    let status = response.status();
+    let bytes = match axum::body::to_bytes(response.into_body(), 2 * 1024 * 1024).await {
+        Ok(value) => value,
+        Err(error) => {
             return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
         }
-    }
-    match state.heimdall.start(&attempt_id).await {
-        Ok(start) => Json(serde_json::json!({
-            "attempt_id": attempt_id,
-            "authorization_url": start.authorization_url
-        }))
-        .into_response(),
+    };
+    let result = match serde_json::from_slice::<serde_json::Value>(&bytes) {
+        Ok(value) => value,
         Err(error) => {
-            let message = error.to_string();
-            let mut auth = state.auth.lock().await;
-            let mut next_state = auth.state.clone();
-            if let Some(attempt) = next_state.heimdall_attempts.get_mut(&attempt_id) {
-                attempt.status = "failed".into();
-                attempt.error = Some("Heimdall could not start Discord sign-in".into());
-            }
-            if let Err(commit_error) = auth.commit(next_state) {
-                return (StatusCode::INTERNAL_SERVER_ERROR, commit_error.to_string())
-                    .into_response();
-            }
-            (StatusCode::BAD_GATEWAY, message).into_response()
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Eve command boundary returned a non-typed result: {error}"),
+            )
+                .into_response();
         }
+    };
+    if let Err(error) = state.auth.lock().await.record_command_result(
+        account_hash,
+        idempotency_key,
+        operation_id,
+        &result,
+    ) {
+        tracing::error!(%error, %operation_id, "Eve command committed but its reserved result could not be finalized; duplicate execution remains blocked");
     }
+    (status, Json(result)).into_response()
 }
 
-async fn heimdall_callback(
-    State(state): State<AppState>,
-    Json(callback): Json<BackendCallback>,
-) -> Response {
-    if callback.attempt_id.len() > 128 || callback.attempt_id.trim().is_empty() {
-        return (StatusCode::BAD_REQUEST, "invalid Heimdall attempt id").into_response();
-    }
-    if let Err(error) = state.heimdall.validate_callback_envelope(&callback) {
-        return (StatusCode::UNAUTHORIZED, error.to_string()).into_response();
-    }
-    let now = unix_time_seconds();
+async fn current_eve_surface_version(state: &AppState, account_hash: &str) -> anyhow::Result<u64> {
+    if let Some(id) = state
+        .session_zeros
+        .active_contract_review_for_account(account_hash)
+        .await?
     {
-        let auth = state.auth.lock().await;
-        let Some(attempt) = auth.state.heimdall_attempts.get(&callback.attempt_id) else {
-            return (StatusCode::NOT_FOUND, "unknown Heimdall attempt").into_response();
-        };
-        if attempt.expires_at_unix < now || attempt.status != "pending" {
-            return (StatusCode::CONFLICT, "Heimdall attempt is not pending").into_response();
-        }
+        return Ok(state.session_zeros.snapshot(id).await?.revision);
     }
-    if callback.status != "success" {
-        let mut auth = state.auth.lock().await;
-        let mut next_state = auth.state.clone();
-        if let Some(attempt) = next_state.heimdall_attempts.get_mut(&callback.attempt_id) {
-            attempt.status = "failed".into();
-            attempt.error = Some(
-                callback
-                    .error_description
-                    .clone()
-                    .or(callback.error.clone())
-                    .unwrap_or_else(|| "Discord membership was not admitted".into()),
-            );
-        }
-        return match auth.commit(next_state) {
-            Ok(()) => StatusCode::NO_CONTENT.into_response(),
-            Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
-        };
+    if let Some(runtime) = session_runtime(state, account_hash).await? {
+        let campaign = load_campaign(&runtime.store)?;
+        return Ok(campaign
+            .revision
+            .saturating_mul(1_000_000_000_000)
+            .saturating_add(
+                campaign
+                    .resolution_policy
+                    .resolution_epoch
+                    .saturating_mul(1_000_000),
+            )
+            .saturating_add(campaign.resolution_policy.provider_configuration_epoch));
     }
-    let claims = match state.heimdall.verify_callback(&callback).await {
-        Ok(claims) => claims,
-        Err(error) => return (StatusCode::UNAUTHORIZED, error.to_string()).into_response(),
-    };
-    let account_session = secret_hash(&format!("heimdall-account:{}", claims.account_id));
-    let mut auth = state.auth.lock().await;
-    let mut next_state = auth.state.clone();
-    let Some(attempt) = next_state.heimdall_attempts.get_mut(&callback.attempt_id) else {
-        return (StatusCode::NOT_FOUND, "unknown Heimdall attempt").into_response();
-    };
-    if attempt.expires_at_unix < now || attempt.status != "pending" {
-        return (StatusCode::CONFLICT, "Heimdall attempt is not pending").into_response();
+    if let Some(id) = state
+        .session_zeros
+        .session_for_account(account_hash)
+        .await?
+    {
+        return Ok(state.session_zeros.snapshot(id).await?.revision);
     }
-    attempt.status = "succeeded".into();
-    attempt.account_session_hash = Some(account_session);
-    match auth.commit(next_state) {
-        Ok(()) => StatusCode::NO_CONTENT.into_response(),
-        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
-    }
+    Ok(0)
 }
 
-async fn heimdall_attempt(
-    Path(attempt_id): Path<String>,
-    State(state): State<AppState>,
+async fn complete_eve_authentication(
+    invocation: EveCommandInvocation,
+    state: AppState,
 ) -> Response {
-    let auth = state.auth.lock().await;
-    let Some(attempt) = auth.state.heimdall_attempts.get(&attempt_id) else {
-        return StatusCode::NOT_FOUND.into_response();
-    };
-    if attempt.expires_at_unix < unix_time_seconds() {
-        return StatusCode::GONE.into_response();
+    let handle = invocation
+        .payload
+        .get("handle")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("");
+    if handle.is_empty() {
+        return Json(eve_result(
+            &invocation,
+            "denied",
+            "Authentication completion omitted its opaque handle.".into(),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
     }
-    Json(serde_json::json!({
-        "status": attempt.status,
-        "error": attempt.error,
-    }))
-    .into_response()
-}
-
-async fn heimdall_adopt(Path(attempt_id): Path<String>, State(state): State<AppState>) -> Response {
-    let now = unix_time_seconds();
-    let raw_session = uuid::Uuid::new_v4().to_string();
-    let alias_hash = secret_hash(&raw_session);
-    let mut auth = state.auth.lock().await;
-    let mut next_state = auth.state.clone();
-    let Some(attempt) = next_state.heimdall_attempts.remove(&attempt_id) else {
-        return StatusCode::NOT_FOUND.into_response();
-    };
-    if attempt.expires_at_unix < now {
-        return StatusCode::GONE.into_response();
-    }
-    if attempt.status != "succeeded" {
-        return (StatusCode::CONFLICT, "Heimdall attempt has not succeeded").into_response();
-    }
-    let Some(account_session) = attempt.account_session_hash else {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Heimdall attempt lost account authority",
+    let completion = match state
+        .heimdall
+        .complete(
+            handle,
+            invocation.operation.idempotency_key.as_deref().unwrap(),
         )
+        .await
+    {
+        Ok(value) => value,
+        Err(error) => {
+            return Json(eve_result(
+                &invocation,
+                "denied",
+                error.to_string(),
+                None,
+                None,
+                None,
+            ))
             .into_response();
+        }
     };
-    next_state.session_hashes.insert(account_session.clone());
-    next_state
-        .session_aliases
-        .insert(alias_hash, account_session);
-    if let Err(error) = auth.commit(next_state) {
-        return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+    if completion.status == "pending" {
+        return Json(eve_result(&invocation, "pending", "Heimdall is waiting for Discord.".into(), None, Some(serde_json::json!({
+            "pluginId":"gamecult.heimdall.access","schemaId":"heimdall.auth_completion_status.v1",
+            "payload":{"schema":"heimdall.auth_completion_status.v1","status":"pending"}
+        })), None)).into_response();
     }
-    let mut response = Json(serde_json::json!({"status":"authenticated"})).into_response();
+    if completion.status == "denied" {
+        return Json(eve_result(
+            &invocation,
+            "denied",
+            completion.error.clone().unwrap_or_else(|| "Heimdall denied access.".into()),
+            None,
+            Some(serde_json::json!({
+                "pluginId":"gamecult.heimdall.access","schemaId":"heimdall.auth_completion_status.v1",
+                "payload":{"schema":"heimdall.auth_completion_status.v1","status":"denied"}
+            })),
+            None,
+        )).into_response();
+    }
+    if completion.handle.as_deref() != Some(handle) {
+        return Json(eve_result(
+            &invocation,
+            "denied",
+            "Heimdall completion handle did not match the browser-held attempt.".into(),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    }
+    let claims = match state.heimdall.verify_completion(&completion).await {
+        Ok(value) => value,
+        Err(error) => return Json(eve_result(&invocation, "denied", error.to_string(), None, Some(serde_json::json!({
+            "pluginId":"gamecult.heimdall.access","schemaId":"heimdall.auth_completion_status.v1",
+            "payload":{"schema":"heimdall.auth_completion_status.v1","status":"denied"}
+        })), None)).into_response(),
+    };
+    let session = completion.session.as_ref().unwrap();
+    if !completion
+        .shared_capabilities
+        .iter()
+        .any(|value| value == "app_access")
+    {
+        return Json(eve_result(
+            &invocation,
+            "denied",
+            "Heimdall completion did not expose Ghostlight app_access.".into(),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    }
+    let refresh = completion
+        .refresh
+        .as_ref()
+        .map(|value| value.expires_at.as_str())
+        .unwrap_or(&session.expires_at);
+    let refresh_token = completion.refresh_token.as_deref().unwrap_or("");
+    if refresh_token.is_empty() {
+        return Json(eve_result(
+            &invocation,
+            "denied",
+            "Heimdall omitted its refresh claim.".into(),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    }
+    let raw_cookie = match state.auth.lock().await.create_session(NewSession {
+        account_id: &claims.account_id,
+        heimdall_session_id: &claims.sid,
+        access_revision: claims.access_revision,
+        capabilities: claims.capabilities.clone(),
+        access_expires_at: DateTime::from_timestamp(claims.exp as i64, 0).unwrap_or_else(Utc::now),
+        refresh_expires_at: refresh.parse().unwrap_or_else(|_| Utc::now()),
+        refresh_claim: refresh_token,
+    }) {
+        Ok(value) => value,
+        Err(error) => {
+            return Json(eve_result(
+                &invocation,
+                "denied",
+                error.to_string(),
+                None,
+                None,
+                None,
+            ))
+            .into_response();
+        }
+    };
+    let mut response = Json(eve_result(
+        &invocation,
+        "accepted",
+        "Authenticated.".into(),
+        None,
+        Some(serde_json::json!({
+            "pluginId":"gamecult.heimdall.access","schemaId":"heimdall.auth_completion_status.v1",
+            "payload":{"schema":"heimdall.auth_completion_status.v1","status":"authenticated"}
+        })),
+        None,
+    ))
+    .into_response();
     response.headers_mut().insert(
         header::SET_COOKIE,
         HeaderValue::from_str(&format!(
-            "ghostlight_session={raw_session}; HttpOnly; Secure; SameSite=Lax; Path=/"
+            "ghostlight_session={raw_cookie}; HttpOnly; Secure; SameSite=Lax; Path=/ghostlight/"
         ))
         .unwrap(),
     );
     response
 }
 
-fn unix_time_seconds() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs()
-}
-
-fn prune_heimdall_attempts(state: &mut AuthState, now: u64) {
-    state
-        .heimdall_attempts
-        .retain(|_, attempt| attempt.expires_at_unix >= now);
-}
-
-async fn require_api_authentication(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    request: Request,
-    next: Next,
-) -> Response {
-    if !authorized(&headers, &state).await {
-        return StatusCode::UNAUTHORIZED.into_response();
+fn validate_eve_invocation(invocation: &EveCommandInvocation) -> anyhow::Result<()> {
+    if invocation.schema != "gamecult.eve.command_invocation.v1"
+        || invocation.provider_id != EVE_PROVIDER_ID
+        || invocation.surface_id != EVE_SURFACE_ID
+        || invocation.command_boundary != EVE_COMMAND_BOUNDARY
+        || invocation.receipt_schema != EVE_RESULT_SCHEMA
+    {
+        anyhow::bail!("Invocation does not match the Ghostlight Eve provider boundary");
     }
-    next.run(request).await
+    if invocation.operation.operation_id.trim().is_empty()
+        || invocation
+            .operation
+            .idempotency_key
+            .as_deref()
+            .is_none_or(str::is_empty)
+        || invocation
+            .operation
+            .schema_id
+            .as_deref()
+            .is_none_or(str::is_empty)
+        || invocation.client_id.trim().is_empty()
+        || invocation.issued_at.parse::<DateTime<Utc>>().is_err()
+    {
+        anyhow::bail!("Invocation metadata is incomplete");
+    }
+    if contains_authority_field(&invocation.payload) {
+        anyhow::bail!("Browser payloads may not supply actor, member, or account authority");
+    }
+    if invocation
+        .operation
+        .route_hint
+        .transport
+        .as_deref()
+        .is_some_and(|value| value != "https-json")
+    {
+        anyhow::bail!(
+            "Ghostlight's browser boundary accepts only its advertised HTTPS Eve transport"
+        );
+    }
+    let expected_schema = eve_operation_schema(&invocation.operation.operation_id)
+        .ok_or_else(|| anyhow::anyhow!("Eve operation is not advertised by Ghostlight"))?;
+    if invocation.operation.schema_id.as_deref() != Some(expected_schema) {
+        anyhow::bail!(
+            "Eve operation payload schema does not match the advertised command descriptor"
+        );
+    }
+    Ok(())
+}
+
+fn eve_operation_schema(operation: &str) -> Option<&'static str> {
+    Some(match operation {
+        "heimdall.auth.begin" => "heimdall.auth_begin_command.v1",
+        "heimdall.auth.complete" => "heimdall.auth_complete_command.v1",
+        "app.auth.logout" => "ghostlight.app_logout.v1",
+        "session_zero.begin" => "ghostlight.session_zero_begin.v1",
+        "session_zero.join" => "ghostlight.session_zero_join.v1",
+        "session_zero.invites.create" => "ghostlight.session_zero_invites_create.v1",
+        "session_zero.message.send" => "ghostlight.session_zero_message_send.v1",
+        "session_zero.boundary.set" => "ghostlight.session_zero_boundary_set.v1",
+        "session_zero.boundary.remove" => "ghostlight.session_zero_boundary_remove.v1",
+        "session_zero.leave"
+        | "session_zero.roster.lock"
+        | "session_zero.compile"
+        | "session_zero.approve"
+        | "session_zero.publish" => "ghostlight.session_zero_revision_command.v1",
+        "session_zero.member.remove" => "ghostlight.session_zero_member_remove.v1",
+        "session_zero.decision.resolve" => "ghostlight.session_zero_decision_resolve.v1",
+        "campaign.select" => "ghostlight.campaign_select.v1",
+        "campaign.contract_review.begin" => "ghostlight.contract_review_begin.v1",
+        "world.speak" => "ghostlight.world_speak.v1",
+        "world.assess" => "ghostlight.player_action_assess.v1",
+        "world.attempt" => "ghostlight.player_action_attempt.v1",
+        "world.wait" => "ghostlight.world_wait.v1",
+        "governance.time.propose" => "ghostlight.time_advance_proposal.v1",
+        "governance.time.approve" => "ghostlight.time_advance_approval.v1",
+        "governance.travel.propose" => "ghostlight.group_travel_proposal.v1",
+        "governance.travel.approve" => "ghostlight.group_travel_approval.v1",
+        "governance.cells.propose" => "ghostlight.cell_budget_proposal.v1",
+        "governance.cells.approve" => "ghostlight.cell_budget_approval.v1",
+        "world.destination.compile" => "ghostlight.destination_compile.v1",
+        "world.destination.approve" => "ghostlight.destination_approval.v1",
+        "world.gestalt.fission.compile" => "ghostlight.gestalt_fission_compile.v1",
+        "world.gestalt.fission.approve" => "ghostlight.gestalt_fission_approval.v1",
+        _ => return None,
+    })
+}
+
+fn contains_authority_field(value: &serde_json::Value) -> bool {
+    match value {
+        serde_json::Value::Object(values) => values.iter().any(|(key, value)| {
+            matches!(
+                key.as_str(),
+                "actor_id"
+                    | "actorId"
+                    | "member_id"
+                    | "memberId"
+                    | "account_hash"
+                    | "accountHash"
+                    | "viewer_actor_id"
+            ) || contains_authority_field(value)
+        }),
+        serde_json::Value::Array(values) => values.iter().any(contains_authority_field),
+        _ => false,
+    }
+}
+
+fn eve_result(
+    invocation: &EveCommandInvocation,
+    state: &str,
+    message: String,
+    transient_projection: Option<serde_json::Value>,
+    plugin_payload: Option<serde_json::Value>,
+    clear_bindings: Option<Vec<String>>,
+) -> serde_json::Value {
+    let source_version = invocation.operation.route_hint.source_version.unwrap_or(0);
+    let mut value = serde_json::json!({
+        "schema":EVE_RESULT_SCHEMA,
+        "receipt":{
+            "schema":"gamecult.eve.command_receipt.v1",
+            "receiptId":format!("eve-receipt:{}",uuid::Uuid::new_v4()),
+            "commandId":invocation.operation.idempotency_key.as_deref().unwrap_or(""),
+            "command":invocation.operation.operation_id,
+            "state":state,
+            "ownerRepo":"GameCult/Ghostlight",
+            "authority":"SessionZeroKernel or WorldKernel after server-side membership resolution",
+            "providerId":EVE_PROVIDER_ID,
+            "surfaceId":EVE_SURFACE_ID,
+            "message":message,
+            "diagnostics":[],
+            "issuedAtUtc":Utc::now().to_rfc3339(),
+            "sourceVersion":source_version
+        }
+    });
+    if let Some(transient) = transient_projection {
+        value["transientProjection"] = transient;
+    }
+    if let Some(plugin) = plugin_payload {
+        value["pluginPayload"] = plugin;
+    }
+    if let Some(names) = clear_bindings {
+        value["draftDirective"] = serde_json::json!({"clear":true,"bindingNames":names});
+    }
+    value
+}
+
+async fn dispatch_eve_product_command(
+    headers: &HeaderMap,
+    state: &AppState,
+    account_hash: &str,
+    invocation: EveCommandInvocation,
+) -> Response {
+    let operation = invocation.operation.operation_id.clone();
+    let payload = captured_payload(&invocation.payload);
+    macro_rules! required_string {
+        ($name:literal) => {
+            match string_field(&payload, $name) {
+                Some(value) => value,
+                None => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!(concat!($name, " is required")),
+                    )
+                }
+            }
+        };
+    }
+    macro_rules! required_u64 {
+        ($name:literal) => {
+            match u64_field(&payload, $name) {
+                Some(value) => value,
+                None => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!(concat!($name, " is required")),
+                    )
+                }
+            }
+        };
+    }
+    let session_id = if operation.starts_with("session_zero.")
+        && !matches!(
+            operation.as_str(),
+            "session_zero.begin" | "session_zero.join"
+        ) {
+        match state.session_zeros.session_for_account(account_hash).await {
+            Ok(Some(value)) => Some(value),
+            Ok(None) => {
+                return Json(eve_result(
+                    &invocation,
+                    "denied",
+                    "No active Session Zero belongs to this account.".into(),
+                    None,
+                    None,
+                    None,
+                ))
+                .into_response();
+            }
+            Err(error) => {
+                return Json(eve_result(
+                    &invocation,
+                    "denied",
+                    error.to_string(),
+                    None,
+                    None,
+                    None,
+                ))
+                .into_response();
+            }
+        }
+    } else {
+        None
+    };
+    let response = match operation.as_str() {
+        "session_zero.begin" => match decode_payload::<BeginSessionZeroRequest>(&payload) {
+            Ok(request) => {
+                begin_session_zero(headers.clone(), State(state.clone()), Json(request)).await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "session_zero.join" => {
+            let token =
+                string_field(&payload, "invite_token").or_else(|| string_field(&payload, "token"));
+            let request = decode_payload::<JoinSessionZeroRequest>(&payload);
+            match (token, request) {
+                (Some(token), Ok(request)) => {
+                    join_session_zero(
+                        Path(token),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(request),
+                    )
+                    .await
+                }
+                (None, _) => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!("invite_token is required"),
+                    );
+                }
+                (_, Err(error)) => return invalid_eve_payload(&invocation, error),
+            }
+        }
+        "session_zero.invites.create" => match decode_payload::<SessionZeroInviteRequest>(&payload)
+        {
+            Ok(request) => {
+                create_session_zero_invites(
+                    Path(session_id.unwrap()),
+                    headers.clone(),
+                    State(state.clone()),
+                    Json(request),
+                )
+                .await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "session_zero.message.send" => {
+            match decode_payload::<SessionZeroMessageRequest>(&payload) {
+                Ok(request) => {
+                    post_session_zero_message(
+                        Path(session_id.unwrap()),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(request),
+                    )
+                    .await
+                }
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            }
+        }
+        "session_zero.boundary.set" => match decode_payload::<SessionZeroBoundaryRequest>(&payload)
+        {
+            Ok(request) => {
+                set_session_zero_boundary(
+                    Path(session_id.unwrap()),
+                    headers.clone(),
+                    State(state.clone()),
+                    Json(request),
+                )
+                .await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "session_zero.boundary.remove" => {
+            let boundary_id = string_field(&payload, "target");
+            let request = decode_payload::<SessionZeroRevisionRequest>(&payload);
+            match (boundary_id, request) {
+                (Some(id), Ok(request)) => {
+                    remove_session_zero_boundary(
+                        Path((session_id.unwrap(), id)),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(request),
+                    )
+                    .await
+                }
+                (None, _) => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!("boundary target is required"),
+                    );
+                }
+                (_, Err(error)) => return invalid_eve_payload(&invocation, error),
+            }
+        }
+        "session_zero.leave" => match decode_payload::<SessionZeroRevisionRequest>(&payload) {
+            Ok(request) => {
+                leave_session_zero(
+                    Path(session_id.unwrap()),
+                    headers.clone(),
+                    State(state.clone()),
+                    Json(request),
+                )
+                .await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "session_zero.member.remove" => {
+            let target = string_field(&payload, "target");
+            let revision = u64_field(&payload, "expected_revision");
+            match (target, revision) {
+                (Some(member_id), Some(expected_revision)) => {
+                    remove_session_zero_member(
+                        Path(session_id.unwrap()),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(SessionZeroMemberRequest {
+                            expected_revision,
+                            member_id,
+                        }),
+                    )
+                    .await
+                }
+                _ => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!("target and expected_revision are required"),
+                    );
+                }
+            }
+        }
+        "session_zero.decision.resolve" => {
+            match decode_payload::<SessionZeroDecisionRequest>(&payload) {
+                Ok(request) => {
+                    resolve_session_zero_decision(
+                        Path(session_id.unwrap()),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(request),
+                    )
+                    .await
+                }
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            }
+        }
+        "session_zero.roster.lock" => {
+            match decode_payload::<SessionZeroRevisionRequest>(&payload) {
+                Ok(request) => {
+                    lock_session_zero_roster(
+                        Path(session_id.unwrap()),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(request),
+                    )
+                    .await
+                }
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            }
+        }
+        "session_zero.compile" => match decode_payload::<SessionZeroRevisionRequest>(&payload) {
+            Ok(request) => {
+                compile_session_zero(
+                    Path(session_id.unwrap()),
+                    headers.clone(),
+                    State(state.clone()),
+                    Json(request),
+                )
+                .await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "session_zero.approve" => match decode_payload::<SessionZeroRevisionRequest>(&payload) {
+            Ok(request) => {
+                approve_session_zero(
+                    Path(session_id.unwrap()),
+                    headers.clone(),
+                    State(state.clone()),
+                    Json(request),
+                )
+                .await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "session_zero.publish" => match decode_payload::<SessionZeroRevisionRequest>(&payload) {
+            Ok(request) => {
+                publish_session_zero(
+                    Path(session_id.unwrap()),
+                    headers.clone(),
+                    State(state.clone()),
+                    Json(request),
+                )
+                .await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "campaign.contract_review.begin" => {
+            begin_contract_review(headers.clone(), State(state.clone())).await
+        }
+        "campaign.select" => match string_field(&payload, "campaign_id")
+            .and_then(|value| uuid::Uuid::parse_str(&value).ok())
+        {
+            Some(campaign_id) => {
+                select_campaign_route(Path(campaign_id), headers.clone(), State(state.clone()))
+                    .await
+            }
+            None => {
+                return invalid_eve_payload(
+                    &invocation,
+                    anyhow::anyhow!("campaign_id is required"),
+                );
+            }
+        },
+        "world.speak" | "world.assess" | "world.attempt" | "world.wait" => {
+            let (campaign, actor_id) = match current_player_context(state, account_hash).await {
+                Ok(value) => value,
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            };
+            let world_command = match operation.as_str() {
+                "world.speak" => WorldCommand::Speak {
+                    expected_revision: required_u64!("expected_revision"),
+                    actor_id,
+                    text: required_string!("text"),
+                    intended_effect: None,
+                },
+                "world.assess" => WorldCommand::Assess {
+                    expected_revision: required_u64!("expected_revision"),
+                    intent: ActionIntent {
+                        actor_id,
+                        description: required_string!("description"),
+                        intended_effect: required_string!("intended_effect"),
+                    },
+                    proposal: None,
+                },
+                "world.attempt" => WorldCommand::Attempt {
+                    actor_id,
+                    assessment_digest: required_string!("assessment_digest"),
+                },
+                "world.wait" => WorldCommand::Wait {
+                    expected_revision: required_u64!("expected_revision"),
+                    minutes: required_u64!("minutes") as u32,
+                },
+                _ => unreachable!(),
+            };
+            let _ = campaign;
+            command(headers.clone(), State(state.clone()), Json(world_command)).await
+        }
+        "governance.time.propose" => match (
+            u64_field(&payload, "expected_revision"),
+            u64_field(&payload, "time_advance_minutes"),
+        ) {
+            (Some(expected_revision), Some(minutes)) if u32::try_from(minutes).is_ok() => {
+                propose_time_advance(
+                    headers.clone(),
+                    State(state.clone()),
+                    Json(TimeAdvanceRequest {
+                        expected_revision,
+                        minutes: minutes as u32,
+                    }),
+                )
+                .await
+            }
+            _ => {
+                return invalid_eve_payload(
+                    &invocation,
+                    anyhow::anyhow!("expected_revision and time_advance_minutes are required"),
+                );
+            }
+        },
+        "governance.time.approve" => {
+            let proposal = string_field(&payload, "proposal_id");
+            let request = decode_payload::<SessionZeroRevisionRequest>(&payload);
+            match (proposal, request) {
+                (Some(id), Ok(request)) => {
+                    approve_time_advance(
+                        Path(id),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(request),
+                    )
+                    .await
+                }
+                _ => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!("proposal_id and expected_revision are required"),
+                    );
+                }
+            }
+        }
+        "governance.travel.propose" => match decode_payload::<GroupTravelRequest>(&payload) {
+            Ok(request) => {
+                propose_group_travel(headers.clone(), State(state.clone()), Json(request)).await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "governance.travel.approve" => {
+            let proposal = string_field(&payload, "proposal_id");
+            let request = decode_payload::<SessionZeroRevisionRequest>(&payload);
+            match (proposal, request) {
+                (Some(id), Ok(request)) => {
+                    approve_group_travel(
+                        Path(id),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(request),
+                    )
+                    .await
+                }
+                _ => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!("proposal_id and expected_revision are required"),
+                    );
+                }
+            }
+        }
+        "governance.cells.propose" => match decode_payload::<CellBudgetRequest>(&payload) {
+            Ok(request) => {
+                propose_cell_budget(headers.clone(), State(state.clone()), Json(request)).await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "governance.cells.approve" => {
+            let proposal = string_field(&payload, "proposal_id");
+            let request = decode_payload::<SessionZeroRevisionRequest>(&payload);
+            match (proposal, request) {
+                (Some(id), Ok(request)) => {
+                    approve_cell_budget(
+                        Path(id),
+                        headers.clone(),
+                        State(state.clone()),
+                        Json(request),
+                    )
+                    .await
+                }
+                _ => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!("proposal_id and expected_revision are required"),
+                    );
+                }
+            }
+        }
+        "world.destination.compile" => {
+            let (campaign, actor_id) = match current_player_context(state, account_hash).await {
+                Ok(value) => value,
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            };
+            let origin_location_id = match campaign.actors.get(&actor_id) {
+                Some(actor) => actor.location_id.clone(),
+                None => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!("Assigned actor is missing."),
+                    );
+                }
+            };
+            compile_destination(
+                headers.clone(),
+                State(state.clone()),
+                Json(DestinationRequest {
+                    origin_location_id,
+                    destination: required_string!("destination"),
+                }),
+            )
+            .await
+        }
+        "world.destination.approve" => match string_field(&payload, "preview_id") {
+            Some(id) => approve_destination(Path(id), headers.clone(), State(state.clone())).await,
+            None => {
+                return invalid_eve_payload(&invocation, anyhow::anyhow!("preview_id is required"));
+            }
+        },
+        "world.gestalt.fission.compile" => {
+            match decode_payload::<GestaltFissionRequest>(&payload) {
+                Ok(request) => {
+                    compile_fission(headers.clone(), State(state.clone()), Json(request)).await
+                }
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            }
+        }
+        "world.gestalt.fission.approve" => match string_field(&payload, "preview_id") {
+            Some(id) => approve_fission(Path(id), headers.clone(), State(state.clone())).await,
+            None => {
+                return invalid_eve_payload(&invocation, anyhow::anyhow!("preview_id is required"));
+            }
+        },
+        _ => {
+            return Json(eve_result(
+                &invocation,
+                "denied",
+                format!("Unknown Eve operation {operation}."),
+                None,
+                None,
+                None,
+            ))
+            .into_response();
+        }
+    };
+    kernel_response_to_eve(invocation, response).await
+}
+
+fn captured_payload(payload: &serde_json::Value) -> serde_json::Value {
+    let mut captured = payload.as_object().cloned().unwrap_or_default();
+    if let Some(serde_json::Value::Object(bindings)) = captured.remove("bindings") {
+        for (name, value) in bindings {
+            captured.insert(name, value);
+        }
+    }
+    serde_json::Value::Object(captured)
+}
+
+fn decode_payload<T: serde::de::DeserializeOwned>(
+    payload: &serde_json::Value,
+) -> anyhow::Result<T> {
+    serde_json::from_value(payload.clone()).map_err(Into::into)
+}
+
+fn string_field(payload: &serde_json::Value, name: &str) -> Option<String> {
+    payload
+        .get(name)
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_owned)
+}
+
+fn u64_field(payload: &serde_json::Value, name: &str) -> Option<u64> {
+    payload.get(name).and_then(serde_json::Value::as_u64)
+}
+
+fn invalid_eve_payload(invocation: &EveCommandInvocation, error: anyhow::Error) -> Response {
+    Json(eve_result(
+        invocation,
+        "denied",
+        format!("Invalid operation payload: {error}"),
+        None,
+        None,
+        None,
+    ))
+    .into_response()
+}
+
+async fn current_player_context(
+    state: &AppState,
+    account_hash: &str,
+) -> anyhow::Result<(Campaign, String)> {
+    let runtime = session_runtime(state, account_hash)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("No campaign is selected."))?;
+    let campaign = load_campaign(&runtime.store)?;
+    let member = campaign_member_for_account(&runtime.store, &campaign, account_hash)?;
+    Ok((campaign, member.actor_id))
+}
+
+async fn kernel_response_to_eve(invocation: EveCommandInvocation, response: Response) -> Response {
+    let status = response.status();
+    let bytes = match axum::body::to_bytes(response.into_body(), 2 * 1024 * 1024).await {
+        Ok(value) => value,
+        Err(error) => {
+            return Json(eve_result(
+                &invocation,
+                "denied",
+                error.to_string(),
+                None,
+                None,
+                None,
+            ))
+            .into_response();
+        }
+    };
+    let value = serde_json::from_slice::<serde_json::Value>(&bytes).ok();
+    let fallback = String::from_utf8_lossy(&bytes).trim().to_owned();
+    let message = value
+        .as_ref()
+        .and_then(|value| value.get("error").and_then(serde_json::Value::as_str))
+        .map(str::to_owned)
+        .or_else(|| (!fallback.is_empty() && value.is_none()).then_some(fallback))
+        .unwrap_or_else(|| {
+            if status.is_success() {
+                "Ghostlight committed the operation.".into()
+            } else {
+                format!("Ghostlight refused the operation ({status}).")
+            }
+        });
+    let accepted = status.is_success();
+    let transient = if accepted {
+        value.as_ref().and_then(|value| {
+            transient_result_projection(
+                &invocation.operation.operation_id,
+                value,
+                invocation.operation.route_hint.source_version.unwrap_or(0),
+            )
+        })
+    } else {
+        None
+    };
+    let clear = accepted.then(|| {
+        invocation
+            .payload
+            .get("bindings")
+            .and_then(serde_json::Value::as_object)
+            .map(|values| values.keys().cloned().collect::<Vec<_>>())
+            .unwrap_or_default()
+    });
+    Json(eve_result(
+        &invocation,
+        if accepted { "accepted" } else { "denied" },
+        message,
+        transient,
+        None,
+        clear,
+    ))
+    .into_response()
+}
+
+fn transient_result_projection(
+    operation: &str,
+    value: &serde_json::Value,
+    source_version: u64,
+) -> Option<serde_json::Value> {
+    let mut children = Vec::new();
+    if operation == "session_zero.invites.create" {
+        let links = value
+            .get("invite_tokens")?
+            .as_array()?
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .map(|token| format!("/ghostlight/?invite={token}"))
+            .collect::<Vec<_>>();
+        let text = (!links.is_empty())
+            .then(|| format!("Single-use invitations:\n{}", links.join("\n")))?;
+        children.push(serde_json::json!({"id":"ghostlight.command-result.text","kind":"text","props":{"value":text},"children":[]}));
+    } else if operation == "world.assess" {
+        let assessment = value.get("assessment")?;
+        let digest = assessment.get("digest")?.as_str()?;
+        let admissible = assessment
+            .get("admissible")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false);
+        let summary = format!(
+            "{}\nDC {} · modifier {} · ceiling {}\nSuccess: {}\nMixed: {}\nFailure: {}{}",
+            if admissible {
+                "The attempt is admissible."
+            } else {
+                "The attempt is not currently admissible."
+            },
+            assessment
+                .get("dc")
+                .and_then(serde_json::Value::as_u64)
+                .unwrap_or(0),
+            assessment
+                .get("modifier_total")
+                .and_then(serde_json::Value::as_i64)
+                .unwrap_or(0),
+            assessment
+                .get("effect_ceiling")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("bounded"),
+            assessment
+                .get("success_stake")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or(""),
+            assessment
+                .get("mixed_stake")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or(""),
+            assessment
+                .get("failure_stake")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or(""),
+            assessment
+                .get("bargains")
+                .and_then(serde_json::Value::as_array)
+                .filter(|values| !values.is_empty())
+                .map(|values| format!(
+                    "\nBargains: {}",
+                    values
+                        .iter()
+                        .filter_map(serde_json::Value::as_str)
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                ))
+                .unwrap_or_default(),
+        );
+        children.push(serde_json::json!({"id":"ghostlight.assessment.summary","kind":"text","props":{"value":summary},"children":[]}));
+        if admissible {
+            children.push(eve_button(
+                "ghostlight.assessment.confirm",
+                "Roll the d20",
+                "world.attempt",
+                serde_json::json!({"assessment_digest":digest}),
+                &[],
+            ));
+        }
+    } else if matches!(
+        operation,
+        "world.destination.compile" | "world.gestalt.fission.compile"
+    ) {
+        children.push(serde_json::json!({"id":"ghostlight.command-result.text","kind":"text","props":{"value":serde_json::to_string_pretty(value).ok()?},"children":[]}));
+        let preview_id = value.get("preview_id")?.as_str()?;
+        let approval_operation = if operation == "world.destination.compile" {
+            "world.destination.approve"
+        } else {
+            "world.gestalt.fission.approve"
+        };
+        children.push(eve_button(
+            "ghostlight.preview.approve",
+            "Approve preview",
+            approval_operation,
+            serde_json::json!({"preview_id":preview_id}),
+            &[],
+        ));
+    } else {
+        return None;
+    }
+    Some(serde_json::json!({
+        "type":"surface-state",
+        "schema":"gamecult.eve.surface.v1",
+        "providerId":EVE_PROVIDER_ID,
+        "providerKind":"narrative.simulation.command-result",
+        "title":"Ghostlight result",
+        "version":source_version,
+        "updatedAtUtc":Utc::now().to_rfc3339(),
+        "surface":{"id":"ghostlight.command-result","root":{"id":"ghostlight.command-result.root","kind":"card","props":{"title":"Result"},"children":children}},
+        "commands":[
+            eve_command_descriptor("world.attempt","ghostlight.player_action_attempt.v1",&[],"WorldKernel"),
+            eve_command_descriptor("world.destination.approve","ghostlight.destination_approval.v1",&[],"WorldKernel"),
+            eve_command_descriptor("world.gestalt.fission.approve","ghostlight.gestalt_fission_approval.v1",&[],"WorldKernel")
+        ]
+    }))
 }
 
 async fn health(State(state): State<AppState>) -> Response {
@@ -1035,24 +2042,6 @@ async fn populate_role_suggestions(
     }
     schedule_mesh_refresh(&state);
     Ok(())
-}
-
-async fn session_zero_surface_route(
-    Path(session_id): Path<uuid::Uuid>,
-    headers: HeaderMap,
-    State(state): State<AppState>,
-) -> Response {
-    let account_hash = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    match state.session_zeros.snapshot(session_id).await {
-        Ok(snapshot) => match session_zero_surface(&snapshot, &account_hash) {
-            Ok(surface) => Json(surface).into_response(),
-            Err(error) => (StatusCode::FORBIDDEN, error.to_string()).into_response(),
-        },
-        Err(error) => (StatusCode::NOT_FOUND, error.to_string()).into_response(),
-    }
 }
 
 async fn create_session_zero_invites(
@@ -1941,7 +2930,11 @@ async fn session_zero_simple_command(
     }
 }
 
-async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response {
+async fn surface(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    invite: Option<&str>,
+) -> Response {
     let session = match authenticated_session(&headers, &state).await {
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
@@ -1973,12 +2966,26 @@ async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response 
         Ok(Some(value)) => value,
         Ok(None) => {
             return match state.session_zeros.session_for_account(&session).await {
-                Ok(Some(id)) => match state.session_zeros.snapshot(id).await.and_then(|snapshot| session_zero_surface(&snapshot, &session)) {
+                Ok(Some(id)) => match state
+                    .session_zeros
+                    .snapshot(id)
+                    .await
+                    .and_then(|snapshot| session_zero_surface(&snapshot, &session))
+                {
                     Ok(surface) => Json(surface).into_response(),
-                    Err(error) => (StatusCode::INTERNAL_SERVER_ERROR,error.to_string()).into_response(),
+                    Err(error) => {
+                        (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                    }
                 },
-                Ok(None) => Json(serde_json::json!({"schema":"gamecult.eve.surface.v1","surface_id":"ghostlight.session-zero-entry","version":0,"title":"Begin Session Zero","layout":{"kind":"stack","children":[]}})).into_response(),
-                Err(error) => (StatusCode::INTERNAL_SERVER_ERROR,error.to_string()).into_response(),
+                Ok(None) => match session_zero_entry_surface(&state, &session, invite).await {
+                    Ok(surface) => Json(surface).into_response(),
+                    Err(error) => {
+                        (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                    }
+                },
+                Err(error) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                }
             };
         }
         Err(error) => {
@@ -2064,11 +3071,132 @@ async fn surface(headers: HeaderMap, State(state): State<AppState>) -> Response 
                     "travel_proposals":travel_proposals,
                     "cell_budget_proposals":cell_budget_proposals,
                 });
+                if let Some(children) = projected
+                    .pointer_mut("/surface/root/children")
+                    .and_then(serde_json::Value::as_array_mut)
+                {
+                    for proposal in &time_proposals {
+                        children.push(eve_button(
+                            &format!("governance.time.approve.{}", proposal.id),
+                            &format!("Approve time advance: {} minutes", proposal.minutes),
+                            "governance.time.approve",
+                            serde_json::json!({"expected_revision":campaign.revision,"proposal_id":proposal.id}),
+                            &[],
+                        ));
+                    }
+                    for proposal in &travel_proposals {
+                        children.push(eve_button(
+                            &format!("governance.travel.approve.{}", proposal.id),
+                            "Approve group travel",
+                            "governance.travel.approve",
+                            serde_json::json!({"expected_revision":campaign.revision,"proposal_id":proposal.id}),
+                            &[],
+                        ));
+                    }
+                    for proposal in &cell_budget_proposals {
+                        children.push(eve_button(
+                            &format!("governance.cells.approve.{}", proposal.id),
+                            &format!("Approve Persona-cell budget {}", proposal.active_cell_budget),
+                            "governance.cells.approve",
+                            serde_json::json!({"expected_revision":campaign.revision,"proposal_id":proposal.id}),
+                            &[],
+                        ));
+                    }
+                }
             }
             Json(projected).into_response()
         }
         Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
     }
+}
+
+async fn session_zero_entry_surface(
+    state: &AppState,
+    account_hash: &str,
+    invite: Option<&str>,
+) -> anyhow::Result<serde_json::Value> {
+    let mut campaign_choices = Vec::new();
+    for id in state.registry.list().await {
+        let runtime = state.registry.runtime(id).await?;
+        let campaign = load_campaign(&runtime.store)?;
+        if campaign_member_for_account(&runtime.store, &campaign, account_hash).is_ok() {
+            campaign_choices.push(serde_json::json!({
+                "id":format!("campaign-choice:{id}"),"kind":"control.button",
+                "props":{"label":format!("Continue {}",campaign.name),"command":"campaign.select","action":{"command":"campaign.select","campaign_id":id}},"children":[]
+            }));
+        }
+    }
+    let mut children = vec![
+        serde_json::json!({"id":"entry.intro","kind":"card","props":{"title":"Begin Session Zero"},"children":[
+            {"id":"entry.intro.text","kind":"text","props":{"value":"Build the campaign with the DM before the world becomes canonical. Tone, boundaries, characters, evidence gaps, and opening pressure remain negotiable until everyone approves."},"children":[]}
+        ]}),
+        serde_json::json!({"id":"entry.name","kind":"control.input.text","props":{"label":"Draft name","placeholder":"The campaign you are about to regret caring about"},"stateBindings":[eve_local_draft("name","string")],"children":[]}),
+        serde_json::json!({"id":"entry.vault","kind":"control.input.text","props":{"label":"Lore Vault","value":"Aetheria","placeholder":"Aetheria"},"stateBindings":[eve_local_draft("vault_provider","string")],"children":[]}),
+        serde_json::json!({"id":"entry.display-name","kind":"control.input.text","props":{"label":"Your display name"},"stateBindings":[eve_local_draft("display_name","string")],"children":[]}),
+        eve_button(
+            "entry.begin",
+            "Begin Session Zero",
+            "session_zero.begin",
+            serde_json::json!({}),
+            &["name", "vault_provider", "display_name"],
+        ),
+        serde_json::json!({"id":"entry.join-heading","kind":"text.title","props":{"value":"Join a table"},"children":[]}),
+        serde_json::json!({"id":"entry.invite","kind":"control.input.text","props":{"label":"Invitation token","value":invite.unwrap_or_default()},"stateBindings":[eve_local_draft("invite_token","string")],"children":[]}),
+        serde_json::json!({"id":"entry.join-name","kind":"control.input.text","props":{"label":"Your display name"},"stateBindings":[eve_local_draft("display_name","string")],"children":[]}),
+        eve_button(
+            "entry.join",
+            "Join Session Zero",
+            "session_zero.join",
+            serde_json::json!({}),
+            &["invite_token", "display_name"],
+        ),
+    ];
+    if !campaign_choices.is_empty() {
+        children.push(serde_json::json!({"id":"entry.campaigns","kind":"card","props":{"title":"Your campaigns"},"children":campaign_choices}));
+    }
+    children.push(eve_button(
+        "entry.logout",
+        "Sign out",
+        "app.auth.logout",
+        serde_json::json!({}),
+        &[],
+    ));
+    Ok(serde_json::json!({
+        "type":"surface-state","schema":"gamecult.eve.surface.v1","providerId":EVE_PROVIDER_ID,"providerKind":"narrative.session-zero-entry",
+        "title":"Ghostlight Dungeon","version":0,"updatedAtUtc":Utc::now().to_rfc3339(),
+        "surface":{"id":EVE_SURFACE_ID,"root":{"id":"entry.root","kind":"surface","props":{},"children":children},"styles":{"tokens":{"colorBackground":"#0c1110","colorPanel":"#17201d","colorText":"#e8e1cf","colorMuted":"#9aa69f","colorAccent":"#d49b58"}}},
+        "commands":[
+            eve_command_descriptor("session_zero.begin","ghostlight.session_zero_begin.v1", &["name","vault_provider","display_name"], "SessionZeroKernel"),
+            eve_command_descriptor("session_zero.join","ghostlight.session_zero_join.v1", &["invite_token","display_name"], "SessionZeroKernel"),
+            eve_command_descriptor("campaign.select","ghostlight.campaign_select.v1", &[], "campaign_membership.v1"),
+            eve_command_descriptor("app.auth.logout","ghostlight.app_logout.v1", &[], "ghostlight.app_session.v1")
+        ]
+    }))
+}
+
+fn eve_local_draft(name: &str, value_kind: &str) -> serde_json::Value {
+    serde_json::json!({"targetProp":"value","pointerId":format!("draft:{name}"),"sourceId":"renderer","schemaId":"gamecult.eve.local_draft.v1","routeKind":"local","bindingName":name,"documentId":"ghostlight.play.drafts","fieldPath":name,"valueKind":value_kind,"accessMode":"local-draft","authority":"renderer-ephemeral"})
+}
+
+fn eve_button(
+    id: &str,
+    label: &str,
+    command: &str,
+    action: serde_json::Value,
+    bindings: &[&str],
+) -> serde_json::Value {
+    let mut action = action.as_object().cloned().unwrap_or_default();
+    action.insert("command".into(), serde_json::Value::String(command.into()));
+    serde_json::json!({"id":id,"kind":"control.button","props":{"label":label,"command":command,"action":action,"captureBindings":bindings},"children":[]})
+}
+
+fn eve_command_descriptor(
+    command: &str,
+    payload_schema: &str,
+    bindings: &[&str],
+    authority: &str,
+) -> serde_json::Value {
+    serde_json::json!({"schema":"gamecult.eve.command.v1","command":command,"payloadSchema":payload_schema,"captureBindings":bindings,"transport":"https-json","authority":authority})
 }
 
 async fn revision_events(headers: HeaderMap, State(state): State<AppState>) -> Response {
@@ -3251,15 +4379,6 @@ fn gestalt_fission_preview_projection(preview: &GestaltFissionPreview) -> serde_
     })
 }
 
-fn campaign_branch_projection(kind: &str, campaign: &Campaign) -> serde_json::Value {
-    serde_json::json!({
-        "kind":kind,
-        "campaign_id":campaign.id,
-        "name":campaign.name,
-        "revision":campaign.revision,
-    })
-}
-
 fn player_command_projection(
     result: &CommandResult,
     narration: Option<NarrationProjection>,
@@ -3484,66 +4603,27 @@ fn schedule_mesh_refresh(state: &AppState) {
     });
 }
 
-#[derive(Deserialize)]
-struct CampaignBranchRequest {
-    name: String,
-}
-
-async fn campaigns(headers: HeaderMap, State(state): State<AppState>) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let ids = state
-        .auth
-        .lock()
-        .await
-        .state
-        .session_campaign_ids
-        .get(&session)
-        .cloned()
-        .unwrap_or_default();
-    let mut values = Vec::new();
-    let selected = state
-        .auth
-        .lock()
-        .await
-        .state
-        .session_campaigns
-        .get(&session)
-        .copied();
-    for id in ids {
-        if let Ok(runtime) = state.registry.runtime(id).await {
-            if let Ok(campaign) = load_campaign(&runtime.store) {
-                values.push(serde_json::json!({"id":id,"name":campaign.name,"revision":campaign.revision,"selected":selected==Some(id)}));
-            }
-        }
-    }
-    Json(serde_json::json!({"schema":"ghostlight.campaign_list.v1","campaigns":values}))
-        .into_response()
-}
-
 async fn select_campaign_route(
     Path(campaign_id): Path<uuid::Uuid>,
     headers: HeaderMap,
     State(state): State<AppState>,
 ) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
+    let account_hash = match authenticated_session(&headers, &state).await {
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    let owned = state
-        .auth
-        .lock()
-        .await
-        .state
-        .session_campaign_ids
-        .get(&session)
-        .is_some_and(|ids| ids.contains(&campaign_id));
+    let owned = match state.registry.runtime(campaign_id).await {
+        Ok(runtime) => load_campaign(&runtime.store)
+            .and_then(|campaign| {
+                campaign_member_for_account(&runtime.store, &campaign, &account_hash)
+            })
+            .is_ok(),
+        Err(_) => false,
+    };
     if !owned {
         return StatusCode::FORBIDDEN.into_response();
     }
-    match select_campaign(&state, &session, campaign_id).await {
+    match select_campaign(&state, &account_hash, campaign_id).await {
         Ok(()) => StatusCode::NO_CONTENT.into_response(),
         Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
     }
@@ -3668,328 +4748,6 @@ async fn begin_contract_review(headers: HeaderMap, State(state): State<AppState>
         },
         Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
     }
-}
-
-async fn fork_campaign(
-    headers: HeaderMap,
-    State(state): State<AppState>,
-    Json(request): Json<CampaignBranchRequest>,
-) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let source = match state
-        .auth
-        .lock()
-        .await
-        .state
-        .session_campaigns
-        .get(&session)
-        .copied()
-    {
-        Some(value) => value,
-        None => return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response(),
-    };
-    let source_runtime = match state.registry.runtime(source).await {
-        Ok(runtime) => runtime,
-        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
-    };
-    if campaign_is_group(&source_runtime.store, source) {
-        return (
-            StatusCode::CONFLICT,
-            "fork is disabled for co-op campaigns until departure and ownership governance exist",
-        )
-            .into_response();
-    }
-    match state.registry.fork(source, request.name).await {
-        Ok(runtime) => {
-            let campaign = match load_campaign(&runtime.store) {
-                Ok(value) => value,
-                Err(error) => {
-                    return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
-                }
-            };
-            match select_campaign(&state, &session, campaign.id).await {
-                Ok(()) => {
-                    if let Err(error) = refresh_mesh(&state).await {
-                        tracing::warn!(%error, "campaign fork CultMesh publication failed");
-                    }
-                    Json(campaign_branch_projection("forked", &campaign)).into_response()
-                }
-                Err(error) => {
-                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
-                }
-            }
-        }
-        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
-    }
-}
-
-async fn reset_campaign(
-    headers: HeaderMap,
-    State(state): State<AppState>,
-    Json(request): Json<CampaignBranchRequest>,
-) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let source = match state
-        .auth
-        .lock()
-        .await
-        .state
-        .session_campaigns
-        .get(&session)
-        .copied()
-    {
-        Some(value) => value,
-        None => return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response(),
-    };
-    let source_runtime = match state.registry.runtime(source).await {
-        Ok(runtime) => runtime,
-        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
-    };
-    if campaign_is_group(&source_runtime.store, source) {
-        return (
-            StatusCode::CONFLICT,
-            "reset is disabled for co-op campaigns until unanimous lifecycle governance exists",
-        )
-            .into_response();
-    }
-    match state.registry.reset(source, request.name).await {
-        Ok(runtime) => {
-            let campaign = match load_campaign(&runtime.store) {
-                Ok(value) => value,
-                Err(error) => {
-                    return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
-                }
-            };
-            match select_campaign(&state, &session, campaign.id).await {
-                Ok(()) => {
-                    if let Err(error) = refresh_mesh(&state).await {
-                        tracing::warn!(%error, "campaign reset CultMesh publication failed");
-                    }
-                    Json(campaign_branch_projection("reset", &campaign)).into_response()
-                }
-                Err(error) => {
-                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
-                }
-            }
-        }
-        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
-    }
-}
-
-async fn export_campaign(headers: HeaderMap, State(state): State<AppState>) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let campaign_id = match state
-        .auth
-        .lock()
-        .await
-        .state
-        .session_campaigns
-        .get(&session)
-        .copied()
-    {
-        Some(value) => value,
-        None => return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response(),
-    };
-    let runtime = match state.registry.runtime(campaign_id).await {
-        Ok(runtime) => runtime,
-        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
-    };
-    if campaign_is_group(&runtime.store, campaign_id) {
-        return (
-            StatusCode::CONFLICT,
-            "export is disabled for co-op campaigns until private-state consent governance exists",
-        )
-            .into_response();
-    }
-    match state
-        .registry
-        .export(campaign_id, state.runtime_root.join("exports"))
-        .await
-    {
-        Ok(path) => match std::fs::read(&path) {
-            Ok(bytes) => {
-                let filename = path
-                    .file_name()
-                    .and_then(|value| value.to_str())
-                    .unwrap_or("campaign.cc");
-                let mut response = Response::new(axum::body::Body::from(bytes));
-                response.headers_mut().insert(
-                    header::CONTENT_TYPE,
-                    HeaderValue::from_static("application/octet-stream"),
-                );
-                response.headers_mut().insert(
-                    header::CONTENT_DISPOSITION,
-                    HeaderValue::from_str(&format!("attachment; filename=\"{filename}\"")).unwrap(),
-                );
-                response
-            }
-            Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
-        },
-        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
-    }
-}
-
-fn campaign_is_group(store: &CampaignStore, campaign_id: uuid::Uuid) -> bool {
-    store
-        .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
-            "campaign_membership.v1",
-            &campaign_id.to_string(),
-        )
-        .ok()
-        .flatten()
-        .is_some_and(|(_, membership)| {
-            membership
-                .members
-                .values()
-                .filter(|member| member.active)
-                .count()
-                > 1
-        })
-}
-
-async fn export_canon_candidates_markdown(
-    headers: HeaderMap,
-    State(state): State<AppState>,
-) -> Response {
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let runtime = match session_runtime(&state, &session).await {
-        Ok(Some(value)) => value,
-        Ok(None) => {
-            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
-        }
-        Err(error) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
-        }
-    };
-    let campaign = match load_campaign(&runtime.store) {
-        Ok(value) => value,
-        Err(error) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
-        }
-    };
-    let mut markdown = format!(
-        "# Canon candidates — {}\n\nCampaign: `{}`  \nRevision: `{}`\n\n",
-        campaign.name, campaign.id, campaign.revision
-    );
-    if campaign.canon_candidates.is_empty() {
-        markdown.push_str("No canon candidates have been recorded.\n");
-    }
-    for candidate in campaign.canon_candidates.values() {
-        markdown.push_str(&format!(
-            "## {}\n\n- Status: `{}`\n- Gap: {}\n- Proposed wording: {}\n- Evidence receipts: {}\n- Affected Vault sources: {}\n- Conflicts: {}\n\n",
-            candidate.id,
-            candidate.status,
-            candidate.gap,
-            candidate.proposed_wording,
-            candidate.evidence_receipt_ids.join(", "),
-            candidate.affected_vault_sources.join(", "),
-            candidate.conflicts.join("; "),
-        ));
-    }
-    let mut response = Response::new(axum::body::Body::from(markdown));
-    response.headers_mut().insert(
-        header::CONTENT_TYPE,
-        HeaderValue::from_static("text/markdown; charset=utf-8"),
-    );
-    response.headers_mut().insert(
-        header::CONTENT_DISPOSITION,
-        HeaderValue::from_static("attachment; filename=canon-candidates.md"),
-    );
-    response
-}
-
-async fn set_provider_parallelism(
-    ConnectInfo(peer): ConnectInfo<SocketAddr>,
-    headers: HeaderMap,
-    State(state): State<AppState>,
-    Json(request): Json<ProviderParallelismRequest>,
-) -> Response {
-    if !operator_peer_allowed(peer) {
-        return StatusCode::FORBIDDEN.into_response();
-    }
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let runtime = match session_runtime(&state, &session).await {
-        Ok(Some(value)) => value,
-        Ok(None) => {
-            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
-        }
-        Err(error) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
-        }
-    };
-    let campaign = match load_campaign(&runtime.store) {
-        Ok(value) => value,
-        Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
-    };
-    match runtime
-        .kernel
-        .command(WorldCommand::SetProviderParallelism {
-            expected_revision: campaign.revision,
-            expected_provider_configuration_epoch: request.expected_provider_configuration_epoch,
-            provider_parallelism: request.provider_parallelism,
-        })
-        .await
-    {
-        Ok(value) => {
-            if let Err(error) = refresh_mesh(&state).await {
-                tracing::warn!(%error, "provider concurrency CultMesh publication failed");
-            }
-            Json(value).into_response()
-        }
-        Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
-    }
-}
-
-async fn operator_inspector(
-    ConnectInfo(peer): ConnectInfo<SocketAddr>,
-    headers: HeaderMap,
-    State(state): State<AppState>,
-) -> Response {
-    if !operator_peer_allowed(peer) {
-        return StatusCode::FORBIDDEN.into_response();
-    }
-    let session = match authenticated_session(&headers, &state).await {
-        Some(value) => value,
-        None => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let runtime = match session_runtime(&state, &session).await {
-        Ok(Some(value)) => value,
-        Ok(None) => {
-            return (StatusCode::NOT_FOUND, "session has no selected campaign").into_response();
-        }
-        Err(error) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
-        }
-    };
-    let campaign = match load_campaign(&runtime.store) {
-        Ok(value) => value,
-        Err(error) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
-        }
-    };
-    match state.mesh.operator_surface(campaign.id) {
-        Ok(surface) => Json(surface).into_response(),
-        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
-    }
-}
-
-fn operator_peer_allowed(peer: SocketAddr) -> bool {
-    peer.ip().is_loopback()
 }
 
 async fn process_due_ticks(
@@ -4141,12 +4899,101 @@ async fn await_background_work<T>(
     }
 }
 
-async fn authorized(headers: &HeaderMap, state: &AppState) -> bool {
-    authenticated_session(headers, state).await.is_some()
+async fn app_session_refresh_loop(state: AppState) {
+    let mut pulse = tokio::time::interval(std::time::Duration::from_secs(60));
+    pulse.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        pulse.tick().await;
+        if let Err(error) = refresh_due_app_sessions(&state).await {
+            tracing::warn!(%error, "scheduled Heimdall session refresh pass failed; unexpired local claims remain authoritative");
+        }
+    }
+}
+
+async fn refresh_due_app_sessions(state: &AppState) -> anyhow::Result<()> {
+    let candidates = state
+        .auth
+        .lock()
+        .await
+        .sessions_due_for_refresh(Utc::now(), chrono::Duration::minutes(5))?;
+    for candidate in candidates {
+        let idempotency_key = format!(
+            "refresh:{}:{}",
+            candidate.heimdall_session_id, candidate.access_revision,
+        );
+        let completion = match state
+            .heimdall
+            .refresh(&candidate.refresh_claim, &idempotency_key)
+            .await
+        {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::warn!(%error, session_id=%candidate.heimdall_session_id, "Heimdall refresh transport unavailable");
+                continue;
+            }
+        };
+        if completion.status == "denied" {
+            state
+                .auth
+                .lock()
+                .await
+                .revoke_cookie_hash(&candidate.cookie_hash)?;
+            continue;
+        }
+        let claims = match state.heimdall.verify_completion(&completion).await {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::warn!(%error, session_id=%candidate.heimdall_session_id, "Heimdall refresh receipt failed verification");
+                continue;
+            }
+        };
+        if claims.sid != candidate.heimdall_session_id
+            || secret_hash(&format!("heimdall-account:{}", claims.account_id))
+                != candidate.account_subject_hash
+        {
+            tracing::warn!(session_id=%candidate.heimdall_session_id, "Heimdall refresh changed local session custody");
+            continue;
+        }
+        let session = completion
+            .session
+            .as_ref()
+            .context("Heimdall refresh omitted session summary")?;
+        let refresh = completion
+            .refresh
+            .as_ref()
+            .context("Heimdall refresh omitted refresh expiry")?;
+        let refresh_claim = completion
+            .refresh_token
+            .as_deref()
+            .context("Heimdall refresh omitted rotated refresh claim")?;
+        state.auth.lock().await.apply_refresh(
+            &candidate.cookie_hash,
+            RefreshedSession {
+                expected_access_revision: candidate.access_revision,
+                access_revision: claims.access_revision,
+                capabilities: claims.capabilities,
+                access_expires_at: DateTime::from_timestamp(claims.exp as i64, 0)
+                    .context("Heimdall refresh expiry is invalid")?,
+                refresh_expires_at: refresh.expires_at.parse()?,
+                refresh_claim,
+            },
+        )?;
+        debug_assert_eq!(session.session_id, candidate.heimdall_session_id);
+    }
+    Ok(())
 }
 
 async fn authenticated_session(headers: &HeaderMap, state: &AppState) -> Option<String> {
-    let session = headers
+    let raw_cookie = cookie_value(headers)?;
+    state
+        .auth
+        .lock()
+        .await
+        .account_for_cookie(raw_cookie, Utc::now())
+}
+
+fn cookie_value(headers: &HeaderMap) -> Option<&str> {
+    headers
         .get(header::COOKIE)
         .and_then(|v| v.to_str().ok())
         .and_then(|cookies| {
@@ -4154,70 +5001,38 @@ async fn authenticated_session(headers: &HeaderMap, state: &AppState) -> Option<
                 .split(';')
                 .map(str::trim)
                 .find_map(|cookie| cookie.strip_prefix("ghostlight_session="))
-        });
-    let hash = secret_hash(session?);
-    let auth = state.auth.lock().await;
-    if auth.state.session_hashes.contains(&hash) {
-        return Some(hash);
-    }
-    auth.state.session_aliases.get(&hash).cloned()
+        })
 }
 
 async fn session_runtime(
     state: &AppState,
-    session_hash: &str,
+    account_hash: &str,
 ) -> anyhow::Result<Option<CampaignRuntime>> {
-    let campaign_id = state
-        .auth
-        .lock()
-        .await
-        .state
-        .session_campaigns
-        .get(session_hash)
-        .copied();
+    let campaign_id = state.auth.lock().await.selected_campaign(account_hash);
     match campaign_id {
-        Some(id) => Ok(Some(state.registry.runtime(id).await?)),
+        Some(id) => {
+            let runtime = state.registry.runtime(id).await?;
+            let campaign = load_campaign(&runtime.store)?;
+            campaign_member_for_account(&runtime.store, &campaign, account_hash)?;
+            Ok(Some(runtime))
+        }
         None => Ok(None),
     }
 }
 
 async fn select_campaign(
     state: &AppState,
-    session_hash: &str,
+    account_hash: &str,
     campaign_id: uuid::Uuid,
 ) -> anyhow::Result<()> {
-    state.registry.runtime(campaign_id).await?;
-    let mut auth = state.auth.lock().await;
-    if !auth.state.session_hashes.contains(session_hash) {
-        return Err(anyhow::anyhow!("session is no longer authorized"));
-    }
-    let selection = |current: &AuthState| {
-        let mut next_state = current.clone();
-        next_state
-            .session_campaigns
-            .insert(session_hash.to_owned(), campaign_id);
-        next_state
-            .session_campaign_ids
-            .entry(session_hash.to_owned())
-            .or_default()
-            .insert(campaign_id);
-        next_state
-    };
-    let current = auth.state.clone();
-    if auth.commit(selection(&current)).is_ok() {
-        return Ok(());
-    }
-
-    auth.reload()?;
-    if !auth.state.session_hashes.contains(session_hash) {
-        return Err(anyhow::anyhow!("session is no longer authorized"));
-    }
-    let current = auth.state.clone();
-    auth.commit(selection(&current))
-}
-
-fn secret_hash(value: &str) -> String {
-    format!("sha256:{:x}", Sha256::digest(value.as_bytes()))
+    let runtime = state.registry.runtime(campaign_id).await?;
+    let campaign = load_campaign(&runtime.store)?;
+    campaign_member_for_account(&runtime.store, &campaign, account_hash)?;
+    state
+        .auth
+        .lock()
+        .await
+        .select_campaign(account_hash, campaign_id)
 }
 
 fn load_campaign(store: &CampaignStore) -> anyhow::Result<Campaign> {
@@ -4267,7 +5082,7 @@ fn campaign_model_policy(
 
 async fn migrate_legacy_campaign_memberships(
     registry: &CampaignRegistry,
-    auth: &AuthState,
+    auth: &LegacyAuthState,
 ) -> anyhow::Result<()> {
     let mut owners = BTreeMap::<uuid::Uuid, BTreeSet<String>>::new();
     for (account_hash, campaign_id) in &auth.session_campaigns {
@@ -4489,34 +5304,15 @@ mod tests {
 
     fn empty_app_state(root: &std::path::Path) -> AppState {
         let registry = CampaignRegistry::new(root.join("campaigns")).unwrap();
-        let auth_store = CampaignStore::open(root.join("auth.cc")).unwrap();
-        let auth_state = AuthState {
-            schema: "ghostlight.auth_state.v1".into(),
-            session_hashes: BTreeSet::new(),
-            session_aliases: BTreeMap::new(),
-            session_campaigns: BTreeMap::new(),
-            session_campaign_ids: BTreeMap::new(),
-            heimdall_attempts: BTreeMap::new(),
-        };
-        let row = auth_store
-            .insert(
-                "auth_state.v1",
-                "ghostlight.auth_state.v1",
-                "primary",
-                &auth_state,
-            )
-            .unwrap();
+        let wrapping_key = root.join("session-wrapping.key");
+        std::fs::write(&wrapping_key, [7_u8; 32]).unwrap();
+        let auth = AppSessionOwner::open(root.join("app-sessions.cc"), &wrapping_key).unwrap();
         AppState {
             registry,
             session_zeros: SessionZeroRegistry::new(root.join("session-zero")).unwrap(),
             session_zero_director: None,
             entitlements: Arc::new(FixtureEntitlementPort),
-            runtime_root: root.into(),
-            auth: Arc::new(Mutex::new(AuthOwner {
-                store: auth_store,
-                row,
-                state: auth_state,
-            })),
+            auth: Arc::new(Mutex::new(auth)),
             heimdall: Arc::new(HeimdallClient::fixture()),
             deepseek_status: "fixture".into(),
             compiler: None,
@@ -4531,145 +5327,73 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn api_authentication_precedes_json_extraction() {
-        let dir = tempfile::tempdir().unwrap();
-        let state = empty_app_state(dir.path());
-        let app = app_router(state, dir.path().join("web"));
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri("/api/command")
-                    .header(header::CONTENT_TYPE, "application/json")
-                    .body(Body::from("not-json"))
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
-    }
-
-    #[tokio::test]
-    async fn authenticated_api_requests_reach_json_extraction() {
-        let dir = tempfile::tempdir().unwrap();
-        let state = empty_app_state(dir.path());
-        state
+    async fn fixture_session(state: &AppState, account_id: &str) -> (String, String) {
+        let cookie = state
             .auth
             .lock()
             .await
-            .state
-            .session_hashes
-            .insert(secret_hash("valid-session"));
+            .create_session(NewSession {
+                account_id,
+                heimdall_session_id: "fixture-heimdall-session",
+                access_revision: 1,
+                capabilities: vec!["app_access".into()],
+                access_expires_at: Utc::now() + chrono::Duration::hours(1),
+                refresh_expires_at: Utc::now() + chrono::Duration::days(7),
+                refresh_claim: "fixture-refresh",
+            })
+            .unwrap();
+        let account_hash = state
+            .auth
+            .lock()
+            .await
+            .account_for_cookie(&cookie, Utc::now())
+            .unwrap();
+        (cookie, account_hash)
+    }
+
+    #[tokio::test]
+    async fn public_router_exposes_only_the_eve_product_boundary() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
         let app = app_router(state, dir.path().join("web"));
+        for retired in [
+            "/api/command",
+            "/api/session-zero",
+            "/api/auth/heimdall/start",
+        ] {
+            let response = app
+                .clone()
+                .oneshot(Request::builder().uri(retired).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        }
         let response = app
             .oneshot(
                 Request::builder()
-                    .method("POST")
-                    .uri("/api/command")
-                    .header(header::CONTENT_TYPE, "application/json")
-                    .header(header::COOKIE, "ghostlight_session=valid-session")
-                    .body(Body::from("not-json"))
+                    .uri("/api/eve/surfaces/ghostlight.play")
+                    .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
     #[tokio::test]
-    async fn heimdall_cookie_alias_resolves_to_stable_account_campaign_authority() {
+    async fn local_session_cookie_resolves_only_to_heimdall_account_subject_hash() {
         let dir = tempfile::tempdir().unwrap();
         let state = empty_app_state(dir.path());
-        let account_session = secret_hash("heimdall-account:acct-1");
-        let cookie_hash = secret_hash("browser-session");
-        {
-            let mut auth = state.auth.lock().await;
-            auth.state.session_hashes.insert(account_session.clone());
-            auth.state
-                .session_aliases
-                .insert(cookie_hash, account_session.clone());
-        }
+        let (cookie, account_hash) = fixture_session(&state, "acct-1").await;
         let mut headers = HeaderMap::new();
         headers.insert(
             header::COOKIE,
-            HeaderValue::from_static("ghostlight_session=browser-session"),
+            HeaderValue::from_str(&format!("ghostlight_session={cookie}")).unwrap(),
         );
         assert_eq!(
             authenticated_session(&headers, &state).await,
-            Some(account_session)
+            Some(account_hash)
         );
-    }
-
-    #[tokio::test]
-    async fn completed_heimdall_attempt_is_single_use_session_authority() {
-        let dir = tempfile::tempdir().unwrap();
-        let state = empty_app_state(dir.path());
-        {
-            let mut auth = state.auth.lock().await;
-            let mut next = auth.state.clone();
-            next.heimdall_attempts.insert(
-                "attempt-one".into(),
-                HeimdallAuthAttempt {
-                    expires_at_unix: unix_time_seconds() + 60,
-                    status: "succeeded".into(),
-                    account_session_hash: Some("account-authority".into()),
-                    error: None,
-                },
-            );
-            auth.commit(next).unwrap();
-        }
-
-        let router = app_router(state.clone(), dir.path().join("web"));
-        let adopted = router
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri("/api/auth/heimdall/attempt/attempt-one/adopt")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_eq!(adopted.status(), StatusCode::OK);
-        let cookie = adopted.headers()[header::SET_COOKIE].to_str().unwrap();
-        assert!(cookie.contains("HttpOnly"));
-        assert!(cookie.contains("Secure"));
-        assert!(
-            state
-                .auth
-                .lock()
-                .await
-                .state
-                .session_hashes
-                .contains("account-authority")
-        );
-
-        let replay = router
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri("/api/auth/heimdall/attempt/attempt-one/adopt")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_eq!(replay.status(), StatusCode::NOT_FOUND);
-
-        let retired_invite = router
-            .oneshot(
-                Request::builder()
-                    .uri("/invite/old-authority")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(retired_invite.status(), StatusCode::OK);
-        assert!(retired_invite.headers().get(header::SET_COOKIE).is_none());
     }
 
     #[tokio::test]
@@ -4749,143 +5473,76 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn sessions_resolve_only_their_selected_campaign_runtime() {
-        let dir = tempfile::tempdir().unwrap();
-        let registry = CampaignRegistry::new(dir.path().join("campaigns")).unwrap();
-        let left = seed("Left");
-        let right = seed("Right");
-        registry.create(left.clone(), vec![], vec![]).await.unwrap();
-        registry
-            .create(right.clone(), vec![], vec![])
-            .await
-            .unwrap();
-        let auth_store = CampaignStore::open(dir.path().join("auth.cc")).unwrap();
-        let auth_state = AuthState {
-            schema: "ghostlight.auth_state.v1".into(),
-            session_hashes: BTreeSet::from(["left".into(), "right".into()]),
-            session_aliases: BTreeMap::new(),
-            session_campaigns: BTreeMap::from([
-                ("left".into(), left.id),
-                ("right".into(), right.id),
-            ]),
-            session_campaign_ids: BTreeMap::from([
-                ("left".into(), BTreeSet::from([left.id])),
-                ("right".into(), BTreeSet::from([right.id])),
-            ]),
-            heimdall_attempts: BTreeMap::new(),
-        };
-        let row = auth_store
-            .insert(
-                "auth_state.v1",
-                "ghostlight.auth_state.v1",
-                "primary",
-                &auth_state,
-            )
-            .unwrap();
-        let state = AppState {
-            registry,
-            session_zeros: SessionZeroRegistry::new(dir.path().join("session-zero")).unwrap(),
-            session_zero_director: None,
-            entitlements: Arc::new(FixtureEntitlementPort),
-            runtime_root: dir.path().into(),
-            auth: Arc::new(Mutex::new(AuthOwner {
-                store: auth_store,
-                row,
-                state: auth_state,
-            })),
-            heimdall: Arc::new(HeimdallClient::fixture()),
-            deepseek_status: "fixture".into(),
-            compiler: None,
-            assessor: None,
-            model: None,
-            expansion_previews: Arc::new(Mutex::new(BTreeMap::new())),
-            fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
-            live_turns: Arc::new(AtomicUsize::new(0)),
-            live_turn_started: Arc::new(Notify::new()),
-            live_commit_gate: Arc::new(RwLock::new(())),
-            mesh: MeshPublisher::open(dir.path().join("mesh.cc"), None).unwrap(),
-        };
-        let left_runtime = session_runtime(&state, "left").await.unwrap().unwrap();
-        let right_runtime = session_runtime(&state, "right").await.unwrap().unwrap();
-        assert_eq!(load_campaign(&left_runtime.store).unwrap().id, left.id);
-        assert_eq!(load_campaign(&right_runtime.store).unwrap().id, right.id);
-        assert_ne!(
-            left_runtime.store.identity(),
-            right_runtime.store.identity()
-        );
-        assert!(!state.auth.lock().await.state.session_campaign_ids["left"].contains(&right.id));
-    }
-
-    #[test]
-    fn failed_auth_commit_cannot_change_in_memory_authority() {
-        let dir = tempfile::tempdir().unwrap();
-        let store = CampaignStore::open(dir.path().join("auth.cc")).unwrap();
-        let original = AuthState {
-            schema: "ghostlight.auth_state.v1".into(),
-            session_hashes: BTreeSet::new(),
-            session_aliases: BTreeMap::new(),
-            session_campaigns: BTreeMap::new(),
-            session_campaign_ids: BTreeMap::new(),
-            heimdall_attempts: BTreeMap::new(),
-        };
-        let row = store
-            .insert(
-                "auth_state.v1",
-                "ghostlight.auth_state.v1",
-                "primary",
-                &original,
-            )
-            .unwrap();
-        let mut owner = AuthOwner {
-            store: store.clone(),
-            row: row.clone(),
-            state: original.clone(),
-        };
-
-        let mut externally_committed = original.clone();
-        externally_committed.session_hashes.insert("other".into());
-        store
-            .replace(&row, "ghostlight.auth_state.v1", &externally_committed)
-            .unwrap();
-
-        let mut rejected = original.clone();
-        rejected.session_hashes.insert("phantom".into());
-        assert!(owner.commit(rejected).is_err());
-        assert_eq!(owner.state.session_hashes, original.session_hashes);
-        assert_eq!(owner.row, row);
-    }
-
-    #[tokio::test]
-    async fn campaign_selection_reloads_stale_auth_without_losing_concurrent_state() {
+    async fn campaign_selection_is_derived_from_exact_membership() {
         let dir = tempfile::tempdir().unwrap();
         let state = empty_app_state(dir.path());
-        let campaign = seed("Fresh branch");
-        state
+        let (_cookie, account_hash) = fixture_session(&state, "owner").await;
+        let campaign = seed("Membership-bound");
+        let runtime = state
             .registry
             .create(campaign.clone(), vec![], vec![])
             .await
             .unwrap();
-
-        let (store, row, mut externally_committed) = {
-            let mut auth = state.auth.lock().await;
-            let mut authorized = auth.state.clone();
-            authorized.session_hashes.insert("owner".into());
-            auth.commit(authorized).unwrap();
-            (auth.store.clone(), auth.row.clone(), auth.state.clone())
-        };
-        externally_committed
-            .session_hashes
-            .insert("concurrent".into());
-        store
-            .replace(&row, "ghostlight.auth_state.v1", &externally_committed)
+        runtime
+            .store
+            .insert(
+                "campaign_membership.v1",
+                "ghostlight.campaign_membership.v1",
+                &campaign.id.to_string(),
+                &ghostlight_dungeon::session_zero::CampaignMembership {
+                    schema: "ghostlight.campaign_membership.v1".into(),
+                    campaign_id: campaign.id,
+                    governance_epoch: 0,
+                    host_member_id: "member:owner".into(),
+                    members: BTreeMap::from([(
+                        "member:owner".into(),
+                        ghostlight_dungeon::session_zero::CampaignMember {
+                            member_id: "member:owner".into(),
+                            account_hash: account_hash.clone(),
+                            display_name: "Owner".into(),
+                            actor_id: "player".into(),
+                            is_host: true,
+                            active: true,
+                            cell_allowance: 8,
+                        },
+                    )]),
+                    extraordinary_permissions: BTreeMap::new(),
+                },
+            )
             .unwrap();
+        select_campaign(&state, &account_hash, campaign.id)
+            .await
+            .unwrap();
+        assert_eq!(
+            load_campaign(
+                &session_runtime(&state, &account_hash)
+                    .await
+                    .unwrap()
+                    .unwrap()
+                    .store
+            )
+            .unwrap()
+            .id,
+            campaign.id
+        );
+        assert!(
+            select_campaign(&state, "sha256:not-a-member", campaign.id)
+                .await
+                .is_err()
+        );
+    }
 
-        select_campaign(&state, "owner", campaign.id).await.unwrap();
-
-        let auth = state.auth.lock().await;
-        assert!(auth.state.session_hashes.contains("concurrent"));
-        assert_eq!(auth.state.session_campaigns["owner"], campaign.id);
-        assert!(auth.state.session_campaign_ids["owner"].contains(&campaign.id));
+    #[test]
+    fn authority_fields_are_rejected_recursively_at_eve_ingress() {
+        assert!(contains_authority_field(
+            &serde_json::json!({"bindings":{"actor_id":"npc"}})
+        ));
+        assert!(contains_authority_field(
+            &serde_json::json!({"nested":[{"memberId":"member:other"}]})
+        ));
+        assert!(!contains_authority_field(
+            &serde_json::json!({"target":"member:other","text":"hello"})
+        ));
     }
 
     #[test]
@@ -4996,16 +5653,6 @@ mod tests {
             })
             .is_err()
         );
-    }
-
-    #[test]
-    fn operator_http_boundary_is_loopback_only() {
-        assert!(operator_peer_allowed("127.0.0.1:8831".parse().unwrap()));
-        assert!(operator_peer_allowed("[::1]:8831".parse().unwrap()));
-        assert!(!operator_peer_allowed(
-            "192.168.178.158:55000".parse().unwrap()
-        ));
-        assert!(!operator_peer_allowed("10.77.0.4:55000".parse().unwrap()));
     }
 
     #[test]

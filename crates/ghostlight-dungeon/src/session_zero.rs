@@ -1481,13 +1481,180 @@ pub fn session_zero_surface(
         character.obligations.join(", "),
         character.vulnerabilities.join(", ")
     );
+    let shared_channel_id = state
+        .channels
+        .values()
+        .find(|channel| channel.kind == SessionZeroChannelKind::SharedTable)
+        .map(|channel| channel.id.clone())
+        .ok_or_else(|| anyhow!("shared Session Zero channel is missing"))?;
+    let private_channel_id = state
+        .channels
+        .values()
+        .find(|channel| channel.member_id.as_deref() == Some(member.id.as_str()))
+        .map(|channel| channel.id.clone());
+    let transcript = channels
+        .iter()
+        .flat_map(|channel| {
+            let channel_label = if channel["kind"] == "shared_table" { "Table" } else { "Private DM" };
+            channel["messages"].as_array().into_iter().flatten().filter_map(move |message| {
+                Some(serde_json::json!({
+                    "id":format!("session-zero.message.{}", message["id"].as_str()?),
+                    "kind":"text.dialogue",
+                    "props":{"value":format!("{channel_label} · {}: {}", message["speaker"].as_str().unwrap_or("system"), message["text"].as_str().unwrap_or(""))},
+                    "children":[]
+                }))
+            })
+        })
+        .collect::<Vec<_>>();
+    let mut children = vec![
+        serde_json::json!({"id":"session-zero.status","kind":"card","props":{"title":format!("{} · revision {}", session_status_label(&state.status), state.revision)},"children":[]}),
+        serde_json::json!({"id":"session-zero.roster","kind":"card","props":{"title":format!("Roster · {} pooled cells",state.pooled_cell_allowance())},"children":[{"id":"session-zero.roster.text","kind":"text","props":{"value":roster_summary},"children":[]}]}),
+        serde_json::json!({"id":"session-zero.contract","kind":"card","props":{"title":"Campaign contract"},"children":[{"id":"session-zero.contract.text","kind":"text","props":{"value":contract_summary},"children":[]}]}),
+        serde_json::json!({"id":"session-zero.character","kind":"card","props":{"title":"Your private character"},"children":[{"id":"session-zero.character.text","kind":"text","props":{"value":character_summary},"children":[]}]}),
+        serde_json::json!({"id":"session-zero.conversation","kind":"card","props":{"title":"Session Zero conversation"},"children":transcript}),
+        serde_json::json!({
+            "id":"session-zero.channel","kind":"control.select","props":{"label":"Speak at","value":shared_channel_id},
+            "stateBindings":[local_draft_binding("channel_id", "choice")],
+            "children":[
+                {"id":"channel.shared","kind":"control.option","props":{"value":shared_channel_id,"label":"Shared table"},"children":[]},
+                {"id":"channel.private","kind":"control.option","props":{"value":private_channel_id.clone().unwrap_or_default(),"label":"Private DM","disabled":private_channel_id.is_none()},"children":[]}
+            ]
+        }),
+        serde_json::json!({
+            "id":"session-zero.message.draft","kind":"control.input.textarea","props":{"label":"Tell the DM or table","rows":4,"placeholder":"Describe what you want, ask a question, or counter a proposal."},
+            "stateBindings":[local_draft_binding("text", "string")],"children":[]
+        }),
+        command_control(
+            "session-zero.message.send",
+            "Send",
+            "session_zero.message.send",
+            serde_json::json!({"expected_revision":state.revision}),
+            &["channel_id", "text"],
+        ),
+        serde_json::json!({"id":"session-zero.boundary.topic","kind":"control.input.text","props":{"label":"Private boundary topic","placeholder":"What should the campaign avoid, veil, or ask about first?"},"stateBindings":[local_draft_binding("topic", "string")],"children":[]}),
+        serde_json::json!({"id":"session-zero.boundary.level","kind":"control.select","props":{"label":"Boundary level","value":"ask_first"},"stateBindings":[local_draft_binding("level", "choice")],"children":[
+            {"id":"boundary.ask-first","kind":"control.option","props":{"value":"ask_first","label":"Ask first"},"children":[]},
+            {"id":"boundary.veil","kind":"control.option","props":{"value":"veil","label":"Veil"},"children":[]},
+            {"id":"boundary.line","kind":"control.option","props":{"value":"line","label":"Line"},"children":[]}
+        ]}),
+        command_control(
+            "session-zero.boundary.set",
+            "Add private boundary",
+            "session_zero.boundary.set",
+            serde_json::json!({"expected_revision":state.revision}),
+            &["topic", "level"],
+        ),
+        serde_json::json!({"id":"session-zero.decision.counter","kind":"control.input.textarea","props":{"label":"Counterproposal","rows":3,"placeholder":"State the replacement you want the table or DM to consider."},"stateBindings":[local_draft_binding("counter", "string")],"children":[]}),
+    ];
+    for boundary in &private_boundaries {
+        children.push(serde_json::json!({
+            "id":format!("session-zero.boundary.{}",boundary.id),
+            "kind":"card",
+            "props":{"title":format!("Your boundary · {:?}",boundary.level)},
+            "children":[
+                {"id":format!("session-zero.boundary.{}.topic",boundary.id),"kind":"text","props":{"value":boundary.topic},"children":[]},
+                command_control(&format!("session-zero.boundary.{}.remove",boundary.id), "Remove boundary", "session_zero.boundary.remove", serde_json::json!({"expected_revision":state.revision,"target":boundary.id}), &[])
+            ]
+        }));
+    }
+    for decision in visible_decisions
+        .iter()
+        .filter(|decision| !decision.resolved)
+    {
+        children.push(serde_json::json!({
+            "id":format!("session-zero.decision.{}",decision.id),"kind":"card","props":{"title":decision.prompt},"children":[
+                {"id":format!("session-zero.decision.{}.proposal",decision.id),"kind":"text","props":{"value":decision.proposed_resolution},"children":[]},
+                command_control(&format!("session-zero.decision.{}.accept",decision.id), "Accept", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":true,"counter":null}), &[]),
+                command_control(&format!("session-zero.decision.{}.counter",decision.id), "Counter", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false}), &["counter"]),
+                command_control(&format!("session-zero.decision.{}.discuss",decision.id), "Discuss", "session_zero.message.send", serde_json::json!({"expected_revision":state.revision,"text":format!("I want to discuss this proposal before deciding: {}",decision.prompt)}), &["channel_id"])
+            ]
+        }));
+    }
+    if member.is_host && !state.roster_locked {
+        children.push(serde_json::json!({"id":"session-zero.invite-count","kind":"control.input.number","props":{"label":"Invitations","value":1,"min":1,"max":7},"stateBindings":[local_draft_binding("count", "number")],"children":[]}));
+        children.push(command_control(
+            "session-zero.invites.create",
+            "Create invitations",
+            "session_zero.invites.create",
+            serde_json::json!({}),
+            &["count"],
+        ));
+        children.push(command_control(
+            "session-zero.roster.lock",
+            "Lock roster",
+            "session_zero.roster.lock",
+            serde_json::json!({"expected_revision":state.revision}),
+            &[],
+        ));
+        for candidate in state
+            .members
+            .values()
+            .filter(|candidate| candidate.active && candidate.id != member.id)
+        {
+            children.push(command_control(
+                &format!("session-zero.member.{}.remove", candidate.id),
+                &format!("Remove {}", candidate.display_name),
+                "session_zero.member.remove",
+                serde_json::json!({"expected_revision":state.revision,"target":candidate.id}),
+                &[],
+            ));
+        }
+    }
+    if !member.is_host && !state.roster_locked {
+        children.push(command_control(
+            "session-zero.leave",
+            "Leave Session Zero",
+            "session_zero.leave",
+            serde_json::json!({"expected_revision":state.revision}),
+            &[],
+        ));
+    }
+    if member.is_host && state.roster_locked && state.status == SessionZeroStatus::RosterLocked {
+        children.push(command_control(
+            "session-zero.compile",
+            "Compile campaign preview",
+            "session_zero.compile",
+            serde_json::json!({"expected_revision":state.revision}),
+            &[],
+        ));
+    }
+    if state.status == SessionZeroStatus::Review {
+        children.push(command_control(
+            "session-zero.approve",
+            if state.approvals.contains_key(&member.id) {
+                "Approved"
+            } else {
+                "Approve shared and private drafts"
+            },
+            "session_zero.approve",
+            serde_json::json!({"expected_revision":state.revision}),
+            &[],
+        ));
+        if member.is_host && state.approved_brief().is_ok() {
+            children.push(command_control(
+                "session-zero.publish",
+                "Publish campaign",
+                "session_zero.publish",
+                serde_json::json!({"expected_revision":state.revision}),
+                &[],
+            ));
+        }
+    }
+    children.push(command_control(
+        "ghostlight.logout",
+        "Sign out",
+        "app.auth.logout",
+        serde_json::json!({}),
+        &[],
+    ));
     Ok(serde_json::json!({
         "type": "surface-state",
         "schema": "gamecult.eve.surface.v1",
-        "providerId": "gamecult.ghostlight.dungeon.session-zero",
+        "providerId": "gamecult.ghostlight.dungeon",
         "providerKind": "narrative.session-zero",
         "title": state.name,
         "version": state.revision,
+        "updatedAtUtc": Utc::now().to_rfc3339(),
         "session_zero": {
             "id": state.id,
             "status": state.status,
@@ -1511,17 +1678,12 @@ pub fn session_zero_surface(
             "publish_ready": state.approved_brief().is_ok(),
         },
         "surface": {
-            "id": format!("ghostlight.session-zero.{}", state.id),
+            "id": "ghostlight.play",
             "root": {
                 "id": "session-zero.root",
                 "kind": "surface",
                 "props": {},
-                "children": [
-                    {"id":"session-zero.status","kind":"card","props":{"title":format!("{} · revision {}", session_status_label(&state.status), state.revision)},"children":[]},
-                    {"id":"session-zero.roster","kind":"card","props":{"title":format!("Roster · {} pooled cells",state.pooled_cell_allowance())},"children":[{"id":"session-zero.roster.text","kind":"text","props":{"value":roster_summary},"children":[]}]},
-                    {"id":"session-zero.contract","kind":"card","props":{"title":"Campaign contract"},"children":[{"id":"session-zero.contract.text","kind":"text","props":{"value":contract_summary},"children":[]}]},
-                    {"id":"session-zero.character","kind":"card","props":{"title":"Your private character"},"children":[{"id":"session-zero.character.text","kind":"text","props":{"value":character_summary},"children":[]}]}
-                ]
+                "children": children
             },
             "styles": {"tokens": {
                 "colorBackground": "#0c1110",
@@ -1532,12 +1694,64 @@ pub fn session_zero_surface(
             }}
         },
         "commands": [
-            {"id":"session-zero.message","schema":"gamecult.eve.command.v1"},
-            {"id":"session-zero.boundary","schema":"gamecult.eve.command.v1"},
-            {"id":"session-zero.decision","schema":"gamecult.eve.command.v1"},
-            {"id":"session-zero.approve","schema":"gamecult.eve.command.v1"}
+            eve_command("session_zero.message.send", "ghostlight.session_zero_message_send.v1", &["channel_id","text"]),
+            eve_command("session_zero.boundary.set", "ghostlight.session_zero_boundary_set.v1", &["topic","level"]),
+            eve_command("session_zero.boundary.remove", "ghostlight.session_zero_boundary_remove.v1", &[]),
+            eve_command("session_zero.decision.resolve", "ghostlight.session_zero_decision_resolve.v1", &[]),
+            eve_command("session_zero.invites.create", "ghostlight.session_zero_invites_create.v1", &["count"]),
+            eve_command("session_zero.leave", "ghostlight.session_zero_revision_command.v1", &[]),
+            eve_command("session_zero.member.remove", "ghostlight.session_zero_member_remove.v1", &[]),
+            eve_command("session_zero.roster.lock", "ghostlight.session_zero_revision_command.v1", &[]),
+            eve_command("session_zero.compile", "ghostlight.session_zero_revision_command.v1", &[]),
+            eve_command("session_zero.approve", "ghostlight.session_zero_revision_command.v1", &[]),
+            eve_command("session_zero.publish", "ghostlight.session_zero_revision_command.v1", &[]),
+            eve_command("app.auth.logout", "ghostlight.app_logout.v1", &[])
         ]
     }))
+}
+
+fn local_draft_binding(name: &str, value_kind: &str) -> serde_json::Value {
+    serde_json::json!({
+        "targetProp":"value",
+        "pointerId":format!("draft:{name}"),
+        "sourceId":"renderer",
+        "schemaId":"gamecult.eve.local_draft.v1",
+        "routeKind":"local",
+        "bindingName":name,
+        "documentId":"ghostlight.play.drafts",
+        "fieldPath":name,
+        "valueKind":value_kind,
+        "accessMode":"local-draft",
+        "authority":"renderer-ephemeral"
+    })
+}
+
+fn command_control(
+    id: &str,
+    label: &str,
+    command: &str,
+    action: serde_json::Value,
+    bindings: &[&str],
+) -> serde_json::Value {
+    let mut action = action.as_object().cloned().unwrap_or_default();
+    action.insert("command".into(), serde_json::Value::String(command.into()));
+    serde_json::json!({
+        "id":id,
+        "kind":"control.button",
+        "props":{"label":label,"command":command,"action":action,"captureBindings":bindings},
+        "children":[]
+    })
+}
+
+fn eve_command(command: &str, payload_schema: &str, bindings: &[&str]) -> serde_json::Value {
+    serde_json::json!({
+        "schema":"gamecult.eve.command.v1",
+        "command":command,
+        "payloadSchema":payload_schema,
+        "captureBindings":bindings,
+        "transport":"https-json",
+        "authority":"SessionZeroKernel"
+    })
 }
 
 fn session_status_label(status: &SessionZeroStatus) -> &'static str {
@@ -2736,6 +2950,52 @@ mod tests {
         assert!(!encoded.contains("token_hash"));
         let member_schema = serde_json::to_string(&schema_for!(SessionZeroMember)).unwrap();
         assert!(!member_schema.contains("account_hash"));
+    }
+
+    #[test]
+    fn session_zero_surface_exposes_accept_counter_discuss_and_owned_boundary_controls_as_bindings()
+    {
+        let mut draft = state();
+        let host = draft.host_member_id.clone();
+        draft.boundaries.insert(
+            "boundary:host".into(),
+            ContentBoundary {
+                schema: "ghostlight.content_boundary.v1".into(),
+                id: "boundary:host".into(),
+                owner_member_id: host,
+                topic: "medical horror".into(),
+                normalized_topic: "medical horror".into(),
+                level: BoundaryLevel::Veil,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        );
+        draft.decisions.insert(
+            "decision:tone".into(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "decision:tone".into(),
+                owner_member_id: None,
+                prompt: "How severe should consequences be?".into(),
+                proposed_resolution: "Consequences are durable but rarely lethal.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: None,
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                material: true,
+                resolved: false,
+            },
+        );
+
+        let encoded =
+            serde_json::to_string(&session_zero_surface(&draft, "account:host").unwrap()).unwrap();
+        assert!(encoded.contains("Accept"));
+        assert!(encoded.contains("Counter"));
+        assert!(encoded.contains("Discuss"));
+        assert!(encoded.contains("session_zero.boundary.remove"));
+        assert!(encoded.contains("\"bindingName\":\"counter\""));
+        assert!(!encoded.contains("payload.fields"));
+        assert!(!encoded.contains("\"kind\":\"form\""));
     }
 
     #[tokio::test]

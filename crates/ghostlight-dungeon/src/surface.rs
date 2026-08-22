@@ -79,9 +79,104 @@ pub fn player_surface_for_actor(
         .as_ref()
         .map(|cover| cover.effective_budget)
         .unwrap_or(campaign.resolution_policy.active_cell_budget);
+    let mut children = vec![
+        json!({"id":"dungeon.status","kind":"card","props":{"title":format!("{} · revision {} · {}",campaign.name,campaign.revision,campaign.world_time)},"children":[]}),
+        json!({"id":"dungeon.location","kind":"card","props":{"title":format!("{} · {}",location.name,player.name)},"children":[]}),
+        json!({"id":"dungeon.ledger","kind":"card","props":{"title":"Character ledger"},"children":[{"id":"dungeon.ledger.text","kind":"text","props":{"value":ledger},"children":[]}]}),
+        json!({"id":"dungeon.resolution","kind":"card","props":{"title":format!("World resolution · {} configured / {} effective",campaign.resolution_policy.active_cell_budget,effective_budget)},"children":[{"id":"dungeon.resolution.text","kind":"text","props":{"value":format!("Resolution epoch {} · {} pins · {} temporary overage",campaign.resolution_policy.resolution_epoch,campaign.resolution_pins.len(),campaign.resolution_cover.as_ref().map(|cover| cover.mandatory_overage).unwrap_or(0))},"children":[]}]}),
+        json!({"id":"dungeon.news","kind":"card","props":{"title":"Accessible news and rumors"},"children":news}),
+        json!({"id":"dungeon.transcript","kind":"card","props":{"title":"Story"},"children":story}),
+        json!({"id":"dungeon.speech","kind":"control.input.textarea","props":{"label":"Say something","rows":3,"placeholder":"Your character's exact words"},"stateBindings":[local_draft("text","string")],"children":[]}),
+        command_control(
+            "dungeon.speak",
+            "Speak",
+            "world.speak",
+            json!({"expected_revision":campaign.revision}),
+            &["text"],
+        ),
+        json!({"id":"dungeon.attempt.description","kind":"control.input.textarea","props":{"label":"What do you try?","rows":4,"placeholder":"Describe the attempt, not a completed fact."},"stateBindings":[local_draft("description","string")],"children":[]}),
+        json!({"id":"dungeon.attempt.effect","kind":"control.input.text","props":{"label":"What effect do you want?","placeholder":"The concrete outcome you are trying to cause"},"stateBindings":[local_draft("intended_effect","string")],"children":[]}),
+        command_control(
+            "dungeon.assess",
+            "Assess stakes",
+            "world.assess",
+            json!({"expected_revision":campaign.revision}),
+            &["description", "intended_effect"],
+        ),
+        json!({"id":"dungeon.wait.minutes","kind":"control.input.number","props":{"label":"Wait minutes","value":30,"min":1,"max":1440},"stateBindings":[local_draft("minutes","number")],"children":[]}),
+        command_control(
+            "dungeon.wait",
+            "Wait",
+            "world.wait",
+            json!({"expected_revision":campaign.revision}),
+            &["minutes"],
+        ),
+        json!({"id":"dungeon.time.minutes","kind":"control.input.number","props":{"label":"Proposed group time advance (minutes)","value":30,"min":1,"max":1440},"stateBindings":[local_draft("time_advance_minutes","number")],"children":[]}),
+        command_control(
+            "dungeon.time.propose",
+            "Propose group time advance",
+            "governance.time.propose",
+            json!({"expected_revision":campaign.revision}),
+            &["time_advance_minutes"],
+        ),
+        json!({"id":"dungeon.cells.budget","kind":"control.input.number","props":{"label":"Active Persona-cell budget","value":campaign.resolution_policy.active_cell_budget,"min":1,"max":128},"stateBindings":[local_draft("active_cell_budget","number")],"children":[]}),
+        command_control(
+            "dungeon.cells.propose",
+            "Propose cell budget",
+            "governance.cells.propose",
+            json!({"expected_revision":campaign.revision,"expected_resolution_epoch":campaign.resolution_policy.resolution_epoch}),
+            &["active_cell_budget"],
+        ),
+        command_control(
+            "dungeon.contract-review",
+            "Review campaign contract",
+            "campaign.contract_review.begin",
+            json!({}),
+            &[],
+        ),
+        command_control(
+            "dungeon.logout",
+            "Sign out",
+            "app.auth.logout",
+            json!({}),
+            &[],
+        ),
+    ];
+    if location.routes.is_empty() {
+        children.push(json!({"id":"dungeon.travel.none","kind":"text","props":{"value":"No compiled route leaves this location yet."},"children":[]}));
+    } else {
+        children.push(json!({
+            "id":"dungeon.travel.destination",
+            "kind":"control.select",
+            "props":{"label":"Group destination"},
+            "stateBindings":[local_draft("destination_location_id","choice")],
+            "children":location.routes.iter().filter_map(|(destination_id,route)|campaign.locations.get(destination_id).map(|destination|json!({
+                "id":format!("dungeon.travel.option.{destination_id}"),
+                "kind":"control.option",
+                "props":{"value":destination_id,"label":format!("{} · {} minutes · {}",destination.name,route.travel_minutes,route.distance)},
+                "children":[]
+            }))).collect::<Vec<_>>()
+        }));
+        children.push(command_control(
+            "dungeon.travel.propose",
+            "Propose group travel",
+            "governance.travel.propose",
+            json!({"expected_revision":campaign.revision}),
+            &["destination_location_id"],
+        ));
+    }
+    children.push(json!({"id":"dungeon.destination.name","kind":"control.input.text","props":{"label":"Compile a new destination","placeholder":"Describe where you want to go"},"stateBindings":[local_draft("destination","string")],"children":[]}));
+    children.push(command_control(
+        "dungeon.destination.compile",
+        "Compile destination preview",
+        "world.destination.compile",
+        json!({}),
+        &["destination"],
+    ));
     json!({
       "type":"surface-state", "schema":"gamecult.eve.surface.v1", "providerId":"gamecult.ghostlight.dungeon",
       "providerKind":"narrative.simulation", "title":campaign.name, "version":interface_version,
+      "updatedAtUtc":chrono::Utc::now().to_rfc3339(),
       "world_revision":campaign.revision,
       "viewer_actor_id":viewer_actor_id,
       "player_location_id":player.location_id,
@@ -93,17 +188,44 @@ pub fn player_surface_for_actor(
         "pin_count":campaign.resolution_pins.len(),
         "fission_targets":campaign.agency_profiles.values().filter(|profile| profile.active_leaf && profile.subject_kind == crate::domain::AgencySubjectKind::Gestalt).filter_map(|profile| campaign.gestalts.get(&profile.subject_id)).filter(|gestalt|gestalt.home_location_id==player.location_id).map(|gestalt| json!({"id":gestalt.id,"name":gestalt.name})).collect::<Vec<_>>()
       },
-      "surface":{"id":format!("ghostlight.campaign.{}",campaign.id),"root":{"id":"dungeon.root","kind":"surface","props":{},"children":[
-        {"id":"dungeon.status","kind":"card","props":{"title":format!("{} · revision {} · {}",campaign.name,campaign.revision,campaign.world_time)},"children":[]},
-        {"id":"dungeon.location","kind":"card","props":{"title":format!("{} · {}",location.name,player.name)},"children":[]},
-        {"id":"dungeon.ledger","kind":"card","props":{"title":"Character ledger"},"children":[{"id":"dungeon.ledger.text","kind":"text","props":{"value":ledger},"children":[]}]},
-        {"id":"dungeon.resolution","kind":"card","props":{"title":format!("World resolution · {} configured / {} effective",campaign.resolution_policy.active_cell_budget,effective_budget)},"children":[{"id":"dungeon.resolution.text","kind":"text","props":{"value":format!("Resolution epoch {} · {} pins · {} temporary overage",campaign.resolution_policy.resolution_epoch,campaign.resolution_pins.len(),campaign.resolution_cover.as_ref().map(|cover| cover.mandatory_overage).unwrap_or(0))},"children":[]}]},
-        {"id":"dungeon.news","kind":"card","props":{"title":"Accessible news and rumors"},"children":news},
-        {"id":"dungeon.transcript","kind":"card","props":{"title":"Story"},"children":story},
-        {"id":"dungeon.composer","kind":"text-input","props":{"label":"What do you attempt?","commandId":"attempt.assess"},"children":[]}
-      ]},"styles":{"tokens":{"colorBackground":"#0c1110","colorPanel":"#17201d","colorText":"#e8e1cf","colorMuted":"#9aa69f","colorAccent":"#d49b58"}}},
-      "commands":[{"id":"attempt.assess","schema":"gamecult.eve.command.v1","receiptSchema":"ghostlight.player_action_assessment.v1"}]
+      "surface":{"id":"ghostlight.play","root":{"id":"dungeon.root","kind":"surface","props":{},"children":children},"styles":{"tokens":{"colorBackground":"#0c1110","colorPanel":"#17201d","colorText":"#e8e1cf","colorMuted":"#9aa69f","colorAccent":"#d49b58"}}},
+      "commands":[
+        eve_command("world.speak","ghostlight.world_speak.v1", &["text"], "WorldKernel"),
+        eve_command("world.assess","ghostlight.player_action_assess.v1", &["description","intended_effect"], "WorldKernel"),
+        eve_command("world.attempt","ghostlight.player_action_attempt.v1", &[], "WorldKernel"),
+        eve_command("world.wait","ghostlight.world_wait.v1", &["minutes"], "WorldKernel"),
+        eve_command("governance.cells.propose","ghostlight.cell_budget_proposal.v1", &["active_cell_budget"], "WorldKernel"),
+        eve_command("governance.cells.approve","ghostlight.cell_budget_approval.v1", &[], "WorldKernel"),
+        eve_command("governance.time.propose","ghostlight.time_advance_proposal.v1", &["time_advance_minutes"], "WorldKernel"),
+        eve_command("governance.time.approve","ghostlight.time_advance_approval.v1", &[], "WorldKernel"),
+        eve_command("governance.travel.propose","ghostlight.group_travel_proposal.v1", &["destination_location_id"], "WorldKernel"),
+        eve_command("governance.travel.approve","ghostlight.group_travel_approval.v1", &[], "WorldKernel"),
+        eve_command("world.destination.compile","ghostlight.destination_compile.v1", &["destination"], "WorldCompiler"),
+        eve_command("world.destination.approve","ghostlight.destination_approval.v1", &[], "WorldKernel"),
+        eve_command("campaign.contract_review.begin","ghostlight.contract_review_begin.v1", &[], "SessionZeroKernel"),
+        eve_command("app.auth.logout","ghostlight.app_logout.v1", &[], "ghostlight.app_session.v1")
+      ]
     })
+}
+
+fn local_draft(name: &str, value_kind: &str) -> Value {
+    json!({"targetProp":"value","pointerId":format!("draft:{name}"),"sourceId":"renderer","schemaId":"gamecult.eve.local_draft.v1","routeKind":"local","bindingName":name,"documentId":"ghostlight.play.drafts","fieldPath":name,"valueKind":value_kind,"accessMode":"local-draft","authority":"renderer-ephemeral"})
+}
+
+fn command_control(
+    id: &str,
+    label: &str,
+    command: &str,
+    action: Value,
+    bindings: &[&str],
+) -> Value {
+    let mut action = action.as_object().cloned().unwrap_or_default();
+    action.insert("command".into(), Value::String(command.into()));
+    json!({"id":id,"kind":"control.button","props":{"label":label,"command":command,"action":action,"captureBindings":bindings},"children":[]})
+}
+
+fn eve_command(command: &str, payload_schema: &str, bindings: &[&str], authority: &str) -> Value {
+    json!({"schema":"gamecult.eve.command.v1","command":command,"payloadSchema":payload_schema,"captureBindings":bindings,"transport":"https-json","authority":authority})
 }
 
 fn story_nodes(campaign: &Campaign, narrations: &[NarrationProjection]) -> Vec<Value> {
@@ -433,5 +555,41 @@ mod tests {
 
         assert!(encoded.contains("Local neighbors"));
         assert!(!encoded.contains("SECRET_REMOTE_POPULATION"));
+    }
+
+    #[test]
+    fn player_surface_uses_bound_eve_controls_for_time_travel_and_destination_compilation() {
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        campaign.locations.insert(
+            "harbor".into(),
+            crate::domain::Location {
+                id: "harbor".into(),
+                name: "Harbor".into(),
+                container_id: None,
+                routes: Default::default(),
+                persistent_features: vec![],
+            },
+        );
+        campaign.locations.get_mut("center").unwrap().routes.insert(
+            "harbor".into(),
+            crate::domain::Route {
+                destination_id: "harbor".into(),
+                distance: "nearby".into(),
+                travel_minutes: 20,
+            },
+        );
+
+        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+        for binding in [
+            "time_advance_minutes",
+            "destination_location_id",
+            "destination",
+        ] {
+            assert!(encoded.contains(&format!("\"bindingName\":\"{binding}\"")));
+        }
+        assert!(encoded.contains("governance.travel.propose"));
+        assert!(encoded.contains("world.destination.compile"));
+        assert!(!encoded.contains("payload.fields"));
+        assert!(!encoded.contains("\"kind\":\"form\""));
     }
 }

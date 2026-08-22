@@ -787,16 +787,19 @@ dependencies = [
 name = "ghostlight-dungeon"
 version = "0.1.0"
 dependencies = [
+ "aes-gcm",
  "anyhow",
  "async-stream",
  "async-trait",
  "axum",
+ "base64",
  "chrono",
  "cultcache-rs 0.1.0",
  "cultcache-rs 0.1.0 (git+https://github.com/GameCult/cultcache-rs.git?rev=0ba87453115e3d44e8fcb7419866cd7dd70fb096)",
  "cultmesh-rs",
  "cultnet-rs",
  "ghostlight-persona-projection",
+ "hmac",
  "jsonschema",
  "jsonwebtoken",
  "rand 0.9.5",

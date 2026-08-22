@@ -37,6 +37,9 @@ use std::{
 };
 
 pub const PROVIDER_ID: &str = "gamecult.ghostlight.dungeon";
+pub const SURFACE_ID: &str = "ghostlight.play";
+pub const COMMAND_BOUNDARY: &str = "ghostlight.eve.commands";
+pub const COMMAND_RESULT_SCHEMA: &str = "gamecult.eve.command_result.v1";
 pub const HEALTH_KEY: &str = "ghostlight:dungeon:health";
 pub const ADVERTISEMENT_KEY: &str = "eve:provider:gamecult.ghostlight.dungeon";
 
@@ -188,6 +191,59 @@ impl MeshPublisher {
         })
     }
 
+    pub fn identity(&self) -> &MeshRuntimeIdentity {
+        &self.identity
+    }
+
+    pub fn provider_advertisement(&self, updated_at: &str) -> Value {
+        json!({
+            "schema":"gamecult.eve.provider_advertisement.v1",
+            "providerId":PROVIDER_ID,
+            "serviceId":self.identity.service_id.as_str(),
+            "verseId":"gamecult.private",
+            "rootVerse":"gamecult",
+            "canonicalService":"ghostlight-dungeon",
+            "locatedService":self.identity.located_service.as_str(),
+            "cultMeshAddress":"cultmesh://gamecult.private/ghostlight/providers/dungeon",
+            "title":"Ghostlight Dungeon",
+            "kind":"narrative.simulation",
+            "updatedAtUtc":updated_at,
+            "freshness":{"state":"live","lastSeenAtUtc":updated_at,"maxAgeMs":360000},
+            "schemas":[
+                "gamecult.eve.surface.v1",
+                "gamecult.eve.command_invocation.v1",
+                COMMAND_RESULT_SCHEMA,
+                "gamecult.eve.command_receipt.v1",
+                "heimdall.access_gate_state.v1"
+            ],
+            "witnesses":[{"kind":"source-commit","ref":option_env!("GHOSTLIGHT_BUILD_COMMIT").unwrap_or("development")}],
+            "surfaces":[{
+                "surfaceId":SURFACE_ID,
+                "schema":"gamecult.eve.surface.v1",
+                "url":"/api/eve/surfaces/ghostlight.play",
+                "transport":"https-json",
+                "status":"available",
+                "surfaceKind":"subject-scoped-narrative",
+                "interactionModel":"typed-command-receipts",
+                "worldInteraction":{
+                    "projectionKind":"actor-filtered-authoritative",
+                    "stateSchemas":["ghostlight.session_zero.v1","ghostlight.campaign.v1"],
+                    "commandBoundary":COMMAND_BOUNDARY,
+                    "receiptSchema":COMMAND_RESULT_SCHEMA,
+                    "loweringTargets":["browser","eve-native","tui"],
+                    "ownership":"Ghostlight kernels own state; Eve lowers projections and commands."
+                },
+                "requiresPlugins":[{
+                    "pluginId":"gamecult.heimdall.access",
+                    "versionRange":"^1.0.0",
+                    "availability":"required",
+                    "requiredCapabilities":["auth.gate","auth.begin","auth.complete","auth.logout"]
+                }]
+            }],
+            "commands":[{"command":COMMAND_BOUNDARY,"transport":"https-json","summary":"Canonical Ghostlight Eve command boundary."}]
+        })
+    }
+
     pub fn publish_snapshot(
         &self,
         campaigns: &[CampaignMeshSnapshot],
@@ -207,111 +263,13 @@ impl MeshPublisher {
             "runtime":self.identity.runtime_id.as_str(),
             "commit":option_env!("GHOSTLIGHT_BUILD_COMMIT").unwrap_or("development")
         });
-        let schema_ids = vec![
-            "gamecult.eve.surface.v1",
-            "gamecult.eve.surface_state.v1",
-            "gamecult.eve.provider_advertisement.v1",
-            "ghostlight.service_health.v1",
-            "ghostlight.schema_catalog.v1",
-            "ghostlight.campaign.v1",
-            "ghostlight.player_action_assessment.v1",
-            "ghostlight.roll_receipt.v1",
-            "ghostlight.world_commit_receipt.v1",
-            "ghostlight.persona_stage_receipt.v1",
-            "ghostlight.actor_state_delta.v1",
-            "ghostlight.world_action_proposal.v1",
-            "ghostlight.strategic_tick.v1",
-            "ghostlight.gestalt_migration.v1",
-            "ghostlight.member_migration.v1",
-            "ghostlight.news_issue.v1",
-            "ghostlight.canon_candidate.v1",
-            "ghostlight.session_zero.v1",
-            "ghostlight.session_zero_member.v1",
-            "ghostlight.session_zero_message.v1",
-            "ghostlight.session_zero_channel.v1",
-            "ghostlight.campaign_contract.v1",
-            "ghostlight.character_draft.v1",
-            "ghostlight.content_boundary.v1",
-            "ghostlight.active_contract_boundary_policy.v1",
-            "ghostlight.session_zero_decision.v1",
-            "ghostlight.session_zero_delta.v1",
-            "ghostlight.session_zero_approval.v1",
-            "ghostlight.approved_campaign_brief.v1",
-            "ghostlight.campaign_dm_persona.v1",
-            "ghostlight.campaign_membership.v1",
-            "ghostlight.campaign_governance.v1",
-            "ghostlight.extraordinary_permission.v1",
-            "ghostlight.time_advance_proposal.v1",
-            "ghostlight.group_travel_proposal.v1",
-            "ghostlight.cell_budget_proposal.v1",
-        ];
         let catalog = json!({
             "schema":"ghostlight.schema_catalog.v1",
             "providerId":PROVIDER_ID,
             "schemas":schema_catalog(),
             "updatedAtUtc":updated_at
         });
-        let mut surfaces = campaigns
-            .iter()
-            .flat_map(|snapshot| {
-                let campaign = &snapshot.campaign;
-                let mut values = snapshot.membership.as_ref().map_or_else(
-                    || vec![json!({
-                        "schema":"gamecult.eve.surface.v1",
-                        "surfaceId":format!("ghostlight.campaign.{}",campaign.id),
-                        "key":format!("eve:surface:ghostlight.campaign.{}",campaign.id),
-                        "transport":"cultmesh-record","status":"available",
-                        "audience":"legacy-owner","mode":"interactive",
-                        "surfaceKind":"interactive-world","interactionModel":"provider-command-receipts"
-                    })],
-                    |membership| membership.members.values().filter(|member|member.active).map(|member|json!({
-                        "schema":"gamecult.eve.surface.v1",
-                        "surfaceId":format!("ghostlight.campaign.{}.{}",campaign.id,member.member_id),
-                        "key":format!("eve:surface:ghostlight.campaign.{}.{}",campaign.id,member.member_id),
-                        "transport":"cultmesh-record","status":"available",
-                        "audience":member.member_id,"mode":"interactive",
-                        "surfaceKind":"actor-filtered-interactive-world","interactionModel":"provider-command-receipts"
-                    })).collect()
-                );
-                values.push(json!({
-                        "schema":"gamecult.eve.surface.v1",
-                        "surfaceId":format!("ghostlight.operator.{}",campaign.id),
-                        "key":format!("eve:operator:ghostlight.campaign.{}",campaign.id),
-                        "transport":"cultmesh-record",
-                        "status":"available",
-                        "audience":"authenticated-operator",
-                        "mode":"inspect",
-                        "surfaceKind":"operator-inspector",
-                        "interactionModel":"read-only-receipt-inspection"
-                    }));
-                values
-            })
-            .collect::<Vec<_>>();
-        surfaces.extend(session_zeros.iter().map(|snapshot| json!({
-            "schema":"gamecult.eve.surface.v1",
-            "surfaceId":format!("ghostlight.session-zero.{}.{}",snapshot.session_zero_id,snapshot.member_id),
-            "key":format!("eve:surface:ghostlight.session-zero.{}.{}",snapshot.session_zero_id,snapshot.member_id),
-            "transport":"cultmesh-record","status":"available",
-            "audience":snapshot.member_id,"mode":"interactive",
-            "surfaceKind":"actor-filtered-session-zero","interactionModel":"provider-command-receipts"
-        })));
-        let advertisement = json!({
-            "schema":"gamecult.eve.provider_advertisement.v1",
-            "providerId":PROVIDER_ID,
-            "serviceId":self.identity.service_id.as_str(),
-            "verseId":"gamecult.private",
-            "rootVerse":"gamecult",
-            "canonicalService":"ghostlight-dungeon",
-            "locatedService":self.identity.located_service.as_str(),
-            "cultMeshAddress":"cultmesh://gamecult.private/ghostlight/providers/dungeon",
-            "title":"GhostlightDungeon",
-            "kind":"narrative.simulation",
-            "updatedAtUtc":updated_at,
-            "freshness":{"state":"live","lastSeenAtUtc":updated_at,"maxAgeMs":360000},
-            "schemas":schema_ids,
-            "surfaces":surfaces,
-            "commands":[{"command":"ghostlight.world.commands","schema":"gamecult.eve.command.v1","transport":"cultmesh","summary":"Revision-bound world command intents; WorldKernel owns receipts."}]
-        });
+        let advertisement = self.provider_advertisement(&updated_at);
 
         let mut node = self
             .node
@@ -734,6 +692,42 @@ mod tests {
                 .unwrap()
                 .get_required::<SchemaCatalogRecord>("ghostlight:schema-catalog")
                 .is_ok()
+        );
+    }
+
+    #[test]
+    fn public_provider_advertises_one_subject_scoped_surface_and_heimdall_plugin() {
+        let temp = tempdir().unwrap();
+        let publisher = MeshPublisher::open_with_identity(
+            temp.path().join("mesh.cc"),
+            None,
+            MeshRuntimeIdentity {
+                runtime_id: "ghostlight-test".into(),
+                service_id: "ghostlight-test".into(),
+                located_service: "fixture".into(),
+            },
+        )
+        .unwrap();
+
+        let advertisement = publisher.provider_advertisement("2026-08-22T00:00:00Z");
+        let surfaces = advertisement["surfaces"].as_array().unwrap();
+        assert_eq!(surfaces.len(), 1);
+        assert_eq!(surfaces[0]["surfaceId"], SURFACE_ID);
+        assert_eq!(
+            surfaces[0]["worldInteraction"]["commandBoundary"],
+            COMMAND_BOUNDARY
+        );
+        assert_eq!(
+            surfaces[0]["worldInteraction"]["receiptSchema"],
+            COMMAND_RESULT_SCHEMA
+        );
+        assert_eq!(
+            surfaces[0]["requiresPlugins"][0]["pluginId"],
+            "gamecult.heimdall.access"
+        );
+        assert!(
+            advertisement.to_string().find("account_hash").is_none(),
+            "public advertisement must remain subject-agnostic"
         );
     }
 }

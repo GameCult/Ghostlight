@@ -6,16 +6,19 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+aes-gcm.workspace = true
 async-trait.workspace = true
 async-stream.workspace = true
 axum.workspace = true
 chrono.workspace = true
+base64.workspace = true
 cultcache-legacy.workspace = true
 cultcache-rs.workspace = true
 cultnet-rs.workspace = true
 cultmesh-rs.workspace = true
 jsonschema.workspace = true
 jsonwebtoken.workspace = true
+hmac.workspace = true
 ghostlight-persona-projection = { path = "../ghostlight-persona-projection" }
 rand.workspace = true
 reqwest.workspace = true
