@@ -27,6 +27,15 @@ Heimdall member messages
 compiler. Account and invitation hashes remain persistence-only; shared model
 turns, browser surfaces, schemas, and CultMesh records cannot see them.
 
+Material negotiation has one typed path. Accept applies the exact proposal
+stored in the decision. Counter clears every typed payload from that decision,
+records the player's counter in its shared or private durable channel, removes
+the Accept control, and leaves compilation blocked. The DM may replace it only
+through a same-epoch `ApplyDmTurn` containing a fresh material decision; the
+replacement and retirement of the pending counter commit atomically. Stale,
+empty, malformed, or failed counter responses leave the counter pending and the
+retired payload uncommittable.
+
 ```text
 Vault evidence receipts + typed campaign snapshot
   -> permissioned projection

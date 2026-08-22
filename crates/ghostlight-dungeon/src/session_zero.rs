@@ -213,6 +213,8 @@ pub struct SessionZeroDecision {
     pub proposed_character_patch: Option<CharacterDraftPatch>,
     #[serde(default)]
     pub evidence_receipt_ids: Vec<String>,
+    #[serde(default)]
+    pub pending_counter: Option<String>,
     pub material: bool,
     pub resolved: bool,
 }
@@ -871,6 +873,7 @@ pub enum SessionZeroCommand {
         expected_channel_revision: u64,
         channel_id: String,
         member_id: Option<String>,
+        supersedes_countered_decision_id: Option<String>,
         delta: SessionZeroDelta,
         model_receipts: Vec<ModelStageReceipt>,
     },
@@ -1576,13 +1579,38 @@ pub fn session_zero_surface(
         .iter()
         .filter(|decision| !decision.resolved)
     {
-        children.push(serde_json::json!({
-            "id":format!("session-zero.decision.{}",decision.id),"kind":"card","props":{"title":decision.prompt},"children":[
-                {"id":format!("session-zero.decision.{}.proposal",decision.id),"kind":"text","props":{"value":decision.proposed_resolution},"children":[]},
+        let mut decision_children = vec![serde_json::json!({
+            "id":format!("session-zero.decision.{}.proposal",decision.id),
+            "kind":"text",
+            "props":{"value":decision.pending_counter.as_ref().unwrap_or(&decision.proposed_resolution)},
+            "children":[]
+        })];
+        if decision.pending_counter.is_some() {
+            decision_children.push(serde_json::json!({
+                "id":format!("session-zero.decision.{}.pending",decision.id),
+                "kind":"text",
+                "props":{"value":"Counterproposal recorded. The previous typed proposal has been retired; the DM is preparing a fresh decision."},
+                "children":[]
+            }));
+            decision_children.push(command_control(
+                &format!("session-zero.decision.{}.retry-counter", decision.id),
+                "Revise / retry counter",
+                "session_zero.decision.resolve",
+                serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false}),
+                &["counter"],
+            ));
+        } else {
+            decision_children.extend([
                 command_control(&format!("session-zero.decision.{}.accept",decision.id), "Accept", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":true,"counter":null}), &[]),
                 command_control(&format!("session-zero.decision.{}.counter",decision.id), "Counter", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false}), &["counter"]),
-                command_control(&format!("session-zero.decision.{}.discuss",decision.id), "Discuss", "session_zero.message.send", serde_json::json!({"expected_revision":state.revision,"text":format!("I want to discuss this proposal before deciding: {}",decision.prompt)}), &["channel_id"])
-            ]
+                command_control(&format!("session-zero.decision.{}.discuss",decision.id), "Discuss", "session_zero.message.send", serde_json::json!({"expected_revision":state.revision,"text":format!("I want to discuss this proposal before deciding: {}",decision.prompt)}), &["channel_id"]),
+            ]);
+        }
+        children.push(serde_json::json!({
+            "id":format!("session-zero.decision.{}",decision.id),
+            "kind":"card",
+            "props":{"title":decision.prompt},
+            "children":decision_children
         }));
     }
     if member.is_host && !state.roster_locked {
@@ -1978,6 +2006,7 @@ fn execute(
             expected_channel_revision,
             channel_id,
             member_id,
+            supersedes_countered_decision_id,
             delta,
             model_receipts,
         } => {
@@ -2003,6 +2032,27 @@ fn execute(
                 return Err(anyhow!("stale Session Zero component projection"));
             }
             validate_dm_delta(&state, &channel_id, member_id.as_deref(), &delta)?;
+            if let Some(decision_id) = supersedes_countered_decision_id.as_deref() {
+                let countered = state
+                    .decisions
+                    .get(decision_id)
+                    .ok_or_else(|| anyhow!("countered decision is missing"))?;
+                if countered.resolved || countered.pending_counter.is_none() {
+                    return Err(anyhow!("decision has no pending counterproposal"));
+                }
+                if countered.owner_member_id.as_deref() != member_id.as_deref() {
+                    return Err(anyhow!("countered decision channel owner mismatch"));
+                }
+                if !delta.decisions.iter().any(|replacement| {
+                    replacement.material
+                        && !replacement.resolved
+                        && replacement.owner_member_id.as_deref() == member_id.as_deref()
+                }) {
+                    return Err(anyhow!(
+                        "counter response must contain a fresh material decision"
+                    ));
+                }
+            }
             let contract_changed = delta.contract_patch != CampaignContractPatch::default();
             let decisions_changed = !delta.decisions.is_empty();
             apply_contract_patch(&mut state.contract, delta.contract_patch);
@@ -2022,6 +2072,13 @@ fn execute(
                     decision.id = format!("decision:{}", Uuid::new_v4().simple());
                 }
                 state.decisions.insert(decision.id.clone(), decision);
+            }
+            if let Some(decision_id) = supersedes_countered_decision_id {
+                state
+                    .decisions
+                    .get_mut(&decision_id)
+                    .expect("countered decision was just validated")
+                    .resolved = true;
             }
             if contract_changed || (decisions_changed && member_id.is_none()) {
                 shared_changed(&mut state);
@@ -2153,6 +2210,9 @@ fn execute(
                 return Err(anyhow!("decision belongs to another member"));
             }
             if accept {
+                if decision.pending_counter.is_some() {
+                    return Err(anyhow!("counterproposal is awaiting a fresh DM decision"));
+                }
                 if let Some(patch) = decision.proposed_contract_patch.clone() {
                     if decision.owner_member_id.is_some() {
                         return Err(anyhow!(
@@ -2209,12 +2269,35 @@ fn execute(
                 let proposed_resolution = counter
                     .filter(|value| !value.trim().is_empty())
                     .ok_or_else(|| anyhow!("counterproposal is required"))?;
+                validate_bounded("counterproposal", &proposed_resolution, 1, 2_000)?;
+                let channel_id = decision
+                    .owner_member_id
+                    .as_ref()
+                    .map(|owner| format!("private:{owner}"))
+                    .unwrap_or_else(|| "shared:table".into());
+                let prompt = decision.prompt.clone();
+                let private_decision = decision.owner_member_id.is_some();
                 let decision = state
                     .decisions
                     .get_mut(&decision_id)
                     .expect("decision was just validated");
-                decision.proposed_resolution = proposed_resolution;
+                decision.pending_counter = Some(proposed_resolution.clone());
+                decision.proposed_extraordinary_permission = None;
+                decision.proposed_contract_patch = None;
+                decision.proposed_character_patch = None;
                 decision.resolved = false;
+                append_message(
+                    &mut state,
+                    channel_id,
+                    Some(member_id.clone()),
+                    SessionZeroSpeakerKind::Player,
+                    format!("Counterproposal to '{}': {}", prompt, proposed_resolution),
+                )?;
+                if private_decision {
+                    character_changed(&mut state, &member_id);
+                } else {
+                    shared_changed(&mut state);
+                }
             }
             retire_preview(&mut state);
         }
@@ -2457,6 +2540,11 @@ fn validate_dm_delta(
     }
     let mut ids = BTreeSet::new();
     for decision in &delta.decisions {
+        if decision.pending_counter.is_some() {
+            return Err(anyhow!(
+                "DM proposals cannot author player counterproposal state"
+            ));
+        }
         validate_bounded("decision ID", &decision.id, 1, 240)?;
         validate_bounded("decision prompt", &decision.prompt, 1, 1_000)?;
         validate_bounded(
@@ -3030,6 +3118,7 @@ mod tests {
                 proposed_contract_patch: None,
                 proposed_character_patch: None,
                 evidence_receipt_ids: vec![],
+                pending_counter: None,
                 material: true,
                 resolved: false,
             },
@@ -3110,6 +3199,7 @@ mod tests {
                 expected_channel_revision: 1,
                 channel_id: host_channel,
                 member_id: Some(host_id.clone()),
+                supersedes_countered_decision_id: None,
                 delta: private_delta("repay the harbor guild"),
                 model_receipts: vec![],
             })
@@ -3122,6 +3212,7 @@ mod tests {
                 expected_channel_revision: 1,
                 channel_id: guest_channel,
                 member_id: Some(guest_id.clone()),
+                supersedes_countered_decision_id: None,
                 delta: private_delta("find my missing sibling"),
                 model_receipts: vec![],
             })
@@ -3165,6 +3256,7 @@ mod tests {
                 expected_channel_revision: before.channels[&channel_id].revision,
                 channel_id: channel_id.clone(),
                 member_id: None,
+                supersedes_countered_decision_id: None,
                 delta: SessionZeroDelta {
                     dm_speech: "I couldn't finish that response. No draft state changed.".into(),
                     ..Default::default()
@@ -3230,6 +3322,7 @@ mod tests {
                 expected_channel_revision: 0,
                 channel_id: format!("private:{member_id}"),
                 member_id: Some(member_id.clone()),
+                supersedes_countered_decision_id: None,
                 delta: SessionZeroDelta {
                     decisions: vec![SessionZeroDecision {
                         schema: "ghostlight.session_zero_decision.v1".into(),
@@ -3241,6 +3334,7 @@ mod tests {
                         proposed_contract_patch: None,
                         proposed_character_patch: None,
                         evidence_receipt_ids: vec![],
+                        pending_counter: None,
                         material: true,
                         resolved: false,
                     }],
@@ -3274,6 +3368,202 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn counterproposal_retires_stale_payload_until_fresh_typed_decision_arrives() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let mut initial = state();
+        let member_id = initial.host_member_id.clone();
+        let actor_id = initial.character_drafts[&member_id].actor_id.clone();
+        let original_decision_id = "decision:fork-memory".to_string();
+        let permission = |id: &str, costs: Vec<String>| ExtraordinaryPermission {
+            schema: "ghostlight.extraordinary_permission.v1".into(),
+            id: id.into(),
+            actor_id: actor_id.clone(),
+            name: "Fork-memory synchronization".into(),
+            reliable_scope: "Synchronize briefly with one willing nearby mind".into(),
+            prerequisites: vec!["The other mind gives informed consent".into()],
+            costs,
+            limits: vec!["Cannot read an unwilling mind".into()],
+            exposure: vec!["Leaves a traceable synchronization signature".into()],
+            effect_ceiling: "Shared impressions, never identity overwrite".into(),
+            evidence_receipt_ids: vec![],
+            branch_local: true,
+        };
+        initial.decisions.insert(
+            original_decision_id.clone(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: original_decision_id.clone(),
+                owner_member_id: Some(member_id.clone()),
+                prompt: "Accept the proposed fork-memory limits?".into(),
+                proposed_resolution: "Memory contamination always fades after rest.".into(),
+                proposed_extraordinary_permission: Some(permission(
+                    "permission:fork-memory:original",
+                    vec!["Temporary memory contamination".into()],
+                )),
+                proposed_contract_patch: None,
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            },
+        );
+        let state_id = initial.id;
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store.clone(), state_id);
+
+        let counter_text = "Contamination usually fades, but intense synchronization can leave permanent associative scars.";
+        let countered = kernel
+            .command(SessionZeroCommand::ResolveDecision {
+                actor_account_hash: "account:host".into(),
+                expected_revision: 0,
+                decision_id: original_decision_id.clone(),
+                accept: false,
+                counter: Some(counter_text.into()),
+            })
+            .await
+            .unwrap();
+        let pending = &countered.state.decisions[&original_decision_id];
+        assert_eq!(pending.pending_counter.as_deref(), Some(counter_text));
+        assert!(pending.proposed_extraordinary_permission.is_none());
+        assert!(pending.proposed_contract_patch.is_none());
+        assert!(pending.proposed_character_patch.is_none());
+        assert!(!pending.resolved);
+        let private_channel = format!("private:{member_id}");
+        let last_message_id = countered.state.channels[&private_channel]
+            .message_ids
+            .last()
+            .unwrap();
+        assert!(
+            countered.state.messages[last_message_id]
+                .text
+                .contains(counter_text)
+        );
+        let pending_surface =
+            serde_json::to_string(&session_zero_surface(&countered.state, "account:host").unwrap())
+                .unwrap();
+        assert!(pending_surface.contains("Counterproposal recorded"));
+        assert!(!pending_surface.contains(&format!(
+            "session-zero.decision.{original_decision_id}.accept"
+        )));
+
+        let before_rejected_accept = countered.state.clone();
+        let rejected_accept = kernel
+            .command(SessionZeroCommand::ResolveDecision {
+                actor_account_hash: "account:host".into(),
+                expected_revision: countered.state.revision,
+                decision_id: original_decision_id.clone(),
+                accept: true,
+                counter: None,
+            })
+            .await
+            .unwrap_err();
+        assert!(
+            rejected_accept
+                .to_string()
+                .contains("awaiting a fresh DM decision")
+        );
+        assert_eq!(
+            store
+                .load::<SessionZeroState>("session_zero.v1", &state_id.to_string())
+                .unwrap()
+                .unwrap()
+                .1,
+            before_rejected_accept
+        );
+
+        let rejected_replacement = kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: countered.state.character_epochs[&member_id],
+                expected_channel_revision: countered.state.channels[&private_channel].revision,
+                channel_id: private_channel.clone(),
+                member_id: Some(member_id.clone()),
+                supersedes_countered_decision_id: Some(original_decision_id.clone()),
+                delta: SessionZeroDelta {
+                    dm_speech: "I need to think about that.".into(),
+                    ..Default::default()
+                },
+                model_receipts: vec![],
+            })
+            .await
+            .unwrap_err();
+        assert!(
+            rejected_replacement
+                .to_string()
+                .contains("fresh material decision")
+        );
+        assert_eq!(
+            store
+                .load::<SessionZeroState>("session_zero.v1", &state_id.to_string())
+                .unwrap()
+                .unwrap()
+                .1,
+            before_rejected_accept
+        );
+
+        let replacement_decision_id = "decision:fork-memory:revised".to_string();
+        let revised_permission = permission(
+            "permission:fork-memory:revised",
+            vec![
+                "Migraines and memory contamination".into(),
+                "Intense synchronization can leave permanent associative scars".into(),
+            ],
+        );
+        let replaced = kernel
+            .command(SessionZeroCommand::ApplyDmTurn {
+                expected_component_epoch: countered.state.character_epochs[&member_id],
+                expected_channel_revision: countered.state.channels[&private_channel].revision,
+                channel_id: private_channel,
+                member_id: Some(member_id.clone()),
+                supersedes_countered_decision_id: Some(original_decision_id.clone()),
+                delta: SessionZeroDelta {
+                    decisions: vec![SessionZeroDecision {
+                        schema: "ghostlight.session_zero_decision.v1".into(),
+                        id: replacement_decision_id.clone(),
+                        owner_member_id: Some(member_id.clone()),
+                        prompt: "Accept the revised fork-memory bargain?".into(),
+                        proposed_resolution: counter_text.into(),
+                        proposed_extraordinary_permission: Some(revised_permission.clone()),
+                        proposed_contract_patch: None,
+                        proposed_character_patch: None,
+                        evidence_receipt_ids: vec![],
+                        pending_counter: None,
+                        material: true,
+                        resolved: false,
+                    }],
+                    dm_speech: "That cost preserves the ability and its stakes.".into(),
+                    ..Default::default()
+                },
+                model_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        assert!(replaced.state.decisions[&original_decision_id].resolved);
+        assert!(!replaced.state.decisions[&replacement_decision_id].resolved);
+        assert!(
+            replaced.state.character_drafts[&member_id]
+                .extraordinary_permissions
+                .is_empty()
+        );
+
+        let accepted = kernel
+            .command(SessionZeroCommand::ResolveDecision {
+                actor_account_hash: "account:host".into(),
+                expected_revision: replaced.state.revision,
+                decision_id: replacement_decision_id,
+                accept: true,
+                counter: None,
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            accepted.state.character_drafts[&member_id].extraordinary_permissions,
+            vec![revised_permission]
+        );
+    }
+
+    #[tokio::test]
     async fn malformed_shared_dm_delta_cannot_cross_private_authority() {
         let dir = tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
@@ -3288,6 +3578,7 @@ mod tests {
                 expected_channel_revision: 0,
                 channel_id: "shared:table".into(),
                 member_id: None,
+                supersedes_countered_decision_id: None,
                 delta: SessionZeroDelta {
                     character_patch: Some(CharacterDraftPatch {
                         secrets_add: vec!["leaked private history".into()],

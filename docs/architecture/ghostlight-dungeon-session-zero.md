@@ -67,6 +67,17 @@ the kernel may append a fixed local DM notice to the conversation while leaving
 contract, characters, decisions, boundaries, approvals, and model receipts
 unchanged.
 
+Material decisions preserve the distinction between discussion and consent.
+Accept applies only the exact typed payload currently stored in the decision.
+Counter atomically removes that payload, records the player's text in the
+decision's durable channel, marks the unresolved decision as awaiting a DM
+replacement, and invalidates the affected projection epoch. The DM response
+must produce a fresh material decision against that same channel and component
+epoch; installing it and retiring the pending counter is one kernel commit.
+Until then the old decision has no Accept surface and forged acceptance fails.
+Inference failure, an irrelevant response, or a stale response leaves the
+counter unresolved and compilation blocked.
+
 ## Approval and publication
 
 The host locks the roster before compilation. Material unresolved decisions

@@ -1915,6 +1915,7 @@ async fn populate_opening_suggestions(
                 ),
                 proposed_character_patch: None,
                 evidence_receipt_ids: opening.evidence_receipt_ids.clone(),
+                pending_counter: None,
                 material: true,
                 resolved: false,
             },
@@ -1941,6 +1942,7 @@ async fn populate_opening_suggestions(
             expected_channel_revision: snapshot.channels["shared:table"].revision,
             channel_id: "shared:table".into(),
             member_id: None,
+            supersedes_countered_decision_id: None,
             delta: ghostlight_dungeon::session_zero::SessionZeroDelta {
                 contract_patch: Default::default(),
                 character_patch: None,
@@ -2044,6 +2046,7 @@ async fn populate_role_suggestions(
                         },
                     ),
                     evidence_receipt_ids: role.evidence_receipt_ids.clone(),
+                    pending_counter: None,
                     material: true,
                     resolved: false,
                 },
@@ -2056,6 +2059,7 @@ async fn populate_role_suggestions(
                 expected_channel_revision: snapshot.channels[&channel_id].revision,
                 channel_id,
                 member_id: Some(member.id.clone()),
+                supersedes_countered_decision_id: None,
                 delta: ghostlight_dungeon::session_zero::SessionZeroDelta {
                     contract_patch: Default::default(),
                     character_patch: None,
@@ -2195,7 +2199,7 @@ async fn post_session_zero_message(
         .member_for_account(&account_hash)
         .map(|member| member.id.clone());
     let channel = result.state.channels.get(&channel_id).cloned();
-    if let (Some(director), Some(channel)) = (state.session_zero_director.clone(), channel) {
+    if let Some(channel) = channel {
         let private_member = if channel.kind
             == ghostlight_dungeon::session_zero::SessionZeroChannelKind::PrivateDm
         {
@@ -2203,59 +2207,14 @@ async fn post_session_zero_message(
         } else {
             None
         };
-        let component_epoch = private_member
-            .as_ref()
-            .and_then(|id| result.state.character_epochs.get(id).copied())
-            .unwrap_or(result.state.shared_epoch);
-        let snapshot = result.state.clone();
-        let kernel = runtime.kernel.clone();
-        let mesh_state = state.clone();
-        tokio::spawn(async move {
-            match director
-                .respond(&snapshot, &channel_id, private_member.as_deref())
-                .await
-            {
-                Ok((delta, receipts)) => {
-                    if let Err(error) = kernel
-                        .command(SessionZeroCommand::ApplyDmTurn {
-                            expected_component_epoch: component_epoch,
-                            expected_channel_revision: channel.revision,
-                            channel_id,
-                            member_id: private_member,
-                            delta,
-                            model_receipts: receipts,
-                        })
-                        .await
-                    {
-                        tracing::info!(%error, "stale or invalid Session Zero DM proposal discarded");
-                    } else {
-                        schedule_mesh_refresh(&mesh_state);
-                    }
-                }
-                Err(error) => {
-                    tracing::warn!(%error, "Session Zero DM inference failed without draft mutation");
-                    let failure = ghostlight_dungeon::session_zero::SessionZeroDelta {
-                        dm_speech: "I couldn't finish that response. Your message is safely recorded and no draft state changed; please retry or rephrase when you're ready.".into(),
-                        ..Default::default()
-                    };
-                    if let Err(stale) = kernel
-                        .command(SessionZeroCommand::ApplyDmTurn {
-                            expected_component_epoch: component_epoch,
-                            expected_channel_revision: channel.revision,
-                            channel_id,
-                            member_id: private_member,
-                            delta: failure,
-                            model_receipts: Vec::new(),
-                        })
-                        .await
-                    {
-                        tracing::info!(%stale, "stale Session Zero DM failure notice discarded");
-                    } else {
-                        schedule_mesh_refresh(&mesh_state);
-                    }
-                }
-            }
-        });
+        schedule_session_zero_dm_response(
+            &state,
+            &runtime,
+            result.state.clone(),
+            channel_id.clone(),
+            private_member,
+            None,
+        );
     }
     schedule_mesh_refresh(&state);
     (
@@ -2268,6 +2227,109 @@ async fn post_session_zero_message(
         })),
     )
         .into_response()
+}
+
+fn schedule_session_zero_dm_response(
+    state: &AppState,
+    runtime: &ghostlight_dungeon::session_zero::SessionZeroRuntime,
+    snapshot: SessionZeroState,
+    channel_id: String,
+    member_id: Option<String>,
+    supersedes_countered_decision_id: Option<String>,
+) {
+    let Some(director) = state.session_zero_director.clone() else {
+        return;
+    };
+    let Some(channel) = snapshot.channels.get(&channel_id).cloned() else {
+        return;
+    };
+    let component_epoch = member_id
+        .as_ref()
+        .and_then(|id| snapshot.character_epochs.get(id).copied())
+        .unwrap_or(snapshot.shared_epoch);
+    let kernel = runtime.kernel.clone();
+    let mesh_state = state.clone();
+    tokio::spawn(async move {
+        match director
+            .respond(&snapshot, &channel_id, member_id.as_deref())
+            .await
+        {
+            Ok((delta, receipts)) => {
+                let applied = kernel
+                    .command(SessionZeroCommand::ApplyDmTurn {
+                        expected_component_epoch: component_epoch,
+                        expected_channel_revision: channel.revision,
+                        channel_id: channel_id.clone(),
+                        member_id: member_id.clone(),
+                        supersedes_countered_decision_id: supersedes_countered_decision_id.clone(),
+                        delta,
+                        model_receipts: receipts,
+                    })
+                    .await;
+                if let Err(error) = applied {
+                    tracing::info!(%error, "stale or invalid Session Zero DM proposal discarded");
+                    if supersedes_countered_decision_id.is_some() {
+                        append_session_zero_dm_failure_notice(
+                            &kernel,
+                            &mesh_state,
+                            component_epoch,
+                            channel.revision,
+                            channel_id,
+                            member_id,
+                            "I couldn't turn that counterproposal into a safe typed replacement. Your counter remains pending and the previous bargain cannot be accepted. Please discuss or counter it again.",
+                        )
+                        .await;
+                    }
+                } else {
+                    schedule_mesh_refresh(&mesh_state);
+                }
+            }
+            Err(error) => {
+                tracing::warn!(%error, "Session Zero DM inference failed without draft mutation");
+                append_session_zero_dm_failure_notice(
+                    &kernel,
+                    &mesh_state,
+                    component_epoch,
+                    channel.revision,
+                    channel_id,
+                    member_id,
+                    "I couldn't finish that response. Your message is safely recorded and no draft state changed; please retry or rephrase when you're ready.",
+                )
+                .await;
+            }
+        }
+    });
+}
+
+async fn append_session_zero_dm_failure_notice(
+    kernel: &ghostlight_dungeon::session_zero::SessionZeroKernel,
+    state: &AppState,
+    expected_component_epoch: u64,
+    expected_channel_revision: u64,
+    channel_id: String,
+    member_id: Option<String>,
+    message: &str,
+) {
+    let failure = ghostlight_dungeon::session_zero::SessionZeroDelta {
+        dm_speech: message.into(),
+        ..Default::default()
+    };
+    if let Err(stale) = kernel
+        .command(SessionZeroCommand::ApplyDmTurn {
+            expected_component_epoch,
+            expected_channel_revision,
+            channel_id,
+            member_id,
+            supersedes_countered_decision_id: None,
+            delta: failure,
+            model_receipts: Vec::new(),
+        })
+        .await
+    {
+        tracing::info!(%stale, "stale Session Zero DM failure notice discarded");
+    } else {
+        schedule_mesh_refresh(state);
+    }
 }
 
 async fn set_session_zero_boundary(
@@ -2457,6 +2519,24 @@ async fn resolve_session_zero_decision(
         .await
     {
         Ok(result) => {
+            if !accepted
+                && let Some(decision) = result.state.decisions.get(&decision_id)
+                && decision.pending_counter.is_some()
+            {
+                let member_id = decision.owner_member_id.clone();
+                let channel_id = member_id
+                    .as_ref()
+                    .map(|owner| format!("private:{owner}"))
+                    .unwrap_or_else(|| "shared:table".into());
+                schedule_session_zero_dm_response(
+                    &state,
+                    &runtime,
+                    result.state.clone(),
+                    channel_id,
+                    member_id,
+                    Some(decision_id.clone()),
+                );
+            }
             if accepted
                 && let Some(opening) = accepted_opening_suggestion(&result.state, &decision_id)
                 && let Some(compiler) = state.compiler.clone()
