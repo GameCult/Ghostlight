@@ -601,6 +601,15 @@ The host can discard any non-canonical preview through the SessionZeroKernel;
 the command clears only preview state and returns the locked roster to drafting
 without editing the contract, character drafts, or fictional time.
 
+Session Zero owns human-controlled actor identity and state. Public player names
+and premises may enter the shared compiler as setting context, but those names
+are reserved outside world-cast compilation: actors and Gestalt members cannot
+materialize them. The compiler's singular player object is a provisional
+starting-position marker only. Ghostlight removes it and installs the approved
+typed characters locally. Collision receives one same-snapshot correction and
+then rejects the candidate; no deduplication or model choice can replace the
+Session Zero owner.
+
 Private character relationships now cross compilation through a typed identity
 membrane. Exact player references bind to their approved actor IDs. Each
 otherwise unresolved named person gets a stable server-generated

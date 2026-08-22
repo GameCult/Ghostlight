@@ -222,6 +222,14 @@ The host may discard any non-canonical preview through a typed Session Zero
 command and continue drafting without changing the contract, characters, or
 fictional time. A retained preview never traps the table into reviewing it.
 
+Session Zero also remains the sole owner of every human-controlled character.
+The shared compiler may use player-approved public names and premises as world
+context, but those names are reserved: neither ordinary cast nor Gestalt member
+output may materialize them. Its singular player document is only a provisional
+starting-position marker. After compilation, Ghostlight removes that marker and
+installs the approved typed characters. A candidate that duplicates a reserved
+player identity is corrected against the same snapshot or rejected atomically.
+
 An approved unresolved relationship person crosses world compilation as a
 server-owned identity anchor. The shared world compiler never receives that
 person's name, identity handle, or relationship. After the public topology is
