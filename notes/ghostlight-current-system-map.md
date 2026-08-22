@@ -524,14 +524,21 @@ promoted into Worldbuilding before they become reusable campaign canon.
 Session Zero compilation, expansion, and fission follow the same projection
 rule. Review projections expose topology, pressures, source-use coverage, gaps,
 assumptions, public party cards, and only the current viewer's private ledger.
-Generated openings are shared typed decisions; accepting one amends the draft
-for discussion and triggers three grounded role decisions in each private DM
-channel. Custom starts and characters use the same draft. The browser returns
+Generated openings are optional shared typed decisions; accepting one amends
+the draft for discussion and triggers three optional grounded role decisions in
+each private DM channel. Ignoring them cannot block a custom start or character.
+Custom starts and characters use the same draft. The browser returns
 only decision commands and cannot echo a rewritten candidate into compilation.
 Candidate IDs, text, list sizes, and evidence references receive local
 validation. Suggestion retrieval and model receipts remain in the Session Zero
 store; publication compiles the unanimously approved brief, never the
 conversation transcript.
+
+Roster lock is not readiness. Before world compilation the kernel checks the
+typed contract's core play frame and each active character's minimum actionable
+shape. Transcript-only detail, blank contract fields, or a character with no
+public premise, capability, goal, and stake return explicit missing inputs and
+cannot spend a world-compiler call.
 
 Campaign publication has a separate discoverability boundary. Session Zero
 publication and solo lifecycle operations initialize a new `.cc` store under a

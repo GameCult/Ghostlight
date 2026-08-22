@@ -811,6 +811,13 @@ impl SessionZeroState {
         {
             return Err(anyhow!("material decisions remain unresolved"));
         }
+        let gaps = self.compilation_gaps();
+        if !gaps.is_empty() {
+            return Err(anyhow!(
+                "Session Zero draft is incomplete: {}",
+                gaps.join("; ")
+            ));
+        }
         let shared_digest = self.shared_digest()?;
         let active = self
             .members
@@ -838,6 +845,68 @@ impl SessionZeroState {
             shared_digest,
             character_digests,
         })
+    }
+
+    fn compilation_gaps(&self) -> Vec<String> {
+        let mut gaps = Vec::new();
+        for (label, value) in [
+            ("campaign premise", self.contract.premise.as_str()),
+            ("canon horizon", self.contract.canon_horizon.as_str()),
+            ("starting location", self.contract.starting_where.as_str()),
+            ("starting time", self.contract.starting_when.as_str()),
+            (
+                "starting pressure",
+                self.contract.starting_pressure.as_str(),
+            ),
+            ("desired goal", self.contract.desired_goal.as_str()),
+            ("pacing", self.contract.pacing.as_str()),
+            (
+                "consequence style",
+                self.contract.consequence_style.as_str(),
+            ),
+            ("narrative focus", self.contract.narrative_focus.as_str()),
+            ("DM style", self.contract.dm_style.as_str()),
+        ] {
+            if value.trim().is_empty() {
+                gaps.push(label.to_string());
+            }
+        }
+        if self.contract.tone.is_empty() {
+            gaps.push("tone".into());
+        }
+        let active_members = self
+            .members
+            .values()
+            .filter(|member| member.active)
+            .collect::<Vec<_>>();
+        if active_members.len() > 1 && self.contract.party_bonds.is_empty() {
+            gaps.push("party bonds".into());
+        }
+        for member in active_members {
+            let Some(character) = self.character_drafts.get(&member.id) else {
+                gaps.push(format!("{} character draft", member.display_name));
+                continue;
+            };
+            if character.name.trim().is_empty() {
+                gaps.push(format!("{} character name", member.display_name));
+            }
+            if character.public_premise.trim().is_empty() {
+                gaps.push(format!("{} public character premise", member.display_name));
+            }
+            if character.capabilities.is_empty() {
+                gaps.push(format!("{} capabilities", member.display_name));
+            }
+            if character.goals.is_empty() {
+                gaps.push(format!("{} goals", member.display_name));
+            }
+            if character.obligations.is_empty() && character.vulnerabilities.is_empty() {
+                gaps.push(format!(
+                    "{} obligation or vulnerability",
+                    member.display_name
+                ));
+            }
+        }
+        gaps
     }
 }
 
@@ -2044,12 +2113,12 @@ fn execute(
                     return Err(anyhow!("countered decision channel owner mismatch"));
                 }
                 if !delta.decisions.iter().any(|replacement| {
-                    replacement.material
-                        && !replacement.resolved
+                    !replacement.resolved
                         && replacement.owner_member_id.as_deref() == member_id.as_deref()
+                        && (!countered.material || replacement.material)
                 }) {
                     return Err(anyhow!(
-                        "counter response must contain a fresh material decision"
+                        "counter response must contain a fresh decision with the required materiality"
                     ));
                 }
             }
@@ -3051,6 +3120,76 @@ mod tests {
         assert_eq!(state.pooled_cell_allowance(), OPERATOR_CELL_CEILING);
     }
 
+    #[test]
+    fn blank_conversation_only_draft_cannot_enter_world_compilation() {
+        let mut draft = state();
+        draft.roster_locked = true;
+        let error = draft.compilation_brief().unwrap_err().to_string();
+        assert!(error.contains("Session Zero draft is incomplete"));
+        assert!(error.contains("starting location"));
+        assert!(error.contains("public character premise"));
+        assert!(error.contains("capabilities"));
+    }
+
+    #[test]
+    fn optional_opening_or_role_suggestions_do_not_block_custom_compilation() {
+        let mut draft = state();
+        draft.roster_locked = true;
+        draft.contract.premise = "Keep a refugee clinic supplied during a political crisis.".into();
+        draft.contract.canon_horizon = "After Burden of Proof".into();
+        draft.contract.starting_where = "Hellas, Mars".into();
+        draft.contract.starting_when = "Zhestokost administration".into();
+        draft.contract.starting_pressure = "A ration strike and refugee convoy".into();
+        draft.contract.desired_goal = "Protect the clinic without becoming an informant.".into();
+        draft.contract.tone = vec!["serious political drama".into()];
+        draft.contract.pacing = "deliberate pressure with sharp turns".into();
+        draft.contract.consequence_style = "durable, low arbitrary lethality".into();
+        draft.contract.narrative_focus = "institutional leverage and human solidarity".into();
+        draft.contract.dm_style = "candid, challenging, and humane".into();
+        let character = draft
+            .character_drafts
+            .get_mut(&draft.host_member_id)
+            .unwrap();
+        character.public_premise =
+            "A Corvid logistics mediator caught between institutions.".into();
+        character.capabilities = vec!["Route planning".into()];
+        character.goals = vec!["Get the convoy through".into()];
+        character.obligations = vec!["A life-debt to the quartermaster".into()];
+        draft.decisions.insert(
+            "opening:optional".into(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "opening:optional".into(),
+                owner_member_id: None,
+                prompt: "Use this generated opening?".into(),
+                proposed_resolution: "A generated frame the player may ignore.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: Some(CampaignContractPatch {
+                    starting_where: Some("Somewhere else".into()),
+                    ..Default::default()
+                }),
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: false,
+                resolved: false,
+            },
+        );
+        assert!(draft.compilation_brief().is_ok());
+        draft
+            .decisions
+            .get_mut("opening:optional")
+            .unwrap()
+            .material = true;
+        assert!(
+            draft
+                .compilation_brief()
+                .unwrap_err()
+                .to_string()
+                .contains("material decisions")
+        );
+    }
+
     #[tokio::test]
     async fn actor_filtered_surface_never_projects_other_private_state_or_account_hashes() {
         let dir = tempdir().unwrap();
@@ -3491,7 +3630,7 @@ mod tests {
         assert!(
             rejected_replacement
                 .to_string()
-                .contains("fresh material decision")
+                .contains("required materiality")
         );
         assert_eq!(
             store

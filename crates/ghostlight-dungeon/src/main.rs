@@ -1916,7 +1916,7 @@ async fn populate_opening_suggestions(
                 proposed_character_patch: None,
                 evidence_receipt_ids: opening.evidence_receipt_ids.clone(),
                 pending_counter: None,
-                material: true,
+                material: false,
                 resolved: false,
             },
         )
@@ -2047,7 +2047,7 @@ async fn populate_role_suggestions(
                     ),
                     evidence_receipt_ids: role.evidence_receipt_ids.clone(),
                     pending_counter: None,
-                    material: true,
+                    material: false,
                     resolved: false,
                 },
             )

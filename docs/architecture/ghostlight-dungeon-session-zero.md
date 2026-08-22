@@ -67,7 +67,9 @@ the kernel may append a fixed local DM notice to the conversation while leaving
 contract, characters, decisions, boundaries, approvals, and model receipts
 unchanged.
 
-Material decisions preserve the distinction between discussion and consent.
+Generated opening and role suggestions are non-material decisions: the player
+may accept, counter, discuss, or ignore them without blocking a fully custom
+draft. Material decisions preserve the distinction between discussion and consent.
 Accept applies only the exact typed payload currently stored in the decision.
 Counter atomically removes that payload, records the player's text in the
 decision's durable channel, marks the unresolved decision as awaiting a DM
@@ -81,7 +83,12 @@ counter unresolved and compilation blocked.
 ## Approval and publication
 
 The host locks the roster before compilation. Material unresolved decisions
-block compilation. The compiler receives an `approved_campaign_brief.v1`, not
+block compilation. The kernel also refuses a conversation-only draft: the
+typed contract must identify premise, canon horizon, start, pressure, goal,
+tone, pacing, consequences, narrative focus, and DM style; every active
+character must have a public premise, capability, goal, and at least one
+obligation or vulnerability. Group drafts additionally require a party bond.
+The compiler receives an `approved_campaign_brief.v1`, not
 the transcript. Private character history and secrets are withheld from world
 generation; after the grounded seed validates, Ghostlight locally replaces the
 provisional compiler player with the exact approved actors at one shared start.
