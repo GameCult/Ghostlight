@@ -72,6 +72,8 @@ pub struct ModelProviderAttemptReceipt {
     pub latency_ms: u64,
     pub token_usage: Option<ModelTokenUsage>,
     #[serde(default)]
+    pub transport_features: Vec<String>,
+    #[serde(default)]
     pub local_validation_result: String,
     #[serde(default)]
     pub local_validation_error: Option<String>,
@@ -102,6 +104,7 @@ pub struct ModelProviderOutput {
     pub system_fingerprint: Option<String>,
     pub finish_reason: Option<String>,
     pub token_usage: Option<ModelTokenUsage>,
+    pub transport_features: Vec<String>,
 }
 
 #[async_trait]
@@ -156,6 +159,7 @@ pub async fn run_validated_stage_with_timeout(
             system_fingerprint,
             finish_reason,
             token_usage,
+            transport_features,
         } = provider_output;
         provider_attempts.push(ModelProviderAttemptReceipt {
             provider_request_id,
@@ -163,6 +167,7 @@ pub async fn run_validated_stage_with_timeout(
             finish_reason,
             latency_ms: started.elapsed().as_millis() as u64,
             token_usage,
+            transport_features,
             local_validation_result: "pending".into(),
             local_validation_error: None,
         });
@@ -503,6 +508,7 @@ mod tests {
             finish_reason: output.finish_reason,
             latency_ms: 1,
             token_usage: output.token_usage,
+            transport_features: output.transport_features,
             local_validation_result: "valid".into(),
             local_validation_error: None,
         })
@@ -554,8 +560,17 @@ mod tests {
         assert_eq!(body["reasoning"]["effort"], "low");
         assert_eq!(body["reasoning"]["exclude"], true);
         assert_eq!(body["response_format"]["type"], "json_object");
+        assert_eq!(body["plugins"][0]["id"], "response-healing");
         assert_eq!(body["temperature"].as_f64(), Some(0.0));
         assert!(body.get("thinking").is_none());
+
+        let mut narrative = request.clone();
+        narrative.output_schema = None;
+        assert!(
+            openrouter_request_body(&narrative, "stealth/ox-alpha")
+                .get("plugins")
+                .is_none()
+        );
 
         let mut capable = request;
         capable.model = MODEL_CAPABLE.into();
@@ -822,6 +837,11 @@ impl OpenRouterPort {
             .await?;
         let mut output = decode_openai_chat_response(&value, "OpenRouter")?;
         output.resolved_model = Some(resolved_model);
+        if request.output_schema.is_some() {
+            output
+                .transport_features
+                .push("openrouter.response-healing".into());
+        }
         Ok(output)
     }
 }
@@ -838,6 +858,7 @@ fn openrouter_request_body(request: &ModelStageRequest, resolved_model: &str) ->
     });
     if request.output_schema.is_some() {
         body["response_format"] = serde_json::json!({"type":"json_object"});
+        body["plugins"] = serde_json::json!([{"id":"response-healing"}]);
         body["temperature"] = serde_json::json!(request.temperature.unwrap_or(0.0));
     } else if let Some(temperature) = request.temperature {
         body["temperature"] = serde_json::json!(temperature);
@@ -916,5 +937,6 @@ fn decode_openai_chat_response(
             .as_str()
             .map(str::to_owned),
         token_usage,
+        transport_features: vec![],
     })
 }
