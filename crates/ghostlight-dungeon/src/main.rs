@@ -5040,11 +5040,7 @@ async fn refresh_due_app_sessions(state: &AppState) -> anyhow::Result<()> {
         .await
         .sessions_due_for_refresh(Utc::now(), chrono::Duration::minutes(5))?;
     for candidate in candidates {
-        let idempotency_key = refresh_idempotency_key(
-            &candidate.heimdall_session_id,
-            candidate.access_revision,
-            &candidate.refresh_claim,
-        );
+        let idempotency_key = refresh_idempotency_key(&candidate.heimdall_session_id);
         let completion = match state
             .heimdall
             .refresh(&candidate.refresh_claim, &idempotency_key)
@@ -5107,13 +5103,8 @@ async fn refresh_due_app_sessions(state: &AppState) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn refresh_idempotency_key(
-    heimdall_session_id: &str,
-    access_revision: u64,
-    refresh_claim: &str,
-) -> String {
-    let generation = secret_hash(&format!("heimdall-refresh-generation:{refresh_claim}"));
-    format!("refresh:{heimdall_session_id}:{access_revision}:{generation}")
+fn refresh_idempotency_key(heimdall_session_id: &str) -> String {
+    format!("refresh:{heimdall_session_id}:{}", uuid::Uuid::new_v4())
 }
 
 async fn authenticated_session(headers: &HeaderMap, state: &AppState) -> Option<String> {
@@ -5535,14 +5526,12 @@ mod tests {
     }
 
     #[test]
-    fn refresh_idempotency_tracks_the_rotating_claim_generation() {
-        let first = refresh_idempotency_key("heimdall-session", 7, "refresh-claim-one");
-        let retry = refresh_idempotency_key("heimdall-session", 7, "refresh-claim-one");
-        let rotated = refresh_idempotency_key("heimdall-session", 7, "refresh-claim-two");
+    fn each_refresh_attempt_has_a_distinct_command_identity() {
+        let first = refresh_idempotency_key("heimdall-session");
+        let second = refresh_idempotency_key("heimdall-session");
 
-        assert_eq!(first, retry);
-        assert_ne!(first, rotated);
-        assert!(!first.contains("refresh-claim-one"));
+        assert_ne!(first, second);
+        assert!(first.starts_with("refresh:heimdall-session:"));
     }
 
     #[test]
