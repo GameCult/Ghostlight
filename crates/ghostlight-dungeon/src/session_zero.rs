@@ -1285,12 +1285,21 @@ impl SessionZeroDirector {
         state: &SessionZeroState,
         channel_id: &str,
         member_id: Option<&str>,
+        supersedes_countered_decision_id: Option<&str>,
     ) -> Result<(SessionZeroDelta, Vec<ModelStageReceipt>)> {
         require_channel_access_by_member(state, channel_id, member_id)?;
-        let permitted = permitted_dm_context(state, channel_id, member_id)?;
+        let permitted = permitted_dm_context(
+            state,
+            channel_id,
+            member_id,
+            supersedes_countered_decision_id,
+        )?;
         let binding = format!(
-            "session-zero:{}:revision:{}:channel:{}",
-            state.id, state.revision, channel_id
+            "session-zero:{}:revision:{}:channel:{}:focus:{}",
+            state.id,
+            state.revision,
+            channel_id,
+            supersedes_countered_decision_id.unwrap_or("conversation")
         );
         let projector_schema = serde_json::to_value(schema_for!(ProjectedLivedStream))?;
         let projector = run_validated_stage(
@@ -1300,7 +1309,7 @@ impl SessionZeroDirector {
                 model: self.projector_model.clone(),
                 snapshot_binding: binding.clone(),
                 lived_stream: format!(
-                    "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, and authorship. Never invent state. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\nReturn one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}",
+                    "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, and authorship. Never invent state. If turn_focus is present, make that exact counter replacement the sole immediate task. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\nReturn one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}",
                     serde_json::to_string(&projector_schema)?,
                     serde_json::to_string(&permitted)?
                 ),
@@ -1324,7 +1333,7 @@ impl SessionZeroDirector {
                 model: self.persona_model.clone(),
                 snapshot_binding: binding.clone(),
                 lived_stream: format!(
-                    "You are {}. {} Lead a candid, collaborative Session Zero. Ask only the most useful next questions; synthesize choices; preserve the player's premise while negotiating costs and limits that create stakes. Do not claim changes are accepted. Speak naturally, with no schema or machine-state language.\n\n{}",
+                    "You are {}. {} Lead a candid, collaborative Session Zero. Ask only the most useful next questions; synthesize choices; preserve the player's premise while negotiating costs and limits that create stakes. When the lived stream names an exact counter replacement, resolve that task before any other decision. Do not claim changes are accepted. Speak naturally, with no schema or machine-state language.\n\n{}",
                     state.dm_persona.name, state.dm_persona.voice, lived.lived_stream
                 ),
                 output_schema: None,
@@ -1335,7 +1344,12 @@ impl SessionZeroDirector {
         )
         .await?;
         validate_bounded("DM speech", &persona.narrative, 1, 6_000)?;
-        let interpreter_context = permitted_interpreter_context(state, channel_id, member_id)?;
+        let interpreter_context = permitted_interpreter_context(
+            state,
+            channel_id,
+            member_id,
+            supersedes_countered_decision_id,
+        )?;
         let mut interpreter_schema = serde_json::to_value(schema_for!(SessionZeroInterpretation))?;
         require_typed_decision_payloads(&mut interpreter_schema)?;
         let interpreter = run_validated_stage(
@@ -1345,7 +1359,7 @@ impl SessionZeroDirector {
                 model: self.interpreter_model.clone(),
                 snapshot_binding: binding,
                 lived_stream: format!(
-                    "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
+                    "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. If turn_focus is present, emit exactly one fresh decision for that counter with the required owner and materiality; do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
                     serde_json::to_string(&interpreter_schema)?,
                     serde_json::to_string(&interpreter_context)?,
                     serde_json::to_string(&persona.narrative)?
@@ -1433,6 +1447,7 @@ fn permitted_dm_context(
     state: &SessionZeroState,
     channel_id: &str,
     member_id: Option<&str>,
+    supersedes_countered_decision_id: Option<&str>,
 ) -> Result<serde_json::Value> {
     let channel = state
         .channels
@@ -1459,13 +1474,9 @@ fn permitted_dm_context(
         .filter(|member| member.active)
         .map(|member| public_character_projection(&state.character_drafts[&member.id]))
         .collect::<Vec<_>>();
-    let visible_decisions = state
-        .decisions
-        .values()
-        .filter(|decision| {
-            decision.owner_member_id.is_none() || decision.owner_member_id.as_deref() == member_id
-        })
-        .collect::<Vec<_>>();
+    let turn_focus = counter_replacement_focus(state, member_id, supersedes_countered_decision_id)?;
+    let visible_decisions =
+        visible_decisions_for_turn(state, member_id, supersedes_countered_decision_id)?;
     let mut value = serde_json::json!({
         "session_id": state.id,
         "revision": state.revision,
@@ -1476,6 +1487,7 @@ fn permitted_dm_context(
         "aggregate_boundaries": state.aggregate_boundaries,
         "public_party": public_party,
         "unresolved_decisions": visible_decisions,
+        "turn_focus": turn_focus,
         "recent_messages": recent_messages,
         "evidence_coverage": state.preview_evidence_coverage,
     });
@@ -1517,23 +1529,21 @@ fn permitted_interpreter_context(
     state: &SessionZeroState,
     channel_id: &str,
     member_id: Option<&str>,
+    supersedes_countered_decision_id: Option<&str>,
 ) -> Result<serde_json::Value> {
     let channel = state
         .channels
         .get(channel_id)
         .ok_or_else(|| anyhow!("channel does not exist"))?;
-    let visible_decisions = state
-        .decisions
-        .values()
-        .filter(|decision| {
-            decision.owner_member_id.is_none() || decision.owner_member_id.as_deref() == member_id
-        })
-        .collect::<Vec<_>>();
+    let turn_focus = counter_replacement_focus(state, member_id, supersedes_countered_decision_id)?;
+    let visible_decisions =
+        visible_decisions_for_turn(state, member_id, supersedes_countered_decision_id)?;
     let mut value = serde_json::json!({
         "channel_kind": channel.kind,
         "member_id": member_id,
         "current_contract": state.contract,
         "existing_visible_decisions": visible_decisions,
+        "turn_focus": turn_focus,
     });
     if channel.kind == SessionZeroChannelKind::PrivateDm {
         let member_id = member_id.ok_or_else(|| anyhow!("private member is missing"))?;
@@ -1545,6 +1555,63 @@ fn permitted_interpreter_context(
         )?;
     }
     Ok(value)
+}
+
+fn visible_decisions_for_turn<'a>(
+    state: &'a SessionZeroState,
+    member_id: Option<&str>,
+    supersedes_countered_decision_id: Option<&str>,
+) -> Result<Vec<&'a SessionZeroDecision>> {
+    if let Some(decision_id) = supersedes_countered_decision_id {
+        return Ok(vec![
+            state
+                .decisions
+                .get(decision_id)
+                .ok_or_else(|| anyhow!("countered decision is missing"))?,
+        ]);
+    }
+    Ok(state
+        .decisions
+        .values()
+        .filter(|decision| {
+            decision.owner_member_id.is_none() || decision.owner_member_id.as_deref() == member_id
+        })
+        .collect())
+}
+
+fn counter_replacement_focus(
+    state: &SessionZeroState,
+    member_id: Option<&str>,
+    supersedes_countered_decision_id: Option<&str>,
+) -> Result<Option<serde_json::Value>> {
+    let Some(decision_id) = supersedes_countered_decision_id else {
+        return Ok(None);
+    };
+    let decision = state
+        .decisions
+        .get(decision_id)
+        .ok_or_else(|| anyhow!("countered decision is missing"))?;
+    if decision.resolved {
+        return Err(anyhow!("countered decision is already resolved"));
+    }
+    if decision.owner_member_id.as_deref() != member_id {
+        return Err(anyhow!(
+            "countered decision is outside this channel's authority"
+        ));
+    }
+    let pending_counter = decision
+        .pending_counter
+        .as_deref()
+        .ok_or_else(|| anyhow!("countered decision has no pending counterproposal"))?;
+    Ok(Some(serde_json::json!({
+        "kind":"counter_replacement",
+        "decision_id":decision.id,
+        "original_prompt":decision.prompt,
+        "pending_counter":pending_counter,
+        "required_owner_member_id":decision.owner_member_id,
+        "required_material":decision.material,
+        "required_output":"exactly one fresh unresolved decision with a non-empty typed payload",
+    })))
 }
 
 fn display_list(values: &[String]) -> String {
@@ -3242,7 +3309,7 @@ mod tests {
             "interpreter",
         );
         let (delta, receipts) = director
-            .respond(&state(), "shared:table", None)
+            .respond(&state(), "shared:table", None, None)
             .await
             .unwrap();
         assert_eq!(
@@ -3313,7 +3380,7 @@ mod tests {
         )
         .unwrap();
 
-        let context = permitted_dm_context(&draft, &private_channel, Some(&host_id)).unwrap();
+        let context = permitted_dm_context(&draft, &private_channel, Some(&host_id), None).unwrap();
         let shared = serde_json::to_string(&context["recent_shared_messages"]).unwrap();
         assert!(shared.contains("Hellas inside Zhestokost space"));
         assert!(!shared.contains("forged transit credential"));
@@ -3321,6 +3388,74 @@ mod tests {
             serde_json::to_string(&context["recent_messages"])
                 .unwrap()
                 .contains("forged transit credential")
+        );
+    }
+
+    #[test]
+    fn counter_replacement_focus_projects_only_the_exact_pending_decision() {
+        let mut draft = state();
+        let host_id = draft.host_member_id.clone();
+        let target_id = "decision:target".to_string();
+        let decision =
+            |id: String, prompt: &str, pending_counter: Option<String>| SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id,
+                owner_member_id: Some(host_id.clone()),
+                prompt: prompt.into(),
+                proposed_resolution: "A retired proposal".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: None,
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter,
+                material: true,
+                resolved: false,
+            };
+        draft.decisions.insert(
+            target_id.clone(),
+            decision(
+                target_id.clone(),
+                "Replace the memory cost?",
+                Some("Ordinary contamination fades with rest.".into()),
+            ),
+        );
+        draft.decisions.insert(
+            "decision:unrelated".into(),
+            decision(
+                "decision:unrelated".into(),
+                "UNRELATED-DECISION-MARKER",
+                None,
+            ),
+        );
+        let private_channel = format!("private:{host_id}");
+
+        let projected =
+            permitted_dm_context(&draft, &private_channel, Some(&host_id), Some(&target_id))
+                .unwrap();
+        let extraction = permitted_interpreter_context(
+            &draft,
+            &private_channel,
+            Some(&host_id),
+            Some(&target_id),
+        )
+        .unwrap();
+        for context in [&projected, &extraction] {
+            let encoded = serde_json::to_string(context).unwrap();
+            assert!(encoded.contains("Ordinary contamination fades with rest"));
+            assert!(encoded.contains("counter_replacement"));
+            assert!(encoded.contains("exactly one fresh unresolved decision"));
+            assert!(!encoded.contains("UNRELATED-DECISION-MARKER"));
+        }
+        assert_eq!(
+            projected["unresolved_decisions"].as_array().unwrap().len(),
+            1
+        );
+        assert_eq!(
+            extraction["existing_visible_decisions"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
         );
     }
 

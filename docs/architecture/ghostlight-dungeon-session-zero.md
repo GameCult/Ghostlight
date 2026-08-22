@@ -106,6 +106,11 @@ Retry relaunches the membrane from that already persisted counter and unchanged
 Session Zero snapshot. It does not ask the player to retype the counter, append
 a duplicate message, or advance revision merely to try inference again; only a
 later kernel-validated replacement changes state.
+The countered decision ID is also part of the model snapshot binding and
+permitted turn context. Projector and Interpreter see that one pending decision,
+its exact counter, required owner, and required materiality instead of the whole
+unresolved queue. This aligns the model's task with the kernel gate while
+reducing distraction and wasted tokens.
 
 ## Approval and publication
 

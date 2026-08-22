@@ -1640,7 +1640,12 @@ async fn kernel_response_to_eve(invocation: EveCommandInvocation, response: Resp
     let fallback = String::from_utf8_lossy(&bytes).trim().to_owned();
     let message = value
         .as_ref()
-        .and_then(|value| value.get("error").and_then(serde_json::Value::as_str))
+        .and_then(|value| {
+            value
+                .get("error")
+                .or_else(|| value.get("message"))
+                .and_then(serde_json::Value::as_str)
+        })
         .map(str::to_owned)
         .or_else(|| (!fallback.is_empty() && value.is_none()).then_some(fallback))
         .unwrap_or_else(|| {
@@ -2261,7 +2266,12 @@ fn schedule_session_zero_dm_response(
     let mesh_state = state.clone();
     tokio::spawn(async move {
         match director
-            .respond(&snapshot, &channel_id, member_id.as_deref())
+            .respond(
+                &snapshot,
+                &channel_id,
+                member_id.as_deref(),
+                supersedes_countered_decision_id.as_deref(),
+            )
             .await
         {
             Ok((delta, receipts)) => {
@@ -2549,6 +2559,7 @@ async fn resolve_session_zero_decision(
                 "session_zero_id":session_id,
                 "revision":snapshot.revision,
                 "status":"counter_retry_started",
+                "message":"Ghostlight started a revision-bound retry from the persisted counterproposal; no Session Zero state changed.",
             })),
         )
             .into_response();
@@ -5627,6 +5638,52 @@ mod tests {
         assert!(value.contains("Secure"));
         assert!(value.contains("SameSite=Lax"));
         assert!(value.contains("Path=/ghostlight/"));
+    }
+
+    #[tokio::test]
+    async fn eve_receipt_uses_an_explicit_nonmutating_progress_message() {
+        let invocation = EveCommandInvocation {
+            schema: "gamecult.eve.command_invocation.v1".into(),
+            provider_id: "ghostlight".into(),
+            surface_id: EVE_SURFACE_ID.into(),
+            operation: EveOperation {
+                operation_id: "session_zero.decision.retry".into(),
+                schema_id: None,
+                idempotency_key: Some("retry-message-witness".into()),
+                route_hint: EveRouteHint {
+                    source_version: Some(7),
+                    transport: None,
+                },
+            },
+            payload: serde_json::json!({"bindings":{}}),
+            issued_at: Utc::now().to_rfc3339(),
+            client_id: "test-client".into(),
+            command_boundary: EVE_COMMAND_BOUNDARY.into(),
+            receipt_schema: EVE_RESULT_SCHEMA.into(),
+        };
+        let response = kernel_response_to_eve(
+            invocation,
+            Json(serde_json::json!({
+                "status":"counter_retry_started",
+                "message":"Retry started without changing Session Zero state."
+            }))
+            .into_response(),
+        )
+        .await;
+        let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let result: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+
+        assert_eq!(
+            result["receipt"]["message"],
+            "Retry started without changing Session Zero state."
+        );
+        assert_eq!(result["receipt"]["state"], "accepted");
+        assert_eq!(
+            result["draftDirective"],
+            serde_json::json!({"clear":true,"bindingNames":[]})
+        );
     }
 
     #[test]

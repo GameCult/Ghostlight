@@ -48,6 +48,10 @@ retired payload uncommittable.
 Retry is an inference launch against that persisted counter and exact unchanged
 snapshot. It owns no state transition; a replacement still commits only through
 `ApplyDmTurn` at the original component and channel epochs.
+For a counter replacement, the target decision ID enters the stage binding and
+permitted Projector/Interpreter context. Unrelated decisions are omitted from
+that inference turn, so the model receives the same exact task the kernel later
+validates.
 
 An acceptance card is also a typed-state claim. New Interpreter decisions must
 carry a non-empty contract, character, or extraordinary-permission payload;
