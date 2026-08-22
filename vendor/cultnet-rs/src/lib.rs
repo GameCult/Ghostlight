@@ -1,17 +1,25 @@
 mod contracts;
+mod cultmesh;
 mod framing;
+mod operation_service;
+mod provider_session;
 mod replication;
 mod rudp;
 mod schema_discovery;
 mod security;
 mod service_identity;
+mod shard_catalog;
 mod transport;
 
 pub use contracts::*;
+pub use cultmesh::*;
 pub use framing::*;
+pub use operation_service::*;
+pub use provider_session::*;
 pub use replication::*;
 pub use rudp::*;
 pub use schema_discovery::*;
 pub use security::*;
 pub use service_identity::*;
+pub use shard_catalog::*;
 pub use transport::*;

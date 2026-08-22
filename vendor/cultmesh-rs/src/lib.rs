@@ -773,7 +773,7 @@ fn request_raw_snapshot_from_rudp_catalog(
             max_payload_bytes: None,
             max_fragment_bytes: Some(1200),
             max_pending_reliable_packets: None,
-            media_reliable_expire_after_ms: None,
+            reconnect_policy: None,
         })?;
     client.connect(Vec::new())?;
     let connect_deadline = Instant::now() + options.connect_timeout;
@@ -871,7 +871,7 @@ pub fn publish_cultnet_messages_to_rudp_catalog(
             max_payload_bytes: None,
             max_fragment_bytes: Some(1200),
             max_pending_reliable_packets: None,
-            media_reliable_expire_after_ms: None,
+            reconnect_policy: None,
         })?;
     client.connect(Vec::new())?;
     let connect_deadline = Instant::now() + options.connect_timeout;
