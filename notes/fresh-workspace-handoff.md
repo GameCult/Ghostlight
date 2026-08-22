@@ -55,6 +55,14 @@ rewrite.
   Arena cells never become synthetic collective actors or union knowledge.
 - Heimdall owns account identity. `campaign_membership.v1` binds an authenticated
   member to exactly one canonical actor.
+- Eve owns editable bindings, command invocation, command receipts, plugin
+  composition, and lowering. Ghostlight publishes one stable
+  `ghostlight.play` surface; the browser is a thin provider host and never owns
+  login, Session Zero, campaign, governance, or receipt semantics.
+- Heimdall's `gamecult.heimdall.access` plugin renders anonymous and identity
+  state. Sensitive begin, completion, refresh, and logout operations cross its
+  private CultNet command plane; the browser retains only an opaque attempt
+  handle and Ghostlight retains only its own hashed app session.
 - VoidBot owns Vault retrieval and evidence. Ghostlight stores exact evidence
   receipts, not a rival semantic index.
 - Idunn owns deployment and same-release daemon continuity. Odin owns discovery.
@@ -158,6 +166,7 @@ capacity.
 ## Essential references
 
 - MVP authority: `docs/architecture/ghostlight-dungeon-mvp.md`
+- Interface authority: `docs/architecture/ghostlight-eve-native-interface.md`
 - Gestalt authority: `docs/architecture/ghostlight-multiresolution-agency.md`
 - Live system map: `notes/ghostlight-current-system-map.md`
 - Implementation program: `notes/ghostlight-implementation-plan.md`

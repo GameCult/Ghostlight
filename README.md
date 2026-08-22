@@ -35,6 +35,31 @@ multiresolution agency graph for keeping large settings active at finite cost.
 - CultMesh publishes typed service and Eve/CultUI state; the browser lowers that
   surface and does not become a second state authority.
 
+## Eve-native interface
+
+Ghostlight publishes one stable logical surface, `ghostlight.play`, for
+anonymous entry, Session Zero, Contract Review, and campaign play. The browser
+contains Eve's canonical provider host and lowering package plus Heimdall's
+access-plugin adapter. It does not contain Ghostlight-specific screen renderers
+or domain API routing.
+
+Editable Eve bindings are the input model. Text, number, and choice controls
+bind either provider-owned typed state or renderer-local draft state; an
+operation captures named bindings and submits one canonical Eve command.
+Rejected or stale commands preserve local drafts, while an accepted receipt may
+clear named bindings before the host refetches the authoritative surface. A
+browser may lower this interaction to an HTML form for accessibility, but forms
+are not part of Eve's state or command ontology.
+
+Heimdall authentication is composed as the required
+`gamecult.heimdall.access` Eve plugin. Heimdall owns OAuth attempts, provider
+callbacks, claims, entitlements, and single-use completion redemption.
+Ghostlight owns only its hashed HttpOnly app session and derives campaign
+authority from canonical membership. The browser sees an opaque attempt handle,
+never a claim, refresh credential, account hash, member ID, or actor authority.
+See
+[`docs/architecture/ghostlight-eve-native-interface.md`](docs/architecture/ghostlight-eve-native-interface.md).
+
 ## Current Status
 
 Ghostlight Dungeon is implemented and deployed as a native Yggdrasil,
@@ -101,14 +126,15 @@ The shortest reliable re-entry path is:
 - [`docs/architecture/ghostlight-dungeon-mvp.md`](docs/architecture/ghostlight-dungeon-mvp.md): runtime authority, compiler, action loop, persistence, hosting, and security;
 - [`docs/architecture/ghostlight-dungeon-session-zero.md`](docs/architecture/ghostlight-dungeon-session-zero.md): campaign negotiation, privacy, publication, membership, and bounded co-op;
 - [`docs/architecture/ghostlight-multiresolution-agency.md`](docs/architecture/ghostlight-multiresolution-agency.md): dynamic Gestalt partitioning, cohesive and arena cells, fairness, and atomic strategic waves;
+- [`docs/architecture/ghostlight-eve-native-interface.md`](docs/architecture/ghostlight-eve-native-interface.md): Eve bindings, the stable provider surface, private Heimdall command plane, app-session custody, and browser cut line;
 - [`notes/ghostlight-current-system-map.md`](notes/ghostlight-current-system-map.md): current implemented pipeline;
 - [`notes/ghostlight-implementation-plan.md`](notes/ghostlight-implementation-plan.md): live sequence and next pressure tests;
 - [`state/map.yaml`](state/map.yaml): canonical human-readable project state.
 
 ## Repository Shape
 
-- `crates/ghostlight-dungeon/`: Rust daemon, kernel, compiler, persistence,
-  provider stages, web lowerer, and acceptance harnesses;
+- `crates/ghostlight-dungeon/`: Rust daemon, kernels, compiler, persistence,
+  provider stages, Eve projection/command ingress, and acceptance harnesses;
 - `crates/ghostlight-persona-projection/`: generalized projection membrane owned
   by Ghostlight and consumed by Epiphany;
 - `docs/architecture/`: durable contracts and authority maps;
@@ -118,6 +144,8 @@ The shortest reliable re-entry path is:
 - `examples/`: earlier fixtures and regression material;
 - `state/`: human-readable project memory plus older research-pipeline state;
 - `tools/`: state, validation, and fixture helpers.
+- `web/`: thin Eve browser host, Ghostlight transport, and Heimdall plugin
+  adapter; product state and product-specific rendering remain server-owned.
 
 Runtime documents and campaign exports use MessagePack-backed CultCache `.cc`.
 JSON exists at schema publication, browser, MCP, model-provider, and diagnostic

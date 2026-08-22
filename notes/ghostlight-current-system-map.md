@@ -389,25 +389,48 @@ advancing world revision or fictional time. Provider concurrency increments only
 `provider_configuration_epoch`; it batches the same cover and cannot repartition
 the world. See `docs/architecture/ghostlight-multiresolution-agency.md`.
 
-The browser command boundary is deliberately smaller than `WorldCommand`.
-Authenticated HTTP admits only player-owned Speak, unfilled Assess, Attempt,
-Wait, and active-cell-budget requests. Actor identity must match the campaign player. Compiler
-approval has its own route. Strategic ticks, region commits, gestalt presence,
-reaction waves, NPC initiative, and campaign creation are internal mailbox
-commands and cannot be invoked through `/api/command`.
+The public application boundary is one stable Eve provider surface:
+`GET /api/eve/provider`, `GET /api/eve/surfaces/ghostlight.play`,
+`POST /api/eve/commands`, and revision-only `GET /api/eve/events`. Anonymous
+surface requests return an Eve Heimdall access gate without campaign,
+membership, actor, account, boundary, or Session Zero state. Authenticated
+surface requests derive account, selected campaign, membership, and exact actor
+from Ghostlight-owned app-session and campaign records before projection.
 
-Authentication owns entry to the complete `/api` router before request-body
-extraction. Axum's protected-route middleware reads only headers and durable
-session authority; an invalid session receives `401` before JSON parsing,
-schema rejection, campaign lookup, inference, or mutation. Handlers repeat the
-session lookup where they need the session identity, so revocation between the
-perimeter check and a handler cannot leave stale authority alive. Public
-`/health`, the Heimdall login-attempt boundary, and static browser assets remain
-outside this middleware. Login attempts carry no campaign authority: only a
-JWKS-verified successful Heimdall callback can bind one to an account, and only
-one browser adoption can mint its HttpOnly session alias. Regressions prove malformed anonymous JSON is refused
-at the perimeter while the same malformed body under a valid session reaches
-the ordinary `400` extractor response.
+Command ingress accepts only `gamecult.eve.command_invocation.v1`. It validates
+provider, logical surface, command boundary, operation schema, source version,
+and idempotency before resolving the caller's authority server-side. Browser
+payloads containing account, member, or actor authority fields are rejected.
+Every admitted operation then uses the existing `SessionZeroKernel` or
+`WorldKernel` mailbox and returns a persisted Eve command receipt. Strategic
+ticks, region commits, NPC initiative, and raw kernel commands remain outside
+the browser capability surface.
+
+The browser is `EveBrowserProviderHost`, Ghostlight transport, Heimdall access
+adapter, status mount, and SSE invalidation. Eve owns editable bindings and
+operation capture: renderer-local drafts survive authoritative refreshes and
+stale refusals, and only an accepted result may request named draft clearance.
+HTML forms may appear as an accessibility lowering detail but are absent from
+Eve documents and command payload semantics. Session Zero, campaign,
+governance, receipt, and login DOM renderers are not product authorities.
+
+Heimdall owns OAuth attempts, Discord callbacks, entitlement evaluation, claim
+issuance, and single-use completion. Anonymous Eve operations cross Heimdall's
+authenticated CultNet operation boundary on Yggdrasil loopback. Sensitive
+completion and refresh fields are message-wrapped and never enter the public
+CultMesh catalog, Odin records, Eve surfaces, logs, or browser responses.
+Ghostlight validates the exact issuer, audience, app, profile, access revision,
+session identity, expiry, and `app_access` before creating a local app session.
+
+`ghostlight.app_session.v1` stores a hash of the random cookie, stable Heimdall
+subject hash, exact Heimdall session and access revision, verified capabilities,
+expiries, and a locally wrapped refresh claim. Routine requests verify that
+state locally. Claim refresh and logout revalidate exact Heimdall session
+custody through the private boundary; a stale refresh cannot resurrect a
+logged-out session. Heimdall outages leave valid local sessions usable only
+until their verified expiry. Campaign access always comes from
+`campaign_membership.v1`; account preferences remember only selection. The old
+auth store is frozen rollback evidence and does not participate in admission.
 
 That boundary also projects less state outward than the kernel returns inward.
 Player HTTP responses contain only assessment, public commit/roll receipts, and
@@ -421,7 +444,7 @@ before generation. Only direct-seed source text enters causal world compilation;
 background and excluded sources remain coverage provenance and cannot donate
 story incidents or cast.
 
-The player Eve surface follows the same membrane. It renders the player-owned
+The actor-filtered Eve surface follows the same membrane. It renders the player-owned
 ledger—including that actor's own relationships—and already filtered news, but
 does not enumerate canonical institution postures or raw world clocks. Those
 remain operator state until narration or an exact information channel makes a
@@ -432,13 +455,11 @@ It likewise exposes only the number of operator pins and local active
 population leaves eligible for a fission preview. Pin bodies, remote population
 names, and `ReplaceResolutionPins` remain outside the player boundary.
 
-HTTP operator inspection and provider-parallelism mutation require both an
-authenticated campaign session and an actual loopback TCP peer. The daemon uses
-Axum connection metadata from its direct listener; forwarded address headers do
-not grant authority. LAN and WireGuard peers receive `403` before spoiler state
-or controls are read. The browser operator panel is present only when loaded
-from `127.0.0.1`, `localhost`, or `::1`; this mirrors the server boundary and is
-not itself treated as security.
+Exact private per-member and operator projections remain CultMesh documents for
+authorized Verse consumers. The public provider advertisement exposes only the
+subject-scoped logical surface and Heimdall plugin requirement. Hermodr may
+materialize that provider for inspection when its plugin is installed; it is
+not a Ghostlight runtime dependency and owns no application state.
 
 Global strategic context has a separate non-causal lane. Two stable broad Vault
 queries run alongside local retrieval, and a Flash extraction stage proposes a

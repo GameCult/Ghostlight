@@ -31,6 +31,19 @@ persistent pins, approval-gated gestalt fission, graph and cover receipts, and
 a separate operator provider-concurrency limit. The
 specific authority map is
 `docs/architecture/ghostlight-multiresolution-agency.md`.
+
+The current interface cut makes that Eve publication the browser's actual
+product boundary. `ghostlight.play` is one stable actor-filtered surface across
+anonymous entry, Session Zero, Contract Review, and play. The browser embeds
+Eve's canonical provider host and lowering package; text, numeric, and choice
+input uses typed Eve bindings and renderer-local drafts, and operations capture
+named bindings into canonical command invocations. There is no Eve form
+ontology or generic `payload.fields` dialect. Heimdall supplies the required
+`gamecult.heimdall.access` plugin and owns authentication attempts, Discord
+callbacks, claims, entitlements, and completion redemption through its private
+loopback CultNet command plane. Ghostlight owns hashed local sessions and
+derives campaign authority only from canonical membership. The exact cut is
+`docs/architecture/ghostlight-eve-native-interface.md`.
 The accepted implementation is hosted natively on Yggdrasil as immutable
 release `10b638e45756e5210aaee1efb5dcf74dbebf83c0`. Exact checkout,
 embedded commit, release manifest, binary hash, systemd process, typed health,

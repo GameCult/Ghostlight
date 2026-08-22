@@ -4,55 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Ghostlight Dungeon</title>
-  <script type="module" crossorigin src="/assets/index-BHkI62J0.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CYZ4YyRa.css">
+  <script type="module" crossorigin src="/assets/index-BuuhLtYk.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-0xx6l_wS.css">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to Session Zero</a>
+  <a class="skip-link" href="#surface">Skip to Ghostlight</a>
   <header>
     <p class="eyebrow">GHOSTLIGHT / LIVING WORLDS</p>
     <h1>Ghostlight Dungeon</h1>
     <p id="status" role="status" aria-live="polite">Reading the table…</p>
   </header>
-  <main id="main">
-    <section id="entry" class="card" hidden>
-      <h2>Begin Session Zero</h2>
-      <p>Build the campaign with your DM before anything becomes world truth.</p>
-      <form id="session-entry-form">
-        <label for="draft-name">Campaign draft</label><input id="draft-name" name="name" maxlength="80" required>
-        <label for="display-name">Your table name</label><input id="display-name" name="display_name" maxlength="80" required>
-        <label for="vault-provider">Lore Vault</label><select id="vault-provider" name="vault_provider"><option value="aetheria">Aetheria</option></select>
-        <fieldset><legend>Table</legend><label><input type="radio" name="mode" value="solo" checked> Solo</label><label><input type="radio" name="mode" value="group"> Group, up to eight</label></fieldset>
-        <button type="submit">Begin Session Zero</button>
-      </form>
-      <form id="join-form"><h3>Join a Session Zero</h3><label for="join-token">Invitation token</label><input id="join-token" required><label for="join-name">Your table name</label><input id="join-name" maxlength="80" required><button type="submit">Join table</button></form>
-    </section>
-
-    <section id="session-zero" hidden>
-      <div class="session-heading"><div><p class="eyebrow">SESSION ZERO</p><h2 id="session-title">Campaign draft</h2></div><p id="session-state" class="state-pill"></p></div>
-      <nav class="channel-tabs" aria-label="Session Zero channels"><button type="button" id="tab-shared" aria-pressed="true">Shared table</button><button type="button" id="tab-private" aria-pressed="false">Private DM</button></nav>
-      <div class="session-grid">
-        <div>
-          <section class="card" aria-labelledby="conversation-title"><h3 id="conversation-title">Conversation</h3><ol id="session-transcript" class="transcript" aria-live="polite"></ol><form id="session-message-form"><label for="session-message">Talk with the DM</label><textarea id="session-message" maxlength="4000" required></textarea><button type="submit">Send</button></form></section>
-          <section class="card"><h3>Unresolved decisions</h3><div id="decision-list"></div></section>
-          <section class="card" id="review-card" hidden><h3>Compilation review</h3><div id="review-content"></div></section>
-        </div>
-        <aside>
-          <section class="card"><h3>Roster and readiness</h3><div id="roster"></div><p id="cell-pool" class="quiet"></p><form id="invite-form"><label for="invite-count">Create invitations</label><input id="invite-count" type="number" min="1" max="7" value="1"><button type="submit">Create links</button></form><div id="invite-output" aria-live="polite"></div></section>
-          <section class="card"><h3>Campaign contract</h3><dl id="contract-ledger"></dl></section>
-          <section class="card"><h3>Your private character</h3><dl id="character-ledger"></dl></section>
-          <section class="card"><h3>Content boundaries</h3><p class="quiet">Only you can see attribution. The table receives the strictest combined rule.</p><form id="boundary-form"><label for="boundary-topic">Topic</label><input id="boundary-topic" maxlength="300" required><label for="boundary-level">Treatment</label><select id="boundary-level"><option value="line">Line — exclude</option><option value="veil">Veil — off-screen</option><option value="ask_first">Ask first</option></select><button type="submit">Set private boundary</button></form><ul id="boundary-list"></ul></section>
-          <section class="card session-actions"><h3>Readiness</h3><button type="button" id="lock-roster">Lock roster</button><button type="button" id="compile-session">Compile review</button><button type="button" id="approve-session">Approve shared contract and my character</button><button type="button" id="publish-session">Publish campaign</button></section>
-        </aside>
-      </div>
-    </section>
-
-    <section id="surface"></section>
-    <section id="play-controls" hidden>
-      <form id="composer" class="card"><label for="attempt">What does your character do or say?</label><textarea id="attempt" maxlength="4000" required></textarea><label for="intended-effect">Intended uncertain effect</label><input id="intended-effect" maxlength="1000"><p class="quiet">Speak commits the words. Assess previews resistance and stakes before any roll.</p><div class="button-row"><button type="button" id="speak">Speak</button><button type="submit">Assess attempt</button></div></form>
-      <section id="receipt" class="card" hidden aria-live="polite"></section>
-      <section class="card governance"><h2>Shared table decisions</h2><button type="button" id="contract-review">Begin Contract Review</button><form id="travel-form"><label for="travel-destination">Travel together</label><select id="travel-destination"></select><button type="submit">Propose travel</button></form><form id="time-form"><label for="time-minutes">Advance time together</label><input id="time-minutes" type="number" min="1" max="1440" value="60"><button type="submit">Propose time</button></form><form id="resolution-form"><label for="active-cell-budget">Active Persona cells: <output id="active-cell-budget-value">8</output></label><input id="active-cell-budget" type="range" min="1" max="128" value="8"><button type="submit">Propose budget</button></form></section>
-    </section>
-  </main>
+  <main id="surface" tabindex="-1"></main>
 </body>
 </html>

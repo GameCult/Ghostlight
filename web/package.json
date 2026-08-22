@@ -5,8 +5,13 @@
   "scripts": {
     "build": "npm run typecheck && vite build",
     "dev": "vite --host 127.0.0.1 --port 8832",
+    "test": "node test/static-boundary.mjs",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": { "@gamecult/eve-browser-lowering": "file:../vendor/eve/packages/eve-browser-lowering" },
+  "dependencies": {
+    "@gamecult/eve-browser-lowering": "file:../vendor/eve/packages/eve-browser-lowering",
+    "@gamecult/eve-contracts": "file:../vendor/eve/packages/eve-contracts",
+    "ajv": "^8.17.1"
+  },
   "devDependencies": { "typescript": "^5.6.3", "vite": "^7.1.2" }
 }
