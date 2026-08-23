@@ -2667,7 +2667,6 @@ pub fn strategic_activity_targets(campaign: &Campaign, subject_id: &str) -> BTre
                 .filter(|target| {
                     target.subject_id != subject_id
                         && target.active_leaf
-                        && target.simulation_eligible
                         && !source.location_ids.is_disjoint(&target.location_ids)
                 })
                 .map(|target| target.subject_id.clone()),
@@ -3074,6 +3073,23 @@ pub(crate) mod tests {
         assert_eq!(
             value.agency_profiles["player"].information_channels,
             BTreeSet::from(["licensed courier wire".into()])
+        );
+    }
+
+    #[test]
+    fn human_controlled_actor_remains_a_target_without_becoming_a_simulation_subject() {
+        let mut value = campaign(1, 1);
+        value
+            .agency_profiles
+            .get_mut("faction-0000")
+            .unwrap()
+            .location_ids
+            .insert("center".into());
+
+        assert!(!value.agency_profiles["player"].simulation_eligible);
+        assert!(
+            strategic_activity_targets(&value, "faction-0000").contains("player"),
+            "simulation eligibility controls who may act through a Persona cell, not who may be addressed"
         );
     }
 
@@ -3707,6 +3723,12 @@ pub(crate) mod tests {
             },
         );
         ensure_agency_profiles(&mut value);
+        assert!(
+            member_activity_targets(&value, "mira")
+                .unwrap()
+                .contains("player"),
+            "a folded named member may address the co-located human without making the human Persona-controlled"
+        );
         value
             .agency_profiles
             .get_mut("refugees")
