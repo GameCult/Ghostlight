@@ -6,7 +6,8 @@ use crate::{
     model::{MODEL_FAST, ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
     outcome::{activity_outcome_binding, resolve_activity_outcomes},
     persona::{
-        CellConstituentSlice, CellMemberSlice, CellPerceivedEventSlice, CellProjectionEngine,
+        CellActivityTargetSlice, CellConstituentSlice, CellMemberSlice,
+        CellMigrationDestinationSlice, CellPerceivedEventSlice, CellProjectionEngine,
         ExecutionPermit, PermittedCellSlice,
     },
     resolution::{
@@ -462,18 +463,14 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
         .map(|id| constituent_slice(campaign, id))
         .collect::<Result<Vec<_>>>()?;
     for subject in &mut constituents {
-        subject.activity_target_ids.retain(|target| {
+        subject.activity_targets.retain(|target, _| {
             !target.starts_with("member:") || selected_member_ids.contains(target)
         });
-        subject.activity_target_names =
-            activity_target_names(campaign, &subject.activity_target_ids)?;
     }
     for member in &mut member_exceptions {
-        member.activity_target_ids.retain(|target| {
+        member.activity_targets.retain(|target, _| {
             !target.starts_with("member:") || selected_member_ids.contains(target)
         });
-        member.activity_target_names =
-            activity_target_names(campaign, &member.activity_target_ids)?;
     }
     let shared_knowledge = intersection(
         constituents
@@ -674,6 +671,8 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                     permitted_state_references.insert(format!("gestalt:{gestalt_id}"));
                     permitted_state_references.insert(format!("location:{location_id}"));
                 }
+                let migration_destinations = migration_destination_slices(campaign, &destinations)?;
+                let activity_targets = activity_target_slices(campaign, &activity_target_ids)?;
                 Ok(CellMemberSlice {
                     subject_id: format!("member:{}", member.id),
                     member_id: member.id.clone(),
@@ -685,9 +684,8 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                     resources: member.equipment.clone(),
                     information_channels,
                     permitted_state_references,
-                    migration_destinations: destinations,
-                    activity_target_ids,
-                    activity_target_names: BTreeMap::new(),
+                    migration_destinations,
+                    activity_targets,
                     goals,
                     pressures: member
                         .conditions
@@ -720,6 +718,7 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
         .agency_profiles
         .get(id)
         .ok_or_else(|| anyhow!("simulation cell subject lacks an agency profile"))?;
+    let activity_target_ids = crate::resolution::strategic_activity_targets(campaign, id);
     let mut value = CellConstituentSlice {
         subject_id: id.into(),
         subject_kind: profile.subject_kind.clone(),
@@ -731,10 +730,9 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
         resources: BTreeSet::new(),
         information_channels: profile.information_channels.clone(),
         permitted_state_references: crate::resolution::subject_state_references(campaign, id)?,
-        reachable_destination_ids: BTreeSet::new(),
+        reachable_destinations: BTreeMap::new(),
         migration_destinations: BTreeMap::new(),
-        activity_target_ids: crate::resolution::strategic_activity_targets(campaign, id),
-        activity_target_names: BTreeMap::new(),
+        activity_targets: activity_target_slices(campaign, &activity_target_ids)?,
         goals: vec![],
         relationships: BTreeMap::new(),
         memories: vec![],
@@ -757,14 +755,20 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
                 .chain(&actor.obligations)
                 .cloned()
                 .collect();
-            value.reachable_destination_ids = campaign
+            value.reachable_destinations = campaign
                 .locations
                 .get(&actor.location_id)
                 .into_iter()
                 .flat_map(|location| location.routes.values())
                 .filter(|route| route.travel_minutes <= campaign.tick_hours.saturating_mul(60))
-                .map(|route| route.destination_id.clone())
-                .collect();
+                .map(|route| {
+                    let destination = campaign
+                        .locations
+                        .get(&route.destination_id)
+                        .ok_or_else(|| anyhow!("reachable destination vanished from topology"))?;
+                    Ok((route.destination_id.clone(), destination.name.clone()))
+                })
+                .collect::<Result<BTreeMap<_, _>>>()?;
         }
         AgencySubjectKind::Institution => {
             let institution = campaign
@@ -784,15 +788,13 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
             value.resources = gestalt.resources.clone();
             value.goals = gestalt.goals.clone();
             value.pressures = gestalt.pressures.clone();
-            value.migration_destinations = crate::resolution::gestalt_migration_destinations(
+            let mut destinations = crate::resolution::gestalt_migration_destinations(
                 campaign,
                 id,
                 &gestalt.home_location_id,
             );
-            value
-                .migration_destinations
-                .retain(|_, location_id| location_id != &gestalt.home_location_id);
-            for (destination_id, location_id) in &value.migration_destinations {
+            destinations.retain(|_, location_id| location_id != &gestalt.home_location_id);
+            for (destination_id, location_id) in &destinations {
                 value
                     .permitted_state_references
                     .insert(format!("gestalt:{destination_id}"));
@@ -800,43 +802,95 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
                     .permitted_state_references
                     .insert(format!("location:{location_id}"));
             }
+            value.migration_destinations = migration_destination_slices(campaign, &destinations)?;
         }
     }
     Ok(value)
 }
 
-fn activity_target_names(
+fn activity_target_slices(
     campaign: &Campaign,
     target_ids: &BTreeSet<String>,
-) -> Result<BTreeMap<String, String>> {
+) -> Result<BTreeMap<String, CellActivityTargetSlice>> {
     target_ids
         .iter()
         .map(|target_id| {
-            let name = if let Some(member_id) = target_id.strip_prefix("member:") {
-                campaign
-                    .gestalt_members
-                    .get(member_id)
-                    .map(|member| member.name.clone())
-            } else {
-                campaign
-                    .actors
-                    .get(target_id)
-                    .map(|actor| actor.name.clone())
-                    .or_else(|| {
-                        campaign
-                            .institutions
-                            .get(target_id)
-                            .map(|institution| institution.name.clone())
-                    })
-                    .or_else(|| {
-                        campaign
-                            .gestalts
-                            .get(target_id)
-                            .map(|gestalt| gestalt.name.clone())
-                    })
-            }
-            .ok_or_else(|| anyhow!("activity target {target_id} has no canonical named subject"))?;
-            Ok((target_id.clone(), name))
+            let (name, location_ids) =
+                if let Some(member_id) = target_id.strip_prefix("member:") {
+                    let member = campaign.gestalt_members.get(member_id).ok_or_else(|| {
+                        anyhow!("activity target {target_id} has no member state")
+                    })?;
+                    (
+                        member.name.clone(),
+                        BTreeSet::from([crate::resolution::dormant_member_location(
+                            campaign, member_id,
+                        )?]),
+                    )
+                } else {
+                    let profile = campaign.agency_profiles.get(target_id).ok_or_else(|| {
+                        anyhow!("activity target {target_id} has no agency profile")
+                    })?;
+                    let name = campaign
+                        .actors
+                        .get(target_id)
+                        .map(|actor| actor.name.clone())
+                        .or_else(|| {
+                            campaign
+                                .institutions
+                                .get(target_id)
+                                .map(|institution| institution.name.clone())
+                        })
+                        .or_else(|| {
+                            campaign
+                                .gestalts
+                                .get(target_id)
+                                .map(|gestalt| gestalt.name.clone())
+                        })
+                        .ok_or_else(|| {
+                            anyhow!("activity target {target_id} has no canonical named subject")
+                        })?;
+                    (name, profile.location_ids.clone())
+                };
+            let locations = location_ids
+                .into_iter()
+                .map(|location_id| {
+                    let location = campaign.locations.get(&location_id).ok_or_else(|| {
+                        anyhow!("activity target location {location_id} vanished")
+                    })?;
+                    Ok((location_id, location.name.clone()))
+                })
+                .collect::<Result<BTreeMap<_, _>>>()?;
+            Ok((
+                target_id.clone(),
+                CellActivityTargetSlice { name, locations },
+            ))
+        })
+        .collect()
+}
+
+fn migration_destination_slices(
+    campaign: &Campaign,
+    destinations: &BTreeMap<String, String>,
+) -> Result<BTreeMap<String, CellMigrationDestinationSlice>> {
+    destinations
+        .iter()
+        .map(|(gestalt_id, location_id)| {
+            let population = campaign
+                .gestalts
+                .get(gestalt_id)
+                .ok_or_else(|| anyhow!("migration destination {gestalt_id} vanished"))?;
+            let location = campaign
+                .locations
+                .get(location_id)
+                .ok_or_else(|| anyhow!("migration destination location {location_id} vanished"))?;
+            Ok((
+                gestalt_id.clone(),
+                CellMigrationDestinationSlice {
+                    population_name: population.name.clone(),
+                    location_id: location_id.clone(),
+                    location_name: location.name.clone(),
+                },
+            ))
         })
         .collect()
 }
@@ -1050,6 +1104,64 @@ mod tests {
     }
 
     #[test]
+    fn actor_slice_names_reachable_places_and_a_target_already_at_the_current_location() {
+        use crate::domain::{ActorState, Location, Route};
+
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        campaign.actors.insert(
+            "reed".into(),
+            ActorState {
+                id: "reed".into(),
+                name: "Reed".into(),
+                location_id: "center".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec!["keep the twelve together".into()],
+                memories: vec![],
+            },
+        );
+        campaign.locations.insert(
+            "garrison".into(),
+            Location {
+                id: "garrison".into(),
+                name: "Garrison Outpost".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec![],
+            },
+        );
+        campaign.locations.get_mut("center").unwrap().routes.insert(
+            "garrison".into(),
+            Route {
+                destination_id: "garrison".into(),
+                distance: "3 km".into(),
+                travel_minutes: 20,
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+
+        let slice = constituent_slice(&campaign, "player").unwrap();
+        assert_eq!(
+            slice
+                .reachable_destinations
+                .get("garrison")
+                .map(String::as_str),
+            Some("Garrison Outpost")
+        );
+        let reed = slice.activity_targets.get("reed").unwrap();
+        assert_eq!(reed.name, "Reed");
+        assert_eq!(
+            reed.locations.get("center").map(String::as_str),
+            Some("Center")
+        );
+        assert!(!reed.locations.contains_key("garrison"));
+    }
+
+    #[test]
     fn cell_slice_projects_only_actionable_salient_member_exceptions() {
         use crate::domain::*;
         let mut campaign = crate::resolution::tests::campaign(0, 1);
@@ -1133,8 +1245,15 @@ mod tests {
             slice.member_exceptions[0]
                 .migration_destinations
                 .get("neighbors")
-                .map(String::as_str),
+                .map(|destination| destination.location_id.as_str()),
             Some("center")
+        );
+        assert_eq!(
+            slice.member_exceptions[0]
+                .migration_destinations
+                .get("neighbors")
+                .map(|destination| destination.population_name.as_str()),
+            Some("Neighbors")
         );
         assert!(
             slice.member_exceptions[0]
@@ -1143,15 +1262,23 @@ mod tests {
         );
         assert!(
             slice.member_exceptions[0]
-                .activity_target_ids
-                .contains("refugees")
+                .activity_targets
+                .contains_key("refugees")
         );
         assert_eq!(
             slice.member_exceptions[0]
-                .activity_target_names
+                .activity_targets
                 .get("refugees")
-                .map(String::as_str),
+                .map(|target| target.name.as_str()),
             Some("Refugees")
+        );
+        assert_eq!(
+            slice.member_exceptions[0]
+                .activity_targets
+                .get("refugees")
+                .and_then(|target| target.locations.get("center"))
+                .map(String::as_str),
+            Some("Center")
         );
         let selected_member_ids = slice
             .member_exceptions
@@ -1161,31 +1288,17 @@ mod tests {
         assert!(selected_member_ids.contains("member:mira"));
         assert!(slice.constituents.iter().all(|constituent| {
             constituent
-                .activity_target_ids
-                .iter()
+                .activity_targets
+                .keys()
                 .filter(|target| target.starts_with("member:"))
                 .all(|target| selected_member_ids.contains(target))
         }));
         assert!(slice.member_exceptions.iter().all(|member| {
             member
-                .activity_target_ids
-                .iter()
+                .activity_targets
+                .keys()
                 .filter(|target| target.starts_with("member:"))
                 .all(|target| selected_member_ids.contains(target))
-        }));
-        assert!(slice.constituents.iter().all(|constituent| {
-            constituent
-                .activity_target_names
-                .keys()
-                .collect::<BTreeSet<_>>()
-                == constituent
-                    .activity_target_ids
-                    .iter()
-                    .collect::<BTreeSet<_>>()
-        }));
-        assert!(slice.member_exceptions.iter().all(|member| {
-            member.activity_target_names.keys().collect::<BTreeSet<_>>()
-                == member.activity_target_ids.iter().collect::<BTreeSet<_>>()
         }));
         assert!(
             !serde_json::to_string(&slice)
@@ -1211,7 +1324,7 @@ mod tests {
                 .iter()
                 .any(|member| member.member_id == "mira"
                     && member.migration_destinations.is_empty()
-                    && member.activity_target_ids.contains("refugees"))
+                    && member.activity_targets.contains_key("refugees"))
         );
     }
 
@@ -1301,8 +1414,7 @@ mod tests {
             information_channels: BTreeSet::from(["refugee-wire".into()]),
             permitted_state_references: BTreeSet::new(),
             migration_destinations: BTreeMap::new(),
-            activity_target_ids: BTreeSet::new(),
-            activity_target_names: BTreeMap::new(),
+            activity_targets: BTreeMap::new(),
             goals: vec![],
             pressures: vec![],
             relationships: BTreeMap::new(),
