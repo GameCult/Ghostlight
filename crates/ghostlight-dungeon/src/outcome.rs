@@ -491,19 +491,42 @@ fn validate_outcomes_against_expected(
             .supporting_state_references
             .iter()
             .collect::<BTreeSet<_>>();
-        if unique_references.len() != outcome.supporting_state_references.len()
-            || outcome.supporting_state_references.len() > 8
-            || outcome
-                .supporting_state_references
-                .iter()
-                .any(|reference| !allowed_references.contains(reference))
-            || (!matches!(
-                outcome.effect,
-                StrategicOutcomeEffect::NoMaterialChange { .. }
-            ) && outcome.supporting_state_references.is_empty())
+        if unique_references.len() != outcome.supporting_state_references.len() {
+            return Err(anyhow!(
+                "outcome {} repeats a supporting_state_reference; each exact handle may appear once",
+                outcome.action_digest
+            ));
+        }
+        if outcome.supporting_state_references.len() > 8 {
+            return Err(anyhow!(
+                "outcome {} cites {} supporting_state_references; the exact limit is 8",
+                outcome.action_digest,
+                outcome.supporting_state_references.len()
+            ));
+        }
+        let unavailable_references = outcome
+            .supporting_state_references
+            .iter()
+            .filter(|reference| !allowed_references.contains(*reference))
+            .cloned()
+            .collect::<Vec<_>>();
+        if !unavailable_references.is_empty() {
+            return Err(anyhow!(
+                "outcome {} cites unavailable supporting_state_references {}; copy only from this action's exact allowed_state_references {}",
+                outcome.action_digest,
+                serde_json::to_string(&unavailable_references)?,
+                serde_json::to_string(&allowed_references)?,
+            ));
+        }
+        if !matches!(
+            outcome.effect,
+            StrategicOutcomeEffect::NoMaterialChange { .. }
+        ) && outcome.supporting_state_references.is_empty()
         {
             return Err(anyhow!(
-                "strategic outcome cites state outside its exact slice"
+                "material outcome {} requires at least one supporting_state_reference copied from its exact allowed_state_references {}",
+                outcome.action_digest,
+                serde_json::to_string(&allowed_references)?,
             ));
         }
         validate_effect(campaign, proposal, outcome, &mut exclusive_effects).map_err(|error| {
@@ -1873,6 +1896,78 @@ mod tests {
     fn missing_outcome_is_rejected() {
         let value = campaign();
         assert!(validate_activity_outcomes(&value, &[proposal()], &[]).is_err());
+    }
+
+    #[test]
+    fn reference_rejection_names_the_action_offender_and_allowed_handles() {
+        let value = campaign();
+        let action = proposal();
+        let digest = cell_action_digest(&action).unwrap();
+        let outcome = StrategicActivityOutcome {
+            schema: "ghostlight.strategic_activity_outcome.v1".into(),
+            action_digest: digest.clone(),
+            source_subject_id: "dockers".into(),
+            band: StrategicOutcomeBand::Success,
+            summary: "The inspection confirms the causeway is open.".into(),
+            supporting_state_references: vec!["knowledge:borrowed from another action".into()],
+            effect: StrategicOutcomeEffect::KnowledgeLearned {
+                owner_subject_id: "dockers".into(),
+                fact_id: "fact:safe-route".into(),
+            },
+        };
+
+        let error = validate_activity_outcomes(&value, &[action], &[outcome])
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains(&digest));
+        assert!(error.contains("knowledge:borrowed from another action"));
+        assert!(error.contains("fact:fact:safe-route"));
+        assert!(error.contains("exact allowed_state_references"));
+    }
+
+    #[test]
+    fn named_actor_possessions_use_the_resource_reference_ontology() {
+        let mut value = campaign();
+        value.actors.insert(
+            "reed".into(),
+            crate::domain::ActorState {
+                id: "reed".into(),
+                name: "Reed".into(),
+                location_id: "dock".into(),
+                capabilities: BTreeSet::from(["field repair".into()]),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::from(["medical satchel".into()]),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec!["keep the patients together".into()],
+                memories: vec![],
+            },
+        );
+        ensure_agency_profiles(&mut value);
+
+        let references = allowed_state_references(
+            &value,
+            &CellActionProposal {
+                subject_id: "reed".into(),
+                intent: "use the satchel to stabilize a patient".into(),
+                intended_effect: "spend its remaining supplies".into(),
+                priority: 90,
+                state_references: vec!["resource:medical satchel".into()],
+                public_channels: vec![],
+                effect: StrategicCellEffect::ActorActivity {
+                    actor_id: "reed".into(),
+                    activity: StrategicActivityKind::Prepare,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["dock".into()],
+                },
+            },
+        )
+        .unwrap();
+
+        assert!(references.contains("resource:medical satchel"));
+        assert!(!references.contains("equipment:medical satchel"));
     }
 
     #[test]

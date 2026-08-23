@@ -2492,7 +2492,7 @@ pub fn subject_state_references(campaign: &Campaign, subject_id: &str) -> Result
                     actor
                         .equipment
                         .iter()
-                        .map(|value| format!("equipment:{value}")),
+                        .map(|value| format!("resource:{value}")),
                 )
                 .chain(
                     actor
