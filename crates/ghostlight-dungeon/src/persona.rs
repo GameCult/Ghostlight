@@ -903,7 +903,7 @@ impl CellProjectionEngine {
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
                 "Copy each subject's exact allowed_effect_types. A lane absent from that list is structurally unavailable: do not emit it and do not invent a destination. ",
-                "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. ",
+                "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
@@ -1876,7 +1876,7 @@ fn exact_cell_action_condition(
         },
         "then":{
             "properties":{
-                "state_references":exact_string_array_schema(permitted_state_references, 0, 16),
+                "state_references":exact_string_array_schema(permitted_state_references, 0, permitted_state_references.len()),
                 "public_channels":exact_string_array_schema(information_channels, 0, 8),
                 "effect":effect_schema
             }
@@ -2528,6 +2528,42 @@ mod tests {
             allowed_constituent_effect_types(&slice.constituents[0]),
             vec!["actor_activity"]
         );
+    }
+
+    #[test]
+    fn cell_schema_does_not_reject_a_large_exact_reference_slice() {
+        let mut slice = fixture_cell_slice();
+        let subject_id = slice.constituents[0].subject_id.clone();
+        slice.constituents[0].permitted_state_references = (0..21)
+            .map(|index| format!("reference:{index:02}"))
+            .collect();
+        let active = BTreeSet::from([subject_id]);
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let exact_references = slice.constituents[0]
+            .permitted_state_references
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>();
+        let appraisal = serde_json::json!({
+            "actions":[{
+                "subject_id":slice.constituents[0].subject_id,
+                "intent":"hold the exact supplied footing",
+                "intended_effect":"prepare locally",
+                "priority":80,
+                "state_references":exact_references,
+                "public_channels":[],
+                "effect":{
+                    "type":"institution",
+                    "posture":"withhold action pending an exact count",
+                    "location_ids":[]
+                }
+            }],
+            "inactions":[]
+        });
+
+        assert!(validator.is_valid(&appraisal));
     }
 
     #[test]
