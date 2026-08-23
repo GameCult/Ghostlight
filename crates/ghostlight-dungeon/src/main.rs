@@ -3917,20 +3917,23 @@ async fn publish_latest_narration(
     let narrator = Narrator {
         model: model.clone(),
         model_name: MODEL_CAPABLE.into(),
+        verifier_model_name: MODEL_FAST.into(),
     };
-    let (projection, receipt) = narrator.project(&runtime.store, &campaign).await?;
+    let (projection, receipts) = narrator.project(&runtime.store, &campaign).await?;
     runtime.store.insert(
         "narration_projection.v1",
         "ghostlight.narration_projection.v1",
         &projection.id,
         &projection,
     )?;
-    let _ = runtime.store.insert(
-        "persona_stage_receipt.v1",
-        "ghostlight.persona_stage_receipt.v1",
-        receipt.storage_key(),
-        &receipt,
-    );
+    for receipt in receipts {
+        let _ = runtime.store.insert(
+            "persona_stage_receipt.v1",
+            "ghostlight.persona_stage_receipt.v1",
+            receipt.storage_key(),
+            &receipt,
+        );
+    }
     Ok(Some(projection))
 }
 

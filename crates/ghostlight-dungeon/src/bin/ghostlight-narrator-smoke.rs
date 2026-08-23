@@ -35,15 +35,18 @@ async fn main() -> anyhow::Result<()> {
     let narrator = Narrator {
         model,
         model_name: "deepseek-v4-pro".into(),
+        verifier_model_name: "deepseek-v4-flash".into(),
     };
     let started = Instant::now();
-    let (projection, receipt) = narrator.project(&store, &campaign).await?;
-    store.insert(
-        "persona_stage_receipt.v1",
-        "ghostlight.persona_stage_receipt.v1",
-        receipt.storage_key(),
-        &receipt,
-    )?;
+    let (projection, receipts) = narrator.project(&store, &campaign).await?;
+    for receipt in &receipts {
+        store.insert(
+            "persona_stage_receipt.v1",
+            "ghostlight.persona_stage_receipt.v1",
+            receipt.storage_key(),
+            receipt,
+        )?;
+    }
     let result_path = store_path
         .parent()
         .unwrap_or_else(|| std::path::Path::new("."))
@@ -55,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
         "schema":"ghostlight.narrator_smoke.v1",
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "projection":projection,
-        "model_stage_receipt":receipt,
+        "model_stage_receipts":receipts,
         "campaign_revision":campaign.revision,
         "result_path":result_path
     });

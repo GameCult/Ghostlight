@@ -140,14 +140,19 @@ async fn main() -> anyhow::Result<()> {
     let narrator = Narrator {
         model,
         model_name: "deepseek-v4-pro".into(),
+        verifier_model_name: "deepseek-v4-flash".into(),
     };
-    let (narration, narration_receipt) = narrator.project(&store, &post).await?;
-    store.insert(
-        "persona_stage_receipt.v1",
-        "ghostlight.persona_stage_receipt.v1",
-        narration_receipt.storage_key(),
-        &narration_receipt,
-    )?;
+    let (narration, narration_receipts) = narrator.project(&store, &post).await?;
+    for receipt in &narration_receipts {
+        store.insert(
+            "persona_stage_receipt.v1",
+            "ghostlight.persona_stage_receipt.v1",
+            receipt.storage_key(),
+            receipt,
+        )?;
+    }
+    let mut model_stage_receipts = vec![impossible_receipt, feasible_receipt];
+    model_stage_receipts.extend(narration_receipts);
 
     let result = serde_json::json!({
         "schema":"ghostlight.action_smoke.v1",
@@ -158,7 +163,7 @@ async fn main() -> anyhow::Result<()> {
         "feasible_assessment":feasible,
         "attempt":attempt,
         "narration":narration,
-        "model_stage_receipts":[impossible_receipt, feasible_receipt, narration_receipt],
+        "model_stage_receipts":model_stage_receipts,
         "campaign_revision":post.revision,
         "store":root.join("campaign.cc"),
         "result_path":root.join("result.json")
