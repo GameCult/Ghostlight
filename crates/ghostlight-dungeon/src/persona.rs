@@ -1103,6 +1103,30 @@ impl CellProjectionEngine {
                     interpreted.receipt.local_validation_error =
                         Some(error.to_string().chars().take(1_000).collect());
                     stage_receipts.push(interpreted.receipt);
+                    if let Some(structured) = interpreted.structured
+                        && let Ok(proposal) =
+                            serde_json::from_value::<CellAppraisalProposal>(structured)
+                        && let Ok(appraisal) = bind_cell_appraisal(&slice, proposal)
+                    {
+                        let rejected_action_indices = appraisal
+                            .actions
+                            .iter()
+                            .enumerate()
+                            .filter_map(|(index, action)| {
+                                validate_cell_action(&slice, action)
+                                    .is_err()
+                                    .then_some(index)
+                            })
+                            .collect::<Vec<_>>();
+                        exclude_rejected_cell_effects(
+                            request
+                                .output_schema
+                                .as_mut()
+                                .ok_or_else(|| anyhow!("cell correction lost its output schema"))?,
+                            &appraisal.actions,
+                            &rejected_action_indices,
+                        )?;
+                    }
                     append_cell_correction(&mut request, &error, &rejected_appraisal);
                 }
                 Err(error) => {
@@ -1599,86 +1623,95 @@ fn validate_cell_appraisal(
         }
     }
     for action in &appraisal.actions {
-        if action.intent.trim().is_empty() || action.intended_effect.trim().is_empty() {
-            return Err(anyhow!(
-                "action for subject {} requires non-empty intent and intended_effect",
-                action.subject_id
-            ));
-        }
-        if let Some(subject) = slice
-            .constituents
-            .iter()
-            .find(|value| value.subject_id == action.subject_id)
-        {
-            validate_action_permissions(
-                action,
-                &subject.permitted_state_references,
-                &subject.information_channels,
-            )?;
-            validate_constituent_effect(subject, &action.effect)?;
-        } else if let Some(member) = slice
-            .member_exceptions
-            .iter()
-            .find(|value| value.subject_id == action.subject_id)
-        {
-            validate_action_permissions(
-                action,
-                &member.permitted_state_references,
-                &member.information_channels,
-            )?;
-            match &action.effect {
-                crate::domain::StrategicCellEffect::MemberActivity {
-                    member_id,
+        validate_cell_action(slice, action)?;
+    }
+    Ok(())
+}
+
+fn validate_cell_action(
+    slice: &PermittedCellSlice,
+    action: &crate::domain::CellActionProposal,
+) -> Result<()> {
+    if action.intent.trim().is_empty() || action.intended_effect.trim().is_empty() {
+        return Err(anyhow!(
+            "action for subject {} requires non-empty intent and intended_effect",
+            action.subject_id
+        ));
+    }
+    if let Some(subject) = slice
+        .constituents
+        .iter()
+        .find(|value| value.subject_id == action.subject_id)
+    {
+        validate_action_permissions(
+            action,
+            &subject.permitted_state_references,
+            &subject.information_channels,
+        )?;
+        validate_constituent_effect(subject, &action.effect)?;
+        return Ok(());
+    }
+    let Some(member) = slice
+        .member_exceptions
+        .iter()
+        .find(|value| value.subject_id == action.subject_id)
+    else {
+        return Err(anyhow!("action is attributed outside the cell"));
+    };
+    validate_action_permissions(
+        action,
+        &member.permitted_state_references,
+        &member.information_channels,
+    )?;
+    match &action.effect {
+        crate::domain::StrategicCellEffect::MemberActivity {
+            member_id,
+            activity,
+            target_subject_ids,
+            location_ids,
+        } => {
+            let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
+            let needs_target = !activity.allows_targetless_local_attempt();
+            if needs_target && target_subject_ids.is_empty() {
+                return Err(anyhow!(
+                    "named member {} activity {:?} requires one or more exact target IDs; no anonymous or unsupplied target can be encoded. Remove the action unless the Persona explicitly attempted one of {:?}",
+                    member.member_id,
+                    activity,
+                    member.activity_targets.keys().collect::<Vec<_>>()
+                ));
+            }
+            if member_id != &member.member_id
+                || target_subject_ids.len() > 4
+                || unique_targets.len() != target_subject_ids.len()
+                || target_subject_ids
+                    .iter()
+                    .any(|target| !member.activity_targets.contains_key(target))
+                || location_ids.len() != 1
+                || location_ids[0] != member.source_location_id
+            {
+                return Err(anyhow!(
+                    "named member {} proposed {:?} toward {:?} at {:?}; exact allowed targets (choose at most four unique IDs) are {:?} and location is {:?}",
+                    member.member_id,
                     activity,
                     target_subject_ids,
                     location_ids,
-                } => {
-                    let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
-                    let needs_target = !activity.allows_targetless_local_attempt();
-                    if needs_target && target_subject_ids.is_empty() {
-                        return Err(anyhow!(
-                            "named member {} activity {:?} requires one or more exact target IDs; no anonymous or unsupplied target can be encoded. Remove the action unless the Persona explicitly attempted one of {:?}",
-                            member.member_id,
-                            activity,
-                            member.activity_targets.keys().collect::<Vec<_>>()
-                        ));
-                    }
-                    if member_id != &member.member_id
-                        || target_subject_ids.len() > 4
-                        || unique_targets.len() != target_subject_ids.len()
-                        || target_subject_ids
-                            .iter()
-                            .any(|target| !member.activity_targets.contains_key(target))
-                        || location_ids.len() != 1
-                        || location_ids[0] != member.source_location_id
-                    {
-                        return Err(anyhow!(
-                            "named member {} proposed {:?} toward {:?} at {:?}; exact allowed targets (choose at most four unique IDs) are {:?} and location is {:?}",
-                            member.member_id,
-                            activity,
-                            target_subject_ids,
-                            location_ids,
-                            member.activity_targets.keys().collect::<Vec<_>>(),
-                            member.source_location_id
-                        ));
-                    }
-                }
-                crate::domain::StrategicCellEffect::MemberMigration {
-                    destination_gestalt_id,
-                } if member
-                    .migration_destinations
-                    .contains_key(destination_gestalt_id) => {}
-                _ => {
-                    return Err(anyhow!(
-                        "action for named member {} exceeds exact personal authority; effect={:?}; allowed destination gestalt IDs={:?}",
-                        member.member_id,
-                        action.effect,
-                        member.migration_destinations.keys().collect::<Vec<_>>()
-                    ));
-                }
+                    member.activity_targets.keys().collect::<Vec<_>>(),
+                    member.source_location_id
+                ));
             }
-        } else {
-            return Err(anyhow!("action is attributed outside the cell"));
+        }
+        crate::domain::StrategicCellEffect::MemberMigration {
+            destination_gestalt_id,
+        } if member
+            .migration_destinations
+            .contains_key(destination_gestalt_id) => {}
+        _ => {
+            return Err(anyhow!(
+                "action for named member {} exceeds exact personal authority; effect={:?}; allowed destination gestalt IDs={:?}",
+                member.member_id,
+                action.effect,
+                member.migration_destinations.keys().collect::<Vec<_>>()
+            ));
         }
     }
     Ok(())
@@ -2293,6 +2326,32 @@ mod tests {
                         })
                         .to_string());
                     }
+                    let repeated = serde_json::json!({
+                        "actions":[{
+                            "subject_id":"faction-06",
+                            "intent":"continue weighing the position",
+                            "intended_effect":"retain the posture already in force",
+                            "priority":5,
+                            "state_references":["institution:faction-06"],
+                            "public_channels":["public bulletin"],
+                            "effect":{
+                                "type":"institution",
+                                "posture":"weighing whether to publish a position",
+                                "location_ids":["forum"]
+                            }
+                        }],
+                        "inactions":[]
+                    });
+                    assert!(
+                        !jsonschema::validator_for(
+                            request
+                                .output_schema
+                                .as_ref()
+                                .expect("correction retains its schema")
+                        )
+                        .unwrap()
+                        .is_valid(&repeated)
+                    );
                     self.saw_rejected_appraisal.store(
                         request.lived_stream.contains("PREVIOUS_REJECTED_APPRAISAL")
                             && request
