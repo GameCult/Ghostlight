@@ -136,9 +136,12 @@ deployment witness, binary hash, zero-restart service state, and signed Idunn
 health agree. The Idunn Linux success receipt reports 265 library tests before
 its truncated remaining package-target output; the complete locked package
 test command and release build both succeeded. Odin itself publishes fresh
-authenticated health, but its persisted Ghostlight advertisement still names
-the prior `c7463c0…` release because the known large-snapshot RUDP publication
-defect remains open.
+authenticated health. The shared CultNet RUDP cut now bounds reliable admission
+to the 32-packet ACK horizon, promotes queued fragments on acknowledgement, and
+requires explicit flush completion. The Ghostlight consumer cut publishes its
+provider advertisement before bulk state and limits its rendezvous schema
+catalog to advertised boundary types. Live discovery freshness must still be
+proved against the deployed release; source tests alone do not close that gate.
 
 Live local evidence now covers grounded VoidBot compilation, a four-actor wave,
 impossible and receipted d20 actions, grounded narration, strategic cells, and a
@@ -178,9 +181,10 @@ The next engineering gate is growing the agency corpus beyond its 36 candidate
 cases without cosmetic reskins and removing the remaining legacy model effect
 schemas. Then resume the 20-plus-power live Aetheria skeleton across budgets
 `1`, `4`, `8`, and `32`, including nested refugee dispersal and later
-rematerialization. The existing large-
-document RUDP transport defect remains a separate discovery workstream; do not
-truncate Ghostlight's operator truth to make the catalog look fresh.
+rematerialization. The large-document RUDP repair must pass the five-runtime
+unit and impairment matrix, Ghostlight's locked Linux build, and a fresh
+persisted Odin advertisement before the workstream is closed. Do not truncate
+Ghostlight's operator truth to make discovery look healthy.
 Separate-account two-player and eight-player Session Zero and shared-scene
 pressure remains an independent unproven gate; no human cohort is currently
 waiting. The browser never

@@ -138,7 +138,7 @@ impl Default for CultMeshRudpDocumentPublishOptions {
             runtime_id: "cultmesh-rudp-document-publisher".to_string(),
             connection_id: CULTMESH_RUDP_DOCUMENT_CATALOG_CONNECTION_ID,
             connect_timeout: Duration::from_secs(3),
-            flush_timeout: Duration::from_millis(300),
+            flush_timeout: Duration::from_secs(30),
             poll_interval: Duration::from_millis(10),
             resend_delay_ms: 50,
             source_agent_id: None,
@@ -892,13 +892,7 @@ pub fn publish_cultnet_messages_to_rudp_catalog(
         let payload = encode_cultnet_message_to_vec(message, CultNetWireContract::CultNetSchemaV0)?;
         client.send("schema", payload)?;
     }
-    let flush_deadline = Instant::now() + options.flush_timeout;
-    while Instant::now() < flush_deadline {
-        let _ = client.receive_once()?;
-        client.poll_resends()?;
-        thread::sleep(options.poll_interval);
-    }
-    Ok(())
+    client.flush_reliable(options.flush_timeout)
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -1158,6 +1152,80 @@ mod tests {
         assert_eq!(received.0, "cultmesh.test.note.v0");
         assert_eq!(received.1, "note");
         assert_eq!(received.2.as_deref(), Some("muninn-test"));
+        Ok(())
+    }
+
+    #[test]
+    fn large_rudp_publication_waits_for_acknowledged_delivery() -> Result<()> {
+        let temp = tempfile::tempdir()?;
+        let node = CultMesh::create_node(
+            temp.path().join("cultmesh.cc"),
+            TestDocuments,
+            CultMeshNodeOptions {
+                runtime_id: "large-publisher-test".into(),
+                ..CultMeshNodeOptions::default()
+            },
+        )?;
+        let socket = UdpSocket::bind("127.0.0.1:0")?;
+        socket.set_read_timeout(Some(Duration::from_millis(10)))?;
+        let target = socket.local_addr()?;
+        let options = CultMeshRudpDocumentPublishOptions::odin(target, "large-publisher-test");
+        let messages = [
+            node.create_rudp_document_message(
+                "large-a",
+                &Note {
+                    body: "a".repeat(256 * 1024),
+                },
+                &options,
+            )?,
+            node.create_rudp_document_message(
+                "large-b",
+                &Note {
+                    body: "b".repeat(256 * 1024),
+                },
+                &options,
+            )?,
+        ];
+
+        let server = thread::spawn(move || -> Result<Vec<String>> {
+            thread::sleep(Duration::from_millis(500));
+            let mut server = CultNetRudpSocketTransportConnection::new(
+                CultNetRudpSocketTransportOptions::server(
+                    "delayed-odin-test",
+                    socket,
+                    CULTMESH_RUDP_DOCUMENT_CATALOG_CONNECTION_ID,
+                ),
+            )?;
+            let deadline = Instant::now() + Duration::from_secs(5);
+            let mut record_keys = Vec::new();
+            while Instant::now() < deadline && record_keys.len() < 2 {
+                if let Some(frame) = server.receive_once()? {
+                    let message = decode_cultnet_message_from_slice(
+                        &frame.payload,
+                        CultNetWireContract::CultNetSchemaV0,
+                    )?;
+                    if let cultnet_rs::CultNetMessage::DocumentPutRaw { document, .. } = message {
+                        record_keys.push(document.record_key);
+                    }
+                }
+                server.poll_resends()?;
+            }
+            let linger_deadline = Instant::now() + Duration::from_millis(250);
+            while Instant::now() < linger_deadline {
+                let _ = server.receive_once()?;
+                server.poll_resends()?;
+            }
+            if record_keys.len() != 2 {
+                anyhow::bail!("timed out waiting for both large RUDP documents");
+            }
+            Ok(record_keys)
+        });
+
+        publish_cultnet_messages_to_rudp_catalog(&messages, options)?;
+        assert_eq!(
+            server.join().expect("server thread should not panic")?,
+            vec!["large-a", "large-b"]
+        );
         Ok(())
     }
 

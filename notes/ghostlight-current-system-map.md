@@ -378,13 +378,22 @@ where return catch-up advanced canonical state, the subsequent player command
 correctly failed stale, and an early return left the operator surface on the
 previous revision.
 
-The current Odin crossing accepts Ghostlight health, advertisements, player
-surfaces, and a prefix of the snapshot, but the first large operator projection
-can stall the RUDP publisher before the remaining batch arrives. This is a
-transport/publication defect, not permission to truncate operator truth or move
-campaign authority into Odin. The complete projection remains in Ghostlight's
-local CultMesh; repair the large-document RUDP path in its owning transport
-workstream.
+The RUDP session owns reliable-send pressure. It admits at most 32 packets—the
+cumulative-ACK horizon—queues the rest, promotes queued packets only as ACKs
+retire admitted packets, and emits an exact ACK when an older retransmit has
+fallen behind that horizon. Its explicit flush succeeds only after every
+reliable packet is acknowledged. Large CultMesh documents no longer
+depend on blasting every fragment and sleeping for a fixed interval. The wire
+contract is unchanged, and model, campaign, and application authorities remain
+outside the transport.
+
+Ghostlight stages discovery-critical health and provider advertisement before
+bulk projections. Its Odin schema catalog contains only the Ghostlight-owned
+boundary state types advertised to consumers: `ghostlight.campaign.v1` and
+`ghostlight.session_zero.v1`. Internal compiler, Persona, transition, Gestalt,
+receipt, and operator documents remain available through their owning private
+projection; they are not dumped into rendezvous merely because Ghostlight has
+Rust types for them.
 
 Opening retrieval deliberately covers early, transitional, and late historical
 frames. These pure retrieval/compiler functions now serve the Session Zero DM;

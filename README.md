@@ -38,6 +38,9 @@ multiresolution agency graph for keeping large settings active at finite cost.
   directly harming an absent player character.
 - CultMesh publishes typed service and Eve/CultUI state; the browser lowers that
   surface and does not become a second state authority.
+- Odin receives Ghostlight's advertised boundary schemas and typed projections
+  over ACK-bounded RUDP publication. Internal runtime schemas are not treated as
+  discovery contracts merely because Ghostlight owns them.
 
 ## Eve-native interface
 

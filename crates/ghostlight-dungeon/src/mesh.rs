@@ -1,30 +1,12 @@
 use crate::{
     domain::{
-        ActionAssessment, ActorState, ActorStateDelta, AgencyProfile, AgencyRelation, Campaign,
-        CampaignLifecycleReceipt, CanonCandidate, CellActionProposal, CellAppraisal, Event,
-        GestaltFissionPreview, GestaltLineage, GestaltMaterializationReceipt, GestaltMemberDelta,
-        GestaltPersonaState, InstitutionState, Location, NarrationProjection, NewsIssue,
-        RegionExpansionPreview, RejectedProposalReceipt, RelationshipState,
-        ResolutionControlReceipt, ResolutionCover, ResolutionDemand, ResolutionPin,
-        ResolutionPlanReceipt, ResolutionPolicy, RollReceipt, SimulationCell,
-        StrategicActivityOutcome, StrategicGestaltMigration, StrategicMemberMigration,
-        StrategicTickPlan, StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest,
-        WorldActionProposal, WorldClock, WorldCommitReceipt, WorldCompilePreview, WorldFact,
+        Campaign, CellAppraisal, GestaltMaterializationReceipt, NarrationProjection,
+        RejectedProposalReceipt, ResolutionControlReceipt, ResolutionPlanReceipt,
+        StrategicActivityOutcome, StrategicTickReceipt, VaultEvidenceReceipt, WorldCommitReceipt,
     },
     model::{ModelRuntimeStatus, ModelStageReceipt},
-    session_zero::{
-        ActiveContractBoundaryPolicy, ApprovedCampaignBrief, CampaignContract, CampaignDmPersona,
-        CampaignGovernance, CampaignMembership, CellBudgetProposal, CharacterDraft,
-        ContentBoundary, ExtraordinaryPermission, GroupTravelProposal, SessionZeroApproval,
-        SessionZeroChannel, SessionZeroDecision, SessionZeroDelta, SessionZeroMember,
-        SessionZeroMessage, SessionZeroState, TimeAdvanceProposal,
-    },
+    session_zero::{CampaignMembership, SessionZeroState},
     surface::{operator_surface, player_surface, player_surface_for_actor},
-    transition::{
-        ActionMeans, AgencyAttemptCase, ComponentWorldState, IdentityHandleState,
-        MutationAuthorityEnvelope, MutationIntent, MutationPermit, TypedSubject, WorldComponentRef,
-        WorldMutation, WorldMutationBatch, WorldMutationReceipt,
-    },
 };
 use anyhow::Result;
 use chrono::Utc;
@@ -291,16 +273,16 @@ impl MeshPublisher {
         )?;
         self.put_and_stage(
             &mut node,
-            "ghostlight:schema-catalog",
-            &SchemaCatalogRecord { value: catalog },
-            &mut remote_messages,
-        )?;
-        self.put_and_stage(
-            &mut node,
             ADVERTISEMENT_KEY,
             &EveProviderAdvertisementRecord {
                 value: advertisement,
             },
+            &mut remote_messages,
+        )?;
+        self.put_and_stage(
+            &mut node,
+            "ghostlight:schema-catalog",
+            &SchemaCatalogRecord { value: catalog },
             &mut remote_messages,
         )?;
         for snapshot in campaigns {
@@ -576,99 +558,10 @@ fn remote_options(target: SocketAddr, runtime_id: &str) -> CultMeshRudpDocumentP
 }
 
 fn schema_catalog() -> Value {
-    let mut catalog = json!({
-        "ghostlight.vault_manifest.v1": schemars::schema_for!(VaultManifest),
-        "ghostlight.vault_evidence_receipt.v1": schemars::schema_for!(VaultEvidenceReceipt),
-        "ghostlight.world_compile_preview.v1": schemars::schema_for!(WorldCompilePreview),
+    json!({
         "ghostlight.campaign.v1": schemars::schema_for!(Campaign),
-        "ghostlight.world_fact.v1": schemars::schema_for!(WorldFact),
-        "ghostlight.location.v1": schemars::schema_for!(Location),
-        "ghostlight.actor_state.v1": schemars::schema_for!(ActorState),
-        "ghostlight.relationship_state.v1": schemars::schema_for!(RelationshipState),
-        "ghostlight.institution_state.v1": schemars::schema_for!(InstitutionState),
-        "ghostlight.world_clock.v1": schemars::schema_for!(WorldClock),
-        "ghostlight.event.v1": schemars::schema_for!(Event),
-        "ghostlight.player_action_assessment.v1": schemars::schema_for!(ActionAssessment),
-        "ghostlight.roll_receipt.v1": schemars::schema_for!(RollReceipt),
-        "ghostlight.world_commit_receipt.v1": schemars::schema_for!(WorldCommitReceipt),
-        "ghostlight.persona_stage_receipt.v1": schemars::schema_for!(ModelStageReceipt),
-        "ghostlight.actor_state_delta.v1": schemars::schema_for!(ActorStateDelta),
-        "ghostlight.world_action_proposal.v1": schemars::schema_for!(WorldActionProposal),
-        "ghostlight.narration_projection.v1": schemars::schema_for!(NarrationProjection),
-        "ghostlight.region_expansion_preview.v1": schemars::schema_for!(RegionExpansionPreview),
-        "ghostlight.rejected_proposal_receipt.v1": schemars::schema_for!(RejectedProposalReceipt),
-        "ghostlight.campaign_lifecycle_receipt.v1": schemars::schema_for!(CampaignLifecycleReceipt),
-        "ghostlight.strategic_tick_plan.v1": schemars::schema_for!(StrategicTickPlan),
-        "ghostlight.strategic_tick.v1": schemars::schema_for!(StrategicTickReceipt),
-        "ghostlight.news_issue.v1": schemars::schema_for!(NewsIssue),
-        "ghostlight.canon_candidate.v1": schemars::schema_for!(CanonCandidate),
-        "ghostlight.gestalt_persona_state.v1": schemars::schema_for!(GestaltPersonaState),
-        "ghostlight.gestalt_member_delta.v1": schemars::schema_for!(GestaltMemberDelta)
-        ,"ghostlight.gestalt_materialization_receipt.v1": schemars::schema_for!(GestaltMaterializationReceipt),
-        "ghostlight.agency_profile.v1": schemars::schema_for!(AgencyProfile),
-        "ghostlight.agency_relation.v1": schemars::schema_for!(AgencyRelation),
-        "ghostlight.gestalt_lineage.v1": schemars::schema_for!(GestaltLineage),
-        "ghostlight.resolution_policy.v1": schemars::schema_for!(ResolutionPolicy),
-        "ghostlight.resolution_pin.v1": schemars::schema_for!(ResolutionPin),
-        "ghostlight.resolution_demand.v1": schemars::schema_for!(ResolutionDemand),
-        "ghostlight.simulation_cell.v1": schemars::schema_for!(SimulationCell),
-        "ghostlight.resolution_cover.v1": schemars::schema_for!(ResolutionCover),
-        "ghostlight.resolution_plan_receipt.v1": schemars::schema_for!(ResolutionPlanReceipt),
-        "ghostlight.resolution_control_receipt.v1": schemars::schema_for!(ResolutionControlReceipt),
-        "ghostlight.cell_appraisal.v1": schemars::schema_for!(CellAppraisal),
-        "ghostlight.cell_action_proposal.v1": schemars::schema_for!(CellActionProposal),
-        "ghostlight.gestalt_fission_preview.v1": schemars::schema_for!(GestaltFissionPreview)
-        ,"ghostlight.session_zero.v1": schemars::schema_for!(SessionZeroState),
-        "ghostlight.session_zero_member.v1": schemars::schema_for!(SessionZeroMember),
-        "ghostlight.session_zero_message.v1": schemars::schema_for!(SessionZeroMessage),
-        "ghostlight.session_zero_channel.v1": schemars::schema_for!(SessionZeroChannel),
-        "ghostlight.campaign_contract.v1": schemars::schema_for!(CampaignContract),
-        "ghostlight.character_draft.v1": schemars::schema_for!(CharacterDraft),
-        "ghostlight.content_boundary.v1": schemars::schema_for!(ContentBoundary),
-        "ghostlight.active_contract_boundary_policy.v1": schemars::schema_for!(ActiveContractBoundaryPolicy),
-        "ghostlight.session_zero_decision.v1": schemars::schema_for!(SessionZeroDecision),
-        "ghostlight.session_zero_delta.v1": schemars::schema_for!(SessionZeroDelta),
-        "ghostlight.session_zero_approval.v1": schemars::schema_for!(SessionZeroApproval),
-        "ghostlight.approved_campaign_brief.v1": schemars::schema_for!(ApprovedCampaignBrief),
-        "ghostlight.campaign_dm_persona.v1": schemars::schema_for!(CampaignDmPersona),
-        "ghostlight.campaign_membership.v1": schemars::schema_for!(CampaignMembership),
-        "ghostlight.campaign_governance.v1": schemars::schema_for!(CampaignGovernance),
-        "ghostlight.extraordinary_permission.v1": schemars::schema_for!(ExtraordinaryPermission),
-        "ghostlight.time_advance_proposal.v1": schemars::schema_for!(TimeAdvanceProposal),
-        "ghostlight.group_travel_proposal.v1": schemars::schema_for!(GroupTravelProposal),
-        "ghostlight.cell_budget_proposal.v1": schemars::schema_for!(CellBudgetProposal),
-        "ghostlight.typed_subject.v1": schemars::schema_for!(TypedSubject),
-        "ghostlight.world_component_ref.v1": schemars::schema_for!(WorldComponentRef),
-        "ghostlight.action_means.v1": schemars::schema_for!(ActionMeans),
-        "ghostlight.mutation_intent.v1": schemars::schema_for!(MutationIntent),
-        "ghostlight.mutation_permit.v1": schemars::schema_for!(MutationPermit),
-        "ghostlight.mutation_authority_envelope.v1": schemars::schema_for!(MutationAuthorityEnvelope),
-        "ghostlight.world_mutation.v1": schemars::schema_for!(WorldMutation),
-        "ghostlight.world_mutation_batch.v1": schemars::schema_for!(WorldMutationBatch),
-        "ghostlight.world_mutation_receipt.v1": schemars::schema_for!(WorldMutationReceipt),
-        "ghostlight.component_world_state.v1": schemars::schema_for!(ComponentWorldState),
-        "ghostlight.identity_handle.v1": schemars::schema_for!(IdentityHandleState),
-        "ghostlight.agency_attempt_case.v1": schemars::schema_for!(AgencyAttemptCase)
-    });
-    let schemas = catalog
-        .as_object_mut()
-        .expect("schema catalog literal is an object");
-    schemas.insert(
-        "ghostlight.strategic_activity_outcome.v1".into(),
-        serde_json::to_value(schemars::schema_for!(StrategicActivityOutcome))
-            .expect("strategic activity outcome schema serializes"),
-    );
-    schemas.insert(
-        "ghostlight.gestalt_migration.v1".into(),
-        serde_json::to_value(schemars::schema_for!(StrategicGestaltMigration))
-            .expect("gestalt migration schema serializes"),
-    );
-    schemas.insert(
-        "ghostlight.member_migration.v1".into(),
-        serde_json::to_value(schemars::schema_for!(StrategicMemberMigration))
-            .expect("member migration schema serializes"),
-    );
-    catalog
+        "ghostlight.session_zero.v1": schemars::schema_for!(SessionZeroState)
+    })
 }
 
 #[cfg(test)]
@@ -694,19 +587,12 @@ mod tests {
             .unwrap()
             .get_required::<SchemaCatalogRecord>("ghostlight:schema-catalog")
             .unwrap();
-        assert!(catalog.value["schemas"]["ghostlight.campaign.v1"]["$schema"].is_string());
-        for schema in [
-            "ghostlight.vault_manifest.v1",
-            "ghostlight.relationship_state.v1",
-            "ghostlight.strategic_tick.v1",
-            "ghostlight.gestalt_materialization_receipt.v1",
-            "ghostlight.agency_profile.v1",
-            "ghostlight.resolution_cover.v1",
-            "ghostlight.cell_appraisal.v1",
-            "ghostlight.gestalt_fission_preview.v1",
-        ] {
-            assert!(catalog.value["schemas"][schema]["$schema"].is_string());
-        }
+        let schemas = catalog.value["schemas"].as_object().unwrap();
+        assert_eq!(schemas.len(), 2);
+        assert!(schemas["ghostlight.campaign.v1"]["$schema"].is_string());
+        assert!(schemas["ghostlight.session_zero.v1"]["$schema"].is_string());
+        assert!(!schemas.contains_key("ghostlight.persona_stage_receipt.v1"));
+        assert!(!schemas.contains_key("ghostlight.world_mutation.v1"));
         drop(catalog);
         drop(publisher);
         let reopened = MeshPublisher::open(temp.path().join("mesh.cc"), None).unwrap();
