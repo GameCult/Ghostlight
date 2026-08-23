@@ -149,13 +149,6 @@ pub struct GestaltMemberDelta {
     pub relevance_lease_until_revision: u64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
-pub struct GestaltAggregateDelta {
-    pub knowledge_additions: BTreeSet<String>,
-    pub resource_additions: BTreeSet<String>,
-    pub pressures: Vec<String>,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct GestaltPromotion {
     pub gestalt_id: String,
@@ -176,8 +169,6 @@ pub struct GestaltIndividuation {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct GestaltDemotion {
     pub actor_id: String,
-    #[serde(default)]
-    pub aggregate_delta: GestaltAggregateDelta,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
@@ -194,6 +185,10 @@ pub struct GestaltMaterializationReceipt {
     pub campaign_id: Uuid,
     pub previous_revision: u64,
     pub revision: u64,
+    #[serde(default)]
+    pub previous_resolution_epoch: u64,
+    #[serde(default)]
+    pub resolution_epoch: u64,
     pub reason: String,
     pub changes: Vec<GestaltPresenceChange>,
     pub committed_at: DateTime<Utc>,
@@ -1001,7 +996,6 @@ pub enum WorldCommand {
     DematerializeGestaltMember {
         expected_revision: u64,
         actor_id: String,
-        aggregate_delta: GestaltAggregateDelta,
     },
     ReconcileGestaltPresence {
         expected_revision: u64,

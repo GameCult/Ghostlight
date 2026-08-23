@@ -290,11 +290,6 @@ fn validate_plan(
                 "presence plan demotes an unknown or duplicate member"
             ));
         }
-        if demotion.aggregate_delta != Default::default() {
-            return Err(anyhow!(
-                "automatic presence planning cannot rewrite gestalt knowledge"
-            ));
-        }
         let member = campaign
             .gestalt_members
             .values()

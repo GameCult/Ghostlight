@@ -1185,17 +1185,10 @@ fn execute(
         WorldCommand::DematerializeGestaltMember {
             expected_revision,
             actor_id,
-            aggregate_delta,
         } => {
             require_revision(&campaign, expected_revision)?;
             let before = campaign.clone();
-            apply_demotion(
-                &mut campaign,
-                &GestaltDemotion {
-                    actor_id,
-                    aggregate_delta,
-                },
-            )?;
+            apply_demotion(&mut campaign, &GestaltDemotion { actor_id })?;
             commit_gestalt_presence(
                 store,
                 row,
@@ -1622,7 +1615,7 @@ fn apply_demotion(campaign: &mut Campaign, demotion: &GestaltDemotion) -> Result
     let gestalt_id = campaign.gestalt_members[&member_id].gestalt_id.clone();
     let gestalt = campaign
         .gestalts
-        .get_mut(&gestalt_id)
+        .get(&gestalt_id)
         .ok_or_else(|| KernelError::Invalid("gestalt is missing".into()))?;
     let member = campaign
         .gestalt_members
@@ -1631,21 +1624,6 @@ fn apply_demotion(campaign: &mut Campaign, demotion: &GestaltDemotion) -> Result
     fold_actor_delta(&actor, gestalt, member);
     member.materialized_actor_id = None;
     member.version += 1;
-    if !demotion.aggregate_delta.knowledge_additions.is_empty()
-        || !demotion.aggregate_delta.resource_additions.is_empty()
-        || !demotion.aggregate_delta.pressures.is_empty()
-    {
-        gestalt
-            .shared_knowledge
-            .extend(demotion.aggregate_delta.knowledge_additions.clone());
-        gestalt
-            .resources
-            .extend(demotion.aggregate_delta.resource_additions.clone());
-        gestalt
-            .pressures
-            .extend(demotion.aggregate_delta.pressures.clone());
-        gestalt.version += 1;
-    }
     campaign.actors.remove(&demotion.actor_id);
     Ok(())
 }
@@ -2650,6 +2628,7 @@ fn commit_gestalt_presence(
     kind: &str,
     reason: &str,
 ) -> Result<CommandResult, KernelError> {
+    let previous_resolution_epoch = campaign.resolution_policy.resolution_epoch;
     crate::resolution::ensure_agency_profiles(&mut campaign);
     let mut changes = Vec::new();
     for (member_id, member) in &campaign.gestalt_members {
@@ -2687,6 +2666,8 @@ fn commit_gestalt_presence(
     }
     let previous_revision = campaign.revision;
     campaign.revision += 1;
+    campaign.resolution_policy.resolution_epoch = previous_resolution_epoch.saturating_add(1);
+    campaign.resolution_cover = None;
     let committed_at = Utc::now();
     let receipt = WorldCommitReceipt {
         schema: "ghostlight.world_commit_receipt.v1".into(),
@@ -2702,6 +2683,8 @@ fn commit_gestalt_presence(
         campaign_id: campaign.id,
         previous_revision,
         revision: campaign.revision,
+        previous_resolution_epoch,
+        resolution_epoch: campaign.resolution_policy.resolution_epoch,
         reason: reason.into(),
         changes,
         committed_at,
@@ -5343,6 +5326,10 @@ mod tests {
                 pressures: vec![],
             },
         );
+        let gestalt_baseline = seed.gestalts["village"].clone();
+        crate::resolution::ensure_agency_profiles(&mut seed);
+        let demand = crate::resolution::default_demand(&seed, "pre-materialization cover");
+        seed.resolution_cover = Some(crate::resolution::plan_cover(&seed, demand).unwrap());
         let john = GestaltMemberDelta {
             schema: "ghostlight.gestalt_member_delta.v1".into(),
             id: "john".into(),
@@ -5395,12 +5382,13 @@ mod tests {
                 .capabilities
                 .contains("master blacksmith")
         );
+        assert_eq!(first.resolution_policy.resolution_epoch, 1);
+        assert!(first.resolution_cover.is_none());
         assert!(
             kernel
                 .command(WorldCommand::DematerializeGestaltMember {
                     expected_revision: 1,
                     actor_id: "member:john".into(),
-                    aggregate_delta: Default::default(),
                 })
                 .await
                 .unwrap_err()
@@ -5418,10 +5406,6 @@ mod tests {
             .command(WorldCommand::DematerializeGestaltMember {
                 expected_revision: 2,
                 actor_id: "member:john".into(),
-                aggregate_delta: GestaltAggregateDelta {
-                    knowledge_additions: BTreeSet::from(["the player keeps promises".into()]),
-                    ..Default::default()
-                },
             })
             .await
             .unwrap();
@@ -5432,6 +5416,8 @@ mod tests {
             panic!()
         };
         assert!(!folded.actors.contains_key("member:john"));
+        assert_eq!(folded.resolution_policy.resolution_epoch, 2);
+        assert!(folded.resolution_cover.is_none());
         assert_eq!(
             folded.gestalt_members["john"].memories,
             vec!["met the player"]
@@ -5440,7 +5426,7 @@ mod tests {
             .command(WorldCommand::MaterializeGestaltMember {
                 expected_revision: 3,
                 gestalt_id: "village".into(),
-                expected_gestalt_version: 1,
+                expected_gestalt_version: 0,
                 member_id: "john".into(),
                 expected_member_version: 2,
                 location_id: "room".into(),
@@ -5458,21 +5444,18 @@ mod tests {
             again.actors["member:john"].relationships["player"],
             "new acquaintance"
         );
-        assert!(
-            again.gestalts["village"]
-                .shared_knowledge
-                .contains("the player keeps promises")
-        );
+        assert_eq!(again.gestalts["village"], gestalt_baseline);
+        assert_eq!(again.resolution_policy.resolution_epoch, 3);
+        assert!(again.resolution_cover.is_none());
 
         let bad_plan = GestaltPresencePlan {
             individuations: vec![],
             demotions: vec![GestaltDemotion {
                 actor_id: "member:john".into(),
-                aggregate_delta: GestaltAggregateDelta::default(),
             }],
             promotions: vec![GestaltPromotion {
                 gestalt_id: "village".into(),
-                expected_gestalt_version: 1,
+                expected_gestalt_version: 0,
                 member_id: "invented-person".into(),
                 expected_member_version: 0,
                 location_id: "room".into(),
@@ -5510,6 +5493,10 @@ mod tests {
         assert_eq!(receipts[0].changes[0].operation, "materialized");
         assert_eq!(receipts[1].changes[0].operation, "dematerialized");
         assert_eq!(receipts[2].changes[0].member_id, "john");
+        assert_eq!(receipts[0].previous_resolution_epoch, 0);
+        assert_eq!(receipts[0].resolution_epoch, 1);
+        assert_eq!(receipts[1].resolution_epoch, 2);
+        assert_eq!(receipts[2].resolution_epoch, 3);
     }
 
     #[tokio::test]
