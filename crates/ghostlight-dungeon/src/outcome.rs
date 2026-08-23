@@ -1627,6 +1627,7 @@ fn outcome_effect_shape(
 
 fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Value {
     let mut constraints = Vec::new();
+    let admits = |kind: &OutcomeEffectKind| action.admissible_effect_kinds.contains(kind);
     let source_resources = action
         .source_state
         .get("resources")
@@ -1636,69 +1637,89 @@ fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Val
         .filter_map(serde_json::Value::as_str)
         .map(str::to_owned)
         .collect::<Vec<_>>();
-    constraints.push(effect_scope_condition(
-        &[
-            OutcomeEffectKind::ResourceCreated,
-            OutcomeEffectKind::ResourceConsumed,
-            OutcomeEffectKind::ResourceTransferred,
-        ],
-        serde_json::json!({
-            "properties":{"owner_subject_id":{"const":action.resource_owner_id}}
-        }),
-    ));
-    constraints.push(effect_scope_condition(
-        &[OutcomeEffectKind::ResourceCreated],
-        serde_json::json!({
-            "properties":{"resource":{"type":"string","minLength":1,"maxLength":160}}
-        }),
-    ));
-    constraints.push(effect_scope_condition(
-        &[
-            OutcomeEffectKind::ResourceConsumed,
-            OutcomeEffectKind::ResourceTransferred,
-        ],
-        serde_json::json!({
-            "properties":{"resource":exact_string_value_schema(&source_resources)}
-        }),
-    ));
-    constraints.push(effect_scope_condition(
-        &[OutcomeEffectKind::ResourceTransferred],
-        serde_json::json!({
-            "properties":{"other_subject_id":exact_string_value_schema(&action.resource_recipient_ids)}
-        }),
-    ));
-    let pressure_owner_schemas = action
-        .pressure_owner_subject_ids
+    let resource_kinds = [
+        OutcomeEffectKind::ResourceCreated,
+        OutcomeEffectKind::ResourceConsumed,
+        OutcomeEffectKind::ResourceTransferred,
+    ];
+    let admitted_resource_kinds = resource_kinds
         .iter()
-        .map(|owner| {
-            let prefix = format!("pressure:{owner}:");
-            let current = action
-                .allowed_state_references
-                .iter()
-                .filter_map(|reference| reference.strip_prefix(&prefix).map(str::to_owned))
-                .collect::<Vec<_>>();
+        .filter(|kind| admits(kind))
+        .cloned()
+        .collect::<Vec<_>>();
+    if !admitted_resource_kinds.is_empty() {
+        constraints.push(effect_scope_condition(
+            &admitted_resource_kinds,
+            serde_json::json!({
+                "properties":{"owner_subject_id":{"const":action.resource_owner_id}}
+            }),
+        ));
+    }
+    if admits(&OutcomeEffectKind::ResourceCreated) {
+        constraints.push(effect_scope_condition(
+            &[OutcomeEffectKind::ResourceCreated],
+            serde_json::json!({
+                "properties":{"resource":{"type":"string","minLength":1,"maxLength":160}}
+            }),
+        ));
+    }
+    let admitted_existing_resource_kinds = [
+        OutcomeEffectKind::ResourceConsumed,
+        OutcomeEffectKind::ResourceTransferred,
+    ]
+    .into_iter()
+    .filter(|kind| admits(kind))
+    .collect::<Vec<_>>();
+    if !admitted_existing_resource_kinds.is_empty() {
+        constraints.push(effect_scope_condition(
+            &admitted_existing_resource_kinds,
+            serde_json::json!({
+                "properties":{"resource":exact_string_value_schema(&source_resources)}
+            }),
+        ));
+    }
+    if admits(&OutcomeEffectKind::ResourceTransferred) {
+        constraints.push(effect_scope_condition(
+            &[OutcomeEffectKind::ResourceTransferred],
+            serde_json::json!({
+                "properties":{"other_subject_id":exact_string_value_schema(&action.resource_recipient_ids)}
+            }),
+        ));
+    }
+    if admits(&OutcomeEffectKind::GestaltPressure) {
+        let pressure_owner_schemas = action
+            .pressure_owner_subject_ids
+            .iter()
+            .map(|owner| {
+                let prefix = format!("pressure:{owner}:");
+                let current = action
+                    .allowed_state_references
+                    .iter()
+                    .filter_map(|reference| reference.strip_prefix(&prefix).map(str::to_owned))
+                    .collect::<Vec<_>>();
+                serde_json::json!({
+                    "properties":{
+                        "owner_subject_id":{"const":owner},
+                        "pressure_resolutions":exact_string_array_value_schema(&current, 0, 4)
+                    },
+                    "required":["owner_subject_id"]
+                })
+            })
+            .collect::<Vec<_>>();
+        constraints.push(effect_scope_condition(
+            &[OutcomeEffectKind::GestaltPressure],
             serde_json::json!({
                 "properties":{
-                    "owner_subject_id":{"const":owner},
-                    "pressure_resolutions":exact_string_array_value_schema(&current, 0, 4)
+                    "owner_subject_id":exact_string_value_schema(&action.pressure_owner_subject_ids),
+                    "pressure_additions":{
+                        "type":"array","uniqueItems":true,"maxItems":4,
+                        "items":{"type":"string","minLength":1,"maxLength":240}
+                    }
                 },
-                "required":["owner_subject_id"]
-            })
-        })
-        .collect::<Vec<_>>();
-    constraints.push(effect_scope_condition(
-        &[OutcomeEffectKind::GestaltPressure],
-        serde_json::json!({
-            "properties":{
-                "owner_subject_id":exact_string_value_schema(&action.pressure_owner_subject_ids),
-                "pressure_additions":{
-                    "type":"array","uniqueItems":true,"maxItems":4,
-                    "items":{"type":"string","minLength":1,"maxLength":240}
-                }
-            },
-            "oneOf":pressure_owner_schemas
-        }),
-    ));
+                "oneOf":pressure_owner_schemas
+            }),
+        ));
+    }
     let relation_ids = action
         .active_relations
         .iter()
@@ -1706,44 +1727,58 @@ fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Val
         .filter_map(serde_json::Value::as_str)
         .map(str::to_owned)
         .collect::<Vec<_>>();
-    constraints.push(effect_scope_condition(
-        &[OutcomeEffectKind::AgencyRelationShift],
-        serde_json::json!({
-            "properties":{
-                "relation_id":exact_string_value_schema(&relation_ids),
-                "strength_delta":{"type":"integer","enum":[-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9,10]}
-            }
-        }),
-    ));
-    if let Some(member_id) = &action.member_state_owner_id {
+    if admits(&OutcomeEffectKind::AgencyRelationShift) {
         constraints.push(effect_scope_condition(
-            &[
-                OutcomeEffectKind::MemberMemory,
-                OutcomeEffectKind::MemberObligation,
-                OutcomeEffectKind::MemberRelationship,
-            ],
+            &[OutcomeEffectKind::AgencyRelationShift],
             serde_json::json!({
-                "properties":{"member_id":{"const":member_id}}
+                "properties":{
+                    "relation_id":exact_string_value_schema(&relation_ids),
+                    "strength_delta":{"type":"integer","enum":[-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9,10]}
+                }
             }),
         ));
     }
-    constraints.push(effect_scope_condition(
-        &[OutcomeEffectKind::MemberMemory],
-        serde_json::json!({"properties":{"memory":{"type":"string","minLength":1,"maxLength":240}}}),
-    ));
-    constraints.push(effect_scope_condition(
-        &[OutcomeEffectKind::MemberObligation],
-        serde_json::json!({"properties":{"obligation":{"type":"string","minLength":1,"maxLength":240}}}),
-    ));
-    constraints.push(effect_scope_condition(
-        &[OutcomeEffectKind::MemberRelationship],
-        serde_json::json!({
-            "properties":{
-                "other_subject_id":exact_string_value_schema(&action.target_subject_ids),
-                "relationship_description":{"type":"string","minLength":1,"maxLength":240}
-            }
-        }),
-    ));
+    let admitted_member_kinds = [
+        OutcomeEffectKind::MemberMemory,
+        OutcomeEffectKind::MemberObligation,
+        OutcomeEffectKind::MemberRelationship,
+    ]
+    .into_iter()
+    .filter(|kind| admits(kind))
+    .collect::<Vec<_>>();
+    if !admitted_member_kinds.is_empty() {
+        if let Some(member_id) = &action.member_state_owner_id {
+            constraints.push(effect_scope_condition(
+                &admitted_member_kinds,
+                serde_json::json!({
+                    "properties":{"member_id":{"const":member_id}}
+                }),
+            ));
+        }
+    }
+    if admits(&OutcomeEffectKind::MemberMemory) {
+        constraints.push(effect_scope_condition(
+            &[OutcomeEffectKind::MemberMemory],
+            serde_json::json!({"properties":{"memory":{"type":"string","minLength":1,"maxLength":240}}}),
+        ));
+    }
+    if admits(&OutcomeEffectKind::MemberObligation) {
+        constraints.push(effect_scope_condition(
+            &[OutcomeEffectKind::MemberObligation],
+            serde_json::json!({"properties":{"obligation":{"type":"string","minLength":1,"maxLength":240}}}),
+        ));
+    }
+    if admits(&OutcomeEffectKind::MemberRelationship) {
+        constraints.push(effect_scope_condition(
+            &[OutcomeEffectKind::MemberRelationship],
+            serde_json::json!({
+                "properties":{
+                    "other_subject_id":exact_string_value_schema(&action.target_subject_ids),
+                    "relationship_description":{"type":"string","minLength":1,"maxLength":240}
+                }
+            }),
+        ));
+    }
     let fact_ids = action
         .discoverable_facts
         .iter()
@@ -1751,15 +1786,17 @@ fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Val
         .filter_map(serde_json::Value::as_str)
         .map(str::to_owned)
         .collect::<Vec<_>>();
-    constraints.push(effect_scope_condition(
-        &[OutcomeEffectKind::KnowledgeLearned],
-        serde_json::json!({
-            "properties":{
-                "owner_subject_id":{"const":action.source_subject_id},
-                "fact_id":exact_string_value_schema(&fact_ids)
-            }
-        }),
-    ));
+    if admits(&OutcomeEffectKind::KnowledgeLearned) {
+        constraints.push(effect_scope_condition(
+            &[OutcomeEffectKind::KnowledgeLearned],
+            serde_json::json!({
+                "properties":{
+                    "owner_subject_id":{"const":action.source_subject_id},
+                    "fact_id":exact_string_value_schema(&fact_ids)
+                }
+            }),
+        ));
+    }
     constraints.push(effect_scope_condition(
         &[OutcomeEffectKind::NoMaterialChange],
         serde_json::json!({"properties":{"reason":{"type":"string","minLength":1,"maxLength":240}}}),
@@ -1801,6 +1838,13 @@ fn exact_string_array_value_schema(
     min_items: usize,
     max_items: usize,
 ) -> serde_json::Value {
+    if values.is_empty() {
+        return serde_json::json!({
+            "type":"array",
+            "minItems":min_items,
+            "maxItems":0
+        });
+    }
     serde_json::json!({
         "type":"array",
         "uniqueItems":true,
@@ -2237,6 +2281,35 @@ mod tests {
                 "effect_kind":"no_material_change",
                 "supporting_state_references":[],
                 "reason":"No durable state changes."
+            }]
+        })));
+    }
+
+    #[test]
+    fn outcome_schema_omits_unavailable_empty_effect_lanes() {
+        let value = campaign();
+        let action = proposal();
+        let mut contexts = build_context(&value, &[action]).unwrap().actions;
+        let mut context = contexts.remove(0);
+        context.source_state["resources"] = serde_json::json!([]);
+        context.active_relations.clear();
+        context.pressure_owner_subject_ids.clear();
+        context.resource_recipient_ids.clear();
+        context.discoverable_facts.clear();
+        context.member_state_owner_id = None;
+        context.admissible_effect_kinds = vec![OutcomeEffectKind::NoMaterialChange];
+        context.allowed_state_references.clear();
+        let mut schema = serde_json::to_value(schema_for!(OutcomeProposalBundle)).unwrap();
+        constrain_outcome_schema(&mut schema, std::slice::from_ref(&context)).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+
+        assert!(validator.is_valid(&serde_json::json!({
+            "outcomes":[{
+                "action_digest":context.action_digest,
+                "band":"mixed",
+                "effect_kind":"no_material_change",
+                "supporting_state_references":[],
+                "reason":"The attempt changes no durable state."
             }]
         })));
     }
