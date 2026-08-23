@@ -75,8 +75,10 @@ Persona while extracting state. The kernel still treats the three stages as
 one atomic proposal; an invalid Interpreter commits neither speech nor state.
 
 The Interpreter receives only the current contract, its channel and member
-scope, the entitled private character when applicable, visible typed decisions,
-and the exact Persona response. Transcript windows, evidence coverage,
+scope, the entitled private character when applicable, unresolved material
+decisions, and the exact Persona response. Non-material opening and role cards
+remain renderer-visible suggestions but never enter Projector or Interpreter
+cognition unless the player explicitly selects or discusses one. Transcript windows, evidence coverage,
 boundaries, and public-party narrative already served their purpose in the
 Projector and are not replayed into extraction. It cannot restate existing
 draft fields or unresolved decisions as new proposals. Stable schema-first
@@ -86,9 +88,15 @@ fail, the kernel may append a fixed local DM notice to the conversation while
 leaving contract, characters, decisions, boundaries, approvals, and model
 receipts unchanged.
 
+One Interpreter turn has one owner per typed lane. A shared turn may directly
+edit the draft contract or offer a contract decision, never both; a private turn
+may directly edit the character draft or offer a character/permission decision,
+never both. The model-facing schema requests a same-snapshot correction for a
+split-lane output, and the kernel repeats the invariant before mutation.
+
 Generated opening and role suggestions are non-material decisions: the player
 may accept, counter, discuss, or ignore them without blocking a fully custom
-draft. On daemon load, the registry demotes pre-cut payloadless questions and
+draft. They are UI affordances, not implicit DM memory. On daemon load, the registry demotes pre-cut payloadless questions and
 generated opening records whose old `material` flags would otherwise veto a
 custom draft. A payloadless question cannot own compilation readiness because
 it has no typed change to accept. This migration uses an exact CultCache

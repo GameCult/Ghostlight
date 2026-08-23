@@ -1451,6 +1451,7 @@ impl SessionZeroDirector {
             let mut interpreter_schema =
                 serde_json::to_value(schema_for!(SessionZeroInterpretation))?;
             require_typed_decision_payloads(&mut interpreter_schema)?;
+            require_single_lane_ownership(&mut interpreter_schema)?;
             let interpreter = run_validated_stage(
                 self.model.as_ref(),
                 &ModelStageRequest {
@@ -1633,6 +1634,58 @@ fn require_typed_decision_payloads(schema: &mut serde_json::Value) -> Result<()>
             {
                 "required": ["proposed_character_patch"],
                 "properties": {"proposed_character_patch": {"type": "object"}}
+            }
+        ]),
+    );
+    Ok(())
+}
+
+fn require_single_lane_ownership(schema: &mut serde_json::Value) -> Result<()> {
+    let root = schema
+        .as_object_mut()
+        .ok_or_else(|| anyhow!("Session Zero Interpreter schema has no object root"))?;
+    root.insert(
+        "allOf".into(),
+        serde_json::json!([
+            {
+                "if": {
+                    "properties": {
+                        "decisions": {
+                            "contains": {
+                                "required": ["proposed_contract_patch"],
+                                "properties": {"proposed_contract_patch": {"type": "object"}}
+                            }
+                        }
+                    }
+                },
+                "then": {
+                    "properties": {
+                        "contract_patch": {"const": CampaignContractPatch::default()}
+                    }
+                }
+            },
+            {
+                "if": {
+                    "properties": {
+                        "decisions": {
+                            "contains": {
+                                "anyOf": [
+                                    {
+                                        "required": ["proposed_character_patch"],
+                                        "properties": {"proposed_character_patch": {"type": "object"}}
+                                    },
+                                    {
+                                        "required": ["proposed_extraordinary_permission"],
+                                        "properties": {"proposed_extraordinary_permission": {"type": "object"}}
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "then": {
+                    "properties": {"character_patch": {"type": "null"}}
+                }
             }
         ]),
     );
@@ -1912,7 +1965,10 @@ fn visible_decisions_for_turn<'a>(
         .decisions
         .values()
         .filter(|decision| {
-            decision.owner_member_id.is_none() || decision.owner_member_id.as_deref() == member_id
+            decision.material
+                && !decision.resolved
+                && (decision.owner_member_id.is_none()
+                    || decision.owner_member_id.as_deref() == member_id)
         })
         .collect())
 }
@@ -3655,6 +3711,24 @@ fn validate_dm_delta(
             }
         }
     }
+    let proposes_contract_decision = delta
+        .decisions
+        .iter()
+        .any(|decision| decision.proposed_contract_patch.is_some());
+    if contract_patch_changes_shared(&delta.contract_patch) && proposes_contract_decision {
+        return Err(anyhow!(
+            "a DM turn cannot directly edit the contract and offer a contract decision"
+        ));
+    }
+    let proposes_private_decision = delta.decisions.iter().any(|decision| {
+        decision.proposed_character_patch.is_some()
+            || decision.proposed_extraordinary_permission.is_some()
+    });
+    if delta.character_patch.is_some() && proposes_private_decision {
+        return Err(anyhow!(
+            "a DM turn cannot directly edit a character and offer a private decision"
+        ));
+    }
     validate_bounded("DM speech", &delta.dm_speech, 0, 6_000)?;
     for reply in &delta.suggested_replies {
         validate_bounded("suggested reply", reply, 1, 500)?;
@@ -4526,6 +4600,125 @@ mod tests {
             ..Default::default()
         };
         assert!(validator.is_valid(&serde_json::to_value(valid).unwrap()));
+    }
+
+    #[test]
+    fn ui_suggestions_never_enter_dm_or_interpreter_cognition() {
+        let mut draft = state();
+        draft.decisions.insert(
+            "opening:unselected".into(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "opening:unselected".into(),
+                owner_member_id: None,
+                prompt: "Use an unselected opening?".into(),
+                proposed_resolution: "Age-of-Automation suggestion must remain UI-only.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: Some(CampaignContractPatch {
+                    starting_when: Some("Age of Automation (2160-2163)".into()),
+                    ..Default::default()
+                }),
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: false,
+                resolved: false,
+            },
+        );
+        draft.decisions.insert(
+            "decision:material".into(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "decision:material".into(),
+                owner_member_id: None,
+                prompt: "Adopt the negotiated post-Burden horizon?".into(),
+                proposed_resolution: "Begin after Burden of Proof.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: Some(CampaignContractPatch {
+                    canon_horizon: Some("After Burden of Proof".into()),
+                    ..Default::default()
+                }),
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            },
+        );
+
+        let dm = permitted_dm_context(&draft, "shared:table", None, None).unwrap();
+        let interpreter =
+            permitted_interpreter_context(&draft, "shared:table", None, None).unwrap();
+        for context in [dm, interpreter] {
+            let rendered = serde_json::to_string(&context).unwrap();
+            assert!(!rendered.contains("Age of Automation"));
+            assert!(!rendered.contains("opening:unselected"));
+            assert!(rendered.contains("decision:material"));
+            assert!(rendered.contains("After Burden of Proof"));
+        }
+    }
+
+    #[test]
+    fn dm_turn_cannot_split_one_lane_between_direct_and_decision_ownership() {
+        let draft = state();
+        let duplicate_contract = SessionZeroDelta {
+            contract_patch: CampaignContractPatch {
+                canon_horizon: Some("After Burden of Proof".into()),
+                ..Default::default()
+            },
+            decisions: vec![SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "decision:duplicate-contract".into(),
+                owner_member_id: None,
+                prompt: "Adopt the horizon?".into(),
+                proposed_resolution: "Begin after Burden of Proof.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: Some(CampaignContractPatch {
+                    canon_horizon: Some("After Burden of Proof".into()),
+                    ..Default::default()
+                }),
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            }],
+            ..Default::default()
+        };
+
+        let mut schema = serde_json::to_value(schema_for!(SessionZeroInterpretation)).unwrap();
+        require_typed_decision_payloads(&mut schema).unwrap();
+        require_single_lane_ownership(&mut schema).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let split_interpretation = SessionZeroInterpretation {
+            contract_patch: duplicate_contract.contract_patch.clone(),
+            decisions: duplicate_contract.decisions.clone(),
+            ..Default::default()
+        };
+        assert!(!validator.is_valid(&serde_json::to_value(&split_interpretation).unwrap()));
+        assert!(
+            validator.is_valid(
+                &serde_json::to_value(SessionZeroInterpretation {
+                    contract_patch: duplicate_contract.contract_patch.clone(),
+                    ..Default::default()
+                })
+                .unwrap()
+            )
+        );
+        assert!(
+            validator.is_valid(
+                &serde_json::to_value(SessionZeroInterpretation {
+                    decisions: duplicate_contract.decisions.clone(),
+                    ..Default::default()
+                })
+                .unwrap()
+            )
+        );
+
+        let error = validate_dm_delta(&draft, "shared:table", None, &duplicate_contract)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("directly edit the contract"));
     }
 
     #[test]
