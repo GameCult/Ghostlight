@@ -128,6 +128,11 @@ fn main() -> Result<()> {
     let mut state = ClientStore::open(state_path)?;
     match command.as_str() {
         "auth-begin" => {
+            if state.state.pending_handle.is_some() {
+                bail!(
+                    "A native authentication attempt is already pending. Run auth-complete before starting another."
+                );
+            }
             let receipt: AuthBeginReceipt = invoke(
                 endpoint,
                 "ghostlight.auth.begin",
@@ -156,30 +161,16 @@ fn main() -> Result<()> {
                 .pending_handle
                 .clone()
                 .context("No pending native authentication attempt. Run auth-begin first.")?;
-            let receipt: AuthCompletionReceipt = invoke(
-                endpoint,
-                "ghostlight.auth.complete",
-                "ghostlight.native_auth_complete.v1",
-                &json!({"schema":"ghostlight.native_auth_complete.v1","handle":handle}),
-            )?;
-            if receipt.status == "authenticated" {
-                state.state.session_token = Some(
-                    receipt
-                        .session_token
-                        .context("Authenticated native receipt omitted its session token")?,
-                );
-                state.state.refresh_expires_at = receipt.refresh_expires_at;
-                state.state.pending_handle = None;
-                state.commit()?;
+            complete_authentication(endpoint, &mut state, &handle)?;
+        }
+        "auth-complete-stdin" => {
+            let mut handle = String::new();
+            std::io::stdin().read_to_string(&mut handle)?;
+            let handle = handle.trim();
+            if handle.is_empty() || handle.len() > 8_192 {
+                bail!("stdin did not contain one bounded opaque Heimdall attempt handle");
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&json!({
-                    "status":receipt.status,
-                    "message":receipt.message,
-                    "refreshExpiresAt":state.state.refresh_expires_at
-                }))?
-            );
+            complete_authentication(endpoint, &mut state, handle)?;
         }
         "surface" => {
             let session = state
@@ -272,9 +263,57 @@ fn parse_args() -> Result<(SocketAddr, PathBuf, String, Vec<String>)> {
     }
     let state = state.context("--state <path.cc> is required")?;
     let command = args.first().cloned().context(
-        "usage: ghostlight-native-client --state <path.cc> [--endpoint host:port] auth-begin|auth-complete|surface|invoke",
+        "usage: ghostlight-native-client --state <path.cc> [--endpoint host:port] auth-begin|auth-complete|auth-complete-stdin|surface|invoke",
     )?;
     Ok((endpoint, state, command, args.into_iter().skip(1).collect()))
+}
+
+fn complete_authentication(
+    endpoint: SocketAddr,
+    state: &mut ClientStore,
+    handle: &str,
+) -> Result<()> {
+    let receipt: AuthCompletionReceipt = invoke(
+        endpoint,
+        "ghostlight.auth.complete",
+        "ghostlight.native_auth_complete.v1",
+        &json!({"schema":"ghostlight.native_auth_complete.v1","handle":handle}),
+    )?;
+    if apply_auth_completion(&mut state.state, handle, &receipt)? {
+        state.commit()?;
+    }
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "status":receipt.status,
+            "message":receipt.message,
+            "refreshExpiresAt":state.state.refresh_expires_at
+        }))?
+    );
+    Ok(())
+}
+
+fn apply_auth_completion(
+    state: &mut NativeClientState,
+    handle: &str,
+    receipt: &AuthCompletionReceipt,
+) -> Result<bool> {
+    if receipt.status == "authenticated" {
+        state.session_token = Some(
+            receipt
+                .session_token
+                .clone()
+                .context("Authenticated native receipt omitted its session token")?,
+        );
+        state.refresh_expires_at = receipt.refresh_expires_at.clone();
+        state.pending_handle = None;
+        return Ok(true);
+    }
+    if receipt.status != "pending" && state.pending_handle.as_deref() == Some(handle) {
+        state.pending_handle = None;
+        return Ok(true);
+    }
+    Ok(false)
 }
 
 fn invoke<T: DeserializeOwned>(
@@ -345,4 +384,60 @@ fn invoke<T: DeserializeOwned>(
         transport.poll_resends()?;
     }
     bail!("Ghostlight native operation timed out")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn state(handle: Option<&str>) -> NativeClientState {
+        NativeClientState {
+            schema: "ghostlight.native_client_state.v1".into(),
+            pending_handle: handle.map(str::to_owned),
+            session_token: None,
+            refresh_expires_at: None,
+            updated_at: "2026-08-23T00:00:00Z".into(),
+        }
+    }
+
+    fn receipt(status: &str) -> AuthCompletionReceipt {
+        AuthCompletionReceipt {
+            status: status.into(),
+            message: status.into(),
+            session_token: (status == "authenticated").then(|| "session".into()),
+            refresh_expires_at: (status == "authenticated").then(|| "2026-09-23T00:00:00Z".into()),
+        }
+    }
+
+    #[test]
+    fn pending_completion_preserves_the_attempt() {
+        let mut state = state(Some("owned"));
+        assert!(!apply_auth_completion(&mut state, "owned", &receipt("pending")).unwrap());
+        assert_eq!(state.pending_handle.as_deref(), Some("owned"));
+    }
+
+    #[test]
+    fn terminal_completion_clears_only_its_owned_attempt() {
+        let mut owned = state(Some("owned"));
+        assert!(apply_auth_completion(&mut owned, "owned", &receipt("denied")).unwrap());
+        assert!(owned.pending_handle.is_none());
+
+        let mut other = state(Some("current"));
+        assert!(!apply_auth_completion(&mut other, "old", &receipt("denied")).unwrap());
+        assert_eq!(other.pending_handle.as_deref(), Some("current"));
+    }
+
+    #[test]
+    fn recovered_authenticated_attempt_supersedes_pending_state() {
+        let mut state = state(Some("current"));
+        assert!(
+            apply_auth_completion(&mut state, "completed-old", &receipt("authenticated")).unwrap()
+        );
+        assert!(state.pending_handle.is_none());
+        assert_eq!(state.session_token.as_deref(), Some("session"));
+        assert_eq!(
+            state.refresh_expires_at.as_deref(),
+            Some("2026-09-23T00:00:00Z")
+        );
+    }
 }
