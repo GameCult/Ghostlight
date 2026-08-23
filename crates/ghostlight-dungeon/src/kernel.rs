@@ -5290,10 +5290,9 @@ mod tests {
         let batches = store
             .load_all::<crate::transition::WorldMutationBatch>("world_mutation_batch.v1")
             .unwrap();
-        assert_eq!(batches[0].1.mutations.len(), 4);
+        assert_eq!(batches[0].mutations.len(), 4);
         assert_eq!(
             batches[0]
-                .1
                 .mutations
                 .iter()
                 .filter(|mutation| matches!(
