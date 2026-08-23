@@ -99,12 +99,14 @@ The migration is not complete while any of these can decide canonical state:
 - model output, browser payloads, narration, news generation, retrieval, or a
   derived simulation cell.
 
-Administrative world creation, compiler publication, and region expansion must
-ultimately lower to the same batch primitive. They may possess broader
-authority envelopes, but not another state-writing mechanism. Approval-gated
-population fission already lowers to entity admission, lineage, custody, and
-membership mutations; the fission projector owns only the derived resolution
-profiles and cover epoch.
+Bounded region expansion now lowers to the same batch primitive through typed
+place and proposition admission plus exact topology changes. It may possess a
+broader administrative authority envelope, but not another state-writing
+mechanism. Approval-gated population fission likewise lowers to entity
+admission, lineage, custody, and membership mutations; the fission projector
+owns only the derived resolution profiles and cover epoch. Initial compiler
+publication remains a separately named seed authority until its ownership is
+explicitly classified; it must not quietly grow into a second runtime writer.
 
 ### Shared paths
 

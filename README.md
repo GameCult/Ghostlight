@@ -93,17 +93,18 @@ current acceptance surface covers:
   rematerialisation of the same person;
 - atomic rejection of malformed, stale, or semantically invalid model waves;
 - one kernel-owned mutation reducer for foreground, reaction, strategic, time,
-  travel, and population-fission consequences, with exact component versions
-  and mutation proof receipts;
+  travel, population-fission, and bounded region-expansion consequences, with
+  exact component versions and mutation proof receipts;
 - provider, token, cache, latency, validation, state-version, and build receipts;
 - exact-build deployment, state migration, public cutover, and restart
   verification on Yggdrasil.
 
-The remaining forge gates are completion of the mutation migration for bounded
-region expansion, expansion and review of the agency corpus beyond its current
-candidate seed, multi-account human pressure testing of Session Zero
-privacy/publication and bounded co-op, and continued multiresolution Gestalt
-agency pressure. The public site is provisional; checkout is not live.
+The remaining forge gates are explicit classification of initial compiler seed
+publication and named-person materialisation/dematerialisation, expansion and
+review of the agency corpus beyond its current candidate seed, multi-account
+human pressure testing of Session Zero privacy/publication and bounded co-op,
+and continued multiresolution Gestalt agency pressure. The public site is
+provisional; checkout is not live.
 
 ## Bounded Co-op
 

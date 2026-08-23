@@ -38,12 +38,13 @@ agency, offscreen strategic activity, knowledge-filtered news, and actor-filtere
 Eve/CultMesh surfaces.
 
 The immediate engineering gate is completion of the principled world-transition
-migration before adversarial hosted play resumes. Region expansion remains a
-named direct writer, and the 36-case agency corpus is only a candidate seed
-against a 300-reviewed-case target. Separate-account multiplayer privacy and
-unanimity proof also remains required, but the previously expected D&D test
-group is no longer available; record that gate as unproven rather than silently
-lowering it.
+migration before adversarial hosted play resumes. Bounded region expansion now
+uses the mutation reducer; initial compiler seed publication and named-person
+materialisation/dematerialisation still require explicit classification. The
+36-case agency corpus is only a candidate seed against a 300-reviewed-case
+target. Separate-account multiplayer privacy and unanimity proof also remains
+required, but the previously expected D&D test group is no longer available;
+record that gate as unproven rather than silently lowering it.
 
 ## Authority map
 
@@ -54,11 +55,11 @@ lowering it.
 - Each campaign `WorldKernel` mailbox is the sole owner of canonical world state
   and revision. Player commands, NPC proposals, ticks, travel, waits, imports,
   reloads, and contract amendments share its validated atomic commit path.
-- Accepted foreground, reaction, strategic, time, travel, and population-fission
-  outcomes lower into one closed `WorldMutationBatch` vocabulary. Means and
-  intended effects remain proposals; only the kernel reducer can alter typed
-  canonical components. Legacy effect enums are model-boundary migration input,
-  not alternate physical laws.
+- Accepted foreground, reaction, strategic, time, travel, population-fission,
+  and bounded region-expansion outcomes lower into one closed
+  `WorldMutationBatch` vocabulary. Means and intended effects remain proposals;
+  only the kernel reducer can alter typed canonical components. Legacy effect
+  enums are model-boundary migration input, not alternate physical laws.
 - Ghostlight owns the generalized Projector → Persona → Interpreter membrane.
   Projectors, Personas, Interpreters, retrieval, narration, dice previews, and
   browsers may propose or project; none may commit canonical state.
@@ -89,11 +90,11 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `c7463c050620c69342c0cb84973beaefb09295cb`
+  `636828f509e2e3cc82280bc2edf02ba6fcbc4712`
 - Executable SHA-256:
-  `7b1aed52797f0845d896e9a1de2aa0b973a837353e8a76087845a50d9a429b06`
+  `f0647726fb6e54b8ab0851665edefb94667406466d472bd30d2a8ee4639afd7c`
 - Artifact SHA-256:
-  `sha256-d5aa68cc1162f7bf145a5b96b10284842638a8751810cd532a6d7f17ed93610d`
+  `sha256-e5dfeb43f95be622918a9897c854360ddbdfbdb25f33aa8829dd043679c59ed1`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -112,8 +113,12 @@ Do not start both writers.
   access gate.
 
 Manifest, embedded commit, executable hash, typed health, `current` symlink,
-zero-restart service state, fresh signed Idunn health, fresh Odin catalog
-publication, public crossing, and anonymous rejection agree.
+zero-restart service state, fresh signed Idunn health, public crossing, and
+anonymous rejection agree. Odin itself publishes fresh authenticated health,
+but its persisted Ghostlight provider advertisement is still the `c7463c0…`
+row from 2026-08-23 13:16 UTC. That is the already named large-snapshot RUDP
+publication defect, not permission to call discovery fresh or to truncate
+Ghostlight's private operator surface.
 
 ## Deployment and discovery truth
 
@@ -147,18 +152,23 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `c7463c0…`; its locked Linux package test and
-  immutable build completed before atomic activation. The same source passes
-  263 library, 33 daemon, and one build-provenance test in the local Windows
-  witness; Idunn's Linux journal reports 262 library tests before the remaining
-  package targets in its truncated success receipt. Typed health, manifest,
-  embedded source, executable hash, provider readiness, nine campaigns, two
-  Session Zero drafts, and zero daemon restarts agree.
-- Foreground, reaction, strategic, wait, travel, and population-fission writes
-  now use the typed mutation reducer. Each successful batch advances a touched
-  subject version once and persists its authority, mutations, receipt, causal
-  receipt, and aggregate projection atomically. Component-only mutation ingress
-  rejects aggregate campaign rows.
+- Idunn admitted exact release `636828f…`; its locked Linux package test and
+  immutable build completed before atomic activation. Idunn's Linux journal
+  reports 265 library tests before the remaining package targets in its
+  truncated success receipt; the complete package test and release build
+  succeeded. Typed health, manifest, embedded source, executable hash, provider
+  readiness, nine campaigns, two Session Zero drafts, and zero daemon restarts
+  agree.
+- Foreground, reaction, strategic, wait, travel, population-fission, and bounded
+  region-expansion writes now use the typed mutation reducer. Each successful
+  batch advances a touched subject version once and persists its authority,
+  mutations, receipt, causal receipt, and aggregate projection atomically.
+  Component-only mutation ingress rejects aggregate campaign rows.
+- Region expansion admits typed place and proposition profiles, validates
+  evidence and containment, and requires an exact reciprocal route between the
+  stable origin and every newly compiled destination. Aggregate locations,
+  routes, and facts are rebuilt from accepted component state; the direct
+  insertion loops have been deleted.
 - Population fission cannot copy scarce custody into every child. Approved
   fission assigns every parent resource to exactly one child, transfers each
   named member exactly once, preserves the shared non-scarce baseline through
@@ -226,20 +236,22 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 ## Next action
 
-1. Route bounded region expansion through the admitted mutation batch and prove
-   that no production direct writer can bypass the reducer. Classify initial
-   compiler publication and materialisation/dematerialisation explicitly rather
-   than quietly treating their current aggregate writes as equivalent.
+1. Classify initial compiler publication and materialisation/dematerialisation
+   explicitly rather than quietly treating their current aggregate writes as
+   equivalent. Continue the negative writer audit after each classification.
 2. Expand and review the agency corpus from its current 36 candidate cases
    toward 300 behaviorally distinct cases; do not inflate it with reskins.
-3. Resume adversarial Eve play, then fork or compile a denser 20-plus-power
+3. Repair or pressure the existing large-document RUDP discovery defect in its
+   owning transport workstream without truncating Ghostlight's private operator
+   truth.
+4. Resume adversarial Eve play, then fork or compile a denser 20-plus-power
    Aetheria skeleton and pressure budgets 1, 4, 8, and 32 with real provider
    output, including nested refugee dispersal and later rematerialization.
-4. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
+5. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
-5. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
+6. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
    unanimous-approval, unanimous-time/travel, stale-command, and restart smoke.
-6. Continue human pressure on multiresolution Gestalt agency: meaningful
+7. Continue human pressure on multiresolution Gestalt agency: meaningful
    background surprises, exact attributed rival activity inside arenas,
    information boundaries, nested fission/folding, migration, and return
    encounters.

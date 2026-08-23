@@ -113,22 +113,28 @@ and narration receives only the latest causal turn rather than a route dump.
 World transition authority is now a closed semantic mutation algebra rather
 than four empirical effect universes. Foreground attempts, NPC initiative,
 reaction appraisal, strategic actor/institution/Gestalt outcomes, waits,
-unanimous group travel, and approval-gated population fission lower through one
-revision-bound batch reducer and persist its authority, batch, and receipt with
-the aggregate campaign projection. Fission inherits non-scarce population
-baseline through typed lineage while partitioning every exact resource and
-named member once; the resolution organ only changes profiles and cover epoch.
-Region expansion, initial compiler publication, removal of legacy model effect
-schemas, and the 300-case reviewed agency corpus remain the explicit migration
+unanimous group travel, approval-gated population fission, and bounded region
+expansion lower through one revision-bound batch reducer and persist its
+authority, batch, and receipt with the aggregate campaign projection. Fission
+inherits non-scarce population baseline through typed lineage while
+partitioning every exact resource and named member once; the resolution organ
+only changes profiles and cover epoch. Region expansion admits exact place and
+proposition profiles and a reciprocal origin/destination topology before
+reconstructing compatibility rows. Initial compiler publication, explicit
+classification of materialisation/dematerialisation, removal of legacy model
+effect schemas, and the 300-case reviewed agency corpus remain the migration
 frontier. See `docs/architecture/ghostlight-transition-algebra.md`.
 
 Idunn's locked Linux test/build gate admitted this cut as immutable Yggdrasil
-release `c7463c050620c69342c0cb84973beaefb09295cb` with Eve
+release `636828f509e2e3cc82280bc2edf02ba6fcbc4712` with Eve
 `19c3dcf9173dce848a6253e975324ea239a02d24`. Live health, the release symlink,
-deployment witness, binary hash, zero-restart service state, signed Idunn
-health, and fresh Odin catalog publication agree. The local Windows witness is
-263 library, 33 daemon, and one provenance test; the Idunn Linux success receipt
-reports 262 library tests before its truncated remaining package-target output.
+deployment witness, binary hash, zero-restart service state, and signed Idunn
+health agree. The Idunn Linux success receipt reports 265 library tests before
+its truncated remaining package-target output; the complete locked package
+test command and release build both succeeded. Odin itself publishes fresh
+authenticated health, but its persisted Ghostlight advertisement still names
+the prior `c7463c0…` release because the known large-snapshot RUDP publication
+defect remains open.
 
 Live local evidence now covers grounded VoidBot compilation, a four-actor wave,
 impossible and receipted d20 actions, grounded narration, strategic cells, and a
@@ -164,12 +170,13 @@ leak. It used 90,030 tokens at a 76.3% prompt-cache-hit ratio; the retained
 invalid receipts expose one repeated institution posture and one repeated
 pressure without letting either mutate the world.
 
-The next engineering gate is lowering bounded region expansion through the
-mutation reducer, explicitly classifying seed publication and
-materialisation/dematerialisation, and growing the agency corpus beyond its 36
-candidate cases without cosmetic reskins. After that cut, resume the
-20-plus-power live Aetheria skeleton across budgets `1`, `4`, `8`, and `32`,
-including nested refugee dispersal and later rematerialization.
+The next engineering gate is explicitly classifying seed publication and
+materialisation/dematerialisation, then growing the agency corpus beyond its 36
+candidate cases without cosmetic reskins. After that cut, resume the 20-plus-
+power live Aetheria skeleton across budgets `1`, `4`, `8`, and `32`, including
+nested refugee dispersal and later rematerialization. The existing large-
+document RUDP transport defect remains a separate discovery workstream; do not
+truncate Ghostlight's operator truth to make the catalog look fresh.
 Separate-account two-player and eight-player Session Zero and shared-scene
 pressure remains an independent unproven gate; no human cohort is currently
 waiting. The browser never

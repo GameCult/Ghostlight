@@ -897,12 +897,21 @@ wrote campaign state has been removed. Its surviving projector updates only
 agency profiles, facets, cover invalidation, and `resolution_epoch` after the
 canonical mutation batch succeeds.
 
-The runtime migration is not yet complete. Bounded region expansion still
-inserts compiled locations and facts directly, and initial compiler publication
-remains a separate seed authority. Materialisation and dematerialisation are
-resolution changes over one persistent person and require an explicit review
-of why they currently advance aggregate world revision. These are named writer
-frontiers, not silently equivalent paths. See
+Bounded region expansion now composes typed place admission, typed proposition
+admission, and exact topology changes against one authority snapshot. Every
+new destination carries an explicit outbound route from the stable origin and
+a reciprocal return route with the same positive travel time. Place profiles,
+proposition content, evidence references, discovery locations, containment,
+route identity, distance, and topology are validated on the component overlay;
+the aggregate `Location`, `Route`, and `WorldFact` rows are reconstructed only
+from accepted component state. The previous direct location/fact insertion
+loops are gone.
+
+The runtime migration is not yet complete. Initial compiler publication remains
+a separate seed authority. Materialisation and dematerialisation are resolution
+changes over one persistent person and require an explicit review of why they
+currently advance aggregate world revision. These are named writer frontiers,
+not silently equivalent paths. See
 `docs/architecture/ghostlight-transition-algebra.md`.
 
 Relationship documents in the schema catalog are revision-bound projections
