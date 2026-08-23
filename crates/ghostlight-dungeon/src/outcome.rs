@@ -388,6 +388,26 @@ pub fn validate_plan_activity_outcomes(
     campaign: &Campaign,
     plan: &StrategicTickPlan,
 ) -> Result<()> {
+    if !plan.selected_actions.is_empty() {
+        let selected = plan
+            .selected_actions
+            .iter()
+            .filter(|proposal| proposal.effects.iter().any(is_activity_effect))
+            .map(|proposal| Ok((cell_action_digest(proposal)?, proposal)))
+            .collect::<Result<BTreeMap<_, _>>>()?;
+        if selected.len()
+            != plan
+                .selected_actions
+                .iter()
+                .filter(|proposal| proposal.effects.iter().any(is_activity_effect))
+                .count()
+        {
+            return Err(anyhow!(
+                "selected strategic activities contain duplicate action digests"
+            ));
+        }
+        return validate_outcomes_against_expected(campaign, &selected, &plan.activity_outcomes);
+    }
     let synthetic = plan
         .gestalt_activities
         .iter()
@@ -401,12 +421,12 @@ pub fn validate_plan_activity_outcomes(
                     priority: 0,
                     state_references: vec![],
                     public_channels: activity.public_channels.clone(),
-                    effect: StrategicCellEffect::GestaltActivity {
+                    effects: vec![StrategicCellEffect::GestaltActivity {
                         gestalt_id: activity.gestalt_id.clone(),
                         activity: activity.activity.clone(),
                         target_subject_ids: activity.target_subject_ids.clone(),
                         location_ids: activity.location_ids.clone(),
-                    },
+                    }],
                 },
             )
         })
@@ -420,12 +440,12 @@ pub fn validate_plan_activity_outcomes(
                     priority: 0,
                     state_references: vec![],
                     public_channels: activity.public_channels.clone(),
-                    effect: StrategicCellEffect::ActorActivity {
+                    effects: vec![StrategicCellEffect::ActorActivity {
                         actor_id: activity.actor_id.clone(),
                         activity: activity.activity.clone(),
                         target_subject_ids: activity.target_subject_ids.clone(),
                         location_ids: activity.location_ids.clone(),
-                    },
+                    }],
                 },
             )
         }))
@@ -439,12 +459,12 @@ pub fn validate_plan_activity_outcomes(
                     priority: 0,
                     state_references: vec![],
                     public_channels: activity.public_channels.clone(),
-                    effect: StrategicCellEffect::MemberActivity {
+                    effects: vec![StrategicCellEffect::MemberActivity {
                         member_id: activity.member_id.clone(),
                         activity: activity.activity.clone(),
                         target_subject_ids: activity.target_subject_ids.clone(),
                         location_ids: activity.location_ids.clone(),
-                    },
+                    }],
                 },
             )
         }))
@@ -1454,7 +1474,19 @@ fn is_human_controlled_actor(campaign: &Campaign, subject_id: &str) -> bool {
 fn activity_parts(
     proposal: &CellActionProposal,
 ) -> Result<(StrategicActivityKind, Vec<String>, Vec<String>)> {
-    match &proposal.effect {
+    let mut activities = proposal
+        .effects
+        .iter()
+        .filter(|effect| is_activity_effect(effect));
+    let activity = activities
+        .next()
+        .ok_or_else(|| anyhow!("strategic outcome was requested for a non-activity"))?;
+    if activities.next().is_some() {
+        return Err(anyhow!(
+            "one strategic action cannot contain multiple activity effects"
+        ));
+    }
+    match activity {
         StrategicCellEffect::GestaltActivity {
             activity,
             target_subject_ids,
@@ -1481,6 +1513,15 @@ fn activity_parts(
             "strategic outcome was requested for a non-activity"
         )),
     }
+}
+
+fn is_activity_effect(effect: &StrategicCellEffect) -> bool {
+    matches!(
+        effect,
+        StrategicCellEffect::GestaltActivity { .. }
+            | StrategicCellEffect::ActorActivity { .. }
+            | StrategicCellEffect::MemberActivity { .. }
+    )
 }
 
 fn subject_name(campaign: &Campaign, subject_id: &str) -> Result<String> {
@@ -2305,12 +2346,12 @@ mod tests {
             priority: 50,
             state_references: vec!["capability:repair nets".into(), "location:dock".into()],
             public_channels: vec![],
-            effect: StrategicCellEffect::GestaltActivity {
+            effects: vec![StrategicCellEffect::GestaltActivity {
                 gestalt_id: "dockers".into(),
                 activity: StrategicActivityKind::Investigate,
                 target_subject_ids: vec![],
                 location_ids: vec!["dock".into()],
-            },
+            }],
         }
     }
 
@@ -2369,12 +2410,12 @@ mod tests {
                 "capability:route scouting".into(),
             ],
             public_channels: vec![],
-            effect: StrategicCellEffect::ActorActivity {
+            effects: vec![StrategicCellEffect::ActorActivity {
                 actor_id: "member:sable".into(),
                 activity: StrategicActivityKind::Investigate,
                 target_subject_ids: vec![],
                 location_ids: vec!["dock".into()],
-            },
+            }],
         };
 
         let context = build_context(&value, &[action]).unwrap();
@@ -2550,12 +2591,12 @@ mod tests {
     async fn repeated_current_pressure_uses_the_outcome_semantic_correction_owner() {
         let value = campaign();
         let mut action = proposal();
-        action.effect = StrategicCellEffect::GestaltActivity {
+        action.effects = vec![StrategicCellEffect::GestaltActivity {
             gestalt_id: "dockers".into(),
             activity: StrategicActivityKind::Prepare,
             target_subject_ids: vec![],
             location_ids: vec!["dock".into()],
-        };
+        }];
         let digest = cell_action_digest(&action).unwrap();
         let model = RepeatingPressureModel {
             action_digest: digest,
@@ -2647,12 +2688,12 @@ mod tests {
                 priority: 90,
                 state_references: vec!["resource:medical satchel".into()],
                 public_channels: vec![],
-                effect: StrategicCellEffect::ActorActivity {
+                effects: vec![StrategicCellEffect::ActorActivity {
                     actor_id: "reed".into(),
                     activity: StrategicActivityKind::Prepare,
                     target_subject_ids: vec![],
                     location_ids: vec!["dock".into()],
-                },
+                }],
             },
         )
         .unwrap();
@@ -2665,12 +2706,12 @@ mod tests {
     fn resource_outcome_reports_the_exact_required_owner() {
         let value = campaign();
         let mut action = proposal();
-        action.effect = StrategicCellEffect::GestaltActivity {
+        action.effects = vec![StrategicCellEffect::GestaltActivity {
             gestalt_id: "dockers".into(),
             activity: StrategicActivityKind::Prepare,
             target_subject_ids: vec![],
             location_ids: vec!["dock".into()],
-        };
+        }];
         let outcome = StrategicActivityOutcome {
             schema: "ghostlight.strategic_activity_outcome.v1".into(),
             action_digest: cell_action_digest(&action).unwrap(),
@@ -2752,12 +2793,12 @@ mod tests {
     fn prepare_context_projects_only_locally_admissible_durable_handles() {
         let value = campaign();
         let mut action = proposal();
-        action.effect = StrategicCellEffect::GestaltActivity {
+        action.effects = vec![StrategicCellEffect::GestaltActivity {
             gestalt_id: "dockers".into(),
             activity: StrategicActivityKind::Prepare,
             target_subject_ids: vec![],
             location_ids: vec!["dock".into()],
-        };
+        }];
 
         let context = action_context(&value, &action).unwrap();
 
@@ -2823,12 +2864,12 @@ mod tests {
             priority: 70,
             state_references: vec!["capability:pull relays".into(), "location:dock".into()],
             public_channels: vec![],
-            effect: StrategicCellEffect::MemberActivity {
+            effects: vec![StrategicCellEffect::MemberActivity {
                 member_id: "mira".into(),
                 activity: StrategicActivityKind::Obstruct,
                 target_subject_ids: vec![],
                 location_ids: vec!["dock".into()],
-            },
+            }],
         };
 
         let physical = action_context(&value, &action).unwrap();
@@ -2838,7 +2879,7 @@ mod tests {
                 .contains(&OutcomeEffectKind::MemberObligation)
         );
 
-        if let StrategicCellEffect::MemberActivity { activity, .. } = &mut action.effect {
+        if let StrategicCellEffect::MemberActivity { activity, .. } = &mut action.effects[0] {
             *activity = StrategicActivityKind::Communicate;
         }
         let social = action_context(&value, &action).unwrap();

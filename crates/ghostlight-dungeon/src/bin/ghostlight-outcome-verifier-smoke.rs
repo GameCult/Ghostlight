@@ -125,12 +125,12 @@ async fn main() -> anyhow::Result<()> {
         priority: 100,
         state_references,
         public_channels: vec![],
-        effect: StrategicCellEffect::GestaltActivity {
+        effects: vec![StrategicCellEffect::GestaltActivity {
             gestalt_id: source_id.into(),
             activity: StrategicActivityKind::Trade,
             target_subject_ids: vec![target_id.into()],
             location_ids: vec![location],
-        },
+        }],
     };
     let calls = Arc::new(std::sync::Mutex::new(Vec::new()));
     let secret = std::env::var_os("GHOSTLIGHT_DEEPSEEK_BLOB")

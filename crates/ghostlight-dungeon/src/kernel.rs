@@ -1886,8 +1886,44 @@ fn apply_strategic_tick_plan(
     campaign: &mut Campaign,
     plan: crate::domain::StrategicTickPlan,
 ) -> Result<AppliedStrategicTickPlan, KernelError> {
+    let plan = if plan.selected_actions.is_empty() {
+        plan
+    } else {
+        let activity_outcomes = plan.activity_outcomes;
+        let mut projected =
+            crate::resolution::project_selected_actions(campaign, plan.selected_actions)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+        projected.activity_outcomes = activity_outcomes;
+        projected
+    };
     crate::outcome::validate_plan_activity_outcomes(campaign, &plan)
         .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    let canonical_composition = !plan.selected_actions.is_empty();
+    let prospective_actor_locations = plan
+        .actor_moves
+        .iter()
+        .map(|action| (action.actor_id.clone(), action.destination_id.clone()))
+        .collect::<BTreeMap<_, _>>();
+    let prospective_gestalt_locations = plan
+        .gestalt_migrations
+        .iter()
+        .map(|action| {
+            (
+                action.gestalt_id.clone(),
+                action.destination_location_id.clone(),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let prospective_member_locations = plan
+        .member_migrations
+        .iter()
+        .map(|action| {
+            (
+                action.member_id.clone(),
+                action.destination_location_id.clone(),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
     let lowering_plan = plan.clone();
     let activity_outcomes = plan.activity_outcomes.clone();
     let mut outcome_event_context = BTreeMap::new();
@@ -1974,9 +2010,12 @@ fn apply_strategic_tick_plan(
         });
     }
 
-    let mut seen_gestalts = BTreeSet::new();
+    let mut legacy_seen_gestalts = BTreeSet::new();
+    let mut seen_gestalt_pressures = BTreeSet::new();
     for action in plan.gestalt_actions {
-        if !seen_gestalts.insert(action.gestalt_id.clone()) {
+        if !seen_gestalt_pressures.insert(action.gestalt_id.clone())
+            || (!canonical_composition && !legacy_seen_gestalts.insert(action.gestalt_id.clone()))
+        {
             return Err(KernelError::Invalid(
                 "gestalt acts twice in one strategic tick".into(),
             ));
@@ -2018,8 +2057,11 @@ fn apply_strategic_tick_plan(
         });
     }
 
+    let mut seen_gestalt_migrations = BTreeSet::new();
     for action in &plan.gestalt_migrations {
-        if !seen_gestalts.insert(action.gestalt_id.clone()) {
+        if !seen_gestalt_migrations.insert(action.gestalt_id.clone())
+            || (!canonical_composition && !legacy_seen_gestalts.insert(action.gestalt_id.clone()))
+        {
             return Err(KernelError::Invalid(
                 "gestalt acts twice in one strategic tick".into(),
             ));
@@ -2060,8 +2102,11 @@ fn apply_strategic_tick_plan(
         });
     }
 
+    let mut seen_gestalt_activities = BTreeSet::new();
     for action in plan.gestalt_activities {
-        if !seen_gestalts.insert(action.gestalt_id.clone()) {
+        if !seen_gestalt_activities.insert(action.gestalt_id.clone())
+            || (!canonical_composition && !legacy_seen_gestalts.insert(action.gestalt_id.clone()))
+        {
             return Err(KernelError::Invalid(
                 "gestalt acts twice in one strategic tick".into(),
             ));
@@ -2089,10 +2134,10 @@ fn apply_strategic_tick_plan(
             || (needs_target && action.target_subject_ids.is_empty())
             || action.location_ids.len() > 4
             || unique_locations.len() != action.location_ids.len()
-            || action
-                .location_ids
-                .iter()
-                .any(|location| !profile.location_ids.contains(location))
+            || action.location_ids.iter().any(|location| {
+                !profile.location_ids.contains(location)
+                    && prospective_gestalt_locations.get(&action.gestalt_id) != Some(location)
+            })
         {
             return Err(KernelError::Invalid(
                 "strategic gestalt activity exceeds exact graph or location scope".into(),
@@ -2149,9 +2194,12 @@ fn apply_strategic_tick_plan(
         });
     }
 
-    let mut seen_actors = BTreeSet::new();
+    let mut legacy_seen_actors = BTreeSet::new();
+    let mut seen_actor_moves = BTreeSet::new();
     for action in plan.actor_moves {
-        if !seen_actors.insert(action.actor_id.clone()) {
+        if !seen_actor_moves.insert(action.actor_id.clone())
+            || (!canonical_composition && !legacy_seen_actors.insert(action.actor_id.clone()))
+        {
             return Err(KernelError::Invalid(
                 "actor moves twice in one strategic tick".into(),
             ));
@@ -2201,8 +2249,11 @@ fn apply_strategic_tick_plan(
         });
     }
 
+    let mut seen_actor_activities = BTreeSet::new();
     for action in plan.actor_activities {
-        if !seen_actors.insert(action.actor_id.clone()) {
+        if !seen_actor_activities.insert(action.actor_id.clone())
+            || (!canonical_composition && !legacy_seen_actors.insert(action.actor_id.clone()))
+        {
             return Err(KernelError::Invalid(
                 "actor acts twice in one strategic tick".into(),
             ));
@@ -2229,7 +2280,8 @@ fn apply_strategic_tick_plan(
                 .any(|target| !allowed_targets.contains(target))
             || (needs_target && action.target_subject_ids.is_empty())
             || action.location_ids.len() != 1
-            || action.location_ids[0] != actor.location_id
+            || (action.location_ids[0] != actor.location_id
+                && prospective_actor_locations.get(&action.actor_id) != action.location_ids.first())
         {
             return Err(KernelError::Invalid(
                 "strategic actor activity exceeds exact graph or location scope".into(),
@@ -2282,9 +2334,12 @@ fn apply_strategic_tick_plan(
         });
     }
 
-    let mut seen_members = BTreeSet::new();
+    let mut legacy_seen_members = BTreeSet::new();
+    let mut seen_member_activities = BTreeSet::new();
     for action in plan.member_activities {
-        if !seen_members.insert(action.member_id.clone()) {
+        if !seen_member_activities.insert(action.member_id.clone())
+            || (!canonical_composition && !legacy_seen_members.insert(action.member_id.clone()))
+        {
             return Err(KernelError::Invalid(
                 "gestalt member acts twice in one strategic tick".into(),
             ));
@@ -2316,7 +2371,9 @@ fn apply_strategic_tick_plan(
                 .any(|target| !allowed_targets.contains(target))
             || (needs_target && action.target_subject_ids.is_empty())
             || action.location_ids.len() != 1
-            || action.location_ids[0] != exact_location
+            || (action.location_ids[0] != exact_location
+                && prospective_member_locations.get(&action.member_id)
+                    != action.location_ids.first())
         {
             return Err(KernelError::Invalid(
                 "strategic member activity exceeds exact graph or location scope".into(),
@@ -2370,8 +2427,11 @@ fn apply_strategic_tick_plan(
             public_channels: action.public_channels,
         });
     }
+    let mut seen_member_migrations = BTreeSet::new();
     for action in plan.member_migrations {
-        if !seen_members.insert(action.member_id.clone()) {
+        if !seen_member_migrations.insert(action.member_id.clone())
+            || (!canonical_composition && !legacy_seen_members.insert(action.member_id.clone()))
+        {
             return Err(KernelError::Invalid(
                 "gestalt member migrates twice in one strategic tick".into(),
             ));
@@ -3282,6 +3342,89 @@ mod tests {
             resolution_cover: None,
             strategic_tick_count: 0,
         }
+    }
+
+    #[test]
+    fn composite_selected_action_commits_atomically_and_rebuilds_derived_lanes() {
+        let mut value = campaign();
+        value.locations.insert(
+            "yard".into(),
+            Location {
+                id: "yard".into(),
+                name: "Yard".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec![],
+            },
+        );
+        value.locations.get_mut("room").unwrap().routes.insert(
+            "yard-route".into(),
+            crate::domain::Route {
+                destination_id: "yard".into(),
+                distance: "nearby".into(),
+                travel_minutes: 15,
+            },
+        );
+        let mut runner = value.actors["player"].clone();
+        runner.id = "runner".into();
+        runner.name = "Runner".into();
+        value.actors.insert(runner.id.clone(), runner);
+        crate::resolution::ensure_agency_profiles(&mut value);
+        let proposal = CellActionProposal {
+            subject_id: "runner".into(),
+            intent: "cross into the yard and inspect it".into(),
+            intended_effect: "arrive in the yard and identify one local hazard".into(),
+            priority: 80,
+            state_references: vec!["subject:runner".into()],
+            public_channels: vec![],
+            effects: vec![
+                StrategicCellEffect::ActorMove {
+                    actor_id: "runner".into(),
+                    destination_id: "yard".into(),
+                },
+                StrategicCellEffect::ActorActivity {
+                    actor_id: "runner".into(),
+                    activity: StrategicActivityKind::Investigate,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["yard".into()],
+                },
+            ],
+        };
+        let digest = crate::resolution::cell_action_digest(&proposal).unwrap();
+        let mut plan = crate::resolution::project_selected_actions(&value, vec![proposal]).unwrap();
+        plan.activity_outcomes = vec![StrategicActivityOutcome {
+            schema: "ghostlight.strategic_activity_outcome.v1".into(),
+            action_digest: digest,
+            source_subject_id: "runner".into(),
+            band: StrategicOutcomeBand::Success,
+            summary: "Runner completes the inspection without a durable discovery.".into(),
+            supporting_state_references: vec![],
+            effect: StrategicOutcomeEffect::NoMaterialChange {
+                reason: "The inspection reveals no durable new fact.".into(),
+            },
+        }];
+        plan.actor_moves = vec![StrategicActorMove {
+            actor_id: "player".into(),
+            destination_id: "invented".into(),
+            public_channels: vec![],
+        }];
+
+        let applied = apply_strategic_tick_plan(&mut value, plan).unwrap();
+
+        assert_eq!(value.actors["runner"].location_id, "yard");
+        assert_eq!(value.actors["player"].location_id, "room");
+        assert_eq!(
+            applied
+                .events
+                .iter()
+                .map(|event| event.kind.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "actor_movement",
+                "actor_activity",
+                "strategic_activity_outcome"
+            ]
+        );
     }
 
     #[tokio::test]
@@ -6348,11 +6491,11 @@ mod tests {
             priority: 1,
             state_references: vec![],
             public_channels: vec![],
-            effect: StrategicCellEffect::Institution {
+            effects: vec![StrategicCellEffect::Institution {
                 institution_id: subject_id,
                 posture: "publishing a bounded new commitment".into(),
                 location_ids: vec![],
-            },
+            }],
         }];
         wave.appraisals[0].inactions.clear();
         let mut rejected_verifier = resolution_stage(
@@ -6436,12 +6579,12 @@ mod tests {
                 "location:camp".into(),
             ],
             public_channels: vec![],
-            effect: StrategicCellEffect::GestaltActivity {
+            effects: vec![StrategicCellEffect::GestaltActivity {
                 gestalt_id: "refugees-east".into(),
                 activity: StrategicActivityKind::Prepare,
                 target_subject_ids: vec![],
                 location_ids: vec!["camp".into()],
-            },
+            }],
         };
         let action_digest = crate::resolution::cell_action_digest(&proposal).unwrap();
         appraisal.actions = vec![proposal];

@@ -157,7 +157,8 @@ struct CellActionCandidate {
     priority: i16,
     state_references: Vec<String>,
     public_channels: Vec<String>,
-    effect: CellEffectCandidate,
+    #[schemars(length(min = 1, max = 4))]
+    effects: Vec<CellEffectCandidate>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -262,10 +263,10 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
   "type":"object",
   "required":["actions","inactions"],
   "properties":{
-    "actions":{"type":"array","items":{"type":"object","required":["subject_id","intent","intended_effect","priority","state_references","public_channels","effect"],"properties":{
+    "actions":{"type":"array","items":{"type":"object","required":["subject_id","intent","intended_effect","priority","state_references","public_channels","effects"],"properties":{
       "subject_id":{"type":"string"},"intent":{"type":"string"},"intended_effect":{"type":"string"},"priority":{"type":"integer"},
       "state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},
-      "effect":{"oneOf":[
+      "effects":{"type":"array","minItems":1,"maxItems":4,"items":{"oneOf":[
         {"type":"object","required":["type","posture","location_ids"],"properties":{"type":{"const":"institution"},"posture":{"type":"string","minLength":1,"maxLength":240},"location_ids":{"type":"array","items":{"type":"string"}}}},
         {"type":"object","required":["type","pressure_additions","pressure_resolutions"],"properties":{"type":{"const":"gestalt"},"pressure_additions":{"type":"array","maxItems":4,"items":{"type":"string"}},"pressure_resolutions":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
         {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"gestalt_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
@@ -274,7 +275,7 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
         {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"actor_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":1,"items":{"type":"string"}}}},
         {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"member_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":1,"items":{"type":"string"}}}},
         {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"member_migration"},"destination_gestalt_id":{"type":"string"}}}
-      ]}
+      ]}}
     }}},
     "inactions":{"type":"array","items":{"type":"object","required":["subject_id","reason"],"properties":{"subject_id":{"type":"string"},"reason":{"type":"string","minLength":1,"maxLength":240}}}}
   }
@@ -1013,7 +1014,7 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
-                "Copy each subject's exact allowed_effect_types. A lane absent from that list is structurally unavailable: do not emit it and do not invent a destination. ",
+                "Each action carries one to four orthogonal effects in execution order. Copy each subject's exact allowed_effect_types. A lane absent from that list is structurally unavailable: do not emit it and do not invent a destination. When one chosen act includes travel followed by a local attempt at the supplied destination, preserve both means in one action: movement first, then the activity at that exact destination. Never split one subject's single choice into multiple actions. ",
                 "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
@@ -1081,7 +1082,7 @@ impl CellProjectionEngine {
                                 "subject_id":action.subject_id,
                                 "intent":action.intent,
                                 "intended_effect":action.intended_effect,
-                                "typed_effect":action.effect,
+                                "typed_effects":action.effects,
                             })).collect::<Vec<_>>(),
                             "subject_names":slice.constituents.iter().map(|subject|(&subject.subject_id, &subject.name)).chain(slice.member_exceptions.iter().map(|member|(&member.subject_id, &member.name))).collect::<BTreeMap<_,_>>(),
                             "campaign_policy":serde_json::from_str::<serde_json::Value>(&campaign_policy)?,
@@ -1098,7 +1099,7 @@ impl CellProjectionEngine {
                                 model: self.interpreter_model.clone(),
                                 snapshot_binding: verifier_binding,
                                 lived_stream: format!(
-                                    "You are the private semantic verifier between an Interpreter and the world kernel. Judge each candidate typed effect independently against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_typed_permissions as the sole map of canonical subjects, locations, and destinations. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict for every supplied action_index, in the same order, with no omissions or duplicates. Never reject one action merely because another action is wrong. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current location is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. Each faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {{\"verdicts\":[{{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}}]}}.\n\nCONTEXT:\n{}",
+                                    "You are the private semantic verifier between an Interpreter and the world kernel. Judge each candidate action's ordered typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_typed_permissions as the sole map of canonical subjects, locations, and destinations. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct chosen means: travel followed by a local attempt at that supplied destination requires both movement and activity in the same action, in that order. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict for every supplied action_index, in the same order, with no omissions or duplicates. Never reject one action merely because another action is wrong. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. Each faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {{\"verdicts\":[{{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}}]}}.\n\nCONTEXT:\n{}",
                                     serde_json::to_string(&verifier_context)?
                                 ),
                                 output_schema: Some(verifier_schema),
@@ -1267,7 +1268,7 @@ fn append_cell_correction(
 ) {
     let repair_guidance = cell_correction_guidance(error);
     request.lived_stream.push_str(&format!(
-        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. The semantic verifier's concrete repair guidance in REJECTION names the exact mismatch and is the primary correction instruction. {repair_guidance} Every retained action must still carry a valid non-empty typed transition under the original contract. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destinations or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
+        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. The semantic verifier's concrete repair guidance in REJECTION names the exact mismatch and is the primary correction instruction. {repair_guidance} Every retained action must still carry one to four valid orthogonal typed effects under the original contract. Preserve all distinct chosen means in one action; travel followed by a local attempt at the exact destination uses movement then activity. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destinations or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
     ));
 }
 
@@ -1285,7 +1286,7 @@ fn rejected_action_diagnostic(
                         "subject_id": action.subject_id,
                         "intent": action.intent,
                         "intended_effect": action.intended_effect,
-                        "typed_effect": action.effect,
+                        "typed_effects": action.effects,
                     })
                 })
             })
@@ -1318,15 +1319,21 @@ fn exclude_rejected_cell_effects(
         constraints.push(serde_json::json!({
             "not":{
                 "type":"object",
-                "required":["subject_id", "effect"],
+                "required":["subject_id", "effects"],
                 "properties":{
                     "subject_id":{"const":action.subject_id},
-                    "effect":{"const":cell_effect_candidate_value(&action.effect)}
+                    "effects":{"const":cell_effect_candidate_values(&action.effects)}
                 }
             }
         }));
     }
     Ok(())
+}
+
+fn cell_effect_candidate_values(
+    effects: &[crate::domain::StrategicCellEffect],
+) -> serde_json::Value {
+    serde_json::Value::Array(effects.iter().map(cell_effect_candidate_value).collect())
 }
 
 fn cell_effect_candidate_value(effect: &crate::domain::StrategicCellEffect) -> serde_json::Value {
@@ -1536,60 +1543,64 @@ fn bind_cell_appraisal(
         .actions
         .into_iter()
         .map(|candidate| {
-            let effect = match candidate.effect {
-                CellEffectCandidate::Institution {
-                    posture,
-                    location_ids,
-                } => crate::domain::StrategicCellEffect::Institution {
-                    institution_id: candidate.subject_id.clone(),
-                    posture,
-                    location_ids,
-                },
-                CellEffectCandidate::Gestalt {
-                    pressure_additions,
-                    pressure_resolutions,
-                } => crate::domain::StrategicCellEffect::Gestalt {
-                    gestalt_id: candidate.subject_id.clone(),
-                    pressure_additions,
-                    pressure_resolutions,
-                },
-                CellEffectCandidate::GestaltActivity {
-                    activity,
-                    target_subject_ids,
-                    location_ids,
-                } => crate::domain::StrategicCellEffect::GestaltActivity {
-                    gestalt_id: candidate.subject_id.clone(),
-                    activity,
-                    target_subject_ids,
-                    location_ids,
-                },
-                CellEffectCandidate::GestaltMigration {
-                    destination_gestalt_id,
-                } => crate::domain::StrategicCellEffect::GestaltMigration {
-                    destination_gestalt_id,
-                },
-                CellEffectCandidate::ActorMove { destination_id } => {
-                    crate::domain::StrategicCellEffect::ActorMove {
-                        actor_id: candidate.subject_id.clone(),
-                        destination_id,
-                    }
-                }
-                CellEffectCandidate::ActorActivity {
-                    activity,
-                    target_subject_ids,
-                    location_ids,
-                } => crate::domain::StrategicCellEffect::ActorActivity {
-                    actor_id: candidate.subject_id.clone(),
-                    activity,
-                    target_subject_ids,
-                    location_ids,
-                },
-                CellEffectCandidate::MemberActivity {
-                    activity,
-                    target_subject_ids,
-                    location_ids,
-                } => {
-                    let member_id = slice
+            let effects = candidate
+                .effects
+                .into_iter()
+                .map(|effect| {
+                    let effect = match effect {
+                        CellEffectCandidate::Institution {
+                            posture,
+                            location_ids,
+                        } => crate::domain::StrategicCellEffect::Institution {
+                            institution_id: candidate.subject_id.clone(),
+                            posture,
+                            location_ids,
+                        },
+                        CellEffectCandidate::Gestalt {
+                            pressure_additions,
+                            pressure_resolutions,
+                        } => crate::domain::StrategicCellEffect::Gestalt {
+                            gestalt_id: candidate.subject_id.clone(),
+                            pressure_additions,
+                            pressure_resolutions,
+                        },
+                        CellEffectCandidate::GestaltActivity {
+                            activity,
+                            target_subject_ids,
+                            location_ids,
+                        } => crate::domain::StrategicCellEffect::GestaltActivity {
+                            gestalt_id: candidate.subject_id.clone(),
+                            activity,
+                            target_subject_ids,
+                            location_ids,
+                        },
+                        CellEffectCandidate::GestaltMigration {
+                            destination_gestalt_id,
+                        } => crate::domain::StrategicCellEffect::GestaltMigration {
+                            destination_gestalt_id,
+                        },
+                        CellEffectCandidate::ActorMove { destination_id } => {
+                            crate::domain::StrategicCellEffect::ActorMove {
+                                actor_id: candidate.subject_id.clone(),
+                                destination_id,
+                            }
+                        }
+                        CellEffectCandidate::ActorActivity {
+                            activity,
+                            target_subject_ids,
+                            location_ids,
+                        } => crate::domain::StrategicCellEffect::ActorActivity {
+                            actor_id: candidate.subject_id.clone(),
+                            activity,
+                            target_subject_ids,
+                            location_ids,
+                        },
+                        CellEffectCandidate::MemberActivity {
+                            activity,
+                            target_subject_ids,
+                            location_ids,
+                        } => {
+                            let member_id = slice
                         .member_exceptions
                         .iter()
                         .find(|member| member.subject_id == candidate.subject_id)
@@ -1600,19 +1611,22 @@ fn bind_cell_appraisal(
                                 candidate.subject_id
                             )
                         })?;
-                    crate::domain::StrategicCellEffect::MemberActivity {
-                        member_id,
-                        activity,
-                        target_subject_ids,
-                        location_ids,
-                    }
-                }
-                CellEffectCandidate::MemberMigration {
-                    destination_gestalt_id,
-                } => crate::domain::StrategicCellEffect::MemberMigration {
-                    destination_gestalt_id,
-                },
-            };
+                            crate::domain::StrategicCellEffect::MemberActivity {
+                                member_id,
+                                activity,
+                                target_subject_ids,
+                                location_ids,
+                            }
+                        }
+                        CellEffectCandidate::MemberMigration {
+                            destination_gestalt_id,
+                        } => crate::domain::StrategicCellEffect::MemberMigration {
+                            destination_gestalt_id,
+                        },
+                    };
+                    Ok(effect)
+                })
+                .collect::<Result<Vec<_>>>()?;
             Ok(crate::domain::CellActionProposal {
                 subject_id: candidate.subject_id,
                 intent: candidate.intent,
@@ -1620,7 +1634,7 @@ fn bind_cell_appraisal(
                 priority: candidate.priority,
                 state_references: candidate.state_references,
                 public_channels: candidate.public_channels,
-                effect,
+                effects,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -1746,7 +1760,22 @@ fn validate_cell_action(
             &subject.permitted_state_references,
             &subject.information_channels,
         )?;
-        validate_constituent_effect(subject, &action.effect)?;
+        validate_effect_bundle(&action.effects)?;
+        let prospective_location = action.effects.iter().find_map(|effect| match effect {
+            crate::domain::StrategicCellEffect::ActorMove { destination_id, .. } => {
+                Some(destination_id.as_str())
+            }
+            crate::domain::StrategicCellEffect::GestaltMigration {
+                destination_gestalt_id,
+            } => subject
+                .migration_destinations
+                .get(destination_gestalt_id)
+                .map(|destination| destination.location_id.as_str()),
+            _ => None,
+        });
+        for effect in &action.effects {
+            validate_constituent_effect(subject, effect, prospective_location)?;
+        }
         return Ok(());
     }
     let Some(member) = slice
@@ -1761,58 +1790,96 @@ fn validate_cell_action(
         &member.permitted_state_references,
         &member.information_channels,
     )?;
-    match &action.effect {
-        crate::domain::StrategicCellEffect::MemberActivity {
-            member_id,
-            activity,
-            target_subject_ids,
-            location_ids,
-        } => {
-            let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
-            let needs_target = !activity.allows_targetless_local_attempt();
-            if needs_target && target_subject_ids.is_empty() {
-                return Err(anyhow!(
-                    "named member {} activity {:?} requires one or more exact target IDs; no anonymous or unsupplied target can be encoded. Remove the action unless the Persona explicitly attempted one of {:?}",
-                    member.member_id,
-                    activity,
-                    member.activity_targets.keys().collect::<Vec<_>>()
-                ));
+    validate_effect_bundle(&action.effects)?;
+    let prospective_location = action.effects.iter().find_map(|effect| match effect {
+        crate::domain::StrategicCellEffect::MemberMigration {
+            destination_gestalt_id,
+        } => member
+            .migration_destinations
+            .get(destination_gestalt_id)
+            .map(|destination| destination.location_id.as_str()),
+        _ => None,
+    });
+    for effect in &action.effects {
+        match effect {
+            crate::domain::StrategicCellEffect::MemberActivity {
+                member_id,
+                activity,
+                target_subject_ids,
+                location_ids,
+            } => {
+                let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
+                let needs_target = !activity.allows_targetless_local_attempt();
+                let activity_location = location_ids.first().map(String::as_str);
+                if member_id != &member.member_id
+                    || target_subject_ids.len() > 4
+                    || unique_targets.len() != target_subject_ids.len()
+                    || target_subject_ids
+                        .iter()
+                        .any(|target| !member.activity_targets.contains_key(target))
+                    || (needs_target && target_subject_ids.is_empty())
+                    || location_ids.len() != 1
+                    || (activity_location != Some(member.source_location_id.as_str())
+                        && activity_location != prospective_location)
+                {
+                    return Err(anyhow!(
+                        "named member {} proposed {:?} toward {:?} at {:?}; exact allowed targets are {:?}, current location is {}, and a paired migration may establish {:?}",
+                        member.member_id,
+                        activity,
+                        target_subject_ids,
+                        location_ids,
+                        member.activity_targets.keys().collect::<Vec<_>>(),
+                        member.source_location_id,
+                        prospective_location
+                    ));
+                }
             }
-            if member_id != &member.member_id
-                || target_subject_ids.len() > 4
-                || unique_targets.len() != target_subject_ids.len()
-                || target_subject_ids
-                    .iter()
-                    .any(|target| !member.activity_targets.contains_key(target))
-                || location_ids.len() != 1
-                || location_ids[0] != member.source_location_id
-            {
+            crate::domain::StrategicCellEffect::MemberMigration {
+                destination_gestalt_id,
+            } if member
+                .migration_destinations
+                .contains_key(destination_gestalt_id) => {}
+            _ => {
                 return Err(anyhow!(
-                    "named member {} proposed {:?} toward {:?} at {:?}; exact allowed targets (choose at most four unique IDs) are {:?} and location is {:?}",
+                    "action for named member {} exceeds exact personal authority; effects={:?}; allowed destination gestalt IDs={:?}",
                     member.member_id,
-                    activity,
-                    target_subject_ids,
-                    location_ids,
-                    member.activity_targets.keys().collect::<Vec<_>>(),
-                    member.source_location_id
+                    action.effects,
+                    member.migration_destinations.keys().collect::<Vec<_>>()
                 ));
             }
         }
-        crate::domain::StrategicCellEffect::MemberMigration {
-            destination_gestalt_id,
-        } if member
-            .migration_destinations
-            .contains_key(destination_gestalt_id) => {}
-        _ => {
+    }
+    Ok(())
+}
+
+fn validate_effect_bundle(effects: &[crate::domain::StrategicCellEffect]) -> Result<()> {
+    if effects.is_empty() || effects.len() > 4 {
+        return Err(anyhow!(
+            "a strategic action requires one to four exact effects"
+        ));
+    }
+    let mut lanes = BTreeSet::new();
+    for effect in effects {
+        if !lanes.insert(cell_effect_lane(effect)) {
             return Err(anyhow!(
-                "action for named member {} exceeds exact personal authority; effect={:?}; allowed destination gestalt IDs={:?}",
-                member.member_id,
-                action.effect,
-                member.migration_destinations.keys().collect::<Vec<_>>()
+                "a strategic action may use each orthogonal effect lane at most once"
             ));
         }
     }
     Ok(())
+}
+
+fn cell_effect_lane(effect: &crate::domain::StrategicCellEffect) -> &'static str {
+    match effect {
+        crate::domain::StrategicCellEffect::Institution { .. } => "institution",
+        crate::domain::StrategicCellEffect::Gestalt { .. } => "gestalt_pressure",
+        crate::domain::StrategicCellEffect::GestaltActivity { .. } => "gestalt_activity",
+        crate::domain::StrategicCellEffect::GestaltMigration { .. } => "gestalt_migration",
+        crate::domain::StrategicCellEffect::ActorMove { .. } => "actor_move",
+        crate::domain::StrategicCellEffect::ActorActivity { .. } => "actor_activity",
+        crate::domain::StrategicCellEffect::MemberActivity { .. } => "member_activity",
+        crate::domain::StrategicCellEffect::MemberMigration { .. } => "member_migration",
+    }
 }
 
 fn validate_active_decision_owners(
@@ -1842,6 +1909,7 @@ fn validate_active_decision_owners(
 fn validate_constituent_effect(
     subject: &CellConstituentSlice,
     effect: &crate::domain::StrategicCellEffect,
+    prospective_location: Option<&str>,
 ) -> Result<()> {
     match effect {
         crate::domain::StrategicCellEffect::Institution {
@@ -1942,9 +2010,10 @@ fn validate_constituent_effect(
                     .any(|target| !subject.activity_targets.contains_key(target))
                 || location_ids.len() > 4
                 || unique_locations.len() != location_ids.len()
-                || location_ids
-                    .iter()
-                    .any(|location| !subject.location_ids.contains(location))
+                || location_ids.iter().any(|location| {
+                    !subject.location_ids.contains(location)
+                        && Some(location.as_str()) != prospective_location
+                })
             {
                 return Err(anyhow!(
                     "gestalt {} proposed {:?} toward {:?} at {:?}; exact allowed targets (choose at most four unique IDs) are {:?} and exact locations (choose at most four unique IDs) are {:?}",
@@ -2008,7 +2077,8 @@ fn validate_constituent_effect(
                     .any(|target| !subject.activity_targets.contains_key(target))
                 || (needs_target && target_subject_ids.is_empty())
                 || location_ids.len() != 1
-                || !subject.location_ids.contains(&location_ids[0])
+                || (!subject.location_ids.contains(&location_ids[0])
+                    && Some(location_ids[0].as_str()) != prospective_location)
             {
                 return Err(anyhow!(
                     "actor {} proposed {:?} toward {:?} at {:?}; exact allowed targets are {:?} and exact locations are {:?}",
@@ -2168,7 +2238,12 @@ fn exact_cell_action_condition(
             "properties":{
                 "state_references":exact_string_array_schema(permitted_state_references, 0, permitted_state_references.len()),
                 "public_channels":exact_string_array_schema(information_channels, 0, 8),
-                "effect":effect_schema
+                "effects":{
+                    "type":"array",
+                    "minItems":1,
+                    "maxItems":4,
+                    "items":effect_schema
+                }
             }
         }
     })
@@ -2181,17 +2256,29 @@ fn exact_constituent_effect_schema(subject: &CellConstituentSlice) -> serde_json
         .keys()
         .cloned()
         .collect::<BTreeSet<_>>();
+    let activity_location_ids = subject
+        .location_ids
+        .iter()
+        .cloned()
+        .chain(subject.reachable_destinations.keys().cloned())
+        .chain(
+            subject
+                .migration_destinations
+                .values()
+                .map(|destination| destination.location_id.clone()),
+        )
+        .collect::<BTreeSet<_>>();
     let mut constraints = Vec::new();
     match subject.subject_kind {
         crate::domain::AgencySubjectKind::Actor => constraints.push(exact_activity_scope_schema(
             &activity_target_ids,
-            &subject.location_ids,
+            &activity_location_ids,
             1,
             vec!["actor_activity"],
         )),
         crate::domain::AgencySubjectKind::Gestalt => constraints.push(exact_activity_scope_schema(
             &activity_target_ids,
-            &subject.location_ids,
+            &activity_location_ids,
             0,
             vec!["gestalt_activity"],
         )),
@@ -2237,9 +2324,17 @@ fn exact_member_effect_schema(member: &CellMemberSlice) -> serde_json::Value {
         .keys()
         .cloned()
         .collect::<BTreeSet<_>>();
+    let activity_location_ids = std::iter::once(member.source_location_id.clone())
+        .chain(
+            member
+                .migration_destinations
+                .values()
+                .map(|destination| destination.location_id.clone()),
+        )
+        .collect::<BTreeSet<_>>();
     let mut constraints = vec![exact_activity_scope_schema(
         &activity_target_ids,
-        &BTreeSet::from([member.source_location_id.clone()]),
+        &activity_location_ids,
         1,
         vec!["member_activity"],
     )];
@@ -2423,7 +2518,7 @@ mod tests {
                                 "priority":5,
                                 "state_references":["institution:faction-06"],
                                 "public_channels":["public bulletin"],
-                                "effect":{"type":"institution","posture":"weighing whether to publish a position","location_ids":["forum"]}
+                                "effects":[{"type":"institution","posture":"weighing whether to publish a position","location_ids":["forum"]}]
                             }],
                             "inactions":[]
                         })
@@ -2437,11 +2532,11 @@ mod tests {
                             "priority":5,
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
-                            "effect":{
+                            "effects":[{
                                 "type":"institution",
                                 "posture":"weighing whether to publish a position",
                                 "location_ids":["forum"]
-                            }
+                            }]
                         }],
                         "inactions":[]
                     });
@@ -2471,7 +2566,7 @@ mod tests {
                             "priority":5,
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
-                            "effect":{"type":"institution","posture":"published a bounded position","location_ids":["forum"]}
+                            "effects":[{"type":"institution","posture":"published a bounded position","location_ids":["forum"]}]
                         }],
                         "inactions":[]
                     }).to_string())
@@ -2579,7 +2674,7 @@ mod tests {
             "semantic_invalid"
         );
         assert!(matches!(
-            output.appraisal.actions[0].effect,
+            output.appraisal.actions[0].effects[0],
             StrategicCellEffect::Institution { .. }
         ));
     }
@@ -2626,11 +2721,11 @@ mod tests {
                             "priority":5,
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
-                            "effect":{
+                            "effects":[{
                                 "type":"institution",
                                 "posture":if correction {"withholding reserve commitment pending a verified public count"} else {"releases the reserve immediately"},
                                 "location_ids":["forum"]
-                            }
+                            }]
                         }],
                         "inactions":[]
                     }).to_string())
@@ -2703,7 +2798,8 @@ mod tests {
             output.stage_receipts[3].validation_result,
             "semantic_invalid"
         );
-        let StrategicCellEffect::Institution { posture, .. } = &output.appraisal.actions[0].effect
+        let StrategicCellEffect::Institution { posture, .. } =
+            &output.appraisal.actions[0].effects[0]
         else {
             panic!("corrected effect changed type")
         };
@@ -2741,11 +2837,11 @@ mod tests {
             priority: 50,
             state_references: vec!["institution:faction-06".into()],
             public_channels: vec!["public bulletin".into()],
-            effect: StrategicCellEffect::Institution {
+            effects: vec![StrategicCellEffect::Institution {
                 institution_id: "faction-06".into(),
                 posture: "publishing a bounded new commitment".into(),
                 location_ids: vec!["forum".into()],
-            },
+            }],
         });
         assert!(
             validate_cell_appraisal(&slice, &appraisal)
@@ -2817,7 +2913,7 @@ mod tests {
                     "priority":80,
                     "state_references":["subject:relationship-anchor:reed"],
                     "public_channels":[],
-                    "effect":effect
+                    "effects":[effect]
                 }],
                 "inactions":[]
             })
@@ -2930,11 +3026,11 @@ mod tests {
                 "priority":80,
                 "state_references":exact_references,
                 "public_channels":[],
-                "effect":{
+                "effects":[{
                     "type":"institution",
                     "posture":"withhold action pending an exact count",
                     "location_ids":[]
-                }
+                }]
             }],
             "inactions":[]
         });
@@ -2951,11 +3047,11 @@ mod tests {
             priority: 1,
             state_references: vec![],
             public_channels: vec![],
-            effect: StrategicCellEffect::Institution {
+            effects: vec![StrategicCellEffect::Institution {
                 institution_id: "faction-06".into(),
                 posture: "withholding pending verification".into(),
                 location_ids: vec!["forum".into()],
-            },
+            }],
         };
         let mut second = first.clone();
         second.intended_effect = "release immediately".into();
@@ -2978,9 +3074,9 @@ mod tests {
             priority: 80,
             state_references: vec!["member:reed".into()],
             public_channels: vec![],
-            effect: StrategicCellEffect::MemberMigration {
+            effects: vec![StrategicCellEffect::MemberMigration {
                 destination_gestalt_id: "refugee-encampment".into(),
-            },
+            }],
         };
         let diagnostic = rejected_action_diagnostic(&[action], &[0]);
         assert!(diagnostic.contains("member:reed"));
@@ -3010,10 +3106,10 @@ mod tests {
             priority: 80,
             state_references: vec!["institution:faction-06".into()],
             public_channels: vec![],
-            effect: StrategicCellEffect::ActorMove {
+            effects: vec![StrategicCellEffect::ActorMove {
                 actor_id,
                 destination_id: "encampment".into(),
-            },
+            }],
         };
         exclude_rejected_cell_effects(&mut schema, &[rejected], &[0]).unwrap();
         let validator = jsonschema::validator_for(&schema).unwrap();
@@ -3026,7 +3122,7 @@ mod tests {
                     "priority":80,
                     "state_references":["institution:faction-06"],
                     "public_channels":[],
-                    "effect":effect,
+                    "effects":[effect],
                 }],
                 "inactions":[],
             })
@@ -3149,10 +3245,10 @@ mod tests {
                     priority: 1,
                     state_references: vec!["gestalt:crowd".into()],
                     public_channels: vec![],
-                    effect: CellEffectCandidate::Gestalt {
+                    effects: vec![CellEffectCandidate::Gestalt {
                         pressure_additions: vec![],
                         pressure_resolutions: vec![],
-                    },
+                    }],
                 }],
                 inactions: vec![],
             },
@@ -3301,11 +3397,11 @@ mod tests {
                     priority: 70,
                     state_references: vec!["member:mira".into()],
                     public_channels: vec![],
-                    effect: CellEffectCandidate::MemberActivity {
+                    effects: vec![CellEffectCandidate::MemberActivity {
                         activity: crate::domain::StrategicActivityKind::Communicate,
                         target_subject_ids: vec!["refugees".into()],
                         location_ids: vec!["forum".into()],
-                    },
+                    }],
                 }],
                 inactions: vec![],
             },
@@ -3314,7 +3410,8 @@ mod tests {
         validate_cell_appraisal(&slice, &appraisal).unwrap();
 
         let mut stolen = appraisal;
-        let StrategicCellEffect::MemberActivity { member_id, .. } = &mut stolen.actions[0].effect
+        let StrategicCellEffect::MemberActivity { member_id, .. } =
+            &mut stolen.actions[0].effects[0]
         else {
             unreachable!()
         };
@@ -3351,11 +3448,11 @@ mod tests {
                     priority: 70,
                     state_references: vec!["subject:actor:liaison".into()],
                     public_channels: vec![],
-                    effect: CellEffectCandidate::ActorActivity {
+                    effects: vec![CellEffectCandidate::ActorActivity {
                         activity: crate::domain::StrategicActivityKind::Communicate,
                         target_subject_ids: vec!["clinic".into()],
                         location_ids: vec!["forum".into()],
-                    },
+                    }],
                 }],
                 inactions: vec![],
             },
@@ -3363,7 +3460,7 @@ mod tests {
         .unwrap();
         validate_cell_appraisal(&slice, &appraisal).unwrap();
         assert!(matches!(
-            &appraisal.actions[0].effect,
+            &appraisal.actions[0].effects[0],
             StrategicCellEffect::ActorActivity { actor_id, .. } if actor_id == "actor:liaison"
         ));
 
@@ -3377,11 +3474,11 @@ mod tests {
                     priority: 70,
                     state_references: vec!["subject:actor:liaison".into()],
                     public_channels: vec![],
-                    effect: CellEffectCandidate::MemberActivity {
+                    effects: vec![CellEffectCandidate::MemberActivity {
                         activity: crate::domain::StrategicActivityKind::Communicate,
                         target_subject_ids: vec!["clinic".into()],
                         location_ids: vec!["forum".into()],
-                    },
+                    }],
                 }],
                 inactions: vec![],
             },
@@ -3392,6 +3489,54 @@ mod tests {
                 .to_string()
                 .contains("is not a selected member exception")
         );
+    }
+
+    #[test]
+    fn actor_can_compose_exact_travel_and_destination_activity() {
+        let mut slice = fixture_cell_slice();
+        let subject = &mut slice.constituents[0];
+        subject.subject_id = "actor:director".into();
+        subject.subject_kind = AgencySubjectKind::Actor;
+        subject.name = "Clinic Director".into();
+        subject.collective_authority_id = None;
+        subject.location_ids = BTreeSet::from(["garrison".into()]);
+        subject.reachable_destinations =
+            BTreeMap::from([("encampment".into(), "Refugee Encampment".into())]);
+        subject.permitted_state_references =
+            BTreeSet::from(["subject:actor:director".into(), "location:garrison".into()]);
+        subject.current_posture = None;
+
+        let proposal = bind_cell_appraisal(
+            &slice,
+            CellAppraisalProposal {
+                actions: vec![CellActionCandidate {
+                    subject_id: "actor:director".into(),
+                    intent: "travel to the encampment and ask what supplies are needed".into(),
+                    intended_effect: "arrive there and make the request without inventing a reply"
+                        .into(),
+                    priority: 70,
+                    state_references: vec!["subject:actor:director".into()],
+                    public_channels: vec![],
+                    effects: vec![
+                        CellEffectCandidate::ActorMove {
+                            destination_id: "encampment".into(),
+                        },
+                        CellEffectCandidate::ActorActivity {
+                            activity: crate::domain::StrategicActivityKind::Communicate,
+                            target_subject_ids: vec![],
+                            location_ids: vec!["encampment".into()],
+                        },
+                    ],
+                }],
+                inactions: vec![],
+            },
+        )
+        .unwrap();
+        validate_cell_appraisal(&slice, &proposal).unwrap();
+
+        let mut omitted_travel = proposal;
+        omitted_travel.actions[0].effects.remove(0);
+        assert!(validate_cell_appraisal(&slice, &omitted_travel).is_err());
     }
 
     #[test]
@@ -3479,12 +3624,12 @@ mod tests {
         append_cell_correction(
             &mut request,
             &anyhow::anyhow!("the typed effect was unsupported"),
-            r#"{"actions":[{"effect":{"type":"gestalt"}}]}"#,
+            r#"{"actions":[{"effects":[{"type":"gestalt"}]}]}"#,
         );
         assert!(
             request
                 .lived_stream
-                .contains("valid non-empty typed transition")
+                .contains("one to four valid orthogonal typed effects")
         );
         assert!(
             request

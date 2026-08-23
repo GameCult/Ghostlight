@@ -298,12 +298,14 @@ async fn main() -> anyhow::Result<()> {
         .flat_map(|appraisal| &appraisal.actions)
         .find(|proposal| {
             proposal.subject_id == "member:mira-venn"
-                && matches!(
-                    &proposal.effect,
-                    ghostlight_dungeon::domain::StrategicCellEffect::MemberMigration {
-                        destination_gestalt_id,
-                    } if destination_gestalt_id == "harbor-neighbors"
-                )
+                && proposal.effects.iter().any(|effect| {
+                    matches!(
+                        effect,
+                        ghostlight_dungeon::domain::StrategicCellEffect::MemberMigration {
+                            destination_gestalt_id,
+                        } if destination_gestalt_id == "harbor-neighbors"
+                    )
+                })
         })
         .cloned();
     if require_migration && migration_proposal.is_none() {

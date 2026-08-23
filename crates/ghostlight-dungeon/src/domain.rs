@@ -493,7 +493,9 @@ pub struct CellActionProposal {
     pub priority: i16,
     pub state_references: Vec<String>,
     pub public_channels: Vec<String>,
-    pub effect: StrategicCellEffect,
+    #[serde(default)]
+    #[schemars(length(min = 1, max = 4))]
+    pub effects: Vec<StrategicCellEffect>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -706,6 +708,11 @@ pub struct NewsIssue {
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
 pub struct StrategicTickPlan {
+    /// Canonical admitted strategic choices. The action arrays below are
+    /// deterministic projections used by the legacy event and transition
+    /// lowering path; production callers rebuild them from this list.
+    #[serde(default)]
+    pub selected_actions: Vec<CellActionProposal>,
     pub institution_actions: Vec<StrategicInstitutionAction>,
     pub gestalt_actions: Vec<StrategicGestaltAction>,
     #[serde(default)]
