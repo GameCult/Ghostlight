@@ -789,6 +789,63 @@ mod tests {
         assert_eq!(usage.prompt_cache_miss_tokens, 40);
         assert!(!format!("{output:?}").contains("private"));
     }
+
+    #[tokio::test]
+    async fn openrouter_retries_transient_admission_without_changing_the_request() {
+        let calls = std::sync::Arc::new(AtomicUsize::new(0));
+        let server_calls = calls.clone();
+        let app = axum::Router::new().route(
+            "/",
+            axum::routing::post(move || {
+                let calls = server_calls.clone();
+                async move {
+                    if calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                        axum::response::Response::builder()
+                            .status(axum::http::StatusCode::TOO_MANY_REQUESTS)
+                            .header(reqwest::header::RETRY_AFTER, "0")
+                            .body(axum::body::Body::from("busy"))
+                            .unwrap()
+                    } else {
+                        axum::response::IntoResponse::into_response(axum::Json(serde_json::json!({
+                            "id":"generation-after-retry",
+                            "model":"stealth/ox-alpha",
+                            "choices":[{
+                                "finish_reason":"stop",
+                                "message":{"content":"ready"}
+                            }]
+                        })))
+                    }
+                }
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        let mut port =
+            OpenRouterPort::new("test-key".into(), "stealth/ox-alpha", "stealth/ox-alpha");
+        port.endpoint = format!("http://{address}/");
+        let request = ModelStageRequest {
+            stage: "interpreter".into(),
+            model: MODEL_FAST.into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "same snapshot".into(),
+            output_schema: None,
+            source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: Some(32),
+        };
+
+        let output = port.run_with_observation(&request).await.unwrap();
+
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(output.content, "ready");
+        assert!(
+            output
+                .transport_features
+                .contains(&"openrouter.transient-retries:1".to_owned())
+        );
+        server.abort();
+    }
 }
 
 #[derive(Clone)]
@@ -1005,20 +1062,32 @@ impl OpenRouterPort {
     ) -> Result<ModelProviderOutput> {
         let resolved_model = resolve_model(request, &self.fast_model, &self.capable_model);
         let body = openrouter_request_body(request, &resolved_model);
-        let value: serde_json::Value = self
-            .client
-            .post(&self.endpoint)
-            .bearer_auth(self.api_key.as_str())
-            .header("HTTP-Referer", "https://ghostlight.gamecult.org")
-            .header("X-Title", "Ghostlight Dungeon")
-            .json(&body)
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let mut transient_retries = 0usize;
+        let value: serde_json::Value = loop {
+            let response = self
+                .client
+                .post(&self.endpoint)
+                .bearer_auth(self.api_key.as_str())
+                .header("HTTP-Referer", "https://ghostlight.gamecult.org")
+                .header("X-Title", "Ghostlight Dungeon")
+                .json(&body)
+                .send()
+                .await?;
+            if openrouter_transient_status(response.status()) && transient_retries < 3 {
+                let delay = openrouter_retry_delay(&response, transient_retries);
+                transient_retries += 1;
+                tokio::time::sleep(delay).await;
+                continue;
+            }
+            break response.error_for_status()?.json().await?;
+        };
         let mut output = decode_openai_chat_response(&value, "OpenRouter")?;
         output.resolved_model = Some(resolved_model);
+        if transient_retries > 0 {
+            output
+                .transport_features
+                .push(format!("openrouter.transient-retries:{transient_retries}"));
+        }
         if request.output_schema.is_some() {
             output
                 .transport_features
@@ -1026,6 +1095,29 @@ impl OpenRouterPort {
         }
         Ok(output)
     }
+}
+
+fn openrouter_transient_status(status: reqwest::StatusCode) -> bool {
+    matches!(
+        status,
+        reqwest::StatusCode::TOO_MANY_REQUESTS
+            | reqwest::StatusCode::BAD_GATEWAY
+            | reqwest::StatusCode::SERVICE_UNAVAILABLE
+            | reqwest::StatusCode::GATEWAY_TIMEOUT
+    )
+}
+
+fn openrouter_retry_delay(response: &reqwest::Response, retry: usize) -> std::time::Duration {
+    let advertised_seconds = response
+        .headers()
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<u64>().ok());
+    std::time::Duration::from_secs(
+        advertised_seconds
+            .unwrap_or([5, 15, 30][retry.min(2)])
+            .min(30),
+    )
 }
 
 fn openrouter_request_body(request: &ModelStageRequest, resolved_model: &str) -> serde_json::Value {
