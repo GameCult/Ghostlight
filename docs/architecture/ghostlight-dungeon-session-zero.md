@@ -117,6 +117,10 @@ player-entitled draft field, including history, secrets, knowledge, equipment,
 relationships, goals, and the complete terms of extraordinary permissions.
 Prose explains a bargain; the visible typed payload is the state the player is
 actually consenting to.
+Character patches are reversible during negotiation. Every list supports exact
+removals before additions, and relationship keys support exact removal before a
+replacement is installed. This permits spelling, identity, and mistaken-ledger
+corrections without duplicate private subjects or transcript replay.
 Accept applies only the exact typed payload currently stored in the decision.
 Counter preserves that payload as an inert, visible audit and replacement
 basis, records the player's text in the decision's durable channel, marks the

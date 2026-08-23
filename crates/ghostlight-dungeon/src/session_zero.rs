@@ -405,14 +405,23 @@ pub struct CharacterDraftPatch {
     pub name: Option<String>,
     pub public_premise: Option<String>,
     pub private_history_add: Vec<String>,
+    pub private_history_remove: Vec<String>,
     pub secrets_add: Vec<String>,
+    pub secrets_remove: Vec<String>,
     pub capabilities_add: Vec<String>,
+    pub capabilities_remove: Vec<String>,
     pub knowledge_add: Vec<String>,
+    pub knowledge_remove: Vec<String>,
     pub equipment_add: Vec<String>,
+    pub equipment_remove: Vec<String>,
     pub relationships: BTreeMap<String, String>,
+    pub relationship_removals: Vec<String>,
     pub obligations_add: Vec<String>,
+    pub obligations_remove: Vec<String>,
     pub vulnerabilities_add: Vec<String>,
+    pub vulnerabilities_remove: Vec<String>,
     pub goals_add: Vec<String>,
+    pub goals_remove: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
@@ -2113,13 +2122,21 @@ fn display_character_patch(patch: &CharacterDraftPatch) -> String {
     }
     for (values, label) in [
         (&patch.private_history_add, "Private history to add"),
+        (&patch.private_history_remove, "Private history to remove"),
         (&patch.secrets_add, "Secrets to add"),
+        (&patch.secrets_remove, "Secrets to remove"),
         (&patch.capabilities_add, "Capabilities to add"),
+        (&patch.capabilities_remove, "Capabilities to remove"),
         (&patch.knowledge_add, "Knowledge to add"),
+        (&patch.knowledge_remove, "Knowledge to remove"),
         (&patch.equipment_add, "Equipment to add"),
+        (&patch.equipment_remove, "Equipment to remove"),
         (&patch.obligations_add, "Obligations to add"),
+        (&patch.obligations_remove, "Obligations to remove"),
         (&patch.vulnerabilities_add, "Vulnerabilities to add"),
+        (&patch.vulnerabilities_remove, "Vulnerabilities to remove"),
         (&patch.goals_add, "Goals to add"),
+        (&patch.goals_remove, "Goals to remove"),
     ] {
         if !values.is_empty() {
             lines.push(format!("{label}: {}", values.join("; ")));
@@ -2129,6 +2146,12 @@ fn display_character_patch(patch: &CharacterDraftPatch) -> String {
         lines.push(format!(
             "Relationships to set: {}",
             display_relationships(&patch.relationships)
+        ));
+    }
+    if !patch.relationship_removals.is_empty() {
+        lines.push(format!(
+            "Relationship keys to remove: {}",
+            patch.relationship_removals.join("; ")
         ));
     }
     lines.join("\n")
@@ -3891,15 +3914,34 @@ fn apply_character_patch(draft: &mut CharacterDraft, patch: CharacterDraftPatch)
     if let Some(value) = patch.public_premise {
         draft.public_premise = value;
     }
+    remove_exact(&mut draft.private_history, patch.private_history_remove);
     extend_unique(&mut draft.private_history, patch.private_history_add);
+    remove_exact(&mut draft.secrets, patch.secrets_remove);
     extend_unique(&mut draft.secrets, patch.secrets_add);
+    remove_exact(&mut draft.capabilities, patch.capabilities_remove);
     extend_unique(&mut draft.capabilities, patch.capabilities_add);
+    remove_exact(&mut draft.knowledge, patch.knowledge_remove);
     extend_unique(&mut draft.knowledge, patch.knowledge_add);
+    remove_exact(&mut draft.equipment, patch.equipment_remove);
     extend_unique(&mut draft.equipment, patch.equipment_add);
+    for key in patch.relationship_removals {
+        draft.relationships.remove(&key);
+    }
     draft.relationships.extend(patch.relationships);
+    remove_exact(&mut draft.obligations, patch.obligations_remove);
     extend_unique(&mut draft.obligations, patch.obligations_add);
+    remove_exact(&mut draft.vulnerabilities, patch.vulnerabilities_remove);
     extend_unique(&mut draft.vulnerabilities, patch.vulnerabilities_add);
+    remove_exact(&mut draft.goals, patch.goals_remove);
     extend_unique(&mut draft.goals, patch.goals_add);
+}
+
+fn remove_exact(target: &mut Vec<String>, values: Vec<String>) {
+    if values.is_empty() {
+        return;
+    }
+    let removals = values.into_iter().collect::<BTreeSet<_>>();
+    target.retain(|value| !removals.contains(value));
 }
 
 fn extend_unique(target: &mut Vec<String>, values: Vec<String>) {
@@ -4765,6 +4807,42 @@ mod tests {
             &character_and_permission,
         )
         .unwrap();
+    }
+
+    #[test]
+    fn character_patch_can_correct_accepted_identity_without_duplicate_subjects() {
+        let mut character = CharacterDraft {
+            relationships: BTreeMap::from([(
+                "Reed".into(),
+                "Ash promised not to let Reed disappear into a manifest.".into(),
+            )]),
+            capabilities: vec![
+                "manifest reconciliation".into(),
+                "mistaken capability".into(),
+            ],
+            ..Default::default()
+        };
+        let full_name =
+            "Reed — full sung name: Rain gathering every lost footstep beneath one patient wing";
+        let patch = CharacterDraftPatch {
+            relationship_removals: vec!["Reed".into()],
+            relationships: BTreeMap::from([(
+                full_name.into(),
+                "Ash promised not to let Reed disappear into a destination manifest.".into(),
+            )]),
+            capabilities_remove: vec!["mistaken capability".into()],
+            ..Default::default()
+        };
+        let visible = display_character_patch(&patch);
+        assert!(visible.contains("Relationship keys to remove: Reed"));
+        assert!(visible.contains("Capabilities to remove: mistaken capability"));
+
+        apply_character_patch(&mut character, patch);
+
+        assert_eq!(character.relationships.len(), 1);
+        assert!(!character.relationships.contains_key("Reed"));
+        assert!(character.relationships.contains_key(full_name));
+        assert_eq!(character.capabilities, ["manifest reconciliation"]);
     }
 
     #[test]
