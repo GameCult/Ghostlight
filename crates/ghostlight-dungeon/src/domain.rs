@@ -483,7 +483,10 @@ pub enum StrategicActivityKind {
 
 impl StrategicActivityKind {
     pub fn allows_targetless_local_attempt(&self) -> bool {
-        matches!(self, Self::Prepare | Self::Investigate | Self::Communicate)
+        matches!(
+            self,
+            Self::Prepare | Self::Investigate | Self::Obstruct | Self::Communicate
+        )
     }
 }
 

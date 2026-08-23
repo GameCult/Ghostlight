@@ -2552,6 +2552,9 @@ fn strategic_activity_summary(
         (StrategicActivityKind::Obstruct, false) => {
             format!("{source_name} attempts to obstruct {targets}.")
         }
+        (StrategicActivityKind::Obstruct, true) => {
+            format!("{source_name} attempts local interference.")
+        }
         (StrategicActivityKind::Trade, false) => {
             format!("{source_name} offers a trade to {targets}.")
         }
@@ -4219,6 +4222,35 @@ mod tests {
         assert_eq!(
             events[0].summary,
             "Eastern transit refugees attempts a local communication."
+        );
+        assert!(events[0].actor_ids.is_empty());
+        assert!(events[0].institution_ids.is_empty());
+        assert_eq!(events[0].gestalt_ids, vec!["refugees-east"]);
+    }
+
+    #[test]
+    fn local_obstruction_records_the_source_without_inventing_a_target() {
+        let mut value = hierarchical_refugee_campaign();
+        let before = value.clone();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            resolve_test_activities(StrategicTickPlan {
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("local infrastructure obstruction"),
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Obstruct,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            }),
+        )
+        .unwrap();
+        assert_eq!(value, before);
+        assert_eq!(
+            events[0].summary,
+            "Eastern transit refugees attempts local interference."
         );
         assert!(events[0].actor_ids.is_empty());
         assert!(events[0].institution_ids.is_empty());

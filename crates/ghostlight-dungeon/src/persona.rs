@@ -912,6 +912,9 @@ impl CellProjectionEngine {
             slice.max_actions
         );
         let permission_guidance = format!(
+            "{permission_guidance} A targetless local obstruct at the exact supplied location records attempted interference with unnamed infrastructure, terrain, traffic, or another local feature. It records only the source's attempt—never damage, disruption, or a target response. Never substitute a merely permitted canonical subject for that unnamed local feature."
+        );
+        let permission_guidance = format!(
             "{permission_guidance} Campaign policy is a hard output boundary, not actor knowledge. Emit no action, inaction rationale, pressure, migration, posture, or activity that introduces a line topic, depicts a veil topic on-screen, or introduces an ask_first topic. Never reveal boundary attribution. CAMPAIGN POLICY: {campaign_policy}"
         );
         let mut request = ModelStageRequest {
@@ -957,7 +960,7 @@ impl CellProjectionEngine {
                             )
                             .await?;
                         let verifier_context = serde_json::json!({
-                            "local_attempt_contract":"A targetless local communicate at the source's exact current location faithfully records speech, an offer, a permission request, or a notice directed to an unnamed ordinary role. It records no listener, reply, acceptance, or outcome and must not be rejected merely because target_subject_ids is empty.",
+                            "local_attempt_contract":"A targetless local communicate at the source's exact current location faithfully records speech, an offer, a permission request, or a notice directed to an unnamed ordinary role. A targetless local obstruct there faithfully records attempted interference with unnamed infrastructure, terrain, traffic, or another local feature. Both record only the source's attempt—never a listener, reply, damage, disruption, acceptance, or outcome—and must not be rejected merely because target_subject_ids is empty.",
                             "spatial_effect_contract":"A prepare, investigate, or other activity may include incidental walking, approaching, queuing, carrying, or repositioning around an unnamed local feature while the source remains inside the effect's supplied canonical location. The activity records the attempt and need not serialize every footstep. Reject omitted movement only when the Persona clearly commits the subject to a different supplied canonical location or population destination; local texture does not create topology or establish arrival.",
                             "exact_typed_permissions":serde_json::from_str::<serde_json::Value>(&interpreter_context)?,
                             "lived_stream":lived.text,
@@ -1976,7 +1979,7 @@ fn exact_activity_scope_schema(
             },
             "allOf":[{
                 "if":{
-                    "properties":{"activity":{"enum":["coordinate","recruit","obstruct","trade"]}},
+                    "properties":{"activity":{"enum":["coordinate","recruit","trade"]}},
                     "required":["activity"]
                 },
                 "then":{"properties":{"target_subject_ids":{"minItems":1}}}
@@ -2508,6 +2511,12 @@ mod tests {
         }))));
         assert!(validator.is_valid(&action(serde_json::json!({
             "type":"actor_activity",
+            "activity":"obstruct",
+            "target_subject_ids":[],
+            "location_ids":["forum"]
+        }))));
+        assert!(validator.is_valid(&action(serde_json::json!({
+            "type":"actor_activity",
             "activity":"coordinate",
             "target_subject_ids":["inst_zhestokost"],
             "location_ids":["forum"]
@@ -2750,13 +2759,7 @@ mod tests {
             target_subject_ids: vec![],
             location_ids: vec!["forum".into()],
         };
-        let error = validate_constituent_effect(subject, &targetless_obstruction).unwrap_err();
-        assert!(
-            error
-                .to_string()
-                .contains("no anonymous or unsupplied target")
-        );
-        assert!(error.to_string().contains("Remove the action"));
+        validate_constituent_effect(subject, &targetless_obstruction).unwrap();
 
         let internal_preparation = StrategicCellEffect::GestaltActivity {
             gestalt_id: "refugees".into(),
