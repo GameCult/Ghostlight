@@ -113,8 +113,11 @@ their first attempt, two material institutional consequences, exact constituent
 authority, and no player mutation. Authenticated surface and lifecycle
 acceptance now cover spoiler-safe literal HTTP responses, Heimdall-account
 campaign isolation, fork/reset/export, four persisted campaigns, and
-exact-commit restart. Live priority cancels in-flight scheduler
-inference and excludes its commit gate.
+exact-commit restart. Live priority announces pressure before waiting for an
+already-admitted scheduler commit, cancels in-flight scheduler inference, and
+excludes new background commits. The queued guard is cancellation-safe, and
+Session Zero emits revision-bound queued/started diagnostics so provider delay
+cannot masquerade as scheduler contention.
 
 The revised provider-backed Gestalt golden now passes across four waves and
 budget changes `1 -> 4 -> 8 -> 4`. It committed ten durable consequences,

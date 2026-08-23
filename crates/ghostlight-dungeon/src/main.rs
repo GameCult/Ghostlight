@@ -87,17 +87,18 @@ struct AppState {
 
 struct LiveTurnGuard {
     counter: Arc<AtomicUsize>,
-    _commit_read: OwnedRwLockReadGuard<()>,
+    _commit_read: Option<OwnedRwLockReadGuard<()>>,
 }
 impl LiveTurnGuard {
     async fn enter(state: &AppState) -> Self {
-        let commit_read = state.live_commit_gate.clone().read_owned().await;
-        state.live_turns.fetch_add(1, Ordering::SeqCst);
-        state.live_turn_started.notify_waiters();
-        Self {
+        let mut guard = Self {
             counter: state.live_turns.clone(),
-            _commit_read: commit_read,
-        }
+            _commit_read: None,
+        };
+        guard.counter.fetch_add(1, Ordering::SeqCst);
+        state.live_turn_started.notify_waiters();
+        guard._commit_read = Some(state.live_commit_gate.clone().read_owned().await);
+        guard
     }
 }
 impl Drop for LiveTurnGuard {
@@ -2330,9 +2331,21 @@ fn schedule_session_zero_dm_response(
     supersedes_countered_decision_id: Option<String>,
 ) {
     let Some(director) = state.session_zero_director.clone() else {
+        tracing::warn!(
+            session_zero_id = %snapshot.id,
+            revision = snapshot.revision,
+            %channel_id,
+            "Session Zero DM response was not scheduled because the model director is unavailable"
+        );
         return;
     };
     let Some(channel) = snapshot.channels.get(&channel_id).cloned() else {
+        tracing::warn!(
+            session_zero_id = %snapshot.id,
+            revision = snapshot.revision,
+            %channel_id,
+            "Session Zero DM response was not scheduled because the channel is absent"
+        );
         return;
     };
     let component_epoch = member_id
@@ -2341,18 +2354,29 @@ fn schedule_session_zero_dm_response(
         .unwrap_or(snapshot.shared_epoch);
     let kernel = runtime.kernel.clone();
     let mesh_state = state.clone();
+    tracing::info!(
+        session_zero_id = %snapshot.id,
+        revision = snapshot.revision,
+        %channel_id,
+        "Session Zero DM response queued"
+    );
     tokio::spawn(async move {
-        match run_live_model_work(
-            &mesh_state,
-            director.respond(
+        let _live = LiveTurnGuard::enter(&mesh_state).await;
+        tracing::info!(
+            session_zero_id = %snapshot.id,
+            revision = snapshot.revision,
+            %channel_id,
+            "Session Zero DM response started"
+        );
+        let response = director
+            .respond(
                 &snapshot,
                 &channel_id,
                 member_id.as_deref(),
                 supersedes_countered_decision_id.as_deref(),
-            ),
-        )
-        .await
-        {
+            )
+            .await;
+        match response {
             Ok((delta, receipts)) => {
                 let applied = kernel
                     .command(SessionZeroCommand::ApplyDmTurn {
@@ -5970,6 +5994,64 @@ mod tests {
         trigger.await.unwrap();
         assert_eq!(state.live_turns.load(Ordering::SeqCst), 0);
         assert!(state.live_commit_gate.clone().try_write_owned().is_ok());
+    }
+
+    #[tokio::test]
+    async fn queued_live_work_announces_pressure_before_waiting_for_a_background_commit() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let background_commit = state.live_commit_gate.clone().write_owned().await;
+        let live_started = state.live_turn_started.notified();
+        tokio::pin!(live_started);
+        live_started.as_mut().enable();
+
+        let live_state = state.clone();
+        let (entered_tx, mut entered_rx) = tokio::sync::oneshot::channel();
+        let live = tokio::spawn(async move {
+            run_live_model_work(&live_state, async move {
+                let _ = entered_tx.send(());
+            })
+            .await;
+        });
+
+        tokio::time::timeout(std::time::Duration::from_millis(100), &mut live_started)
+            .await
+            .expect("queued live work did not announce pressure");
+        assert_eq!(state.live_turns.load(Ordering::SeqCst), 1);
+        assert!(entered_rx.try_recv().is_err());
+        assert!(
+            await_background_work(&state, true, async { Ok::<_, anyhow::Error>(()) })
+                .await
+                .unwrap()
+                .is_none()
+        );
+
+        drop(background_commit);
+        live.await.unwrap();
+        assert_eq!(state.live_turns.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
+    async fn cancelling_live_work_queued_at_the_commit_gate_releases_its_pressure() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let _background_commit = state.live_commit_gate.clone().write_owned().await;
+        let live_started = state.live_turn_started.notified();
+        tokio::pin!(live_started);
+        live_started.as_mut().enable();
+
+        let live_state = state.clone();
+        let live = tokio::spawn(async move {
+            run_live_model_work(&live_state, std::future::pending::<()>()).await;
+        });
+        tokio::time::timeout(std::time::Duration::from_millis(100), &mut live_started)
+            .await
+            .expect("queued live work did not announce pressure");
+        assert_eq!(state.live_turns.load(Ordering::SeqCst), 1);
+
+        live.abort();
+        assert!(live.await.unwrap_err().is_cancelled());
+        assert_eq!(state.live_turns.load(Ordering::SeqCst), 0);
     }
 
     #[tokio::test]

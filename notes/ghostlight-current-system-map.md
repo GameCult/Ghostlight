@@ -137,13 +137,18 @@ the campaign revision and world time untouched. Background inference checks
 live-turn pressure before launch and again before commit; return catch-up uses
 the same command path with player-turn priority for fictional commands.
 
-A live request also interrupts an in-flight scheduler wave. Dropping that wave
+A live request also interrupts an in-flight scheduler wave. Live-turn admission
+increments pressure and signals cancellation before waiting for an already
+admitted background commit to finish. The admission guard exists before that
+wait, so cancellation cannot leak false pressure. Dropping the scheduler wave
 aborts its parallel cell tasks before they can launch later Persona stages, and
 a shared/exclusive commit gate makes scheduler commit impossible while any live
 request is active. Return catch-up is intentionally exempt because it is part of
 the live request and must finish before the requested fictional action. Private
 assessment and resolution-policy edits neither advance fiction nor invoke
-catch-up.
+catch-up. Session Zero logs the exact draft revision when a DM response is
+queued and when its live guard is admitted, making provider latency distinct
+from scheduler contention without exposing channel contents.
 
 Resolution-demand focal IDs are salience hints, not partition commands. They
 cannot create mandatory singleton cells or exceed the configured budget. Cell
