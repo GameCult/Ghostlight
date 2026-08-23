@@ -9,6 +9,7 @@ pub mod gestalt;
 pub mod idunn_health;
 pub mod initiative;
 pub mod kernel;
+pub mod legacy_transition;
 pub mod mesh;
 pub mod model;
 pub mod narrator;

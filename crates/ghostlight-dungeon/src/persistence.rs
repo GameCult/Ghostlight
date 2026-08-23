@@ -357,6 +357,72 @@ impl CampaignStore {
         Ok(next_row)
     }
 
+    pub fn append_world_transition_with_mutation<T: Serialize>(
+        &self,
+        expected: &CultCacheEnvelope,
+        next_schema: &str,
+        next: &T,
+        receipt_key: &str,
+        receipt: &WorldCommitReceipt,
+        authority: &MutationAuthorityEnvelope,
+        batch: &WorldMutationBatch,
+        mutation_receipt: &WorldMutationReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        if mutation_receipt.previous_world_revision != receipt.previous_revision
+            || mutation_receipt.world_revision != receipt.revision
+            || mutation_receipt.campaign_id != receipt.campaign_id
+            || mutation_receipt.batch_digest != batch.digest
+            || mutation_receipt.authority_envelope_digest != authority.digest
+        {
+            return Err(anyhow!(
+                "world and mutation receipts do not describe one transition"
+            ));
+        }
+        let next_row = envelope(&expected.r#type, next_schema, &expected.key, next)?;
+        let mut rows = vec![
+            next_row.clone(),
+            envelope(
+                "world_commit_receipt.v1",
+                "ghostlight.world_commit_receipt.v1",
+                receipt_key,
+                receipt,
+            )?,
+            envelope(
+                "mutation_authority_envelope.v1",
+                "ghostlight.mutation_authority_envelope.v1",
+                &authority.id,
+                authority,
+            )?,
+            envelope(
+                "world_mutation_batch.v1",
+                "ghostlight.world_mutation_batch.v1",
+                &batch.id,
+                batch,
+            )?,
+            envelope(
+                "world_mutation_receipt.v1",
+                "ghostlight.world_mutation_receipt.v1",
+                &mutation_receipt.id,
+                mutation_receipt,
+            )?,
+        ];
+        if let Some(roll) = &receipt.roll {
+            rows.push(envelope(
+                "roll_receipt.v1",
+                "ghostlight.roll_receipt.v1",
+                &roll.assessment_digest,
+                roll,
+            )?);
+        }
+        if !self
+            .inner
+            .compare_and_swap_batch(std::slice::from_ref(expected), rows)?
+        {
+            return Err(anyhow!("stale CultCache snapshot"));
+        }
+        Ok(next_row)
+    }
+
     pub fn commit_time_advance(
         &self,
         expected_campaign: &CultCacheEnvelope,
@@ -364,6 +430,11 @@ impl CampaignStore {
         expected_proposal: &CultCacheEnvelope,
         next_proposal: &TimeAdvanceProposal,
         receipt: &WorldCommitReceipt,
+        mutation: (
+            &MutationAuthorityEnvelope,
+            &WorldMutationBatch,
+            &WorldMutationReceipt,
+        ),
     ) -> Result<CultCacheEnvelope> {
         let next_campaign_row = envelope(
             &expected_campaign.r#type,
@@ -377,7 +448,7 @@ impl CampaignStore {
             &expected_proposal.key,
             next_proposal,
         )?;
-        let rows = vec![
+        let mut rows = vec![
             next_campaign_row.clone(),
             next_proposal_row,
             envelope(
@@ -387,6 +458,7 @@ impl CampaignStore {
                 receipt,
             )?,
         ];
+        append_mutation_proof(&mut rows, receipt, mutation)?;
         if !self.inner.compare_and_swap_batch(
             &[expected_campaign.clone(), expected_proposal.clone()],
             rows,
@@ -403,6 +475,11 @@ impl CampaignStore {
         expected_proposal: &CultCacheEnvelope,
         next_proposal: &GroupTravelProposal,
         receipt: &WorldCommitReceipt,
+        mutation: (
+            &MutationAuthorityEnvelope,
+            &WorldMutationBatch,
+            &WorldMutationReceipt,
+        ),
     ) -> Result<CultCacheEnvelope> {
         let next_campaign_row = envelope(
             &expected_campaign.r#type,
@@ -416,7 +493,7 @@ impl CampaignStore {
             &expected_proposal.key,
             next_proposal,
         )?;
-        let rows = vec![
+        let mut rows = vec![
             next_campaign_row.clone(),
             next_proposal_row,
             envelope(
@@ -426,6 +503,7 @@ impl CampaignStore {
                 receipt,
             )?,
         ];
+        append_mutation_proof(&mut rows, receipt, mutation)?;
         if !self.inner.compare_and_swap_batch(
             &[expected_campaign.clone(), expected_proposal.clone()],
             rows,
@@ -644,6 +722,11 @@ impl CampaignStore {
         world_receipt: &WorldCommitReceipt,
         strategic_receipt: &StrategicTickReceipt,
         resolution_wave: Option<&ResolutionWaveCommit>,
+        mutation: Option<(
+            &MutationAuthorityEnvelope,
+            &WorldMutationBatch,
+            &WorldMutationReceipt,
+        )>,
     ) -> Result<CultCacheEnvelope> {
         let next_row = envelope(
             &expected.r#type,
@@ -705,6 +788,35 @@ impl CampaignStore {
                     outcome,
                 )?);
             }
+        }
+        if let Some((authority, batch, mutation_receipt)) = mutation {
+            if mutation_receipt.previous_world_revision != world_receipt.previous_revision
+                || mutation_receipt.world_revision != world_receipt.revision
+                || mutation_receipt.batch_digest != batch.digest
+                || mutation_receipt.authority_envelope_digest != authority.digest
+            {
+                return Err(anyhow!(
+                    "strategic and mutation receipts do not describe one transition"
+                ));
+            }
+            rows.push(envelope(
+                "mutation_authority_envelope.v1",
+                "ghostlight.mutation_authority_envelope.v1",
+                &authority.id,
+                authority,
+            )?);
+            rows.push(envelope(
+                "world_mutation_batch.v1",
+                "ghostlight.world_mutation_batch.v1",
+                &batch.id,
+                batch,
+            )?);
+            rows.push(envelope(
+                "world_mutation_receipt.v1",
+                "ghostlight.world_mutation_receipt.v1",
+                &mutation_receipt.id,
+                mutation_receipt,
+            )?);
         }
         if !self
             .inner
@@ -782,6 +894,46 @@ impl CampaignStore {
         }
         Ok(next_row)
     }
+}
+
+fn append_mutation_proof(
+    rows: &mut Vec<CultCacheEnvelope>,
+    world_receipt: &WorldCommitReceipt,
+    (authority, batch, mutation_receipt): (
+        &MutationAuthorityEnvelope,
+        &WorldMutationBatch,
+        &WorldMutationReceipt,
+    ),
+) -> Result<()> {
+    if mutation_receipt.previous_world_revision != world_receipt.previous_revision
+        || mutation_receipt.world_revision != world_receipt.revision
+        || mutation_receipt.campaign_id != world_receipt.campaign_id
+        || mutation_receipt.batch_digest != batch.digest
+        || mutation_receipt.authority_envelope_digest != authority.digest
+    {
+        return Err(anyhow!(
+            "world and mutation receipts do not describe one transition"
+        ));
+    }
+    rows.push(envelope(
+        "mutation_authority_envelope.v1",
+        "ghostlight.mutation_authority_envelope.v1",
+        &authority.id,
+        authority,
+    )?);
+    rows.push(envelope(
+        "world_mutation_batch.v1",
+        "ghostlight.world_mutation_batch.v1",
+        &batch.id,
+        batch,
+    )?);
+    rows.push(envelope(
+        "world_mutation_receipt.v1",
+        "ghostlight.world_mutation_receipt.v1",
+        &mutation_receipt.id,
+        mutation_receipt,
+    )?);
+    Ok(())
 }
 
 fn merge_vault_manifest(

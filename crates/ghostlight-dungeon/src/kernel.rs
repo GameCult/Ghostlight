@@ -298,7 +298,33 @@ fn execute(
                 OutcomeBand::Mixed => assessment.mixed_effect.clone(),
                 OutcomeBand::Failure => assessment.failure_effect.clone(),
             };
-            apply_world_effect(&mut campaign, &effect)?;
+            let transition = crate::legacy_transition::lower_foreground_effect(
+                &campaign,
+                &assessment.intent.actor_id,
+                &effect,
+                roll.outcome.clone(),
+                crate::transition::MutationProcedure::ForegroundAttempt,
+                &assessment.effect_ceiling,
+                &assessment.digest,
+                Some(
+                    crate::legacy_transition::digest_serializable(&assessment.intent)
+                        .map_err(|error| KernelError::Invalid(error.to_string()))?,
+                ),
+                Some(
+                    crate::legacy_transition::digest_serializable(
+                        &assessment.intent.intended_effect,
+                    )
+                    .map_err(|error| KernelError::Invalid(error.to_string()))?,
+                ),
+                assessment.expires_at,
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let mutation_receipt = crate::legacy_transition::apply_lowered_transition(
+                &mut campaign,
+                &transition,
+                Utc::now(),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
             refresh_materialized_member_relevance(
                 &mut campaign,
                 std::iter::once(assessment.intent.actor_id.as_str()),
@@ -314,7 +340,15 @@ fn execute(
                 speaker: "world".into(),
                 text: text.clone(),
             });
-            commit(store, row, campaign, "attempt", Some(roll))
+            commit_mutation_transition(
+                store,
+                row,
+                campaign,
+                "attempt",
+                Some(roll),
+                transition,
+                mutation_receipt,
+            )
         }
         WorldCommand::Speak {
             expected_revision,
@@ -365,11 +399,36 @@ fn execute(
                     "wait duration must be between 1 and 1440 minutes".into(),
                 ));
             }
-            campaign.world_time += Duration::minutes(i64::from(minutes));
+            let source_receipt_id = format!(
+                "direct-wait:{}:{}:{}",
+                campaign.id, campaign.revision, minutes
+            );
+            let transition = crate::legacy_transition::lower_time_advance(
+                &campaign,
+                minutes,
+                crate::transition::MutationProcedure::DirectCommand,
+                &source_receipt_id,
+                Utc::now() + Duration::minutes(5),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let mutation_receipt = crate::legacy_transition::apply_lowered_transition(
+                &mut campaign,
+                &transition,
+                Utc::now(),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
             campaign.last_player_activity = Utc::now();
             campaign.away_ticks_processed = 0;
             campaign.pending_ticks = 0;
-            commit(store, row, campaign, "wait", None)
+            commit_mutation_transition(
+                store,
+                row,
+                campaign,
+                "wait",
+                None,
+                transition,
+                mutation_receipt,
+            )
         }
         WorldCommand::ProposeTimeAdvance {
             expected_revision,
@@ -491,7 +550,12 @@ fn execute(
             let route = campaign
                 .locations
                 .get(&origin_location_id)
-                .and_then(|location| location.routes.get(&destination_location_id))
+                .and_then(|location| {
+                    location
+                        .routes
+                        .values()
+                        .find(|route| route.destination_id == destination_location_id)
+                })
                 .ok_or_else(|| {
                     KernelError::Invalid("destination is not directly reachable".into())
                 })?;
@@ -945,15 +1009,17 @@ fn execute(
                     }
                 }
             }
-            campaign.world_time += Duration::hours(i64::from(campaign.tick_hours));
-            for clock in campaign.clocks.values_mut() {
-                clock.progress = clock.progress.saturating_add(1).min(clock.threshold);
-            }
-            let tick_number = campaign.strategic_tick_count.saturating_add(1);
-            let tick_events = match resolved_plan.or(plan) {
+            let applied_tick = match resolved_plan.or(plan) {
                 Some(plan) => apply_strategic_tick_plan(&mut campaign, plan)?,
-                None => deterministic_strategic_tick(&mut campaign, tick_number),
+                None => {
+                    let plan = deterministic_strategic_tick_plan();
+                    apply_strategic_tick_plan(&mut campaign, plan)?
+                }
             };
+            let AppliedStrategicTickPlan {
+                events: tick_events,
+                mutation,
+            } = applied_tick;
             if let Some(wave) = &resolution_wave {
                 crate::resolution::advance_detail_debt(&mut campaign, &wave.cover);
                 campaign.resolution_cover = Some(wave.cover.clone());
@@ -990,6 +1056,7 @@ fn execute(
                 model_receipt_hash,
                 event_ids,
                 resolution_wave,
+                mutation,
             )
         }
         WorldCommand::ExpandRegion {
@@ -1168,24 +1235,26 @@ fn execute(
                     validate_world_proposal(actor, proposal)?;
                 }
             }
+            let source_receipt_id = format!(
+                "reaction-input:{}",
+                crate::legacy_transition::digest_serializable(&reactions)
+                    .map_err(|error| KernelError::Invalid(error.to_string()))?
+            );
+            let transition = crate::legacy_transition::lower_reaction_wave(
+                &campaign,
+                &witnessed_memory,
+                &reactions,
+                &source_receipt_id,
+                Utc::now() + Duration::minutes(5),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let mutation_receipt = crate::legacy_transition::apply_lowered_transition(
+                &mut campaign,
+                &transition,
+                Utc::now(),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
             for reaction in reactions {
-                let actor = campaign
-                    .actors
-                    .get_mut(&reaction.actor_id)
-                    .expect("validated actor");
-                if actor.memories.len() < 64 && !actor.memories.contains(&witnessed_memory) {
-                    actor.memories.push(witnessed_memory.clone());
-                }
-                actor
-                    .conditions
-                    .extend(reaction.private_delta.conditions_add);
-                for value in reaction.private_delta.conditions_remove {
-                    actor.conditions.remove(&value);
-                }
-                actor.goals.extend(reaction.private_delta.goals_add);
-                actor
-                    .relationships
-                    .extend(reaction.private_delta.relationship_updates);
                 if let Some(speech) = reaction.speech {
                     campaign.transcript.push(NarrativeTurn {
                         revision: campaign.revision + 1,
@@ -1210,7 +1279,15 @@ fn execute(
                 location_ids: vec![player_location],
                 public_channels: vec![],
             });
-            commit(store, row, campaign, "reaction_wave", None)
+            commit_mutation_transition(
+                store,
+                row,
+                campaign,
+                "reaction_wave",
+                None,
+                transition,
+                mutation_receipt,
+            )
         }
         WorldCommand::ResolveNpcAction {
             expected_revision,
@@ -1275,14 +1352,38 @@ fn execute(
                     OutcomeBand::Mixed => (&assessment.mixed_stake, &assessment.mixed_effect),
                     OutcomeBand::Failure => (&assessment.failure_stake, &assessment.failure_effect),
                 };
-                apply_world_effect(&mut campaign, effect)?;
+                let transition = crate::legacy_transition::lower_foreground_effect(
+                    &campaign,
+                    &proposal.actor_id,
+                    effect,
+                    roll.outcome.clone(),
+                    crate::transition::MutationProcedure::NpcAttempt,
+                    &assessment.effect_ceiling,
+                    &assessment.digest,
+                    Some(
+                        crate::legacy_transition::digest_serializable(&intent)
+                            .map_err(|error| KernelError::Invalid(error.to_string()))?,
+                    ),
+                    Some(
+                        crate::legacy_transition::digest_serializable(&intent.intended_effect)
+                            .map_err(|error| KernelError::Invalid(error.to_string()))?,
+                    ),
+                    assessment.expires_at,
+                )
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+                let mutation_receipt = crate::legacy_transition::apply_lowered_transition(
+                    &mut campaign,
+                    &transition,
+                    Utc::now(),
+                )
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
                 campaign.transcript.push(NarrativeTurn {
                     revision: campaign.revision + 1,
                     at: Utc::now(),
                     speaker: "world".into(),
                     text: text.clone(),
                 });
-                Some(roll)
+                Some((roll, transition, mutation_receipt))
             } else {
                 None
             };
@@ -1305,7 +1406,19 @@ fn execute(
                 &mut campaign,
                 std::iter::once(proposal.actor_id.as_str()),
             );
-            commit(store, row, campaign, "resolve_npc_action", roll)
+            if let Some((roll, transition, mutation_receipt)) = roll {
+                commit_mutation_transition(
+                    store,
+                    row,
+                    campaign,
+                    "resolve_npc_action",
+                    Some(roll),
+                    transition,
+                    mutation_receipt,
+                )
+            } else {
+                commit(store, row, campaign, "resolve_npc_action", None)
+            }
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
     }
@@ -1434,66 +1547,6 @@ fn apply_promotion(
         .saturating_add(GESTALT_RELEVANCE_LEASE_REVISIONS);
     member.version += 1;
     campaign.actors.insert(actor_id, actor);
-    Ok(())
-}
-
-fn apply_world_effect(
-    campaign: &mut Campaign,
-    effect: &WorldEffectDelta,
-) -> Result<(), KernelError> {
-    for (actor_id, delta) in &effect.actor_conditions {
-        let actor = campaign
-            .actors
-            .get_mut(actor_id)
-            .ok_or_else(|| KernelError::Invalid("outcome actor vanished".into()))?;
-        actor.conditions.extend(delta.add.clone());
-        for value in &delta.remove {
-            actor.conditions.remove(value);
-        }
-    }
-    for (actor_id, additions) in &effect.actor_knowledge_additions {
-        let actor = campaign
-            .actors
-            .get_mut(actor_id)
-            .ok_or_else(|| KernelError::Invalid("outcome actor vanished".into()))?;
-        actor.knowledge.extend(additions.clone());
-    }
-    for (actor_id, relationships) in &effect.actor_relationship_updates {
-        campaign
-            .actors
-            .get_mut(actor_id)
-            .ok_or_else(|| KernelError::Invalid("outcome actor vanished".into()))?
-            .relationships
-            .extend(relationships.clone());
-    }
-    for (actor_id, destination) in &effect.actor_moves {
-        campaign
-            .actors
-            .get_mut(actor_id)
-            .ok_or_else(|| KernelError::Invalid("outcome actor vanished".into()))?
-            .location_id = destination.clone();
-    }
-    for (clock_id, amount) in &effect.clock_advances {
-        let clock = campaign
-            .clocks
-            .get_mut(clock_id)
-            .ok_or_else(|| KernelError::Invalid("outcome clock vanished".into()))?;
-        clock.progress = clock.progress.saturating_add(*amount).min(clock.threshold);
-    }
-    for (clock_id, amount) in &effect.clock_reductions {
-        let clock = campaign
-            .clocks
-            .get_mut(clock_id)
-            .ok_or_else(|| KernelError::Invalid("outcome clock vanished".into()))?;
-        clock.progress = clock.progress.saturating_sub(*amount);
-    }
-    for (institution_id, posture) in &effect.institution_postures {
-        campaign
-            .institutions
-            .get_mut(institution_id)
-            .ok_or_else(|| KernelError::Invalid("outcome institution vanished".into()))?
-            .posture = posture.clone();
-    }
     Ok(())
 }
 
@@ -1787,12 +1840,30 @@ fn assess(c: &Campaign, intent: ActionIntent) -> ActionAssessment {
     a
 }
 
+#[derive(Debug)]
+struct AppliedStrategicTickPlan {
+    events: Vec<Event>,
+    mutation: Option<(
+        crate::legacy_transition::LoweredLegacyTransition,
+        crate::transition::WorldMutationReceipt,
+    )>,
+}
+
+impl std::ops::Deref for AppliedStrategicTickPlan {
+    type Target = [Event];
+
+    fn deref(&self) -> &Self::Target {
+        &self.events
+    }
+}
+
 fn apply_strategic_tick_plan(
     campaign: &mut Campaign,
     plan: crate::domain::StrategicTickPlan,
-) -> Result<Vec<crate::domain::Event>, KernelError> {
+) -> Result<AppliedStrategicTickPlan, KernelError> {
     crate::outcome::validate_plan_activity_outcomes(campaign, &plan)
         .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    let lowering_plan = plan.clone();
     let activity_outcomes = plan.activity_outcomes.clone();
     let mut outcome_event_context = BTreeMap::new();
     for activity in &plan.gestalt_activities {
@@ -1831,7 +1902,7 @@ fn apply_strategic_tick_plan(
     // invalid late action cannot leave this primitive partially mutated.
     let mut next = campaign.clone();
     let revision = campaign.revision + 1;
-    let at = campaign.world_time;
+    let at = campaign.world_time + Duration::hours(i64::from(campaign.tick_hours));
     let mut events = Vec::new();
     let mut seen_institutions = BTreeSet::new();
     for action in plan.institution_actions {
@@ -1855,20 +1926,16 @@ fn apply_strategic_tick_plan(
             ));
         }
         validate_public_channels(&action.public_channels)?;
-        let institution = next
+        let institution = campaign
             .institutions
-            .get_mut(&action.institution_id)
+            .get(&action.institution_id)
             .ok_or_else(|| KernelError::Invalid("strategic plan invented an institution".into()))?;
         if !crate::resolution::substantive_text_change(&institution.posture, &action.posture) {
             return Err(KernelError::Invalid(
                 "strategic institution action would not change its posture".into(),
             ));
         }
-        institution.posture = action.posture;
-        let summary = format!(
-            "{} adopts posture: {}",
-            institution.name, institution.posture
-        );
+        let summary = format!("{} adopts posture: {}", institution.name, action.posture);
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:institution:{}", institution.id),
             at,
@@ -1890,9 +1957,9 @@ fn apply_strategic_tick_plan(
             ));
         }
         validate_public_channels(&action.public_channels)?;
-        let gestalt = next
+        let gestalt = campaign
             .gestalts
-            .get_mut(&action.gestalt_id)
+            .get(&action.gestalt_id)
             .ok_or_else(|| KernelError::Invalid("strategic plan invented a gestalt".into()))?;
         crate::resolution::validate_gestalt_pressure_transition(
             &gestalt.pressures,
@@ -1913,14 +1980,6 @@ fn apply_strategic_tick_plan(
                 action.pressure_additions.join("; ")
             ));
         }
-        let resolved = action.pressure_resolutions.iter().collect::<BTreeSet<_>>();
-        gestalt
-            .pressures
-            .retain(|pressure| !resolved.contains(pressure));
-        for pressure in action.pressure_additions {
-            gestalt.pressures.push(pressure);
-        }
-        gestalt.version += 1;
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:gestalt:{}", gestalt.id),
             at,
@@ -1957,18 +2016,6 @@ fn apply_strategic_tick_plan(
         let destination_name = campaign.gestalts[&action.destination_gestalt_id]
             .name
             .clone();
-        let gestalt = next
-            .gestalts
-            .get_mut(&action.gestalt_id)
-            .expect("gestalt migration source was validated");
-        gestalt.home_location_id = action.destination_location_id.clone();
-        gestalt.version = gestalt.version.saturating_add(1);
-        let profile = next
-            .agency_profiles
-            .get_mut(&action.gestalt_id)
-            .expect("gestalt migration profile was validated");
-        profile.location_ids = BTreeSet::from([action.destination_location_id.clone()]);
-        profile.profile_version = profile.profile_version.saturating_add(1);
         events.push(crate::domain::Event {
             id: format!(
                 "strategic:{revision}:gestalt-migration:{}",
@@ -2113,10 +2160,6 @@ fn apply_strategic_tick_plan(
         }
         let origin = actor.location_id.clone();
         let actor_name = actor.name.clone();
-        next.actors
-            .get_mut(&action.actor_id)
-            .expect("actor was validated")
-            .location_id = action.destination_id.clone();
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:actor:{}", action.actor_id),
             at,
@@ -2326,7 +2369,6 @@ fn apply_strategic_tick_plan(
                     .clone()
             });
         let member_name = campaign.gestalt_members[&action.member_id].name.clone();
-        rebase_member_migration(&mut next, &action)?;
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:member:{}", action.member_id),
             at,
@@ -2342,13 +2384,28 @@ fn apply_strategic_tick_plan(
             public_channels: action.public_channels,
         });
     }
+    let plan_digest = crate::legacy_transition::digest_serializable(&lowering_plan)
+        .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    let mutation = crate::legacy_transition::lower_strategic_wave(
+        campaign,
+        &lowering_plan,
+        &format!("strategic-wave:{plan_digest}"),
+        Utc::now() + Duration::minutes(5),
+    )
+    .map_err(|error| KernelError::Invalid(error.to_string()))?
+    .map(|transition| {
+        let receipt =
+            crate::legacy_transition::apply_lowered_transition(&mut next, &transition, Utc::now())
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+        Ok::<_, KernelError>((transition, receipt))
+    })
+    .transpose()?;
     for outcome in activity_outcomes {
         let (source_subject_id, locations, public_channels) = outcome_event_context
             .remove(&outcome.action_digest)
             .ok_or_else(|| {
                 KernelError::Invalid("strategic outcome lost its activity context".into())
             })?;
-        apply_strategic_outcome_effect(&mut next, &outcome.effect)?;
         let mut subject_ids = BTreeSet::from([source_subject_id]);
         collect_outcome_subject_ids(&outcome.effect, &mut subject_ids);
         let mut actor_ids = Vec::new();
@@ -2394,193 +2451,7 @@ fn apply_strategic_tick_plan(
         });
     }
     *campaign = next;
-    Ok(events)
-}
-
-fn apply_strategic_outcome_effect(
-    campaign: &mut Campaign,
-    effect: &crate::domain::StrategicOutcomeEffect,
-) -> Result<(), KernelError> {
-    use crate::domain::StrategicOutcomeEffect;
-    match effect {
-        StrategicOutcomeEffect::NoMaterialChange { .. } => {}
-        StrategicOutcomeEffect::ResourceCreated {
-            owner_subject_id,
-            resource,
-        } => insert_subject_resource(campaign, owner_subject_id, resource)?,
-        StrategicOutcomeEffect::ResourceConsumed {
-            owner_subject_id,
-            resource,
-        } => remove_subject_resource(campaign, owner_subject_id, resource)?,
-        StrategicOutcomeEffect::ResourceTransferred {
-            from_subject_id,
-            to_subject_id,
-            resource,
-        } => {
-            remove_subject_resource(campaign, from_subject_id, resource)?;
-            insert_subject_resource(campaign, to_subject_id, resource)?;
-        }
-        StrategicOutcomeEffect::GestaltPressure {
-            gestalt_id,
-            pressure_additions,
-            pressure_resolutions,
-        } => {
-            let gestalt = campaign
-                .gestalts
-                .get_mut(gestalt_id)
-                .ok_or_else(|| KernelError::Invalid("outcome gestalt vanished".into()))?;
-            crate::resolution::validate_gestalt_pressure_transition(
-                &gestalt.pressures,
-                pressure_additions,
-                pressure_resolutions,
-            )
-            .map_err(|error| KernelError::Invalid(error.to_string()))?;
-            let resolved = pressure_resolutions.iter().collect::<BTreeSet<_>>();
-            gestalt
-                .pressures
-                .retain(|pressure| !resolved.contains(pressure));
-            gestalt.pressures.extend(pressure_additions.iter().cloned());
-            gestalt.version = gestalt.version.saturating_add(1);
-        }
-        StrategicOutcomeEffect::AgencyRelationShift {
-            relation_id,
-            strength_delta,
-        } => {
-            let relation = campaign
-                .agency_relations
-                .get_mut(relation_id)
-                .ok_or_else(|| KernelError::Invalid("outcome relation vanished".into()))?;
-            relation.strength = u8::try_from(i16::from(relation.strength) + strength_delta)
-                .map_err(|_| KernelError::Invalid("outcome relation shift overflowed".into()))?;
-        }
-        StrategicOutcomeEffect::MemberMemory { member_id, memory } => {
-            let member = campaign
-                .gestalt_members
-                .get_mut(member_id)
-                .ok_or_else(|| KernelError::Invalid("outcome member vanished".into()))?;
-            if !member.memories.contains(memory) {
-                member.memories.push(memory.clone());
-            }
-            member.version = member.version.saturating_add(1);
-        }
-        StrategicOutcomeEffect::MemberObligation {
-            member_id,
-            obligation,
-        } => {
-            let member = campaign
-                .gestalt_members
-                .get_mut(member_id)
-                .ok_or_else(|| KernelError::Invalid("outcome member vanished".into()))?;
-            member.obligations.insert(obligation.clone());
-            member.version = member.version.saturating_add(1);
-        }
-        StrategicOutcomeEffect::MemberRelationship {
-            member_id,
-            other_subject_id,
-            description,
-        } => {
-            let member = campaign
-                .gestalt_members
-                .get_mut(member_id)
-                .ok_or_else(|| KernelError::Invalid("outcome member vanished".into()))?;
-            member
-                .relationships
-                .insert(other_subject_id.clone(), description.clone());
-            member.version = member.version.saturating_add(1);
-        }
-        StrategicOutcomeEffect::KnowledgeLearned {
-            owner_subject_id,
-            fact_id,
-        } => {
-            let statement = campaign
-                .facts
-                .get(fact_id)
-                .map(|fact| fact.statement.clone())
-                .ok_or_else(|| KernelError::Invalid("outcome fact vanished".into()))?;
-            if let Some(member_id) = owner_subject_id.strip_prefix("member:") {
-                let member = campaign
-                    .gestalt_members
-                    .get_mut(member_id)
-                    .ok_or_else(|| KernelError::Invalid("outcome member vanished".into()))?;
-                member.knowledge_removals.remove(&statement);
-                member.knowledge_additions.insert(statement);
-                member.version = member.version.saturating_add(1);
-            } else {
-                let gestalt = campaign.gestalts.get_mut(owner_subject_id).ok_or_else(|| {
-                    KernelError::Invalid("outcome knowledge owner vanished".into())
-                })?;
-                gestalt.shared_knowledge.insert(statement);
-                gestalt.version = gestalt.version.saturating_add(1);
-            }
-        }
-    }
-    Ok(())
-}
-
-fn insert_subject_resource(
-    campaign: &mut Campaign,
-    subject_id: &str,
-    resource: &str,
-) -> Result<(), KernelError> {
-    if let Some(member_id) = subject_id.strip_prefix("member:") {
-        let member = campaign
-            .gestalt_members
-            .get_mut(member_id)
-            .ok_or_else(|| KernelError::Invalid("resource member vanished".into()))?;
-        member.equipment.insert(resource.into());
-        member.version = member.version.saturating_add(1);
-        return Ok(());
-    }
-    if let Some(gestalt) = campaign.gestalts.get_mut(subject_id) {
-        gestalt.resources.insert(resource.into());
-        gestalt.version = gestalt.version.saturating_add(1);
-        return Ok(());
-    }
-    if let Some(institution) = campaign.institutions.get_mut(subject_id) {
-        institution.resources.push(resource.into());
-        institution.resources.sort();
-        institution.resources.dedup();
-        return Ok(());
-    }
-    if let Some(actor) = campaign.actors.get_mut(subject_id) {
-        actor.equipment.insert(resource.into());
-        return Ok(());
-    }
-    Err(KernelError::Invalid("resource recipient vanished".into()))
-}
-
-fn remove_subject_resource(
-    campaign: &mut Campaign,
-    subject_id: &str,
-    resource: &str,
-) -> Result<(), KernelError> {
-    let removed = if let Some(member_id) = subject_id.strip_prefix("member:") {
-        let member = campaign
-            .gestalt_members
-            .get_mut(member_id)
-            .ok_or_else(|| KernelError::Invalid("resource member vanished".into()))?;
-        let removed = member.equipment.remove(resource);
-        member.version = member.version.saturating_add(1);
-        removed
-    } else if let Some(gestalt) = campaign.gestalts.get_mut(subject_id) {
-        let removed = gestalt.resources.remove(resource);
-        gestalt.version = gestalt.version.saturating_add(1);
-        removed
-    } else if let Some(institution) = campaign.institutions.get_mut(subject_id) {
-        let previous = institution.resources.len();
-        institution.resources.retain(|value| value != resource);
-        institution.resources.len() != previous
-    } else if let Some(actor) = campaign.actors.get_mut(subject_id) {
-        actor.equipment.remove(resource)
-    } else {
-        return Err(KernelError::Invalid("resource owner vanished".into()));
-    };
-    if !removed {
-        return Err(KernelError::Invalid(
-            "outcome attempted to spend a missing resource".into(),
-        ));
-    }
-    Ok(())
+    Ok(AppliedStrategicTickPlan { events, mutation })
 }
 
 fn collect_outcome_subject_ids(
@@ -2698,113 +2569,11 @@ fn agency_subject_name(campaign: &Campaign, subject_id: &str) -> Result<String, 
         .ok_or_else(|| KernelError::Invalid("strategic activity target vanished".into()))
 }
 
-fn rebase_member_migration(
-    campaign: &mut Campaign,
-    action: &crate::domain::StrategicMemberMigration,
-) -> Result<(), KernelError> {
-    let effective_capabilities =
-        crate::resolution::effective_member_capabilities(campaign, &action.member_id)
-            .map_err(|error| KernelError::Invalid(error.to_string()))?;
-    let effective_knowledge =
-        crate::resolution::effective_member_knowledge(campaign, &action.member_id)
-            .map_err(|error| KernelError::Invalid(error.to_string()))?;
-    let source_goals = campaign.gestalts[&action.source_gestalt_id].goals.clone();
-    let destination = campaign.gestalts[&action.destination_gestalt_id].clone();
-    let effective_goals = {
-        let member = &campaign.gestalt_members[&action.member_id];
-        if member.goals.is_empty() {
-            source_goals
-        } else {
-            member.goals.clone()
-        }
-    };
-    let member = campaign
-        .gestalt_members
-        .get_mut(&action.member_id)
-        .expect("member migration was validated");
-    member.capability_additions = effective_capabilities
-        .difference(&destination.shared_capabilities)
-        .cloned()
-        .collect();
-    member.capability_removals = destination
-        .shared_capabilities
-        .difference(&effective_capabilities)
-        .cloned()
-        .collect();
-    member.knowledge_additions = effective_knowledge
-        .difference(&destination.shared_knowledge)
-        .cloned()
-        .collect();
-    member.knowledge_removals = destination
-        .shared_knowledge
-        .difference(&effective_knowledge)
-        .cloned()
-        .collect();
-    member.goals = if effective_goals == destination.goals {
-        vec![]
-    } else {
-        effective_goals
-    };
-    member.gestalt_id = action.destination_gestalt_id.clone();
-    member.last_location_id = Some(action.destination_location_id.clone());
-    member.version = member.version.saturating_add(1);
-    campaign
-        .gestalts
-        .get_mut(&action.source_gestalt_id)
-        .expect("source gestalt was validated")
-        .version += 1;
-    campaign
-        .gestalts
-        .get_mut(&action.destination_gestalt_id)
-        .expect("destination gestalt was validated")
-        .version += 1;
-    Ok(())
-}
-
-fn deterministic_strategic_tick(
-    campaign: &mut Campaign,
-    tick_number: u64,
-) -> Vec<crate::domain::Event> {
-    let mut events = Vec::new();
-    for institution in campaign.institutions.values_mut() {
-        let summary = institution
-            .goals
-            .first()
-            .map(|goal| format!("{} advances its interest: {}", institution.name, goal))
-            .unwrap_or_else(|| format!("{} consolidates its current position", institution.name));
-        institution.posture = format!("acting after strategic tick {tick_number}");
-        events.push(crate::domain::Event {
-            id: format!("strategic:{}:{}", campaign.revision + 1, institution.id),
-            at: campaign.world_time,
-            kind: "institution_action".into(),
-            summary,
-            actor_ids: vec![],
-            institution_ids: vec![institution.id.clone()],
-            gestalt_ids: vec![],
-            location_ids: vec![],
-            public_channels: vec![format!("institution:{}", institution.id)],
-        });
-    }
-    for gestalt in campaign.gestalts.values_mut() {
-        gestalt.version += 1;
-        let summary = gestalt
-            .goals
-            .first()
-            .map(|goal| format!("{} collectively advances: {}", gestalt.name, goal))
-            .unwrap_or_else(|| format!("{} carries on its shared routine", gestalt.name));
-        events.push(crate::domain::Event {
-            id: format!("strategic:{}:gestalt:{}", campaign.revision + 1, gestalt.id),
-            at: campaign.world_time,
-            kind: "gestalt_action".into(),
-            summary,
-            actor_ids: vec![],
-            institution_ids: vec![],
-            gestalt_ids: vec![gestalt.id.clone()],
-            location_ids: vec![gestalt.home_location_id.clone()],
-            public_channels: vec![format!("gestalt:{}", gestalt.id)],
-        });
-    }
-    events
+fn deterministic_strategic_tick_plan() -> StrategicTickPlan {
+    // Deterministic time and clock obligations are lowered by the same wave
+    // transition. Without an admitted Persona wave there is no authority to
+    // invent actor or institution activity.
+    StrategicTickPlan::default()
 }
 
 fn validate_public_channels(channels: &[String]) -> Result<(), KernelError> {
@@ -2905,6 +2674,10 @@ fn commit_strategic_tick(
     model_receipt_hash: Option<String>,
     event_ids: Vec<String>,
     resolution_wave: Option<ResolutionWaveCommit>,
+    mutation: Option<(
+        crate::legacy_transition::LoweredLegacyTransition,
+        crate::transition::WorldMutationReceipt,
+    )>,
 ) -> Result<CommandResult, KernelError> {
     crate::resolution::ensure_agency_profiles(&mut campaign);
     let previous_revision = campaign.revision;
@@ -2949,6 +2722,9 @@ fn commit_strategic_tick(
             &receipt,
             &strategic,
             resolution_wave.as_ref(),
+            mutation
+                .as_ref()
+                .map(|(transition, receipt)| (&transition.authority, &transition.batch, receipt)),
         )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
@@ -3005,6 +2781,49 @@ fn commit(
             &campaign,
             &format!("{}-{}", campaign.id, campaign.revision),
             &receipt,
+        )
+        .map_err(persist)?;
+    Ok(CommandResult::Committed { campaign, receipt })
+}
+
+fn commit_mutation_transition(
+    store: &CampaignStore,
+    row: cultcache_legacy::CultCacheEnvelope,
+    mut campaign: Campaign,
+    kind: &str,
+    roll: Option<RollReceipt>,
+    transition: crate::legacy_transition::LoweredLegacyTransition,
+    mutation_receipt: crate::transition::WorldMutationReceipt,
+) -> Result<CommandResult, KernelError> {
+    crate::resolution::ensure_agency_profiles(&mut campaign);
+    let previous_revision = campaign.revision;
+    campaign.revision += 1;
+    if mutation_receipt.previous_world_revision != previous_revision
+        || mutation_receipt.world_revision != campaign.revision
+    {
+        return Err(KernelError::Invalid(
+            "mutation receipt does not bind the campaign transition".into(),
+        ));
+    }
+    let receipt = WorldCommitReceipt {
+        schema: "ghostlight.world_commit_receipt.v1".into(),
+        campaign_id: campaign.id,
+        previous_revision,
+        revision: campaign.revision,
+        command_kind: kind.into(),
+        committed_at: mutation_receipt.committed_at,
+        roll,
+    };
+    store
+        .append_world_transition_with_mutation(
+            &row,
+            "ghostlight.campaign.v1",
+            &campaign,
+            &format!("{}-{}", campaign.id, campaign.revision),
+            &receipt,
+            &transition.authority,
+            &transition.batch,
+            &mutation_receipt,
         )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
@@ -3095,7 +2914,17 @@ fn commit_governed_time_advance(
     proposal_row: cultcache_legacy::CultCacheEnvelope,
     mut proposal: TimeAdvanceProposal,
 ) -> Result<CommandResult, KernelError> {
-    campaign.world_time += Duration::minutes(i64::from(proposal.minutes));
+    let transition = crate::legacy_transition::lower_time_advance(
+        &campaign,
+        proposal.minutes,
+        crate::transition::MutationProcedure::Governance,
+        &proposal.id,
+        Utc::now() + Duration::minutes(5),
+    )
+    .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    let mutation_receipt =
+        crate::legacy_transition::apply_lowered_transition(&mut campaign, &transition, Utc::now())
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
     campaign.last_player_activity = Utc::now();
     campaign.away_ticks_processed = 0;
     campaign.pending_ticks = 0;
@@ -3109,11 +2938,18 @@ fn commit_governed_time_advance(
         previous_revision,
         revision: campaign.revision,
         command_kind: "unanimous_time_advance".into(),
-        committed_at: Utc::now(),
+        committed_at: mutation_receipt.committed_at,
         roll: None,
     };
     store
-        .commit_time_advance(&campaign_row, &campaign, &proposal_row, &proposal, &receipt)
+        .commit_time_advance(
+            &campaign_row,
+            &campaign,
+            &proposal_row,
+            &proposal,
+            &receipt,
+            (&transition.authority, &transition.batch, &mutation_receipt),
+        )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
 }
@@ -3140,23 +2976,32 @@ fn commit_governed_group_travel(
     let route_minutes = campaign
         .locations
         .get(&proposal.origin_location_id)
-        .and_then(|location| location.routes.get(&proposal.destination_location_id))
-        .map(|route| route.travel_minutes)
+        .and_then(|location| {
+            location.routes.iter().find_map(|(route_id, route)| {
+                (route.destination_id == proposal.destination_location_id)
+                    .then_some(route.travel_minutes)
+            })
+        })
         .ok_or_else(|| KernelError::Invalid("group-travel route no longer exists".into()))?;
     if route_minutes != proposal.travel_minutes {
         return Err(KernelError::Invalid(
             "group-travel route changed after proposal".into(),
         ));
     }
-    for actor_id in &active_actor_ids {
-        campaign
-            .actors
-            .get_mut(actor_id)
-            .expect("active actor was checked")
-            .location_id = proposal.destination_location_id.clone();
-    }
+    let transition = crate::legacy_transition::lower_group_travel(
+        &campaign,
+        &active_actor_ids,
+        &proposal.origin_location_id,
+        &proposal.destination_location_id,
+        route_minutes,
+        &proposal.id,
+        Utc::now() + Duration::minutes(5),
+    )
+    .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    let mutation_receipt =
+        crate::legacy_transition::apply_lowered_transition(&mut campaign, &transition, Utc::now())
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
     crate::resolution::ensure_agency_profiles(&mut campaign);
-    campaign.world_time += Duration::minutes(i64::from(route_minutes));
     campaign.last_player_activity = Utc::now();
     campaign.away_ticks_processed = 0;
     campaign.pending_ticks = 0;
@@ -3186,11 +3031,18 @@ fn commit_governed_group_travel(
         previous_revision,
         revision: campaign.revision,
         command_kind: "unanimous_group_travel".into(),
-        committed_at: Utc::now(),
+        committed_at: mutation_receipt.committed_at,
         roll: None,
     };
     store
-        .commit_group_travel(&campaign_row, &campaign, &proposal_row, &proposal, &receipt)
+        .commit_group_travel(
+            &campaign_row,
+            &campaign,
+            &proposal_row,
+            &proposal,
+            &receipt,
+            (&transition.authority, &transition.batch, &mutation_receipt),
+        )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
 }
@@ -4815,6 +4667,12 @@ mod tests {
         assert!(receipt.roll.is_some());
         assert_eq!(store.keys("world_commit_receipt.v1").unwrap().len(), 1);
         assert_eq!(store.keys("roll_receipt.v1").unwrap().len(), 1);
+        assert_eq!(
+            store.keys("mutation_authority_envelope.v1").unwrap().len(),
+            1
+        );
+        assert_eq!(store.keys("world_mutation_batch.v1").unwrap().len(), 1);
+        assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
     }
 
     #[tokio::test]

@@ -100,6 +100,7 @@ pub struct MutationIntent {
 #[serde(rename_all = "snake_case")]
 pub enum MutationProcedure {
     ForegroundAttempt,
+    DirectCommand,
     NpcAttempt,
     ReactionAppraisal,
     StrategicOutcome,
@@ -113,7 +114,14 @@ pub enum MutationProcedure {
 pub enum MutationOutcomeBinding {
     Foreground(OutcomeBand),
     Strategic(StrategicOutcomeBand),
+    StrategicWave(Vec<StrategicOutcomeSourceBinding>),
     Deterministic,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct StrategicOutcomeSourceBinding {
+    pub action_digest: String,
+    pub band: StrategicOutcomeBand,
 }
 
 #[derive(
@@ -217,7 +225,11 @@ pub enum MutationSubjectRole {
 pub enum MutationStringRole {
     RouteId,
     ResourceKind,
+    ResourceLabel,
     RecipeId,
+    Description,
+    Summary,
+    RetirementReason,
     CapabilityId,
     ConditionId,
     CommitmentId,
@@ -240,6 +252,7 @@ pub enum MutationIntegerRole {
     Quantity,
     Integrity,
     Severity,
+    RelationshipStrengthDelta,
     PressureAmount,
     TravelMinutes,
     WorldMinutes,
@@ -436,6 +449,7 @@ pub enum WorldMutation {
         #[serde(default)]
         related_resources: Vec<SubjectRef>,
         resource_kind: Option<String>,
+        resource_label: Option<String>,
         recipe_id: Option<String>,
         quantity: Option<i64>,
         integrity: Option<i64>,
@@ -471,6 +485,7 @@ pub enum WorldMutation {
         relationship_id: String,
         #[schemars(length(max = 1000))]
         description: Option<String>,
+        strength_delta: Option<i64>,
     },
     ChangePressure {
         pressure: SubjectRef,
@@ -627,6 +642,7 @@ pub struct ResourceComponentState {
     pub schema: String,
     pub resource: SubjectRef,
     pub resource_kind: String,
+    pub label: String,
     pub quantity: i64,
     pub integrity: i64,
     #[serde(default)]
@@ -668,6 +684,7 @@ pub struct RelationshipComponentState {
     pub source: SubjectRef,
     pub target: SubjectRef,
     pub description: String,
+    pub strength: Option<i64>,
     pub version: u64,
 }
 
@@ -940,13 +957,22 @@ fn apply_component_mutation(
             subject,
             from_place,
             to_place,
-            ..
+            route_id,
         } => {
             active_subject(state, subject)?;
             active_subject(state, from_place)?;
             active_subject(state, to_place)?;
             require_kind(from_place, SubjectKind::Place)?;
             require_kind(to_place, SubjectKind::Place)?;
+            let route = state
+                .topology
+                .get(route_id)
+                .ok_or_else(|| anyhow!("relocation route does not exist"))?;
+            if !route.open || route.from_place != *from_place || route.to_place != *to_place {
+                return Err(anyhow!(
+                    "relocation route does not admit the exact origin and destination"
+                ));
+            }
             if state.occupancy.get(subject) != Some(from_place) {
                 return Err(anyhow!(
                     "relocation origin does not match canonical occupancy"
@@ -974,6 +1000,7 @@ fn apply_component_mutation(
             custodian,
             related_resources,
             resource_kind,
+            resource_label,
             recipe_id,
             quantity,
             integrity,
@@ -984,6 +1011,7 @@ fn apply_component_mutation(
             custodian.as_ref(),
             related_resources,
             resource_kind.as_deref(),
+            resource_label.as_deref(),
             recipe_id.as_deref(),
             *quantity,
             *integrity,
@@ -1112,6 +1140,7 @@ fn apply_component_mutation(
             operation,
             relationship_id,
             description,
+            strength_delta,
         } => apply_relationship_mutation(
             state,
             source,
@@ -1119,6 +1148,7 @@ fn apply_component_mutation(
             operation,
             relationship_id,
             description.as_deref(),
+            *strength_delta,
         )?,
         ChangePressure {
             pressure,
@@ -1253,12 +1283,28 @@ fn apply_resource_mutation(
     custodian: Option<&SubjectRef>,
     related_resources: &[SubjectRef],
     resource_kind: Option<&str>,
+    resource_label: Option<&str>,
     recipe_id: Option<&str>,
     quantity: Option<i64>,
     integrity: Option<i64>,
 ) -> Result<()> {
     require_kind(resource, SubjectKind::Resource)?;
     let version = next_component_version(state);
+    if !matches!(operation, ResourceMutationOperation::Create) {
+        let custodian =
+            custodian.ok_or_else(|| anyhow!("resource mutation lacks exact custody authority"))?;
+        active_subject(state, custodian)?;
+        if matches!(operation, ResourceMutationOperation::Combine) {
+            if related_resources
+                .iter()
+                .any(|input| state.custody.get(input) != Some(custodian))
+            {
+                return Err(anyhow!("resource combination exceeds exact custody"));
+            }
+        } else if state.custody.get(resource) != Some(custodian) {
+            return Err(anyhow!("resource mutation exceeds exact custody"));
+        }
+    }
     match operation {
         ResourceMutationOperation::Create => {
             if state.subjects.contains_key(resource) || state.resources.contains_key(resource) {
@@ -1273,6 +1319,9 @@ fn apply_resource_mutation(
             let resource_kind = resource_kind
                 .filter(|value| !value.trim().is_empty())
                 .ok_or_else(|| anyhow!("resource creation lacks a kind"))?;
+            let resource_label = resource_label
+                .filter(|value| !value.trim().is_empty())
+                .ok_or_else(|| anyhow!("resource creation lacks a label"))?;
             state.subjects.insert(
                 resource.clone(),
                 TypedSubject {
@@ -1293,6 +1342,7 @@ fn apply_resource_mutation(
                     schema: "ghostlight.resource_component.v1".into(),
                     resource: resource.clone(),
                     resource_kind: resource_kind.into(),
+                    label: resource_label.into(),
                     quantity,
                     integrity: integrity.unwrap_or(100),
                     qualities: BTreeSet::new(),
@@ -1304,11 +1354,7 @@ fn apply_resource_mutation(
         ResourceMutationOperation::Transform => {
             let _recipe =
                 recipe_id.ok_or_else(|| anyhow!("resource transformation lacks recipe"))?;
-            let owner = state
-                .custody
-                .get(resource)
-                .cloned()
-                .ok_or_else(|| anyhow!("resource has no custodian"))?;
+            let owner = custodian.expect("non-create custody checked").clone();
             for input in related_resources {
                 active_subject(state, input)?;
                 require_kind(input, SubjectKind::Resource)?;
@@ -1325,6 +1371,9 @@ fn apply_resource_mutation(
                 .ok_or_else(|| anyhow!("resource does not exist"))?;
             if let Some(kind) = resource_kind {
                 value.resource_kind = kind.into();
+            }
+            if let Some(label) = resource_label {
+                value.label = label.into();
             }
             if quantity.is_some_and(|quantity| quantity != value.quantity) {
                 return Err(anyhow!(
@@ -1390,11 +1439,7 @@ fn apply_resource_mutation(
             if state.subjects.contains_key(child) {
                 return Err(anyhow!("resource split child already exists"));
             }
-            let owner = state
-                .custody
-                .get(resource)
-                .cloned()
-                .ok_or_else(|| anyhow!("resource has no custodian"))?;
+            let owner = custodian.expect("non-create custody checked").clone();
             let source = state
                 .resources
                 .get_mut(resource)
@@ -1410,6 +1455,7 @@ fn apply_resource_mutation(
                 schema: source.schema.clone(),
                 resource: child.clone(),
                 resource_kind: source.resource_kind.clone(),
+                label: resource_label.unwrap_or(&source.label).into(),
                 quantity: amount,
                 integrity: source.integrity,
                 qualities: source.qualities.clone(),
@@ -1443,11 +1489,7 @@ fn apply_resource_mutation(
             let first = related_resources
                 .first()
                 .expect("length checked before first");
-            let owner = state
-                .custody
-                .get(first)
-                .cloned()
-                .ok_or_else(|| anyhow!("combined input has no custodian"))?;
+            let owner = custodian.expect("non-create custody checked").clone();
             let first_state = state
                 .resources
                 .get(first)
@@ -1495,6 +1537,7 @@ fn apply_resource_mutation(
                     schema: first_state.schema,
                     resource: resource.clone(),
                     resource_kind: resource_kind.unwrap_or(&first_state.resource_kind).into(),
+                    label: resource_label.unwrap_or(&first_state.label).into(),
                     quantity: total,
                     integrity: integrity.unwrap_or(first_state.integrity),
                     qualities: first_state.qualities,
@@ -1598,6 +1641,7 @@ fn apply_relationship_mutation(
     operation: &RelationshipMutationOperation,
     relationship_id: &str,
     description: Option<&str>,
+    strength_delta: Option<i64>,
 ) -> Result<()> {
     active_subject(state, source)?;
     active_subject(state, target)?;
@@ -1606,6 +1650,9 @@ fn apply_relationship_mutation(
         RelationshipMutationOperation::Create => {
             if state.relationships.contains_key(relationship_id) {
                 return Err(anyhow!("relationship already exists"));
+            }
+            if strength_delta.is_some_and(|value| !(0..=100).contains(&value)) {
+                return Err(anyhow!("relationship strength exceeds bounds"));
             }
             state.relationships.insert(
                 relationship_id.into(),
@@ -1616,6 +1663,7 @@ fn apply_relationship_mutation(
                         .filter(|value| !value.trim().is_empty())
                         .ok_or_else(|| anyhow!("relationship creation lacks a description"))?
                         .into(),
+                    strength: strength_delta,
                     version,
                 },
             );
@@ -1628,10 +1676,22 @@ fn apply_relationship_mutation(
             if value.source != *source || value.target != *target {
                 return Err(anyhow!("relationship endpoints do not match"));
             }
-            value.description = description
-                .filter(|description| !description.trim().is_empty())
-                .ok_or_else(|| anyhow!("relationship alteration lacks a description"))?
-                .into();
+            if let Some(description) = description.filter(|value| !value.trim().is_empty()) {
+                value.description = description.into();
+            }
+            if let Some(delta) = strength_delta {
+                let current = value
+                    .strength
+                    .ok_or_else(|| anyhow!("relationship has no numeric strength"))?;
+                let next = current
+                    .checked_add(delta)
+                    .filter(|next| (0..=100).contains(next))
+                    .ok_or_else(|| anyhow!("relationship strength exceeds bounds"))?;
+                value.strength = Some(next);
+            }
+            if description.is_none() && strength_delta.is_none() {
+                return Err(anyhow!("relationship alteration is empty"));
+            }
             value.version = version;
         }
         RelationshipMutationOperation::Retire => {
@@ -2258,6 +2318,7 @@ pub fn validate_component_world(state: &ComponentWorldState) -> Result<()> {
         active_subject(state, resource)?;
         require_kind(resource, SubjectKind::Resource)?;
         if &value.resource != resource
+            || value.label.trim().is_empty()
             || value.quantity <= 0
             || value.integrity < 0
             || value.integrity > 100
@@ -2796,27 +2857,36 @@ fn string_schema_fields(
         Relocate => vec![(RouteId, "route_id", Required)],
         ResourceCreate => vec![
             (ResourceKind, "resource_kind", Required),
+            (ResourceLabel, "resource_label", Required),
             (RecipeId, "recipe_id", Optional),
         ],
         ResourceTransform | ResourceSplit | ResourceCombine => vec![
             (ResourceKind, "resource_kind", Optional),
+            (ResourceLabel, "resource_label", Optional),
             (RecipeId, "recipe_id", Required),
         ],
         ResourceConsume | ResourceDamage | ResourceRepair => vec![
             (ResourceKind, "resource_kind", Optional),
+            (ResourceLabel, "resource_label", Optional),
             (RecipeId, "recipe_id", Optional),
         ],
-        CapabilityGrant | CapabilityAlter | CapabilitySuspend | CapabilityRetire => {
-            vec![(CapabilityId, "capability_id", Required)]
-        }
-        ConditionApply | ConditionAlter | ConditionClear => {
-            vec![(ConditionId, "condition_id", Required)]
-        }
+        CapabilityGrant | CapabilityAlter | CapabilitySuspend | CapabilityRetire => vec![
+            (CapabilityId, "capability_id", Required),
+            (Description, "description", Optional),
+        ],
+        ConditionApply | ConditionAlter | ConditionClear => vec![
+            (ConditionId, "condition_id", Required),
+            (Description, "description", Optional),
+        ],
         CommitmentCreate | CommitmentAlter | CommitmentFulfill | CommitmentDefault
-        | CommitmentRetire => vec![(CommitmentId, "commitment_id", Required)],
-        RelationshipCreate | RelationshipAlter | RelationshipRetire => {
-            vec![(RelationshipId, "relationship_id", Required)]
-        }
+        | CommitmentRetire => vec![
+            (CommitmentId, "commitment_id", Required),
+            (Description, "description", Optional),
+        ],
+        RelationshipCreate | RelationshipAlter | RelationshipRetire => vec![
+            (RelationshipId, "relationship_id", Required),
+            (Description, "description", Optional),
+        ],
         PressureCreate => vec![(PressureLabel, "label", Required)],
         PressureAdvance | PressureReduce | PressureResolve | PressureRetire => {
             vec![(PressureLabel, "label", Optional)]
@@ -2824,6 +2894,7 @@ fn string_schema_fields(
         MemoryRecord | MemoryRevise | MemoryRetire => vec![
             (MemoryId, "memory_id", Required),
             (EventId, "event_id", Optional),
+            (Summary, "summary", Optional),
         ],
         PostureChange => vec![(Posture, "posture", Required)],
         IdentityAdopt => vec![
@@ -2838,10 +2909,10 @@ fn string_schema_fields(
             vec![(TopologyEdgeId, "edge_id", Required)]
         }
         AdmitEntity => vec![(AdmissionReceiptId, "admission_receipt_id", Required)],
+        RetireEntity => vec![(RetirementReason, "reason", Required)],
         TransferCustody | KnowledgeAcquire | KnowledgeCommunicate | KnowledgeConceal
         | KnowledgeCorrect | KnowledgeInvalidate | PopulationJoin | PopulationLeave
-        | PopulationTransfer | PopulationSplit | PopulationMerge | RetireEntity
-        | AdvanceWorldTime => vec![],
+        | PopulationTransfer | PopulationSplit | PopulationMerge | AdvanceWorldTime => vec![],
     }
 }
 
@@ -2867,6 +2938,9 @@ fn integer_schema_fields(
         ConditionApply | ConditionAlter | ConditionClear => {
             vec![(Severity, "severity", Optional)]
         }
+        RelationshipCreate | RelationshipAlter => {
+            vec![(RelationshipStrengthDelta, "strength_delta", Optional)]
+        }
         PressureAdvance | PressureReduce => vec![(PressureAmount, "amount", Required)],
         PressureCreate | PressureResolve | PressureRetire => {
             vec![(PressureAmount, "amount", Optional)]
@@ -2878,12 +2952,12 @@ fn integer_schema_fields(
         AdvanceWorldTime => vec![(WorldMinutes, "minutes", Required)],
         Relocate | TransferCustody | CapabilityGrant | CapabilityAlter | CapabilitySuspend
         | CapabilityRetire | CommitmentCreate | CommitmentAlter | CommitmentFulfill
-        | CommitmentDefault | CommitmentRetire | RelationshipCreate | RelationshipAlter
-        | RelationshipRetire | KnowledgeAcquire | KnowledgeCommunicate | KnowledgeConceal
-        | KnowledgeCorrect | KnowledgeInvalidate | MemoryRecord | MemoryRevise | MemoryRetire
-        | PostureChange | PopulationJoin | PopulationLeave | PopulationTransfer
-        | PopulationSplit | PopulationMerge | IdentityAdopt | IdentityDisclose
-        | IdentityRestrict | IdentityRetire | AdmitEntity | RetireEntity => vec![],
+        | CommitmentDefault | CommitmentRetire | RelationshipRetire | KnowledgeAcquire
+        | KnowledgeCommunicate | KnowledgeConceal | KnowledgeCorrect | KnowledgeInvalidate
+        | MemoryRecord | MemoryRevise | MemoryRetire | PostureChange | PopulationJoin
+        | PopulationLeave | PopulationTransfer | PopulationSplit | PopulationMerge
+        | IdentityAdopt | IdentityDisclose | IdentityRestrict | IdentityRetire | AdmitEntity
+        | RetireEntity => vec![],
     }
 }
 
@@ -3253,28 +3327,60 @@ impl WorldMutation {
             }
             MutateResource {
                 resource_kind,
+                resource_label,
                 recipe_id,
                 ..
             } => {
                 if let Some(value) = resource_kind {
                     values.push((MutationStringRole::ResourceKind, value.clone()));
                 }
+                if let Some(value) = resource_label {
+                    values.push((MutationStringRole::ResourceLabel, value.clone()));
+                }
                 if let Some(value) = recipe_id {
                     values.push((MutationStringRole::RecipeId, value.clone()));
                 }
             }
-            ChangeCapability { capability_id, .. } => {
-                values.push((MutationStringRole::CapabilityId, capability_id.clone()))
+            ChangeCapability {
+                capability_id,
+                description,
+                ..
+            } => {
+                values.push((MutationStringRole::CapabilityId, capability_id.clone()));
+                if let Some(value) = description {
+                    values.push((MutationStringRole::Description, value.clone()));
+                }
             }
-            ChangeCondition { condition_id, .. } => {
-                values.push((MutationStringRole::ConditionId, condition_id.clone()))
+            ChangeCondition {
+                condition_id,
+                description,
+                ..
+            } => {
+                values.push((MutationStringRole::ConditionId, condition_id.clone()));
+                if let Some(value) = description {
+                    values.push((MutationStringRole::Description, value.clone()));
+                }
             }
-            ChangeCommitment { commitment_id, .. } => {
-                values.push((MutationStringRole::CommitmentId, commitment_id.clone()))
+            ChangeCommitment {
+                commitment_id,
+                description,
+                ..
+            } => {
+                values.push((MutationStringRole::CommitmentId, commitment_id.clone()));
+                if let Some(value) = description {
+                    values.push((MutationStringRole::Description, value.clone()));
+                }
             }
             ChangeRelationship {
-                relationship_id, ..
-            } => values.push((MutationStringRole::RelationshipId, relationship_id.clone())),
+                relationship_id,
+                description,
+                ..
+            } => {
+                values.push((MutationStringRole::RelationshipId, relationship_id.clone()));
+                if let Some(value) = description {
+                    values.push((MutationStringRole::Description, value.clone()));
+                }
+            }
             ChangePressure { label, .. } => {
                 if let Some(value) = label {
                     values.push((MutationStringRole::PressureLabel, value.clone()));
@@ -3283,11 +3389,15 @@ impl WorldMutation {
             ChangeMemory {
                 memory_id,
                 event_id,
+                summary,
                 ..
             } => {
                 values.push((MutationStringRole::MemoryId, memory_id.clone()));
                 if let Some(value) = event_id {
                     values.push((MutationStringRole::EventId, value.clone()));
+                }
+                if let Some(value) = summary {
+                    values.push((MutationStringRole::Summary, value.clone()));
                 }
             }
             ChangePosture { posture, .. } => {
@@ -3313,11 +3423,13 @@ impl WorldMutation {
                 MutationStringRole::AdmissionReceiptId,
                 admission_receipt_id.clone(),
             )),
+            RetireEntity { reason, .. } => {
+                values.push((MutationStringRole::RetirementReason, reason.clone()))
+            }
             TransferCustody { .. }
             | ChangeKnowledge { .. }
             | ChangePopulationMembership { .. }
             | ChangePopulationLineage { .. }
-            | RetireEntity { .. }
             | AdvanceWorldTime { .. } => {}
         }
         values
@@ -3344,6 +3456,11 @@ impl WorldMutation {
                     values.push((MutationIntegerRole::Severity, *value));
                 }
             }
+            ChangeRelationship { strength_delta, .. } => {
+                if let Some(value) = strength_delta {
+                    values.push((MutationIntegerRole::RelationshipStrengthDelta, *value));
+                }
+            }
             ChangePressure { amount, .. } => {
                 if let Some(value) = amount {
                     values.push((MutationIntegerRole::PressureAmount, *value));
@@ -3361,7 +3478,6 @@ impl WorldMutation {
             | TransferCustody { .. }
             | ChangeCapability { .. }
             | ChangeCommitment { .. }
-            | ChangeRelationship { .. }
             | ChangeKnowledge { .. }
             | ChangeMemory { .. }
             | ChangePosture { .. }
@@ -3392,6 +3508,7 @@ impl WorldMutation {
                 operation,
                 custodian,
                 related_resources,
+                resource_label,
                 quantity,
                 integrity,
                 ..
@@ -3418,14 +3535,41 @@ impl WorldMutation {
                 ResourceMutationOperation::Create if custodian.is_none() => {
                     return Err(anyhow!("resource creation requires an exact custodian"));
                 }
+                ResourceMutationOperation::Create
+                    if resource_label.as_deref().is_none_or(str::is_empty) =>
+                {
+                    return Err(anyhow!("resource creation requires an exact label"));
+                }
+                _ if custodian.is_none() => {
+                    return Err(anyhow!(
+                        "resource mutation requires exact custody authority"
+                    ));
+                }
                 _ => {}
             },
             ChangeCapability { capability_id, .. } => nonempty("capability id", capability_id)?,
             ChangeCondition { condition_id, .. } => nonempty("condition id", condition_id)?,
             ChangeCommitment { commitment_id, .. } => nonempty("commitment id", commitment_id)?,
             ChangeRelationship {
-                relationship_id, ..
-            } => nonempty("relationship id", relationship_id)?,
+                operation,
+                relationship_id,
+                description,
+                strength_delta,
+                ..
+            } => {
+                nonempty("relationship id", relationship_id)?;
+                if matches!(operation, RelationshipMutationOperation::Create)
+                    && description.as_deref().is_none_or(str::is_empty)
+                {
+                    return Err(anyhow!("relationship creation requires a description"));
+                }
+                if matches!(operation, RelationshipMutationOperation::Alter)
+                    && description.is_none()
+                    && strength_delta.is_none()
+                {
+                    return Err(anyhow!("relationship alteration is empty"));
+                }
+            }
             ChangePressure {
                 operation, amount, ..
             } if matches!(
@@ -3566,6 +3710,60 @@ impl WorldMutation {
     }
 }
 
+/// Compile a single-use permit that authorizes exactly one already-admitted
+/// semantic mutation. This is the compatibility cut for legacy outcome
+/// records: they may be lowered into the algebra, but they do not retain an
+/// independent write policy.
+pub fn exact_mutation_permit(
+    id: impl Into<String>,
+    mutation: &WorldMutation,
+) -> Result<MutationPermit> {
+    mutation.validate_local_shape()?;
+    let subject_bindings = mutation
+        .subject_roles()
+        .into_iter()
+        .map(|(role, allowed_subjects)| MutationSubjectBinding {
+            role,
+            allowed_subjects,
+        })
+        .collect();
+    let mut string_constraints = BTreeMap::new();
+    for (role, value) in mutation.string_roles() {
+        let length = u16::try_from(value.chars().count())
+            .map_err(|_| anyhow!("world mutation string exceeds permit capacity"))?;
+        let constraint = string_constraints
+            .entry(role)
+            .or_insert_with(|| StringConstraint {
+                allowed_values: BTreeSet::new(),
+                minimum_length: 1,
+                maximum_length: length.max(1),
+            });
+        constraint.maximum_length = constraint.maximum_length.max(length);
+        constraint.allowed_values.insert(value);
+    }
+    let integer_bounds = mutation
+        .integer_roles()
+        .into_iter()
+        .map(|(role, value)| {
+            (
+                role,
+                IntegerBounds {
+                    minimum: value,
+                    maximum: value,
+                },
+            )
+        })
+        .collect();
+    Ok(MutationPermit {
+        id: id.into(),
+        operation: mutation.operation(),
+        subject_bindings,
+        string_constraints,
+        integer_bounds,
+        maximum_uses: 1,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3680,6 +3878,27 @@ mod tests {
                 .to_string()
                 .contains("role Subject")
         );
+    }
+
+    #[test]
+    fn exact_permit_binds_semantic_description_not_only_subject_and_operation() {
+        let mutation = WorldMutation::ChangeRelationship {
+            source: subject(SubjectKind::Actor, "actor:ash"),
+            target: subject(SubjectKind::Actor, "actor:sable"),
+            operation: RelationshipMutationOperation::Create,
+            relationship_id: "relationship:ash:sable".into(),
+            description: Some("Ash trusts Sable with the route.".into()),
+            strength_delta: None,
+        };
+        let permit = exact_mutation_permit("permit:relationship", &mutation).unwrap();
+        validate_permitted_mutation(&permit, &mutation).unwrap();
+
+        let mut rewritten = mutation;
+        let WorldMutation::ChangeRelationship { description, .. } = &mut rewritten else {
+            unreachable!();
+        };
+        *description = Some("Ash owes Sable absolute obedience.".into());
+        assert!(validate_permitted_mutation(&permit, &rewritten).is_err());
     }
 
     #[test]
@@ -3835,6 +4054,7 @@ mod tests {
                     schema: "ghostlight.resource_component.v1".into(),
                     resource: medicine,
                     resource_kind: "medicine".into(),
+                    label: "medicine lot".into(),
                     quantity: 10,
                     integrity: 100,
                     qualities: BTreeSet::new(),
@@ -3873,7 +4093,17 @@ mod tests {
             )]),
             population_lineages: BTreeMap::new(),
             identities: BTreeMap::new(),
-            topology: BTreeMap::new(),
+            topology: BTreeMap::from([(
+                "route:camp-trail".into(),
+                TopologyComponentState {
+                    id: "route:camp-trail".into(),
+                    from_place: camp,
+                    to_place: subject(SubjectKind::Place, "place:trail"),
+                    travel_minutes: 30,
+                    open: true,
+                    version: 4,
+                },
+            )]),
         }
     }
 
@@ -4056,6 +4286,7 @@ mod tests {
                         MutationSubjectRole::RelatedResource,
                         BTreeSet::from([child.clone()]),
                     ),
+                    (MutationSubjectRole::Owner, BTreeSet::from([sable.clone()])),
                 ],
                 vec![(
                     MutationStringRole::RecipeId,
@@ -4100,9 +4331,10 @@ mod tests {
                     WorldMutation::MutateResource {
                         resource: source.clone(),
                         operation: ResourceMutationOperation::Split,
-                        custodian: None,
+                        custodian: Some(sable.clone()),
                         related_resources: vec![child.clone()],
                         resource_kind: None,
+                        resource_label: None,
                         recipe_id: Some("recipe:measure-dose".into()),
                         quantity: Some(4),
                         integrity: None,
