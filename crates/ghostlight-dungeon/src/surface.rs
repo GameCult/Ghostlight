@@ -106,6 +106,11 @@ pub fn player_surface_for_actor(
         .rev()
         .filter(|event| !reported_event_ids.contains(&event.id))
         .filter(|event| {
+            event.kind != "reaction_wave"
+                && event.kind != "group_travel"
+                && !event.actor_ids.iter().any(|actor_id| actor_id == viewer_actor_id)
+        })
+        .filter(|event| {
             player_profile.is_some_and(|profile| {
                 crate::scheduler::subject_perceives_event(
                     viewer_actor_id,
@@ -631,6 +636,64 @@ mod tests {
 
         assert!(encoded.contains("The junction workers reopen the water line."));
         assert!(!encoded.contains("SECRET_REMOTE_EVENT"));
+    }
+
+    #[test]
+    fn player_surface_news_omits_the_viewers_own_turn_and_travel_noise() {
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        campaign.events.extend([
+            crate::domain::Event {
+                id: "event:own-activity".into(),
+                at: Utc::now(),
+                kind: "actor_activity".into(),
+                summary: "PLAYER_PRIVATE_ACTIVITY_SUMMARY".into(),
+                actor_ids: vec!["player".into()],
+                institution_ids: vec![],
+                gestalt_ids: vec![],
+                location_ids: vec!["center".into()],
+                public_channels: vec![],
+            },
+            crate::domain::Event {
+                id: "event:reaction".into(),
+                at: Utc::now(),
+                kind: "reaction_wave".into(),
+                summary: "PLAYER_SPEECH_DUPLICATE".into(),
+                actor_ids: vec!["faction-0000".into()],
+                institution_ids: vec![],
+                gestalt_ids: vec![],
+                location_ids: vec!["center".into()],
+                public_channels: vec![],
+            },
+            crate::domain::Event {
+                id: "event:travel".into(),
+                at: Utc::now(),
+                kind: "group_travel".into(),
+                summary: "PLAYER_TRAVEL_DUPLICATE".into(),
+                actor_ids: vec!["player".into()],
+                institution_ids: vec![],
+                gestalt_ids: vec![],
+                location_ids: vec!["center".into()],
+                public_channels: vec![],
+            },
+            crate::domain::Event {
+                id: "event:other".into(),
+                at: Utc::now(),
+                kind: "institution_action".into(),
+                summary: "The local watch reinforces the gate.".into(),
+                actor_ids: vec![],
+                institution_ids: vec!["faction-0000".into()],
+                gestalt_ids: vec![],
+                location_ids: vec!["center".into()],
+                public_channels: vec![],
+            },
+        ]);
+
+        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+
+        assert!(!encoded.contains("PLAYER_PRIVATE_ACTIVITY_SUMMARY"));
+        assert!(!encoded.contains("PLAYER_SPEECH_DUPLICATE"));
+        assert!(!encoded.contains("PLAYER_TRAVEL_DUPLICATE"));
+        assert!(encoded.contains("The local watch reinforces the gate."));
     }
 
     #[test]
