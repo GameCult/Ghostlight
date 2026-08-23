@@ -730,6 +730,8 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
         migration_destinations: BTreeMap::new(),
         activity_target_ids: crate::resolution::strategic_activity_targets(campaign, id),
         goals: vec![],
+        relationships: BTreeMap::new(),
+        memories: vec![],
         current_posture: None,
         pressures: vec![],
     };
@@ -741,6 +743,8 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
             value.capabilities = actor.capabilities.clone();
             value.resources = actor.equipment.clone();
             value.goals = actor.goals.clone();
+            value.relationships = actor.relationships.clone();
+            value.memories = actor.memories.clone();
             value.pressures = actor
                 .conditions
                 .iter()
@@ -981,6 +985,26 @@ mod tests {
                 .unwrap()
                 .is_empty()
         );
+    }
+
+    #[test]
+    fn canonical_actor_cell_slice_preserves_memory_and_relationship_context() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let expected_goals = vec!["keep the twelve patients together".into()];
+        let expected_memories = vec!["Promised Ash to stay with the twelve.".into()];
+        let expected_relationships =
+            BTreeMap::from([("ash".into(), "trusted with a responsibility".into())]);
+        {
+            let actor = campaign.actors.get_mut("player").unwrap();
+            actor.goals = expected_goals.clone();
+            actor.memories = expected_memories.clone();
+            actor.relationships = expected_relationships.clone();
+        }
+
+        let slice = constituent_slice(&campaign, "player").unwrap();
+        assert_eq!(slice.goals, expected_goals);
+        assert_eq!(slice.memories, expected_memories);
+        assert_eq!(slice.relationships, expected_relationships);
     }
 
     #[test]

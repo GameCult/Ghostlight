@@ -96,7 +96,14 @@ fn main() -> Result<()> {
     for actor in campaign.actors.values() {
         subjects.insert(
             actor.id.clone(),
-            json!({ "kind": "actor", "name": actor.name }),
+            json!({
+                "kind": "actor",
+                "name": actor.name,
+                "goals": actor.goals,
+                "obligations": actor.obligations,
+                "relationships": actor.relationships,
+                "memories": actor.memories,
+            }),
         );
     }
     for institution in campaign.institutions.values() {
@@ -108,13 +115,26 @@ fn main() -> Result<()> {
     for gestalt in campaign.gestalts.values() {
         subjects.insert(
             gestalt.id.clone(),
-            json!({ "kind": "gestalt", "name": gestalt.name }),
+            json!({
+                "kind": "gestalt",
+                "name": gestalt.name,
+                "goals": gestalt.goals,
+                "pressures": gestalt.pressures,
+            }),
         );
     }
     for member in campaign.gestalt_members.values() {
         subjects.insert(
             member.id.clone(),
-            json!({ "kind": "gestalt_member", "name": member.name, "gestaltId": member.gestalt_id }),
+            json!({
+                "kind": "gestalt_member",
+                "name": member.name,
+                "gestaltId": member.gestalt_id,
+                "goals": member.goals,
+                "obligations": member.obligations,
+                "relationships": member.relationships,
+                "memories": member.memories,
+            }),
         );
     }
 

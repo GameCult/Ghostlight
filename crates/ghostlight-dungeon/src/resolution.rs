@@ -8,6 +8,11 @@ pub const MIN_ACTIVE_CELL_BUDGET: u8 = 1;
 pub const MAX_ACTIVE_CELL_BUDGET: u8 = 128;
 pub const MAX_PROVIDER_PARALLELISM: u8 = 32;
 
+pub(crate) fn information_channel_is_concrete(channel: &str) -> bool {
+    let channel = channel.trim();
+    !channel.is_empty() && channel.len() <= 160 && !channel.eq_ignore_ascii_case("unknown")
+}
+
 #[derive(Clone, Debug)]
 struct Candidate {
     left: String,
@@ -82,16 +87,17 @@ pub fn ensure_agency_profiles(campaign: &mut Campaign) {
     for actor in campaign.actors.values() {
         if let Some(profile) = campaign.agency_profiles.get_mut(&actor.id) {
             profile.location_ids = BTreeSet::from([actor.location_id.clone()]);
-            profile
-                .information_channels
-                .retain(|channel| !actor.knowledge.contains(channel));
+            profile.information_channels.retain(|channel| {
+                information_channel_is_concrete(channel) && !actor.knowledge.contains(channel)
+            });
         }
     }
     for gestalt in campaign.gestalts.values() {
         if let Some(profile) = campaign.agency_profiles.get_mut(&gestalt.id) {
-            profile
-                .information_channels
-                .retain(|channel| !gestalt.shared_knowledge.contains(channel));
+            profile.information_channels.retain(|channel| {
+                information_channel_is_concrete(channel)
+                    && !gestalt.shared_knowledge.contains(channel)
+            });
         }
     }
     let live: BTreeSet<_> = campaign
@@ -2952,6 +2958,7 @@ pub(crate) mod tests {
             .information_channels = BTreeSet::from([
             "private convoy vulnerability".into(),
             "licensed courier wire".into(),
+            "unknown".into(),
         ]);
         ensure_agency_profiles(&mut value);
         assert_eq!(

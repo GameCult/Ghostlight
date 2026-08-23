@@ -2705,7 +2705,7 @@ fn validate_public_channels(channels: &[String]) -> Result<(), KernelError> {
     if channels.len() > 8
         || channels
             .iter()
-            .any(|c| c.trim().is_empty() || c.len() > 160)
+            .any(|channel| !crate::resolution::information_channel_is_concrete(channel))
     {
         return Err(KernelError::Invalid(
             "strategic action has invalid information channels".into(),
