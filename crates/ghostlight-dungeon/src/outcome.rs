@@ -35,13 +35,19 @@ struct ActionOutcomeContext {
     source_state: serde_json::Value,
     target_state: Vec<serde_json::Value>,
     active_relations: Vec<serde_json::Value>,
-    pressure_owner_subject_ids: Vec<String>,
+    pressure_owners: Vec<PressureOwnerContext>,
     resource_owner_id: String,
     resource_recipient_ids: Vec<String>,
     discoverable_facts: Vec<serde_json::Value>,
     member_state_owner_id: Option<String>,
     admissible_effect_kinds: Vec<OutcomeEffectKind>,
     allowed_state_references: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct PressureOwnerContext {
+    owner_subject_id: String,
+    current_pressures: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -151,7 +157,7 @@ pub async fn resolve_activity_outcomes(
         .into_iter()
         .collect();
     let static_contract = format!(
-        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. For each action, effect_kind must come from that action's admissible_effect_kinds; this is the runtime's exact projection of locally valid consequence handles. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. Prefer the most specific causally supported durable effect when the attempt and its band establish one. A mixed result should preserve bounded progress, cost, or a new unresolved pressure when a supplied handle supports it; do not collapse concrete partial work into no change merely because it is incomplete. Use no_material_change when none of the other supplied handles honestly represents a durable result; success or mixed success does not itself authorize inventing a response, fact, relationship, or resource. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one recipient: copy one exact resource_recipient_ids value into the output field other_subject_id; it cannot take from a target. Every resource effect's owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure copies one exact pressure_owner_subject_ids value into owner_subject_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
+        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. For each action, effect_kind must come from that action's admissible_effect_kinds; this is the runtime's exact projection of locally valid consequence handles. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. Prefer the most specific causally supported durable effect when the attempt and its band establish one. A mixed result should preserve bounded progress, cost, or a new unresolved pressure when a supplied handle supports it; do not collapse concrete partial work into no change merely because it is incomplete. Use no_material_change when none of the other supplied handles honestly represents a durable result; success or mixed success does not itself authorize inventing a response, fact, relationship, or resource. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one recipient: copy one exact resource_recipient_ids value into the output field other_subject_id; it cannot take from a target. Every resource effect's owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure copies one exact pressure_owners.owner_subject_id value adjacent to that owner's current_pressures into owner_subject_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. Every material effect needs at least one supplied supporting_state_reference. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
     );
     let mut request = ModelStageRequest {
         stage: "strategic_outcome_resolver".into(),
@@ -1145,8 +1151,16 @@ fn action_context(
         source_state,
         target_state,
         active_relations,
-        pressure_owner_subject_ids: pressure_owner_ids(campaign, proposal)?
+        pressure_owners: pressure_owner_ids(campaign, proposal)?
             .into_iter()
+            .map(|owner_subject_id| PressureOwnerContext {
+                current_pressures: campaign.gestalts[&owner_subject_id]
+                    .pressures
+                    .iter()
+                    .cloned()
+                    .collect(),
+                owner_subject_id,
+            })
             .collect(),
         resource_owner_id: proposal.subject_id.clone(),
         resource_recipient_ids,
@@ -1688,33 +1702,43 @@ fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Val
     }
     if admits(&OutcomeEffectKind::GestaltPressure) {
         let pressure_owner_schemas = action
-            .pressure_owner_subject_ids
+            .pressure_owners
             .iter()
             .map(|owner| {
-                let prefix = format!("pressure:{owner}:");
-                let current = action
-                    .allowed_state_references
-                    .iter()
-                    .filter_map(|reference| reference.strip_prefix(&prefix).map(str::to_owned))
-                    .collect::<Vec<_>>();
                 serde_json::json!({
                     "properties":{
-                        "owner_subject_id":{"const":owner},
-                        "pressure_resolutions":exact_string_array_value_schema(&current, 0, 4)
+                        "owner_subject_id":{"const":owner.owner_subject_id},
+                        "pressure_additions":{
+                            "type":"array","uniqueItems":true,"maxItems":4,
+                            "items":{
+                                "type":"string","minLength":1,"maxLength":240,
+                                "not":{"enum":owner.current_pressures}
+                            }
+                        },
+                        "pressure_resolutions":exact_string_array_value_schema(
+                            &owner.current_pressures,
+                            0,
+                            owner.current_pressures.len().min(4)
+                        )
                     },
-                    "required":["owner_subject_id"]
+                    "required":["owner_subject_id"],
+                    "anyOf":[
+                        {"properties":{"pressure_additions":{"minItems":1}}},
+                        {"properties":{"pressure_resolutions":{"minItems":1}}}
+                    ]
                 })
             })
+            .collect::<Vec<_>>();
+        let pressure_owner_ids = action
+            .pressure_owners
+            .iter()
+            .map(|owner| owner.owner_subject_id.clone())
             .collect::<Vec<_>>();
         constraints.push(effect_scope_condition(
             &[OutcomeEffectKind::GestaltPressure],
             serde_json::json!({
                 "properties":{
-                    "owner_subject_id":exact_string_value_schema(&action.pressure_owner_subject_ids),
-                    "pressure_additions":{
-                        "type":"array","uniqueItems":true,"maxItems":4,
-                        "items":{"type":"string","minLength":1,"maxLength":240}
-                    }
+                    "owner_subject_id":exact_string_value_schema(&pressure_owner_ids)
                 },
                 "oneOf":pressure_owner_schemas
             }),
@@ -2293,7 +2317,7 @@ mod tests {
         let mut context = contexts.remove(0);
         context.source_state["resources"] = serde_json::json!([]);
         context.active_relations.clear();
-        context.pressure_owner_subject_ids.clear();
+        context.pressure_owners.clear();
         context.resource_recipient_ids.clear();
         context.discoverable_facts.clear();
         context.member_state_owner_id = None;
@@ -2312,6 +2336,42 @@ mod tests {
                 "reason":"The attempt changes no durable state."
             }]
         })));
+    }
+
+    #[test]
+    fn pressure_context_and_schema_expose_only_real_state_changes() {
+        let value = campaign();
+        let action = proposal();
+        let context = action_context(&value, &action).unwrap();
+        assert_eq!(context.pressure_owners.len(), 1);
+        assert_eq!(context.pressure_owners[0].owner_subject_id, "dockers");
+        assert_eq!(
+            context.pressure_owners[0].current_pressures,
+            vec!["storm damage"]
+        );
+
+        let mut schema = serde_json::to_value(schema_for!(OutcomeProposalBundle)).unwrap();
+        constrain_outcome_schema(&mut schema, std::slice::from_ref(&context)).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let pressure = |additions: Vec<&str>, resolutions: Vec<&str>| {
+            serde_json::json!({
+                "outcomes":[{
+                    "action_digest":context.action_digest,
+                    "band":"mixed",
+                    "effect_kind":"gestalt_pressure",
+                    "supporting_state_references":["pressure:dockers:storm damage"],
+                    "owner_subject_id":"dockers",
+                    "pressure_additions":additions,
+                    "pressure_resolutions":resolutions
+                }]
+            })
+        };
+
+        assert!(validator.is_valid(&pressure(vec!["crew exhaustion"], vec![])));
+        assert!(validator.is_valid(&pressure(vec![], vec!["storm damage"])));
+        assert!(!validator.is_valid(&pressure(vec![], vec![])));
+        assert!(!validator.is_valid(&pressure(vec!["storm damage"], vec![])));
+        assert!(!validator.is_valid(&pressure(vec![], vec!["invented resolution"])));
     }
 
     #[test]

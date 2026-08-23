@@ -2080,14 +2080,38 @@ pub fn validate_gestalt_pressure_transition(
         .iter()
         .map(|value| value.to_lowercase())
         .collect::<BTreeSet<_>>();
-    if normalized_additions.len() != additions.len()
-        || normalized_resolutions.len() != resolutions.len()
-        || !normalized_additions.is_disjoint(&normalized_resolutions)
-        || !normalized_additions.is_disjoint(&normalized_current)
-        || resolutions.iter().any(|value| !current.contains(value))
-    {
+    if normalized_additions.len() != additions.len() {
+        return Err(anyhow!("gestalt pressure additions contain duplicates"));
+    }
+    if normalized_resolutions.len() != resolutions.len() {
+        return Err(anyhow!("gestalt pressure resolutions contain duplicates"));
+    }
+    if !normalized_additions.is_disjoint(&normalized_resolutions) {
         return Err(anyhow!(
-            "gestalt pressure transition repeats, overlaps, or invents a resolved pressure"
+            "gestalt pressure additions and resolutions overlap"
+        ));
+    }
+    let repeated = additions
+        .iter()
+        .filter(|value| normalized_current.contains(&value.to_lowercase()))
+        .cloned()
+        .collect::<Vec<_>>();
+    if !repeated.is_empty() {
+        return Err(anyhow!(
+            "gestalt pressure additions already exist: {}",
+            repeated.join(" | ")
+        ));
+    }
+    let invented = resolutions
+        .iter()
+        .filter(|value| !current.contains(value))
+        .cloned()
+        .collect::<Vec<_>>();
+    if !invented.is_empty() {
+        return Err(anyhow!(
+            "gestalt pressure resolutions are not exact current markers: {}; exact current pressures are: {}",
+            invented.join(" | "),
+            current.join(" | ")
         ));
     }
     Ok(())
@@ -3174,22 +3198,21 @@ pub(crate) mod tests {
             .is_ok()
         );
         assert!(validate_gestalt_pressure_transition(&current, &[], &[]).is_err());
-        assert!(
-            validate_gestalt_pressure_transition(
-                &current,
-                &["THE FERRY DEADLINE IS NEAR".into()],
-                &[],
-            )
-            .is_err()
-        );
-        assert!(
-            validate_gestalt_pressure_transition(
-                &current,
-                &[],
-                &["an invented solved problem".into()],
-            )
-            .is_err()
-        );
+        let repeated = validate_gestalt_pressure_transition(
+            &current,
+            &["THE FERRY DEADLINE IS NEAR".into()],
+            &[],
+        )
+        .unwrap_err();
+        assert!(repeated.to_string().contains("already exist"));
+        let invented = validate_gestalt_pressure_transition(
+            &current,
+            &[],
+            &["an invented solved problem".into()],
+        )
+        .unwrap_err();
+        assert!(invented.to_string().contains("not exact current markers"));
+        assert!(invented.to_string().contains("the ferry deadline is near"));
         assert!(!substantive_text_change(
             "holding position",
             "Holding Position"
