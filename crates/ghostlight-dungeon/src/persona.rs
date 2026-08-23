@@ -999,6 +999,9 @@ impl CellProjectionEngine {
                                             .repair_guidance
                                             .as_deref()
                                             .expect("validated mismatch guidance")
+                                            .chars()
+                                            .take(240)
+                                            .collect::<String>()
                                     )
                                     .into()
                                 })
@@ -1131,7 +1134,7 @@ fn validate_effect_verification(
         ) {
             (CellEffectMatchResult::Match, None, None) => {}
             (CellEffectMatchResult::Mismatch, Some(_), Some(guidance))
-                if !guidance.trim().is_empty() && guidance.chars().count() <= 240 =>
+                if !guidance.trim().is_empty() =>
             {
                 rejected.push(expected_index)
             }
@@ -1201,8 +1204,7 @@ fn cell_effect_verifier_schema(action_count: usize) -> Result<serde_json::Value>
                     },
                     "repair_guidance":{
                         "type":"string",
-                        "minLength":1,
-                        "maxLength":240
+                        "minLength":1
                     }
                 }
             }
@@ -2322,6 +2324,16 @@ mod tests {
             ]
         });
         assert!(validator.is_valid(&faithful));
+
+        let long_but_semantically_coherent_guidance = serde_json::json!({
+            "verdicts":[
+                {"action_index":0,"result":"mismatch","mismatch_kind":"wrong_effect_kind","repair_guidance":"The Persona chose a concrete journey, so preserve that exact decision with the supplied migration effect rather than downgrading it to coordination; if no supplied effect can represent the destination, remove this action and let the world retain the attributed choice without committing an invented route."},
+                {"action_index":1,"result":"match","mismatch_kind":null,"repair_guidance":null},
+                {"action_index":2,"result":"match","mismatch_kind":null,"repair_guidance":null},
+                {"action_index":3,"result":"match","mismatch_kind":null,"repair_guidance":null}
+            ]
+        });
+        assert!(validator.is_valid(&long_but_semantically_coherent_guidance));
 
         let incoherent = serde_json::json!({
             "verdicts":[

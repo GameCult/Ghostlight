@@ -4242,13 +4242,8 @@ async fn command(
         )
         .await
     {
-        return (
-            StatusCode::CONFLICT,
-            Json(ErrorBody {
-                error: error.to_string(),
-            }),
-        )
-            .into_response();
+        let body = player_safe_strategic_failure(&error);
+        return (StatusCode::CONFLICT, Json(body)).into_response();
     }
     if let WorldCommand::Wait {
         expected_revision,
@@ -4314,13 +4309,10 @@ async fn command(
                     }),
                 )
                     .into_response(),
-                Err(error) => (
-                    StatusCode::UNPROCESSABLE_ENTITY,
-                    Json(ErrorBody {
-                        error: error.to_string(),
-                    }),
-                )
-                    .into_response(),
+                Err(error) => {
+                    let body = player_safe_strategic_failure(&error);
+                    (StatusCode::UNPROCESSABLE_ENTITY, Json(body)).into_response()
+                }
             };
         }
     }
@@ -5784,12 +5776,35 @@ struct ErrorBody {
     error: String,
 }
 
+fn player_safe_strategic_failure(error: &anyhow::Error) -> ErrorBody {
+    tracing::warn!(%error, "private strategic simulation failed without mutation");
+    ErrorBody {
+        error: "The strategic world simulation could not produce a valid atomic wave. No world state changed; retry when ready."
+            .into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use axum::{body::Body, http::Request};
     use ghostlight_dungeon::domain::{ActorState, BranchOrigin, Location};
     use tower::ServiceExt;
+
+    #[test]
+    fn strategic_failure_projection_never_contains_private_model_diagnostics() {
+        let private = anyhow::anyhow!(
+            "the hidden convoy chooses a route at dawn; verifier returned private output"
+        );
+        let projected = player_safe_strategic_failure(&private);
+
+        assert_eq!(
+            projected.error,
+            "The strategic world simulation could not produce a valid atomic wave. No world state changed; retry when ready."
+        );
+        assert!(!projected.error.contains("convoy"));
+        assert!(!projected.error.contains("verifier"));
+    }
 
     fn seed(name: &str) -> Campaign {
         let actor = ActorState {

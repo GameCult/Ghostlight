@@ -313,8 +313,12 @@ async fn verify_outcomes(
         }
         match (verdict.result, verdict.repair_guidance) {
             (OutcomeVerifierResult::Match, None) => {}
-            (OutcomeVerifierResult::Mismatch, Some(guidance)) if bounded_text(&guidance, 240) => {
-                mismatches.push(format!("{}: {guidance}", verdict.action_digest));
+            (OutcomeVerifierResult::Mismatch, Some(guidance)) if !guidance.trim().is_empty() => {
+                mismatches.push(format!(
+                    "{}: {}",
+                    verdict.action_digest,
+                    guidance.chars().take(240).collect::<String>()
+                ));
             }
             _ => {
                 return Err(anyhow!(
@@ -1514,8 +1518,7 @@ fn constrain_verifier_schema(schema: &mut serde_json::Value, digests: &[String])
                     "result":{"const":"mismatch"},
                     "repair_guidance":{
                         "type":"string",
-                        "minLength":1,
-                        "maxLength":240
+                        "minLength":1
                     }
                 }
             }
@@ -1696,6 +1699,13 @@ mod tests {
                 "action_digest":digest,
                 "result":"match",
                 "repair_guidance":null
+            }]
+        })));
+        assert!(validator.is_valid(&serde_json::json!({
+            "verdicts":[{
+                "action_digest":digest,
+                "result":"mismatch",
+                "repair_guidance":"The proposed transfer is not causally supported by the exact attempt. Preserve the source subject, exact resource custody, and recipient boundary; if no supplied outcome can express the actual result, replace it with no_material_change instead of inventing an exchange or acceptance that never occurred."
             }]
         })));
         assert!(!validator.is_valid(&serde_json::json!({
