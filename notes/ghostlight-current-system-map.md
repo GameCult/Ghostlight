@@ -109,6 +109,16 @@ history. The authority map is
 `docs/architecture/ghostlight-dungeon-session-zero.md`; later multiplayer work
 remains in `docs/architecture/ghostlight-dungeon-multiplayer-intention.md`.
 
+Solo `Wait` has two exact meanings. A wait shorter than the campaign horizon is
+a simple fictional-time command. A wait equal to one horizon enters the same
+`AdvanceStrategicTick` compiler, Persona-cell, outcome, and atomic commit path
+as away-time simulation, with a one-horizon maximum per player command. The
+bounded co-op time proposal still advances raw time after unanimous approval;
+routing governed co-op horizons through strategic simulation remains an open
+implementation gate. Group travel updates controlled actor locations and their
+canonical agency-profile locations in the same commit, so reload never becomes
+a repair owner for partition inputs.
+
 Build provenance has one owner: `crates/ghostlight-dungeon/build.rs` binds the
 exact source commit into the binary. Its inputs are either the release tool's
 explicit clean-tree commit or Git HEAD; it watches the actual symbolic ref,
@@ -128,8 +138,10 @@ exact campaign revision
   -> cohesive or arena simulation-cell cover
   -> one private Projector/Persona/Interpreter membrane per cell
   -> model proposes exact constituent-attributed actions or explicit inaction
+  -> independent effect verifier checks the typed action against the Persona choice
   -> runtime selects compatible attempts and content-addresses each activity
   -> one batched outcome resolver chooses bounded typed consequences
+  -> selective outcome verifier checks high-risk custody and private-state effects
   -> runtime binds complete cell membership + world/resolution revisions
   -> WorldKernel validates cover, stage/outcome receipts, knowledge, scope, custody, topology, and bounds
   -> AdvanceStrategicTick through the campaign mailbox
@@ -140,6 +152,29 @@ The model owns no tick mutation. A provider failure or invalid proposal leaves
 the campaign revision and world time untouched. Background inference checks
 live-turn pressure before launch and again before commit; return catch-up uses
 the same command path with player-turn priority for fictional commands.
+
+The effect and outcome verdict schemas make semantic coherence structural:
+`match` carries no mismatch fields, while `mismatch` requires its exact kind or
+repair text. Repair prose is ephemeral diagnostic input, not world state; local
+code bounds it before correction and never publishes private cell choices to a
+player error surface. A rejected wave returns one spoiler-free message while
+its exact diagnostic remains operator-only.
+
+On the one same-snapshot Interpreter correction, Ghostlight also removes each
+exact subject/effect pair rejected by either per-action local validation or the
+independent effect verifier from the output schema. Neither validator chooses
+the replacement or gains commit authority; the correction constraint only
+makes an already-known-invalid mapping impossible to repeat. The Interpreter
+must use another permitted typed lane, omit the action, or fail the whole wave
+without mutation. Cross-action failures do not guess at an offender and remain
+ordinary semantic corrections.
+
+The effect verifier receives the same exact typed permission slice used by the
+Interpreter. That slice is its sole map of canonical locations, reachable actor
+destinations, population destinations, and target IDs. A pump, desk, queue, or
+other place named only in lived prose remains local texture inside the supplied
+canonical activity location; the verifier cannot manufacture topology and then
+reject a valid local action for omitting travel through it.
 
 A live request also interrupts an in-flight scheduler wave. Live-turn admission
 increments pressure and signals cancellation before waiting for an already
@@ -154,6 +189,11 @@ catch-up. Session Zero logs the exact draft revision when a DM response is
 queued and when its live guard is admitted, making provider latency distinct
 from scheduler contention without exposing channel contents.
 
+Entering or dropping that guard republishes the canonical typed health record
+immediately. HTTP health reads the same record, so `live_turn_pressure` is an
+actual launch brake during an in-flight player command rather than a delayed
+status reconstruction.
+
 Resolution-demand focal IDs are salience hints, not partition commands. They
 cannot create mandatory singleton cells or exceed the configured budget. Cell
 Projectors receive decision-relevant situation state; cell Interpreters receive
@@ -162,6 +202,46 @@ are derived by the runtime, so a model is never asked to copy an invariant that
 the planner already owns. Stable prompt prefixes are deliberately placed before
 dynamic state, and provider receipts expose per-attempt token/cache usage plus
 bounded local validation failures.
+
+Canonical actor cell slices include that actor's exact goals, obligations,
+relationships, and bounded memories. Named Gestalt-member exceptions receive
+the same continuity fields. The Projector narrativizes them for the Persona;
+the Interpreter still receives only exact effect permissions. A promise does
+not become a hard-coded behavior rule, but it cannot disappear merely because
+the actor entered offscreen simulation.
+
+The Interpreter output schema is conditional on exact decision-owner ID.
+Institution, actor, Gestalt, and named-member effect variants cannot cross
+subjects. Target IDs, canonical locations, pressure resolutions, movement
+destinations, state references, and public channels are enumerated from that
+subject's permitted slice. Movement and population-migration variants disappear
+when the subject has no exact destination; target-requiring activities cannot
+emit an empty target list. Semantic correction therefore judges meaning rather
+than repairing type combinations local code already knows are impossible.
+
+Each permitted activity target is one runtime-derived descriptor keyed by its
+authoritative ID, with the target's exact name and current canonical locations.
+Reachable actor destinations map exact location IDs to names; population
+migration destinations carry both population and location identity. The
+Projector, Interpreter, and effect verifier can distinguish a canonical target
+actually named by the Persona from an unnamed local role, and can prove whether
+“go to Reed” means movement at all. Opaque permitted IDs are not enough reason
+to substitute a containing population, related institution, or unrelated
+destination. Descriptor prose is disambiguation context, not a new subject or
+fuzzy-match authority.
+
+Targetless local activity is explicit rather than encoded through a convenient
+unrelated subject. Preparation, investigation, communication, and obstruction
+may act on an unnamed role, infrastructure, terrain, traffic, or other local
+texture only at the exact supplied location. The activity records the source's
+attempt, never a listener, discovery, damage, disruption, or response. A
+canonical target is required whenever the attempt actually addresses one.
+
+`AgencyProfile.information_channels` owns concrete routes through which a
+subject can publish or receive reports. Actor knowledge and Gestalt shared
+knowledge remain separate state and may justify an action without manufacturing
+a news route. Profile maintenance removes legacy overlap and `unknown`
+placeholders; the compiler rejects both categories before campaign approval.
 
 Arena projection preserves spatial partitions as well as identity partitions.
 Each remote view carries its actual location; a relation grants potential
@@ -229,6 +309,51 @@ same private campaign copy as the rest of the strategic wave, so a late invalid
 outcome cannot leave an earlier action, clock, detail debt, or event committed.
 
 Deterministic admissible-effect handles constrain every resolver decision.
+Actor possessions, member equipment, institution resources, and Gestalt
+resources use one `resource:*` reference ontology. When a model cites another
+action's handle or invents a reference, the local owner returns the exact
+action digest, offending values, and admissible set to the private same-snapshot
+correction. The player receives only a spoiler-free refusal if correction also
+fails.
+
+The resolver's JSON Schema is derived from exact action authority. Each action
+digest admits only its available effect kinds; unavailable lanes are absent,
+not represented by empty placeholder choices. The chosen effect kind makes its
+own owner, recipient, resource, relation, member, fact, pressure, and evidence
+fields structurally required while forbidding fields owned by another kind.
+Exact IDs and existing values come from that action's bounded slice. New
+resource or pressure text remains model-proposed but locally bounded and still
+requires kernel validation. This keeps deterministic impossibility out of the
+semantic retry loop without letting the schema decide narrative causality.
+
+Pressure authority is state-relative. The outcome stage receives each exact
+Gestalt owner together with its current unresolved pressure strings. A
+resolution must copy one of those strings; an addition must be new and cannot
+overlap a resolution or repeat current state. The runtime rejects the whole
+wave on a no-op, duplicate, or invented resolution before commit.
+These state-transition checks belong to the outcome semantic validator, not the
+generic JSON-shape retry. A well-shaped repeated pressure reaches the bounded
+outcome correction with the exact rejected bundle; the correction may propose
+a genuinely new pressure or `no_material_change`, while the kernel guard still
+makes the repeated transition uncommittable.
+
+Named-member private effects are action-relative too. An obligation is
+available only for social activity—communication, coordination, recruitment,
+or trade—where the attempt can actually create a promise or debt. Physical
+preparation, investigation, or obstruction cannot mint an unrelated social
+obligation merely because the member is present in the outcome slice.
+
+Structured-stage failures name the exact stage, instance JSON pointer, and
+schema pointer. Receipts retain the bounded private diagnostic; player-facing
+strategic refusal remains spoiler-free. A model failure can therefore be
+located without logging chain-of-thought or dumping the private prompt.
+For the one same-snapshot correction, the validator also projects only the
+nearest rejected containing object rather than replaying the whole output. This
+gives the model the exact failed activity or effect beside the schema pointer,
+preserves the stable cacheable prompt prefix, and avoids paying again for
+unrelated valid output. Parallel cell failures retain the exact cell ID,
+constituent IDs, and bounded anyhow cause chain in operator-only logs.
+
 Ordinary bounded preparation, pressure, and knowledge effects stop at local
 validation. Resource consumption/transfers, agency-relation shifts, and named
 member private deltas additionally receive an independent same-snapshot
@@ -243,6 +368,23 @@ Odin rendezvous is temporarily unavailable. RUDP publication is outbound
 replication, not daemon-liveness authority: a failed publish is logged with its
 key and target while the complete local snapshot persists and HTTP serves that
 same typed health and Eve state.
+
+`advance_one_strategic_tick` owns post-commit mesh publication for scheduler,
+return catch-up, and explicit player-horizon waits. Callers no longer decide
+whether a strategic commit deserves a projection. A publication error is an
+operator-visible derived-state failure; it cannot roll back, rewrite, or report
+the already committed world transition as failed. This closes the former path
+where return catch-up advanced canonical state, the subsequent player command
+correctly failed stale, and an early return left the operator surface on the
+previous revision.
+
+The current Odin crossing accepts Ghostlight health, advertisements, player
+surfaces, and a prefix of the snapshot, but the first large operator projection
+can stall the RUDP publisher before the remaining batch arrives. This is a
+transport/publication defect, not permission to truncate operator truth or move
+campaign authority into Odin. The complete projection remains in Ghostlight's
+local CultMesh; repair the large-document RUDP path in its owning transport
+workstream.
 
 Opening retrieval deliberately covers early, transitional, and late historical
 frames. These pure retrieval/compiler functions now serve the Session Zero DM;
@@ -270,24 +412,35 @@ and operator inspection; the browser cannot reveal them before discovery.
 
 ## Current acceptance body
 
-Yggdrasil currently serves native immutable release
-`257b6429c52c796167125bd81d923a605ac065df`, executable SHA-256
-`dd50de988179818091ad53d957e53d86cb5b098911001d75fbb05252867be8d8`,
-with Eve release `23eaf32eae76204357c1406b4a7d01bcece6b815`. The service runs as
-`ghostlight:ghostlight` under `ghostlight-dungeon.service`; typed health,
-manifest, embedded commit, executable hash, seven imported campaigns, one
-Session Zero draft, OpenRouter `stealth/ox-alpha` readiness, and restart
-recovery agree. Ghostlight stages request logical fast/capable classes; the
-OpenRouter port maps both classes to the test model, uses low/medium reasoning by
-class, excludes reasoning from responses, and receipts the resolved physical
-provider and model.
+Yggdrasil serves one native immutable Ghostlight release under
+`ghostlight-dungeon.service`. The fresh-workspace handoff and `state/map.yaml`
+carry the exact current source, Eve source, executable hash, provider, store
+counts, and replay witness. This map describes the acceptance body without
+duplicating a volatile release identity in several sections.
 
-The exact hosted gate passed 171 Linux package tests with zero daemon restarts.
-The active adversarial journey repaired pending-counter authority, optional
-opening/role suggestions, and pre-compiler draft completeness. Its local
-Heimdall claim then expired during a private message; the visible Discord flow
-is waiting for human reauthentication before live Mars/Hellas compilation
-continues.
+The hosted adversarial campaign now pressures the complete eight-cell strategic
+path against real provider output. Every failed Projector, Persona,
+Interpreter, effect-verifier, outcome, or kernel boundary has left campaign
+revision and fictional time unchanged. Human separate-account co-op privacy and
+unanimity remain unproven; the expected D&D cohort dispersed before this pass,
+so no fixture or solo browser run may be presented as that acceptance.
+
+Campaign `34929b8d-7b04-49af-9936-1c798fd79760` is the current live strategic
+witness. Its revision-12-to-13 return catch-up preserved one eight-cell cover:
+five exact actor/institution cells, two Gestalt cells, and one arena containing
+three mutually distinct remote institutions. The arena acquired no actor ID.
+Zhestokost's exact repeated posture became attributed inaction; two named
+members made their own decisions; Reed kept the twelve-patient commitment; and
+the player plus Reed remained byte-identical. Five selected actions produced
+five bounded outcomes. Fourteen channel-aware reports remained absent from the
+player surface because that actor has no route to them.
+
+That tick used 34 stage receipts and 35 provider attempts: 83,838 prompt
+tokens, 64,000 cache-hit tokens, 6,192 completion tokens, and 90,030 total
+tokens. The extra Interpreter receipt records the rejected repeated institution
+posture. The outcome path records an undersized bundle retry and a rejected
+repeated pressure before the corrected complete bundle. All diagnostics
+remained private; the campaign committed once.
 
 The public `/ghostlight/` path terminates on Yggdrasil nginx and proxies the
 native loopback listener at `127.0.0.1:8831`. Anonymous access returns the
@@ -307,14 +460,11 @@ reverse tunnel.
 
 ### Deployment, discovery, and adjacent capacity
 
-Idunn runs exact source `2a5cb3e08f5f5f40a12f825a9522b31e6af941af`.
-Odin runs exact source `b4f9a2e95f0b41cebdeddc49223781d1d3c7b42a` with
-CultLib `21163d83fa2670dbcc9cdd57c6c1776b33a91d62`. Idunn is the only
-deployment and daemon-survival authority; Odin is the discovery/rendezvous
-authority. Their
-health or availability never grants either organ a campaign write path.
-Idunn's runtime health clock preserves milliseconds, so same-second signed
-health samples no longer oscillate into false "health vanished" transitions.
+Idunn is the only deployment and daemon-survival authority; Odin is the
+discovery/rendezvous authority. Their health or availability never grants
+either organ a campaign write path. Current release identity for Idunn, Odin,
+Heimdall, Bifrost, and Epiphany is operational truth in `gamecult-ops`; do not
+copy it here and let it fossilize again.
 
 Release admission is based on the newest executable- or build-affecting commit
 reachable from the admitted ref. Documentation, notes, state receipts, and
@@ -323,30 +473,18 @@ that the selected commit is an ancestor of the admitted ref before activation,
 then verifies the exact installed witness. Documentation and state-only commits
 therefore cannot displace the live executable.
 
-Heimdall runs exact source `1086aee01169bf60e8a492b2740db1c6f3e8cabf`
-with CultLib `5cefa0db0079a8e3ee22f29d7b9e6e5aa60912a9`. It publishes four
-redacted typed discovery records to Odin under globally unique catalog keys:
+Heimdall publishes four redacted typed discovery records to Odin under globally
+unique catalog keys:
 the provider, private command boundary, Eve access plugin, and transport
 profile. Ghostlight resolves `heimdall:command-boundary` from Odin only for
 begin, complete, refresh, and logout; valid local app sessions do not depend on
 an Odin round trip. No direct Heimdall endpoint remains in the Ghostlight unit.
 
 Epiphany is adjacent capacity, not part of Ghostlight's campaign authority and
-not required by the current provider-backed runtime. Epiphany source
-`ebc0ffe4f341154d1902f9afe86f0a87f150179c` passed its locked tests and was
-sealed as immutable package
-`sha256-bb76728653b8e2e872b4da47f917abe4233fd6d4ae1fd573c5971c7db3922a5c`
-with witness
-`4d8350fac61f90d32a2b8067731308ec3e3672a42804db29c680b0fc68ab9adc`.
-Idunn stopped the deployment before publication because the Bifrost operator
-runtime identity/substrate and resident Self Codex credentials were absent.
-Epiphany's deployment brake remains engaged, its units are inactive and
-disabled, no `deployment.env` or signed runtime health was published, and
-`/srv/epiphany/app/current` remains recovery release
-`267a0257a4938d80d34b7807c66aa5f550b50f2c`. The next Epiphany attempt must be
-one Idunn-owned transaction after those prerequisites exist; passive watcher
-tasks and cross-task exclusivity messages are not an operational control
-plane.
+not required by the current provider-backed runtime. Rehydrate her live state
+from her own workspace and `gamecult-ops`. Her deployment remains one
+Idunn-owned transaction; passive watcher tasks and cross-task exclusivity
+messages are not an operational control plane.
 
 The deployed Session Zero canary survived two exact-build restarts with its
 private store intact. Heimdall completed a real KLTST Discord round trip and
@@ -535,6 +673,23 @@ before generation. Only direct-seed source text enters causal world compilation;
 background and excluded sources remain coverage provenance and cannot donate
 story incidents or cast.
 
+Player-facing narration is a verified projection. Pro drafts from the latest
+causal committed turn; an independent Flash stage checks the draft against the
+same actor-filtered state and returns either that exact draft or a minimal
+grounded correction. Both receipts bind the published projection. Narration
+cannot reverse the committed outcome band or invent locations, objects,
+participants, or discoveries merely because they make prettier prose.
+
+`ghostlight-campaign-inspect` is a read-only typed-store witness. It reports the
+latest strategic cover, attributed appraisals and inactions, activity outcomes,
+events, news, subject continuity, and model receipt/token metadata without
+dumping provider reasoning or raw private narrative streams.
+
+`ghostlight-mesh-inspect` provides the same read-only operator projection from
+a copied derived `mesh.cc` snapshot. It never opens or copies the live campaign
+store. Operators may extract one private JSON witness from that copy, then
+delete the temporary mesh file; JSON is diagnostic export, not state authority.
+
 The actor-filtered Eve surface follows the same membrane. It renders the player-owned
 ledger—including that actor's own relationships—and already filtered news, but
 does not enumerate canonical institution postures or raw world clocks. Those
@@ -650,6 +805,15 @@ targets, but those links never union knowledge or authority. Only the owning
 member's review surface projects the compiled target, placement, and private
 description before approval. A shared branch assumption exposes the count of
 materialized private subjects, never their identities or relationship details.
+
+Approved private character playability crosses a narrower compiler membrane
+than private history. The shared world compiler receives bounded capabilities,
+equipment, obligations, goals, and extraordinary-permission scope, costs,
+limits, exposure, and effect ceilings only so it can seed precise discoverable
+environmental facts for the opening problem. It never receives private
+history, secrets, relationships, or pre-existing knowledge. Generic crisis
+restatements do not satisfy this requirement; a concrete investigative ability
+needs a concrete pre-existing finding or an explicit evidence gap.
 
 Roster lock is not readiness. Before world compilation the kernel checks the
 typed contract's core play frame and each active character's minimum actionable

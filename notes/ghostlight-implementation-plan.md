@@ -53,14 +53,14 @@ callbacks, claims, entitlements, and completion redemption through its private
 loopback CultNet command plane. Ghostlight owns hashed local sessions and
 derives campaign authority only from canonical membership. The exact cut is
 `docs/architecture/ghostlight-eve-native-interface.md`.
-The accepted implementation is hosted natively on Yggdrasil as immutable
-release `4c04c13c144c1f6dce8af47698caafe34d6a6120`. Exact checkout,
-embedded commit, release manifest, binary hash, systemd process, typed health,
-CultMesh store, seven migrated campaigns, one Session Zero draft, OpenRouter
-`stealth/ox-alpha` startup inference, local VoidBot retrieval, public Heimdall
-path, restart recovery, and unauthenticated rejection agree. Idunn owns continuity and Odin
-owns discovery; neither owns campaign mutation. This pass makes model
-work inspectable and provider-switchable:
+The accepted implementation is hosted natively on Yggdrasil as an immutable
+Idunn release. Exact checkout, embedded commit, release manifest, binary hash,
+systemd process, typed health, CultMesh store, local VoidBot retrieval, public
+Heimdall path, restart recovery, and unauthenticated rejection must agree. The
+fresh-workspace handoff and state map record the current release witness; this
+plan does not duplicate volatile infrastructure revisions. Idunn owns continuity
+and Odin owns discovery; neither owns campaign mutation. Model work is
+inspectable and provider-switchable:
 provider attempts expose prompt/completion/cache usage and exact local failures;
 stable prefixes precede dynamic context; world and agency compilation are
 separate stages; Projectors receive situation state while Interpreters receive
@@ -73,21 +73,18 @@ become a coarse goal. Rejected candidates become coverage gaps, and deterministi
 remote profiles keep unknown facets unknown. The Pro
 agency stage no longer spends output tokens restating remote profiles.
 
-The current control plane runs Idunn from exact source
-`2a5cb3e08f5f5f40a12f825a9522b31e6af941af` and Odin from exact source
-`b4f9a2e95f0b41cebdeddc49223781d1d3c7b42a`. Heimdall source
-`1086aee01169bf60e8a492b2740db1c6f3e8cabf` publishes its redacted provider,
-command boundary, plugin, and transport records into Odin. Ghostlight resolves
-the private auth route from that typed catalog; its systemd unit has no direct
-Heimdall endpoint authority. Idunn's release selector admits
+Current Idunn, Odin, Heimdall, and Epiphany release identity is operational
+truth owned by `gamecult-ops`; rehydrate there before touching the host.
+Heimdall publishes its redacted provider, command boundary, plugin, and
+transport records into Odin. Ghostlight resolves the private auth route from
+that typed catalog; its systemd unit has no direct Heimdall endpoint authority.
+Idunn's release selector admits
 the newest executable/build-affecting commit reachable from a configured ref,
 so later documentation and state-only commits do not churn the deployed body.
-Epiphany source `ebc0ffe4f341154d1902f9afe86f0a87f150179c` is tested and sealed,
-but is not deployed: Idunn correctly stopped before publication because the
-Bifrost operator substrate and resident Self credentials are missing.
-Ghostlight does not wait on that adjacent capacity. The immediate product gate
-remains the separate-account two-player Session Zero/shared-scene canary,
-followed by the eight-account privacy and unanimity smoke.
+Ghostlight does not wait on Epiphany's adjacent compiler/swarm capacity. The
+separate-account co-op privacy and unanimity acceptance remains unproven; no
+human test group is currently waiting on the forge, so controlled account
+fixtures or a later tester cohort must close it without weakening the gate.
 
 Strategic activity outcomes now have their own authority between attempt
 selection and commit. One batched Flash resolver receives only selected
@@ -97,6 +94,11 @@ relations, facts, pressure resolutions, member owners, and player mutation.
 WorldKernel requires the action-set-bound stage receipt and applies every
 outcome with the rest of the wave on one private campaign copy. Accepted
 outcomes are stored in CultCache and shown through the operator Eve surface.
+The shared strategic-tick function also owns the derived CultMesh refresh after
+commit. Scheduler, return catch-up, and explicit horizon waits cannot leave
+canonical state ahead of the operator projection merely because a caller
+returns early. Publication remains notification-only and cannot roll a commit
+back.
 
 The current browser/compiler hardening adds three ownership cuts before the
 next isolated acceptance run: compiler evidence is triaged into direct,
@@ -135,8 +137,18 @@ inert outcome resolver.
 Release truth, authenticated compiler/player HTTP journeys, restart continuity,
 and the strict multiresolution refugee-return golden now pass against immutable
 builds. Visual browser inspection and a real Heimdall KLTST Discord admission
-now pass. The next gate is separate-account two-player and eight-player
-Session Zero/shared-scene pressure, followed by supervised human play. The browser never
+now pass. The live eight-cell campaign additionally committed one complete
+return-catch-up wave with exact actor/member attribution, a non-acting rival
+arena, byte-stable player/Reed state, five bounded outcomes, and no remote-news
+leak. It used 90,030 tokens at a 76.3% prompt-cache-hit ratio; the retained
+invalid receipts expose one repeated institution posture and one repeated
+pressure without letting either mutate the world.
+
+The next simulation gate is a 20-plus-power live Aetheria skeleton across
+budgets `1`, `4`, `8`, and `32`, including nested refugee dispersal and later
+rematerialization. Separate-account two-player and eight-player Session Zero
+and shared-scene pressure remains an independent unproven gate; no human cohort
+is currently waiting. The browser never
 receives the Heimdall access token; it adopts a server-verified login attempt
 into an HttpOnly Ghostlight session. Treat player confusion, dramatic flatness, composite consequences,
 and token-heavy low-consequence stages as evidence about missing context or

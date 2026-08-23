@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-08-22
+Updated: 2026-08-23
 
 This is the compact re-entry packet. It records current authority, deployed
 truth, proof, and the next decision. Git history owns chronology; the system map
@@ -37,8 +37,11 @@ d20 resolution, persistent locations and institutions, multiresolution Gestalt
 agency, offscreen strategic activity, knowledge-filtered news, and actor-filtered
 Eve/CultMesh surfaces.
 
-The immediate product gate is human multiplayer proof, not another foundation
-rewrite.
+The immediate product gate is continued adversarial play against the hosted
+compiler and multiresolution agency loop. Separate-account multiplayer privacy
+and unanimity proof remains required, but the previously expected D&D test
+group is no longer available; record that gate as unproven rather than silently
+lowering it.
 
 ## Authority map
 
@@ -79,17 +82,19 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `41a1950f1dcb2215b07cee484151ca5f09a59a10`
+  `a10a0125fc87a1262c50c85a0f1bf52133989feb`
 - Executable SHA-256:
-  `b4544027e9ce19e17aae53b27abe146c96006e667c8f7d3d92b45c6545024050`
-- Eve release: `23eaf32eae76204357c1406b4a7d01bcece6b815`
+  `87ae68139375f507c54456907c687c397f18d7591a6a93d814ba7f4bc0ef3513`
+- Artifact SHA-256:
+  `sha256-c0d1ab58fe711ff98502d4fad495c7a4d90e2aa079f08ac43e7981e26056cf92`
+- Eve release: `e5a81185bb790906bea5eeba40507673b0d9b5bb`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
 - Public route: `https://yggdrasil.gamecult.org/ghostlight/`
 - Vault retrieval: local VoidBot at `127.0.0.1:17875/mcp`
-- Stored state at the last witness: seven campaigns and one Session Zero draft
-- Provider state: OpenRouter `stealth/ox-alpha` startup inference ready; logical
-  fast/capable classes map to the physical model at the provider port
+- Stored state at the last witness: nine campaigns and two Session Zero drafts
+- Provider state: DeepSeek ready; fast stages use `deepseek-v4-flash` and
+  capable stages use `deepseek-v4-pro`
 - Access witness: anonymous Eve gate 200; canonical `heimdall.auth.begin`
   accepted through Odin-discovered Heimdall; no actor or campaign state in the
   anonymous surface. A retained Heimdall grant completed fresh authentication,
@@ -106,32 +111,39 @@ restart recovery, public crossing, and anonymous rejection agree.
 
 Idunn, Odin, and Heimdall release identity is operational truth owned by
 `gamecult-ops`; verify their current witnesses there rather than trusting an
-old commit copied into this handoff. At the 2026-08-22 Ghostlight witness,
-Idunn, Odin discovery, and Heimdall's private access plane were live. Idunn's
-health clock preserves millisecond timestamps; the
-former same-second false “health vanished” transitions are gone.
+old commit copied into this handoff. During the 2026-08-23 Ghostlight pressure
+run, Idunn continuously admitted signed Ghostlight health and Odin continued
+publishing discovery. One Idunn cycle still logged that authenticated
+Ghostlight health vanished before projection between fresh samples; the next
+signed sample was active and the daemon never restarted. Treat that as an Idunn
+projection-clock defect, not a campaign repair signal. Idunn also repeatedly attempted an Odin stale-release
+deployment that the deployment brake rejected with `ReleaseMismatch`; this is
+an adjacent control-plane fault, not evidence that Ghostlight lost campaign
+authority or health. Bifrost persona-feedback health emitted intermittent
+dependency-unavailable alarms between fresh diagnostic publications. Rehydrate
+those organs in `gamecult-ops` before changing them.
 
 Idunn selects the newest executable- or build-affecting commit reachable from
 the admitted ref. Documentation, notes, state receipts, and root Markdown do
 not cause a deployment. The root actuator proves the selected commit is an
 ancestor of the admitted ref and verifies the exact installed witness after
 activation. Therefore later Ghostlight documentation commits do not displace
-release `257b642…`.
+the selected executable.
 
 ## Epiphany capacity gate
 
-Epiphany is adjacent capacity, not a Ghostlight runtime dependency. Idunn
-reported successful admission of source
-`785213ec297a6bb784f16e1705b0431bc82faf61` on 2026-08-22, but the legacy
-`epiphany-ox4-heartbeat`, `epiphany-ox4-persona`, and `epiphany-ox4-swarm`
-units subsequently reported inactive/failed. Rehydrate in Epiphany and
-`gamecult-ops` before assuming usable swarm capacity. Do not manually launch
-her or coordinate deployment by cross-task exclusivity messages.
+Epiphany is adjacent capacity, not a Ghostlight runtime dependency. Rehydrate
+in Epiphany and `gamecult-ops` before assuming usable swarm capacity. Do not
+manually launch her or coordinate deployment through cross-task exclusivity
+messages.
 
 ## Current proof
 
-- Idunn's exact `41a1950…` release gate passed 171 Linux package tests; the
-  daemon is healthy with zero restarts and the deployment brake re-engaged.
+- Idunn admitted exact release `a10a012…`; its locked package test and immutable
+  build completed before atomic activation. The same source passes 239 library,
+  32 daemon, and one build-provenance test locally. Typed health, manifest,
+  embedded source, executable hash, provider readiness, nine campaigns, two
+  Session Zero drafts, and zero daemon restarts agree.
 - Live refresh pressure reproduced and removed two contract faults: reuse of a
   private-command idempotency key across separately sealed attempts, and
   validation of a refresh receipt as if it carried the initial-login account
@@ -154,14 +166,47 @@ her or coordinate deployment by cross-task exclusivity messages.
   activity, folding, and later rematerialization.
 - A budget-8/provider-parallelism-8 strategic wave covered every subject,
   committed material background activity, and did not puppet the player.
+- Hosted campaign `34929b8d-7b04-49af-9936-1c798fd79760` advanced from revision
+  12 to 13 through the shared `return_catch_up` path. Its eight-cell cover
+  remained stable: five individual/cohesive actor or institution cells, two
+  Gestalt cells with exact member activity, and one three-institution arena.
+  Zhestokost's repeated posture was corrected to attributed inaction; Reed held
+  the twelve patients; the player and Reed were byte-identical across the
+  tick; five exact activities produced five bounded outcomes. The arena emitted
+  no collective actor, actor knowledge did not become an information channel,
+  and the actor-filtered player surface exposed none of the 14 remote channel
+  reports.
+- The successful revision-13 wave used 34 model stages and 35 provider attempts:
+  83,838 prompt tokens, 64,000 cache-hit tokens (76.3%), 6,192 completion
+  tokens, and 90,030 total tokens. One institution action needed semantic
+  correction and one outcome bundle needed shape plus pressure-no-op
+  correction; neither failed proposal mutated the campaign.
+- A return catch-up could previously commit canonical state and then return a
+  truthful stale-command receipt before refreshing its derived CultMesh
+  operator surface. Strategic publication now lives in the shared tick-commit
+  path. The release restart projected revision 13 without another world
+  mutation, and the browser's existing Heimdall-backed app session survived.
+- Retained operator witness:
+  `F:\Projects\gamecult-ops\artifacts\ghostlight-operator-rev13-20260823.json`.
+  The temporary local and Yggdrasil mesh copies were deleted after extraction.
+
+Known acceptance limits remain visible. Revision 12 permanently records an
+earlier semantic scar in this test branch: Mira Chen moved to the garrison while
+trying to approach Reed. Do not repair that history out of band. The global
+agency skeleton is still sparse (four institutions rather than a 20-plus-power
+Aetheria proof), separate-account human co-op is untested, governed co-op time
+still advances raw time rather than strategic cells, and the Odin RUDP publisher
+can stall on the first large operator document. A legacy campaign also logs a
+`gestalt member is not dormant` scheduler refusal; it is not this canary.
 
 Acceptance witnesses live under `F:\GameCult\GhostlightDungeon\acceptance`.
 Operational release and rollback truth remains in `gamecult-ops`.
 
 ## Next action
 
-1. Resume the authenticated Mars/Hellas canary, compile the custom start, and
-   pressure live action/continuity paths.
+1. Fork or compile a denser 20-plus-power Aetheria agency skeleton and pressure
+   budgets 1, 4, 8, and 32 with real provider output, including nested refugee
+   dispersal and later rematerialization.
 2. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
 3. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
