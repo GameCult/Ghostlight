@@ -18,6 +18,9 @@ use std::{
 const SERVICE_ID: &str = "ghostlight.native.player";
 const TARGET_RUNTIME_ID: &str = "ghostlight-dungeon-yggdrasil";
 const DEFAULT_ENDPOINT: &str = "127.0.0.1:4102";
+const CONNECTION_TIMEOUT: Duration = Duration::from_secs(120);
+const DEFAULT_OPERATION_TIMEOUT: Duration = Duration::from_secs(120);
+const EVE_INVOCATION_TIMEOUT: Duration = Duration::from_secs(600);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct NativeClientState {
@@ -335,8 +338,8 @@ fn invoke<T: DeserializeOwned>(
     options.max_pending_reliable_packets = Some(4_096);
     let mut transport = CultNetRudpSocketTransportConnection::new(options)?;
     transport.connect(Vec::new())?;
-    let deadline = Instant::now() + Duration::from_secs(120);
-    while !transport.connected() && Instant::now() < deadline {
+    let connection_deadline = Instant::now() + CONNECTION_TIMEOUT;
+    while !transport.connected() && Instant::now() < connection_deadline {
         let _ = transport.receive_once()?;
         transport.poll_resends()?;
     }
@@ -354,7 +357,8 @@ fn invoke<T: DeserializeOwned>(
         source_runtime_id: Some(runtime_id),
         target_runtime_id: Some(TARGET_RUNTIME_ID.into()),
     })?;
-    while Instant::now() < deadline {
+    let operation_deadline = Instant::now() + operation_timeout(operation);
+    while Instant::now() < operation_deadline {
         if let Some(response) = transport.receive_schema_message_once()? {
             let CultNetMessage::OperationResponse {
                 message_id: response_id,
@@ -384,6 +388,14 @@ fn invoke<T: DeserializeOwned>(
         transport.poll_resends()?;
     }
     bail!("Ghostlight native operation timed out")
+}
+
+fn operation_timeout(operation: &str) -> Duration {
+    if operation == "ghostlight.eve.invoke" {
+        EVE_INVOCATION_TIMEOUT
+    } else {
+        DEFAULT_OPERATION_TIMEOUT
+    }
 }
 
 #[cfg(test)]
@@ -439,5 +451,18 @@ mod tests {
             state.refresh_expires_at.as_deref(),
             Some("2026-09-23T00:00:00Z")
         );
+    }
+
+    #[test]
+    fn eve_invocation_wait_budget_is_separate_from_connection_and_authentication() {
+        assert_eq!(
+            operation_timeout("ghostlight.eve.invoke"),
+            Duration::from_secs(600)
+        );
+        assert_eq!(
+            operation_timeout("ghostlight.surface.get"),
+            Duration::from_secs(120)
+        );
+        assert_eq!(CONNECTION_TIMEOUT, Duration::from_secs(120));
     }
 }
