@@ -2738,6 +2738,7 @@ pub fn session_zero_surface(
                 }));
             }
             decision_children.extend([
+                command_control(&format!("session-zero.decision.{}.decline",decision.id), "Decline", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false,"counter":null}), &[]),
                 command_control(&format!("session-zero.decision.{}.counter",decision.id), "Counter", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false}), &["counter"]),
                 command_control(&format!("session-zero.decision.{}.discuss",decision.id), "Discuss", "session_zero.message.send", serde_json::json!({"expected_revision":state.revision,"text":format!("I want to discuss this proposal before deciding: {}",decision.prompt)}), &["channel_id"]),
             ]);
@@ -3537,10 +3538,9 @@ fn execute(
                     .get_mut(&decision_id)
                     .expect("decision was just validated")
                     .resolved = true;
-            } else {
-                let proposed_resolution = counter
-                    .filter(|value| !value.trim().is_empty())
-                    .ok_or_else(|| anyhow!("counterproposal is required"))?;
+            } else if let Some(proposed_resolution) =
+                counter.filter(|value| !value.trim().is_empty())
+            {
                 validate_bounded("counterproposal", &proposed_resolution, 1, 2_000)?;
                 let channel_id = decision
                     .owner_member_id
@@ -3567,6 +3567,12 @@ fn execute(
                 } else {
                     shared_changed(&mut state);
                 }
+            } else {
+                state
+                    .decisions
+                    .get_mut(&decision_id)
+                    .expect("decision was just validated")
+                    .resolved = true;
             }
             retire_preview(&mut state);
         }
@@ -5778,8 +5784,8 @@ mod tests {
     }
 
     #[test]
-    fn session_zero_surface_exposes_accept_counter_discuss_and_owned_boundary_controls_as_bindings()
-    {
+    fn session_zero_surface_exposes_accept_decline_counter_discuss_and_owned_boundary_controls_as_bindings()
+     {
         let mut draft = state();
         let host = draft.host_member_id.clone();
         draft.boundaries.insert(
@@ -5819,6 +5825,7 @@ mod tests {
         let encoded =
             serde_json::to_string(&session_zero_surface(&draft, "account:host").unwrap()).unwrap();
         assert!(encoded.contains("Accept"));
+        assert!(encoded.contains("Decline"));
         assert!(encoded.contains("Counter"));
         assert!(encoded.contains("Discuss"));
         assert!(encoded.contains("session_zero.boundary.remove"));
@@ -6370,6 +6377,62 @@ mod tests {
         assert_eq!(
             accepted.state.character_drafts[&member_id].extraordinary_permissions,
             vec![proposed]
+        );
+    }
+
+    #[tokio::test]
+    async fn declining_a_material_decision_resolves_it_without_applying_its_patch() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let mut initial = state();
+        let original_contract = initial.contract.clone();
+        let decision_id = "decision:declined-opening".to_string();
+        initial.decisions.insert(
+            decision_id.clone(),
+            SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: decision_id.clone(),
+                owner_member_id: None,
+                prompt: "Use the generated opening?".into(),
+                proposed_resolution: "Move the campaign to an unrelated generated opening.".into(),
+                proposed_extraordinary_permission: None,
+                proposed_contract_patch: Some(CampaignContractPatch {
+                    starting_where: Some("Wrong place".into()),
+                    ..Default::default()
+                }),
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            },
+        );
+        let state_id = initial.id;
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, state_id);
+
+        let surface =
+            serde_json::to_string(&session_zero_surface(&initial, "account:host").unwrap())
+                .unwrap();
+        assert!(surface.contains(&format!("session-zero.decision.{decision_id}.decline")));
+
+        let declined = kernel
+            .command(SessionZeroCommand::ResolveDecision {
+                actor_account_hash: "account:host".into(),
+                expected_revision: initial.revision,
+                decision_id: decision_id.clone(),
+                accept: false,
+                counter: None,
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(declined.state.contract, original_contract);
+        assert!(declined.state.decisions[&decision_id].resolved);
+        assert!(
+            declined.state.decisions[&decision_id]
+                .pending_counter
+                .is_none()
         );
     }
 
