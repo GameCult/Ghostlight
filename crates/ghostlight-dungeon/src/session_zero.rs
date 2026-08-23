@@ -1393,6 +1393,15 @@ impl SessionZeroDirector {
             member_id,
             supersedes_countered_decision_id,
         )?;
+        let current_player_turn = if let Some(decision_id) = supersedes_countered_decision_id {
+            state
+                .decisions
+                .get(decision_id)
+                .and_then(|decision| decision.pending_counter.clone())
+                .ok_or_else(|| anyhow!("focused Session Zero turn lost its counterproposal"))?
+        } else {
+            current_player_message(state, channel_id)?.text.clone()
+        };
         let binding = format!(
             "session-zero:{}:revision:{}:channel:{}:focus:{}",
             state.id,
@@ -1451,10 +1460,11 @@ impl SessionZeroDirector {
                 model: self.persona_model.clone(),
                 snapshot_binding: binding.clone(),
                 lived_stream: format!(
-                    "You are {}. {} Lead a candid, collaborative Session Zero. Ask only the most useful next questions; synthesize choices; preserve the player's premise while negotiating costs and limits that create stakes. Do not claim changes are accepted. Speak naturally, with no schema or machine-state language.{}\n\n{}",
+                    "You are {}. {} Lead a candid, collaborative Session Zero. Ask only the most useful next questions; synthesize choices; preserve the player's premise while negotiating costs and limits that create stakes. Do not claim changes are accepted. Speak naturally, with no schema or machine-state language.{}\n\nCURRENT PLAYER TURN, VERBATIM:\n{}\n\nPROJECTED LIVED CONTEXT:\n{}",
                     state.dm_persona.name,
                     state.dm_persona.voice,
                     focused_persona_instruction,
+                    current_player_turn,
                     lived.lived_stream
                 ),
                 output_schema: None,
@@ -1497,7 +1507,7 @@ impl SessionZeroDirector {
                     model: self.interpreter_model.clone(),
                     snapshot_binding: binding,
                     lived_stream: format!(
-                        "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation during ordinary conversation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. Ghostlight owns durable decision IDs, channel ownership, actor binding, permission IDs, materiality, evidence custody, and lifecycle state, so they are absent from your output. If turn_focus is present, it is the one exception: use countered_decision as the exact basis, preserve its unchanged typed fields, apply the pending counter, and emit exactly one replacement decision. Do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
+                        "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. The exact current_player_message is the factual basis for a change only when the DM response clearly offers or endorses that change for review. Never copy current contract fields or existing unresolved decisions into the interpretation during ordinary conversation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. Ghostlight owns durable decision IDs, channel ownership, actor binding, permission IDs, materiality, evidence custody, and lifecycle state, so they are absent from your output. If turn_focus is present, it is the one exception: use countered_decision as the exact basis, preserve its unchanged typed fields, apply the pending counter, and emit exactly one replacement decision. Do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
                         serde_json::to_string(&interpreter_schema)?,
                         serde_json::to_string(&interpreter_context)?,
                         serde_json::to_string(&persona.narrative)?
@@ -1915,11 +1925,13 @@ fn permitted_dm_context(
         }
         return Ok(value);
     }
+    let current_player_message = current_player_message(state, channel_id)?;
     let recent_messages = channel
         .message_ids
         .iter()
         .rev()
-        .take(16)
+        .skip(1)
+        .take(6)
         .rev()
         .filter_map(|id| state.messages.get(id))
         .map(|message| {
@@ -1948,6 +1960,10 @@ fn permitted_dm_context(
         "public_party": public_party,
         "unresolved_decisions": visible_decisions,
         "turn_focus": null,
+        "current_player_message": {
+            "author_member_id": current_player_message.author_member_id,
+            "text": current_player_message.text,
+        },
         "recent_messages": recent_messages,
         "evidence_coverage": state.preview_evidence_coverage,
     });
@@ -1957,7 +1973,7 @@ fn permitted_dm_context(
             .channels
             .get("shared:table")
             .into_iter()
-            .flat_map(|shared| shared.message_ids.iter().rev().take(8).rev())
+            .flat_map(|shared| shared.message_ids.iter().rev().take(4).rev())
             .filter_map(|id| state.messages.get(id))
             .map(|message| {
                 serde_json::json!({
@@ -2023,13 +2039,17 @@ fn permitted_interpreter_context(
         }
         return Ok(value);
     }
+    let current_player_message = current_player_message(state, channel_id)?;
     let visible_decisions = visible_decisions_for_turn(state, member_id, None)?;
     let mut value = serde_json::json!({
         "channel_kind": channel.kind,
         "member_id": member_id,
-        "current_contract": state.contract,
         "existing_visible_decisions": visible_decisions,
         "turn_focus": null,
+        "current_player_message": {
+            "author_member_id": current_player_message.author_member_id,
+            "text": current_player_message.text,
+        },
     });
     if channel.kind == SessionZeroChannelKind::PrivateDm {
         let member_id = member_id.ok_or_else(|| anyhow!("private member is missing"))?;
@@ -2039,8 +2059,31 @@ fn permitted_interpreter_context(
                 .get(member_id)
                 .ok_or_else(|| anyhow!("private character draft is missing"))?,
         )?;
+    } else {
+        value["current_contract"] = serde_json::to_value(&state.contract)?;
     }
     Ok(value)
+}
+
+fn current_player_message<'a>(
+    state: &'a SessionZeroState,
+    channel_id: &str,
+) -> Result<&'a SessionZeroMessage> {
+    let channel = state
+        .channels
+        .get(channel_id)
+        .ok_or_else(|| anyhow!("channel does not exist"))?;
+    let message = channel
+        .message_ids
+        .last()
+        .and_then(|id| state.messages.get(id))
+        .ok_or_else(|| anyhow!("Session Zero DM turn has no current player message"))?;
+    if message.speaker != SessionZeroSpeakerKind::Player {
+        return Err(anyhow!(
+            "Session Zero DM turn is not bound to a current player message"
+        ));
+    }
+    Ok(message)
 }
 
 fn visible_decisions_for_turn<'a>(
@@ -4326,9 +4369,17 @@ mod tests {
                         .find("DYNAMIC PERMITTED CONTEXT:")
                         .expect("projector must receive permitted state");
                     assert!(schema < dynamic);
+                    assert!(request.lived_stream.contains("Plan a Mars campaign."));
                     Ok(r#"{"lived_stream":"The player wants a serious political campaign on Mars, but tone, character, and stakes remain open."}"#.into())
                 }
-                "session_zero_dm_persona" => Ok(PERSONA_SPEECH.into()),
+                "session_zero_dm_persona" => {
+                    assert!(
+                        request
+                            .lived_stream
+                            .contains("CURRENT PLAYER TURN, VERBATIM:\nPlan a Mars campaign.")
+                    );
+                    Ok(PERSONA_SPEECH.into())
+                }
                 "session_zero_interpreter" => {
                     let schema = request
                         .lived_stream
@@ -4341,6 +4392,7 @@ mod tests {
                     assert!(schema < dynamic);
                     assert!(!request.lived_stream.contains("\"dm_speech\""));
                     assert!(!request.lived_stream.contains("\"recent_messages\""));
+                    assert!(request.lived_stream.contains("Plan a Mars campaign."));
                     Ok(r#"{"contract_patch":{"starting_where":"Mars in Zhestokost space","tone":["serious","political"]},"character_patch":null,"decisions":[],"suggested_replies":[]}"#.into())
                 }
                 stage => panic!("unexpected Session Zero model stage {stage}"),
@@ -4570,8 +4622,18 @@ mod tests {
             "persona",
             "interpreter",
         );
+        let mut draft = state();
+        let host_id = draft.host_member_id.clone();
+        append_message(
+            &mut draft,
+            "shared:table".into(),
+            Some(host_id),
+            SessionZeroSpeakerKind::Player,
+            "Plan a Mars campaign.".into(),
+        )
+        .unwrap();
         let (delta, receipts) = director
-            .respond(&state(), "shared:table", None, None)
+            .respond(&draft, "shared:table", None, None)
             .await
             .unwrap();
         assert_eq!(
@@ -4820,6 +4882,15 @@ mod tests {
     #[test]
     fn ui_suggestions_never_enter_dm_or_interpreter_cognition() {
         let mut draft = state();
+        let host_id = draft.host_member_id.clone();
+        append_message(
+            &mut draft,
+            "shared:table".into(),
+            Some(host_id),
+            SessionZeroSpeakerKind::Player,
+            "Use the negotiated post-Burden frame, not the generated openings.".into(),
+        )
+        .unwrap();
         draft.decisions.insert(
             "opening:unselected".into(),
             SessionZeroDecision {
@@ -5097,10 +5168,47 @@ mod tests {
         assert!(shared.contains("Hellas inside Zhestokost space"));
         assert!(!shared.contains("forged transit credential"));
         assert!(
-            serde_json::to_string(&context["recent_messages"])
+            serde_json::to_string(&context["current_player_message"])
                 .unwrap()
                 .contains("forged transit credential")
         );
+        assert!(
+            !serde_json::to_string(&context["recent_messages"])
+                .unwrap()
+                .contains("forged transit credential")
+        );
+        let interpreter =
+            permitted_interpreter_context(&draft, &private_channel, Some(&host_id), None).unwrap();
+        assert!(
+            serde_json::to_string(&interpreter["current_player_message"])
+                .unwrap()
+                .contains("forged transit credential")
+        );
+        assert!(interpreter.get("current_contract").is_none());
+    }
+
+    #[test]
+    fn ordinary_dm_context_keeps_one_exact_current_turn_and_six_prior_channel_turns() {
+        let mut draft = state();
+        let host_id = draft.host_member_id.clone();
+        let private_channel = format!("private:{host_id}");
+        for index in 0..10 {
+            append_message(
+                &mut draft,
+                private_channel.clone(),
+                Some(host_id.clone()),
+                SessionZeroSpeakerKind::Player,
+                format!("private-turn-{index}"),
+            )
+            .unwrap();
+        }
+
+        let context = permitted_dm_context(&draft, &private_channel, Some(&host_id), None).unwrap();
+        assert_eq!(context["current_player_message"]["text"], "private-turn-9");
+        let history = context["recent_messages"].as_array().unwrap();
+        assert_eq!(history.len(), 6);
+        assert_eq!(history[0]["text"], "private-turn-3");
+        assert_eq!(history[5]["text"], "private-turn-8");
     }
 
     #[test]

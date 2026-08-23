@@ -29,11 +29,15 @@ Heimdall member messages
 compiler. Account and invitation hashes remain persistence-only; shared model
 turns, browser surfaces, schemas, and CultMesh records cannot see them.
 
-Session Zero extraction is one atomic membrane with separated authorship. The
-Projector receives channel-permitted state and recent conversation; the Persona
-receives only its lived narrative and owns the complete natural DM utterance;
-the Interpreter receives a smaller typed extraction context and cannot emit a
-speech field. Ghostlight binds the exact Persona output to the Interpreter's
+Session Zero extraction is one atomic membrane with separated authorship. For
+an ordinary turn, Ghostlight binds one exact current player message separately
+from six prior same-channel turns and four shared continuity turns. The
+Projector receives that bounded channel-permitted state; the Persona receives
+the current turn verbatim plus its lived narrative and owns the complete
+natural DM utterance. The Interpreter receives the same current turn, only the
+typed state for its channel's authority lane, and no speech field. A private
+Interpreter does not receive the shared contract merely to be forbidden from
+editing it. Ghostlight binds the exact Persona output to the Interpreter's
 typed proposals only after every stage validates against the same component
 epoch. Interpreter failure therefore commits neither prose nor draft state.
 

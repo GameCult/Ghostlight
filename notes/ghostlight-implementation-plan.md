@@ -35,7 +35,11 @@ Session Zero model custody is split by purpose: every committed invocation is
 retained in the audit for cost and failure analysis, while only the exact
 compiler transaction behind the current preview is eligible for campaign
 publication. Superseded previews and ordinary DM turns cannot contaminate the
-seed proof set.
+seed proof set. Ordinary DM turns bind the current player message verbatim
+outside the lossy Projector summary, retain only six prior channel turns and
+four shared continuity turns, and give the Interpreter only its channel's typed
+authority lane. This keeps exact player intent available while reducing the
+prompt space in which already-settled questions can become salient again.
 
 The current interface cut makes that Eve publication the browser's actual
 product boundary. `ghostlight.play` is one stable actor-filtered surface across
