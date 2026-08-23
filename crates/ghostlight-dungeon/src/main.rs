@@ -4853,7 +4853,9 @@ fn world_compile_preview_projection(preview: &WorldCompilePreview) -> serde_json
 fn region_expansion_preview_projection(preview: &RegionExpansionPreview) -> serde_json::Value {
     serde_json::json!({
         "origin_location_id":preview.expansion.origin_location_id,
+        "origin_routes":preview.expansion.origin_routes,
         "locations":preview.expansion.locations,
+        "facts":preview.expansion.facts,
         "gaps":preview.gaps,
         "requires_approval":preview.requires_approval,
     })

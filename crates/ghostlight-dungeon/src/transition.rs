@@ -1,4 +1,4 @@
-use crate::domain::{OutcomeBand, StrategicOutcomeBand};
+use crate::domain::{FactScope, OutcomeBand, StrategicOutcomeBand};
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use schemars::{JsonSchema, schema_for};
@@ -50,6 +50,8 @@ pub enum WorldComponentKind {
     Posture,
     PopulationMembership,
     PopulationLineage,
+    PlaceProfile,
+    PropositionContent,
     Topology,
     Lifecycle,
     WorldTime,
@@ -242,6 +244,7 @@ pub enum MutationStringRole {
     IdentityHandleId,
     IdentityHandleValue,
     TopologyEdgeId,
+    Distance,
     AdmissionReceiptId,
 }
 
@@ -290,6 +293,8 @@ pub struct MutationPermit {
     pub string_constraints: BTreeMap<MutationStringRole, StringConstraint>,
     #[serde(default)]
     pub integer_bounds: BTreeMap<MutationIntegerRole, IntegerBounds>,
+    #[serde(default)]
+    pub exact_mutation: Option<WorldMutation>,
     #[schemars(range(min = 1))]
     pub maximum_uses: u16,
 }
@@ -430,6 +435,27 @@ pub enum TopologyMutationOperation {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum AdmittedEntityProfile {
+    Place {
+        #[schemars(length(min = 1, max = 240))]
+        name: String,
+        container: Option<SubjectRef>,
+        #[serde(default)]
+        persistent_features: BTreeSet<String>,
+    },
+    Proposition {
+        #[schemars(length(min = 1, max = 4000))]
+        statement: String,
+        scope: FactScope,
+        #[serde(default)]
+        evidence_receipt_ids: BTreeSet<String>,
+        #[serde(default)]
+        discoverable_at_places: BTreeSet<SubjectRef>,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum WorldMutation {
     Relocate {
@@ -544,6 +570,8 @@ pub enum WorldMutation {
         edge_id: String,
         from_place: SubjectRef,
         to_place: SubjectRef,
+        #[serde(default)]
+        distance: Option<String>,
         travel_minutes: Option<i64>,
     },
     AdmitEntity {
@@ -551,6 +579,8 @@ pub enum WorldMutation {
         initial_components: BTreeSet<WorldComponentKind>,
         #[serde(default)]
         initial_place: Option<SubjectRef>,
+        #[serde(default)]
+        initial_profile: Option<AdmittedEntityProfile>,
         admission_receipt_id: String,
     },
     RetireEntity {
@@ -748,10 +778,34 @@ pub struct PopulationLineageState {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct PlaceComponentState {
+    pub place: SubjectRef,
+    pub name: String,
+    pub container: Option<SubjectRef>,
+    #[serde(default)]
+    pub persistent_features: BTreeSet<String>,
+    pub version: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct PropositionComponentState {
+    pub proposition: SubjectRef,
+    pub statement: String,
+    pub scope: FactScope,
+    #[serde(default)]
+    pub evidence_receipt_ids: BTreeSet<String>,
+    #[serde(default)]
+    pub discoverable_at_places: BTreeSet<SubjectRef>,
+    pub version: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct TopologyComponentState {
     pub id: String,
     pub from_place: SubjectRef,
     pub to_place: SubjectRef,
+    #[serde(default = "default_route_distance")]
+    pub distance: String,
     pub travel_minutes: i64,
     pub open: bool,
     pub version: u64,
@@ -779,7 +833,15 @@ pub struct ComponentWorldState {
     pub memberships: BTreeMap<MembershipKey, PopulationMembershipState>,
     pub population_lineages: BTreeMap<String, PopulationLineageState>,
     pub identities: BTreeMap<String, IdentityHandleState>,
+    #[serde(default)]
+    pub place_profiles: BTreeMap<SubjectRef, PlaceComponentState>,
+    #[serde(default)]
+    pub propositions: BTreeMap<SubjectRef, PropositionComponentState>,
     pub topology: BTreeMap<String, TopologyComponentState>,
+}
+
+fn default_route_distance() -> String {
+    "unspecified".into()
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1237,6 +1299,7 @@ fn apply_component_mutation(
             edge_id,
             from_place,
             to_place,
+            distance,
             travel_minutes,
         } => apply_topology_mutation(
             state,
@@ -1244,12 +1307,14 @@ fn apply_component_mutation(
             edge_id,
             from_place,
             to_place,
+            distance.as_deref(),
             *travel_minutes,
         )?,
         AdmitEntity {
             subject,
             initial_components,
             initial_place,
+            initial_profile,
             ..
         } => {
             if subject.kind == SubjectKind::Resource {
@@ -1272,6 +1337,44 @@ fn apply_component_mutation(
                 active_subject(state, place)?;
                 require_kind(place, SubjectKind::Place)?;
                 state.occupancy.insert(subject.clone(), place.clone());
+            }
+            let version = next_component_version(state);
+            match initial_profile {
+                Some(AdmittedEntityProfile::Place {
+                    name,
+                    container,
+                    persistent_features,
+                }) => {
+                    state.place_profiles.insert(
+                        subject.clone(),
+                        PlaceComponentState {
+                            place: subject.clone(),
+                            name: name.clone(),
+                            container: container.clone(),
+                            persistent_features: persistent_features.clone(),
+                            version,
+                        },
+                    );
+                }
+                Some(AdmittedEntityProfile::Proposition {
+                    statement,
+                    scope,
+                    evidence_receipt_ids,
+                    discoverable_at_places,
+                }) => {
+                    state.propositions.insert(
+                        subject.clone(),
+                        PropositionComponentState {
+                            proposition: subject.clone(),
+                            statement: statement.clone(),
+                            scope: scope.clone(),
+                            evidence_receipt_ids: evidence_receipt_ids.clone(),
+                            discoverable_at_places: discoverable_at_places.clone(),
+                            version,
+                        },
+                    );
+                }
+                None => {}
             }
         }
         RetireEntity { subject, .. } => retire_entity(state, subject)?,
@@ -2315,6 +2418,7 @@ fn apply_topology_mutation(
     edge_id: &str,
     from_place: &SubjectRef,
     to_place: &SubjectRef,
+    distance: Option<&str>,
     travel_minutes: Option<i64>,
 ) -> Result<()> {
     active_subject(state, from_place)?;
@@ -2333,12 +2437,16 @@ fn apply_topology_mutation(
             let travel_minutes = travel_minutes
                 .filter(|minutes| *minutes > 0)
                 .ok_or_else(|| anyhow!("topology edge requires positive travel time"))?;
+            let distance = distance
+                .filter(|value| !value.trim().is_empty())
+                .ok_or_else(|| anyhow!("topology edge requires a distance description"))?;
             state.topology.insert(
                 edge_id.into(),
                 TopologyComponentState {
                     id: edge_id.into(),
                     from_place: from_place.clone(),
                     to_place: to_place.clone(),
+                    distance: distance.into(),
                     travel_minutes,
                     open: true,
                     version,
@@ -2356,6 +2464,10 @@ fn apply_topology_mutation(
             value.travel_minutes = travel_minutes
                 .filter(|minutes| *minutes > 0)
                 .ok_or_else(|| anyhow!("topology alteration requires positive travel time"))?;
+            value.distance = distance
+                .filter(|value| !value.trim().is_empty())
+                .ok_or_else(|| anyhow!("topology alteration requires a distance description"))?
+                .into();
             value.version = version;
         }
         TopologyMutationOperation::Open | TopologyMutationOperation::Close => {
@@ -2390,6 +2502,7 @@ fn apply_topology_mutation(
 fn retire_entity(state: &mut ComponentWorldState, subject: &SubjectRef) -> Result<()> {
     active_subject(state, subject)?;
     if state.occupancy.contains_key(subject)
+        || state.occupancy.values().any(|place| place == subject)
         || state.custody.contains_key(subject)
         || state.custody.values().any(|owner| owner == subject)
         || state.memberships.iter().any(|(key, value)| {
@@ -2406,6 +2519,18 @@ fn retire_entity(state: &mut ComponentWorldState, subject: &SubjectRef) -> Resul
         || state.commitments.iter().any(|(key, commitment)| {
             &key.subject == subject || commitment.counterparty.as_ref() == Some(subject)
         })
+        || state
+            .knowledge
+            .keys()
+            .any(|key| &key.knower == subject || &key.proposition == subject)
+        || state
+            .place_profiles
+            .values()
+            .any(|profile| profile.container.as_ref() == Some(subject))
+        || state
+            .propositions
+            .values()
+            .any(|proposition| proposition.discoverable_at_places.contains(subject))
     {
         return Err(anyhow!(
             "entity retirement would leave active component references"
@@ -2418,6 +2543,8 @@ fn retire_entity(state: &mut ComponentWorldState, subject: &SubjectRef) -> Resul
         .expect("active subject was resolved");
     record.lifecycle = LifecycleStatus::Retired;
     record.version = version;
+    state.place_profiles.remove(subject);
+    state.propositions.remove(subject);
     Ok(())
 }
 
@@ -2530,12 +2657,93 @@ pub fn validate_component_world(state: &ComponentWorldState) -> Result<()> {
             active_subject(state, observer)?;
         }
     }
+    for (place, profile) in &state.place_profiles {
+        let subject = active_subject(state, place)?;
+        require_kind(place, SubjectKind::Place)?;
+        if &profile.place != place
+            || profile.name.trim().is_empty()
+            || !subject
+                .admitted_components
+                .contains(&WorldComponentKind::PlaceProfile)
+            || profile
+                .persistent_features
+                .iter()
+                .any(|feature| feature.trim().is_empty())
+        {
+            return Err(anyhow!("place profile is malformed"));
+        }
+        if let Some(container) = &profile.container {
+            active_subject(state, container)?;
+            require_kind(container, SubjectKind::Place)?;
+            if container == place {
+                return Err(anyhow!("place cannot contain itself"));
+            }
+        }
+    }
+    for (subject, record) in &state.subjects {
+        if matches!(
+            record.lifecycle,
+            LifecycleStatus::Admitted | LifecycleStatus::Active
+        ) && subject.kind == SubjectKind::Place
+            && !state.place_profiles.contains_key(subject)
+        {
+            return Err(anyhow!("active place lacks its canonical profile"));
+        }
+    }
+    for start in state.place_profiles.keys() {
+        let mut seen = BTreeSet::new();
+        let mut cursor = Some(start);
+        while let Some(place) = cursor {
+            if !seen.insert(place.clone()) {
+                return Err(anyhow!("place containment contains a cycle"));
+            }
+            cursor = state
+                .place_profiles
+                .get(place)
+                .and_then(|profile| profile.container.as_ref());
+        }
+    }
+    let mut proposition_statements = BTreeSet::new();
+    for (proposition, value) in &state.propositions {
+        let subject = active_subject(state, proposition)?;
+        require_kind(proposition, SubjectKind::Proposition)?;
+        if &value.proposition != proposition
+            || value.statement.trim().is_empty()
+            || !proposition_statements.insert(value.statement.clone())
+            || !subject
+                .admitted_components
+                .contains(&WorldComponentKind::PropositionContent)
+            || value
+                .evidence_receipt_ids
+                .iter()
+                .any(|receipt_id| receipt_id.trim().is_empty())
+        {
+            return Err(anyhow!("proposition content is malformed"));
+        }
+        for place in &value.discoverable_at_places {
+            active_subject(state, place)?;
+            require_kind(place, SubjectKind::Place)?;
+        }
+    }
+    for (subject, record) in &state.subjects {
+        if matches!(
+            record.lifecycle,
+            LifecycleStatus::Admitted | LifecycleStatus::Active
+        ) && subject.kind == SubjectKind::Proposition
+            && !state.propositions.contains_key(subject)
+        {
+            return Err(anyhow!("active proposition lacks canonical content"));
+        }
+    }
     for edge in state.topology.values() {
         active_subject(state, &edge.from_place)?;
         active_subject(state, &edge.to_place)?;
         require_kind(&edge.from_place, SubjectKind::Place)?;
         require_kind(&edge.to_place, SubjectKind::Place)?;
-        if edge.travel_minutes <= 0 || edge.from_place == edge.to_place {
+        if edge.distance.trim().is_empty()
+            || edge.travel_minutes <= 0
+            || edge.from_place == edge.to_place
+        {
             return Err(anyhow!("topology edge is malformed"));
         }
     }
@@ -2646,14 +2854,24 @@ fn mutation_component_refs(
         AdmitEntity {
             subject,
             initial_place,
+            initial_profile,
             ..
-        } => std::iter::once((subject.clone(), Component::Lifecycle, None))
-            .chain(
-                initial_place
-                    .iter()
-                    .map(|_| (subject.clone(), Component::Occupancy, None)),
-            )
-            .collect(),
+        } => {
+            let mut refs = vec![(subject.clone(), Component::Lifecycle, None)];
+            if initial_place.is_some() {
+                refs.push((subject.clone(), Component::Occupancy, None));
+            }
+            match initial_profile {
+                Some(AdmittedEntityProfile::Place { .. }) => {
+                    refs.push((subject.clone(), Component::PlaceProfile, None));
+                }
+                Some(AdmittedEntityProfile::Proposition { .. }) => {
+                    refs.push((subject.clone(), Component::PropositionContent, None));
+                }
+                None => {}
+            }
+            refs
+        }
         RetireEntity { subject, .. } => vec![(subject.clone(), Component::Lifecycle, None)],
         AdvanceWorldTime { campaign, .. } => vec![(campaign.clone(), Component::WorldTime, None)],
     }
@@ -2746,6 +2964,20 @@ fn permit_schema_branch(
     permit: &MutationPermit,
     variants: &[serde_json::Value],
 ) -> Result<serde_json::Value> {
+    if let Some(exact) = &permit.exact_mutation {
+        if exact.operation() != permit.operation {
+            return Err(anyhow!("exact mutation permit operation is inconsistent"));
+        }
+        return Ok(serde_json::json!({
+            "type":"object",
+            "additionalProperties":false,
+            "required":["permit_id","mutation"],
+            "properties":{
+                "permit_id":{"const":permit.id},
+                "mutation":{"const":exact}
+            }
+        }));
+    }
     let (mutation_type, operation) = mutation_schema_tags(permit.operation);
     let mut mutation = variants
         .iter()
@@ -3044,9 +3276,14 @@ fn string_schema_fields(
             (IdentityHandleId, "handle_id", Required),
             (IdentityHandleValue, "handle_value", Optional),
         ],
-        TopologyAdd | TopologyAlter | TopologyOpen | TopologyClose | TopologyRetire => {
-            vec![(TopologyEdgeId, "edge_id", Required)]
-        }
+        TopologyAdd | TopologyAlter => vec![
+            (TopologyEdgeId, "edge_id", Required),
+            (Distance, "distance", Required),
+        ],
+        TopologyOpen | TopologyClose | TopologyRetire => vec![
+            (TopologyEdgeId, "edge_id", Required),
+            (Distance, "distance", Optional),
+        ],
         AdmitEntity => vec![(AdmissionReceiptId, "admission_receipt_id", Required)],
         RetireEntity => vec![(RetirementReason, "reason", Required)],
         TransferCustody | KnowledgeAcquire | KnowledgeCommunicate | KnowledgeConceal
@@ -3162,9 +3399,21 @@ fn mutation_schema_tags(operation: WorldMutationOperation) -> (&'static str, Opt
 }
 
 fn validate_permitted_mutation(permit: &MutationPermit, mutation: &WorldMutation) -> Result<()> {
+    if permit.operation == WorldMutationOperation::AdmitEntity && permit.exact_mutation.is_none() {
+        return Err(anyhow!(
+            "entity admission requires an exact typed mutation permit"
+        ));
+    }
     if mutation.operation() != permit.operation {
         return Err(anyhow!(
             "world mutation operation does not match its permit"
+        ));
+    }
+    if let Some(exact) = &permit.exact_mutation
+        && exact != mutation
+    {
+        return Err(anyhow!(
+            "world mutation differs from the exact semantic mutation admitted by its permit"
         ));
     }
     let roles = mutation.subject_roles();
@@ -3560,8 +3809,13 @@ impl WorldMutation {
                     values.push((MutationStringRole::IdentityHandleValue, value.clone()));
                 }
             }
-            ChangeTopology { edge_id, .. } => {
-                values.push((MutationStringRole::TopologyEdgeId, edge_id.clone()))
+            ChangeTopology {
+                edge_id, distance, ..
+            } => {
+                values.push((MutationStringRole::TopologyEdgeId, edge_id.clone()));
+                if let Some(value) = distance {
+                    values.push((MutationStringRole::Distance, value.clone()));
+                }
             }
             AdmitEntity {
                 admission_receipt_id,
@@ -3823,6 +4077,7 @@ impl WorldMutation {
             ChangeTopology {
                 operation,
                 edge_id,
+                distance,
                 travel_minutes,
                 ..
             } => {
@@ -3830,18 +4085,31 @@ impl WorldMutation {
                 if matches!(
                     operation,
                     TopologyMutationOperation::Add | TopologyMutationOperation::Alter
-                ) && travel_minutes.is_none()
+                ) && (travel_minutes.is_none()
+                    || distance
+                        .as_deref()
+                        .is_none_or(|value| value.trim().is_empty()))
                 {
                     return Err(anyhow!(
-                        "topology creation or alteration requires travel time"
+                        "topology creation or alteration requires distance and travel time"
+                    ));
+                }
+                if !matches!(
+                    operation,
+                    TopologyMutationOperation::Add | TopologyMutationOperation::Alter
+                ) && distance.is_some()
+                {
+                    return Err(anyhow!(
+                        "topology open, close, or retire cannot rewrite distance"
                     ));
                 }
             }
             AdmitEntity {
+                subject,
                 initial_components,
                 initial_place,
+                initial_profile,
                 admission_receipt_id,
-                ..
             } => {
                 if initial_components.is_empty() {
                     return Err(anyhow!("entity admission requires initial components"));
@@ -3855,6 +4123,88 @@ impl WorldMutation {
                 }
                 if let Some(place) = initial_place {
                     require_kind(place, SubjectKind::Place)?;
+                }
+                match (subject.kind.clone(), initial_profile) {
+                    (
+                        SubjectKind::Place,
+                        Some(AdmittedEntityProfile::Place {
+                            name,
+                            container,
+                            persistent_features,
+                        }),
+                    ) => {
+                        if !initial_components.contains(&WorldComponentKind::PlaceProfile)
+                            || !initial_components.contains(&WorldComponentKind::Topology)
+                            || initial_place.is_some()
+                        {
+                            return Err(anyhow!(
+                                "place admission requires place-profile and topology components without occupancy"
+                            ));
+                        }
+                        nonempty("place name", name)?;
+                        if let Some(container) = container {
+                            require_kind(container, SubjectKind::Place)?;
+                            nonempty("place container id", &container.id)?;
+                            if container == subject {
+                                return Err(anyhow!("place cannot contain itself"));
+                            }
+                        }
+                        if persistent_features
+                            .iter()
+                            .any(|feature| feature.trim().is_empty())
+                        {
+                            return Err(anyhow!("place profile contains an empty feature"));
+                        }
+                    }
+                    (
+                        SubjectKind::Proposition,
+                        Some(AdmittedEntityProfile::Proposition {
+                            statement,
+                            evidence_receipt_ids,
+                            discoverable_at_places,
+                            ..
+                        }),
+                    ) => {
+                        if !initial_components.contains(&WorldComponentKind::PropositionContent)
+                            || !initial_components.contains(&WorldComponentKind::Knowledge)
+                            || initial_place.is_some()
+                        {
+                            return Err(anyhow!(
+                                "proposition admission requires proposition-content and knowledge components without occupancy"
+                            ));
+                        }
+                        nonempty("proposition statement", statement)?;
+                        for receipt_id in evidence_receipt_ids {
+                            nonempty("proposition evidence receipt id", receipt_id)?;
+                        }
+                        for place in discoverable_at_places {
+                            require_kind(place, SubjectKind::Place)?;
+                            nonempty("proposition discovery place id", &place.id)?;
+                        }
+                    }
+                    (SubjectKind::Place, _) => {
+                        return Err(anyhow!("place admission requires an exact place profile"));
+                    }
+                    (SubjectKind::Proposition, _) => {
+                        return Err(anyhow!(
+                            "proposition admission requires exact proposition content"
+                        ));
+                    }
+                    (_, Some(_)) => {
+                        return Err(anyhow!(
+                            "entity admission profile does not match the subject kind"
+                        ));
+                    }
+                    (_, None)
+                        if initial_components.contains(&WorldComponentKind::PlaceProfile)
+                            || initial_components
+                                .contains(&WorldComponentKind::PropositionContent) =>
+                    {
+                        return Err(anyhow!(
+                            "non-place/proposition admission cannot claim definition components"
+                        ));
+                    }
+                    (_, None) => {}
                 }
                 nonempty("admission receipt id", admission_receipt_id)?;
             }
@@ -3918,6 +4268,7 @@ pub fn exact_mutation_permit(
         subject_bindings,
         string_constraints,
         integer_bounds,
+        exact_mutation: Some(mutation.clone()),
         maximum_uses: 1,
     })
 }
@@ -3968,6 +4319,7 @@ mod tests {
                 exact(&["route:camp-east"]),
             )]),
             integer_bounds: BTreeMap::new(),
+            exact_mutation: None,
             maximum_uses: 1,
         }
     }
@@ -4060,6 +4412,36 @@ mod tests {
     }
 
     #[test]
+    fn exact_admission_permit_binds_the_complete_place_profile() {
+        let mutation = WorldMutation::AdmitEntity {
+            subject: subject(SubjectKind::Place, "place:annex"),
+            initial_components: BTreeSet::from([
+                WorldComponentKind::PlaceProfile,
+                WorldComponentKind::Topology,
+            ]),
+            initial_place: None,
+            initial_profile: Some(AdmittedEntityProfile::Place {
+                name: "Annex".into(),
+                container: Some(subject(SubjectKind::Place, "place:camp")),
+                persistent_features: BTreeSet::from(["sealed gate".into()]),
+            }),
+            admission_receipt_id: "region-expansion:test".into(),
+        };
+        let permit = exact_mutation_permit("permit:annex", &mutation).unwrap();
+        validate_permitted_mutation(&permit, &mutation).unwrap();
+        let mut rewritten = mutation;
+        let WorldMutation::AdmitEntity {
+            initial_profile: Some(AdmittedEntityProfile::Place { name, .. }),
+            ..
+        } = &mut rewritten
+        else {
+            unreachable!();
+        };
+        *name = "Conveniently Adjacent Dream Annex".into();
+        assert!(validate_permitted_mutation(&permit, &rewritten).is_err());
+    }
+
+    #[test]
     fn stale_or_partially_invalid_batch_has_no_structural_admission() {
         let envelope = envelope();
         let mut batch = valid_batch(&envelope);
@@ -4139,6 +4521,7 @@ mod tests {
                 (MutationStringRole::IdentityHandleValue, exact(&["Sable"])),
             ]),
             integer_bounds: BTreeMap::new(),
+            exact_mutation: None,
             maximum_uses: 1,
         };
         let mutation = WorldMutation::ChangeIdentity {
@@ -4182,13 +4565,24 @@ mod tests {
             medicine.clone(),
             proposition.clone(),
         ] {
+            let admitted_components = match &value.kind {
+                SubjectKind::Place => BTreeSet::from([
+                    WorldComponentKind::PlaceProfile,
+                    WorldComponentKind::Topology,
+                ]),
+                SubjectKind::Proposition => BTreeSet::from([
+                    WorldComponentKind::Knowledge,
+                    WorldComponentKind::PropositionContent,
+                ]),
+                _ => BTreeSet::new(),
+            };
             subjects.insert(
                 value.clone(),
                 TypedSubject {
                     schema: "ghostlight.typed_subject.v1".into(),
                     subject: value,
                     lifecycle: LifecycleStatus::Active,
-                    admitted_components: BTreeSet::new(),
+                    admitted_components,
                     version: 4,
                 },
             );
@@ -4227,7 +4621,7 @@ mod tests {
             knowledge: BTreeMap::from([(
                 KnowledgeKey {
                     knower: sable,
-                    proposition,
+                    proposition: proposition.clone(),
                 },
                 KnowledgeComponentState {
                     status: "known".into(),
@@ -4251,12 +4645,46 @@ mod tests {
             )]),
             population_lineages: BTreeMap::new(),
             identities: BTreeMap::new(),
+            place_profiles: BTreeMap::from([
+                (
+                    camp.clone(),
+                    PlaceComponentState {
+                        place: camp.clone(),
+                        name: "Camp".into(),
+                        container: None,
+                        persistent_features: BTreeSet::new(),
+                        version: 4,
+                    },
+                ),
+                (
+                    subject(SubjectKind::Place, "place:trail"),
+                    PlaceComponentState {
+                        place: subject(SubjectKind::Place, "place:trail"),
+                        name: "Trail".into(),
+                        container: None,
+                        persistent_features: BTreeSet::new(),
+                        version: 4,
+                    },
+                ),
+            ]),
+            propositions: BTreeMap::from([(
+                proposition.clone(),
+                PropositionComponentState {
+                    proposition,
+                    statement: "The eastern trail exists.".into(),
+                    scope: FactScope::CanonBaseline,
+                    evidence_receipt_ids: BTreeSet::new(),
+                    discoverable_at_places: BTreeSet::from([camp.clone()]),
+                    version: 4,
+                },
+            )]),
             topology: BTreeMap::from([(
                 "route:camp-trail".into(),
                 TopologyComponentState {
                     id: "route:camp-trail".into(),
                     from_place: camp,
                     to_place: subject(SubjectKind::Place, "place:trail"),
+                    distance: "near".into(),
                     travel_minutes: 30,
                     open: true,
                     version: 4,
@@ -4284,6 +4712,7 @@ mod tests {
                 .collect(),
             string_constraints: strings.into_iter().collect(),
             integer_bounds: integers.into_iter().collect(),
+            exact_mutation: None,
             maximum_uses: 1,
         }
     }

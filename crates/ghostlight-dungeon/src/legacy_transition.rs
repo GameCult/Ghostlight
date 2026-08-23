@@ -170,6 +170,7 @@ pub fn lower_fission(
                 WorldComponentKind::PopulationLineage,
             ]),
             initial_place: Some(place_subject(&child.home_location_id)),
+            initial_profile: None,
             admission_receipt_id: source_receipt_id.clone(),
         });
         mutations.push(WorldMutation::ChangeIdentity {
@@ -244,6 +245,196 @@ pub fn apply_lowered_fission(
         apply_component_world_batch(&snapshot, &transition.authority, &transition.batch, now)?;
     project_accepted_fission(campaign, preview, &application.state)?;
     Ok(application.receipt)
+}
+
+pub fn lower_region_expansion(
+    campaign: &Campaign,
+    expansion: &crate::domain::RegionExpansion,
+    expires_at: DateTime<Utc>,
+) -> Result<LoweredLegacyTransition> {
+    crate::compiler::validate_region_expansion(campaign, expansion)?;
+    let expansion_digest = digest_serializable(expansion)?;
+    let source_receipt_id = format!(
+        "region-expansion:{}",
+        expansion_digest.trim_start_matches("sha256:")
+    );
+    let mut mutations = Vec::new();
+    for location in &expansion.locations {
+        mutations.push(WorldMutation::AdmitEntity {
+            subject: place_subject(&location.id),
+            initial_components: BTreeSet::from([
+                WorldComponentKind::PlaceProfile,
+                WorldComponentKind::Topology,
+            ]),
+            initial_place: None,
+            initial_profile: Some(AdmittedEntityProfile::Place {
+                name: location.name.clone(),
+                container: location.container_id.as_deref().map(place_subject),
+                persistent_features: location.persistent_features.iter().cloned().collect(),
+            }),
+            admission_receipt_id: source_receipt_id.clone(),
+        });
+    }
+    for fact in &expansion.facts {
+        mutations.push(WorldMutation::AdmitEntity {
+            subject: proposition_subject(&fact.id),
+            initial_components: BTreeSet::from([
+                WorldComponentKind::Knowledge,
+                WorldComponentKind::PropositionContent,
+            ]),
+            initial_place: None,
+            initial_profile: Some(AdmittedEntityProfile::Proposition {
+                statement: fact.statement.clone(),
+                scope: fact.scope.clone(),
+                evidence_receipt_ids: fact.evidence_receipt_ids.iter().cloned().collect(),
+                discoverable_at_places: fact
+                    .discoverable_at_location_ids
+                    .iter()
+                    .map(|id| place_subject(id))
+                    .collect(),
+            }),
+            admission_receipt_id: source_receipt_id.clone(),
+        });
+    }
+    let origin = place_subject(&expansion.origin_location_id);
+    for (route_id, route) in &expansion.origin_routes {
+        mutations.push(WorldMutation::ChangeTopology {
+            operation: TopologyMutationOperation::Add,
+            edge_id: route_id.clone(),
+            from_place: origin.clone(),
+            to_place: place_subject(&route.destination_id),
+            distance: Some(route.distance.clone()),
+            travel_minutes: Some(i64::from(route.travel_minutes)),
+        });
+    }
+    for location in &expansion.locations {
+        for (route_id, route) in &location.routes {
+            mutations.push(WorldMutation::ChangeTopology {
+                operation: TopologyMutationOperation::Add,
+                edge_id: route_id.clone(),
+                from_place: place_subject(&location.id),
+                to_place: place_subject(&route.destination_id),
+                distance: Some(route.distance.clone()),
+                travel_minutes: Some(i64::from(route.travel_minutes)),
+            });
+        }
+    }
+    lower_exact_mutations(
+        campaign,
+        mutations,
+        MutationProcedure::CompilerAdmission,
+        None,
+        MutationOutcomeBinding::Deterministic,
+        None,
+        "Admit only the approved place profiles and proposition contents, then add the exact approved route edges without rewriting existing geography.",
+        &source_receipt_id,
+        Some(digest_serializable(&(
+            "compile_destination",
+            &expansion.origin_location_id,
+        ))?),
+        Some(expansion_digest),
+        expires_at,
+    )
+}
+
+pub fn apply_lowered_region_expansion(
+    campaign: &mut Campaign,
+    expansion: &crate::domain::RegionExpansion,
+    transition: &LoweredLegacyTransition,
+    now: DateTime<Utc>,
+) -> Result<WorldMutationReceipt> {
+    crate::compiler::validate_region_expansion(campaign, expansion)?;
+    let snapshot = component_snapshot(campaign)?;
+    let application =
+        apply_component_world_batch(&snapshot, &transition.authority, &transition.batch, now)?;
+    project_accepted_region_expansion(campaign, expansion, &application.state)?;
+    Ok(application.receipt)
+}
+
+fn project_accepted_region_expansion(
+    campaign: &mut Campaign,
+    expansion: &crate::domain::RegionExpansion,
+    next: &ComponentWorldState,
+) -> Result<()> {
+    for requested in &expansion.locations {
+        let subject = place_subject(&requested.id);
+        let profile = next
+            .place_profiles
+            .get(&subject)
+            .ok_or_else(|| anyhow!("accepted expansion lost a place profile"))?;
+        let routes = next
+            .topology
+            .values()
+            .filter(|edge| edge.from_place == subject && edge.open)
+            .map(|edge| {
+                Ok((
+                    edge.id.clone(),
+                    crate::domain::Route {
+                        destination_id: edge.to_place.id.clone(),
+                        distance: edge.distance.clone(),
+                        travel_minutes: u32::try_from(edge.travel_minutes).map_err(|_| {
+                            anyhow!("accepted expansion travel time exceeds aggregate storage")
+                        })?,
+                    },
+                ))
+            })
+            .collect::<Result<BTreeMap<_, _>>>()?;
+        campaign.locations.insert(
+            subject.id.clone(),
+            crate::domain::Location {
+                id: subject.id,
+                name: profile.name.clone(),
+                container_id: profile
+                    .container
+                    .as_ref()
+                    .map(|container| container.id.clone()),
+                routes,
+                persistent_features: profile.persistent_features.iter().cloned().collect(),
+            },
+        );
+    }
+    let origin = campaign
+        .locations
+        .get_mut(&expansion.origin_location_id)
+        .ok_or_else(|| anyhow!("accepted expansion origin vanished"))?;
+    for route_id in expansion.origin_routes.keys() {
+        let edge = next
+            .topology
+            .get(route_id)
+            .filter(|edge| edge.from_place.id == expansion.origin_location_id && edge.open)
+            .ok_or_else(|| anyhow!("accepted expansion lost an origin route"))?;
+        origin.routes.insert(
+            route_id.clone(),
+            crate::domain::Route {
+                destination_id: edge.to_place.id.clone(),
+                distance: edge.distance.clone(),
+                travel_minutes: u32::try_from(edge.travel_minutes)
+                    .map_err(|_| anyhow!("accepted origin route exceeds aggregate storage"))?,
+            },
+        );
+    }
+    for requested in &expansion.facts {
+        let subject = proposition_subject(&requested.id);
+        let value = next
+            .propositions
+            .get(&subject)
+            .ok_or_else(|| anyhow!("accepted expansion lost proposition content"))?;
+        campaign.facts.insert(
+            subject.id.clone(),
+            crate::domain::WorldFact {
+                id: subject.id,
+                statement: value.statement.clone(),
+                scope: value.scope.clone(),
+                evidence_receipt_ids: value.evidence_receipt_ids.iter().cloned().collect(),
+                discoverable_at_location_ids: value
+                    .discoverable_at_places
+                    .iter()
+                    .map(|place| place.id.clone())
+                    .collect(),
+            },
+        );
+    }
+    Ok(())
 }
 
 fn project_accepted_fission(
@@ -1055,6 +1246,8 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
         memberships: BTreeMap::new(),
         population_lineages: BTreeMap::new(),
         identities: BTreeMap::new(),
+        place_profiles: BTreeMap::new(),
+        propositions: BTreeMap::new(),
         topology: BTreeMap::new(),
     };
     admit(
@@ -1067,8 +1260,22 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
         admit(
             &mut state,
             place_subject(&location.id),
-            BTreeSet::from([WorldComponentKind::Topology]),
+            BTreeSet::from([
+                WorldComponentKind::PlaceProfile,
+                WorldComponentKind::Topology,
+            ]),
             version,
+        );
+        let place = place_subject(&location.id);
+        state.place_profiles.insert(
+            place.clone(),
+            PlaceComponentState {
+                place,
+                name: location.name.clone(),
+                container: location.container_id.as_deref().map(place_subject),
+                persistent_features: location.persistent_features.iter().cloned().collect(),
+                version,
+            },
         );
     }
     for actor in campaign.actors.values() {
@@ -1439,11 +1646,30 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
         );
     }
     for fact in campaign.facts.values() {
+        let proposition = proposition_subject(&fact.id);
         admit(
             &mut state,
-            proposition_subject(&fact.id),
-            BTreeSet::from([WorldComponentKind::Knowledge]),
+            proposition.clone(),
+            BTreeSet::from([
+                WorldComponentKind::Knowledge,
+                WorldComponentKind::PropositionContent,
+            ]),
             version,
+        );
+        state.propositions.insert(
+            proposition.clone(),
+            PropositionComponentState {
+                proposition,
+                statement: fact.statement.clone(),
+                scope: fact.scope.clone(),
+                evidence_receipt_ids: fact.evidence_receipt_ids.iter().cloned().collect(),
+                discoverable_at_places: fact
+                    .discoverable_at_location_ids
+                    .iter()
+                    .map(|id| place_subject(id))
+                    .collect(),
+                version,
+            },
         );
     }
     for clock in campaign.clocks.values() {
@@ -1475,6 +1701,7 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
                     id: route_id.clone(),
                     from_place: place_subject(&location.id),
                     to_place: place_subject(&route.destination_id),
+                    distance: route.distance.clone(),
                     travel_minutes: i64::from(route.travel_minutes),
                     open: true,
                     version,
@@ -1492,15 +1719,7 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
             {
                 proposition_subject(&fact.id)
             } else {
-                let proposition =
-                    proposition_subject(&format!("legacy-knowledge:{}", short_digest(statement)));
-                admit(
-                    &mut state,
-                    proposition.clone(),
-                    BTreeSet::from([WorldComponentKind::Knowledge]),
-                    version,
-                );
-                proposition
+                ensure_proposition(&mut state, campaign, statement, version)
             };
             state.knowledge.insert(
                 KnowledgeKey {
@@ -2211,9 +2430,23 @@ fn ensure_proposition(
     admit(
         state,
         proposition.clone(),
-        BTreeSet::from([WorldComponentKind::Knowledge]),
+        BTreeSet::from([
+            WorldComponentKind::Knowledge,
+            WorldComponentKind::PropositionContent,
+        ]),
         version,
     );
+    state
+        .propositions
+        .entry(proposition.clone())
+        .or_insert_with(|| PropositionComponentState {
+            proposition: proposition.clone(),
+            statement: statement.into(),
+            scope: crate::domain::FactScope::ProvisionalLocal,
+            evidence_receipt_ids: BTreeSet::new(),
+            discoverable_at_places: BTreeSet::new(),
+            version,
+        });
     proposition
 }
 

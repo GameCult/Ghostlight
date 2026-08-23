@@ -830,7 +830,7 @@ pub struct CanonCandidate {
     pub status: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum FactScope {
     CanonBaseline,
@@ -1027,6 +1027,12 @@ fn default_true() -> bool {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct RegionExpansion {
     pub origin_location_id: String,
+    /// Exact outbound routes added to the already-materialized origin. Keeping
+    /// these separate from `locations` makes the existing-place mutation
+    /// explicit in the approval preview instead of deriving a hidden reverse
+    /// route after commit.
+    #[serde(default)]
+    pub origin_routes: BTreeMap<String, Route>,
     pub locations: Vec<Location>,
     pub facts: Vec<WorldFact>,
 }

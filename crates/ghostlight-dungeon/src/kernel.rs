@@ -1088,14 +1088,39 @@ fn execute(
             model_stage_receipts,
         } => {
             require_revision(&campaign, expected_revision)?;
+            let supplied_evidence = evidence_receipts
+                .iter()
+                .map(|receipt| receipt.id.as_str())
+                .collect::<BTreeSet<_>>();
+            if expansion.facts.iter().any(|fact| {
+                fact.evidence_receipt_ids
+                    .iter()
+                    .any(|id| !supplied_evidence.contains(id.as_str()))
+            }) || canon_candidates.iter().any(|candidate| {
+                candidate
+                    .evidence_receipt_ids
+                    .iter()
+                    .any(|id| !supplied_evidence.contains(id.as_str()))
+            }) {
+                return Err(KernelError::Invalid(
+                    "region expansion evidence receipts were not supplied".into(),
+                ));
+            }
             crate::compiler::validate_region_expansion(&campaign, &expansion)
                 .map_err(|error| KernelError::Invalid(error.to_string()))?;
-            for location in expansion.locations {
-                campaign.locations.insert(location.id.clone(), location);
-            }
-            for fact in expansion.facts {
-                campaign.facts.insert(fact.id.clone(), fact);
-            }
+            let transition = crate::legacy_transition::lower_region_expansion(
+                &campaign,
+                &expansion,
+                Utc::now() + Duration::minutes(5),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let mutation_receipt = crate::legacy_transition::apply_lowered_region_expansion(
+                &mut campaign,
+                &expansion,
+                &transition,
+                Utc::now(),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
             for candidate in &canon_candidates {
                 campaign
                     .canon_candidates
@@ -1109,7 +1134,7 @@ fn execute(
                 evidence_receipts,
                 canon_candidates,
                 model_stage_receipts,
-                None,
+                Some((transition, mutation_receipt)),
             )
         }
         WorldCommand::MaterializeGestaltMember {
@@ -3314,6 +3339,8 @@ mod tests {
             memberships: BTreeMap::new(),
             population_lineages: BTreeMap::new(),
             identities: BTreeMap::new(),
+            place_profiles: BTreeMap::new(),
+            propositions: BTreeMap::new(),
             topology: BTreeMap::new(),
         };
         let initial_world_time = state.world_time;
@@ -3334,6 +3361,7 @@ mod tests {
                     maximum: 30,
                 },
             )]),
+            exact_mutation: None,
             maximum_uses: 1,
         };
         let mut authority = MutationAuthorityEnvelope {
@@ -5219,8 +5247,22 @@ mod tests {
                 expected_revision: 0,
                 expansion: RegionExpansion {
                     origin_location_id: "room".into(),
+                    origin_routes: BTreeMap::from([(
+                        "to-annex".into(),
+                        Route {
+                            destination_id: "annex".into(),
+                            distance: "near".into(),
+                            travel_minutes: 10,
+                        },
+                    )]),
                     locations: vec![location],
-                    facts: vec![],
+                    facts: vec![WorldFact {
+                        id: "annex-gate".into(),
+                        statement: "The annex gate is maintained from the inner booth.".into(),
+                        scope: FactScope::BranchLocal,
+                        evidence_receipt_ids: vec![evidence.id.clone()],
+                        discoverable_at_location_ids: BTreeSet::from(["annex".into()]),
+                    }],
                 },
                 evidence_receipts: vec![evidence],
                 canon_candidates: vec![candidate],
@@ -5232,9 +5274,35 @@ mod tests {
             panic!("expected commit")
         };
         assert!(campaign.locations.contains_key("annex"));
+        assert_eq!(
+            campaign.locations["room"].routes["to-annex"].destination_id,
+            "annex"
+        );
         assert_eq!(campaign.revision, 1);
+        assert_eq!(
+            campaign.facts["annex-gate"].discoverable_at_location_ids,
+            BTreeSet::from(["annex".into()])
+        );
         assert_eq!(store.keys("vault_evidence_receipt.v1").unwrap().len(), 1);
         assert_eq!(store.keys("canon_candidate.v1").unwrap().len(), 1);
+        assert_eq!(store.keys("world_mutation_batch.v1").unwrap().len(), 1);
+        assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
+        let batches = store
+            .load_all::<crate::transition::WorldMutationBatch>("world_mutation_batch.v1")
+            .unwrap();
+        assert_eq!(batches[0].1.mutations.len(), 4);
+        assert_eq!(
+            batches[0]
+                .1
+                .mutations
+                .iter()
+                .filter(|mutation| matches!(
+                    &mutation.mutation,
+                    crate::transition::WorldMutation::AdmitEntity { .. }
+                ))
+                .count(),
+            2
+        );
         let (_, manifest): (_, VaultManifest) = store
             .load("vault_manifest.v1", &seed.id.to_string())
             .unwrap()

@@ -274,6 +274,7 @@ struct CompiledAgencyRelation {
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CompiledExpansionSeed {
+    origin_routes: BTreeMap<String, crate::domain::Route>,
     locations: Vec<Location>,
     facts: Vec<WorldFact>,
     gaps: Vec<String>,
@@ -1117,7 +1118,7 @@ impl WorldCompiler {
             .await?;
         let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
         let base_prompt = format!(
-            "Compile only the requested bounded destination region. Every new location id must be new. At least one new location must route back to origin id {} with a positive travel time. Do not rewrite existing geography. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes owned by origin id {} into the new region, and give every such destination a reciprocal route back to the origin with the same positive travel time. Route IDs are globally unique. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
             origin_location_id,
             serde_json::to_string(&campaign.locations)?,
             destination_request,
@@ -1141,6 +1142,7 @@ impl WorldCompiler {
             let seed: CompiledExpansionSeed = serde_json::from_value(output.0)?;
             let expansion = crate::domain::RegionExpansion {
                 origin_location_id: origin_location_id.into(),
+                origin_routes: seed.origin_routes.clone(),
                 locations: seed.locations.clone(),
                 facts: seed.facts.clone(),
             };
@@ -2425,7 +2427,10 @@ pub fn validate_region_expansion(
         return Err(anyhow!("destination expansion origin is unknown"));
     }
     let new_ids: BTreeSet<_> = expansion.locations.iter().map(|x| x.id.as_str()).collect();
-    if expansion.locations.is_empty() || new_ids.len() != expansion.locations.len() {
+    if expansion.locations.is_empty()
+        || new_ids.len() != expansion.locations.len()
+        || new_ids.iter().any(|id| id.trim().is_empty())
+    {
         return Err(anyhow!("destination expansion has no unique locations"));
     }
     if new_ids
@@ -2437,10 +2442,76 @@ pub fn validate_region_expansion(
         ));
     }
     let known = |id: &str| campaign.locations.contains_key(id) || new_ids.contains(id);
+    let new_locations = expansion
+        .locations
+        .iter()
+        .map(|location| (location.id.as_str(), location))
+        .collect::<BTreeMap<_, _>>();
+    let existing_route_ids = campaign
+        .locations
+        .values()
+        .flat_map(|location| location.routes.keys().map(String::as_str))
+        .collect::<BTreeSet<_>>();
+    let mut new_route_ids = BTreeSet::new();
+    if expansion.origin_routes.is_empty() {
+        return Err(anyhow!(
+            "destination expansion has no explicit route from the origin"
+        ));
+    }
+    for (route_id, route) in &expansion.origin_routes {
+        if route_id.trim().is_empty()
+            || existing_route_ids.contains(route_id.as_str())
+            || !new_route_ids.insert(route_id.as_str())
+            || route.travel_minutes == 0
+            || route.distance.trim().is_empty()
+            || !new_ids.contains(route.destination_id.as_str())
+        {
+            return Err(anyhow!("destination expansion has an invalid origin route"));
+        }
+        let destination = new_locations
+            .get(route.destination_id.as_str())
+            .expect("origin route destination was admitted above");
+        if !destination.routes.values().any(|reverse| {
+            reverse.destination_id == expansion.origin_location_id
+                && reverse.travel_minutes == route.travel_minutes
+        }) {
+            return Err(anyhow!(
+                "destination expansion origin route lacks an exact reciprocal return route"
+            ));
+        }
+    }
     let mut attached = false;
     for location in &expansion.locations {
-        for route in location.routes.values() {
-            if route.travel_minutes == 0 || !known(&route.destination_id) {
+        if location.name.trim().is_empty()
+            || location
+                .persistent_features
+                .iter()
+                .any(|feature| feature.trim().is_empty())
+            || location
+                .persistent_features
+                .iter()
+                .collect::<BTreeSet<_>>()
+                .len()
+                != location.persistent_features.len()
+        {
+            return Err(anyhow!(
+                "destination expansion has a malformed place profile"
+            ));
+        }
+        if let Some(container_id) = &location.container_id
+            && (!known(container_id) || container_id == &location.id)
+        {
+            return Err(anyhow!("destination expansion has an invalid container"));
+        }
+        for (route_id, route) in &location.routes {
+            if route_id.trim().is_empty()
+                || existing_route_ids.contains(route_id.as_str())
+                || !new_route_ids.insert(route_id.as_str())
+                || route.travel_minutes == 0
+                || route.distance.trim().is_empty()
+                || !known(&route.destination_id)
+                || route.destination_id == location.id
+            {
                 return Err(anyhow!("destination expansion has a dangling route"));
             }
             if route.destination_id == expansion.origin_location_id {
@@ -2450,6 +2521,26 @@ pub fn validate_region_expansion(
     }
     if !attached {
         return Err(anyhow!("destination expansion is not attached to origin"));
+    }
+    for location in &expansion.locations {
+        let mut seen = BTreeSet::from([location.id.as_str()]);
+        let mut cursor = location.container_id.as_deref();
+        while let Some(container_id) = cursor {
+            if !seen.insert(container_id) {
+                return Err(anyhow!(
+                    "destination expansion containment contains a cycle"
+                ));
+            }
+            cursor = new_locations
+                .get(container_id)
+                .and_then(|container| container.container_id.as_deref())
+                .or_else(|| {
+                    campaign
+                        .locations
+                        .get(container_id)
+                        .and_then(|container| container.container_id.as_deref())
+                });
+        }
     }
     let existing_fact_ids = campaign.facts.keys().collect::<BTreeSet<_>>();
     let mut new_fact_ids = BTreeSet::new();
@@ -2464,6 +2555,10 @@ pub fn validate_region_expansion(
             || !new_fact_ids.insert(fact.id.clone())
             || fact.statement.trim().is_empty()
             || !fact_statements.insert(fact.statement.clone())
+            || fact
+                .evidence_receipt_ids
+                .iter()
+                .any(|receipt_id| receipt_id.trim().is_empty())
         {
             return Err(anyhow!(
                 "destination expansion facts must have new IDs and non-empty unique statements"
@@ -4924,5 +5019,68 @@ mod tests {
         assert_eq!(world_receipts.len(), 2);
         assert_eq!(world_receipts[0].validation_result, "semantic_invalid");
         assert_eq!(world_receipts[1].validation_result, "valid");
+    }
+
+    fn valid_region_expansion() -> crate::domain::RegionExpansion {
+        crate::domain::RegionExpansion {
+            origin_location_id: "center".into(),
+            origin_routes: BTreeMap::from([(
+                "route:center-annex".into(),
+                crate::domain::Route {
+                    destination_id: "annex".into(),
+                    distance: "near".into(),
+                    travel_minutes: 10,
+                },
+            )]),
+            locations: vec![Location {
+                id: "annex".into(),
+                name: "Annex".into(),
+                container_id: None,
+                routes: BTreeMap::from([(
+                    "route:annex-center".into(),
+                    crate::domain::Route {
+                        destination_id: "center".into(),
+                        distance: "near".into(),
+                        travel_minutes: 10,
+                    },
+                )]),
+                persistent_features: vec!["sealed gate".into()],
+            }],
+            facts: vec![],
+        }
+    }
+
+    #[test]
+    fn region_expansion_requires_an_approved_round_trip() {
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let mut expansion = valid_region_expansion();
+        validate_region_expansion(&campaign, &expansion).unwrap();
+        expansion.origin_routes.clear();
+        assert!(
+            validate_region_expansion(&campaign, &expansion)
+                .unwrap_err()
+                .to_string()
+                .contains("explicit route from the origin")
+        );
+    }
+
+    #[test]
+    fn region_expansion_rejects_containment_cycles() {
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let mut expansion = valid_region_expansion();
+        expansion.locations[0].container_id = Some("service-ring".into());
+        expansion.locations.push(Location {
+            id: "service-ring".into(),
+            name: "Service Ring".into(),
+            container_id: Some("annex".into()),
+            routes: BTreeMap::new(),
+            persistent_features: vec!["fixed conduits".into()],
+        });
+        assert!(
+            validate_region_expansion(&campaign, &expansion)
+                .unwrap_err()
+                .to_string()
+                .contains("containment contains a cycle")
+        );
     }
 }
