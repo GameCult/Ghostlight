@@ -87,15 +87,20 @@ struct AppState {
 
 struct LiveTurnGuard {
     counter: Arc<AtomicUsize>,
+    mesh: MeshPublisher,
     _commit_read: Option<OwnedRwLockReadGuard<()>>,
 }
 impl LiveTurnGuard {
     async fn enter(state: &AppState) -> Self {
         let mut guard = Self {
             counter: state.live_turns.clone(),
+            mesh: state.mesh.clone(),
             _commit_read: None,
         };
-        guard.counter.fetch_add(1, Ordering::SeqCst);
+        let pressure = guard.counter.fetch_add(1, Ordering::SeqCst) + 1;
+        if let Err(error) = guard.mesh.publish_live_turn_pressure(pressure) {
+            tracing::warn!(%error, pressure, "live-turn pressure CultMesh publication failed");
+        }
         state.live_turn_started.notify_waiters();
         guard._commit_read = Some(state.live_commit_gate.clone().read_owned().await);
         guard
@@ -103,7 +108,11 @@ impl LiveTurnGuard {
 }
 impl Drop for LiveTurnGuard {
     fn drop(&mut self) {
-        self.counter.fetch_sub(1, Ordering::SeqCst);
+        let previous = self.counter.fetch_sub(1, Ordering::SeqCst);
+        let pressure = previous.saturating_sub(1);
+        if let Err(error) = self.mesh.publish_live_turn_pressure(pressure) {
+            tracing::warn!(%error, pressure, "live-turn pressure CultMesh release failed");
+        }
     }
 }
 
@@ -4238,6 +4247,80 @@ async fn command(
         )
             .into_response();
     }
+    if let WorldCommand::Wait {
+        expected_revision,
+        minutes,
+    } = &command
+    {
+        let campaign = match load_campaign(&runtime.store) {
+            Ok(value) => value,
+            Err(error) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorBody {
+                        error: error.to_string(),
+                    }),
+                )
+                    .into_response();
+            }
+        };
+        if *expected_revision != campaign.revision {
+            return (
+                StatusCode::CONFLICT,
+                Json(ErrorBody {
+                    error: format!(
+                        "stale revision: expected {expected_revision}, actual {}",
+                        campaign.revision
+                    ),
+                }),
+            )
+                .into_response();
+        }
+        let strategic_minutes = u32::from(campaign.tick_hours).saturating_mul(60);
+        if *minutes > strategic_minutes {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(ErrorBody {
+                    error: format!(
+                        "one wait may cover at most one strategic horizon ({strategic_minutes} minutes); wait again after the world advances"
+                    ),
+                }),
+            )
+                .into_response();
+        }
+        if *minutes == strategic_minutes {
+            return match advance_one_strategic_tick(
+                &state,
+                &runtime,
+                campaign,
+                ghostlight_dungeon::domain::TickSource::PlayerWait,
+                false,
+            )
+            .await
+            {
+                Ok(Some(result)) => {
+                    if let Err(error) = refresh_mesh(&state).await {
+                        tracing::warn!(%error, "player strategic wait CultMesh publication failed");
+                    }
+                    Json(player_command_projection(&result, None)).into_response()
+                }
+                Ok(None) => (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    Json(ErrorBody {
+                        error: "strategic waiting yielded without advancing the world".into(),
+                    }),
+                )
+                    .into_response(),
+                Err(error) => (
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    Json(ErrorBody {
+                        error: error.to_string(),
+                    }),
+                )
+                    .into_response(),
+            };
+        }
+    }
     if let WorldCommand::Assess {
         intent, proposal, ..
     } = &mut command
@@ -4550,10 +4633,14 @@ async fn command(
                 &result,
                 CommandResult::Committed { .. } | CommandResult::Created { .. }
             ) {
-                let narration = publish_latest_narration(&state, &runtime)
-                    .await
-                    .ok()
-                    .flatten();
+                let narration = if should_react {
+                    publish_latest_narration(&state, &runtime)
+                        .await
+                        .ok()
+                        .flatten()
+                } else {
+                    None
+                };
                 if let Err(error) = refresh_mesh(&state).await {
                     tracing::warn!(%error, "post-command CultMesh publication failed");
                 }
@@ -5220,39 +5307,41 @@ async fn process_due_ticks(
         if campaign.away_ticks_processed >= target {
             return Ok(());
         }
-        let has_simulatable_agency = campaign
-            .agency_profiles
-            .values()
-            .any(|profile| profile.active_leaf && profile.simulation_eligible);
-        if !has_simulatable_agency {
-            if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
-                return Ok(());
-            }
-            let _background_commit = if yield_to_live_turns {
-                match state.live_commit_gate.clone().try_write_owned() {
-                    Ok(guard) => Some(guard),
-                    Err(_) => return Ok(()),
-                }
-            } else {
-                None
-            };
-            if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
-                return Ok(());
-            }
-            runtime
-                .kernel
-                .command(WorldCommand::AdvanceStrategicTick {
-                    expected_revision: campaign.revision,
-                    source: source.clone(),
-                    plan: None,
-                    model_receipt_hash: None,
-                    resolution_wave: None,
-                })
-                .await?;
-            continue;
-        }
-        let Some(model) = &state.model else {
+        if advance_one_strategic_tick(
+            state,
+            runtime,
+            campaign,
+            source.clone(),
+            yield_to_live_turns,
+        )
+        .await?
+        .is_none()
+        {
             return Ok(());
+        }
+    }
+}
+
+async fn advance_one_strategic_tick(
+    state: &AppState,
+    runtime: &CampaignRuntime,
+    campaign: Campaign,
+    source: ghostlight_dungeon::domain::TickSource,
+    yield_to_live_turns: bool,
+) -> anyhow::Result<Option<CommandResult>> {
+    if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
+        return Ok(None);
+    }
+    let has_simulatable_agency = campaign
+        .agency_profiles
+        .values()
+        .any(|profile| profile.active_leaf && profile.simulation_eligible);
+    let (model_receipt_hash, resolution_wave) = if has_simulatable_agency {
+        let Some(model) = &state.model else {
+            if yield_to_live_turns {
+                return Ok(None);
+            }
+            anyhow::bail!("strategic waiting requires the model provider");
         };
         let permit = Arc::new(SnapshotPermit::new_resolution(
             runtime.store.clone(),
@@ -5275,11 +5364,8 @@ async fn process_due_ticks(
         )
         .await?
         else {
-            return Ok(());
+            return Ok(None);
         };
-        if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
-            return Ok(());
-        }
         for stage in &output.stages {
             match runtime
                 .store
@@ -5299,31 +5385,36 @@ async fn process_due_ticks(
                 }
             }
         }
-        if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
-            return Ok(());
-        }
-        let _background_commit = if yield_to_live_turns {
-            match state.live_commit_gate.clone().try_write_owned() {
-                Ok(guard) => Some(guard),
-                Err(_) => return Ok(()),
-            }
-        } else {
-            None
-        };
-        if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
-            return Ok(());
-        }
-        runtime
-            .kernel
-            .command(WorldCommand::AdvanceStrategicTick {
-                expected_revision: campaign.revision,
-                source: source.clone(),
-                plan: None,
-                model_receipt_hash: Some(output.aggregate_receipt_hash),
-                resolution_wave: Some(output.wave),
-            })
-            .await?;
+        (Some(output.aggregate_receipt_hash), Some(output.wave))
+    } else {
+        (None, None)
+    };
+    if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
+        return Ok(None);
     }
+    let _background_commit = if yield_to_live_turns {
+        match state.live_commit_gate.clone().try_write_owned() {
+            Ok(guard) => Some(guard),
+            Err(_) => return Ok(None),
+        }
+    } else {
+        None
+    };
+    if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
+        return Ok(None);
+    }
+    runtime
+        .kernel
+        .command(WorldCommand::AdvanceStrategicTick {
+            expected_revision: campaign.revision,
+            source,
+            plan: None,
+            model_receipt_hash,
+            resolution_wave,
+        })
+        .await
+        .map(Some)
+        .map_err(Into::into)
 }
 
 async fn await_background_work<T>(
@@ -6008,6 +6099,10 @@ mod tests {
     async fn interactive_model_work_cancels_background_inference_and_excludes_its_commit_gate() {
         let dir = tempfile::tempdir().unwrap();
         let state = empty_app_state(dir.path());
+        state
+            .mesh
+            .publish_snapshot(&[], &[], &state.model_status, 0)
+            .unwrap();
         let trigger_state = state.clone();
         let (entered_tx, entered_rx) = tokio::sync::oneshot::channel();
         let (release_tx, release_rx) = tokio::sync::oneshot::channel();
@@ -6029,11 +6124,19 @@ mod tests {
         assert!(result.is_none());
         entered_rx.await.unwrap();
         assert_eq!(state.live_turns.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            state.mesh.health().unwrap()["scheduler"]["live_turn_pressure"],
+            1
+        );
         assert!(state.live_commit_gate.clone().try_write_owned().is_err());
 
         let _ = release_tx.send(());
         trigger.await.unwrap();
         assert_eq!(state.live_turns.load(Ordering::SeqCst), 0);
+        assert_eq!(
+            state.mesh.health().unwrap()["scheduler"]["live_turn_pressure"],
+            0
+        );
         assert!(state.live_commit_gate.clone().try_write_owned().is_ok());
     }
 
@@ -6137,6 +6240,54 @@ mod tests {
             original_time + chrono::Duration::hours(12)
         );
         assert_eq!(advanced.actors["player"], original_player);
+    }
+
+    #[tokio::test]
+    async fn player_strategic_wait_uses_the_same_tick_commit_and_resets_away_accounting() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let mut campaign = seed("Player wait world");
+        let original_time = campaign.world_time;
+        campaign.last_player_activity = chrono::Utc::now() - chrono::Duration::hours(4);
+        campaign.away_ticks_processed = 3;
+        campaign.pending_ticks = 2;
+        campaign.clocks.insert(
+            "pressure".into(),
+            ghostlight_dungeon::domain::WorldClock {
+                id: "pressure".into(),
+                label: "Pressure rises".into(),
+                progress: 0,
+                threshold: 4,
+                consequence: "the settlement must choose".into(),
+            },
+        );
+        let runtime = state
+            .registry
+            .create(campaign.clone(), vec![], vec![])
+            .await
+            .unwrap();
+
+        let result = advance_one_strategic_tick(
+            &state,
+            &runtime,
+            campaign,
+            ghostlight_dungeon::domain::TickSource::PlayerWait,
+            false,
+        )
+        .await
+        .unwrap();
+        assert!(result.is_some());
+
+        let advanced = load_campaign(&runtime.store).unwrap();
+        assert_eq!(
+            advanced.world_time,
+            original_time + chrono::Duration::hours(i64::from(advanced.tick_hours))
+        );
+        assert_eq!(advanced.clocks["pressure"].progress, 1);
+        assert_eq!(advanced.strategic_tick_count, 1);
+        assert_eq!(advanced.away_ticks_processed, 0);
+        assert_eq!(advanced.pending_ticks, 0);
+        assert!(advanced.last_player_activity > chrono::Utc::now() - chrono::Duration::minutes(1));
     }
 
     #[tokio::test]

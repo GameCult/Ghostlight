@@ -883,7 +883,7 @@ fn execute(
             for clock in campaign.clocks.values_mut() {
                 clock.progress = clock.progress.saturating_add(1).min(clock.threshold);
             }
-            let tick_number = campaign.away_ticks_processed.saturating_add(1);
+            let tick_number = campaign.strategic_tick_count.saturating_add(1);
             let tick_events = match resolved_plan.or(plan) {
                 Some(plan) => apply_strategic_tick_plan(&mut campaign, plan)?,
                 None => deterministic_strategic_tick(&mut campaign, tick_number),
@@ -907,8 +907,15 @@ fn execute(
             }
             let event_ids = tick_events.iter().map(|event| event.id.clone()).collect();
             campaign.events.extend(tick_events);
-            campaign.away_ticks_processed = tick_number.min(8);
-            campaign.pending_ticks = campaign.pending_ticks.saturating_sub(1);
+            if source == TickSource::PlayerWait {
+                campaign.last_player_activity = Utc::now();
+                campaign.away_ticks_processed = 0;
+                campaign.pending_ticks = 0;
+            } else {
+                campaign.away_ticks_processed =
+                    campaign.away_ticks_processed.saturating_add(1).min(8);
+                campaign.pending_ticks = campaign.pending_ticks.saturating_sub(1);
+            }
             commit_strategic_tick(
                 store,
                 row,
@@ -2650,7 +2657,7 @@ fn rebase_member_migration(
 
 fn deterministic_strategic_tick(
     campaign: &mut Campaign,
-    tick_number: u8,
+    tick_number: u64,
 ) -> Vec<crate::domain::Event> {
     let mut events = Vec::new();
     for institution in campaign.institutions.values_mut() {

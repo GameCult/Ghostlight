@@ -91,6 +91,7 @@ pub fn player_surface_for_actor(
         .as_ref()
         .map(|cover| cover.effective_budget)
         .unwrap_or(campaign.resolution_policy.active_cell_budget);
+    let strategic_wait_minutes = u32::from(campaign.tick_hours).saturating_mul(60);
     let mut children = vec![
         json!({"id":"dungeon.status","kind":"card","props":{"title":format!("{} · revision {} · {}",campaign.name,campaign.revision,campaign.world_time)},"children":[]}),
         json!({"id":"dungeon.location","kind":"card","props":{"title":format!("{} · {}",location.name,player.name)},"children":[]}),
@@ -115,7 +116,7 @@ pub fn player_surface_for_actor(
             json!({"expected_revision":campaign.revision}),
             &["description", "intended_effect"],
         ),
-        json!({"id":"dungeon.wait.minutes","kind":"control.input.number","props":{"label":"Wait minutes","value":30,"min":1,"max":1440},"stateBindings":[local_draft("minutes","number")],"children":[]}),
+        json!({"id":"dungeon.wait.minutes","kind":"control.input.number","props":{"label":format!("Wait minutes ({} max)",strategic_wait_minutes),"value":30_u32.min(strategic_wait_minutes),"min":1,"max":strategic_wait_minutes},"stateBindings":[local_draft("minutes","number")],"children":[]}),
         command_control(
             "dungeon.wait",
             "Wait",
@@ -164,10 +165,15 @@ pub fn player_surface_for_actor(
     if location.routes.is_empty() {
         children.push(json!({"id":"dungeon.travel.none","kind":"text","props":{"value":"No compiled route leaves this location yet."},"children":[]}));
     } else {
+        let default_destination_id = location
+            .routes
+            .keys()
+            .next()
+            .expect("non-empty routes have a first destination");
         children.push(json!({
             "id":"dungeon.travel.destination",
             "kind":"control.select",
-            "props":{"label":"Group destination"},
+            "props":{"label":"Group destination","value":default_destination_id},
             "stateBindings":[local_draft("destination_location_id","choice")],
             "children":location.routes.iter().filter_map(|(destination_id,route)|campaign.locations.get(destination_id).map(|destination|json!({
                 "id":format!("dungeon.travel.option.{destination_id}"),
@@ -599,6 +605,7 @@ mod tests {
             assert!(encoded.contains(&format!("\"bindingName\":\"{binding}\"")));
         }
         assert!(encoded.contains("governance.travel.propose"));
+        assert!(encoded.contains("\"value\":\"harbor\""));
         assert!(encoded.contains("world.destination.compile"));
         assert!(encoded.contains("campaign.entry"));
         assert!(!encoded.contains("payload.fields"));

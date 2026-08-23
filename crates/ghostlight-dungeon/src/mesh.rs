@@ -450,6 +450,31 @@ impl MeshPublisher {
             .map(|record| record.value)
     }
 
+    pub fn publish_live_turn_pressure(&self, live_turn_pressure: usize) -> Result<Value> {
+        let mut node = self
+            .node
+            .lock()
+            .map_err(|_| anyhow::anyhow!("mesh lock poisoned"))?;
+        let mut health = node.get_required::<ServiceHealthRecord>(HEALTH_KEY)?.value;
+        health["scheduler"]["live_turn_pressure"] = json!(live_turn_pressure);
+        health["updatedAtUtc"] = json!(Utc::now().to_rfc3339());
+        let mut remote_messages = Vec::new();
+        self.put_and_stage(
+            &mut node,
+            HEALTH_KEY,
+            &ServiceHealthRecord {
+                value: health.clone(),
+            },
+            &mut remote_messages,
+        )?;
+        node.flush()?;
+        drop(node);
+        if let Some(remote) = &self.remote {
+            remote.enqueue(remote_messages);
+        }
+        Ok(health)
+    }
+
     pub fn operator_surface(&self, campaign_id: uuid::Uuid) -> Result<Value> {
         self.node
             .lock()
@@ -669,6 +694,23 @@ mod tests {
         drop(publisher);
         let reopened = MeshPublisher::open(temp.path().join("mesh.cc"), None).unwrap();
         assert_eq!(reopened.health().unwrap(), written);
+    }
+
+    #[test]
+    fn live_turn_pressure_updates_the_canonical_health_document_immediately() {
+        let temp = tempdir().unwrap();
+        let publisher = MeshPublisher::open(temp.path().join("mesh.cc"), None).unwrap();
+        publisher
+            .publish_snapshot(&[], &[], &fixture_model_status(), 0)
+            .unwrap();
+
+        let pressured = publisher.publish_live_turn_pressure(3).unwrap();
+        assert_eq!(pressured["scheduler"]["live_turn_pressure"], 3);
+        assert_eq!(publisher.health().unwrap(), pressured);
+
+        let idle = publisher.publish_live_turn_pressure(0).unwrap();
+        assert_eq!(idle["scheduler"]["live_turn_pressure"], 0);
+        assert_eq!(publisher.health().unwrap(), idle);
     }
 
     #[test]
