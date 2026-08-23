@@ -1,0 +1,401 @@
+use super::{
+    AppState, EveCommandInvocation, complete_native_authentication, eve_command_for_transport,
+    surface,
+};
+use anyhow::{Context, Result, bail};
+use axum::{
+    extract::State,
+    http::{HeaderMap, HeaderValue, header},
+    response::Response,
+};
+use base64::{Engine, engine::general_purpose::STANDARD};
+use cultnet_rs::{
+    CULTNET_OPERATION_CONNECTION_ID, CultNetMessage, CultNetRudpServerEvent, CultNetRudpServerHub,
+    CultNetRudpServerHubOptions, CultNetRudpServerSessionContext, CultNetWireContract,
+    decode_cultnet_message_from_slice,
+};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use std::{
+    net::{SocketAddr, UdpSocket},
+    sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+        mpsc,
+    },
+    time::Duration,
+};
+
+pub const NATIVE_ENDPOINT: &str = "127.0.0.1:4102";
+pub const NATIVE_SERVICE_ID: &str = "ghostlight.native.player";
+pub const NATIVE_RUNTIME_ID: &str = "ghostlight-dungeon-yggdrasil";
+pub const NATIVE_AUTH_BEGIN: &str = "ghostlight.auth.begin";
+pub const NATIVE_AUTH_COMPLETE: &str = "ghostlight.auth.complete";
+pub const NATIVE_SURFACE_GET: &str = "ghostlight.surface.get";
+pub const NATIVE_EVE_INVOKE: &str = "ghostlight.eve.invoke";
+const MAX_IN_FLIGHT: usize = 64;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct NativeAuthBeginCommand {
+    pub schema: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct NativeAuthCompleteCommand {
+    pub schema: String,
+    pub handle: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct NativeSurfaceGetCommand {
+    pub schema: String,
+    pub session_token: String,
+    pub invite: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct NativeEveInvokeCommand {
+    pub schema: String,
+    pub session_token: String,
+    pub invocation: serde_json::Value,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NativeAuthCompletionReceipt {
+    pub schema: String,
+    pub status: String,
+    pub message: String,
+    pub session_token: Option<String>,
+    pub refresh_expires_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NativeFailure {
+    schema: String,
+    code: String,
+    message: String,
+}
+
+struct CompletedResponse {
+    session: CultNetRudpServerSessionContext,
+    response: CultNetMessage,
+}
+
+pub fn start(state: AppState) -> Result<()> {
+    let address: SocketAddr = NATIVE_ENDPOINT.parse()?;
+    let socket = UdpSocket::bind(address)
+        .with_context(|| format!("bind Ghostlight native CultNet boundary at {address}"))?;
+    socket.set_nonblocking(true)?;
+    let mut options = CultNetRudpServerHubOptions::new(
+        state.mesh.identity().runtime_id.clone(),
+        socket,
+        CULTNET_OPERATION_CONNECTION_ID,
+    );
+    options.max_fragment_bytes = Some(2_048);
+    options.max_pending_reliable_packets = Some(4_096);
+    let hub = CultNetRudpServerHub::new(options)?;
+    let runtime = tokio::runtime::Handle::current();
+    std::thread::Builder::new()
+        .name("ghostlight-native-cultmesh".into())
+        .spawn(move || {
+            if let Err(error) = run_server(hub, state, runtime) {
+                tracing::error!(%error, "Ghostlight native CultMesh boundary stopped");
+                std::process::exit(1);
+            }
+        })?;
+    Ok(())
+}
+
+fn run_server(
+    mut hub: CultNetRudpServerHub,
+    state: AppState,
+    runtime: tokio::runtime::Handle,
+) -> Result<()> {
+    let (completed_tx, completed_rx) = mpsc::channel::<CompletedResponse>();
+    let in_flight = Arc::new(AtomicUsize::new(0));
+    loop {
+        while let Ok(completed) = completed_rx.try_recv() {
+            in_flight.fetch_sub(1, Ordering::SeqCst);
+            if hub
+                .session(completed.session.remote_addr)
+                .is_some_and(|active| {
+                    active.session_generation == completed.session.session_generation
+                })
+            {
+                hub.send_schema_message(&completed.session, &completed.response)?;
+            }
+        }
+        if let Some(event) = hub.receive_event_once()? {
+            let CultNetRudpServerEvent::Frame { session, frame } = event else {
+                hub.poll_resends()?;
+                continue;
+            };
+            if frame.channel_id != "schema" {
+                continue;
+            }
+            let request = match decode_cultnet_message_from_slice(
+                &frame.payload,
+                CultNetWireContract::CultNetSchemaV0,
+            ) {
+                Ok(request @ CultNetMessage::OperationRequest { .. }) => request,
+                Ok(_) => continue,
+                Err(error) => {
+                    tracing::warn!(%error, "Ghostlight native boundary rejected malformed CultNet payload");
+                    continue;
+                }
+            };
+            if in_flight.load(Ordering::SeqCst) >= MAX_IN_FLIGHT {
+                let response = failure_response(
+                    &request,
+                    "busy",
+                    "Ghostlight is already processing the maximum native command pressure.",
+                )?;
+                hub.send_schema_message(&session, &response)?;
+                continue;
+            }
+            in_flight.fetch_add(1, Ordering::SeqCst);
+            let tx = completed_tx.clone();
+            let request_state = state.clone();
+            runtime.spawn(async move {
+                let response = handle_operation(request_state, request).await;
+                let _ = tx.send(CompletedResponse { session, response });
+            });
+        }
+        hub.poll_resends()?;
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+pub(super) async fn handle_operation(state: AppState, request: CultNetMessage) -> CultNetMessage {
+    match handle_operation_inner(state, &request).await {
+        Ok(response) => response,
+        Err(error) => {
+            tracing::warn!(%error, "Ghostlight denied a native CultMesh operation");
+            failure_response(
+                &request,
+                "command-denied",
+                "Ghostlight denied the typed native operation without changing world state.",
+            )
+            .unwrap_or_else(|_| bare_failure_response(&request))
+        }
+    }
+}
+
+async fn handle_operation_inner(
+    state: AppState,
+    request: &CultNetMessage,
+) -> Result<CultNetMessage> {
+    let CultNetMessage::OperationRequest {
+        service_id,
+        operation,
+        payload_schema,
+        payload_encoding,
+        target_runtime_id,
+        ..
+    } = request
+    else {
+        bail!("native boundary accepts only operation requests");
+    };
+    if service_id != NATIVE_SERVICE_ID || payload_encoding != "messagepack-base64" {
+        bail!("native request does not match the advertised service contract");
+    }
+    if target_runtime_id
+        .as_deref()
+        .is_some_and(|target| target != state.mesh.identity().runtime_id)
+    {
+        bail!("native request targets another runtime");
+    }
+    match operation.as_str() {
+        NATIVE_AUTH_BEGIN => {
+            require_schema(payload_schema, "ghostlight.native_auth_begin.v1")?;
+            let command: NativeAuthBeginCommand = decode_request(request)?;
+            require_schema(&command.schema, "ghostlight.native_auth_begin.v1")?;
+            let receipt = state.heimdall.begin(message_id(request)?).await?;
+            success_response(request, "heimdall.auth_begin_receipt.v1", &receipt)
+        }
+        NATIVE_AUTH_COMPLETE => {
+            require_schema(payload_schema, "ghostlight.native_auth_complete.v1")?;
+            let command: NativeAuthCompleteCommand = decode_request(request)?;
+            require_schema(&command.schema, "ghostlight.native_auth_complete.v1")?;
+            if command.handle.trim().is_empty() {
+                bail!("native auth completion omitted its opaque handle");
+            }
+            let receipt =
+                complete_native_authentication(&state, &command.handle, message_id(request)?)
+                    .await?;
+            success_response(
+                request,
+                "ghostlight.native_auth_completion_receipt.v1",
+                &receipt,
+            )
+        }
+        NATIVE_SURFACE_GET => {
+            require_schema(payload_schema, "ghostlight.native_surface_get.v1")?;
+            let command: NativeSurfaceGetCommand = decode_request(request)?;
+            require_schema(&command.schema, "ghostlight.native_surface_get.v1")?;
+            let headers = session_headers(&command.session_token)?;
+            let response = surface(headers, State(state), command.invite.as_deref()).await;
+            let value = response_json(response).await?;
+            success_response(request, "gamecult.eve.surface.v1", &value)
+        }
+        NATIVE_EVE_INVOKE => {
+            require_schema(payload_schema, "ghostlight.native_eve_invocation.v1")?;
+            let command: NativeEveInvokeCommand = decode_request(request)?;
+            require_schema(&command.schema, "ghostlight.native_eve_invocation.v1")?;
+            let headers = session_headers(&command.session_token)?;
+            let invocation: EveCommandInvocation = serde_json::from_value(command.invocation)?;
+            let response =
+                eve_command_for_transport(headers, state, invocation, "cultnet-rudp").await;
+            let value = response_json(response).await?;
+            success_response(request, "gamecult.eve.command_result.v1", &value)
+        }
+        _ => bail!("native operation is not advertised by Ghostlight"),
+    }
+}
+
+fn require_schema(actual: &str, expected: &str) -> Result<()> {
+    if actual != expected {
+        bail!("native payload schema does not match the operation");
+    }
+    Ok(())
+}
+
+fn session_headers(session_token: &str) -> Result<HeaderMap> {
+    if session_token.trim().is_empty() || session_token.len() > 256 {
+        bail!("native session token is malformed");
+    }
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        header::COOKIE,
+        HeaderValue::from_str(&format!("ghostlight_session={session_token}"))?,
+    );
+    Ok(headers)
+}
+
+async fn response_json(response: Response) -> Result<serde_json::Value> {
+    if !response.status().is_success() {
+        bail!("Ghostlight product boundary rejected the authenticated request");
+    }
+    let bytes = axum::body::to_bytes(response.into_body(), 4 * 1024 * 1024).await?;
+    Ok(serde_json::from_slice(&bytes)?)
+}
+
+fn decode_request<T: DeserializeOwned>(request: &CultNetMessage) -> Result<T> {
+    let CultNetMessage::OperationRequest { payload, .. } = request else {
+        bail!("expected operation request");
+    };
+    Ok(rmp_serde::from_slice(&STANDARD.decode(payload)?)?)
+}
+
+fn success_response(
+    request: &CultNetMessage,
+    payload_schema: &str,
+    payload: &impl Serialize,
+) -> Result<CultNetMessage> {
+    operation_response(request, "accepted", payload_schema, payload, Vec::new())
+}
+
+fn failure_response(request: &CultNetMessage, code: &str, message: &str) -> Result<CultNetMessage> {
+    operation_response(
+        request,
+        "denied",
+        "ghostlight.native_failure.v1",
+        &NativeFailure {
+            schema: "ghostlight.native_failure.v1".into(),
+            code: code.into(),
+            message: message.into(),
+        },
+        vec![message.into()],
+    )
+}
+
+fn bare_failure_response(request: &CultNetMessage) -> CultNetMessage {
+    let (message_id, operation) = match request {
+        CultNetMessage::OperationRequest {
+            message_id,
+            operation,
+            ..
+        } => (message_id.clone(), operation.clone()),
+        _ => (uuid::Uuid::new_v4().to_string(), "unknown".into()),
+    };
+    CultNetMessage::OperationResponse {
+        message_id,
+        service_id: NATIVE_SERVICE_ID.into(),
+        operation,
+        status: "denied".into(),
+        payload_schema: "ghostlight.native_failure.v1".into(),
+        payload_encoding: "messagepack-base64".into(),
+        payload: String::new(),
+        diagnostics: vec!["Ghostlight denied the malformed native request.".into()],
+        source_runtime_id: Some(NATIVE_RUNTIME_ID.into()),
+    }
+}
+
+fn operation_response(
+    request: &CultNetMessage,
+    status: &str,
+    payload_schema: &str,
+    payload: &impl Serialize,
+    diagnostics: Vec<String>,
+) -> Result<CultNetMessage> {
+    let CultNetMessage::OperationRequest {
+        message_id,
+        service_id,
+        operation,
+        ..
+    } = request
+    else {
+        bail!("expected operation request");
+    };
+    Ok(CultNetMessage::OperationResponse {
+        message_id: message_id.clone(),
+        service_id: service_id.clone(),
+        operation: operation.clone(),
+        status: status.into(),
+        payload_schema: payload_schema.into(),
+        payload_encoding: "messagepack-base64".into(),
+        payload: STANDARD.encode(rmp_serde::to_vec_named(payload)?),
+        diagnostics,
+        source_runtime_id: Some(NATIVE_RUNTIME_ID.into()),
+    })
+}
+
+fn message_id(request: &CultNetMessage) -> Result<&str> {
+    let CultNetMessage::OperationRequest { message_id, .. } = request else {
+        bail!("expected operation request");
+    };
+    Ok(message_id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn native_session_payload_rejects_authority_fields() {
+        let payload = serde_json::json!({
+            "schema":"ghostlight.native_eve_invocation.v1",
+            "sessionToken":"opaque",
+            "invocation":{
+                "schema":"gamecult.eve.command_invocation.v1",
+                "providerId":"gamecult.ghostlight.dungeon",
+                "surfaceId":"ghostlight.play",
+                "operation":{"operationId":"world.speak","schemaId":"ghostlight.world_speak.v1","idempotencyKey":"one","routeHint":{"sourceVersion":1,"transport":"cultnet-rudp"}},
+                "payload":{"actor_id":"npc"},
+                "issuedAt":"2026-08-23T00:00:00Z",
+                "clientId":"native-test",
+                "commandBoundary":"ghostlight.eve.commands",
+                "receiptSchema":"gamecult.eve.command_result.v1"
+            }
+        });
+        let command = serde_json::from_value::<NativeEveInvokeCommand>(payload).unwrap();
+        assert!(super::super::contains_authority_field(
+            &command.invocation["payload"]
+        ));
+    }
+}

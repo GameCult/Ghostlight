@@ -148,7 +148,7 @@ struct DiscordRolePolicy<'a> {
     allowed_role_ids: [&'a str; 1],
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthBeginReceipt {
     pub status: String,
@@ -157,7 +157,7 @@ pub struct AuthBeginReceipt {
     pub navigation: AuthNavigation,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthNavigation {
     pub url: String,

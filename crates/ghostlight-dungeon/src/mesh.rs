@@ -216,6 +216,14 @@ impl MeshPublisher {
                     "projectionKind":"actor-filtered-authoritative",
                     "stateSchemas":["ghostlight.session_zero.v1","ghostlight.campaign.v1"],
                     "commandBoundary":COMMAND_BOUNDARY,
+                    "nativeCommandBoundary":{
+                        "serviceId":"ghostlight.native.player",
+                        "transport":"cultnet.transport.rudp.v0",
+                        "endpoint":"127.0.0.1:4102",
+                        "exposure":"loopback-only",
+                        "authentication":"Heimdall-backed Ghostlight app session",
+                        "operations":["ghostlight.auth.begin","ghostlight.auth.complete","ghostlight.surface.get","ghostlight.eve.invoke"]
+                    },
                     "receiptSchema":COMMAND_RESULT_SCHEMA,
                     "loweringTargets":["browser","eve-native","tui"],
                     "ownership":"Ghostlight kernels own state; Eve lowers projections and commands."
@@ -227,7 +235,10 @@ impl MeshPublisher {
                     "requiredCapabilities":["auth.gate","auth.begin","auth.complete","auth.logout"]
                 }]
             }],
-            "commands":[{"command":COMMAND_BOUNDARY,"transport":"https-json","summary":"Canonical Ghostlight Eve command boundary."}]
+            "commands":[
+                {"command":COMMAND_BOUNDARY,"transport":"https-json","summary":"Canonical Ghostlight Eve command boundary."},
+                {"command":"ghostlight.native.player","transport":"cultnet.transport.rudp.v0","summary":"Loopback native access to the same actor-filtered surface and Eve command authority."}
+            ]
         })
     }
 
@@ -678,6 +689,14 @@ mod tests {
         assert_eq!(
             surfaces[0]["worldInteraction"]["receiptSchema"],
             COMMAND_RESULT_SCHEMA
+        );
+        assert_eq!(
+            surfaces[0]["worldInteraction"]["nativeCommandBoundary"]["endpoint"],
+            "127.0.0.1:4102"
+        );
+        assert_eq!(
+            surfaces[0]["worldInteraction"]["nativeCommandBoundary"]["exposure"],
+            "loopback-only"
         );
         assert_eq!(
             surfaces[0]["requiresPlugins"][0]["pluginId"],

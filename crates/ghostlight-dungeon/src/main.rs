@@ -62,8 +62,10 @@ use tracing_subscriber::EnvFilter;
 
 mod app_session;
 mod heimdall;
+mod native_cultmesh;
 use app_session::{AppSessionOwner, CommandReservation, NewSession, RefreshedSession, secret_hash};
 use heimdall::HeimdallClient;
+use native_cultmesh::NativeAuthCompletionReceipt;
 
 #[derive(Clone)]
 struct AppState {
@@ -418,6 +420,7 @@ async fn main() -> anyhow::Result<()> {
         live_commit_gate: Arc::new(RwLock::new(())),
         mesh,
     };
+    native_cultmesh::start(state.clone())?;
     refresh_mesh(&state).await?;
     tokio::spawn(scheduler_loop(state.clone()));
     tokio::spawn(app_session_refresh_loop(state.clone()));
@@ -473,7 +476,7 @@ fn app_router(state: AppState, web_root: PathBuf) -> Router {
         .with_state(state)
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct EveCommandInvocation {
     schema: String,
@@ -493,7 +496,7 @@ struct EveCommandInvocation {
     receipt_schema: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct EveOperation {
     operation_id: String,
@@ -503,7 +506,7 @@ struct EveOperation {
     route_hint: EveRouteHint,
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct EveRouteHint {
     source_version: Option<u64>,
@@ -567,7 +570,16 @@ async fn eve_command(
     State(state): State<AppState>,
     Json(invocation): Json<EveCommandInvocation>,
 ) -> Response {
-    if let Err(error) = validate_eve_invocation(&invocation) {
+    eve_command_for_transport(headers, state, invocation, "https-json").await
+}
+
+async fn eve_command_for_transport(
+    headers: HeaderMap,
+    state: AppState,
+    invocation: EveCommandInvocation,
+    transport: &str,
+) -> Response {
+    if let Err(error) = validate_eve_invocation(&invocation, transport) {
         return Json(eve_result(
             &invocation,
             "denied",
@@ -865,79 +877,12 @@ async fn complete_eve_authentication(
             None,
         )).into_response();
     }
-    if completion.handle.as_deref() != Some(handle) {
-        return Json(eve_result(
-            &invocation,
-            "denied",
-            "Heimdall completion handle did not match the browser-held attempt.".into(),
-            None,
-            None,
-            None,
-        ))
-        .into_response();
-    }
-    let claims = match state.heimdall.verify_completion(&completion).await {
+    let adopted = match adopt_heimdall_completion(&state, handle, completion).await {
         Ok(value) => value,
         Err(error) => return Json(eve_result(&invocation, "denied", error.to_string(), None, Some(serde_json::json!({
             "pluginId":"gamecult.heimdall.access","schemaId":"heimdall.auth_completion_status.v1",
             "payload":{"schema":"heimdall.auth_completion_status.v1","status":"denied"}
         })), None)).into_response(),
-    };
-    let session = completion.session.as_ref().unwrap();
-    if !completion
-        .shared_capabilities
-        .iter()
-        .any(|value| value == "app_access")
-    {
-        return Json(eve_result(
-            &invocation,
-            "denied",
-            "Heimdall completion did not expose Ghostlight app_access.".into(),
-            None,
-            None,
-            None,
-        ))
-        .into_response();
-    }
-    let refresh = completion
-        .refresh
-        .as_ref()
-        .map(|value| value.expires_at.as_str())
-        .unwrap_or(&session.expires_at);
-    let refresh_token = completion.refresh_token.as_deref().unwrap_or("");
-    if refresh_token.is_empty() {
-        return Json(eve_result(
-            &invocation,
-            "denied",
-            "Heimdall omitted its refresh claim.".into(),
-            None,
-            None,
-            None,
-        ))
-        .into_response();
-    }
-    let refresh_expires_at = refresh.parse().unwrap_or_else(|_| Utc::now());
-    let raw_cookie = match state.auth.lock().await.create_session(NewSession {
-        account_id: &claims.account_id,
-        heimdall_session_id: &claims.sid,
-        access_revision: claims.access_revision,
-        capabilities: claims.capabilities.clone(),
-        access_expires_at: DateTime::from_timestamp(claims.exp as i64, 0).unwrap_or_else(Utc::now),
-        refresh_expires_at,
-        refresh_claim: refresh_token,
-    }) {
-        Ok(value) => value,
-        Err(error) => {
-            return Json(eve_result(
-                &invocation,
-                "denied",
-                error.to_string(),
-                None,
-                None,
-                None,
-            ))
-            .into_response();
-        }
     };
     let mut response = Json(eve_result(
         &invocation,
@@ -953,9 +898,102 @@ async fn complete_eve_authentication(
     .into_response();
     response.headers_mut().insert(
         header::SET_COOKIE,
-        app_session_cookie(&raw_cookie, refresh_expires_at, Utc::now()),
+        app_session_cookie(
+            &adopted.session_token,
+            adopted.refresh_expires_at,
+            Utc::now(),
+        ),
     );
     response
+}
+
+struct AdoptedAppSession {
+    session_token: String,
+    refresh_expires_at: DateTime<Utc>,
+}
+
+async fn adopt_heimdall_completion(
+    state: &AppState,
+    expected_handle: &str,
+    completion: heimdall::AuthCompletionReceipt,
+) -> anyhow::Result<AdoptedAppSession> {
+    if completion.status != "authenticated" || completion.handle.as_deref() != Some(expected_handle)
+    {
+        anyhow::bail!("Heimdall completion did not match the pending Ghostlight attempt");
+    }
+    let claims = state.heimdall.verify_completion(&completion).await?;
+    let session = completion
+        .session
+        .as_ref()
+        .context("Heimdall omitted its authenticated session")?;
+    if !completion
+        .shared_capabilities
+        .iter()
+        .any(|value| value == "app_access")
+    {
+        anyhow::bail!("Heimdall completion did not expose Ghostlight app_access");
+    }
+    let refresh_expires_at = completion
+        .refresh
+        .as_ref()
+        .map(|value| value.expires_at.as_str())
+        .unwrap_or(&session.expires_at)
+        .parse()?;
+    let refresh_token = completion
+        .refresh_token
+        .as_deref()
+        .context("Heimdall omitted its refresh claim")?;
+    let session_token = state.auth.lock().await.create_session(NewSession {
+        account_id: &claims.account_id,
+        heimdall_session_id: &claims.sid,
+        access_revision: claims.access_revision,
+        capabilities: claims.capabilities,
+        access_expires_at: DateTime::from_timestamp(claims.exp as i64, 0)
+            .context("Heimdall access expiry is invalid")?,
+        refresh_expires_at,
+        refresh_claim: refresh_token,
+    })?;
+    Ok(AdoptedAppSession {
+        session_token,
+        refresh_expires_at,
+    })
+}
+
+async fn complete_native_authentication(
+    state: &AppState,
+    handle: &str,
+    idempotency_key: &str,
+) -> anyhow::Result<NativeAuthCompletionReceipt> {
+    let completion = state.heimdall.complete(handle, idempotency_key).await?;
+    match completion.status.as_str() {
+        "pending" => Ok(NativeAuthCompletionReceipt {
+            schema: "ghostlight.native_auth_completion_receipt.v1".into(),
+            status: "pending".into(),
+            message: "Heimdall is waiting for Discord authorization.".into(),
+            session_token: None,
+            refresh_expires_at: None,
+        }),
+        "denied" => Ok(NativeAuthCompletionReceipt {
+            schema: "ghostlight.native_auth_completion_receipt.v1".into(),
+            status: "denied".into(),
+            message: completion
+                .error
+                .unwrap_or_else(|| "Heimdall denied access.".into()),
+            session_token: None,
+            refresh_expires_at: None,
+        }),
+        "authenticated" => {
+            let adopted = adopt_heimdall_completion(state, handle, completion).await?;
+            Ok(NativeAuthCompletionReceipt {
+                schema: "ghostlight.native_auth_completion_receipt.v1".into(),
+                status: "authenticated".into(),
+                message: "Authenticated native Ghostlight client.".into(),
+                session_token: Some(adopted.session_token),
+                refresh_expires_at: Some(adopted.refresh_expires_at.to_rfc3339()),
+            })
+        }
+        _ => anyhow::bail!("Heimdall returned an invalid authentication state"),
+    }
 }
 
 fn app_session_cookie(
@@ -970,7 +1008,10 @@ fn app_session_cookie(
     .expect("Ghostlight generated an invalid app-session cookie")
 }
 
-fn validate_eve_invocation(invocation: &EveCommandInvocation) -> anyhow::Result<()> {
+fn validate_eve_invocation(
+    invocation: &EveCommandInvocation,
+    expected_transport: &str,
+) -> anyhow::Result<()> {
     if invocation.schema != "gamecult.eve.command_invocation.v1"
         || invocation.provider_id != EVE_PROVIDER_ID
         || invocation.surface_id != EVE_SURFACE_ID
@@ -996,18 +1037,10 @@ fn validate_eve_invocation(invocation: &EveCommandInvocation) -> anyhow::Result<
         anyhow::bail!("Invocation metadata is incomplete");
     }
     if contains_authority_field(&invocation.payload) {
-        anyhow::bail!("Browser payloads may not supply actor, member, or account authority");
+        anyhow::bail!("Player payloads may not supply actor, member, or account authority");
     }
-    if invocation
-        .operation
-        .route_hint
-        .transport
-        .as_deref()
-        .is_some_and(|value| value != "https-json")
-    {
-        anyhow::bail!(
-            "Ghostlight's browser boundary accepts only its advertised HTTPS Eve transport"
-        );
+    if invocation.operation.route_hint.transport.as_deref() != Some(expected_transport) {
+        anyhow::bail!("Eve invocation does not match the admitted transport boundary");
     }
     let expected_schema = eve_operation_schema(&invocation.operation.operation_id)
         .ok_or_else(|| anyhow::anyhow!("Eve operation is not advertised by Ghostlight"))?;
@@ -6000,6 +6033,81 @@ mod tests {
             authenticated_session(&headers, &state).await,
             Some(account_hash)
         );
+    }
+
+    #[tokio::test]
+    async fn native_cultmesh_surface_uses_the_same_heimdall_backed_app_session() {
+        use base64::{Engine, engine::general_purpose::STANDARD};
+        use cultnet_rs::CultNetMessage;
+
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let (session_token, account_hash) = fixture_session(&state, "native-owner").await;
+        let request = CultNetMessage::OperationRequest {
+            message_id: "native-surface-1".into(),
+            service_id: native_cultmesh::NATIVE_SERVICE_ID.into(),
+            operation: native_cultmesh::NATIVE_SURFACE_GET.into(),
+            payload_schema: "ghostlight.native_surface_get.v1".into(),
+            payload_encoding: "messagepack-base64".into(),
+            payload: STANDARD.encode(
+                rmp_serde::to_vec_named(&native_cultmesh::NativeSurfaceGetCommand {
+                    schema: "ghostlight.native_surface_get.v1".into(),
+                    session_token,
+                    invite: None,
+                })
+                .unwrap(),
+            ),
+            source_runtime_id: Some("native-test".into()),
+            target_runtime_id: None,
+        };
+
+        let response = native_cultmesh::handle_operation(state, request).await;
+        let CultNetMessage::OperationResponse {
+            status,
+            payload_schema,
+            payload,
+            ..
+        } = response
+        else {
+            panic!("native boundary returned a non-operation response");
+        };
+        assert_eq!(status, "accepted");
+        assert_eq!(payload_schema, "gamecult.eve.surface.v1");
+        let surface: serde_json::Value =
+            rmp_serde::from_slice(&STANDARD.decode(payload).unwrap()).unwrap();
+        assert_eq!(surface["schema"], "gamecult.eve.surface.v1");
+        let encoded = serde_json::to_string(&surface).unwrap();
+        assert!(!encoded.contains(&account_hash));
+        assert!(!encoded.contains("sessionToken"));
+    }
+
+    #[test]
+    fn eve_ingress_binds_each_transport_without_changing_command_semantics() {
+        let invocation = EveCommandInvocation {
+            schema: "gamecult.eve.command_invocation.v1".into(),
+            provider_id: EVE_PROVIDER_ID.into(),
+            surface_id: EVE_SURFACE_ID.into(),
+            operation: EveOperation {
+                operation_id: "world.speak".into(),
+                schema_id: Some("ghostlight.world_speak.v1".into()),
+                idempotency_key: Some("native-transport-witness".into()),
+                route_hint: EveRouteHint {
+                    source_version: Some(1),
+                    transport: Some("cultnet-rudp".into()),
+                },
+            },
+            payload: serde_json::json!({
+                "expected_revision":1,
+                "text":"Hello from a native client."
+            }),
+            issued_at: Utc::now().to_rfc3339(),
+            client_id: "native-test".into(),
+            command_boundary: EVE_COMMAND_BOUNDARY.into(),
+            receipt_schema: EVE_RESULT_SCHEMA.into(),
+        };
+
+        assert!(validate_eve_invocation(&invocation, "cultnet-rudp").is_ok());
+        assert!(validate_eve_invocation(&invocation, "https-json").is_err());
     }
 
     #[test]
