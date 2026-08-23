@@ -219,6 +219,14 @@ pub struct SessionZeroDecision {
     pub resolved: bool,
 }
 
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SessionZeroDecisionResolution {
+    Accept,
+    Decline,
+    Counter,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct SessionZeroApproval {
     pub schema: String,
@@ -1048,7 +1056,7 @@ pub enum SessionZeroCommand {
         actor_account_hash: String,
         expected_revision: u64,
         decision_id: String,
-        accept: bool,
+        resolution: SessionZeroDecisionResolution,
         counter: Option<String>,
     },
     LockRoster {
@@ -2594,14 +2602,23 @@ pub fn session_zero_surface(
         .values()
         .filter(|candidate| candidate.active)
         .map(|candidate| {
+            let readiness = match state.status {
+                SessionZeroStatus::Drafting => "drafting",
+                SessionZeroStatus::RosterLocked | SessionZeroStatus::Compiling => "awaiting review",
+                SessionZeroStatus::Review => {
+                    if state.approvals.contains_key(&candidate.id) {
+                        "approved"
+                    } else {
+                        "approval needed"
+                    }
+                }
+                SessionZeroStatus::Published => "published",
+                SessionZeroStatus::Archived => "archived",
+            };
             format!(
                 "{} · {}{}",
                 candidate.display_name,
-                if state.approvals.contains_key(&candidate.id) {
-                    "ready"
-                } else {
-                    "not ready"
-                },
+                readiness,
                 if candidate.is_host { " · host" } else { "" }
             )
         })
@@ -2682,6 +2699,29 @@ pub fn session_zero_surface(
         ),
         serde_json::json!({"id":"session-zero.decision.counter","kind":"control.input.textarea","props":{"label":"Counterproposal","rows":3,"maxLength":2000,"placeholder":"State the replacement you want the table or DM to consider (up to 2,000 characters)."},"stateBindings":[local_draft_binding("counter", "string")],"children":[]}),
     ];
+    if state.roster_locked
+        && state.preview.is_none()
+        && matches!(
+            state.status,
+            SessionZeroStatus::RosterLocked | SessionZeroStatus::Drafting
+        )
+        && let Err(error) = state.compilation_brief()
+    {
+        children.insert(
+            2,
+            serde_json::json!({
+                "id":"session-zero.compilation-readiness",
+                "kind":"card",
+                "props":{"title":"Before compilation"},
+                "children":[{
+                    "id":"session-zero.compilation-readiness.text",
+                    "kind":"text",
+                    "props":{"value":error.to_string()},
+                    "children":[]
+                }]
+            }),
+        );
+    }
     for boundary in &private_boundaries {
         children.push(serde_json::json!({
             "id":format!("session-zero.boundary.{}",boundary.id),
@@ -2723,12 +2763,12 @@ pub fn session_zero_surface(
                 &format!("session-zero.decision.{}.retry-counter", decision.id),
                 "Revise / retry counter",
                 "session_zero.decision.resolve",
-                serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false}),
+                serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"action":"retry_counter","counter":null}),
                 &[],
             ));
         } else {
             if decision_has_typed_payload(decision) {
-                decision_children.push(command_control(&format!("session-zero.decision.{}.accept",decision.id), "Accept", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":true,"counter":null}), &[]));
+                decision_children.push(command_control(&format!("session-zero.decision.{}.accept",decision.id), "Accept", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"action":"accept","counter":null}), &[]));
             } else {
                 decision_children.push(serde_json::json!({
                     "id":format!("session-zero.decision.{}.missing-payload",decision.id),
@@ -2738,8 +2778,8 @@ pub fn session_zero_surface(
                 }));
             }
             decision_children.extend([
-                command_control(&format!("session-zero.decision.{}.decline",decision.id), "Decline", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false,"counter":null}), &[]),
-                command_control(&format!("session-zero.decision.{}.counter",decision.id), "Counter", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"accept":false}), &["counter"]),
+                command_control(&format!("session-zero.decision.{}.decline",decision.id), "Decline", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"action":"decline","counter":null}), &[]),
+                command_control(&format!("session-zero.decision.{}.counter",decision.id), "Counter", "session_zero.decision.resolve", serde_json::json!({"expected_revision":state.revision,"decision_id":decision.id,"action":"counter"}), &["counter"]),
                 command_control(&format!("session-zero.decision.{}.discuss",decision.id), "Discuss", "session_zero.message.send", serde_json::json!({"expected_revision":state.revision,"text":format!("I want to discuss this proposal before deciding: {}",decision.prompt)}), &["channel_id"]),
             ]);
         }
@@ -3453,7 +3493,7 @@ fn execute(
             actor_account_hash,
             expected_revision,
             decision_id,
-            accept,
+            resolution,
             counter,
         } => {
             require_revision(&state, expected_revision)?;
@@ -3477,7 +3517,7 @@ fn execute(
             {
                 return Err(anyhow!("decision belongs to another member"));
             }
-            if accept {
+            if resolution == SessionZeroDecisionResolution::Accept {
                 if decision.pending_counter.is_some() {
                     return Err(anyhow!("counterproposal is awaiting a fresh DM decision"));
                 }
@@ -3538,9 +3578,10 @@ fn execute(
                     .get_mut(&decision_id)
                     .expect("decision was just validated")
                     .resolved = true;
-            } else if let Some(proposed_resolution) =
-                counter.filter(|value| !value.trim().is_empty())
-            {
+            } else if resolution == SessionZeroDecisionResolution::Counter {
+                let proposed_resolution = counter
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| anyhow!("counterproposal is required"))?;
                 validate_bounded("counterproposal", &proposed_resolution, 1, 2_000)?;
                 let channel_id = decision
                     .owner_member_id
@@ -3568,6 +3609,11 @@ fn execute(
                     shared_changed(&mut state);
                 }
             } else {
+                if counter.is_some() {
+                    return Err(anyhow!(
+                        "declining a decision cannot include a counterproposal"
+                    ));
+                }
                 state
                     .decisions
                     .get_mut(&decision_id)
@@ -5836,6 +5882,21 @@ mod tests {
     }
 
     #[test]
+    fn locked_incomplete_session_projects_the_authoritative_compilation_blocker() {
+        let mut draft = state();
+        draft.roster_locked = true;
+        draft.status = SessionZeroStatus::RosterLocked;
+
+        let encoded =
+            serde_json::to_string(&session_zero_surface(&draft, "account:host").unwrap()).unwrap();
+
+        assert!(encoded.contains("Before compilation"));
+        assert!(encoded.contains("Session Zero draft is incomplete: campaign premise"));
+        assert!(encoded.contains("Host · awaiting review · host"));
+        assert!(!encoded.contains("Host · not ready"));
+    }
+
+    #[test]
     fn compilable_locked_draft_can_retry_after_compiler_failure() {
         let mut draft = compilable_state();
         draft.roster_locked = true;
@@ -6288,7 +6349,7 @@ mod tests {
                 actor_account_hash: "account:host".into(),
                 expected_revision: initial.revision,
                 decision_id,
-                accept: true,
+                resolution: SessionZeroDecisionResolution::Accept,
                 counter: None,
             })
             .await
@@ -6369,7 +6430,7 @@ mod tests {
                 actor_account_hash: "account:host".into(),
                 expected_revision: proposed_turn.state.revision,
                 decision_id,
-                accept: true,
+                resolution: SessionZeroDecisionResolution::Accept,
                 counter: None,
             })
             .await
@@ -6421,7 +6482,7 @@ mod tests {
                 actor_account_hash: "account:host".into(),
                 expected_revision: initial.revision,
                 decision_id: decision_id.clone(),
-                accept: false,
+                resolution: SessionZeroDecisionResolution::Decline,
                 counter: None,
             })
             .await
@@ -6488,7 +6549,7 @@ mod tests {
                 actor_account_hash: "account:host".into(),
                 expected_revision: 0,
                 decision_id: original_decision_id.clone(),
-                accept: false,
+                resolution: SessionZeroDecisionResolution::Counter,
                 counter: Some(counter_text.into()),
             })
             .await
@@ -6531,7 +6592,7 @@ mod tests {
                 actor_account_hash: "account:host".into(),
                 expected_revision: countered.state.revision,
                 decision_id: original_decision_id.clone(),
-                accept: true,
+                resolution: SessionZeroDecisionResolution::Accept,
                 counter: None,
             })
             .await
@@ -6703,7 +6764,7 @@ mod tests {
                 actor_account_hash: "account:host".into(),
                 expected_revision: replaced.state.revision,
                 decision_id: replacement_decision_id,
-                accept: true,
+                resolution: SessionZeroDecisionResolution::Accept,
                 counter: None,
             })
             .await

@@ -37,8 +37,8 @@ use ghostlight_dungeon::{
     registry::{CampaignRegistry, CampaignRuntime},
     session_zero::{
         BoundaryLevel, EntitlementPort, FixtureEntitlementPort, SessionZeroCommand,
-        SessionZeroDirector, SessionZeroRegistry, SessionZeroState, publication_from_session,
-        session_zero_surface,
+        SessionZeroDecisionResolution, SessionZeroDirector, SessionZeroRegistry, SessionZeroState,
+        publication_from_session, session_zero_surface,
     },
     surface::{
         campaign_interface_version, player_surface_for_actor, rebase_campaign_surface_revision,
@@ -158,8 +158,17 @@ struct SessionZeroBoundaryRequest {
 struct SessionZeroDecisionRequest {
     expected_revision: u64,
     decision_id: String,
-    accept: bool,
+    action: SessionZeroDecisionRequestAction,
     counter: Option<String>,
+}
+
+#[derive(Clone, Copy, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum SessionZeroDecisionRequestAction {
+    Accept,
+    Decline,
+    Counter,
+    RetryCounter,
 }
 
 #[derive(Deserialize)]
@@ -2628,12 +2637,18 @@ async fn resolve_session_zero_decision(
         Ok(value) => value,
         Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
     };
-    if !request.accept
-        && request
+    if request.action == SessionZeroDecisionRequestAction::RetryCounter {
+        if request
             .counter
             .as_deref()
-            .is_none_or(|counter| counter.trim().is_empty())
-    {
+            .is_some_and(|counter| !counter.trim().is_empty())
+        {
+            return (
+                StatusCode::BAD_REQUEST,
+                "a counter retry cannot include a new counterproposal",
+            )
+                .into_response();
+        }
         let snapshot = match state.session_zeros.snapshot(session_id).await {
             Ok(value) => value,
             Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
@@ -2667,21 +2682,27 @@ async fn resolve_session_zero_decision(
         )
             .into_response();
     }
+    let resolution = match request.action {
+        SessionZeroDecisionRequestAction::Accept => SessionZeroDecisionResolution::Accept,
+        SessionZeroDecisionRequestAction::Decline => SessionZeroDecisionResolution::Decline,
+        SessionZeroDecisionRequestAction::Counter => SessionZeroDecisionResolution::Counter,
+        SessionZeroDecisionRequestAction::RetryCounter => unreachable!("retry returned above"),
+    };
     let decision_id = request.decision_id.clone();
-    let accepted = request.accept;
+    let accepted = resolution == SessionZeroDecisionResolution::Accept;
     match runtime
         .kernel
         .command(SessionZeroCommand::ResolveDecision {
             actor_account_hash: account_hash,
             expected_revision: request.expected_revision,
             decision_id: request.decision_id,
-            accept: request.accept,
+            resolution,
             counter: request.counter,
         })
         .await
     {
         Ok(result) => {
-            if !accepted
+            if resolution == SessionZeroDecisionResolution::Counter
                 && let Some(decision) = result.state.decisions.get(&decision_id)
                 && decision.pending_counter.is_some()
             {
@@ -5961,6 +5982,26 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn decision_request_uses_an_explicit_action_instead_of_boolean_overloading() {
+        let decline: SessionZeroDecisionRequest = serde_json::from_value(serde_json::json!({
+            "expected_revision": 9,
+            "decision_id": "decision:opening",
+            "action": "decline",
+            "counter": null
+        }))
+        .unwrap();
+        assert!(decline.action == SessionZeroDecisionRequestAction::Decline);
+
+        let legacy = serde_json::from_value::<SessionZeroDecisionRequest>(serde_json::json!({
+            "expected_revision": 9,
+            "decision_id": "decision:opening",
+            "accept": false,
+            "counter": null
+        }));
+        assert!(legacy.is_err());
     }
 
     #[tokio::test]
