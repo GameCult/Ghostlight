@@ -76,20 +76,49 @@ pub fn player_surface_for_actor(
             .collect::<Vec<_>>()
             .join(", ")
     };
+    let player_profile = campaign.agency_profiles.get(viewer_actor_id);
+    let information_channels = player_profile
+        .map(|profile| join(&profile.information_channels))
+        .unwrap_or_else(|| "none".into());
     let ledger = format!(
-        "Capabilities: {}\nEquipment: {}\nConditions: {}\nObligations: {}\nRelationships: {}\nKnown facts: {}",
+        "Capabilities: {}\nEquipment: {}\nConditions: {}\nObligations: {}\nRelationships: {}\nKnown facts: {}\nInformation access: {}",
         join(&player.capabilities),
         join(&player.equipment),
         join(&player.conditions),
         join(&player.obligations),
         relationships,
-        join(&player.knowledge)
+        join(&player.knowledge),
+        information_channels,
     );
-    let accessible_channels = campaign
-        .agency_profiles
-        .get(viewer_actor_id)
-        .map(|profile| &profile.information_channels);
-    let news=campaign.news.iter().filter(|item| accessible_channels.is_some_and(|channels| channels.contains(&item.channel))).map(|item|json!({"id":item.id,"kind":"text","props":{"value":format!("[{}] {}",item.channel,item.headline)} ,"children":[]})).collect::<Vec<_>>();
+    let accessible_channels = player_profile.map(|profile| &profile.information_channels);
+    let accessible_news = campaign
+        .news
+        .iter()
+        .filter(|item| accessible_channels.is_some_and(|channels| channels.contains(&item.channel)))
+        .collect::<Vec<_>>();
+    let reported_event_ids = accessible_news
+        .iter()
+        .flat_map(|item| item.event_ids.iter().cloned())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut news = campaign
+        .events
+        .iter()
+        .rev()
+        .filter(|event| !reported_event_ids.contains(&event.id))
+        .filter(|event| {
+            player_profile.is_some_and(|profile| {
+                crate::scheduler::subject_perceives_event(
+                    viewer_actor_id,
+                    &profile.location_ids,
+                    &profile.information_channels,
+                    event,
+                )
+            })
+        })
+        .take(12)
+        .map(|event| json!({"id":format!("observed:{}",event.id),"kind":"text","props":{"value":format!("[observed] {}",event.summary)},"children":[]}))
+        .collect::<Vec<_>>();
+    news.extend(accessible_news.into_iter().map(|item|json!({"id":item.id,"kind":"text","props":{"value":format!("[{}] {}",item.channel,item.headline)},"children":[]})));
     let effective_budget = campaign
         .resolution_cover
         .as_ref()
@@ -568,6 +597,40 @@ mod tests {
         let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
 
         assert!(!encoded.contains("SECRET_COMMAND_MOVEMENT"));
+    }
+
+    #[test]
+    fn player_surface_projects_directly_perceived_events_but_not_remote_secrets() {
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        campaign.events.extend([
+            crate::domain::Event {
+                id: "event:local".into(),
+                at: Utc::now(),
+                kind: "local-change".into(),
+                summary: "The junction workers reopen the water line.".into(),
+                actor_ids: vec![],
+                institution_ids: vec![],
+                gestalt_ids: vec!["faction-0000".into()],
+                location_ids: vec!["center".into()],
+                public_channels: vec![],
+            },
+            crate::domain::Event {
+                id: "event:remote".into(),
+                at: Utc::now(),
+                kind: "remote-secret".into(),
+                summary: "SECRET_REMOTE_EVENT".into(),
+                actor_ids: vec![],
+                institution_ids: vec!["faction-0000".into()],
+                gestalt_ids: vec![],
+                location_ids: vec!["remote".into()],
+                public_channels: vec![],
+            },
+        ]);
+
+        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+
+        assert!(encoded.contains("The junction workers reopen the water line."));
+        assert!(!encoded.contains("SECRET_REMOTE_EVENT"));
     }
 
     #[test]

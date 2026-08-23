@@ -549,17 +549,12 @@ fn cell_perceived_events(
             let mut perceived_by_subject_ids = constituents
                 .iter()
                 .filter(|subject| {
-                    event.actor_ids.contains(&subject.subject_id)
-                        || event.institution_ids.contains(&subject.subject_id)
-                        || event.gestalt_ids.contains(&subject.subject_id)
-                        || !event
-                            .location_ids
-                            .iter()
-                            .all(|location_id| !subject.location_ids.contains(location_id))
-                        || !event
-                            .public_channels
-                            .iter()
-                            .all(|channel| !subject.information_channels.contains(channel))
+                    subject_perceives_event(
+                        &subject.subject_id,
+                        &subject.location_ids,
+                        &subject.information_channels,
+                        event,
+                    )
                 })
                 .map(|subject| subject.subject_id.clone())
                 .collect::<BTreeSet<_>>();
@@ -583,6 +578,25 @@ fn cell_perceived_events(
             })
         })
         .collect()
+}
+
+pub(crate) fn subject_perceives_event(
+    subject_id: &str,
+    location_ids: &BTreeSet<String>,
+    information_channels: &BTreeSet<String>,
+    event: &crate::domain::Event,
+) -> bool {
+    event.actor_ids.iter().any(|id| id == subject_id)
+        || event.institution_ids.iter().any(|id| id == subject_id)
+        || event.gestalt_ids.iter().any(|id| id == subject_id)
+        || event
+            .location_ids
+            .iter()
+            .any(|location_id| location_ids.contains(location_id))
+        || event
+            .public_channels
+            .iter()
+            .any(|channel| information_channels.contains(channel))
 }
 
 fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<CellMemberSlice>> {
