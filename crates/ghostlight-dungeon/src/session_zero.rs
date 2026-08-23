@@ -1669,16 +1669,8 @@ fn require_single_lane_ownership(schema: &mut serde_json::Value) -> Result<()> {
                     "properties": {
                         "decisions": {
                             "contains": {
-                                "anyOf": [
-                                    {
-                                        "required": ["proposed_character_patch"],
-                                        "properties": {"proposed_character_patch": {"type": "object"}}
-                                    },
-                                    {
-                                        "required": ["proposed_extraordinary_permission"],
-                                        "properties": {"proposed_extraordinary_permission": {"type": "object"}}
-                                    }
-                                ]
+                                "required": ["proposed_character_patch"],
+                                "properties": {"proposed_character_patch": {"type": "object"}}
                             }
                         }
                     }
@@ -3720,13 +3712,13 @@ fn validate_dm_delta(
             "a DM turn cannot directly edit the contract and offer a contract decision"
         ));
     }
-    let proposes_private_decision = delta.decisions.iter().any(|decision| {
-        decision.proposed_character_patch.is_some()
-            || decision.proposed_extraordinary_permission.is_some()
-    });
-    if delta.character_patch.is_some() && proposes_private_decision {
+    let proposes_character_decision = delta
+        .decisions
+        .iter()
+        .any(|decision| decision.proposed_character_patch.is_some());
+    if delta.character_patch.is_some() && proposes_character_decision {
         return Err(anyhow!(
-            "a DM turn cannot directly edit a character and offer a private decision"
+            "a DM turn cannot directly edit a character and offer a character decision"
         ));
     }
     validate_bounded("DM speech", &delta.dm_speech, 0, 6_000)?;
@@ -4719,6 +4711,60 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(error.contains("directly edit the contract"));
+
+        let host_id = draft.host_member_id.clone();
+        let actor_id = draft.character_drafts[&host_id].actor_id.clone();
+        let character_and_permission = SessionZeroDelta {
+            character_patch: Some(CharacterDraftPatch {
+                public_premise: Some("A refugee logistics organizer.".into()),
+                ..Default::default()
+            }),
+            decisions: vec![SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: "decision:permission".into(),
+                owner_member_id: Some(host_id.clone()),
+                prompt: "Accept bounded pressure-stress sensing?".into(),
+                proposed_resolution: "Touch reveals only recent local stress.".into(),
+                proposed_extraordinary_permission: Some(ExtraordinaryPermission {
+                    schema: "ghostlight.extraordinary_permission.v1".into(),
+                    id: "permission:stress-sense".into(),
+                    actor_id,
+                    name: "Pressure-stress sensing".into(),
+                    reliable_scope: "One touched pressure-bearing machine".into(),
+                    prerequisites: vec!["Direct touch".into()],
+                    costs: vec!["Vertigo".into()],
+                    limits: vec!["No causes or remote history".into()],
+                    exposure: vec!["Traceable breathing rhythm".into()],
+                    effect_ceiling: "Recent local thermal and pressure stress map".into(),
+                    evidence_receipt_ids: vec![],
+                    branch_local: true,
+                }),
+                proposed_contract_patch: None,
+                proposed_character_patch: None,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            }],
+            ..Default::default()
+        };
+        assert!(
+            validator.is_valid(
+                &serde_json::to_value(SessionZeroInterpretation {
+                    character_patch: character_and_permission.character_patch.clone(),
+                    decisions: character_and_permission.decisions.clone(),
+                    ..Default::default()
+                })
+                .unwrap()
+            )
+        );
+        validate_dm_delta(
+            &draft,
+            &format!("private:{host_id}"),
+            Some(&host_id),
+            &character_and_permission,
+        )
+        .unwrap();
     }
 
     #[test]

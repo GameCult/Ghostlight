@@ -90,8 +90,10 @@ receipts unchanged.
 
 One Interpreter turn has one owner per typed lane. A shared turn may directly
 edit the draft contract or offer a contract decision, never both; a private turn
-may directly edit the character draft or offer a character/permission decision,
-never both. The model-facing schema requests a same-snapshot correction for a
+may directly edit the ordinary character draft or offer a character-patch
+decision, never both. An extraordinary-permission bargain is a separate consent
+lane, so it may accompany a direct mundane character patch without being
+silently granted. The model-facing schema requests a same-snapshot correction for a
 split-lane output, and the kernel repeats the invariant before mutation.
 
 Generated opening and role suggestions are non-material decisions: the player
