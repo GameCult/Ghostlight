@@ -1,4 +1,4 @@
-use crate::model::{ModelPort, ModelStageRequest, run_validated_stage};
+use crate::model::{ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage};
 use crate::session_zero::{AggregatedBoundary, CampaignContract};
 use anyhow::{Result, anyhow};
 use async_trait::async_trait;
@@ -222,6 +222,12 @@ struct CellActionEffectVerdict {
     repair_guidance: Option<String>,
 }
 
+struct CellActionVerificationRun {
+    action_index: usize,
+    output: ModelStageOutput,
+    verdict: CellActionEffectVerdict,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(rename_all = "snake_case")]
 enum CellEffectMatchResult {
@@ -280,6 +286,8 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
     "inactions":{"type":"array","items":{"type":"object","required":["subject_id","reason"],"properties":{"subject_id":{"type":"string"},"reason":{"type":"string","minLength":1,"maxLength":240}}}}
   }
 }"#;
+
+const CELL_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between an Interpreter and the world kernel. Judge this one candidate action's ordered typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_subject_permission as the sole map of canonical subjects, locations, and destinations for this actor. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct chosen means: travel followed by a local attempt at that supplied destination requires both movement and activity in the same action, in that order. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict with action_index 0. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. A faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {\"verdicts\":[{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}]}";
 
 #[async_trait]
 pub trait ExecutionPermit: Send + Sync {
@@ -513,32 +521,65 @@ fn cell_interpreter_context(
         "resolution_epoch": slice.resolution_epoch,
         "detail_focus_subject_id": slice.detail_focus_subject_id,
         "max_actions": slice.max_actions,
-        "exact_permissions": slice.constituents.iter().filter(|subject| active_subject_ids.contains(&subject.subject_id)).map(|subject| serde_json::json!({
-            "subject_id": subject.subject_id,
-            "subject_kind": subject.subject_kind,
-            "allowed_effect_types": allowed_constituent_effect_types(subject),
-            "collective_authority_id": subject.collective_authority_id,
-            "location_ids": subject.location_ids,
-            "allowed_persistent_publication_channels": subject.information_channels,
-            "permitted_state_references": subject.permitted_state_references,
-            "reachable_destinations": subject.reachable_destinations,
-            "migration_destinations": subject.migration_destinations,
-            "activity_targets": subject.activity_targets,
-            "already_committed_posture": subject.current_posture,
-            "current_pressures": subject.pressures,
-        })).collect::<Vec<_>>(),
-        "member_permissions": slice.member_exceptions.iter().filter(|member| active_subject_ids.contains(&member.subject_id)).map(|member| serde_json::json!({
-            "subject_id": member.subject_id,
-            "member_id": member.member_id,
-            "allowed_effect_types": allowed_member_effect_types(member),
-            "source_gestalt_id": member.source_gestalt_id,
-            "source_location_id": member.source_location_id,
-            "allowed_persistent_publication_channels": member.information_channels,
-            "permitted_state_references": member.permitted_state_references,
-            "migration_destinations": member.migration_destinations,
-            "activity_targets": member.activity_targets,
-        })).collect::<Vec<_>>(),
+        "exact_permissions": slice.constituents.iter().filter(|subject| active_subject_ids.contains(&subject.subject_id)).map(constituent_permission_context).collect::<Vec<_>>(),
+        "member_permissions": slice.member_exceptions.iter().filter(|member| active_subject_ids.contains(&member.subject_id)).map(member_permission_context).collect::<Vec<_>>(),
     })
+}
+
+fn constituent_permission_context(subject: &CellConstituentSlice) -> serde_json::Value {
+    serde_json::json!({
+        "subject_id": subject.subject_id,
+        "subject_kind": subject.subject_kind,
+        "name": subject.name,
+        "allowed_effect_types": allowed_constituent_effect_types(subject),
+        "collective_authority_id": subject.collective_authority_id,
+        "location_ids": subject.location_ids,
+        "allowed_persistent_publication_channels": subject.information_channels,
+        "permitted_state_references": subject.permitted_state_references,
+        "reachable_destinations": subject.reachable_destinations,
+        "migration_destinations": subject.migration_destinations,
+        "activity_targets": subject.activity_targets,
+        "already_committed_posture": subject.current_posture,
+        "current_pressures": subject.pressures,
+    })
+}
+
+fn member_permission_context(member: &CellMemberSlice) -> serde_json::Value {
+    serde_json::json!({
+        "subject_id": member.subject_id,
+        "member_id": member.member_id,
+        "name": member.name,
+        "allowed_effect_types": allowed_member_effect_types(member),
+        "source_gestalt_id": member.source_gestalt_id,
+        "source_location_id": member.source_location_id,
+        "allowed_persistent_publication_channels": member.information_channels,
+        "permitted_state_references": member.permitted_state_references,
+        "migration_destinations": member.migration_destinations,
+        "activity_targets": member.activity_targets,
+    })
+}
+
+fn cell_action_verifier_permission(
+    slice: &PermittedCellSlice,
+    subject_id: &str,
+) -> Result<serde_json::Value> {
+    if let Some(subject) = slice
+        .constituents
+        .iter()
+        .find(|subject| subject.subject_id == subject_id)
+    {
+        return Ok(constituent_permission_context(subject));
+    }
+    if let Some(member) = slice
+        .member_exceptions
+        .iter()
+        .find(|member| member.subject_id == subject_id)
+    {
+        return Ok(member_permission_context(member));
+    }
+    Err(anyhow!(
+        "cell effect verifier cannot find exact authority for {subject_id}"
+    ))
 }
 
 fn cell_scene_boundaries(
@@ -1071,69 +1112,52 @@ impl CellProjectionEngine {
                                 "cell_effect_verifier",
                             )
                             .await?;
-                        let verifier_context = serde_json::json!({
-                            "local_attempt_contract":"A targetless local communicate at the source's exact current location faithfully records speech, an offer, a permission request, or a notice directed to an unnamed ordinary role. A targetless local obstruct there faithfully records attempted interference with unnamed infrastructure, terrain, traffic, or another local feature. Both record only the source's attempt—never a listener, reply, damage, disruption, acceptance, or outcome—and must not be rejected merely because target_subject_ids is empty.",
-                            "spatial_effect_contract":"A prepare, investigate, or other activity may include incidental walking, approaching, queuing, carrying, or repositioning around an unnamed local feature while the source remains inside the effect's supplied canonical location. The activity records the attempt and need not serialize every footstep. Reject omitted movement only when the Persona clearly commits the subject to a different supplied canonical location or population destination; local texture does not create topology or establish arrival.",
-                            "exact_typed_permissions":serde_json::from_str::<serde_json::Value>(&interpreter_context)?,
-                            "lived_stream":lived.text,
-                            "persona_turn":persona.narrative,
-                            "candidate_actions":appraisal.actions.iter().enumerate().map(|(index, action)| serde_json::json!({
-                                "index":index,
-                                "subject_id":action.subject_id,
-                                "intent":action.intent,
-                                "intended_effect":action.intended_effect,
-                                "typed_effects":action.effects,
-                            })).collect::<Vec<_>>(),
-                            "subject_names":slice.constituents.iter().map(|subject|(&subject.subject_id, &subject.name)).chain(slice.member_exceptions.iter().map(|member|(&member.subject_id, &member.name))).collect::<BTreeMap<_,_>>(),
-                            "campaign_policy":serde_json::from_str::<serde_json::Value>(&campaign_policy)?,
-                        });
-                        let verifier_binding = cell_effect_verification_binding(
-                            &slice.snapshot_binding,
+                        let mut verifications = run_cell_effect_verifier_wave(
+                            self.model.clone(),
+                            &self.interpreter_model,
+                            &slice,
+                            &lived.text,
+                            &persona.narrative,
+                            &campaign_policy,
                             &appraisal.actions,
-                        )?;
-                        let verifier_schema = cell_effect_verifier_schema(appraisal.actions.len())?;
-                        let mut verified = run_validated_stage(
-                            self.model.as_ref(),
-                            &ModelStageRequest {
-                                stage: "cell_effect_verifier".into(),
-                                model: self.interpreter_model.clone(),
-                                snapshot_binding: verifier_binding,
-                                lived_stream: format!(
-                                    "You are the private semantic verifier between an Interpreter and the world kernel. Judge each candidate action's ordered typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_typed_permissions as the sole map of canonical subjects, locations, and destinations. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct chosen means: travel followed by a local attempt at that supplied destination requires both movement and activity in the same action, in that order. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict for every supplied action_index, in the same order, with no omissions or duplicates. Never reject one action merely because another action is wrong. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. Each faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {{\"verdicts\":[{{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}}]}}.\n\nCONTEXT:\n{}",
-                                    serde_json::to_string(&verifier_context)?
-                                ),
-                                output_schema: Some(verifier_schema),
-                                source_receipt_ids: slice.source_receipt_ids.clone(),
-                                temperature: Some(0.0),
-                                max_output_tokens: Some(384),
-                            },
                         )
                         .await?;
-                        let verification: CellEffectVerification =
-                            serde_json::from_value(verified.structured.clone().ok_or_else(
-                                || anyhow!("cell effect verifier produced no typed verdict"),
-                            )?)?;
-                        let rejected_action_indices =
-                            validate_effect_verification(&verification, appraisal.actions.len())?;
+                        let rejected_action_indices = verifications
+                            .iter()
+                            .filter_map(|verification| {
+                                matches!(
+                                    verification.verdict.result,
+                                    CellEffectMatchResult::Mismatch
+                                )
+                                .then_some(verification.action_index)
+                            })
+                            .collect::<Vec<_>>();
                         if rejected_action_indices.is_empty() {
-                            stage_receipts.push(verified.receipt);
+                            stage_receipts.extend(
+                                verifications
+                                    .into_iter()
+                                    .map(|verification| verification.output.receipt),
+                            );
                         } else {
-                            let rejection_rationale = verification
-                                .verdicts
+                            let rejection_rationale = verifications
                                 .iter()
-                                .filter_map(|verdict| {
-                                    let CellEffectMatchResult::Mismatch = verdict.result else {
+                                .filter_map(|verification| {
+                                    let CellEffectMatchResult::Mismatch =
+                                        verification.verdict.result
+                                    else {
                                         return None;
                                     };
-                                    let mismatch_kind = verdict
+                                    let mismatch_kind = verification
+                                        .verdict
                                         .mismatch_kind
                                         .as_ref()
                                         .expect("validated mismatch kind");
                                     format!(
                                         "action {}: {:?} — {}",
-                                        verdict.action_index,
+                                        verification.action_index,
                                         mismatch_kind,
-                                        verdict
+                                        verification
+                                            .verdict
                                             .repair_guidance
                                             .as_deref()
                                             .expect("validated mismatch guidance")
@@ -1150,10 +1174,22 @@ impl CellProjectionEngine {
                                 rejected_action_indices,
                                 rejection_rationale
                             );
-                            verified.receipt.validation_result = "semantic_invalid".into();
-                            verified.receipt.local_validation_error =
-                                Some(error.to_string().chars().take(1_000).collect());
-                            stage_receipts.push(verified.receipt);
+                            for verification in &mut verifications {
+                                if matches!(
+                                    verification.verdict.result,
+                                    CellEffectMatchResult::Mismatch
+                                ) {
+                                    verification.output.receipt.validation_result =
+                                        "semantic_invalid".into();
+                                    verification.output.receipt.local_validation_error =
+                                        Some(error.to_string().chars().take(1_000).collect());
+                                }
+                            }
+                            stage_receipts.extend(
+                                verifications
+                                    .into_iter()
+                                    .map(|verification| verification.output.receipt),
+                            );
                             if attempt == 0 {
                                 exclude_rejected_cell_effects(
                                     request.output_schema.as_mut().ok_or_else(|| {
@@ -1237,6 +1273,87 @@ impl CellProjectionEngine {
         }
         unreachable!()
     }
+}
+
+async fn run_cell_effect_verifier_wave(
+    model: Arc<dyn ModelPort>,
+    interpreter_model: &str,
+    slice: &PermittedCellSlice,
+    lived_stream: &str,
+    persona_turn: &str,
+    campaign_policy: &str,
+    actions: &[crate::domain::CellActionProposal],
+) -> Result<Vec<CellActionVerificationRun>> {
+    let campaign_policy = serde_json::from_str::<serde_json::Value>(campaign_policy)?;
+    let verifier_schema = cell_effect_verifier_schema(1)?;
+    let mut jobs = tokio::task::JoinSet::new();
+    for (action_index, action) in actions.iter().enumerate() {
+        let exact_subject_permission = cell_action_verifier_permission(slice, &action.subject_id)?;
+        let verifier_context = serde_json::json!({
+            "local_attempt_contract":"A targetless local communicate at the source's exact current location faithfully records speech, an offer, a permission request, or a notice directed to an unnamed ordinary role. A targetless local obstruct there faithfully records attempted interference with unnamed infrastructure, terrain, traffic, or another local feature. Both record only the source's attempt—never a listener, reply, damage, disruption, acceptance, or outcome—and must not be rejected merely because target_subject_ids is empty.",
+            "spatial_effect_contract":"A prepare, investigate, or other activity may include incidental walking, approaching, queuing, carrying, or repositioning around an unnamed local feature while the source remains inside the effect's supplied canonical location. The activity records the attempt and need not serialize every footstep. Reject omitted movement only when the Persona clearly commits the subject to a different supplied canonical location or population destination; local texture does not create topology or establish arrival.",
+            "exact_subject_permission":exact_subject_permission,
+            "lived_stream":lived_stream,
+            "persona_turn":persona_turn,
+            "candidate_action":{
+                "action_index":0,
+                "subject_id":action.subject_id,
+                "intent":action.intent,
+                "intended_effect":action.intended_effect,
+                "typed_effects":action.effects,
+            },
+            "campaign_policy":campaign_policy,
+        });
+        let request = ModelStageRequest {
+            stage: "cell_effect_verifier".into(),
+            model: interpreter_model.to_owned(),
+            snapshot_binding: cell_effect_verification_binding(
+                &slice.snapshot_binding,
+                std::slice::from_ref(action),
+            )?,
+            lived_stream: format!(
+                "{CELL_EFFECT_VERIFIER_INSTRUCTIONS}\n\nCONTEXT:\n{}",
+                serde_json::to_string(&verifier_context)?
+            ),
+            output_schema: Some(verifier_schema.clone()),
+            source_receipt_ids: slice.source_receipt_ids.clone(),
+            temperature: Some(0.0),
+            max_output_tokens: Some(192),
+        };
+        let model = model.clone();
+        jobs.spawn(async move {
+            let output = run_validated_stage(model.as_ref(), &request)
+                .await
+                .map_err(|error| {
+                    anyhow!("cell effect verifier action {action_index} failed: {error}")
+                })?;
+            let verification: CellEffectVerification = serde_json::from_value(
+                output
+                    .structured
+                    .clone()
+                    .ok_or_else(|| anyhow!("cell effect verifier produced no typed verdict"))?,
+            )?;
+            validate_effect_verification(&verification, 1)?;
+            let verdict = verification
+                .verdicts
+                .into_iter()
+                .next()
+                .expect("one-action verifier schema and validator require one verdict");
+            Ok::<_, anyhow::Error>(CellActionVerificationRun {
+                action_index,
+                output,
+                verdict,
+            })
+        });
+    }
+
+    let mut verified = Vec::with_capacity(actions.len());
+    while let Some(result) = jobs.join_next().await {
+        verified
+            .push(result.map_err(|error| anyhow!("cell effect verifier task failed: {error}"))??);
+    }
+    verified.sort_by_key(|verification| verification.action_index);
+    Ok(verified)
 }
 
 fn cell_projector_mode_guidance(mode: &crate::domain::SimulationCellMode) -> &'static str {
@@ -2444,7 +2561,9 @@ mod tests {
         domain::{AgencySubjectKind, SimulationCellMode, StrategicCellEffect},
         model::{FixtureModel, ModelStageRequest},
     };
+    use std::sync::Mutex;
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use tokio::sync::Barrier;
 
     struct CorrectingCellModel {
         interpreter_calls: AtomicUsize,
@@ -2573,7 +2692,7 @@ mod tests {
                 }
                 "cell_effect_verifier" => {
                     assert!(request.lived_stream.contains("JSON object"));
-                    assert!(request.lived_stream.contains("exact_typed_permissions"));
+                    assert!(request.lived_stream.contains("exact_subject_permission"));
                     assert!(
                         request
                             .lived_stream
@@ -2739,7 +2858,7 @@ mod tests {
                     assert!(request
                         .lived_stream
                         .contains("sole map of canonical subjects, locations, and destinations"));
-                    assert!(request.lived_stream.contains("exact_typed_permissions"));
+                    assert!(request.lived_stream.contains("exact_subject_permission"));
                     assert!(request
                         .lived_stream
                         .contains("empty target list is intentional"));
@@ -3226,6 +3345,118 @@ mod tests {
             ]
         });
         assert!(!validator.is_valid(&incoherent));
+    }
+
+    struct ParallelActionVerifierModel {
+        barrier: Arc<Barrier>,
+        prompts: Arc<Mutex<Vec<String>>>,
+    }
+
+    #[async_trait]
+    impl ModelPort for ParallelActionVerifierModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            assert_eq!(request.stage, "cell_effect_verifier");
+            self.prompts
+                .lock()
+                .unwrap()
+                .push(request.lived_stream.clone());
+            self.barrier.wait().await;
+            Ok(serde_json::json!({
+                "verdicts":[{
+                    "action_index":0,
+                    "result":"match",
+                    "mismatch_kind":null,
+                    "repair_guidance":null
+                }]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "parallel-action-verifier-fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn effect_verifier_wave_is_parallel_and_subject_scoped() {
+        let mut slice = fixture_cell_slice();
+        let mut second = slice.constituents[0].clone();
+        second.subject_id = "faction-07".into();
+        second.name = "Faction Seven".into();
+        second.permitted_state_references = BTreeSet::from(["institution:faction-07".into()]);
+        second.current_posture = Some("holding a separate position".into());
+        slice.constituents.push(second);
+        let actions = [
+            crate::domain::CellActionProposal {
+                subject_id: "faction-06".into(),
+                intent: "publish its position".into(),
+                intended_effect: "state a bounded commitment".into(),
+                priority: 10,
+                state_references: vec!["institution:faction-06".into()],
+                public_channels: vec!["public bulletin".into()],
+                effects: vec![StrategicCellEffect::Institution {
+                    institution_id: "faction-06".into(),
+                    posture: "publishing a bounded position".into(),
+                    location_ids: vec!["forum".into()],
+                }],
+            },
+            crate::domain::CellActionProposal {
+                subject_id: "faction-07".into(),
+                intent: "publish its separate position".into(),
+                intended_effect: "state a distinct bounded commitment".into(),
+                priority: 9,
+                state_references: vec!["institution:faction-07".into()],
+                public_channels: vec!["public bulletin".into()],
+                effects: vec![StrategicCellEffect::Institution {
+                    institution_id: "faction-07".into(),
+                    posture: "publishing a separate bounded position".into(),
+                    location_ids: vec!["forum".into()],
+                }],
+            },
+        ];
+        let prompts = Arc::new(Mutex::new(Vec::new()));
+        let model = Arc::new(ParallelActionVerifierModel {
+            barrier: Arc::new(Barrier::new(2)),
+            prompts: prompts.clone(),
+        });
+
+        let verified = tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            run_cell_effect_verifier_wave(
+                model,
+                "flash",
+                &slice,
+                "Two separately attributed perspectives are active.",
+                "Each institution chooses its own public statement.",
+                "{}",
+                &actions,
+            ),
+        )
+        .await
+        .expect("parallel verifier wave deadlocked")
+        .unwrap();
+
+        assert_eq!(
+            verified
+                .iter()
+                .map(|result| result.action_index)
+                .collect::<Vec<_>>(),
+            vec![0, 1]
+        );
+        let prompts = prompts.lock().unwrap();
+        assert_eq!(prompts.len(), 2);
+        let first = prompts
+            .iter()
+            .find(|prompt| prompt.contains("faction-06"))
+            .unwrap();
+        let second = prompts
+            .iter()
+            .find(|prompt| prompt.contains("faction-07"))
+            .unwrap();
+        assert!(!first.contains("faction-07"));
+        assert!(!second.contains("faction-06"));
+        assert!(first.contains("exact_subject_permission"));
+        assert!(!first.contains("exact_typed_permissions"));
     }
 
     #[test]
