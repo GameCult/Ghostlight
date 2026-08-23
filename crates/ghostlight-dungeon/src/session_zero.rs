@@ -1515,7 +1515,7 @@ impl SessionZeroDirector {
                     model: self.interpreter_model.clone(),
                     snapshot_binding: binding,
                     lived_stream: format!(
-                        "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. The exact current_player_message is the factual basis for a change only when the DM response clearly offers or endorses that change for review. Never copy current contract fields or existing unresolved decisions into the interpretation during ordinary conversation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. Ghostlight owns durable decision IDs, channel ownership, actor binding, permission IDs, materiality, evidence custody, and lifecycle state, so they are absent from your output. If turn_focus is present, it is the one exception: use countered_decision as the exact basis, preserve its unchanged typed fields, apply the pending counter, and emit exactly one replacement decision. Do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
+                        "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. The exact current_player_message is the factual basis for a change only when the DM response clearly offers or endorses that change for review. Never copy current contract fields or existing unresolved decisions into the interpretation during ordinary conversation. Do not infer acceptance from mere discussion. Every material contract change, character change, or extraordinary bargain offered for player review must exist only inside one unresolved decision. Choose exactly one ownership lane for each change: when decisions contains a proposed_contract_patch, contract_patch must remain the all-null empty patch; when decisions contains a proposed_character_patch, character_patch must remain null. Never duplicate a proposed change into a direct patch. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. Ghostlight owns durable decision IDs, channel ownership, actor binding, permission IDs, materiality, evidence custody, and lifecycle state, so they are absent from your output. If turn_focus is present, it is the one exception: use countered_decision as the exact basis, preserve its unchanged typed fields, apply the pending counter, and emit exactly one replacement decision. Do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
                         serde_json::to_string(&interpreter_schema)?,
                         serde_json::to_string(&interpreter_context)?,
                         serde_json::to_string(&persona.narrative)?
@@ -4445,6 +4445,16 @@ mod tests {
                     assert!(!request.lived_stream.contains("\"dm_speech\""));
                     assert!(!request.lived_stream.contains("\"recent_messages\""));
                     assert!(request.lived_stream.contains("Plan a Mars campaign."));
+                    assert!(
+                        request
+                            .lived_stream
+                            .contains("Choose exactly one ownership lane for each change")
+                    );
+                    assert!(
+                        request
+                            .lived_stream
+                            .contains("Never duplicate a proposed change into a direct patch")
+                    );
                     Ok(r#"{"contract_patch":{"starting_where":"Mars in Zhestokost space","tone":["serious","political"]},"character_patch":null,"decisions":[],"suggested_replies":[]}"#.into())
                 }
                 stage => panic!("unexpected Session Zero model stage {stage}"),
