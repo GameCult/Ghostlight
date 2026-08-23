@@ -267,7 +267,7 @@ async fn verify_outcomes(
     source_receipt_ids: &[String],
 ) -> Result<(ModelStageOutput, Vec<String>)> {
     let mut schema = serde_json::to_value(schema_for!(OutcomeVerifierBundle))?;
-    constrain_verifier_schema(&mut schema, digests);
+    constrain_verifier_schema(&mut schema, digests)?;
     let outcome_hash = format!(
         "sha256:{:x}",
         Sha256::digest(rmp_serde::to_vec_named(outcomes)?)
@@ -1484,14 +1484,44 @@ fn constrain_digest_schema(schema: &mut serde_json::Value, digests: &[String]) {
     }
 }
 
-fn constrain_verifier_schema(schema: &mut serde_json::Value, digests: &[String]) {
-    if let Some(value) = schema.pointer_mut("/properties/verdicts/items/properties/action_digest") {
-        value["enum"] = serde_json::json!(digests);
-    }
-    if let Some(verdicts) = schema.pointer_mut("/properties/verdicts") {
-        verdicts["minItems"] = serde_json::json!(digests.len());
-        verdicts["maxItems"] = serde_json::json!(digests.len());
-    }
+fn constrain_verifier_schema(schema: &mut serde_json::Value, digests: &[String]) -> Result<()> {
+    let verdicts = schema
+        .pointer_mut("/properties/verdicts")
+        .ok_or_else(|| anyhow!("strategic outcome verifier schema has no verdicts property"))?;
+    verdicts["minItems"] = serde_json::json!(digests.len());
+    verdicts["maxItems"] = serde_json::json!(digests.len());
+    let verdict = schema
+        .pointer_mut("/$defs/OutcomeVerifierVerdict")
+        .ok_or_else(|| anyhow!("strategic outcome verifier schema has no verdict definition"))?;
+    *verdict = serde_json::json!({
+        "oneOf":[
+            {
+                "type":"object",
+                "additionalProperties":false,
+                "required":["action_digest", "result", "repair_guidance"],
+                "properties":{
+                    "action_digest":{"enum":digests},
+                    "result":{"const":"match"},
+                    "repair_guidance":{"type":"null"}
+                }
+            },
+            {
+                "type":"object",
+                "additionalProperties":false,
+                "required":["action_digest", "result", "repair_guidance"],
+                "properties":{
+                    "action_digest":{"enum":digests},
+                    "result":{"const":"mismatch"},
+                    "repair_guidance":{
+                        "type":"string",
+                        "minLength":1,
+                        "maxLength":240
+                    }
+                }
+            }
+        ]
+    });
+    Ok(())
 }
 
 fn required(value: &Option<String>, field: &str) -> Result<String> {
@@ -1652,6 +1682,36 @@ mod tests {
         fn provider(&self) -> &'static str {
             "outcome-fixture"
         }
+    }
+
+    #[test]
+    fn outcome_verifier_schema_makes_result_guidance_coherence_structural() {
+        let digest = format!("sha256:{}", "a".repeat(64));
+        let mut schema = serde_json::to_value(schema_for!(OutcomeVerifierBundle)).unwrap();
+        constrain_verifier_schema(&mut schema, std::slice::from_ref(&digest)).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+
+        assert!(validator.is_valid(&serde_json::json!({
+            "verdicts":[{
+                "action_digest":digest,
+                "result":"match",
+                "repair_guidance":null
+            }]
+        })));
+        assert!(!validator.is_valid(&serde_json::json!({
+            "verdicts":[{
+                "action_digest":digest,
+                "result":"match",
+                "repair_guidance":"This cannot accompany a match."
+            }]
+        })));
+        assert!(!validator.is_valid(&serde_json::json!({
+            "verdicts":[{
+                "action_digest":digest,
+                "result":"mismatch",
+                "repair_guidance":null
+            }]
+        })));
     }
 
     fn campaign() -> Campaign {

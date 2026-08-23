@@ -1158,13 +1158,55 @@ fn cell_effect_verifier_schema(action_count: usize) -> Result<serde_json::Value>
         .ok_or_else(|| anyhow!("cell effect verifier schema has no verdicts property"))?;
     verdicts.insert("minItems".into(), serde_json::json!(action_count));
     verdicts.insert("maxItems".into(), serde_json::json!(action_count));
-    let action_index = schema
-        .pointer_mut("/$defs/CellActionEffectVerdict/properties/action_index")
-        .ok_or_else(|| anyhow!("cell effect verifier schema has no action index property"))?;
-    *action_index = serde_json::json!({
-        "type":"integer",
-        "minimum":0,
-        "maximum":action_count - 1
+    let verdict = schema
+        .pointer_mut("/$defs/CellActionEffectVerdict")
+        .ok_or_else(|| anyhow!("cell effect verifier schema has no verdict definition"))?;
+    *verdict = serde_json::json!({
+        "oneOf":[
+            {
+                "type":"object",
+                "additionalProperties":false,
+                "required":["action_index", "result", "mismatch_kind", "repair_guidance"],
+                "properties":{
+                    "action_index":{
+                        "type":"integer",
+                        "minimum":0,
+                        "maximum":action_count - 1
+                    },
+                    "result":{"const":"match"},
+                    "mismatch_kind":{"type":"null"},
+                    "repair_guidance":{"type":"null"}
+                }
+            },
+            {
+                "type":"object",
+                "additionalProperties":false,
+                "required":["action_index", "result", "mismatch_kind", "repair_guidance"],
+                "properties":{
+                    "action_index":{
+                        "type":"integer",
+                        "minimum":0,
+                        "maximum":action_count - 1
+                    },
+                    "result":{"const":"mismatch"},
+                    "mismatch_kind":{
+                        "enum":[
+                            "subject_swap",
+                            "effect_omission",
+                            "effect_reversal",
+                            "target_substitution",
+                            "invented_outcome",
+                            "wrong_effect_kind"
+                        ]
+                    },
+                    "repair_guidance":{
+                        "type":"string",
+                        "minLength":1,
+                        "maxLength":240
+                    }
+                }
+            }
+        ]
     });
     Ok(schema)
 }
@@ -2270,10 +2312,26 @@ mod tests {
             schema.pointer("/properties/verdicts/maxItems"),
             Some(&serde_json::json!(4))
         );
-        assert_eq!(
-            schema.pointer("/$defs/CellActionEffectVerdict/properties/action_index/maximum"),
-            Some(&serde_json::json!(3))
-        );
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let faithful = serde_json::json!({
+            "verdicts":[
+                {"action_index":0,"result":"match","mismatch_kind":null,"repair_guidance":null},
+                {"action_index":1,"result":"mismatch","mismatch_kind":"target_substitution","repair_guidance":"Use the exact addressed subject."},
+                {"action_index":2,"result":"match","mismatch_kind":null,"repair_guidance":null},
+                {"action_index":3,"result":"match","mismatch_kind":null,"repair_guidance":null}
+            ]
+        });
+        assert!(validator.is_valid(&faithful));
+
+        let incoherent = serde_json::json!({
+            "verdicts":[
+                {"action_index":0,"result":"match","mismatch_kind":"invented_outcome","repair_guidance":null},
+                {"action_index":1,"result":"match","mismatch_kind":null,"repair_guidance":null},
+                {"action_index":2,"result":"match","mismatch_kind":null,"repair_guidance":null},
+                {"action_index":3,"result":"match","mismatch_kind":null,"repair_guidance":null}
+            ]
+        });
+        assert!(!validator.is_valid(&incoherent));
     }
 
     #[test]
