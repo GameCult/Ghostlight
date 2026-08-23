@@ -3049,6 +3049,7 @@ fn commit_governed_group_travel(
             .expect("active actor was checked")
             .location_id = proposal.destination_location_id.clone();
     }
+    crate::resolution::ensure_agency_profiles(&mut campaign);
     campaign.world_time += Duration::minutes(i64::from(route_minutes));
     campaign.last_player_activity = Utc::now();
     campaign.away_ticks_processed = 0;
@@ -6199,6 +6200,17 @@ mod tests {
         assert_eq!(campaign.world_time, start_time + Duration::minutes(20));
         assert_eq!(campaign.actors["player"].location_id, "harbor");
         assert_eq!(campaign.actors["guest"].location_id, "harbor");
+        assert_eq!(
+            campaign.agency_profiles["player"].location_ids,
+            BTreeSet::from(["harbor".into()])
+        );
+        assert_eq!(
+            campaign.agency_profiles["guest"].location_ids,
+            BTreeSet::from(["harbor".into()])
+        );
+        let mut reload_projection = campaign.clone();
+        crate::resolution::ensure_agency_profiles(&mut reload_projection);
+        assert_eq!(reload_projection, campaign);
         assert!(
             kernel
                 .command(WorldCommand::ApproveGroupTravel {
