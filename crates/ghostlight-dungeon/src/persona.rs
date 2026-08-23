@@ -518,7 +518,7 @@ fn cell_interpreter_context(
             "allowed_effect_types": allowed_constituent_effect_types(subject),
             "collective_authority_id": subject.collective_authority_id,
             "location_ids": subject.location_ids,
-            "allowed_public_channels": subject.information_channels,
+            "allowed_persistent_publication_channels": subject.information_channels,
             "permitted_state_references": subject.permitted_state_references,
             "reachable_destinations": subject.reachable_destinations,
             "migration_destinations": subject.migration_destinations,
@@ -532,7 +532,7 @@ fn cell_interpreter_context(
             "allowed_effect_types": allowed_member_effect_types(member),
             "source_gestalt_id": member.source_gestalt_id,
             "source_location_id": member.source_location_id,
-            "allowed_public_channels": member.information_channels,
+            "allowed_persistent_publication_channels": member.information_channels,
             "permitted_state_references": member.permitted_state_references,
             "migration_destinations": member.migration_destinations,
             "activity_targets": member.activity_targets,
@@ -709,10 +709,11 @@ fn bind_cell_projection(
                 )
             };
             lowered.push(format!(
-                "{} — {}:\n{}",
+                "{} — {}:\n{}\n\n{}",
                 subject.name,
                 footing,
-                narrative.trim()
+                narrative.trim(),
+                constituent_agency_footing(subject)
             ));
         } else {
             let member = slice
@@ -721,14 +722,105 @@ fn bind_cell_projection(
                 .find(|member| member.subject_id == subject_id)
                 .expect("projection owner was validated");
             lowered.push(format!(
-                "{} — at {}:\n{}",
+                "{} — at {}:\n{}\n\n{}",
                 member.name,
                 member.source_location_id,
-                narrative.trim()
+                narrative.trim(),
+                member_agency_footing(member)
             ));
         }
     }
     Ok((lowered.join("\n\n"), active_subject_ids))
+}
+
+fn constituent_agency_footing(subject: &CellConstituentSlice) -> String {
+    let destinations = subject
+        .reachable_destinations
+        .values()
+        .cloned()
+        .chain(subject.migration_destinations.values().map(|destination| {
+            format!(
+                "{} at {}",
+                destination.population_name, destination.location_name
+            )
+        }))
+        .collect::<Vec<_>>();
+    agency_footing(
+        &subject.name,
+        &destinations,
+        &subject.activity_targets,
+        &subject.information_channels,
+    )
+}
+
+fn member_agency_footing(member: &CellMemberSlice) -> String {
+    let destinations = member
+        .migration_destinations
+        .values()
+        .map(|destination| {
+            format!(
+                "{} at {}",
+                destination.population_name, destination.location_name
+            )
+        })
+        .collect::<Vec<_>>();
+    agency_footing(
+        &member.name,
+        &destinations,
+        &member.activity_targets,
+        &member.information_channels,
+    )
+}
+
+fn agency_footing(
+    subject_name: &str,
+    destinations: &[String],
+    targets: &BTreeMap<String, CellActivityTargetSlice>,
+    publication_channels: &BTreeSet<String>,
+) -> String {
+    let destinations = if destinations.is_empty() {
+        "No distinct travel destination is presently established. You may seek a route from where you are, but you cannot assume arrival somewhere unnamed."
+            .to_owned()
+    } else {
+        format!(
+            "The distinct destinations you can presently choose to travel to are: {}. Somewhere else would first require finding a route from where you are.",
+            destinations.join(", ")
+        )
+    };
+    let targets = if targets.is_empty() {
+        "No named distant person or body is presently available to contact. You may still speak to an ordinary unnamed person nearby or work on the local environment."
+            .to_owned()
+    } else {
+        format!(
+            "The named people or bodies you can presently try to reach are: {}. You may still speak to an ordinary unnamed person nearby or work on the local environment.",
+            targets
+                .values()
+                .map(|target| {
+                    let locations = target.locations.values().cloned().collect::<Vec<_>>();
+                    if locations.is_empty() {
+                        target.name.clone()
+                    } else {
+                        format!("{} at {}", target.name, locations.join(", "))
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
+    let channels = if publication_channels.is_empty() {
+        "You have no established channel for publishing this attempt beyond its immediate witnesses."
+            .to_owned()
+    } else {
+        format!(
+            "Your established channels for publishing an attempt are: {}.",
+            publication_channels
+                .iter()
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
+    format!("{subject_name}'s grounded agency: {destinations} {targets} {channels}")
 }
 
 fn required_projection_subject_ids(slice: &PermittedCellSlice) -> BTreeSet<String> {
@@ -924,7 +1016,7 @@ impl CellProjectionEngine {
                 "Copy each subject's exact allowed_effect_types. A lane absent from that list is structurally unavailable: do not emit it and do not invent a destination. ",
                 "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
-                "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
+                "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
                 "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. An inaction means that exact subject takes no strategic action in this horizon. Record only a subject that explicitly holds, waits without making another attempt, or merely continues already_committed_posture in the Persona turn as an inaction, using its exact subject_id and a concrete reason of at most 160 characters. Waiting for the result of an action, withholding a different possible action, or declining one option after choosing another does not make the chosen action an inaction. Never invent an inaction for an unvoiced subject or use absence of a Persona decision as a reason. Inactions share the same count limit stated for actions. A subject cannot appear in both actions and inactions. When nobody acts, actions is empty and inactions must still contain at least one exact attributed decision from the Persona turn."
             ),
@@ -3454,6 +3546,13 @@ mod tests {
         )
         .unwrap();
         assert!(narrative.contains("Faction Six — at forum"));
+        assert!(narrative.contains("Faction Six's grounded agency"));
+        assert!(narrative.contains("No distinct travel destination is presently established"));
+        assert!(narrative.contains("No named distant person or body is presently available"));
+        assert!(
+            narrative
+                .contains("established channels for publishing an attempt are: public bulletin")
+        );
         assert!(!narrative.contains("faction-06"));
         assert_eq!(active_subject_ids, BTreeSet::from(["faction-06".into()]));
 
@@ -3488,6 +3587,39 @@ mod tests {
         )
         .unwrap_err();
         assert!(duplicate.to_string().contains("invented or duplicated"));
+    }
+
+    #[test]
+    fn projected_actor_receives_exact_lived_travel_and_contact_footing() {
+        let mut slice = fixture_cell_slice();
+        let actor = &mut slice.constituents[0];
+        actor.subject_kind = AgencySubjectKind::Actor;
+        actor.name = "Clinic Director".into();
+        actor.information_channels.clear();
+        actor.reachable_destinations =
+            BTreeMap::from([("junction".into(), "Kostolom Junction".into())]);
+        actor.activity_targets = BTreeMap::from([(
+            "commander".into(),
+            CellActivityTargetSlice {
+                name: "Commander Voss".into(),
+                locations: BTreeMap::from([("junction".into(), "Kostolom Junction".into())]),
+            },
+        )]);
+        let (narrative, _) = bind_cell_projection(
+            &slice,
+            CellProjectionProposal {
+                segments: vec![CellPerspectiveSegment {
+                    subject_id: "faction-06".into(),
+                    narrative: "The clinic's needs still press for an answer.".into(),
+                }],
+            },
+        )
+        .unwrap();
+
+        assert!(narrative.contains("choose to travel to are: Kostolom Junction"));
+        assert!(narrative.contains("try to reach are: Commander Voss at Kostolom Junction"));
+        assert!(narrative.contains("Somewhere else would first require finding a route"));
+        assert!(narrative.contains("no established channel for publishing this attempt"));
     }
 
     #[test]
