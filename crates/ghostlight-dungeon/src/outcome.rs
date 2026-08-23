@@ -1541,10 +1541,25 @@ fn constrain_outcome_schema(
         "effect_kind",
         "supporting_state_references"
     ]);
-    proposal["allOf"] = serde_json::json!([
-        {"oneOf":outcome_effect_shape_schemas()},
-        {"oneOf":actions.iter().map(outcome_action_scope_schema).collect::<Vec<_>>()}
-    ]);
+    proposal["properties"]["action_digest"] = exact_string_value_schema(
+        &actions
+            .iter()
+            .map(|action| action.action_digest.clone())
+            .collect::<Vec<_>>(),
+    );
+    let mut constraints = vec![serde_json::json!({
+        "oneOf":outcome_effect_shape_schemas()
+    })];
+    constraints.extend(actions.iter().map(|action| {
+        serde_json::json!({
+            "if":{
+                "properties":{"action_digest":{"const":action.action_digest}},
+                "required":["action_digest"]
+            },
+            "then":outcome_action_scope_schema(action)
+        })
+    }));
+    proposal["allOf"] = serde_json::json!(constraints);
     Ok(())
 }
 
@@ -1709,31 +1724,35 @@ fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Val
         ));
     }
     if admits(&OutcomeEffectKind::GestaltPressure) {
-        let pressure_owner_schemas = action
+        let pressure_owner_constraints = action
             .pressure_owners
             .iter()
             .map(|owner| {
                 serde_json::json!({
-                    "properties":{
-                        "owner_subject_id":{"const":owner.owner_subject_id},
-                        "pressure_additions":{
-                            "type":"array","uniqueItems":true,"maxItems":4,
-                            "items":{
-                                "type":"string","minLength":1,"maxLength":240,
-                                "not":{"enum":owner.current_pressures}
-                            }
-                        },
-                        "pressure_resolutions":exact_string_array_value_schema(
-                            &owner.current_pressures,
-                            0,
-                            owner.current_pressures.len().min(4)
-                        )
+                    "if":{
+                        "properties":{"owner_subject_id":{"const":owner.owner_subject_id}},
+                        "required":["owner_subject_id"]
                     },
-                    "required":["owner_subject_id"],
-                    "anyOf":[
-                        {"properties":{"pressure_additions":{"minItems":1}}},
-                        {"properties":{"pressure_resolutions":{"minItems":1}}}
-                    ]
+                    "then":{
+                        "properties":{
+                            "pressure_additions":{
+                                "type":"array","uniqueItems":true,"maxItems":4,
+                                "items":{
+                                    "type":"string","minLength":1,"maxLength":240,
+                                    "not":{"enum":owner.current_pressures}
+                                }
+                            },
+                            "pressure_resolutions":exact_string_array_value_schema(
+                                &owner.current_pressures,
+                                0,
+                                owner.current_pressures.len().min(4)
+                            )
+                        },
+                        "anyOf":[
+                            {"properties":{"pressure_additions":{"minItems":1}}},
+                            {"properties":{"pressure_resolutions":{"minItems":1}}}
+                        ]
+                    }
                 })
             })
             .collect::<Vec<_>>();
@@ -1748,7 +1767,7 @@ fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Val
                 "properties":{
                     "owner_subject_id":exact_string_value_schema(&pressure_owner_ids)
                 },
-                "oneOf":pressure_owner_schemas
+                "allOf":pressure_owner_constraints
             }),
         ));
     }
@@ -1980,6 +1999,47 @@ mod tests {
     struct CorrectingOutcomeModel {
         action_digest: String,
         resolver_calls: Mutex<usize>,
+    }
+
+    struct RepeatingPressureModel {
+        action_digest: String,
+        requests: Mutex<Vec<ModelStageRequest>>,
+    }
+
+    #[async_trait::async_trait]
+    impl ModelPort for RepeatingPressureModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            let mut requests = self.requests.lock().unwrap();
+            requests.push(request.clone());
+            if requests.len() == 1 {
+                return Ok(serde_json::json!({
+                    "outcomes":[{
+                        "action_digest":self.action_digest,
+                        "band":"mixed",
+                        "effect_kind":"gestalt_pressure",
+                        "supporting_state_references":["pressure:dockers:storm damage"],
+                        "owner_subject_id":"dockers",
+                        "pressure_additions":["storm damage"],
+                        "pressure_resolutions":[]
+                    }]
+                })
+                .to_string());
+            }
+            Ok(serde_json::json!({
+                "outcomes":[{
+                    "action_digest":self.action_digest,
+                    "band":"mixed",
+                    "effect_kind":"no_material_change",
+                    "supporting_state_references":[],
+                    "reason":"The preparation does not yet establish a new durable pressure or resolve the existing storm damage."
+                }]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "repeating-pressure-model"
+        }
     }
 
     #[async_trait::async_trait]
@@ -2378,8 +2438,52 @@ mod tests {
         assert!(validator.is_valid(&pressure(vec!["crew exhaustion"], vec![])));
         assert!(validator.is_valid(&pressure(vec![], vec!["storm damage"])));
         assert!(!validator.is_valid(&pressure(vec![], vec![])));
-        assert!(!validator.is_valid(&pressure(vec!["storm damage"], vec![])));
+        let repeated_pressure = pressure(vec!["storm damage"], vec![]);
+        let repeated_error = validator.validate(&repeated_pressure).unwrap_err();
+        assert_eq!(
+            repeated_error.instance_path().to_string(),
+            "/outcomes/0/pressure_additions/0"
+        );
+        assert!(repeated_error.to_string().contains("storm damage"));
+        assert!(repeated_error.schema_path().to_string().ends_with("/not"));
         assert!(!validator.is_valid(&pressure(vec![], vec!["invented resolution"])));
+    }
+
+    #[tokio::test]
+    async fn repeated_current_pressure_gets_a_precise_same_snapshot_correction() {
+        let value = campaign();
+        let mut action = proposal();
+        action.effect = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "dockers".into(),
+            activity: StrategicActivityKind::Prepare,
+            target_subject_ids: vec![],
+            location_ids: vec!["dock".into()],
+        };
+        let digest = cell_action_digest(&action).unwrap();
+        let model = RepeatingPressureModel {
+            action_digest: digest,
+            requests: Mutex::new(Vec::new()),
+        };
+
+        let (outcomes, stages) = resolve_activity_outcomes(&model, &value, &[action])
+            .await
+            .unwrap();
+
+        assert_eq!(stages.len(), 1);
+        assert_eq!(stages[0].receipt.provider_attempts.len(), 2);
+        assert_eq!(
+            stages[0].receipt.provider_attempts[0].local_validation_result,
+            "schema_invalid"
+        );
+        assert!(matches!(
+            outcomes[0].effect,
+            StrategicOutcomeEffect::NoMaterialChange { .. }
+        ));
+        let requests = model.requests.lock().unwrap();
+        assert_eq!(requests.len(), 2);
+        assert!(requests[1].lived_stream.contains("/pressure_additions/0"));
+        assert!(requests[1].lived_stream.contains("storm damage"));
+        assert!(requests[1].lived_stream.contains("/not"));
     }
 
     #[test]
