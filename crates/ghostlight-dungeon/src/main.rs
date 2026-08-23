@@ -28,8 +28,7 @@ use ghostlight_dungeon::{
         SURFACE_ID as EVE_SURFACE_ID, SessionZeroMeshSnapshot,
     },
     model::{
-        DeepSeekPort, MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelRuntimeStatus, ModelStageRequest,
-        OpenRouterPort, run_validated_stage,
+        DeepSeekPort, MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelRuntimeStatus, OpenRouterPort,
     },
     narrator::Narrator,
     persistence::CampaignStore,
@@ -317,31 +316,10 @@ async fn main() -> anyhow::Result<()> {
             )?),
             _ => unreachable!("provider name was validated above"),
         };
-        let probe = run_validated_stage(
-            provider.as_ref(),
-            &ModelStageRequest {
-                stage: "startup_probe".into(),
-                model: MODEL_FAST.into(),
-                snapshot_binding: "service-startup".into(),
-                lived_stream: "Reply with the single word ready.".into(),
-                output_schema: None,
-                source_receipt_ids: vec![],
-                temperature: Some(0.0),
-                max_output_tokens: Some(128),
-            },
-        )
-        .await;
-        let readiness = match probe {
-            Ok(probe) => format!("ready:{}", probe.receipt.output_hash),
-            Err(error) => {
-                tracing::warn!(provider = %provider_name, %error, "model startup probe failed; runtime remains available");
-                "degraded:startup-probe-failed".into()
-            }
-        };
         let vault_endpoint = std::env::var("GHOSTLIGHT_VAULT_MCP_URL")
             .unwrap_or_else(|_| "http://127.0.0.1:17875/mcp".into());
         (
-            configured_status(readiness),
+            configured_status("configured".into()),
             Some(Arc::new(WorldCompiler::new(
                 Arc::new(VoidBotMcpVault::new(vault_endpoint)),
                 provider.clone(),
