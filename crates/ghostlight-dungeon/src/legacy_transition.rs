@@ -2559,7 +2559,7 @@ mod tests {
     use super::*;
     use crate::domain::{
         ActorState, BranchOrigin, ConditionDelta, InstitutionState, Location, ResolutionPolicy,
-        Route, WorldClock, WorldFact,
+        Route, StrategicOutcomeBand, WorldClock, WorldFact,
     };
     use chrono::Duration;
     use uuid::Uuid;
