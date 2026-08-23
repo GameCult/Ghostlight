@@ -1738,8 +1738,7 @@ fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Val
                             "pressure_additions":{
                                 "type":"array","uniqueItems":true,"maxItems":4,
                                 "items":{
-                                    "type":"string","minLength":1,"maxLength":240,
-                                    "not":{"enum":owner.current_pressures}
+                                    "type":"string","minLength":1,"maxLength":240
                                 }
                             },
                             "pressure_resolutions":exact_string_array_value_schema(
@@ -2439,18 +2438,18 @@ mod tests {
         assert!(validator.is_valid(&pressure(vec![], vec!["storm damage"])));
         assert!(!validator.is_valid(&pressure(vec![], vec![])));
         let repeated_pressure = pressure(vec!["storm damage"], vec![]);
-        let repeated_error = validator.validate(&repeated_pressure).unwrap_err();
-        assert_eq!(
-            repeated_error.instance_path().to_string(),
-            "/outcomes/0/pressure_additions/0"
-        );
-        assert!(repeated_error.to_string().contains("storm damage"));
-        assert!(repeated_error.schema_path().to_string().ends_with("/not"));
+        assert!(validator.is_valid(&repeated_pressure));
+        let repeated_bundle: OutcomeProposalBundle =
+            serde_json::from_value(repeated_pressure).unwrap();
+        let repeated_error = bind_outcomes(&value, &[action], repeated_bundle)
+            .unwrap_err()
+            .to_string();
+        assert!(repeated_error.contains("gestalt pressure additions already exist: storm damage"));
         assert!(!validator.is_valid(&pressure(vec![], vec!["invented resolution"])));
     }
 
     #[tokio::test]
-    async fn repeated_current_pressure_gets_a_precise_same_snapshot_correction() {
+    async fn repeated_current_pressure_uses_the_outcome_semantic_correction_owner() {
         let value = campaign();
         let mut action = proposal();
         action.effect = StrategicCellEffect::GestaltActivity {
@@ -2469,21 +2468,27 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(stages.len(), 1);
-        assert_eq!(stages[0].receipt.provider_attempts.len(), 2);
-        assert_eq!(
-            stages[0].receipt.provider_attempts[0].local_validation_result,
-            "schema_invalid"
-        );
+        assert_eq!(stages.len(), 2);
+        assert_eq!(stages[0].receipt.provider_attempts.len(), 1);
+        assert_eq!(stages[0].receipt.validation_result, "semantic_invalid");
+        assert_eq!(stages[1].receipt.provider_attempts.len(), 1);
         assert!(matches!(
             outcomes[0].effect,
             StrategicOutcomeEffect::NoMaterialChange { .. }
         ));
         let requests = model.requests.lock().unwrap();
         assert_eq!(requests.len(), 2);
-        assert!(requests[1].lived_stream.contains("/pressure_additions/0"));
-        assert!(requests[1].lived_stream.contains("storm damage"));
-        assert!(requests[1].lived_stream.contains("/not"));
+        assert!(
+            requests[1]
+                .lived_stream
+                .contains("gestalt pressure additions already exist: storm damage")
+        );
+        assert!(
+            requests[1]
+                .lived_stream
+                .contains("PREVIOUS_REJECTED_BUNDLE")
+        );
+        assert!(requests[1].lived_stream.contains("pressure_additions"));
     }
 
     #[test]
