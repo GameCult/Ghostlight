@@ -3282,7 +3282,7 @@ mod tests {
             target_subject_ids: vec!["dockers".into()],
             location_ids: vec!["forum".into()],
         };
-        validate_constituent_effect(subject, &valid).unwrap();
+        validate_constituent_effect(subject, &valid, None).unwrap();
 
         let invented_target = StrategicCellEffect::GestaltActivity {
             gestalt_id: "refugees".into(),
@@ -3291,7 +3291,7 @@ mod tests {
             location_ids: vec!["forum".into()],
         };
         assert!(
-            validate_constituent_effect(subject, &invented_target)
+            validate_constituent_effect(subject, &invented_target, None)
                 .unwrap_err()
                 .to_string()
                 .contains("exact allowed targets")
@@ -3303,7 +3303,7 @@ mod tests {
             target_subject_ids: vec![],
             location_ids: vec!["forum".into()],
         };
-        validate_constituent_effect(subject, &targetless_obstruction).unwrap();
+        validate_constituent_effect(subject, &targetless_obstruction, None).unwrap();
 
         let internal_preparation = StrategicCellEffect::GestaltActivity {
             gestalt_id: "refugees".into(),
@@ -3311,7 +3311,7 @@ mod tests {
             target_subject_ids: vec![],
             location_ids: vec!["forum".into()],
         };
-        validate_constituent_effect(subject, &internal_preparation).unwrap();
+        validate_constituent_effect(subject, &internal_preparation, None).unwrap();
 
         let local_investigation = StrategicCellEffect::GestaltActivity {
             gestalt_id: "refugees".into(),
@@ -3319,7 +3319,7 @@ mod tests {
             target_subject_ids: vec![],
             location_ids: vec!["forum".into()],
         };
-        validate_constituent_effect(subject, &local_investigation).unwrap();
+        validate_constituent_effect(subject, &local_investigation, None).unwrap();
 
         let local_communication = StrategicCellEffect::GestaltActivity {
             gestalt_id: "refugees".into(),
@@ -3327,7 +3327,7 @@ mod tests {
             target_subject_ids: vec![],
             location_ids: vec!["forum".into()],
         };
-        validate_constituent_effect(subject, &local_communication).unwrap();
+        validate_constituent_effect(subject, &local_communication, None).unwrap();
     }
 
     #[test]
@@ -3347,13 +3347,13 @@ mod tests {
         let valid = StrategicCellEffect::GestaltMigration {
             destination_gestalt_id: "harbor-neighbors".into(),
         };
-        validate_constituent_effect(subject, &valid).unwrap();
+        validate_constituent_effect(subject, &valid, None).unwrap();
 
         let invented = StrategicCellEffect::GestaltMigration {
             destination_gestalt_id: "palace-court".into(),
         };
         assert!(
-            validate_constituent_effect(subject, &invented)
+            validate_constituent_effect(subject, &invented, None)
                 .unwrap_err()
                 .to_string()
                 .contains("exact allowed population destinations")
@@ -3549,6 +3549,7 @@ mod tests {
                 posture: "weighing whether to publish a position".into(),
                 location_ids: vec!["forum".into()],
             },
+            None,
         )
         .unwrap_err();
         assert!(error.to_string().contains("exact current posture"));
