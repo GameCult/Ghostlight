@@ -1234,8 +1234,10 @@ impl SessionZeroRegistry {
             else {
                 continue;
             };
-            if state.status != SessionZeroStatus::Archived
-                && state.member_for_account(account_hash).is_some()
+            if !matches!(
+                state.status,
+                SessionZeroStatus::Published | SessionZeroStatus::Archived
+            ) && state.member_for_account(account_hash).is_some()
             {
                 matches.push((state.created_at, id));
             }
@@ -4929,6 +4931,29 @@ mod tests {
         let loaded = registry.snapshot(id).await.unwrap();
         assert!(!loaded.decisions["decision:persisted-legacy-question"].material);
         assert_eq!(loaded.revision, revision);
+    }
+
+    #[tokio::test]
+    async fn published_session_zero_cannot_own_campaign_entry_navigation() {
+        let root = tempdir().unwrap();
+        let mut published = state();
+        published.status = SessionZeroStatus::Published;
+        let published_id = published.id;
+        let published_directory = root.path().join(published_id.to_string());
+        fs::create_dir(&published_directory).unwrap();
+        let published_store =
+            CampaignStore::open(published_directory.join("session-zero.cc")).unwrap();
+        SessionZeroKernel::initialize(&published_store, &published).unwrap();
+        drop(published_store);
+
+        let registry = SessionZeroRegistry::new(root.path()).unwrap();
+        registry.load_existing().await.unwrap();
+
+        assert_eq!(
+            registry.session_for_account("account:host").await.unwrap(),
+            None,
+            "published negotiation history must not replace the campaign entry surface"
+        );
     }
 
     #[tokio::test]

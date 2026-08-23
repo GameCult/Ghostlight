@@ -84,6 +84,9 @@ always derived from `campaign_membership.v1`; account preferences contain only
 the selected campaign. `campaign.entry` may clear only that preference so the
 same authenticated player can return to the campaign list or begin another
 Session Zero; it cannot leave, reset, fork, or mutate any campaign.
+Session Zero registry lookup treats only non-terminal negotiations as active:
+`published` and `archived` records remain durable history but cannot replace the
+campaign-entry surface after the preference is cleared.
 
 Transient command-result surfaces preserve Eve's composite campaign interface
 version. A fresh or recompiled assessment may replace only the campaign-revision
