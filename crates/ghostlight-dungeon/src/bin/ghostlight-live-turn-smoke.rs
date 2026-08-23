@@ -8,7 +8,7 @@ fn main() -> anyhow::Result<()> {
 async fn main() -> anyhow::Result<()> {
     use chrono::Utc;
     use ghostlight_dungeon::{
-        domain::WorldCommand,
+        domain::{NarrativeTurn, WorldCommand},
         kernel::WorldKernel,
         model::{DeepSeekPort, ModelPort},
         persistence::CampaignStore,
@@ -35,7 +35,13 @@ async fn main() -> anyhow::Result<()> {
             ))
         });
     std::fs::create_dir_all(&root)?;
-    let campaign = four_actor_campaign();
+    let mut campaign = four_actor_campaign();
+    campaign.transcript.push(NarrativeTurn {
+        revision: campaign.revision,
+        at: campaign.world_time,
+        speaker: "world".into(),
+        text: event_summary.clone(),
+    });
     let store = CampaignStore::open(root.join("campaign.cc"))?;
     store.create_campaign(&campaign, &[], &[])?;
     let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_runtime_secret(secret)?);

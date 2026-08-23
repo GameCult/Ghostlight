@@ -2236,6 +2236,11 @@ fn constrain_interpreter_schema(
         "propertyNames".into(),
         serde_json::json!({"enum":slice.perceived_actors.keys().collect::<Vec<_>>()}),
     );
+    let memories_add = schema
+        .pointer_mut("/$defs/ActorStateDelta/properties/memories_add")
+        .and_then(|value| value.as_object_mut())
+        .ok_or_else(|| anyhow!("Persona proposal schema has no memory additions"))?;
+    memories_add.insert("maxItems".into(), serde_json::json!(0));
     Ok(())
 }
 

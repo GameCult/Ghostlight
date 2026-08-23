@@ -1075,6 +1075,7 @@ fn execute(
             reactions,
         } => {
             require_revision(&campaign, expected_revision)?;
+            let witnessed_memory = canonical_witnessed_memory(&campaign, &event_summary)?;
             let player_location = campaign.actors[&campaign.player_actor_id]
                 .location_id
                 .clone();
@@ -1092,6 +1093,11 @@ fn execute(
                 if actor.location_id != player_location {
                     return Err(KernelError::Invalid("reaction actor is not present".into()));
                 }
+                if !reaction.private_delta.memories_add.is_empty() {
+                    return Err(KernelError::Invalid(
+                        "reaction Interpreter cannot write actor memory".into(),
+                    ));
+                }
                 for proposal in &reaction.action_proposals {
                     validate_world_proposal(actor, proposal)?;
                 }
@@ -1101,7 +1107,9 @@ fn execute(
                     .actors
                     .get_mut(&reaction.actor_id)
                     .expect("validated actor");
-                actor.memories.extend(reaction.private_delta.memories_add);
+                if actor.memories.len() < 64 && !actor.memories.contains(&witnessed_memory) {
+                    actor.memories.push(witnessed_memory.clone());
+                }
                 actor
                     .conditions
                     .extend(reaction.private_delta.conditions_add);
@@ -1526,6 +1534,28 @@ fn validate_world_proposal(
         ));
     }
     Ok(())
+}
+
+fn canonical_witnessed_memory(
+    campaign: &Campaign,
+    event_summary: &str,
+) -> Result<String, KernelError> {
+    let event_summary = event_summary.trim();
+    let witnessed = campaign.transcript.iter().rev().find_map(|turn| {
+        let canonical = if turn.speaker == "world" {
+            turn.text.trim().to_owned()
+        } else {
+            format!("{} says: {}", turn.speaker, turn.text.trim())
+        };
+        (canonical == event_summary).then_some(canonical)
+    });
+    witnessed
+        .map(|canonical| format!("Witnessed: {canonical}"))
+        .ok_or_else(|| {
+            KernelError::Invalid(
+                "reaction stimulus does not match a committed transcript turn".into(),
+            )
+        })
 }
 
 fn overlay(
@@ -5265,11 +5295,143 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn reaction_interpreter_cannot_write_actor_memory() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.transcript.push(NarrativeTurn {
+            revision: 0,
+            at: seed.world_time,
+            speaker: "player".into(),
+            text: "Tell me which seal I repaired.".into(),
+        });
+        seed.actors.insert(
+            "anna".into(),
+            ActorState {
+                id: "anna".into(),
+                name: "Anna".into(),
+                location_id: "room".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let result = kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "player says: Tell me which seal I repaired.".into(),
+                reactions: vec![ActorReaction {
+                    actor_id: "anna".into(),
+                    speech: None,
+                    private_delta: ActorStateDelta {
+                        memories_add: vec!["I repaired the seal.".into()],
+                        ..Default::default()
+                    },
+                    action_proposals: vec![],
+                }],
+            })
+            .await;
+        assert!(
+            matches!(result, Err(KernelError::Invalid(message)) if message.contains("cannot write actor memory"))
+        );
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(persisted.revision, 0);
+        assert!(persisted.actors["anna"].memories.is_empty());
+    }
+
+    #[tokio::test]
+    async fn reaction_memory_preserves_exact_committed_speaker_attribution() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.transcript.push(NarrativeTurn {
+            revision: 0,
+            at: seed.world_time,
+            speaker: "player".into(),
+            text: "Tell me which seal I repaired.".into(),
+        });
+        seed.actors.insert(
+            "anna".into(),
+            ActorState {
+                id: "anna".into(),
+                name: "Anna".into(),
+                location_id: "room".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "player says: Tell me which seal I repaired.".into(),
+                reactions: vec![ActorReaction {
+                    actor_id: "anna".into(),
+                    speech: Some("I did not witness it.".into()),
+                    private_delta: ActorStateDelta::default(),
+                    action_proposals: vec![],
+                }],
+            })
+            .await
+            .unwrap();
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(
+            persisted.actors["anna"].memories,
+            vec!["Witnessed: player says: Tell me which seal I repaired."]
+        );
+        assert!(!persisted.actors["anna"].memories[0].contains("Anna repaired"));
+    }
+
+    #[tokio::test]
     async fn initiative_grants_one_npc_opportunity_without_faking_player_activity() {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let kernel = WorldKernel::start(store.clone());
         let mut seed = campaign();
+        seed.transcript.push(NarrativeTurn {
+            revision: 0,
+            at: seed.world_time,
+            speaker: "world".into(),
+            text: "a disturbance".into(),
+        });
         seed.last_player_activity = Utc::now() - Duration::hours(2);
         for id in ["anna", "bert"] {
             seed.actors.insert(
