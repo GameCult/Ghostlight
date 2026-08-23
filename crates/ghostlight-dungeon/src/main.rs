@@ -40,7 +40,9 @@ use ghostlight_dungeon::{
         SessionZeroDirector, SessionZeroRegistry, SessionZeroState, publication_from_session,
         session_zero_surface,
     },
-    surface::player_surface_for_actor,
+    surface::{
+        campaign_interface_version, player_surface_for_actor, rebase_campaign_surface_revision,
+    },
     turn::{SnapshotPermit, appraise_present},
     vault::VoidBotMcpVault,
 };
@@ -772,16 +774,7 @@ async fn current_eve_surface_version(state: &AppState, account_hash: &str) -> an
     }
     if let Some(runtime) = session_runtime(state, account_hash).await? {
         let campaign = load_campaign(&runtime.store)?;
-        return Ok(campaign
-            .revision
-            .saturating_mul(1_000_000_000_000)
-            .saturating_add(
-                campaign
-                    .resolution_policy
-                    .resolution_epoch
-                    .saturating_mul(1_000_000),
-            )
-            .saturating_add(campaign.resolution_policy.provider_configuration_epoch));
+        return Ok(campaign_interface_version(&campaign));
     }
     if let Some(id) = state
         .session_zeros
@@ -1027,6 +1020,7 @@ fn eve_operation_schema(operation: &str) -> Option<&'static str> {
         | "session_zero.publish" => "ghostlight.session_zero_revision_command.v1",
         "session_zero.member.remove" => "ghostlight.session_zero_member_remove.v1",
         "session_zero.decision.resolve" => "ghostlight.session_zero_decision_resolve.v1",
+        "campaign.entry" => "ghostlight.campaign_entry.v1",
         "campaign.select" => "ghostlight.campaign_select.v1",
         "campaign.contract_review.begin" => "ghostlight.contract_review_begin.v1",
         "world.speak" => "ghostlight.world_speak.v1",
@@ -1409,6 +1403,19 @@ async fn dispatch_eve_product_command(
                 );
             }
         },
+        "campaign.entry" => {
+            match state
+                .auth
+                .lock()
+                .await
+                .clear_selected_campaign(account_hash)
+            {
+                Ok(()) => StatusCode::NO_CONTENT.into_response(),
+                Err(error) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                }
+            }
+        }
         "world.speak" | "world.assess" | "world.attempt" | "world.wait" => {
             let (campaign, actor_id) = match current_player_context(state, account_hash).await {
                 Ok(value) => value,
@@ -1741,6 +1748,7 @@ fn transient_result_projection(
         result_version = assessment
             .get("revision")
             .and_then(serde_json::Value::as_u64)
+            .map(|revision| rebase_campaign_surface_revision(source_version, revision))
             .unwrap_or(source_version);
         let digest = assessment.get("digest")?.as_str()?;
         let admissible = assessment
@@ -1810,6 +1818,7 @@ fn transient_result_projection(
         result_version = receipt
             .get("revision")
             .and_then(serde_json::Value::as_u64)
+            .map(|revision| rebase_campaign_surface_revision(source_version, revision))
             .unwrap_or(source_version);
         let d20 = roll.get("d20")?.as_u64()?;
         let modifier = roll.get("modifier_total")?.as_i64()?;
@@ -6321,12 +6330,12 @@ mod tests {
                     "bargains": ["Acquire an authority that actually reaches the garrison."]
                 }
             }),
-            4,
+            4_000_000_000_000,
         )
         .unwrap();
 
         assert_eq!(projection["schema"], "gamecult.eve.surface.v1");
-        assert_eq!(projection["version"], 4);
+        assert_eq!(projection["version"], 4_000_000_000_000_u64);
         assert!(projection["surface"]["styles"].is_object());
         assert!(projection["surface"]["root"]["children"].is_array());
     }
@@ -6350,11 +6359,11 @@ mod tests {
                     "bargains": []
                 }
             }),
-            8,
+            8_000_000_000_123,
         )
         .unwrap();
 
-        assert_eq!(projection["version"], 9);
+        assert_eq!(projection["version"], 9_000_000_000_123_u64);
         let roll = &projection["surface"]["root"]["children"][1];
         assert_eq!(roll["kind"], "control.button");
         assert_eq!(roll["props"]["command"], "world.attempt");
@@ -6383,11 +6392,11 @@ mod tests {
                     }
                 }
             }),
-            2,
+            2_000_000_000_000,
         )
         .unwrap();
 
-        assert_eq!(projection["version"], 3);
+        assert_eq!(projection["version"], 3_000_000_000_000_u64);
         assert_eq!(
             projection["surface"]["root"]["children"][0]["props"]["value"],
             "d20 12 +3 = 15 against DC 15 — success."

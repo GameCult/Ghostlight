@@ -308,6 +308,22 @@ impl AppSessionOwner {
         self.commit(next)
     }
 
+    pub fn clear_selected_campaign(&mut self, account_subject_hash: &str) -> anyhow::Result<()> {
+        let mut next = self.state.clone();
+        let preferences = next
+            .account_preferences
+            .entry(account_subject_hash.into())
+            .or_insert(AccountPreferences {
+                schema: "ghostlight.account_preferences.v1".into(),
+                account_subject_hash: account_subject_hash.into(),
+                selected_campaign_id: None,
+                updated_at: Utc::now(),
+            });
+        preferences.selected_campaign_id = None;
+        preferences.updated_at = Utc::now();
+        self.commit(next)
+    }
+
     pub fn migrate_preference(
         &mut self,
         account_subject_hash: &str,
@@ -508,6 +524,24 @@ mod tests {
                 .windows("private-refresh-claim".len())
                 .any(|window| window == b"private-refresh-claim")
         );
+    }
+
+    #[test]
+    fn campaign_entry_clears_only_the_selected_preference() {
+        let directory = tempdir().unwrap();
+        let key = directory.path().join("session.key");
+        std::fs::write(&key, [7_u8; 32]).unwrap();
+        let store = directory.path().join("app-sessions.cc");
+        let mut owner = AppSessionOwner::open(&store, &key).unwrap();
+        let account = "sha256:player";
+        owner
+            .select_campaign(account, uuid::Uuid::new_v4())
+            .unwrap();
+
+        owner.clear_selected_campaign(account).unwrap();
+
+        assert_eq!(owner.selected_campaign(account), None);
+        assert!(owner.state.account_preferences.contains_key(account));
     }
 
     #[test]

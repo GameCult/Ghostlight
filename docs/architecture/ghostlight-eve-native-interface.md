@@ -81,7 +81,16 @@ Routine requests use local verified session state. The cookie hash, stable
 account-subject hash, Heimdall session/revision, capabilities, expiries, and
 wrapped refresh claim persist in `app-sessions.cc`. Campaign authorization is
 always derived from `campaign_membership.v1`; account preferences contain only
-the selected campaign.
+the selected campaign. `campaign.entry` may clear only that preference so the
+same authenticated player can return to the campaign list or begin another
+Session Zero; it cannot leave, reset, fork, or mutate any campaign.
+
+Transient command-result surfaces preserve Eve's composite campaign interface
+version. A fresh or recompiled assessment may replace only the campaign-revision
+component while retaining the resolution and provider-configuration epochs.
+The roll control therefore invokes against the same version namespace as the
+authoritative `ghostlight.play` surface instead of collapsing it to a raw world
+revision.
 
 ## Public boundary
 

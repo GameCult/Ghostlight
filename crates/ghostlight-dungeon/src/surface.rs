@@ -7,6 +7,27 @@ use crate::{
 };
 use serde_json::{Value, json};
 
+pub const CAMPAIGN_REVISION_SCALE: u64 = 1_000_000_000_000;
+
+pub fn campaign_interface_version(campaign: &Campaign) -> u64 {
+    campaign
+        .revision
+        .saturating_mul(CAMPAIGN_REVISION_SCALE)
+        .saturating_add(
+            campaign
+                .resolution_policy
+                .resolution_epoch
+                .saturating_mul(1_000_000),
+        )
+        .saturating_add(campaign.resolution_policy.provider_configuration_epoch)
+}
+
+pub fn rebase_campaign_surface_revision(source_version: u64, campaign_revision: u64) -> u64 {
+    campaign_revision
+        .saturating_mul(CAMPAIGN_REVISION_SCALE)
+        .saturating_add(source_version % CAMPAIGN_REVISION_SCALE)
+}
+
 pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -> Value {
     player_surface_for_actor(campaign, &campaign.player_actor_id, narrations)
 }
@@ -16,16 +37,7 @@ pub fn player_surface_for_actor(
     viewer_actor_id: &str,
     narrations: &[NarrationProjection],
 ) -> Value {
-    let interface_version = campaign
-        .revision
-        .saturating_mul(1_000_000_000_000)
-        .saturating_add(
-            campaign
-                .resolution_policy
-                .resolution_epoch
-                .saturating_mul(1_000_000),
-        )
-        .saturating_add(campaign.resolution_policy.provider_configuration_epoch);
+    let interface_version = campaign_interface_version(campaign);
     let story = story_nodes(campaign, narrations);
     let player = &campaign.actors[viewer_actor_id];
     let location = &campaign.locations[&player.location_id];
@@ -135,6 +147,13 @@ pub fn player_surface_for_actor(
             &[],
         ),
         command_control(
+            "dungeon.campaign-entry",
+            "Campaigns and new Session Zero",
+            "campaign.entry",
+            json!({}),
+            &[],
+        ),
+        command_control(
             "dungeon.logout",
             "Sign out",
             "app.auth.logout",
@@ -202,6 +221,7 @@ pub fn player_surface_for_actor(
         eve_command("governance.travel.approve","ghostlight.group_travel_approval.v1", &[], "WorldKernel"),
         eve_command("world.destination.compile","ghostlight.destination_compile.v1", &["destination"], "WorldCompiler"),
         eve_command("world.destination.approve","ghostlight.destination_approval.v1", &[], "WorldKernel"),
+        eve_command("campaign.entry","ghostlight.campaign_entry.v1", &[], "ghostlight.account_preferences.v1"),
         eve_command("campaign.contract_review.begin","ghostlight.contract_review_begin.v1", &[], "SessionZeroKernel"),
         eve_command("app.auth.logout","ghostlight.app_logout.v1", &[], "ghostlight.app_session.v1")
       ]
@@ -271,16 +291,7 @@ pub fn operator_surface(
     resolution_controls: &[crate::domain::ResolutionControlReceipt],
     live_turn_pressure: usize,
 ) -> Value {
-    let interface_version = campaign
-        .revision
-        .saturating_mul(1_000_000_000_000)
-        .saturating_add(
-            campaign
-                .resolution_policy
-                .resolution_epoch
-                .saturating_mul(1_000_000),
-        )
-        .saturating_add(campaign.resolution_policy.provider_configuration_epoch);
+    let interface_version = campaign_interface_version(campaign);
     let cover_text = campaign
         .resolution_cover
         .as_ref()
@@ -589,6 +600,7 @@ mod tests {
         }
         assert!(encoded.contains("governance.travel.propose"));
         assert!(encoded.contains("world.destination.compile"));
+        assert!(encoded.contains("campaign.entry"));
         assert!(!encoded.contains("payload.fields"));
         assert!(!encoded.contains("\"kind\":\"form\""));
     }
