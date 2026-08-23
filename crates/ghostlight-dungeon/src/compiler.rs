@@ -449,7 +449,7 @@ impl WorldCompiler {
         &self,
         start: CustomStart,
     ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
-        self.compile_custom_with_owned_subjects(start, &[], &[])
+        self.compile_custom_with_owned_subjects(start, &[], &[], None)
             .await
     }
 
@@ -458,6 +458,7 @@ impl WorldCompiler {
         start: CustomStart,
         required_relationship_actors: &[RequiredRelationshipActor],
         player_names: &[String],
+        private_operational_context: Option<&serde_json::Value>,
     ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
         validate_user_text("campaign name", &start.campaign_name, 80)?;
         validate_user_text("player identity", &start.who, 500)?;
@@ -500,8 +501,17 @@ impl WorldCompiler {
                 serde_json::to_string(player_names)?
             )
         };
+        let operational_playability_context = private_operational_context
+            .map(|context| -> Result<String> {
+                Ok(format!(
+                    "\nPRIVATE OPERATIONAL PLAYABILITY INPUT:\n{}\nThis input exists only to make approved player capabilities, equipment, obligations, goals, and extraordinary-permission ceilings actionable in the starting world. It is not public narration, NPC knowledge, or world-cast material. Never copy it into actors, gestalts, institutions, dialogue, or the opening transcript. Use it only to seed bounded branch_local or provisional_local environmental facts at exact relevant locations, or report an explicit evidence gap. For every concrete opening problem that an approved capability or permission could investigate, seed at least one discoverable fact precise enough to produce a meaningful result within that capability's effect ceiling. A generic restatement of the overall crisis is not sufficient. Do not encode private history, secrets, relationships, or pre-existing character knowledge; none are supplied here.\n",
+                    serde_json::to_string(context)?
+                ))
+            })
+            .transpose()?
+            .unwrap_or_default();
         let base_prompt = format!(
-            "{shared_prefix}{player_identity_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -764,6 +774,26 @@ impl WorldCompiler {
             .iter()
             .map(|character| character.name.clone())
             .collect::<Vec<_>>();
+        let operational_playability_context = serde_json::json!({
+            "characters":brief.characters.iter().map(|character| serde_json::json!({
+                "actor_id":character.actor_id,
+                "name":character.name,
+                "public_premise":character.public_premise,
+                "capabilities":character.capabilities,
+                "equipment":character.equipment,
+                "obligations":character.obligations,
+                "goals":character.goals,
+                "extraordinary_permissions":character.extraordinary_permissions.iter().map(|permission| serde_json::json!({
+                    "name":permission.name,
+                    "reliable_scope":permission.reliable_scope,
+                    "prerequisites":permission.prerequisites,
+                    "costs":permission.costs,
+                    "limits":permission.limits,
+                    "exposure":permission.exposure,
+                    "effect_ceiling":permission.effect_ceiling,
+                })).collect::<Vec<_>>(),
+            })).collect::<Vec<_>>()
+        });
         let mut compiled = self
             .compile_custom_with_owned_subjects(
                 CustomStart {
@@ -785,6 +815,7 @@ impl WorldCompiler {
                 },
                 &relationship_plan.anchors,
                 &player_names,
+                Some(&operational_playability_context),
             )
             .await?;
         let campaign = &mut compiled.0.campaign;
@@ -3277,6 +3308,7 @@ mod tests {
 
     struct PrivateBoundaryCompilerModel {
         shared_stage_was_private_free: AtomicBool,
+        shared_stage_received_operational_playability: AtomicBool,
         private_stage_was_minimal: AtomicBool,
     }
 
@@ -3351,7 +3383,20 @@ mod tests {
                     self.shared_stage_was_private_free.store(
                         !request.lived_stream.contains("convoy quartermaster")
                             && !request.lived_stream.contains("relationship-anchor:")
-                            && !request.lived_stream.contains("life-debt"),
+                            && !request.lived_stream.contains("life-debt")
+                            && !request.lived_stream.contains("SECRET_COOLANT_RECORD")
+                            && !request.lived_stream.contains("PRIVATE_ROUTE_CODE"),
+                        Ordering::SeqCst,
+                    );
+                    self.shared_stage_received_operational_playability.store(
+                        request
+                            .lived_stream
+                            .contains("PRIVATE OPERATIONAL PLAYABILITY INPUT")
+                            && request.lived_stream.contains("route planning")
+                            && request.lived_stream.contains("keep the convoy supplied")
+                            && request.lived_stream.contains(
+                                "A generic restatement of the overall crisis is not sufficient",
+                            ),
                         Ordering::SeqCst,
                     );
                 }
@@ -3814,6 +3859,7 @@ mod tests {
     async fn approved_private_relationship_identity_never_enters_shared_world_compilation() {
         let model = Arc::new(PrivateBoundaryCompilerModel {
             shared_stage_was_private_free: AtomicBool::new(false),
+            shared_stage_received_operational_playability: AtomicBool::new(false),
             private_stage_was_minimal: AtomicBool::new(false),
         });
         let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
@@ -3824,6 +3870,8 @@ mod tests {
             name: "Sable".into(),
             public_premise: "A logistics mediator".into(),
             capabilities: vec!["route planning".into()],
+            secrets: vec!["SECRET_COOLANT_RECORD".into()],
+            knowledge: vec!["PRIVATE_ROUTE_CODE".into()],
             goals: vec!["keep the convoy supplied".into()],
             ..CharacterDraft::default()
         };
@@ -3855,6 +3903,11 @@ mod tests {
         let (preview, _) = compiler.compile_approved_brief(&brief).await.unwrap();
 
         assert!(model.shared_stage_was_private_free.load(Ordering::SeqCst));
+        assert!(
+            model
+                .shared_stage_received_operational_playability
+                .load(Ordering::SeqCst)
+        );
         assert!(model.private_stage_was_minimal.load(Ordering::SeqCst));
         assert!(
             !preview.campaign.transcript[0]
