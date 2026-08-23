@@ -405,22 +405,31 @@ pub struct CharacterDraftPatch {
     pub name: Option<String>,
     pub public_premise: Option<String>,
     pub private_history_add: Vec<String>,
+    #[serde(default)]
     pub private_history_remove: Vec<String>,
     pub secrets_add: Vec<String>,
+    #[serde(default)]
     pub secrets_remove: Vec<String>,
     pub capabilities_add: Vec<String>,
+    #[serde(default)]
     pub capabilities_remove: Vec<String>,
     pub knowledge_add: Vec<String>,
+    #[serde(default)]
     pub knowledge_remove: Vec<String>,
     pub equipment_add: Vec<String>,
+    #[serde(default)]
     pub equipment_remove: Vec<String>,
     pub relationships: BTreeMap<String, String>,
+    #[serde(default)]
     pub relationship_removals: Vec<String>,
     pub obligations_add: Vec<String>,
+    #[serde(default)]
     pub obligations_remove: Vec<String>,
     pub vulnerabilities_add: Vec<String>,
+    #[serde(default)]
     pub vulnerabilities_remove: Vec<String>,
     pub goals_add: Vec<String>,
+    #[serde(default)]
     pub goals_remove: Vec<String>,
 }
 
@@ -4843,6 +4852,38 @@ mod tests {
         assert!(!character.relationships.contains_key("Reed"));
         assert!(character.relationships.contains_key(full_name));
         assert_eq!(character.capabilities, ["manifest reconciliation"]);
+    }
+
+    #[test]
+    fn character_patch_loads_pre_removal_messagepack_rows() {
+        let legacy = serde_json::json!({
+            "name": "Ash",
+            "public_premise": null,
+            "private_history_add": ["kept the convoy ledger"],
+            "secrets_add": [],
+            "capabilities_add": ["manifest reconciliation"],
+            "knowledge_add": [],
+            "equipment_add": [],
+            "relationships": {"Reed": "Ash owes Reed their life."},
+            "obligations_add": [],
+            "vulnerabilities_add": [],
+            "goals_add": []
+        });
+        let bytes = rmp_serde::to_vec_named(&legacy).unwrap();
+
+        let patch: CharacterDraftPatch = rmp_serde::from_slice(&bytes).unwrap();
+
+        assert_eq!(patch.name.as_deref(), Some("Ash"));
+        assert_eq!(patch.capabilities_add, ["manifest reconciliation"]);
+        assert!(patch.private_history_remove.is_empty());
+        assert!(patch.secrets_remove.is_empty());
+        assert!(patch.capabilities_remove.is_empty());
+        assert!(patch.knowledge_remove.is_empty());
+        assert!(patch.equipment_remove.is_empty());
+        assert!(patch.relationship_removals.is_empty());
+        assert!(patch.obligations_remove.is_empty());
+        assert!(patch.vulnerabilities_remove.is_empty());
+        assert!(patch.goals_remove.is_empty());
     }
 
     #[test]
