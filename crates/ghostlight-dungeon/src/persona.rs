@@ -1831,7 +1831,7 @@ fn constrain_cell_proposal_schema(
         .map(|subject| {
             exact_cell_action_condition(
                 &subject.subject_id,
-                allowed_constituent_effect_types(subject),
+                exact_constituent_effect_schema(subject),
                 &subject.permitted_state_references,
                 &subject.information_channels,
             )
@@ -1844,7 +1844,7 @@ fn constrain_cell_proposal_schema(
                 .map(|member| {
                     exact_cell_action_condition(
                         &member.subject_id,
-                        allowed_member_effect_types(member),
+                        exact_member_effect_schema(member),
                         &member.permitted_state_references,
                         &member.information_channels,
                     )
@@ -1864,7 +1864,7 @@ fn constrain_cell_proposal_schema(
 
 fn exact_cell_action_condition(
     subject_id: &str,
-    allowed_effect_types: Vec<&'static str>,
+    effect_schema: serde_json::Value,
     permitted_state_references: &BTreeSet<String>,
     information_channels: &BTreeSet<String>,
 ) -> serde_json::Value {
@@ -1875,30 +1875,139 @@ fn exact_cell_action_condition(
         },
         "then":{
             "properties":{
-                "state_references":exact_string_array_schema(permitted_state_references, 16),
-                "public_channels":exact_string_array_schema(information_channels, 8),
-                "effect":{
-                    "properties":{
-                        "type":{"type":"string","enum":allowed_effect_types}
-                    },
-                    "required":["type"]
-                }
+                "state_references":exact_string_array_schema(permitted_state_references, 0, 16),
+                "public_channels":exact_string_array_schema(information_channels, 0, 8),
+                "effect":effect_schema
             }
         }
     })
 }
 
-fn exact_string_array_schema(values: &BTreeSet<String>, max_items: usize) -> serde_json::Value {
+fn exact_constituent_effect_schema(subject: &CellConstituentSlice) -> serde_json::Value {
+    let allowed_types = allowed_constituent_effect_types(subject);
+    let mut constraints = Vec::new();
+    match subject.subject_kind {
+        crate::domain::AgencySubjectKind::Actor => constraints.push(exact_activity_scope_schema(
+            &subject.activity_target_ids,
+            &subject.location_ids,
+            1,
+            vec!["actor_activity"],
+        )),
+        crate::domain::AgencySubjectKind::Gestalt => constraints.push(exact_activity_scope_schema(
+            &subject.activity_target_ids,
+            &subject.location_ids,
+            0,
+            vec!["gestalt_activity"],
+        )),
+        crate::domain::AgencySubjectKind::Institution => {}
+    }
+    match subject.subject_kind {
+        crate::domain::AgencySubjectKind::Actor
+            if !subject.reachable_destination_ids.is_empty() =>
+        {
+            constraints.push(serde_json::json!({
+                "if":{"properties":{"type":{"const":"actor_move"}},"required":["type"]},
+                "then":{"properties":{"destination_id":{"type":"string","enum":subject.reachable_destination_ids}}}
+            }));
+        }
+        crate::domain::AgencySubjectKind::Institution => {
+            constraints.push(serde_json::json!({
+                "if":{"properties":{"type":{"const":"institution"}},"required":["type"]},
+                "then":{"properties":{"location_ids":exact_string_array_schema(&subject.location_ids, 0, 4)}}
+            }));
+        }
+        crate::domain::AgencySubjectKind::Gestalt => {
+            constraints.push(serde_json::json!({
+                "if":{"properties":{"type":{"const":"gestalt"}},"required":["type"]},
+                "then":{"properties":{"pressure_resolutions":exact_string_slice_array_schema(&subject.pressures, 0, 4)}}
+            }));
+            if !subject.migration_destinations.is_empty() {
+                constraints.push(serde_json::json!({
+                    "if":{"properties":{"type":{"const":"gestalt_migration"}},"required":["type"]},
+                    "then":{"properties":{"destination_gestalt_id":{"type":"string","enum":subject.migration_destinations.keys().collect::<Vec<_>>()}}}
+                }));
+            }
+        }
+        crate::domain::AgencySubjectKind::Actor => {}
+    }
+    serde_json::json!({
+        "properties":{"type":{"type":"string","enum":allowed_types}},
+        "required":["type"],
+        "allOf":constraints
+    })
+}
+
+fn exact_member_effect_schema(member: &CellMemberSlice) -> serde_json::Value {
+    let mut constraints = vec![exact_activity_scope_schema(
+        &member.activity_target_ids,
+        &BTreeSet::from([member.source_location_id.clone()]),
+        1,
+        vec!["member_activity"],
+    )];
+    if !member.migration_destinations.is_empty() {
+        constraints.push(serde_json::json!({
+            "if":{"properties":{"type":{"const":"member_migration"}},"required":["type"]},
+            "then":{"properties":{"destination_gestalt_id":{"type":"string","enum":member.migration_destinations.keys().collect::<Vec<_>>()}}}
+        }));
+    }
+    serde_json::json!({
+        "properties":{"type":{"type":"string","enum":allowed_member_effect_types(member)}},
+        "required":["type"],
+        "allOf":constraints
+    })
+}
+
+fn exact_activity_scope_schema(
+    target_ids: &BTreeSet<String>,
+    location_ids: &BTreeSet<String>,
+    minimum_locations: usize,
+    activity_effect_types: Vec<&'static str>,
+) -> serde_json::Value {
+    serde_json::json!({
+        "if":{
+            "properties":{"type":{"enum":activity_effect_types}},
+            "required":["type"]
+        },
+        "then":{
+            "properties":{
+                "target_subject_ids":exact_string_array_schema(target_ids, 0, 4),
+                "location_ids":exact_string_array_schema(location_ids, minimum_locations, if minimum_locations == 1 { 1 } else { 4 })
+            },
+            "allOf":[{
+                "if":{
+                    "properties":{"activity":{"enum":["coordinate","recruit","obstruct","trade"]}},
+                    "required":["activity"]
+                },
+                "then":{"properties":{"target_subject_ids":{"minItems":1}}}
+            }]
+        }
+    })
+}
+
+fn exact_string_array_schema(
+    values: &BTreeSet<String>,
+    min_items: usize,
+    max_items: usize,
+) -> serde_json::Value {
     if values.is_empty() {
-        serde_json::json!({"type":"array","maxItems":0})
+        serde_json::json!({"type":"array","minItems":min_items,"maxItems":0})
     } else {
         serde_json::json!({
             "type":"array",
             "uniqueItems":true,
+            "minItems":min_items,
             "maxItems":max_items,
             "items":{"type":"string","enum":values}
         })
     }
+}
+
+fn exact_string_slice_array_schema(
+    values: &[String],
+    min_items: usize,
+    max_items: usize,
+) -> serde_json::Value {
+    exact_string_array_schema(&values.iter().cloned().collect(), min_items, max_items)
 }
 
 fn constrain_interpreter_schema(
@@ -2346,6 +2455,7 @@ mod tests {
             actor.current_posture = None;
             actor.reachable_destination_ids.clear();
             actor.migration_destinations.clear();
+            actor.activity_target_ids = BTreeSet::from(["inst_zhestokost".into()]);
         }
         slice.detail_focus_subject_id = Some(actor_id.clone());
         let active = BTreeSet::from([actor_id]);
@@ -2380,6 +2490,30 @@ mod tests {
         assert!(!validator.is_valid(&action(serde_json::json!({
             "type":"gestalt_migration",
             "destination_gestalt_id":"loc_water_ice_rail_corridor"
+        }))));
+        assert!(!validator.is_valid(&action(serde_json::json!({
+            "type":"actor_activity",
+            "activity":"coordinate",
+            "target_subject_ids":[],
+            "location_ids":["forum"]
+        }))));
+        assert!(validator.is_valid(&action(serde_json::json!({
+            "type":"actor_activity",
+            "activity":"coordinate",
+            "target_subject_ids":["inst_zhestokost"],
+            "location_ids":["forum"]
+        }))));
+        assert!(!validator.is_valid(&action(serde_json::json!({
+            "type":"actor_activity",
+            "activity":"coordinate",
+            "target_subject_ids":["invented-target"],
+            "location_ids":["forum"]
+        }))));
+        assert!(!validator.is_valid(&action(serde_json::json!({
+            "type":"actor_activity",
+            "activity":"prepare",
+            "target_subject_ids":[],
+            "location_ids":["invented-location"]
         }))));
         assert_eq!(
             allowed_constituent_effect_types(&slice.constituents[0]),
