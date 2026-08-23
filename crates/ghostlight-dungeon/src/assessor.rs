@@ -107,7 +107,7 @@ impl ActionAssessor {
                 || intent.actor_id == campaign.player_actor_id,
         );
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
-        constrain_assessment_schema(&mut schema, &allowed_references)?;
+        constrain_assessment_schema(&mut schema, &allowed_references, campaign, actor)?;
         let base_prompt = format!(
             "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, leave knowledge deltas empty and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
@@ -212,6 +212,8 @@ impl ActionAssessor {
 fn constrain_assessment_schema(
     schema: &mut serde_json::Value,
     allowed_references: &BTreeSet<String>,
+    campaign: &Campaign,
+    acting_actor: &crate::domain::ActorState,
 ) -> Result<()> {
     let properties = schema
         .pointer_mut("/properties")
@@ -246,6 +248,102 @@ fn constrain_assessment_schema(
             }
         }),
     );
+    constrain_effect_schema(schema, campaign, acting_actor)?;
+    Ok(())
+}
+
+fn constrain_effect_schema(
+    schema: &mut serde_json::Value,
+    campaign: &Campaign,
+    acting_actor: &crate::domain::ActorState,
+) -> Result<()> {
+    let present_actor_ids = campaign
+        .actors
+        .values()
+        .filter(|candidate| candidate.location_id == acting_actor.location_id)
+        .map(|candidate| candidate.id.clone())
+        .collect::<BTreeSet<_>>();
+    let institution_ids = campaign
+        .institutions
+        .keys()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let relationship_target_ids = present_actor_ids
+        .iter()
+        .chain(institution_ids.iter())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let destination_ids = campaign
+        .locations
+        .get(&acting_actor.location_id)
+        .ok_or_else(|| anyhow!("acting actor location vanished while binding effect schema"))?
+        .routes
+        .keys()
+        .filter(|destination| campaign.locations.contains_key(*destination))
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let clock_ids = campaign.clocks.keys().cloned().collect::<BTreeSet<_>>();
+    let effect_properties = schema
+        .pointer_mut("/$defs/WorldEffectDelta/properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("assessment schema has no world effect properties"))?;
+
+    for field in [
+        "actor_conditions",
+        "actor_knowledge_additions",
+        "actor_relationship_updates",
+    ] {
+        constrain_map_keys(
+            effect_properties
+                .get_mut(field)
+                .ok_or_else(|| anyhow!("assessment effect schema omitted {field}"))?,
+            &present_actor_ids,
+        )?;
+    }
+    let relationship_targets = effect_properties
+        .get_mut("actor_relationship_updates")
+        .and_then(|value| value.get_mut("additionalProperties"))
+        .ok_or_else(|| anyhow!("assessment relationship schema has no target map"))?;
+    constrain_map_keys(relationship_targets, &relationship_target_ids)?;
+
+    let actor_moves = effect_properties
+        .get_mut("actor_moves")
+        .ok_or_else(|| anyhow!("assessment effect schema omitted actor_moves"))?;
+    constrain_map_keys(actor_moves, &BTreeSet::from([acting_actor.id.clone()]))?;
+    if destination_ids.is_empty() {
+        actor_moves["maxProperties"] = serde_json::json!(0);
+    } else {
+        actor_moves["additionalProperties"] = serde_json::json!({
+            "type":"string",
+            "enum":destination_ids
+        });
+    }
+
+    constrain_map_keys(
+        effect_properties
+            .get_mut("clock_advances")
+            .ok_or_else(|| anyhow!("assessment effect schema omitted clock_advances"))?,
+        &clock_ids,
+    )?;
+    constrain_map_keys(
+        effect_properties
+            .get_mut("institution_postures")
+            .ok_or_else(|| anyhow!("assessment effect schema omitted institution_postures"))?,
+        &institution_ids,
+    )?;
+    Ok(())
+}
+
+fn constrain_map_keys(schema: &mut serde_json::Value, allowed: &BTreeSet<String>) -> Result<()> {
+    let object = schema
+        .as_object_mut()
+        .ok_or_else(|| anyhow!("assessment effect map schema is not an object"))?;
+    if allowed.is_empty() {
+        object.insert("maxProperties".into(), serde_json::json!(0));
+        object.remove("propertyNames");
+    } else {
+        object.insert("propertyNames".into(), serde_json::json!({"enum":allowed}));
+    }
     Ok(())
 }
 
@@ -460,10 +558,16 @@ pub(crate) fn validate_effect(
     }
     for relationships in effect.actor_relationship_updates.values() {
         if relationships.iter().any(|(id, value)| {
-            (!campaign.actors.contains_key(id) && !campaign.institutions.contains_key(id))
+            (!campaign
+                .actors
+                .get(id)
+                .is_some_and(|target| target.location_id == acting_actor.location_id)
+                && !campaign.institutions.contains_key(id))
                 || value.trim().is_empty()
         }) {
-            return Err(anyhow!("outcome relationship delta invented a target"));
+            return Err(anyhow!(
+                "outcome relationship delta cited an unavailable target"
+            ));
         }
     }
     for (actor_id, destination) in &effect.actor_moves {
@@ -546,13 +650,15 @@ mod tests {
 
     #[test]
     fn assessment_reference_schema_enumerates_exact_allowed_values() {
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = &campaign.actors["player"];
         let allowed = BTreeSet::from([
             "actor:player".into(),
             "actor:clinic-director".into(),
             "equipment:audit-seal".into(),
         ]);
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
-        constrain_assessment_schema(&mut schema, &allowed).unwrap();
+        constrain_assessment_schema(&mut schema, &allowed, &campaign, acting).unwrap();
         let values = schema
             .pointer("/$defs/ContextModifier/properties/references/items/enum")
             .and_then(serde_json::Value::as_array)
@@ -567,6 +673,85 @@ mod tests {
                 "actor:clinic-director",
                 "equipment:audit-seal"
             ])
+        );
+    }
+
+    #[test]
+    fn assessment_effect_schema_binds_exact_visible_and_spatial_scope() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = campaign.actors["player"].clone();
+        let mut nearby = acting.clone();
+        nearby.id = "clinic-director".into();
+        nearby.name = "Clinic Director".into();
+        campaign.actors.insert(nearby.id.clone(), nearby);
+        campaign.locations.insert(
+            "adjacent".into(),
+            crate::domain::Location {
+                id: "adjacent".into(),
+                name: "Adjacent".into(),
+                container_id: None,
+                routes: Default::default(),
+                persistent_features: vec![],
+            },
+        );
+        campaign
+            .locations
+            .get_mut(&acting.location_id)
+            .unwrap()
+            .routes
+            .insert(
+                "adjacent".into(),
+                crate::domain::Route {
+                    destination_id: "adjacent".into(),
+                    distance: "5 km".into(),
+                    travel_minutes: 20,
+                },
+            );
+        campaign.locations.insert(
+            "remote".into(),
+            crate::domain::Location {
+                id: "remote".into(),
+                name: "Remote".into(),
+                container_id: None,
+                routes: Default::default(),
+                persistent_features: vec![],
+            },
+        );
+        let mut remote = acting.clone();
+        remote.id = "remote-commander".into();
+        remote.name = "Remote Commander".into();
+        remote.location_id = "remote".into();
+        campaign.actors.insert(remote.id.clone(), remote);
+
+        let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
+        constrain_assessment_schema(&mut schema, &BTreeSet::new(), &campaign, &acting).unwrap();
+        let effect = schema
+            .pointer("/$defs/WorldEffectDelta/properties")
+            .unwrap();
+        let actor_targets = effect["actor_conditions"]["propertyNames"]["enum"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .collect::<BTreeSet<_>>();
+        assert_eq!(actor_targets, BTreeSet::from(["clinic-director", "player"]));
+        let relationship_targets =
+            effect["actor_relationship_updates"]["additionalProperties"]["propertyNames"]["enum"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .collect::<BTreeSet<_>>();
+        assert!(relationship_targets.contains("clinic-director"));
+        assert!(relationship_targets.contains("player"));
+        assert!(!relationship_targets.contains("remote-commander"));
+        assert_eq!(
+            effect["actor_moves"]["propertyNames"]["enum"],
+            serde_json::json!(["player"])
+        );
+        assert_eq!(
+            effect["actor_moves"]["additionalProperties"]["enum"],
+            serde_json::json!(["adjacent"])
         );
     }
 
@@ -598,6 +783,42 @@ mod tests {
         assert!(references.contains("actor:player"));
         assert!(references.contains("actor:clinic-director"));
         assert!(!references.contains("actor:remote-commander"));
+    }
+
+    #[test]
+    fn assessment_effect_rejects_a_relationship_to_an_unseen_remote_actor() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = campaign.actors["player"].clone();
+        campaign.locations.insert(
+            "remote".into(),
+            crate::domain::Location {
+                id: "remote".into(),
+                name: "Remote".into(),
+                container_id: None,
+                routes: Default::default(),
+                persistent_features: vec![],
+            },
+        );
+        let mut remote = acting.clone();
+        remote.id = "remote-commander".into();
+        remote.name = "Remote Commander".into();
+        remote.location_id = "remote".into();
+        campaign.actors.insert(remote.id.clone(), remote);
+        let effect = WorldEffectDelta {
+            actor_relationship_updates: std::collections::BTreeMap::from([(
+                acting.id.clone(),
+                std::collections::BTreeMap::from([(
+                    "remote-commander".into(),
+                    "unexpected trust".into(),
+                )]),
+            )]),
+            ..WorldEffectDelta::default()
+        };
+
+        let error = validate_effect(&campaign, &acting, &effect, "nothing changes")
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("unavailable target"));
     }
 
     #[test]

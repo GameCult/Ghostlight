@@ -613,6 +613,14 @@ extraordinary permissions. A remote actor is not a valid modifier reference.
 The same set is shown to the assessor and enforced by local validation, so a
 model cannot invent a reference namespace or cite context it was not given.
 
+Outcome-delta maps are bound to the same snapshot rather than accepting a
+free-form identifier namespace. Actor effects may name only co-located actors;
+relationship targets may additionally name the supplied institutions; movement
+may name only the acting actor and an exact adjacent route; clocks and
+institution postures may name only supplied canonical IDs. Empty authority sets
+make the corresponding map structurally empty. Local validation and WorldKernel
+admission enforce the same scope after decoding.
+
 `Attempt` consumes that exact assessment. It obtains an OS-random d20 inside the
 server command path and atomically stores roll and transition. Impossible acts
 receive no roll. Natural 20 and 1 shift one band and cannot cross impossibility
