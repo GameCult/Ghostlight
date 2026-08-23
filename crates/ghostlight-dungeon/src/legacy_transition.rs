@@ -1328,6 +1328,8 @@ fn project_mutated_components(
 ) -> Result<()> {
     let mut resources_changed = false;
     let mut resource_owners_changed = BTreeSet::new();
+    let mut touched_members = BTreeSet::new();
+    let mut touched_gestalts = BTreeSet::new();
     for permitted in &batch.mutations {
         match &permitted.mutation {
             WorldMutation::TransferCustody {
@@ -1354,6 +1356,7 @@ fn project_mutated_components(
                         .get_mut(member_id)
                         .ok_or_else(|| anyhow!("accepted relocation member vanished"))?;
                     member.last_location_id = Some(destination.id.clone());
+                    touched_members.insert(member_id.to_string());
                     if let Some(actor) = campaign.actors.get_mut(&subject.id) {
                         actor.location_id = destination.id.clone();
                     }
@@ -1375,7 +1378,7 @@ fn project_mutated_components(
                     .get_mut(&subject.id)
                     .ok_or_else(|| anyhow!("accepted relocation population vanished"))?;
                 gestalt.home_location_id = destination.id.clone();
-                gestalt.version = gestalt.version.saturating_add(1);
+                touched_gestalts.insert(subject.id.clone());
                 let profile = campaign
                     .agency_profiles
                     .get_mut(&subject.id)
@@ -1426,7 +1429,7 @@ fn project_mutated_components(
                                     .ok_or_else(|| anyhow!("accepted knowledge member vanished"))?;
                                 member.knowledge_removals.remove(&statement);
                                 member.knowledge_additions.insert(statement.clone());
-                                member.version = member.version.saturating_add(1);
+                                touched_members.insert(member_id.to_string());
                                 if let Some(actor) = campaign.actors.get_mut(&subject.id) {
                                     actor.knowledge.insert(statement.clone());
                                 }
@@ -1445,7 +1448,7 @@ fn project_mutated_components(
                                 .get_mut(&subject.id)
                                 .ok_or_else(|| anyhow!("accepted knowledge gestalt vanished"))?;
                             gestalt.shared_knowledge.insert(statement.clone());
-                            gestalt.version = gestalt.version.saturating_add(1);
+                            touched_gestalts.insert(subject.id.clone());
                         }
                         _ => {
                             return Err(anyhow!(
@@ -1499,7 +1502,7 @@ fn project_mutated_components(
                             actor.relationships.remove(&target.id);
                         }
                     }
-                    member.version = member.version.saturating_add(1);
+                    touched_members.insert(member_id.to_string());
                 } else {
                     let actor = campaign
                         .actors
@@ -1529,7 +1532,7 @@ fn project_mutated_components(
                         .ok_or_else(|| anyhow!("accepted memory member vanished"))?;
                     if !member.memories.contains(&value.summary) {
                         member.memories.push(value.summary.clone());
-                        member.version = member.version.saturating_add(1);
+                        touched_members.insert(member_id.to_string());
                     }
                     if let Some(actor) = campaign.actors.get_mut(&subject.id) {
                         if actor.memories.len() < 64 && !actor.memories.contains(&value.summary) {
@@ -1577,7 +1580,7 @@ fn project_mutated_components(
                             });
                         }
                     }
-                    member.version = member.version.saturating_add(1);
+                    touched_members.insert(member_id.to_string());
                     if let Some(actor) = campaign.actors.get_mut(&subject.id) {
                         match (kind, value) {
                             (CommitmentKind::Goal, Some(value)) => {
@@ -1642,7 +1645,7 @@ fn project_mutated_components(
                     if !value.resolved {
                         gestalt.pressures.push(value.label.clone());
                     }
-                    gestalt.version = gestalt.version.saturating_add(1);
+                    touched_gestalts.insert(value.owner.id.clone());
                 } else {
                     return Err(anyhow!("aggregate pressure owner is unsupported"));
                 }
@@ -1699,6 +1702,9 @@ fn project_mutated_components(
                     &source.id,
                     &destination.id,
                 )?;
+                touched_members.insert(member_id.to_string());
+                touched_gestalts.insert(source.id.clone());
+                touched_gestalts.insert(destination.id.clone());
             }
             WorldMutation::AdvanceWorldTime { .. } => {
                 campaign.world_time = next.world_time;
@@ -1712,7 +1718,28 @@ fn project_mutated_components(
         }
     }
     if resources_changed {
-        project_all_resources(campaign, next, &resource_owners_changed)?;
+        project_all_resources(campaign, next)?;
+        for owner in resource_owners_changed {
+            match owner.kind {
+                SubjectKind::Actor if owner.id.starts_with("member:") => {
+                    touched_members.insert(owner.id.trim_start_matches("member:").to_string());
+                }
+                SubjectKind::Population => {
+                    touched_gestalts.insert(owner.id);
+                }
+                _ => {}
+            }
+        }
+    }
+    for member_id in touched_members {
+        if let Some(member) = campaign.gestalt_members.get_mut(&member_id) {
+            member.version = member.version.saturating_add(1);
+        }
+    }
+    for gestalt_id in touched_gestalts {
+        if let Some(gestalt) = campaign.gestalts.get_mut(&gestalt_id) {
+            gestalt.version = gestalt.version.saturating_add(1);
+        }
     }
     Ok(())
 }
@@ -1792,15 +1819,10 @@ fn project_member_population_transfer(
         effective_goals
     };
     member.gestalt_id = destination_population_id.into();
-    member.version = member.version.saturating_add(1);
     Ok(())
 }
 
-fn project_all_resources(
-    campaign: &mut Campaign,
-    next: &ComponentWorldState,
-    changed_owners: &BTreeSet<SubjectRef>,
-) -> Result<()> {
+fn project_all_resources(campaign: &mut Campaign, next: &ComponentWorldState) -> Result<()> {
     for actor in campaign.actors.values_mut() {
         actor.equipment.clear();
     }
@@ -1854,22 +1876,6 @@ fn project_all_resources(
                     .insert(value.label.clone());
             }
             _ => return Err(anyhow!("aggregate resource custodian is unsupported")),
-        }
-    }
-    for owner in changed_owners {
-        match owner.kind {
-            SubjectKind::Actor if owner.id.starts_with("member:") => {
-                let member_id = owner.id.trim_start_matches("member:");
-                if let Some(member) = campaign.gestalt_members.get_mut(member_id) {
-                    member.version = member.version.saturating_add(1);
-                }
-            }
-            SubjectKind::Population => {
-                if let Some(gestalt) = campaign.gestalts.get_mut(&owner.id) {
-                    gestalt.version = gestalt.version.saturating_add(1);
-                }
-            }
-            _ => {}
         }
     }
     for institution in campaign.institutions.values_mut() {

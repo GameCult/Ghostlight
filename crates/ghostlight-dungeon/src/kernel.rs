@@ -155,6 +155,15 @@ fn execute_mutation_batch(
     batch: crate::transition::WorldMutationBatch,
 ) -> Result<CommandResult, KernelError> {
     let key = batch.campaign_id.to_string();
+    if store
+        .load::<Campaign>("campaign.v1", &key)
+        .map_err(persist)?
+        .is_some()
+    {
+        return Err(KernelError::Invalid(
+            "aggregate campaigns accept mutations only through their WorldCommand mailbox".into(),
+        ));
+    }
     let (row, state) = store
         .load::<crate::transition::ComponentWorldState>("component_world_state.v1", &key)
         .map_err(persist)?
@@ -2977,10 +2986,11 @@ fn commit_governed_group_travel(
         .locations
         .get(&proposal.origin_location_id)
         .and_then(|location| {
-            location.routes.iter().find_map(|(route_id, route)| {
-                (route.destination_id == proposal.destination_location_id)
-                    .then_some(route.travel_minutes)
-            })
+            location
+                .routes
+                .values()
+                .find(|route| route.destination_id == proposal.destination_location_id)
+                .map(|route| route.travel_minutes)
         })
         .ok_or_else(|| KernelError::Invalid("group-travel route no longer exists".into()))?;
     if route_minutes != proposal.travel_minutes {
@@ -3162,6 +3172,15 @@ mod tests {
         plan
     }
 
+    fn assert_only_strategic_obligations_advanced(before: &Campaign, after: &Campaign) {
+        let mut expected = before.clone();
+        expected.world_time += Duration::hours(i64::from(expected.tick_hours));
+        for clock in expected.clocks.values_mut() {
+            clock.progress = clock.progress.saturating_add(1).min(clock.threshold);
+        }
+        assert_eq!(after, &expected);
+    }
+
     fn campaign() -> Campaign {
         let id = uuid::Uuid::new_v4();
         let actor = ActorState {
@@ -3339,9 +3358,29 @@ mod tests {
 
         assert!(
             kernel
-                .commit_mutation_batch(authority, batch)
+                .commit_mutation_batch(authority.clone(), batch.clone())
                 .await
                 .is_err()
+        );
+        let stored = store
+            .load::<ComponentWorldState>("component_world_state.v1", &campaign_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(stored.revision, 8);
+        assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
+
+        let mut aggregate = campaign();
+        aggregate.id = campaign_id;
+        store.create_campaign(&aggregate, &[], &[]).unwrap();
+        let error = kernel
+            .commit_mutation_batch(authority, batch)
+            .await
+            .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("only through their WorldCommand mailbox")
         );
         let stored = store
             .load::<ComponentWorldState>("component_world_state.v1", &campaign_id.to_string())
@@ -3795,7 +3834,7 @@ mod tests {
             assert_eq!(actor.memories, old.memories);
         }
         for (id, before, version_increment) in [
-            ("refugees-east", source_before, 2),
+            ("refugees-east", source_before, 1),
             ("dock-neighbors", docks_before, 1),
             ("hill-neighbors", hills_before, 1),
         ] {
@@ -4073,7 +4112,7 @@ mod tests {
             }),
         )
         .unwrap();
-        assert_eq!(value, before);
+        assert_only_strategic_obligations_advanced(&before, &value);
         assert_eq!(events.len(), 2);
         assert_eq!(events[0].kind, "gestalt_activity");
         assert_eq!(
@@ -4274,7 +4313,7 @@ mod tests {
             }),
         )
         .unwrap();
-        assert_eq!(value, before);
+        assert_only_strategic_obligations_advanced(&before, &value);
         assert_eq!(
             events[0].summary,
             "Eastern transit refugees begins a local investigation."
@@ -4302,7 +4341,7 @@ mod tests {
             }),
         )
         .unwrap();
-        assert_eq!(value, before);
+        assert_only_strategic_obligations_advanced(&before, &value);
         assert_eq!(
             events[0].summary,
             "Eastern transit refugees attempts a local communication."
@@ -4331,7 +4370,7 @@ mod tests {
             }),
         )
         .unwrap();
-        assert_eq!(value, before);
+        assert_only_strategic_obligations_advanced(&before, &value);
         assert_eq!(
             events[0].summary,
             "Eastern transit refugees attempts local interference."
@@ -4361,7 +4400,7 @@ mod tests {
             }),
         )
         .unwrap();
-        assert_eq!(value, before);
+        assert_only_strategic_obligations_advanced(&before, &value);
         assert_eq!(
             events[0].summary,
             "Mira Venn attempts a local communication."
@@ -4396,7 +4435,7 @@ mod tests {
             }),
         )
         .unwrap();
-        assert_eq!(value, before);
+        assert_only_strategic_obligations_advanced(&before, &value);
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[0].summary,
@@ -4488,7 +4527,7 @@ mod tests {
             }),
         )
         .unwrap();
-        assert_eq!(value, before);
+        assert_only_strategic_obligations_advanced(&before, &value);
         assert_eq!(events.len(), 2);
         assert_eq!(events[0].kind, "gestalt_member_activity");
         assert_eq!(
@@ -4533,6 +4572,12 @@ mod tests {
             .unwrap();
         assert_eq!(stored.revision, 1);
         assert_eq!(stored.world_time, seed.world_time + Duration::minutes(30));
+        assert_eq!(
+            store.keys("mutation_authority_envelope.v1").unwrap().len(),
+            1
+        );
+        assert_eq!(store.keys("world_mutation_batch.v1").unwrap().len(), 1);
+        assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
     }
 
     #[tokio::test]
@@ -4799,7 +4844,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn strategic_tick_persists_channel_news_without_using_legacy_host_as_truth() {
+    async fn strategic_tick_without_an_admitted_wave_advances_only_deterministic_obligations() {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let kernel = WorldKernel::start(store.clone());
@@ -4835,18 +4880,19 @@ mod tests {
         let CommandResult::Committed { campaign, .. } = result else {
             panic!("expected commit")
         };
-        assert_eq!(campaign.events.len(), 1);
-        assert_eq!(campaign.news.len(), 1);
-        assert_eq!(campaign.news[0].channel, "institution:board");
+        assert!(campaign.events.is_empty());
+        assert!(campaign.news.is_empty());
         assert_eq!(campaign.away_ticks_processed, 1);
-        assert!(campaign.institutions["board"].posture.contains("acting"));
+        assert_eq!(campaign.institutions["board"].posture, "watching");
+        assert_eq!(campaign.world_time, seed.world_time + Duration::hours(6));
         let ticks = store
             .load_all::<crate::domain::StrategicTickReceipt>("strategic_tick.v1")
             .unwrap();
         assert_eq!(ticks.len(), 1);
         assert_eq!(ticks[0].source, TickSource::Scheduler);
-        assert_eq!(ticks[0].event_ids, vec![campaign.events[0].id.clone()]);
+        assert!(ticks[0].event_ids.is_empty());
         assert!(ticks[0].model_receipt_hash.is_none());
+        assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
     }
 
     #[tokio::test]
@@ -6526,6 +6572,12 @@ mod tests {
             campaign.agency_profiles["guest"].location_ids,
             BTreeSet::from(["harbor".into()])
         );
+        assert_eq!(
+            store.keys("mutation_authority_envelope.v1").unwrap().len(),
+            1
+        );
+        assert_eq!(store.keys("world_mutation_batch.v1").unwrap().len(), 1);
+        assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
         let mut reload_projection = campaign.clone();
         crate::resolution::ensure_agency_profiles(&mut reload_projection);
         assert_eq!(reload_projection, campaign);

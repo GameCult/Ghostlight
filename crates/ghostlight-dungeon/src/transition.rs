@@ -4267,6 +4267,64 @@ mod tests {
     }
 
     #[test]
+    fn exact_relocation_permit_cannot_cross_a_closed_or_different_route() {
+        let state = component_world();
+        let sable = subject(SubjectKind::Actor, "actor:sable");
+        let camp = subject(SubjectKind::Place, "place:camp");
+        let trail = subject(SubjectKind::Place, "place:trail");
+        let permit = permit(
+            "permit:move",
+            WorldMutationOperation::Relocate,
+            vec![
+                (
+                    MutationSubjectRole::Subject,
+                    BTreeSet::from([sable.clone()]),
+                ),
+                (
+                    MutationSubjectRole::OriginPlace,
+                    BTreeSet::from([camp.clone()]),
+                ),
+                (
+                    MutationSubjectRole::DestinationPlace,
+                    BTreeSet::from([trail.clone()]),
+                ),
+            ],
+            vec![(MutationStringRole::RouteId, exact(&["route:camp-trail"]))],
+            vec![],
+        );
+        let envelope = envelope_for(&state, vec![permit]);
+        let batch = batch_for(
+            &state,
+            &envelope,
+            vec![(
+                "permit:move",
+                WorldMutation::Relocate {
+                    subject: sable.clone(),
+                    from_place: camp.clone(),
+                    to_place: trail.clone(),
+                    route_id: "route:camp-trail".into(),
+                },
+            )],
+        );
+
+        let mut closed = state.clone();
+        closed.topology.get_mut("route:camp-trail").unwrap().open = false;
+        assert!(apply_component_world_batch(&closed, &envelope, &batch, Utc::now()).is_err());
+        assert_eq!(closed.occupancy[&sable], camp);
+        assert_eq!(closed.revision, state.revision);
+
+        let mut redirected = state.clone();
+        redirected
+            .topology
+            .get_mut("route:camp-trail")
+            .unwrap()
+            .to_place = subject(SubjectKind::Place, "place:east-trail");
+        assert!(apply_component_world_batch(&redirected, &envelope, &batch, Utc::now()).is_err());
+        assert_eq!(redirected.occupancy[&sable], camp);
+        assert_eq!(redirected.revision, state.revision);
+    }
+
+    #[test]
     fn resource_split_and_transfer_conserve_quantity_and_exact_custody() {
         let state = component_world();
         let source = subject(SubjectKind::Resource, "resource:medicine-lot");
