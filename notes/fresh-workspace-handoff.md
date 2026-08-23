@@ -95,13 +95,13 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `801d4c537ea5713308064de91981a05a40c21993`
+  `447f4027c37f13c83afb4431421d8d66b9384bcd`
 - Executable SHA-256:
-  `1657d09131d6b9e94b08851a706f9563acbe59addf2063eba5df84b45257dbb4`
+  `084e01d22453d0c99c9fe2b375aeead455a970139b0cc8f0f1e1f38c87086d0f`
 - Native client SHA-256:
-  `628a0607c6027662353986d01f999525ec552d7229f98c07d984f55ee0c56e79`
+  `d3f49d2b5459ace468af0c75a02052e099ffc086f9a88b6937b0a49dc67199cd`
 - Artifact SHA-256:
-  `sha256-d09f0246a1b6e8e1be61cec1b0e3cb92f339d6bd59b167818571fa87c2db104e`
+  `sha256-d8f944778c09d0696bc1bd76dc94e613c448053416f5300f0870a968496757cc`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -127,7 +127,7 @@ anonymous rejection agree. CultLib
 cross-runtime, dropped/reordered, fragmentation, and schema-discovery lanes.
 Odin `ba76a7239a7bb40aa1774df7d93b9388dc27b222` uses that exact CultLib body,
 serializes provider document persistence, and returns a typed persisted
-Ghostlight advertisement whose source witness names `801d4c537ea5713308064de91981a05a40c21993`.
+Ghostlight advertisement whose source witness names `447f4027c37f13c83afb4431421d8d66b9384bcd`.
 Its persisted `ghostlight.schema_catalog.v1` contains exactly
 `ghostlight.campaign.v1` and `ghostlight.session_zero.v1`. The former
 large-snapshot RUDP discovery defect is closed; preserve the bounded-window,
@@ -165,7 +165,7 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `801d4c5…`; its locked Linux package test and
+- Idunn admitted exact release `447f402…`; its locked Linux package test and
   immutable build completed before atomic activation. Idunn's Linux journal
   reports 265 library tests before the remaining package targets in its
   truncated success receipt; the complete package test and release build
@@ -174,6 +174,11 @@ messages.
   agree. Odin's raw typed snapshot independently exposes the redacted native
   boundary. A forged native app session was denied, and a before/after digest
   over every campaign store remained identical.
+- Repeated native authentication exposed a client-side custody bug: a second
+  begin replaced the only pending handle after Discord had completed it. The
+  live client now refuses a second begin, clears terminal owned attempts, and
+  accepts an operator-recovered completed handle only through stdin. Three
+  focused state-transition tests and Idunn's full Linux package gate pass.
 - Foreground, reaction, strategic, wait, travel, population-fission, and bounded
   region-expansion writes now use the typed mutation reducer. Each successful
   batch advances a touched subject version once and persists its authority,

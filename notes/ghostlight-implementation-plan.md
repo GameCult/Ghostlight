@@ -137,12 +137,12 @@ reviewed agency corpus remain the migration frontier. See
 `docs/architecture/ghostlight-transition-algebra.md`.
 
 Idunn's locked Linux test/build gate admitted the current cut as immutable
-Yggdrasil release `801d4c537ea5713308064de91981a05a40c21993` with Eve
+Yggdrasil release `447f4027c37f13c83afb4431421d8d66b9384bcd` with Eve
 `19c3dcf9173dce848a6253e975324ea239a02d24`, daemon SHA-256
-`1657d09131d6b9e94b08851a706f9563acbe59addf2063eba5df84b45257dbb4`,
+`084e01d22453d0c99c9fe2b375aeead455a970139b0cc8f0f1e1f38c87086d0f`,
 native-client SHA-256
-`628a0607c6027662353986d01f999525ec552d7229f98c07d984f55ee0c56e79`,
-and artifact `sha256-d09f0246a1b6e8e1be61cec1b0e3cb92f339d6bd59b167818571fa87c2db104e`.
+`d3f49d2b5459ace468af0c75a02052e099ffc086f9a88b6937b0a49dc67199cd`,
+and artifact `sha256-d8f944778c09d0696bc1bd76dc94e613c448053416f5300f0870a968496757cc`.
 The locked 265-test package gate, release build, web build, active symlink,
 zero-restart service state, and signed Idunn health agree. CultLib
 `75c180782aeba7cfd22d6412877397708a4ed28f` owns the five-runtime RUDP repair:
