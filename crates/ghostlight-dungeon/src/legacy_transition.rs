@@ -193,7 +193,7 @@ pub fn lower_fission(
     });
     for (resource, child_id) in &preview.resource_child_assignments {
         mutations.push(WorldMutation::TransferCustody {
-            resource: resource_subject(campaign, resource),
+            resource: resource_subject(campaign, &parent, resource),
             from_custodian: parent.clone(),
             to_custodian: population_subject(child_id),
         });
@@ -908,7 +908,7 @@ fn push_strategic_outcome_mutations(
             let owner = resolve_subject(campaign, owner_subject_id)
                 .ok_or_else(|| anyhow!("strategic resource owner is unknown"))?;
             mutations.push(WorldMutation::MutateResource {
-                resource: resource_subject(campaign, resource),
+                resource: resource_subject(campaign, &owner, resource),
                 operation: ResourceMutationOperation::Create,
                 custodian: Some(owner),
                 related_resources: Vec::new(),
@@ -926,7 +926,7 @@ fn push_strategic_outcome_mutations(
             let owner = resolve_subject(campaign, owner_subject_id)
                 .ok_or_else(|| anyhow!("strategic resource owner is unknown"))?;
             mutations.push(WorldMutation::MutateResource {
-                resource: resource_subject(campaign, resource),
+                resource: resource_subject(campaign, &owner, resource),
                 operation: ResourceMutationOperation::Consume,
                 custodian: Some(owner),
                 related_resources: Vec::new(),
@@ -947,7 +947,7 @@ fn push_strategic_outcome_mutations(
             let to = resolve_subject(campaign, to_subject_id)
                 .ok_or_else(|| anyhow!("strategic resource recipient is unknown"))?;
             mutations.push(WorldMutation::TransferCustody {
-                resource: resource_subject(campaign, resource),
+                resource: resource_subject(campaign, &from, resource),
                 from_custodian: from,
                 to_custodian: to,
             });
@@ -1752,14 +1752,8 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
             );
         }
     }
-    for (label, owners) in legacy_resource_owners(campaign) {
-        if owners.len() != 1 {
-            return Err(anyhow!(
-                "legacy resource label {label:?} has ambiguous custody; normalize it before mutation"
-            ));
-        }
-        let owner = owners.into_iter().next().expect("one owner checked");
-        let resource = resource_subject(campaign, &label);
+    for (owner, label) in legacy_resources(campaign) {
+        let resource = resource_subject(campaign, &owner, &label);
         admit(
             &mut state,
             resource.clone(),
@@ -2450,39 +2444,27 @@ fn ensure_proposition(
     proposition
 }
 
-fn legacy_resource_owners(campaign: &Campaign) -> BTreeMap<String, BTreeSet<SubjectRef>> {
-    let mut resources = BTreeMap::<String, BTreeSet<SubjectRef>>::new();
+fn legacy_resources(campaign: &Campaign) -> BTreeSet<(SubjectRef, String)> {
+    let mut resources = BTreeSet::new();
     for actor in campaign.actors.values() {
         for resource in &actor.equipment {
-            resources
-                .entry(resource.clone())
-                .or_default()
-                .insert(actor_subject(&actor.id));
+            resources.insert((actor_subject(&actor.id), resource.clone()));
         }
     }
     for institution in campaign.institutions.values() {
         for resource in &institution.resources {
-            resources
-                .entry(resource.clone())
-                .or_default()
-                .insert(institution_subject(&institution.id));
+            resources.insert((institution_subject(&institution.id), resource.clone()));
         }
     }
     for gestalt in campaign.gestalts.values() {
         for resource in &gestalt.resources {
-            resources
-                .entry(resource.clone())
-                .or_default()
-                .insert(population_subject(&gestalt.id));
+            resources.insert((population_subject(&gestalt.id), resource.clone()));
         }
     }
     for member in campaign.gestalt_members.values() {
         let owner = actor_subject(&format!("member:{}", member.id));
         for resource in &member.equipment {
-            resources
-                .entry(resource.clone())
-                .or_default()
-                .insert(owner.clone());
+            resources.insert((owner.clone(), resource.clone()));
         }
     }
     resources
@@ -2545,12 +2527,15 @@ fn gestalt_pressure_subject(gestalt_id: &str, label: &str) -> SubjectRef {
     ))
 }
 
-fn resource_subject(campaign: &Campaign, label: &str) -> SubjectRef {
+fn resource_subject(campaign: &Campaign, custodian: &SubjectRef, label: &str) -> SubjectRef {
     SubjectRef {
         kind: SubjectKind::Resource,
         id: format!(
             "resource:{}",
-            short_digest(&(campaign.id.to_string() + "\0" + label))
+            short_digest(&format!(
+                "{}\0{:?}\0{}\0{}",
+                campaign.id, custodian.kind, custodian.id, label
+            ))
         ),
     }
 }
@@ -2760,6 +2745,80 @@ mod tests {
         );
         assert_eq!(campaign.clocks["alarm"].progress, 3);
         assert_eq!(campaign.institutions["watch"].posture, "searching");
+    }
+
+    #[test]
+    fn identical_resource_labels_remain_isolated_by_exact_custody() {
+        let mut campaign = campaign();
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .equipment
+            .insert("communication device".into());
+        campaign
+            .actors
+            .get_mut("witness")
+            .unwrap()
+            .equipment
+            .insert("communication device".into());
+
+        let snapshot = component_snapshot(&campaign).unwrap();
+        let matching_resources = snapshot
+            .resources
+            .iter()
+            .filter(|(_, resource)| resource.label == "communication device")
+            .map(|(resource, _)| {
+                (
+                    resource.clone(),
+                    snapshot.custody.get(resource).cloned().unwrap(),
+                )
+            })
+            .collect::<BTreeSet<_>>();
+        assert_eq!(matching_resources.len(), 2);
+        assert_eq!(
+            matching_resources
+                .iter()
+                .map(|(_, owner)| owner.clone())
+                .collect::<BTreeSet<_>>(),
+            BTreeSet::from([actor_subject("player"), actor_subject("witness")])
+        );
+
+        let plan = StrategicTickPlan {
+            activity_outcomes: vec![StrategicActivityOutcome {
+                schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                action_digest: format!("sha256:{}", "a".repeat(64)),
+                source_subject_id: "witness".into(),
+                band: StrategicOutcomeBand::Success,
+                summary: "Witness expends a communication device.".into(),
+                supporting_state_references: vec!["resource:communication device".into()],
+                effect: StrategicOutcomeEffect::ResourceConsumed {
+                    owner_subject_id: "witness".into(),
+                    resource: "communication device".into(),
+                },
+            }],
+            ..StrategicTickPlan::default()
+        };
+        let transition = lower_strategic_wave(
+            &campaign,
+            &plan,
+            "strategic:test",
+            Utc::now() + Duration::minutes(5),
+        )
+        .unwrap()
+        .unwrap();
+        apply_lowered_transition(&mut campaign, &transition, Utc::now()).unwrap();
+
+        assert!(
+            campaign.actors["player"]
+                .equipment
+                .contains("communication device")
+        );
+        assert!(
+            !campaign.actors["witness"]
+                .equipment
+                .contains("communication device")
+        );
     }
 
     #[test]
