@@ -130,18 +130,21 @@ reviewed agency corpus remain the migration frontier. See
 `docs/architecture/ghostlight-transition-algebra.md`.
 
 Idunn's locked Linux test/build gate admitted this cut as immutable Yggdrasil
-release `2686f9f2973f6bfdb2c1a7fd7311f32e6a81c192` with Eve
-`19c3dcf9173dce848a6253e975324ea239a02d24`. Live health, the release symlink,
-deployment witness, binary hash, zero-restart service state, and signed Idunn
-health agree. The Idunn Linux success receipt reports 265 library tests before
-its truncated remaining package-target output; the complete locked package
-test command and release build both succeeded. Odin itself publishes fresh
-authenticated health. The shared CultNet RUDP cut now bounds reliable admission
-to the 32-packet ACK horizon, promotes queued fragments on acknowledgement, and
-requires explicit flush completion. The Ghostlight consumer cut publishes its
-provider advertisement before bulk state and limits its rendezvous schema
-catalog to advertised boundary types. Live discovery freshness must still be
-proved against the deployed release; source tests alone do not close that gate.
+release `7522ea8405212b344441f83f502993f525276521` with Eve
+`19c3dcf9173dce848a6253e975324ea239a02d24`, executable SHA-256
+`1f0c1352aa6778df7f1a501af18ad5f66b34a5c77a34d36ab32ba8c95b14a791`,
+and artifact SHA-256
+`sha256-4ed1fdb9612f159f3b1f5508bca12bbe42a3e233aa477ca2811010abd3434136`.
+The locked 265-test package gate, release build, web build, active symlink,
+zero-restart service state, and signed Idunn health agree. CultLib
+`75c180782aeba7cfd22d6412877397708a4ed28f` owns the five-runtime RUDP repair:
+32-packet admission, session-owned FIFO pressure, cumulative ACKs inside the
+horizon, exact ACKs for older retransmits, and explicit flush completion.
+Ghostlight publishes discovery-critical records before bulk state and limits
+its rendezvous schema catalog to advertised boundary types. Odin
+`ba76a7239a7bb40aa1774df7d93b9388dc27b222`, on that same CultLib commit,
+serializes provider persistence and returns the exact Ghostlight source witness
+plus the two-schema public catalog through a typed RUDP snapshot.
 
 Live local evidence now covers grounded VoidBot compilation, a four-actor wave,
 impossible and receipted d20 actions, grounded narration, strategic cells, and a
@@ -181,10 +184,11 @@ The next engineering gate is growing the agency corpus beyond its 36 candidate
 cases without cosmetic reskins and removing the remaining legacy model effect
 schemas. Then resume the 20-plus-power live Aetheria skeleton across budgets
 `1`, `4`, `8`, and `32`, including nested refugee dispersal and later
-rematerialization. The large-document RUDP repair must pass the five-runtime
-unit and impairment matrix, Ghostlight's locked Linux build, and a fresh
-persisted Odin advertisement before the workstream is closed. Do not truncate
-Ghostlight's operator truth to make discovery look healthy.
+rematerialization. The large-document RUDP workstream is closed by the green
+five-runtime unit/interop/impairment run, Ghostlight's locked Linux build, and
+Odin's typed persisted source/catalog witness. Keep the transport and durable
+snapshot regression probes; do not reintroduce fixed sleeps or unbounded
+provider-store writes.
 Separate-account two-player and eight-player Session Zero and shared-scene
 pressure remains an independent unproven gate; no human cohort is currently
 waiting. The browser never

@@ -91,11 +91,11 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `2686f9f2973f6bfdb2c1a7fd7311f32e6a81c192`
+  `7522ea8405212b344441f83f502993f525276521`
 - Executable SHA-256:
-  `f27d7865b9caaa762e1f71d3fe0484f126463f98d744dd3f5dea4ddaaf355731`
+  `1f0c1352aa6778df7f1a501af18ad5f66b34a5c77a34d36ab32ba8c95b14a791`
 - Artifact SHA-256:
-  `sha256-24e6d5a812c6c6c531428d329677e99b923c99a6e00a627b9bc8a826e1b8e791`
+  `sha256-4ed1fdb9612f159f3b1f5508bca12bbe42a3e233aa477ca2811010abd3434136`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -115,11 +115,16 @@ Do not start both writers.
 
 Manifest, embedded commit, executable hash, typed health, `current` symlink,
 zero-restart service state, fresh signed Idunn health, public crossing, and
-anonymous rejection agree. Odin itself publishes fresh authenticated health,
-but its persisted Ghostlight provider advertisement is still the `c7463c0…`
-row from 2026-08-23 13:16 UTC. That is the already named large-snapshot RUDP
-publication defect, not permission to call discovery fresh or to truncate
-Ghostlight's private operator surface.
+anonymous rejection agree. CultLib
+`75c180782aeba7cfd22d6412877397708a4ed28f` passed its five-runtime local,
+cross-runtime, dropped/reordered, fragmentation, and schema-discovery lanes.
+Odin `ba76a7239a7bb40aa1774df7d93b9388dc27b222` uses that exact CultLib body,
+serializes provider document persistence, and returns a typed persisted
+Ghostlight advertisement naming source `7522ea8405212b344441f83f502993f525276521`.
+Its persisted `ghostlight.schema_catalog.v1` contains exactly
+`ghostlight.campaign.v1` and `ghostlight.session_zero.v1`. The former
+large-snapshot RUDP discovery defect is closed; preserve the bounded-window,
+hybrid-ACK, explicit-flush, and awaited-persistence regressions.
 
 ## Deployment and discovery truth
 
@@ -153,13 +158,14 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `2686f9f…`; its locked Linux package test and
+- Idunn admitted exact release `7522ea8…`; its locked Linux package test and
   immutable build completed before atomic activation. Idunn's Linux journal
   reports 265 library tests before the remaining package targets in its
   truncated success receipt; the complete package test and release build
   succeeded. Typed health, manifest, embedded source, executable hash, provider
   readiness, nine campaigns, two Session Zero drafts, and zero daemon restarts
-  agree.
+  agree. Odin's raw typed snapshot independently agrees on the exact source
+  commit and two advertised boundary schemas.
 - Foreground, reaction, strategic, wait, travel, population-fission, and bounded
   region-expansion writes now use the typed mutation reducer. Each successful
   batch advances a touched subject version once and persists its authority,
@@ -236,9 +242,11 @@ earlier semantic scar in this test branch: Mira Chen moved to the garrison while
 trying to approach Reed. Do not repair that history out of band. The global
 agency skeleton is still sparse (four institutions rather than a 20-plus-power
 Aetheria proof), separate-account human co-op is untested, governed co-op time
-still advances raw time rather than strategic cells, and the Odin RUDP publisher
-can stall on the first large operator document. A legacy campaign also logs a
-`gestalt member is not dormant` scheduler refusal; it is not this canary.
+still advances raw time rather than strategic cells, and a legacy campaign logs
+a `gestalt member is not dormant` scheduler refusal; it is not this canary.
+Large operator documents now traverse bounded reliable windows and complete
+only after explicit acknowledgement; keep the transport and durable-snapshot
+regressions in the fleet gate.
 
 Acceptance witnesses live under `F:\GameCult\GhostlightDungeon\acceptance`.
 Operational release and rollback truth remains in `gamecult-ops`.
@@ -249,17 +257,14 @@ Operational release and rollback truth remains in `gamecult-ops`.
    toward 300 behaviorally distinct cases; do not inflate it with reskins.
 2. Remove the remaining legacy model effect schemas and continue the negative
    writer audit until aggregate campaign fields are projections only.
-3. Repair or pressure the existing large-document RUDP discovery defect in its
-   owning transport workstream without truncating Ghostlight's private operator
-   truth.
-4. Resume adversarial Eve play, then fork or compile a denser 20-plus-power
+3. Resume adversarial Eve play, then fork or compile a denser 20-plus-power
    Aetheria skeleton and pressure budgets 1, 4, 8, and 32 with real provider
    output, including nested refugee dispersal and later rematerialization.
-5. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
+4. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
-6. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
+5. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
    unanimous-approval, unanimous-time/travel, stale-command, and restart smoke.
-7. Continue human pressure on multiresolution Gestalt agency: meaningful
+6. Continue human pressure on multiresolution Gestalt agency: meaningful
    background surprises, exact attributed rival activity inside arenas,
    information boundaries, nested fission/folding, migration, and return
    encounters.

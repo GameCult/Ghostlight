@@ -395,6 +395,14 @@ receipt, and operator documents remain available through their owning private
 projection; they are not dumped into rendezvous merely because Ghostlight has
 Rust types for them.
 
+Odin registers only the `ghostlight.schema_catalog.v1` public envelope, not
+those private contracts. Its provider-document adapter returns and awaits the
+single durable `node.put` promise, preserving per-peer write order instead of
+launching concurrent CultCache mutations behind transport acknowledgement.
+The live typed snapshot returns Ghostlight source
+`7522ea8405212b344441f83f502993f525276521` and exactly the two boundary schema
+keys above.
+
 Opening retrieval deliberately covers early, transitional, and late historical
 frames. These pure retrieval/compiler functions now serve the Session Zero DM;
 they are not browser-owned creation routes or transient preview maps. Generated
