@@ -61,6 +61,10 @@ impl Narrator {
             })
             .collect();
         let public_slice = serde_json::json!({
+            "viewer_actor": {
+                "id": player.id,
+                "name": player.name,
+            },
             "world_time": campaign.world_time,
             "location": {
                 "id": location.id,
@@ -83,7 +87,7 @@ impl Narrator {
                     campaign.id, campaign.revision
                 ),
                 lived_stream: format!(
-                    "Narrate only latest_committed_turn and any latest_events it directly caused, in concrete, concise second-person interactive-fiction prose. The campaign contract governs tone, pacing, focus, consequences, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first permits no new depiction without a current explicit player acceptance. Never expose boundary attribution. Location, time, and visible actors are grounding constraints, not a request to restate every field. Do not repeat older setup, list routes, or recap unrelated world state. Do not mention JSON, state, commits, revisions, or the source representation. Every environmental noun, sensory adjective, object state, action, and consequence must be traceable to the supplied JSON. Do not invent lighting, temperature, sound, motion, posture, dialogue, private thoughts, expertise, geography, findings, or outcomes. It is better to be spare than to fabricate texture. Emit prose only.\n\n{}",
+                    "Narrate only latest_committed_turn and any latest_events it directly caused, in concrete, concise interactive-fiction prose. viewer_actor is the reader's character and the only actor that may be addressed in second person. If latest_committed_turn belongs to another visible actor, narrate that actor in third person and preserve their exact attribution; never transfer their speech, knowledge, uncertainty, choice, or action to the viewer. The campaign contract governs tone, pacing, focus, consequences, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first permits no new depiction without a current explicit player acceptance. Never expose boundary attribution. Location, time, and visible actors are grounding constraints, not a request to restate every field. Do not repeat older setup, list routes, or recap unrelated world state. Do not mention JSON, state, commits, revisions, or the source representation. Every environmental noun, sensory adjective, object state, action, and consequence must be traceable to the supplied JSON. Do not invent lighting, temperature, sound, motion, posture, dialogue, private thoughts, expertise, geography, findings, or outcomes. It is better to be spare than to fabricate texture. Emit prose only.\n\n{}",
                     serde_json::to_string(&public_slice)?
                 ),
                 output_schema: None,
@@ -122,10 +126,30 @@ impl Narrator {
 mod tests {
     use super::*;
     use crate::{
-        domain::{ActorState, BranchOrigin, Campaign, Location},
-        model::FixtureModel,
+        domain::{ActorState, BranchOrigin, Campaign, Location, NarrativeTurn},
+        model::{FixtureModel, ModelStageRequest},
     };
-    use std::collections::{BTreeMap, BTreeSet};
+    use async_trait::async_trait;
+    use std::{
+        collections::{BTreeMap, BTreeSet},
+        sync::Mutex,
+    };
+
+    struct CaptureNarratorModel {
+        prompt: Mutex<String>,
+    }
+
+    #[async_trait]
+    impl ModelPort for CaptureNarratorModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            *self.prompt.lock().unwrap() = request.lived_stream.clone();
+            Ok("The clinic director answers without moving the ledger.".into())
+        }
+
+        fn provider(&self) -> &'static str {
+            "narrator-capture"
+        }
+    }
 
     fn campaign() -> Campaign {
         let actor = ActorState {
@@ -206,5 +230,41 @@ mod tests {
             .1;
         assert_eq!(persisted, seed);
         assert!(store.keys("narration_projection.v1").unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn narrator_receives_exact_viewer_ownership_for_an_npc_turn() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let mut seed = campaign();
+        let mut director = seed.actors["player"].clone();
+        director.id = "clinic-director".into();
+        director.name = "Clinic Director".into();
+        seed.actors.insert(director.id.clone(), director);
+        seed.transcript.push(NarrativeTurn {
+            revision: 0,
+            at: Utc::now(),
+            speaker: "clinic-director".into(),
+            text: "I will keep the triage ledger.".into(),
+        });
+        store.create_campaign(&seed, &[], &[]).unwrap();
+        let model = Arc::new(CaptureNarratorModel {
+            prompt: Mutex::new(String::new()),
+        });
+        let narrator = Narrator {
+            model: model.clone(),
+            model_name: "fixture".into(),
+        };
+
+        narrator.project(&store, &seed).await.unwrap();
+
+        let prompt = model.prompt.lock().unwrap();
+        assert!(prompt.contains("\"viewer_actor\":{\"id\":\"player\",\"name\":\"Player\"}"));
+        assert!(prompt.contains("\"speaker\":\"clinic-director\""));
+        assert!(prompt.contains("the only actor that may be addressed in second person"));
+        assert!(
+            prompt
+                .contains("never transfer their speech, knowledge, uncertainty, choice, or action")
+        );
     }
 }

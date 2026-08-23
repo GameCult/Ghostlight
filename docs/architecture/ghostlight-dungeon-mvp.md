@@ -193,8 +193,9 @@ Each assessment also carries four bounded typed outcome deltas. The accepted
 MVP delta vocabulary is deliberately narrow: conditions and relationships on
 actors within the acting actor's location, self-movement over an existing
 route, advancement of existing clocks, and posture changes to existing
-institutions. It cannot create actors, places, capabilities, knowledge,
-equipment, clocks, institutions, custody, or branch facts. The kernel validates
+institutions. It cannot create actors, places, capabilities, equipment, clocks,
+institutions, custody, or branch facts; a bounded knowledge
+addition may only copy an existing accessible `WorldFact` statement. The kernel validates
 all four bands before storing an assessment and applies only the OS-random
 roll's selected band in the same atomic commit as the roll receipt. Narrative
 stakes describe that transition; they are no longer the transition.
@@ -223,9 +224,12 @@ not enter catch-up because neither advances or enters the fiction.
   campaign row and cannot be read back as canonical input except as a display
   projection.
 
-The narrator rechecks the campaign revision after inference. Stale or malformed
-prose is discarded. Successful projections survive refresh without acquiring
-write authority over the world they describe.
+The narrator rechecks the campaign revision after inference. Its typed public
+slice identifies the exact viewer actor separately from the latest turn's
+speaker. Second-person narration belongs only to that viewer; another actor's
+speech, knowledge, uncertainty, choice, or action cannot be transferred to the
+player by prose. Stale or malformed prose is discarded. Successful projections
+survive refresh without acquiring write authority over the world they describe.
 
 ### Cut line
 
@@ -644,7 +648,10 @@ discoverable at that actor's current location. Every proposed knowledge
 addition must exactly match one of those statements. A fact known by the acting
 actor may be communicated to another present actor; a location-bound fact may
 be discovered only by the acting actor. Player attempts and NPC initiative use
-the same validator. The kernel atomically updates actor knowledge but never
+the same validator. The model schema enumerates each present recipient
+separately and gives that recipient only the exact new facts legal for that
+recipient; a generic actor-keyed string map is not an inference affordance. The
+kernel repeats the semantic check, atomically updates actor knowledge, and never
 creates a fact from model prose.
 
 This ownership makes the negative invariant structural: an invented protocol
