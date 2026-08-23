@@ -1069,6 +1069,10 @@ pub struct WorldEffectDelta {
     pub actor_relationship_updates: BTreeMap<String, BTreeMap<String, String>>,
     pub actor_moves: BTreeMap<String, String>,
     pub clock_advances: BTreeMap<String, u8>,
+    /// Bounded progress removed from an existing world clock. This is the
+    /// persistent inverse of an advance for repairs, relief, and obstruction.
+    #[serde(default)]
+    pub clock_reductions: BTreeMap<String, u8>,
     pub institution_postures: BTreeMap<String, String>,
 }
 

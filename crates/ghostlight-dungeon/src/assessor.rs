@@ -109,7 +109,7 @@ impl ActionAssessor {
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
         constrain_assessment_schema(&mut schema, &allowed_references, campaign, actor)?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance existing clocks, or change existing institution posture. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, leave knowledge deltas empty and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both maps for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, leave knowledge deltas empty and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(&campaign_contract)?,
             serde_json::to_string(aggregate_boundaries)?,
@@ -334,6 +334,12 @@ fn constrain_effect_schema(
         .ok_or_else(|| anyhow!("assessment effect schema omitted clock_advances"))?;
     constrain_map_keys(clock_advances, &clock_ids)?;
     clock_advances["additionalProperties"] =
+        serde_json::json!({"type":"integer","minimum":1,"maximum":255});
+    let clock_reductions = effect_properties
+        .get_mut("clock_reductions")
+        .ok_or_else(|| anyhow!("assessment effect schema omitted clock_reductions"))?;
+    constrain_map_keys(clock_reductions, &clock_ids)?;
+    clock_reductions["additionalProperties"] =
         serde_json::json!({"type":"integer","minimum":1,"maximum":255});
     let institution_postures = effect_properties
         .get_mut("institution_postures")
@@ -650,6 +656,24 @@ pub(crate) fn validate_effect(
             "outcome clock advance must name an existing clock and advance it by at least one: {id}={amount}"
         ));
     }
+    if let Some((id, amount)) = effect
+        .clock_reductions
+        .iter()
+        .find(|(id, amount)| **amount == 0 || !campaign.clocks.contains_key(*id))
+    {
+        return Err(anyhow!(
+            "outcome clock reduction must name an existing clock and reduce it by at least one: {id}={amount}"
+        ));
+    }
+    if let Some(id) = effect
+        .clock_advances
+        .keys()
+        .find(|id| effect.clock_reductions.contains_key(*id))
+    {
+        return Err(anyhow!(
+            "one outcome cannot both advance and reduce the same clock: {id}"
+        ));
+    }
     if let Some((id, posture)) = effect
         .institution_postures
         .iter()
@@ -827,6 +851,10 @@ mod tests {
             1
         );
         assert_eq!(
+            effect["clock_reductions"]["additionalProperties"]["minimum"],
+            1
+        );
+        assert_eq!(
             effect["institution_postures"]["additionalProperties"]["minLength"],
             1
         );
@@ -977,6 +1005,42 @@ mod tests {
             .to_string();
         assert!(error.contains("missing-clock=0"));
         assert!(error.contains("at least one"));
+    }
+
+    #[test]
+    fn assessment_effect_rejects_invalid_or_conflicting_clock_reduction() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        campaign.clocks.insert(
+            "clinic-failure".into(),
+            crate::domain::WorldClock {
+                id: "clinic-failure".into(),
+                label: "Clinic failure".into(),
+                progress: 3,
+                threshold: 4,
+                consequence: "The regulator fails.".into(),
+            },
+        );
+        let acting = campaign.actors["player"].clone();
+        let invalid = WorldEffectDelta {
+            clock_reductions: std::collections::BTreeMap::from([("missing-clock".into(), 0)]),
+            ..WorldEffectDelta::default()
+        };
+        let error = validate_effect(&campaign, &acting, &invalid, "nothing changes")
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("missing-clock=0"));
+        assert!(error.contains("at least one"));
+
+        let conflicting = WorldEffectDelta {
+            clock_advances: std::collections::BTreeMap::from([("clinic-failure".into(), 1)]),
+            clock_reductions: std::collections::BTreeMap::from([("clinic-failure".into(), 1)]),
+            ..WorldEffectDelta::default()
+        };
+        let error = validate_effect(&campaign, &acting, &conflicting, "ambiguous change")
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("both advance and reduce"));
+        assert!(error.contains("clinic-failure"));
     }
 
     #[test]

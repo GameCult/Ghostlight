@@ -1406,6 +1406,13 @@ fn apply_world_effect(
             .ok_or_else(|| KernelError::Invalid("outcome clock vanished".into()))?;
         clock.progress = clock.progress.saturating_add(*amount).min(clock.threshold);
     }
+    for (clock_id, amount) in &effect.clock_reductions {
+        let clock = campaign
+            .clocks
+            .get_mut(clock_id)
+            .ok_or_else(|| KernelError::Invalid("outcome clock vanished".into()))?;
+        clock.progress = clock.progress.saturating_sub(*amount);
+    }
     for (institution_id, posture) in &effect.institution_postures {
         campaign
             .institutions
@@ -4583,6 +4590,70 @@ mod tests {
         assert!(receipt.roll.is_some());
         assert_eq!(store.keys("world_commit_receipt.v1").unwrap().len(), 1);
         assert_eq!(store.keys("roll_receipt.v1").unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn repair_assessment_persists_reduced_world_pressure() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.clocks.insert(
+            "clinic-failure".into(),
+            WorldClock {
+                id: "clinic-failure".into(),
+                label: "Clinic failure".into(),
+                progress: 3,
+                threshold: 4,
+                consequence: "The regulator fails.".into(),
+            },
+        );
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let intent = ActionIntent {
+            actor_id: "player".into(),
+            description: "Patch the failing regulator seal".into(),
+            intended_effect: "Relieve immediate clinic failure pressure".into(),
+        };
+        let reduction = WorldEffectDelta {
+            clock_reductions: BTreeMap::from([("clinic-failure".into(), 2)]),
+            ..Default::default()
+        };
+        let mut assessment = assess(&seed, intent.clone());
+        assessment.strong_effect = reduction.clone();
+        assessment.success_effect = reduction.clone();
+        assessment.mixed_effect = reduction.clone();
+        // Keep the effect identical across bands so this test exercises the
+        // atomic reduction primitive independently of the OS-random roll.
+        assessment.failure_effect = reduction;
+        assessment.digest = crate::assessor::assessment_digest(&assessment).unwrap();
+        kernel
+            .command(WorldCommand::Assess {
+                expected_revision: 0,
+                intent,
+                proposal: Some(assessment.clone()),
+            })
+            .await
+            .unwrap();
+        let result = kernel
+            .command(WorldCommand::Attempt {
+                actor_id: "player".into(),
+                assessment_digest: assessment.digest,
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!("expected repair commit")
+        };
+
+        assert_eq!(campaign.clocks["clinic-failure"].progress, 1);
+        assert_eq!(campaign.revision, 1);
     }
 
     #[tokio::test]
