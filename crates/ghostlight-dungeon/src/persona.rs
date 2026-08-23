@@ -440,8 +440,14 @@ fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> S
             .collect::<Vec<_>>()
             .join(", ")
     };
+    let recent_memory_start = slice.memories.len().saturating_sub(8);
+    let remembered_experience = if slice.memories.is_empty() {
+        "no additional autobiographical memory is active in this moment".to_owned()
+    } else {
+        slice.memories[recent_memory_start..].join("; ")
+    };
     format!(
-        "{projection}\n\nYour reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
+        "{projection}\n\nYour reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
     )
 }
 
@@ -3340,7 +3346,7 @@ mod tests {
             location_id: "room".into(),
             snapshot_binding: "campaign:1".into(),
             identity_experience: vec!["A tired navigator".into()],
-            memories: vec![],
+            memories: vec!["Proposed the eastern trail evacuation at dusk.".into()],
             perceived_events: vec![],
             perceived_actors: std::collections::BTreeMap::from([(
                 "player".into(),
@@ -3357,6 +3363,10 @@ mod tests {
         let guidance = actor_interpreter_guidance(&slice);
         assert!(guidance.contains("other actor retains agency"));
         assert!(guidance.contains("requested response remains unresolved"));
+        let grounded = ground_actor_lived_stream(&slice, "The crowd turns toward you.");
+        assert!(grounded.contains("What you remember experiencing or being told"));
+        assert!(grounded.contains("Proposed the eastern trail evacuation at dusk."));
+        assert!(grounded.contains("not omniscient proof"));
         let result = engine.execute(slice).await.unwrap();
         assert_eq!(result.stage_receipts.len(), 3);
         assert_eq!(result.proposals.reaction_priority, 0);
