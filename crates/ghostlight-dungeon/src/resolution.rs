@@ -1848,10 +1848,10 @@ fn validate_cell_proposal(
     {
         return Err(anyhow!("cell proposal has no exact constituent authority"));
     }
-    if let Some(member_id) = proposal.subject_id.strip_prefix("member:") {
-        return validate_member_cell_proposal(campaign, cell, member_id, proposal);
-    }
     if !cell.subject_ids.contains(&proposal.subject_id) {
+        if let Some(member_id) = dormant_member_id_for_subject(campaign, &proposal.subject_id) {
+            return validate_member_cell_proposal(campaign, cell, member_id, proposal);
+        }
         return Err(anyhow!("cell proposal has no exact constituent authority"));
     }
     let profile = campaign
@@ -2026,13 +2026,15 @@ fn cell_contains_attributed_subject(
     if is_human_controlled_actor(campaign, subject_id) {
         return false;
     }
-    if let Some(member_id) = subject_id.strip_prefix("member:") {
-        return campaign
-            .gestalt_members
-            .get(member_id)
-            .is_some_and(|member| cell.subject_ids.contains(&member.gestalt_id));
+    if cell.subject_ids.contains(subject_id) {
+        return true;
     }
-    cell.subject_ids.contains(subject_id)
+    if let Some(member_id) = dormant_member_id_for_subject(campaign, subject_id) {
+        return cell
+            .subject_ids
+            .contains(&campaign.gestalt_members[member_id].gestalt_id);
+    }
+    false
 }
 
 fn is_human_controlled_actor(campaign: &Campaign, subject_id: &str) -> bool {
@@ -2625,6 +2627,23 @@ pub fn member_activity_targets(campaign: &Campaign, member_id: &str) -> Result<B
     Ok(targets)
 }
 
+/// Resolve a subject-shaped member ID only while its canonical person remains
+/// folded into a Gestalt. Materialized people deliberately retain the same
+/// stable ID, so the `member:` prefix cannot own their current subject kind.
+pub fn dormant_member_id_for_subject<'a>(
+    campaign: &'a Campaign,
+    subject_id: &'a str,
+) -> Option<&'a str> {
+    let member_id = subject_id.strip_prefix("member:")?;
+    campaign
+        .gestalt_members
+        .get(member_id)
+        .filter(|member| {
+            member.materialized_actor_id.is_none() && !campaign.actors.contains_key(subject_id)
+        })
+        .map(|_| member_id)
+}
+
 pub fn validate_active_gestalt_presence_location(
     campaign: &Campaign,
     gestalt_id: &str,
@@ -2976,6 +2995,120 @@ pub(crate) mod tests {
             value.agency_profiles["player"].information_channels,
             BTreeSet::from(["licensed courier wire".into()])
         );
+    }
+
+    #[test]
+    fn materialized_member_actor_has_one_exact_cell_authority() {
+        let mut value = campaign(0, 2);
+        value.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "center".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        value.gestalt_members.insert(
+            "sable".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "sable".into(),
+                gestalt_id: "refugees".into(),
+                version: 1,
+                name: "Sable".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+                last_location_id: Some("center".into()),
+                materialized_actor_id: Some("member:sable".into()),
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 5,
+            },
+        );
+        value.actors.insert(
+            "member:sable".into(),
+            ActorState {
+                id: "member:sable".into(),
+                name: "Sable".into(),
+                location_id: "center".into(),
+                capabilities: BTreeSet::from(["route scouting".into()]),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        ensure_agency_profiles(&mut value);
+        let actor_cell = SimulationCell {
+            schema: "ghostlight.simulation_cell.v1".into(),
+            id: "actor-cell".into(),
+            mode: SimulationCellMode::Arena,
+            subject_ids: BTreeSet::from(["member:sable".into()]),
+            merge_loss: MergeLoss::default(),
+            rationale: "exact materialized actor".into(),
+            lease_until_world_revision: 0,
+            lease_until_strategic_tick: 0,
+            detail_focus_subject_id: None,
+        };
+        let population_cell = SimulationCell {
+            schema: "ghostlight.simulation_cell.v1".into(),
+            id: "population-cell".into(),
+            mode: SimulationCellMode::Cohesive,
+            subject_ids: BTreeSet::from(["refugees".into()]),
+            merge_loss: MergeLoss::default(),
+            rationale: "population baseline".into(),
+            lease_until_world_revision: 0,
+            lease_until_strategic_tick: 0,
+            detail_focus_subject_id: None,
+        };
+        let proposal = CellActionProposal {
+            subject_id: "member:sable".into(),
+            intent: "inspect the eastern trail".into(),
+            intended_effect: "identify an immediate route hazard".into(),
+            priority: 50,
+            state_references: vec![
+                "subject:member:sable".into(),
+                "location:center".into(),
+                "capability:route scouting".into(),
+            ],
+            public_channels: vec![],
+            effect: StrategicCellEffect::ActorActivity {
+                actor_id: "member:sable".into(),
+                activity: StrategicActivityKind::Investigate,
+                target_subject_ids: vec![],
+                location_ids: vec!["center".into()],
+            },
+        };
+
+        validate_cell_proposal(&value, &actor_cell, &proposal).unwrap();
+        assert!(cell_contains_attributed_subject(
+            &value,
+            &actor_cell,
+            "member:sable"
+        ));
+        assert!(!cell_contains_attributed_subject(
+            &value,
+            &population_cell,
+            "member:sable"
+        ));
+        assert_eq!(dormant_member_id_for_subject(&value, "member:sable"), None);
     }
 
     #[test]

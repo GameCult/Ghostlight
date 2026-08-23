@@ -1165,10 +1165,11 @@ fn action_context(
         resource_owner_id: proposal.subject_id.clone(),
         resource_recipient_ids,
         discoverable_facts,
-        member_state_owner_id: proposal
-            .subject_id
-            .strip_prefix("member:")
-            .map(str::to_owned),
+        member_state_owner_id: crate::resolution::dormant_member_id_for_subject(
+            campaign,
+            &proposal.subject_id,
+        )
+        .map(str::to_owned),
         admissible_effect_kinds: admissible_effect_kinds(campaign, proposal)?,
         allowed_state_references: allowed_state_references(campaign, proposal)?
             .into_iter()
@@ -1215,7 +1216,7 @@ fn admissible_effect_kinds(
     if !pressure_owner_ids(campaign, proposal)?.is_empty() {
         kinds.push(OutcomeEffectKind::GestaltPressure);
     }
-    if !source.starts_with("member:")
+    if crate::resolution::dormant_member_id_for_subject(campaign, source).is_none()
         && matches!(
             activity,
             StrategicActivityKind::Coordinate
@@ -1234,7 +1235,7 @@ fn admissible_effect_kinds(
     {
         kinds.push(OutcomeEffectKind::AgencyRelationShift);
     }
-    if let Some(member_id) = source.strip_prefix("member:") {
+    if let Some(member_id) = crate::resolution::dormant_member_id_for_subject(campaign, source) {
         let member = &campaign.gestalt_members[member_id];
         if member.memories.len() < 64 {
             kinds.push(OutcomeEffectKind::MemberMemory);
@@ -1265,7 +1266,16 @@ fn admissible_effect_kinds(
 }
 
 fn subject_summary(campaign: &Campaign, subject_id: &str) -> Result<serde_json::Value> {
-    if let Some(member_id) = subject_id.strip_prefix("member:") {
+    if let Some(actor) = campaign.actors.get(subject_id) {
+        return Ok(serde_json::json!({
+            "subject_id":subject_id,"name":actor.name,"kind":"actor",
+            "capabilities":actor.capabilities,"knowledge":actor.knowledge,
+            "resources":actor.equipment,"conditions":actor.conditions,
+            "obligations":actor.obligations,"relationships":actor.relationships,"goals":actor.goals,
+        }));
+    }
+    if let Some(member_id) = crate::resolution::dormant_member_id_for_subject(campaign, subject_id)
+    {
         let member = campaign
             .gestalt_members
             .get(member_id)
@@ -1297,14 +1307,6 @@ fn subject_summary(campaign: &Campaign, subject_id: &str) -> Result<serde_json::
             "resources":institution.resources,"goals":institution.goals,"posture":institution.posture,
         }));
     }
-    if let Some(actor) = campaign.actors.get(subject_id) {
-        return Ok(serde_json::json!({
-            "subject_id":subject_id,"name":actor.name,"kind":"actor",
-            "capabilities":actor.capabilities,"knowledge":actor.knowledge,
-            "resources":actor.equipment,"conditions":actor.conditions,
-            "obligations":actor.obligations,"relationships":actor.relationships,"goals":actor.goals,
-        }));
-    }
     Err(anyhow!("outcome context subject vanished"))
 }
 
@@ -1312,7 +1314,9 @@ fn allowed_state_references(
     campaign: &Campaign,
     proposal: &CellActionProposal,
 ) -> Result<BTreeSet<String>> {
-    let mut references = if let Some(member_id) = proposal.subject_id.strip_prefix("member:") {
+    let mut references = if let Some(member_id) =
+        crate::resolution::dormant_member_id_for_subject(campaign, &proposal.subject_id)
+    {
         crate::resolution::member_state_references(campaign, member_id)?
     } else {
         subject_state_references(campaign, &proposal.subject_id)?
@@ -1396,20 +1400,25 @@ fn discoverable_fact_ids(
 }
 
 fn source_knowledge(campaign: &Campaign, subject_id: &str) -> Result<BTreeSet<String>> {
-    if let Some(member_id) = subject_id.strip_prefix("member:") {
-        return effective_member_knowledge(campaign, member_id);
-    }
     if let Some(gestalt) = campaign.gestalts.get(subject_id) {
         return Ok(gestalt.shared_knowledge.clone());
     }
     if let Some(actor) = campaign.actors.get(subject_id) {
         return Ok(actor.knowledge.clone());
     }
+    if let Some(member_id) = crate::resolution::dormant_member_id_for_subject(campaign, subject_id)
+    {
+        return effective_member_knowledge(campaign, member_id);
+    }
     Ok(BTreeSet::new())
 }
 
 pub fn subject_resources(campaign: &Campaign, subject_id: &str) -> Result<BTreeSet<String>> {
-    if let Some(member_id) = subject_id.strip_prefix("member:") {
+    if let Some(actor) = campaign.actors.get(subject_id) {
+        return Ok(actor.equipment.clone());
+    }
+    if let Some(member_id) = crate::resolution::dormant_member_id_for_subject(campaign, subject_id)
+    {
         return campaign
             .gestalt_members
             .get(member_id)
@@ -1421,9 +1430,6 @@ pub fn subject_resources(campaign: &Campaign, subject_id: &str) -> Result<BTreeS
     }
     if let Some(institution) = campaign.institutions.get(subject_id) {
         return Ok(institution.resources.iter().cloned().collect());
-    }
-    if let Some(actor) = campaign.actors.get(subject_id) {
-        return Ok(actor.equipment.clone());
     }
     Err(anyhow!("resource owner is unknown"))
 }
@@ -1478,13 +1484,6 @@ fn activity_parts(
 }
 
 fn subject_name(campaign: &Campaign, subject_id: &str) -> Result<String> {
-    if let Some(member_id) = subject_id.strip_prefix("member:") {
-        return campaign
-            .gestalt_members
-            .get(member_id)
-            .map(|member| member.name.clone())
-            .ok_or_else(|| anyhow!("outcome source member vanished"));
-    }
     campaign
         .actors
         .get(subject_id)
@@ -1501,6 +1500,16 @@ fn subject_name(campaign: &Campaign, subject_id: &str) -> Result<String> {
                 .get(subject_id)
                 .map(|value| value.name.clone())
         })
+        .or_else(|| {
+            crate::resolution::dormant_member_id_for_subject(campaign, subject_id).and_then(
+                |member_id| {
+                    campaign
+                        .gestalt_members
+                        .get(member_id)
+                        .map(|value| value.name.clone())
+                },
+            )
+        })
         .ok_or_else(|| anyhow!("outcome source vanished"))
 }
 
@@ -1511,8 +1520,7 @@ fn outcome_source_receipts(campaign: &Campaign, proposal: &CellActionProposal) -
         subjects.extend(targets);
     }
     for subject in subjects {
-        let profile_id = subject
-            .strip_prefix("member:")
+        let profile_id = crate::resolution::dormant_member_id_for_subject(campaign, &subject)
             .and_then(|member_id| campaign.gestalt_members.get(member_id))
             .map(|member| member.gestalt_id.as_str())
             .unwrap_or(&subject);
@@ -2304,6 +2312,96 @@ mod tests {
                 location_ids: vec!["dock".into()],
             },
         }
+    }
+
+    #[test]
+    fn materialized_member_outcome_context_uses_actor_state_and_effects() {
+        let mut value = campaign();
+        value.gestalt_members.insert(
+            "sable".into(),
+            crate::domain::GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "sable".into(),
+                gestalt_id: "dockers".into(),
+                version: 1,
+                name: "Sable".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::from(["folded kit".into()]),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+                last_location_id: Some("dock".into()),
+                materialized_actor_id: Some("member:sable".into()),
+                last_relevant_revision: 4,
+                relevance_lease_until_revision: 9,
+            },
+        );
+        value.actors.insert(
+            "member:sable".into(),
+            crate::domain::ActorState {
+                id: "member:sable".into(),
+                name: "Sable".into(),
+                location_id: "dock".into(),
+                capabilities: BTreeSet::from(["route scouting".into()]),
+                knowledge: BTreeSet::from(["the east gate is watched".into()]),
+                equipment: BTreeSet::from(["materialized kit".into()]),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        ensure_agency_profiles(&mut value);
+        let action = CellActionProposal {
+            subject_id: "member:sable".into(),
+            intent: "inspect the eastern trail".into(),
+            intended_effect: "identify an immediate route hazard".into(),
+            priority: 50,
+            state_references: vec![
+                "subject:member:sable".into(),
+                "location:dock".into(),
+                "capability:route scouting".into(),
+            ],
+            public_channels: vec![],
+            effect: StrategicCellEffect::ActorActivity {
+                actor_id: "member:sable".into(),
+                activity: StrategicActivityKind::Investigate,
+                target_subject_ids: vec![],
+                location_ids: vec!["dock".into()],
+            },
+        };
+
+        let context = build_context(&value, &[action]).unwrap();
+        let action = &context.actions[0];
+        assert_eq!(action.source_state["kind"], "actor");
+        assert_eq!(action.source_state["resources"][0], "materialized kit");
+        assert_eq!(action.member_state_owner_id, None);
+        assert!(
+            action
+                .allowed_state_references
+                .contains(&"subject:member:sable".into())
+        );
+        assert!(
+            !action
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::MemberMemory)
+        );
+        assert!(
+            !action
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::MemberObligation)
+        );
+        assert!(
+            !action
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::MemberRelationship)
+        );
     }
 
     #[test]

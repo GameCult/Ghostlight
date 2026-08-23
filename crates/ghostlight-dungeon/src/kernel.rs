@@ -2568,13 +2568,6 @@ fn strategic_activity_summary(
 }
 
 fn agency_subject_name(campaign: &Campaign, subject_id: &str) -> Result<String, KernelError> {
-    if let Some(member_id) = subject_id.strip_prefix("member:") {
-        return campaign
-            .gestalt_members
-            .get(member_id)
-            .map(|value| value.name.clone())
-            .ok_or_else(|| KernelError::Invalid("strategic activity target vanished".into()));
-    }
     campaign
         .actors
         .get(subject_id)
@@ -2590,6 +2583,16 @@ fn agency_subject_name(campaign: &Campaign, subject_id: &str) -> Result<String, 
                 .gestalts
                 .get(subject_id)
                 .map(|value| value.name.clone())
+        })
+        .or_else(|| {
+            crate::resolution::dormant_member_id_for_subject(campaign, subject_id).and_then(
+                |member_id| {
+                    campaign
+                        .gestalt_members
+                        .get(member_id)
+                        .map(|value| value.name.clone())
+                },
+            )
         })
         .ok_or_else(|| KernelError::Invalid("strategic activity target vanished".into()))
 }

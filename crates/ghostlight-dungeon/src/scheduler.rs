@@ -837,20 +837,7 @@ fn activity_target_slices(
         .iter()
         .map(|target_id| {
             let (name, location_ids) =
-                if let Some(member_id) = target_id.strip_prefix("member:") {
-                    let member = campaign.gestalt_members.get(member_id).ok_or_else(|| {
-                        anyhow!("activity target {target_id} has no member state")
-                    })?;
-                    (
-                        member.name.clone(),
-                        BTreeSet::from([crate::resolution::dormant_member_location(
-                            campaign, member_id,
-                        )?]),
-                    )
-                } else {
-                    let profile = campaign.agency_profiles.get(target_id).ok_or_else(|| {
-                        anyhow!("activity target {target_id} has no agency profile")
-                    })?;
+                if let Some(profile) = campaign.agency_profiles.get(target_id) {
                     let name = campaign
                         .actors
                         .get(target_id)
@@ -871,6 +858,20 @@ fn activity_target_slices(
                             anyhow!("activity target {target_id} has no canonical named subject")
                         })?;
                     (name, profile.location_ids.clone())
+                } else if let Some(member_id) =
+                    crate::resolution::dormant_member_id_for_subject(campaign, target_id)
+                {
+                    let member = campaign.gestalt_members.get(member_id).ok_or_else(|| {
+                        anyhow!("activity target {target_id} has no member state")
+                    })?;
+                    (
+                        member.name.clone(),
+                        BTreeSet::from([crate::resolution::dormant_member_location(
+                            campaign, member_id,
+                        )?]),
+                    )
+                } else {
+                    return Err(anyhow!("activity target {target_id} has no agency profile"));
                 };
             let locations = location_ids
                 .into_iter()
@@ -1180,6 +1181,77 @@ mod tests {
             Some("Center")
         );
         assert!(!reed.locations.contains_key("garrison"));
+    }
+
+    #[test]
+    fn materialized_gestalt_member_is_projected_as_an_actor_target() {
+        use crate::domain::{ActorState, GestaltMemberDelta, GestaltPersonaState};
+
+        let mut campaign = crate::resolution::tests::campaign(0, 2);
+        campaign.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "center".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        campaign.gestalt_members.insert(
+            "sable".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "sable".into(),
+                gestalt_id: "refugees".into(),
+                version: 1,
+                name: "Sable".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+                last_location_id: Some("center".into()),
+                materialized_actor_id: Some("member:sable".into()),
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 5,
+            },
+        );
+        campaign.actors.insert(
+            "member:sable".into(),
+            ActorState {
+                id: "member:sable".into(),
+                name: "Sable".into(),
+                location_id: "center".into(),
+                capabilities: BTreeSet::from(["route scouting".into()]),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+
+        let slice = constituent_slice(&campaign, "player").unwrap();
+        let sable = slice.activity_targets.get("member:sable").unwrap();
+        assert_eq!(sable.name, "Sable");
+        assert_eq!(
+            sable.locations.get("center").map(String::as_str),
+            Some("Center")
+        );
     }
 
     #[test]
