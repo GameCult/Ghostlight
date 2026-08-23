@@ -84,7 +84,14 @@ pub fn ensure_agency_profiles(campaign: &mut Campaign) {
             profile.location_ids = BTreeSet::from([actor.location_id.clone()]);
             profile
                 .information_channels
-                .extend(actor.knowledge.iter().cloned());
+                .retain(|channel| !actor.knowledge.contains(channel));
+        }
+    }
+    for gestalt in campaign.gestalts.values() {
+        if let Some(profile) = campaign.agency_profiles.get_mut(&gestalt.id) {
+            profile
+                .information_channels
+                .retain(|channel| !gestalt.shared_knowledge.contains(channel));
         }
     }
     let live: BTreeSet<_> = campaign
@@ -143,7 +150,6 @@ fn profile_for_actor(actor: &ActorState, evidence: &[String]) -> AgencyProfile {
         AgencyAxis::Information,
         actor.knowledge.iter().cloned().collect(),
     );
-    profile.information_channels = actor.knowledge.iter().cloned().collect();
     profile
 }
 
@@ -185,7 +191,6 @@ fn profile_for_gestalt(value: &GestaltPersonaState, evidence: &[String]) -> Agen
         AgencyAxis::Information,
         value.shared_knowledge.iter().cloned().collect(),
     );
-    profile.information_channels = value.shared_knowledge.iter().cloned().collect();
     profile
 }
 
@@ -2920,6 +2925,39 @@ pub(crate) mod tests {
             );
         }
         value
+    }
+
+    #[test]
+    fn profile_maintenance_never_promotes_knowledge_into_public_channels() {
+        let mut value = campaign(1, 1);
+        value
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .knowledge
+            .insert("private convoy vulnerability".into());
+
+        value.agency_profiles.remove("player");
+        ensure_agency_profiles(&mut value);
+        assert!(
+            value.agency_profiles["player"]
+                .information_channels
+                .is_empty()
+        );
+
+        value
+            .agency_profiles
+            .get_mut("player")
+            .unwrap()
+            .information_channels = BTreeSet::from([
+            "private convoy vulnerability".into(),
+            "licensed courier wire".into(),
+        ]);
+        ensure_agency_profiles(&mut value);
+        assert_eq!(
+            value.agency_profiles["player"].information_channels,
+            BTreeSet::from(["licensed courier wire".into()])
+        );
     }
 
     #[test]

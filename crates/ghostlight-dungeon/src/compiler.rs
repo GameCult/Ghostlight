@@ -598,7 +598,7 @@ impl WorldCompiler {
             .map(|brief| brief.subject_id.clone())
             .collect::<BTreeSet<_>>();
         let agency_prompt = format!(
-            "MULTIRESOLUTION AGENCY SKELETON\nCompile only this exact, already validated subject roster:\n{}\n\nReturn exactly one agency profile for every supplied subject and no other subject. Copy every subject_id, subject_kind, and location_ids exactly. Every profile must contain exactly the six facet axes geography, ideology, authority, economy_role, species_body, and information. Derive facets only from the supplied roster fields; use an explicit unknown value when they do not support a sharper claim. collective_authority_id must be null or one supplied subject ID; it denotes real shared authority, never mere alliance or proximity. Relations may use only supplied subject IDs and strength must be an integer from 1 through 100. Cross-faction relations never imply shared speech, knowledge, or authority. Preserve geographic, ideological, institutional, economic, biological, and information boundaries that predict different behavior under pressure.",
+            "MULTIRESOLUTION AGENCY SKELETON\nCompile only this exact, already validated subject roster:\n{}\n\nReturn exactly one agency profile for every supplied subject and no other subject. Copy every subject_id, subject_kind, and location_ids exactly. Every profile must contain exactly the six facet axes geography, ideology, authority, economy_role, species_body, and information. Derive facets only from the supplied roster fields; use an explicit unknown value when they do not support a sharper claim. information_channels are routes through which the subject can publish or receive reports (for example a courier wire, bulletin, newspaper, radio net, or word of mouth), never facts the subject knows; do not copy knowledge_or_posture values into information_channels. collective_authority_id must be null or one supplied subject ID; it denotes real shared authority, never mere alliance or proximity. Relations may use only supplied subject IDs and strength must be an integer from 1 through 100. Cross-faction relations never imply shared speech, knowledge, or authority. Preserve geographic, ideological, institutional, economic, biological, and information boundaries that predict different behavior under pressure.",
             serde_json::to_string(&subject_briefs)?
         );
         let agency_schema = serde_json::to_value(schema_for!(CompiledAgencySkeleton))?;
@@ -3016,16 +3016,42 @@ fn apply_compiled_agency_skeleton(
             .filter(|id| !campaign.locations.contains_key(*id))
             .cloned()
             .collect::<Vec<_>>();
+        let knowledge_channel_overlap = match input.subject_kind {
+            AgencySubjectKind::Actor => campaign
+                .actors
+                .get(&input.subject_id)
+                .map(|actor| {
+                    input
+                        .information_channels
+                        .intersection(&actor.knowledge)
+                        .cloned()
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default(),
+            AgencySubjectKind::Gestalt => campaign
+                .gestalts
+                .get(&input.subject_id)
+                .map(|gestalt| {
+                    input
+                        .information_channels
+                        .intersection(&gestalt.shared_knowledge)
+                        .cloned()
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default(),
+            AgencySubjectKind::Institution => Vec::new(),
+        };
         if profile.subject_kind != input.subject_kind
             || input_axes != axes
             || input.location_ids != profile.location_ids
             || !unknown_locations.is_empty()
             || !authority_known
+            || !knowledge_channel_overlap.is_empty()
         {
             let missing_axes = axes.difference(&input_axes).cloned().collect::<Vec<_>>();
             let unexpected_axes = input_axes.difference(&axes).cloned().collect::<Vec<_>>();
             return Err(anyhow!(
-                "agency profile {} malformed: expected_kind={:?}; supplied_kind={:?}; expected_location_ids={:?}; supplied_location_ids={:?}; missing_axes={missing_axes:?}; unexpected_axes={unexpected_axes:?}; unknown_locations={unknown_locations:?}; unknown_collective_authority={:?}",
+                "agency profile {} malformed: expected_kind={:?}; supplied_kind={:?}; expected_location_ids={:?}; supplied_location_ids={:?}; missing_axes={missing_axes:?}; unexpected_axes={unexpected_axes:?}; unknown_locations={unknown_locations:?}; unknown_collective_authority={:?}; knowledge_channel_overlap={knowledge_channel_overlap:?}",
                 input.subject_id,
                 profile.subject_kind,
                 input.subject_kind,
@@ -3243,6 +3269,43 @@ fn validate_opening_playability(campaign: &Campaign) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn agency_compiler_cannot_disguise_private_knowledge_as_a_channel() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .knowledge
+            .insert("convoy vulnerabilities".into());
+        let facets = BTreeMap::from([
+            (AgencyAxis::Geography, BTreeSet::from(["center".into()])),
+            (AgencyAxis::Ideology, BTreeSet::from(["unknown".into()])),
+            (AgencyAxis::Authority, BTreeSet::from(["unknown".into()])),
+            (AgencyAxis::EconomyRole, BTreeSet::from(["unknown".into()])),
+            (AgencyAxis::SpeciesBody, BTreeSet::from(["unknown".into()])),
+            (
+                AgencyAxis::Information,
+                BTreeSet::from(["convoy vulnerabilities".into()]),
+            ),
+        ]);
+        let error = apply_compiled_agency_skeleton(
+            &mut campaign,
+            &BTreeSet::from(["player".into()]),
+            vec![CompiledAgencyProfile {
+                subject_id: "player".into(),
+                subject_kind: AgencySubjectKind::Actor,
+                collective_authority_id: None,
+                facets,
+                location_ids: BTreeSet::from(["center".into()]),
+                information_channels: BTreeSet::from(["convoy vulnerabilities".into()]),
+            }],
+            vec![],
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("knowledge_channel_overlap"));
+    }
 
     #[test]
     fn user_text_admission_rejects_empty_oversized_and_binary_control_input() {
@@ -3661,7 +3724,7 @@ mod tests {
                     }).to_string()
                 }
                 "agency_compile" => serde_json::json!({
-                        "agency_profiles":[{"subject_id":"yard-workers","subject_kind":"gestalt","collective_authority_id":"yard-workers","facets":{"geography":["yard"],"ideology":["mutual aid"],"authority":["yard-workers"],"economy_role":["maintenance"],"species_body":["human"],"information":["yard routines"]},"location_ids":["yard"],"information_channels":["yard routines"]}],
+                        "agency_profiles":[{"subject_id":"yard-workers","subject_kind":"gestalt","collective_authority_id":"yard-workers","facets":{"geography":["yard"],"ideology":["mutual aid"],"authority":["yard-workers"],"economy_role":["maintenance"],"species_body":["human"],"information":["yard routines"]},"location_ids":["yard"],"information_channels":["yard bulletin"]}],
                         "agency_relations":[]
                     }).to_string(),
                 _ => return Err(anyhow!("unexpected stage")),

@@ -1,8 +1,7 @@
 use anyhow::{Context, Result};
 use ghostlight_dungeon::{
     domain::{
-        Campaign, CellAppraisal, ResolutionCover, StrategicActivityOutcome,
-        StrategicTickReceipt,
+        Campaign, CellAppraisal, ResolutionCover, StrategicActivityOutcome, StrategicTickReceipt,
     },
     model::ModelStageReceipt,
     persistence::CampaignStore,
@@ -34,9 +33,7 @@ fn main() -> Result<()> {
         (Some(revision), Some(epoch)) => store
             .load_all::<ResolutionCover>("resolution_cover.v1")?
             .into_iter()
-            .find(|cover| {
-                cover.world_revision == revision && cover.resolution_epoch == epoch
-            }),
+            .find(|cover| cover.world_revision == revision && cover.resolution_epoch == epoch),
         _ => None,
     };
     let appraisals = match (snapshot_revision, resolution_epoch) {
@@ -55,10 +52,8 @@ fn main() -> Result<()> {
             let mut outcomes = Vec::new();
             for key in store.keys("strategic_activity_outcome.v1")? {
                 if key.starts_with(&prefix)
-                    && let Some((_, outcome)) = store.load::<StrategicActivityOutcome>(
-                        "strategic_activity_outcome.v1",
-                        &key,
-                    )?
+                    && let Some((_, outcome)) = store
+                        .load::<StrategicActivityOutcome>("strategic_activity_outcome.v1", &key)?
                 {
                     outcomes.push(outcome);
                 }
@@ -99,7 +94,10 @@ fn main() -> Result<()> {
 
     let mut subjects = BTreeMap::new();
     for actor in campaign.actors.values() {
-        subjects.insert(actor.id.clone(), json!({ "kind": "actor", "name": actor.name }));
+        subjects.insert(
+            actor.id.clone(),
+            json!({ "kind": "actor", "name": actor.name }),
+        );
     }
     for institution in campaign.institutions.values() {
         subjects.insert(
