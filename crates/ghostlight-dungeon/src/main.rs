@@ -5777,7 +5777,11 @@ struct ErrorBody {
 }
 
 fn player_safe_strategic_failure(error: &anyhow::Error) -> ErrorBody {
-    tracing::warn!(%error, "private strategic simulation failed without mutation");
+    let private_error_chain: String = format!("{error:#}").chars().take(4_000).collect();
+    tracing::warn!(
+        error = %private_error_chain,
+        "private strategic simulation failed without mutation"
+    );
     ErrorBody {
         error: "The strategic world simulation could not produce a valid atomic wave. No world state changed; retry when ready."
             .into(),

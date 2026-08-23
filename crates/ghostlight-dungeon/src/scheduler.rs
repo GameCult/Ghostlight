@@ -97,14 +97,17 @@ pub async fn propose_resolution_wave_with_policy(
         let slice = cell_slice(campaign, &cell)?;
         jobs.spawn(async move {
             let cell_id = cell.id;
+            let subject_ids = cell.subject_ids;
             let _permit = semaphore
                 .acquire_owned()
                 .await
                 .map_err(|_| anyhow!("provider concurrency gate closed"))?;
-            let terminal = engine
-                .execute(slice)
-                .await
-                .with_context(|| format!("simulation cell {cell_id} pipeline failed"))?;
+            let terminal = engine.execute(slice).await.with_context(|| {
+                format!(
+                    "simulation cell {cell_id} subjects {} pipeline failed",
+                    serde_json::to_string(&subject_ids).unwrap_or_else(|_| "[unavailable]".into())
+                )
+            })?;
             Ok::<_, anyhow::Error>((cell_id, terminal))
         });
     }
