@@ -6,6 +6,9 @@ use crate::domain::{
 use crate::session_zero::{
     CellBudgetProposal, GroupTravelProposal, PublishedSessionZeroSeed, TimeAdvanceProposal,
 };
+use crate::transition::{
+    ComponentWorldState, MutationAuthorityEnvelope, WorldMutationBatch, WorldMutationReceipt,
+};
 use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
 use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
@@ -79,6 +82,74 @@ impl CampaignStore {
             return Err(anyhow!("row already exists: {kind}/{key}"));
         }
         Ok(row)
+    }
+
+    pub fn create_component_world_state(
+        &self,
+        state: &ComponentWorldState,
+    ) -> Result<CultCacheEnvelope> {
+        self.insert(
+            "component_world_state.v1",
+            "ghostlight.component_world_state.v1",
+            &state.campaign_id.to_string(),
+            state,
+        )
+    }
+
+    pub fn commit_world_mutation_batch(
+        &self,
+        expected: &CultCacheEnvelope,
+        next: &ComponentWorldState,
+        authority: &MutationAuthorityEnvelope,
+        batch: &WorldMutationBatch,
+        receipt: &WorldMutationReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        if expected.r#type != "component_world_state.v1"
+            || expected.key != next.campaign_id.to_string()
+            || authority.campaign_id != next.campaign_id
+            || batch.campaign_id != next.campaign_id
+            || receipt.campaign_id != next.campaign_id
+            || receipt.world_revision != next.revision
+            || receipt.previous_world_revision.saturating_add(1) != next.revision
+            || receipt.batch_digest != batch.digest
+            || receipt.authority_envelope_digest != authority.digest
+        {
+            return Err(anyhow!("world mutation persistence bundle is inconsistent"));
+        }
+        let next_row = envelope(
+            "component_world_state.v1",
+            "ghostlight.component_world_state.v1",
+            &next.campaign_id.to_string(),
+            next,
+        )?;
+        let rows = vec![
+            next_row.clone(),
+            envelope(
+                "mutation_authority_envelope.v1",
+                "ghostlight.mutation_authority_envelope.v1",
+                &authority.id,
+                authority,
+            )?,
+            envelope(
+                "world_mutation_batch.v1",
+                "ghostlight.world_mutation_batch.v1",
+                &batch.id,
+                batch,
+            )?,
+            envelope(
+                "world_mutation_receipt.v1",
+                "ghostlight.world_mutation_receipt.v1",
+                &receipt.id,
+                receipt,
+            )?,
+        ];
+        if !self
+            .inner
+            .compare_and_swap_batch(std::slice::from_ref(expected), rows)?
+        {
+            return Err(anyhow!("stale component world snapshot"));
+        }
+        Ok(next_row)
     }
 
     pub fn create_campaign(

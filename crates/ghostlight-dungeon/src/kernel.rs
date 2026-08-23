@@ -63,10 +63,22 @@ pub enum CommandResult {
         campaign: Campaign,
         proposal: CellBudgetProposal,
     },
+    MutationCommitted {
+        state: crate::transition::ComponentWorldState,
+        receipt: crate::transition::WorldMutationReceipt,
+    },
+}
+
+enum KernelInput {
+    World(WorldCommand),
+    Mutation {
+        authority: crate::transition::MutationAuthorityEnvelope,
+        batch: crate::transition::WorldMutationBatch,
+    },
 }
 
 struct Request {
-    command: WorldCommand,
+    input: KernelInput,
     reply: oneshot::Sender<Result<CommandResult, KernelError>>,
 }
 
@@ -93,7 +105,12 @@ impl WorldKernel {
         tokio::spawn(async move {
             let mut assessments = BTreeMap::new();
             while let Some(request) = rx.recv().await {
-                let result = execute(&store, &mut assessments, request.command);
+                let result = match request.input {
+                    KernelInput::World(command) => execute(&store, &mut assessments, command),
+                    KernelInput::Mutation { authority, batch } => {
+                        execute_mutation_batch(&store, authority, batch)
+                    }
+                };
                 let _ = request.reply.send(result);
             }
         });
@@ -102,13 +119,62 @@ impl WorldKernel {
     pub async fn command(&self, command: WorldCommand) -> Result<CommandResult, KernelError> {
         let (reply, receive) = oneshot::channel();
         self.tx
-            .send(Request { command, reply })
+            .send(Request {
+                input: KernelInput::World(command),
+                reply,
+            })
             .await
             .map_err(|_| KernelError::Invalid("kernel stopped".into()))?;
         receive
             .await
             .map_err(|_| KernelError::Invalid("kernel stopped".into()))?
     }
+
+    pub async fn commit_mutation_batch(
+        &self,
+        authority: crate::transition::MutationAuthorityEnvelope,
+        batch: crate::transition::WorldMutationBatch,
+    ) -> Result<CommandResult, KernelError> {
+        let (reply, receive) = oneshot::channel();
+        self.tx
+            .send(Request {
+                input: KernelInput::Mutation { authority, batch },
+                reply,
+            })
+            .await
+            .map_err(|_| KernelError::Invalid("kernel stopped".into()))?;
+        receive
+            .await
+            .map_err(|_| KernelError::Invalid("kernel stopped".into()))?
+    }
+}
+
+fn execute_mutation_batch(
+    store: &CampaignStore,
+    authority: crate::transition::MutationAuthorityEnvelope,
+    batch: crate::transition::WorldMutationBatch,
+) -> Result<CommandResult, KernelError> {
+    let key = batch.campaign_id.to_string();
+    let (row, state) = store
+        .load::<crate::transition::ComponentWorldState>("component_world_state.v1", &key)
+        .map_err(persist)?
+        .ok_or(KernelError::NotFound)?;
+    let application =
+        crate::transition::apply_component_world_batch(&state, &authority, &batch, Utc::now())
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    store
+        .commit_world_mutation_batch(
+            &row,
+            &application.state,
+            &authority,
+            &batch,
+            &application.receipt,
+        )
+        .map_err(persist)?;
+    Ok(CommandResult::MutationCommitted {
+        state: application.state,
+        receipt: application.receipt,
+    })
 }
 
 fn execute(
@@ -3303,6 +3369,135 @@ mod tests {
             resolution_cover: None,
             strategic_tick_count: 0,
         }
+    }
+
+    #[tokio::test]
+    async fn mailbox_commits_one_authorized_component_mutation_batch_atomically() {
+        use crate::transition::*;
+
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let campaign_id = uuid::Uuid::new_v4();
+        let campaign_subject = SubjectRef {
+            kind: SubjectKind::Campaign,
+            id: campaign_id.to_string(),
+        };
+        let state = ComponentWorldState {
+            schema: "ghostlight.component_world_state.v1".into(),
+            campaign_id,
+            revision: 7,
+            resolution_epoch: 3,
+            world_time: Utc::now(),
+            subjects: BTreeMap::from([(
+                campaign_subject.clone(),
+                TypedSubject {
+                    schema: "ghostlight.typed_subject.v1".into(),
+                    subject: campaign_subject.clone(),
+                    lifecycle: LifecycleStatus::Active,
+                    admitted_components: BTreeSet::from([WorldComponentKind::WorldTime]),
+                    version: 7,
+                },
+            )]),
+            occupancy: BTreeMap::new(),
+            custody: BTreeMap::new(),
+            resources: BTreeMap::new(),
+            capabilities: BTreeMap::new(),
+            conditions: BTreeMap::new(),
+            commitments: BTreeMap::new(),
+            relationships: BTreeMap::new(),
+            pressures: BTreeMap::new(),
+            knowledge: BTreeMap::new(),
+            memories: BTreeMap::new(),
+            postures: BTreeMap::new(),
+            memberships: BTreeMap::new(),
+            population_lineages: BTreeMap::new(),
+            identities: BTreeMap::new(),
+            topology: BTreeMap::new(),
+        };
+        let initial_world_time = state.world_time;
+        store.create_component_world_state(&state).unwrap();
+
+        let permit = MutationPermit {
+            id: "permit:time".into(),
+            operation: WorldMutationOperation::AdvanceWorldTime,
+            subject_bindings: vec![MutationSubjectBinding {
+                role: MutationSubjectRole::Subject,
+                allowed_subjects: BTreeSet::from([campaign_subject.clone()]),
+            }],
+            string_constraints: BTreeMap::new(),
+            integer_bounds: BTreeMap::from([(
+                MutationIntegerRole::WorldMinutes,
+                IntegerBounds {
+                    minimum: 30,
+                    maximum: 30,
+                },
+            )]),
+            maximum_uses: 1,
+        };
+        let mut authority = MutationAuthorityEnvelope {
+            schema: "ghostlight.mutation_authority_envelope.v1".into(),
+            id: "authority:time".into(),
+            campaign_id,
+            world_revision: 7,
+            resolution_epoch: Some(3),
+            procedure: MutationProcedure::Governance,
+            source_subject: None,
+            outcome: MutationOutcomeBinding::Deterministic,
+            effect_ceiling: "Thirty minutes pass; no other component changes.".into(),
+            permits: vec![permit],
+            authority_receipt_ids: BTreeSet::from(["governance:time".into()]),
+            expires_at: Utc::now() + Duration::minutes(5),
+            digest: String::new(),
+        };
+        authority.digest = envelope_digest(&authority).unwrap();
+        let mut batch = WorldMutationBatch {
+            schema: "ghostlight.world_mutation_batch.v1".into(),
+            id: "batch:time".into(),
+            campaign_id,
+            expected_world_revision: 7,
+            expected_resolution_epoch: Some(3),
+            authority_envelope_digest: authority.digest.clone(),
+            source_receipt_id: "governance:time".into(),
+            means_digest: None,
+            intended_effect_digest: None,
+            mutations: vec![PermittedWorldMutation {
+                permit_id: "permit:time".into(),
+                mutation: WorldMutation::AdvanceWorldTime {
+                    campaign: campaign_subject,
+                    minutes: 30,
+                },
+            }],
+            digest: String::new(),
+        };
+        batch.digest = mutation_batch_digest(&batch).unwrap();
+
+        let kernel = WorldKernel::start(store.clone());
+        let committed = kernel
+            .commit_mutation_batch(authority.clone(), batch.clone())
+            .await
+            .unwrap();
+        let CommandResult::MutationCommitted { state, receipt } = committed else {
+            panic!("component mutation did not return its typed receipt");
+        };
+        assert_eq!(state.revision, 8);
+        assert_eq!(state.world_time, initial_world_time + Duration::minutes(30));
+        assert_eq!(receipt.previous_world_revision, 7);
+        assert_eq!(receipt.world_revision, 8);
+        assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
+
+        assert!(
+            kernel
+                .commit_mutation_batch(authority, batch)
+                .await
+                .is_err()
+        );
+        let stored = store
+            .load::<ComponentWorldState>("component_world_state.v1", &campaign_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(stored.revision, 8);
+        assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
     }
 
     fn hierarchical_refugee_campaign() -> Campaign {

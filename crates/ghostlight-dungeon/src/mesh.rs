@@ -20,6 +20,11 @@ use crate::{
         SessionZeroMessage, SessionZeroState, TimeAdvanceProposal,
     },
     surface::{operator_surface, player_surface, player_surface_for_actor},
+    transition::{
+        ActionMeans, AgencyAttemptCase, ComponentWorldState, IdentityHandleState,
+        MutationAuthorityEnvelope, MutationIntent, MutationPermit, TypedSubject, WorldComponentRef,
+        WorldMutation, WorldMutationBatch, WorldMutationReceipt,
+    },
 };
 use anyhow::Result;
 use chrono::Utc;
@@ -631,7 +636,19 @@ fn schema_catalog() -> Value {
         "ghostlight.extraordinary_permission.v1": schemars::schema_for!(ExtraordinaryPermission),
         "ghostlight.time_advance_proposal.v1": schemars::schema_for!(TimeAdvanceProposal),
         "ghostlight.group_travel_proposal.v1": schemars::schema_for!(GroupTravelProposal),
-        "ghostlight.cell_budget_proposal.v1": schemars::schema_for!(CellBudgetProposal)
+        "ghostlight.cell_budget_proposal.v1": schemars::schema_for!(CellBudgetProposal),
+        "ghostlight.typed_subject.v1": schemars::schema_for!(TypedSubject),
+        "ghostlight.world_component_ref.v1": schemars::schema_for!(WorldComponentRef),
+        "ghostlight.action_means.v1": schemars::schema_for!(ActionMeans),
+        "ghostlight.mutation_intent.v1": schemars::schema_for!(MutationIntent),
+        "ghostlight.mutation_permit.v1": schemars::schema_for!(MutationPermit),
+        "ghostlight.mutation_authority_envelope.v1": schemars::schema_for!(MutationAuthorityEnvelope),
+        "ghostlight.world_mutation.v1": schemars::schema_for!(WorldMutation),
+        "ghostlight.world_mutation_batch.v1": schemars::schema_for!(WorldMutationBatch),
+        "ghostlight.world_mutation_receipt.v1": schemars::schema_for!(WorldMutationReceipt),
+        "ghostlight.component_world_state.v1": schemars::schema_for!(ComponentWorldState),
+        "ghostlight.identity_handle.v1": schemars::schema_for!(IdentityHandleState),
+        "ghostlight.agency_attempt_case.v1": schemars::schema_for!(AgencyAttemptCase)
     });
     let schemas = catalog
         .as_object_mut()

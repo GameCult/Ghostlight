@@ -4915,6 +4915,11 @@ fn player_command_projection(
             "kind":"resolution_governance_pending",
             "proposal":proposal,
         }),
+        CommandResult::MutationCommitted { receipt, .. } => serde_json::json!({
+            "kind":"mutation_committed",
+            "revision":receipt.world_revision,
+            "receipt":receipt,
+        }),
     }
 }
 

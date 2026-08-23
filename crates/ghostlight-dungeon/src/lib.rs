@@ -1,5 +1,6 @@
 #![recursion_limit = "256"]
 
+pub mod agency_corpus;
 pub mod assessor;
 pub mod compiler;
 pub mod d20;
@@ -19,6 +20,7 @@ pub mod resolution;
 pub mod scheduler;
 pub mod session_zero;
 pub mod surface;
+pub mod transition;
 pub mod turn;
 pub mod vault;
 #[cfg(windows)]
