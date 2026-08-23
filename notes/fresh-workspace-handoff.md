@@ -37,15 +37,15 @@ d20 resolution, persistent locations and institutions, multiresolution Gestalt
 agency, offscreen strategic activity, knowledge-filtered news, and actor-filtered
 Eve/CultMesh surfaces.
 
-The immediate engineering gate is completion of the principled world-transition
-migration before adversarial hosted play resumes. Bounded region expansion uses
-the mutation reducer; seed publication is now a bounded creation transaction;
-named-person materialisation/folding is a resolution transaction without
-Gestalt-wide effect authority. The 36-case agency corpus is only a candidate
-seed against a 300-reviewed-case target. Separate-account multiplayer privacy
-and unanimity proof also remains required, but the previously expected D&D test
-group is no longer available; record that gate as unproven rather than silently
-lowering it.
+The immediate gate is direct adversarial play through Ghostlight's native
+CultMesh boundary. The native client performs a one-time Heimdall OAuth grant,
+persists only an opaque Ghostlight app-session bearer, fetches the same
+actor-filtered `ghostlight.play` surface, and submits the same canonical Eve
+invocations as the browser. The remaining first-run gate is human Discord
+approval; after redemption, server-side refresh preserves the grant between
+client launches. The 36-case agency corpus remains only a candidate seed
+against a 300-reviewed-case target. Separate-account multiplayer privacy and
+unanimity proof also remains unproven.
 
 ## Authority map
 
@@ -77,6 +77,10 @@ lowering it.
   state. Sensitive begin, completion, refresh, and logout operations cross its
   private CultNet command plane; the browser retains only an opaque attempt
   handle and Ghostlight retains only its own hashed app session.
+- The loopback `ghostlight.native.player` RUDP boundary is another client of
+  that same app-session and Eve-command authority. It cannot accept browser-
+  supplied actor, member, account, or campaign authority fields, and it does
+  not create a second gameplay API.
 - VoidBot owns Vault retrieval and evidence. Ghostlight stores exact evidence
   receipts, not a rival semantic index.
 - Idunn owns deployment and same-release daemon continuity. Odin owns discovery.
@@ -91,14 +95,17 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `7522ea8405212b344441f83f502993f525276521`
+  `801d4c537ea5713308064de91981a05a40c21993`
 - Executable SHA-256:
-  `1f0c1352aa6778df7f1a501af18ad5f66b34a5c77a34d36ab32ba8c95b14a791`
+  `1657d09131d6b9e94b08851a706f9563acbe59addf2063eba5df84b45257dbb4`
+- Native client SHA-256:
+  `628a0607c6027662353986d01f999525ec552d7229f98c07d984f55ee0c56e79`
 - Artifact SHA-256:
-  `sha256-4ed1fdb9612f159f3b1f5508bca12bbe42a3e233aa477ca2811010abd3434136`
+  `sha256-d09f0246a1b6e8e1be61cec1b0e3cb92f339d6bd59b167818571fa87c2db104e`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
+- Native player boundary: loopback RUDP `127.0.0.1:4102`
 - Public route: `https://yggdrasil.gamecult.org/ghostlight/`
 - Vault retrieval: local VoidBot at `127.0.0.1:17875/mcp`
 - Stored state at the last witness: nine campaigns and two Session Zero drafts
@@ -120,7 +127,7 @@ anonymous rejection agree. CultLib
 cross-runtime, dropped/reordered, fragmentation, and schema-discovery lanes.
 Odin `ba76a7239a7bb40aa1774df7d93b9388dc27b222` uses that exact CultLib body,
 serializes provider document persistence, and returns a typed persisted
-Ghostlight advertisement naming source `7522ea8405212b344441f83f502993f525276521`.
+Ghostlight advertisement whose source witness names `801d4c537ea5713308064de91981a05a40c21993`.
 Its persisted `ghostlight.schema_catalog.v1` contains exactly
 `ghostlight.campaign.v1` and `ghostlight.session_zero.v1`. The former
 large-snapshot RUDP discovery defect is closed; preserve the bounded-window,
@@ -158,14 +165,15 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `7522ea8…`; its locked Linux package test and
+- Idunn admitted exact release `801d4c5…`; its locked Linux package test and
   immutable build completed before atomic activation. Idunn's Linux journal
   reports 265 library tests before the remaining package targets in its
   truncated success receipt; the complete package test and release build
   succeeded. Typed health, manifest, embedded source, executable hash, provider
   readiness, nine campaigns, two Session Zero drafts, and zero daemon restarts
-  agree. Odin's raw typed snapshot independently agrees on the exact source
-  commit and two advertised boundary schemas.
+  agree. Odin's raw typed snapshot independently exposes the redacted native
+  boundary. A forged native app session was denied, and a before/after digest
+  over every campaign store remained identical.
 - Foreground, reaction, strategic, wait, travel, population-fission, and bounded
   region-expansion writes now use the typed mutation reducer. Each successful
   batch advances a touched subject version once and persists its authority,
@@ -253,18 +261,22 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 ## Next action
 
-1. Expand and review the agency corpus from its current 36 candidate cases
-   toward 300 behaviorally distinct cases; do not inflate it with reskins.
-2. Remove the remaining legacy model effect schemas and continue the negative
-   writer audit until aggregate campaign fields are projections only.
-3. Resume adversarial Eve play, then fork or compile a denser 20-plus-power
+1. Complete the one-time Heimdall OAuth grant for the native client, fetch the
+   actor-filtered surface over CultMesh, and resume adversarial play without the
+   browser.
+2. Repair the first compiler, world, action, or agency failure at its owning
+   state/projection seam; do not add output bans around missing context.
+3. Then fork or compile a denser 20-plus-power
    Aetheria skeleton and pressure budgets 1, 4, 8, and 32 with real provider
    output, including nested refugee dispersal and later rematerialization.
-4. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
+4. Expand and review the agency corpus from its current 36 candidate cases
+   toward 300 behaviorally distinct cases, and remove remaining legacy model
+   effect schemas.
+5. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
-5. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
+6. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
    unanimous-approval, unanimous-time/travel, stale-command, and restart smoke.
-6. Continue human pressure on multiresolution Gestalt agency: meaningful
+7. Continue human pressure on multiresolution Gestalt agency: meaningful
    background surprises, exact attributed rival activity inside arenas,
    information boundaries, nested fission/folding, migration, and return
    encounters.

@@ -53,6 +53,13 @@ callbacks, claims, entitlements, and completion redemption through its private
 loopback CultNet command plane. Ghostlight owns hashed local sessions and
 derives campaign authority only from canonical membership. The exact cut is
 `docs/architecture/ghostlight-eve-native-interface.md`.
+The same provider now admits an installed native CultMesh client on Yggdrasil
+loopback. It performs Heimdall begin/completion once, persists only the opaque
+Ghostlight app-session bearer in CultCache, retrieves the actor-filtered Eve
+surface, and invokes the canonical Eve command boundary. Browser and native
+transports have exact route bindings but no separate domain operations or
+kernel paths. Odin publishes only the redacted native endpoint and operation
+set; sensitive authentication and player state remain outside discovery.
 The accepted implementation is hosted natively on Yggdrasil as an immutable
 Idunn release. Exact checkout, embedded commit, release manifest, binary hash,
 systemd process, typed health, CultMesh store, local VoidBot retrieval, public
@@ -129,12 +136,13 @@ pressure. Removal of remaining legacy model effect schemas and the 300-case
 reviewed agency corpus remain the migration frontier. See
 `docs/architecture/ghostlight-transition-algebra.md`.
 
-Idunn's locked Linux test/build gate admitted this cut as immutable Yggdrasil
-release `7522ea8405212b344441f83f502993f525276521` with Eve
-`19c3dcf9173dce848a6253e975324ea239a02d24`, executable SHA-256
-`1f0c1352aa6778df7f1a501af18ad5f66b34a5c77a34d36ab32ba8c95b14a791`,
-and artifact SHA-256
-`sha256-4ed1fdb9612f159f3b1f5508bca12bbe42a3e233aa477ca2811010abd3434136`.
+Idunn's locked Linux test/build gate admitted the current cut as immutable
+Yggdrasil release `801d4c537ea5713308064de91981a05a40c21993` with Eve
+`19c3dcf9173dce848a6253e975324ea239a02d24`, daemon SHA-256
+`1657d09131d6b9e94b08851a706f9563acbe59addf2063eba5df84b45257dbb4`,
+native-client SHA-256
+`628a0607c6027662353986d01f999525ec552d7229f98c07d984f55ee0c56e79`,
+and artifact `sha256-d09f0246a1b6e8e1be61cec1b0e3cb92f339d6bd59b167818571fa87c2db104e`.
 The locked 265-test package gate, release build, web build, active symlink,
 zero-restart service state, and signed Idunn health agree. CultLib
 `75c180782aeba7cfd22d6412877397708a4ed28f` owns the five-runtime RUDP repair:

@@ -643,6 +643,24 @@ membership, actor, account, boundary, or Session Zero state. Authenticated
 surface requests derive account, selected campaign, membership, and exact actor
 from Ghostlight-owned app-session and campaign records before projection.
 
+Native and browser clients share that logical surface and command authority.
+The native path is `ghostlight.native.player` over loopback RUDP
+`127.0.0.1:4102`; it exposes only Heimdall begin/completion, actor-filtered
+surface retrieval, and canonical Eve invocation. Heimdall persists the OAuth
+attempt and single-use completion. Ghostlight redeems the completion into the
+same app-session record used by HTTP, then derives every actor and campaign
+binding server-side. The installed native client stores only the opaque
+Ghostlight bearer in a mode-0600 CultCache file. It never receives a Heimdall
+access or refresh claim and cannot submit actor, member, account, or authority
+identifiers.
+
+Odin advertises the redacted native route and operation names in the provider
+document. It does not proxy native commands or persist session tokens, attempt
+handles, claims, account state, membership, or player surfaces. The boundary is
+loopback-only; remote native use requires a trusted host crossing and still
+passes Heimdall admission. A malformed or forged native request returns a typed
+denial before product projection and cannot enter either kernel mailbox.
+
 Command ingress accepts only `gamecult.eve.command_invocation.v1`. It validates
 provider, logical surface, command boundary, operation schema, source version,
 and idempotency before resolving the caller's authority server-side. Browser
