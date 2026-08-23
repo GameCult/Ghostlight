@@ -283,6 +283,10 @@ fn constrain_effect_schema(
         .cloned()
         .collect::<BTreeSet<_>>();
     let clock_ids = campaign.clocks.keys().cloned().collect::<BTreeSet<_>>();
+    for field in ["add", "remove"] {
+        schema["$defs"]["ConditionDelta"]["properties"][field]["items"] =
+            serde_json::json!({"type":"string","minLength":1});
+    }
     let effect_properties = schema
         .pointer_mut("/$defs/WorldEffectDelta/properties")
         .and_then(serde_json::Value::as_object_mut)
@@ -309,6 +313,8 @@ fn constrain_effect_schema(
         .and_then(|value| value.get_mut("additionalProperties"))
         .ok_or_else(|| anyhow!("assessment relationship schema has no target map"))?;
     constrain_map_keys(relationship_targets, &relationship_target_ids)?;
+    relationship_targets["additionalProperties"] =
+        serde_json::json!({"type":"string","minLength":1});
 
     let actor_moves = effect_properties
         .get_mut("actor_moves")
@@ -323,18 +329,18 @@ fn constrain_effect_schema(
         });
     }
 
-    constrain_map_keys(
-        effect_properties
-            .get_mut("clock_advances")
-            .ok_or_else(|| anyhow!("assessment effect schema omitted clock_advances"))?,
-        &clock_ids,
-    )?;
-    constrain_map_keys(
-        effect_properties
-            .get_mut("institution_postures")
-            .ok_or_else(|| anyhow!("assessment effect schema omitted institution_postures"))?,
-        &institution_ids,
-    )?;
+    let clock_advances = effect_properties
+        .get_mut("clock_advances")
+        .ok_or_else(|| anyhow!("assessment effect schema omitted clock_advances"))?;
+    constrain_map_keys(clock_advances, &clock_ids)?;
+    clock_advances["additionalProperties"] =
+        serde_json::json!({"type":"integer","minimum":1,"maximum":255});
+    let institution_postures = effect_properties
+        .get_mut("institution_postures")
+        .ok_or_else(|| anyhow!("assessment effect schema omitted institution_postures"))?;
+    constrain_map_keys(institution_postures, &institution_ids)?;
+    institution_postures["additionalProperties"] =
+        serde_json::json!({"type":"string","minLength":1});
     Ok(())
 }
 
@@ -635,15 +641,23 @@ pub(crate) fn validate_effect(
             return Err(anyhow!("outcome movement exceeds spatial reach"));
         }
     }
-    if effect
+    if let Some((id, amount)) = effect
         .clock_advances
         .iter()
-        .any(|(id, amount)| *amount == 0 || !campaign.clocks.contains_key(id))
-        || effect.institution_postures.iter().any(|(id, posture)| {
-            !campaign.institutions.contains_key(id) || posture.trim().is_empty()
-        })
+        .find(|(id, amount)| **amount == 0 || !campaign.clocks.contains_key(*id))
     {
-        return Err(anyhow!("outcome delta cites unknown world state"));
+        return Err(anyhow!(
+            "outcome clock advance must name an existing clock and advance it by at least one: {id}={amount}"
+        ));
+    }
+    if let Some((id, posture)) = effect
+        .institution_postures
+        .iter()
+        .find(|(id, posture)| !campaign.institutions.contains_key(*id) || posture.trim().is_empty())
+    {
+        return Err(anyhow!(
+            "outcome institution posture must name an existing institution and a non-empty posture: {id}={posture:?}"
+        ));
     }
     Ok(())
 }
@@ -808,6 +822,22 @@ mod tests {
             effect["actor_moves"]["additionalProperties"]["enum"],
             serde_json::json!(["adjacent"])
         );
+        assert_eq!(
+            effect["clock_advances"]["additionalProperties"]["minimum"],
+            1
+        );
+        assert_eq!(
+            effect["institution_postures"]["additionalProperties"]["minLength"],
+            1
+        );
+        assert_eq!(
+            effect["actor_relationship_updates"]["additionalProperties"]["additionalProperties"]["minLength"],
+            1
+        );
+        assert_eq!(
+            schema["$defs"]["ConditionDelta"]["properties"]["add"]["items"]["minLength"],
+            1
+        );
     }
 
     #[test]
@@ -931,6 +961,22 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(error.contains("unavailable target"));
+    }
+
+    #[test]
+    fn assessment_effect_names_an_invalid_zero_clock_advance() {
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = campaign.actors["player"].clone();
+        let effect = WorldEffectDelta {
+            clock_advances: std::collections::BTreeMap::from([("missing-clock".into(), 0)]),
+            ..WorldEffectDelta::default()
+        };
+
+        let error = validate_effect(&campaign, &acting, &effect, "nothing changes")
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("missing-clock=0"));
+        assert!(error.contains("at least one"));
     }
 
     #[test]
