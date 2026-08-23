@@ -496,7 +496,7 @@ fn cell_interpreter_context(
         "exact_permissions": slice.constituents.iter().filter(|subject| active_subject_ids.contains(&subject.subject_id)).map(|subject| serde_json::json!({
             "subject_id": subject.subject_id,
             "subject_kind": subject.subject_kind,
-            "allowed_effect_type": allowed_effect_type(&subject.subject_kind),
+            "allowed_effect_types": allowed_constituent_effect_types(subject),
             "collective_authority_id": subject.collective_authority_id,
             "location_ids": subject.location_ids,
             "allowed_public_channels": subject.information_channels,
@@ -510,7 +510,7 @@ fn cell_interpreter_context(
         "member_permissions": slice.member_exceptions.iter().filter(|member| active_subject_ids.contains(&member.subject_id)).map(|member| serde_json::json!({
             "subject_id": member.subject_id,
             "member_id": member.member_id,
-            "allowed_effect_type": "member_migration_or_member_activity",
+            "allowed_effect_types": allowed_member_effect_types(member),
             "source_gestalt_id": member.source_gestalt_id,
             "source_location_id": member.source_location_id,
             "allowed_public_channels": member.information_channels,
@@ -736,14 +736,32 @@ fn required_projection_subject_ids(slice: &PermittedCellSlice) -> BTreeSet<Strin
         .collect()
 }
 
-fn allowed_effect_type(kind: &crate::domain::AgencySubjectKind) -> &'static str {
-    match kind {
-        crate::domain::AgencySubjectKind::Actor => "actor_move_or_actor_activity",
-        crate::domain::AgencySubjectKind::Institution => "institution",
+fn allowed_constituent_effect_types(subject: &CellConstituentSlice) -> Vec<&'static str> {
+    match subject.subject_kind {
+        crate::domain::AgencySubjectKind::Actor => {
+            let mut types = vec!["actor_activity"];
+            if !subject.reachable_destination_ids.is_empty() {
+                types.push("actor_move");
+            }
+            types
+        }
+        crate::domain::AgencySubjectKind::Institution => vec!["institution"],
         crate::domain::AgencySubjectKind::Gestalt => {
-            "gestalt_pressure_or_gestalt_activity_or_gestalt_migration"
+            let mut types = vec!["gestalt", "gestalt_activity"];
+            if !subject.migration_destinations.is_empty() {
+                types.push("gestalt_migration");
+            }
+            types
         }
     }
+}
+
+fn allowed_member_effect_types(member: &CellMemberSlice) -> Vec<&'static str> {
+    let mut types = vec!["member_activity"];
+    if !member.migration_destinations.is_empty() {
+        types.push("member_migration");
+    }
+    types
 }
 
 #[derive(Clone)]
@@ -884,7 +902,7 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
-                "Copy each subject's allowed_effect_type: institution -> institution, gestalt -> gestalt pressure transition, gestalt_activity, or gestalt_migration, actor -> actor_move, named member -> member_migration or member_activity. ",
+                "Copy each subject's exact allowed_effect_types. A lane absent from that list is structurally unavailable: do not emit it and do not invent a destination. ",
                 "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references and public channels. ",
@@ -1806,7 +1824,81 @@ fn constrain_cell_proposal_schema(
         "subject_id".into(),
         serde_json::json!({"type":"string","enum":subject_ids}),
     );
+    let exact_subject_conditions = slice
+        .constituents
+        .iter()
+        .filter(|subject| active_subject_ids.contains(&subject.subject_id))
+        .map(|subject| {
+            exact_cell_action_condition(
+                &subject.subject_id,
+                allowed_constituent_effect_types(subject),
+                &subject.permitted_state_references,
+                &subject.information_channels,
+            )
+        })
+        .chain(
+            slice
+                .member_exceptions
+                .iter()
+                .filter(|member| active_subject_ids.contains(&member.subject_id))
+                .map(|member| {
+                    exact_cell_action_condition(
+                        &member.subject_id,
+                        allowed_member_effect_types(member),
+                        &member.permitted_state_references,
+                        &member.information_channels,
+                    )
+                }),
+        )
+        .collect::<Vec<_>>();
+    let action_candidate = schema
+        .pointer_mut("/$defs/CellActionCandidate")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("cell appraisal schema has no action candidate"))?;
+    action_candidate.insert(
+        "allOf".into(),
+        serde_json::Value::Array(exact_subject_conditions),
+    );
     Ok(())
+}
+
+fn exact_cell_action_condition(
+    subject_id: &str,
+    allowed_effect_types: Vec<&'static str>,
+    permitted_state_references: &BTreeSet<String>,
+    information_channels: &BTreeSet<String>,
+) -> serde_json::Value {
+    serde_json::json!({
+        "if":{
+            "properties":{"subject_id":{"const":subject_id}},
+            "required":["subject_id"]
+        },
+        "then":{
+            "properties":{
+                "state_references":exact_string_array_schema(permitted_state_references, 16),
+                "public_channels":exact_string_array_schema(information_channels, 8),
+                "effect":{
+                    "properties":{
+                        "type":{"type":"string","enum":allowed_effect_types}
+                    },
+                    "required":["type"]
+                }
+            }
+        }
+    })
+}
+
+fn exact_string_array_schema(values: &BTreeSet<String>, max_items: usize) -> serde_json::Value {
+    if values.is_empty() {
+        serde_json::json!({"type":"array","maxItems":0})
+    } else {
+        serde_json::json!({
+            "type":"array",
+            "uniqueItems":true,
+            "maxItems":max_items,
+            "items":{"type":"string","enum":values}
+        })
+    }
 }
 
 fn constrain_interpreter_schema(
@@ -1913,12 +2005,12 @@ mod tests {
                         return Ok(serde_json::json!({
                             "actions":[{
                                 "subject_id":"faction-06",
-                                "intent":"publish a position",
-                                "intended_effect":"move a person instead",
+                                "intent":"continue weighing the position",
+                                "intended_effect":"retain the posture already in force",
                                 "priority":5,
                                 "state_references":["institution:faction-06"],
                                 "public_channels":["public bulletin"],
-                                "effect":{"type":"actor_move","destination_id":"forum"}
+                                "effect":{"type":"institution","posture":"weighing whether to publish a position","location_ids":["forum"]}
                             }],
                             "inactions":[]
                         })
@@ -1926,7 +2018,9 @@ mod tests {
                     }
                     self.saw_rejected_appraisal.store(
                         request.lived_stream.contains("PREVIOUS_REJECTED_APPRAISAL")
-                            && request.lived_stream.contains("actor_move")
+                            && request
+                                .lived_stream
+                                .contains("weighing whether to publish a position")
                             && request.lived_stream.contains("faction-06"),
                         Ordering::SeqCst,
                     );
@@ -2235,6 +2329,62 @@ mod tests {
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"gestalt_id\""));
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"actor_id\""));
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"member_id\""));
+    }
+
+    #[test]
+    fn cell_schema_removes_effect_lanes_the_exact_actor_cannot_use() {
+        let mut slice = fixture_cell_slice();
+        let actor_id = "relationship-anchor:reed".to_owned();
+        {
+            let actor = &mut slice.constituents[0];
+            actor.subject_id = actor_id.clone();
+            actor.subject_kind = AgencySubjectKind::Actor;
+            actor.name = "Reed".into();
+            actor.permitted_state_references =
+                BTreeSet::from(["subject:relationship-anchor:reed".into()]);
+            actor.information_channels.clear();
+            actor.current_posture = None;
+            actor.reachable_destination_ids.clear();
+            actor.migration_destinations.clear();
+        }
+        slice.detail_focus_subject_id = Some(actor_id.clone());
+        let active = BTreeSet::from([actor_id]);
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let action = |effect| {
+            serde_json::json!({
+                "actions":[{
+                    "subject_id":"relationship-anchor:reed",
+                    "intent":"keep the patients together",
+                    "intended_effect":"make one bounded local attempt",
+                    "priority":80,
+                    "state_references":["subject:relationship-anchor:reed"],
+                    "public_channels":[],
+                    "effect":effect
+                }],
+                "inactions":[]
+            })
+        };
+
+        assert!(validator.is_valid(&action(serde_json::json!({
+            "type":"actor_activity",
+            "activity":"prepare",
+            "target_subject_ids":[],
+            "location_ids":["forum"]
+        }))));
+        assert!(!validator.is_valid(&action(serde_json::json!({
+            "type":"actor_move",
+            "destination_id":"forum"
+        }))));
+        assert!(!validator.is_valid(&action(serde_json::json!({
+            "type":"gestalt_migration",
+            "destination_gestalt_id":"loc_water_ice_rail_corridor"
+        }))));
+        assert_eq!(
+            allowed_constituent_effect_types(&slice.constituents[0]),
+            vec!["actor_activity"]
+        );
     }
 
     #[test]
