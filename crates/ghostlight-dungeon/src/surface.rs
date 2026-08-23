@@ -85,7 +85,11 @@ pub fn player_surface_for_actor(
         relationships,
         join(&player.knowledge)
     );
-    let news=campaign.news.iter().filter(|item| player.knowledge.contains(&item.channel)).map(|item|json!({"id":item.id,"kind":"text","props":{"value":format!("[{}] {}",item.channel,item.headline)},"children":[]})).collect::<Vec<_>>();
+    let accessible_channels = campaign
+        .agency_profiles
+        .get(viewer_actor_id)
+        .map(|profile| &profile.information_channels);
+    let news=campaign.news.iter().filter(|item| accessible_channels.is_some_and(|channels| channels.contains(&item.channel))).map(|item|json!({"id":item.id,"kind":"text","props":{"value":format!("[{}] {}",item.channel,item.headline)} ,"children":[]})).collect::<Vec<_>>();
     let effective_budget = campaign
         .resolution_cover
         .as_ref()
@@ -514,10 +518,10 @@ mod tests {
             reliability: "direct institutional channel".into(),
         });
         campaign
-            .actors
+            .agency_profiles
             .get_mut("player")
             .unwrap()
-            .knowledge
+            .information_channels
             .insert("public bulletin".into());
         campaign.resolution_pins.insert(
             "secret-pin".into(),
@@ -541,6 +545,29 @@ mod tests {
         assert!(!encoded.contains("SECRET_OPERATOR_REASON"));
         assert_eq!(surface["resolution"]["pin_count"], 1);
         assert!(encoded.contains("The public ferry is delayed."));
+    }
+
+    #[test]
+    fn actor_knowledge_cannot_masquerade_as_news_channel_access() {
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        campaign.news.push(crate::domain::NewsIssue {
+            id: "news:sealed".into(),
+            at: Utc::now(),
+            channel: "sealed command wire".into(),
+            headline: "SECRET_COMMAND_MOVEMENT".into(),
+            event_ids: vec!["event:sealed".into()],
+            reliability: "direct institutional channel".into(),
+        });
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .knowledge
+            .insert("sealed command wire".into());
+
+        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+
+        assert!(!encoded.contains("SECRET_COMMAND_MOVEMENT"));
     }
 
     #[test]
