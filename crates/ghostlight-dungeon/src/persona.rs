@@ -1059,8 +1059,12 @@ impl CellProjectionEngine {
                                 );
                                 continue;
                             }
+                            let rejected_actions = rejected_action_diagnostic(
+                                &appraisal.actions,
+                                &rejected_action_indices,
+                            );
                             return Err(anyhow!(
-                                "cell effect verifier rejected the corrected appraisal: {error}"
+                                "cell effect verifier rejected the corrected appraisal: {error}; rejected_actions={rejected_actions}"
                             ));
                         }
                     }
@@ -1127,8 +1131,34 @@ fn append_cell_correction(
 ) {
     let repair_guidance = cell_correction_guidance(error);
     request.lived_stream.push_str(&format!(
-        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. {repair_guidance} Every retained action must still carry a valid non-empty typed transition under the original contract. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destination_ids or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
+        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. The semantic verifier's concrete repair guidance in REJECTION names the exact mismatch and is the primary correction instruction. {repair_guidance} Every retained action must still carry a valid non-empty typed transition under the original contract. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destination_ids or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
     ));
+}
+
+fn rejected_action_diagnostic(
+    actions: &[crate::domain::CellActionProposal],
+    rejected_action_indices: &[usize],
+) -> String {
+    serde_json::to_string(
+        &rejected_action_indices
+            .iter()
+            .filter_map(|index| {
+                actions.get(*index).map(|action| {
+                    serde_json::json!({
+                        "action_index": index,
+                        "subject_id": action.subject_id,
+                        "intent": action.intent,
+                        "intended_effect": action.intended_effect,
+                        "typed_effect": action.effect,
+                    })
+                })
+            })
+            .collect::<Vec<_>>(),
+    )
+    .unwrap_or_else(|_| "[]".into())
+    .chars()
+    .take(2_000)
+    .collect()
 }
 
 fn cell_correction_guidance(error: &anyhow::Error) -> &'static str {
@@ -2607,6 +2637,26 @@ mod tests {
             cell_effect_verification_binding("snapshot", &[first]).unwrap(),
             cell_effect_verification_binding("snapshot", &[second]).unwrap()
         );
+    }
+
+    #[test]
+    fn rejected_action_diagnostic_contains_only_the_selected_typed_candidates() {
+        let action = crate::domain::CellActionProposal {
+            subject_id: "member:reed".into(),
+            intent: "offer terms through Mira".into(),
+            intended_effect: "make the offer without leaving".into(),
+            priority: 80,
+            state_references: vec!["member:reed".into()],
+            public_channels: vec![],
+            effect: StrategicCellEffect::MemberMigration {
+                destination_gestalt_id: "refugee-encampment".into(),
+            },
+        };
+        let diagnostic = rejected_action_diagnostic(&[action], &[0]);
+        assert!(diagnostic.contains("member:reed"));
+        assert!(diagnostic.contains("member_migration"));
+        assert!(diagnostic.contains("refugee-encampment"));
+        assert_eq!(rejected_action_diagnostic(&[], &[4]), "[]");
     }
 
     #[test]
