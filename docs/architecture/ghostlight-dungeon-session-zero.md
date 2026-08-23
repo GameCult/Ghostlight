@@ -88,6 +88,14 @@ fail, the kernel may append a fixed local DM notice to the conversation while
 leaving contract, characters, decisions, boundaries, approvals, and model
 receipts unchanged.
 
+Every player-triggered Session Zero model task enters the same live-inference
+priority gate as campaign play. This includes opening and role suggestions, DM
+turns, counter replacements, and world compilation. Entering the gate cancels
+an in-flight strategic model wave before it can commit and prevents new
+background inference from launching until the interactive task leaves. A quiet
+campaign cannot consume provider concurrency while a player is waiting at the
+table.
+
 One Interpreter turn has one owner per typed lane. A shared turn may directly
 edit the draft contract or offer a contract decision, never both; a private turn
 may directly edit the ordinary character draft or offer a character-patch

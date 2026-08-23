@@ -1910,11 +1910,14 @@ async fn begin_session_zero(
                             if let Some(compiler) = state.compiler.clone() {
                                 let mesh_state = state.clone();
                                 tokio::spawn(async move {
-                                    if let Err(error) = populate_opening_suggestions(
-                                        compiler,
-                                        runtime,
-                                        snapshot,
-                                        mesh_state.clone(),
+                                    if let Err(error) = run_live_model_work(
+                                        &mesh_state,
+                                        populate_opening_suggestions(
+                                            compiler,
+                                            runtime,
+                                            snapshot,
+                                            mesh_state.clone(),
+                                        ),
                                     )
                                     .await
                                     {
@@ -2339,14 +2342,16 @@ fn schedule_session_zero_dm_response(
     let kernel = runtime.kernel.clone();
     let mesh_state = state.clone();
     tokio::spawn(async move {
-        match director
-            .respond(
+        match run_live_model_work(
+            &mesh_state,
+            director.respond(
                 &snapshot,
                 &channel_id,
                 member_id.as_deref(),
                 supersedes_countered_decision_id.as_deref(),
-            )
-            .await
+            ),
+        )
+        .await
         {
             Ok((delta, receipts)) => {
                 let applied = kernel
@@ -2678,12 +2683,15 @@ async fn resolve_session_zero_decision(
                 let role_state = state.clone();
                 let role_snapshot = result.state.clone();
                 tokio::spawn(async move {
-                    if let Err(error) = populate_role_suggestions(
-                        compiler,
-                        role_runtime,
-                        role_snapshot,
-                        opening,
-                        role_state.clone(),
+                    if let Err(error) = run_live_model_work(
+                        &role_state,
+                        populate_role_suggestions(
+                            compiler,
+                            role_runtime,
+                            role_snapshot,
+                            opening,
+                            role_state.clone(),
+                        ),
                     )
                     .await
                     {
@@ -2865,7 +2873,7 @@ async fn compile_session_zero(
     let kernel = runtime.kernel.clone();
     let mesh_state = state.clone();
     tokio::spawn(async move {
-        match compiler.compile_approved_brief(&brief).await {
+        match run_live_model_work(&mesh_state, compiler.compile_approved_brief(&brief)).await {
             Ok((preview, receipts)) => {
                 if let Err(error) = kernel
                     .command(SessionZeroCommand::InstallPreview {
@@ -5295,6 +5303,11 @@ async fn await_background_work<T>(
     }
 }
 
+async fn run_live_model_work<T>(state: &AppState, work: impl std::future::Future<Output = T>) -> T {
+    let _live = LiveTurnGuard::enter(state).await;
+    work.await
+}
+
 async fn app_session_refresh_loop(state: AppState) {
     let mut pulse = tokio::time::interval(std::time::Duration::from_secs(60));
     pulse.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
@@ -5927,17 +5940,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn live_turn_cancels_background_inference_and_excludes_its_commit_gate() {
+    async fn interactive_model_work_cancels_background_inference_and_excludes_its_commit_gate() {
         let dir = tempfile::tempdir().unwrap();
         let state = empty_app_state(dir.path());
         let trigger_state = state.clone();
         let (entered_tx, entered_rx) = tokio::sync::oneshot::channel();
         let (release_tx, release_rx) = tokio::sync::oneshot::channel();
         let trigger = tokio::spawn(async move {
-            let guard = LiveTurnGuard::enter(&trigger_state).await;
-            let _ = entered_tx.send(());
-            let _ = release_rx.await;
-            drop(guard);
+            run_live_model_work(&trigger_state, async move {
+                let _ = entered_tx.send(());
+                let _ = release_rx.await;
+            })
+            .await;
         });
 
         let result = tokio::time::timeout(
