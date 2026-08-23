@@ -1722,6 +1722,7 @@ fn transient_result_projection(
     source_version: u64,
 ) -> Option<serde_json::Value> {
     let mut children = Vec::new();
+    let mut result_version = source_version;
     if operation == "session_zero.invites.create" {
         let links = value
             .get("invite_tokens")?
@@ -1733,8 +1734,14 @@ fn transient_result_projection(
         let text = (!links.is_empty())
             .then(|| format!("Single-use invitations:\n{}", links.join("\n")))?;
         children.push(serde_json::json!({"id":"ghostlight.command-result.text","kind":"text","props":{"value":text},"children":[]}));
-    } else if operation == "world.assess" {
+    } else if operation == "world.assess"
+        || value.get("kind").and_then(serde_json::Value::as_str) == Some("assessed")
+    {
         let assessment = value.get("assessment")?;
+        result_version = assessment
+            .get("revision")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(source_version);
         let digest = assessment.get("digest")?.as_str()?;
         let admissible = assessment
             .get("admissible")
@@ -1795,6 +1802,30 @@ fn transient_result_projection(
                 &[],
             ));
         }
+    } else if operation == "world.attempt"
+        && value.get("kind").and_then(serde_json::Value::as_str) == Some("committed")
+    {
+        let receipt = value.get("receipt")?;
+        let roll = receipt.get("roll")?;
+        result_version = receipt
+            .get("revision")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(source_version);
+        let d20 = roll.get("d20")?.as_u64()?;
+        let modifier = roll.get("modifier_total")?.as_i64()?;
+        let total = roll.get("total")?.as_i64()?;
+        let dc = roll.get("dc")?.as_u64()?;
+        let outcome = roll.get("outcome")?.as_str()?.replace('_', " ");
+        children.push(serde_json::json!({
+            "id":"ghostlight.roll.summary",
+            "kind":"text",
+            "props":{
+                "value":format!(
+                    "d20 {d20} {modifier:+} = {total} against DC {dc} — {outcome}."
+                )
+            },
+            "children":[]
+        }));
     } else if matches!(
         operation,
         "world.destination.compile" | "world.gestalt.fission.compile"
@@ -1822,7 +1853,7 @@ fn transient_result_projection(
         "providerId":EVE_PROVIDER_ID,
         "providerKind":"narrative.simulation.command-result",
         "title":"Ghostlight result",
-        "version":source_version,
+        "version":result_version,
         "updatedAtUtc":Utc::now().to_rfc3339(),
         "surface":{
             "id":"ghostlight.command-result",
@@ -6193,6 +6224,69 @@ mod tests {
         assert_eq!(projection["version"], 4);
         assert!(projection["surface"]["styles"].is_object());
         assert!(projection["surface"]["root"]["children"].is_array());
+    }
+
+    #[test]
+    fn stale_attempt_projects_the_fresh_assessment_and_revision() {
+        let projection = transient_result_projection(
+            "world.attempt",
+            &serde_json::json!({
+                "kind":"assessed",
+                "assessment": {
+                    "revision": 9,
+                    "digest": "sha256:fresh-assessment",
+                    "admissible": true,
+                    "dc": 15,
+                    "modifier_total": 2,
+                    "effect_ceiling": "Supervised access only",
+                    "success_stake": "The ledger is opened.",
+                    "mixed_stake": "The ledger is opened under scrutiny.",
+                    "failure_stake": "Access is refused.",
+                    "bargains": []
+                }
+            }),
+            8,
+        )
+        .unwrap();
+
+        assert_eq!(projection["version"], 9);
+        let roll = &projection["surface"]["root"]["children"][1];
+        assert_eq!(roll["kind"], "control.button");
+        assert_eq!(roll["props"]["command"], "world.attempt");
+        assert_eq!(
+            roll["props"]["action"]["assessment_digest"],
+            "sha256:fresh-assessment"
+        );
+    }
+
+    #[test]
+    fn committed_attempt_projects_the_exact_roll_receipt() {
+        let projection = transient_result_projection(
+            "world.attempt",
+            &serde_json::json!({
+                "kind":"committed",
+                "revision": 6,
+                "receipt": {
+                    "revision": 3,
+                    "roll": {
+                        "assessment_digest":"sha256:assessment",
+                        "d20":12,
+                        "modifier_total":3,
+                        "total":15,
+                        "dc":15,
+                        "outcome":"success"
+                    }
+                }
+            }),
+            2,
+        )
+        .unwrap();
+
+        assert_eq!(projection["version"], 3);
+        assert_eq!(
+            projection["surface"]["root"]["children"][0]["props"]["value"],
+            "d20 12 +3 = 15 against DC 15 — success."
+        );
     }
 
     #[test]

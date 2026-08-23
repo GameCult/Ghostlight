@@ -627,6 +627,12 @@ receive no roll. Natural 20 and 1 shift one band and cannot cross impossibility
 or the effect ceiling. Speech occurs as speech; persuasion, deception, and
 intimidation are separate intended effects.
 
+The accepted Eve command result projects the exact persisted roll receipt—die,
+modifier, total, DC, and outcome band—as one-time player-visible state. If
+return catch-up makes an assessment stale, the typed `assessed` response owns
+the transient projection: it presents the replacement assessment and binds its
+Roll control to that assessment's current campaign revision.
+
 Informational attempts may reveal an existing `WorldFact`; they may not author
 one. `WorldFact` owns branch truth and the location boundaries at which a fact
 can be discovered. `ActorState.knowledge` owns only which exact statements that

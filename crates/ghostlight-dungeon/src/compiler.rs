@@ -3938,6 +3938,50 @@ mod tests {
         assert_eq!(preview.campaign.player_actor_id, "actor-sable");
     }
 
+    #[test]
+    fn approved_player_identity_cannot_be_materialized_as_a_gestalt_member() {
+        let mut seed = private_actor_test_seed();
+        seed.gestalts.push(GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: "corvid-collective".into(),
+            name: "Corvid collective".into(),
+            version: 0,
+            home_location_id: "convoy-staging".into(),
+            shared_capabilities: BTreeSet::new(),
+            shared_knowledge: BTreeSet::new(),
+            resources: BTreeSet::new(),
+            goals: vec![],
+            pressures: vec![],
+        });
+        seed.gestalt_members.push(GestaltMemberDelta {
+            schema: "ghostlight.gestalt_member_delta.v1".into(),
+            id: "member-corvid-sable".into(),
+            gestalt_id: "corvid-collective".into(),
+            version: 0,
+            name: "Sable".into(),
+            capability_additions: BTreeSet::new(),
+            capability_removals: BTreeSet::new(),
+            knowledge_additions: BTreeSet::new(),
+            knowledge_removals: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::new(),
+            goals: vec![],
+            memories: vec![],
+            last_location_id: Some("convoy-staging".into()),
+            materialized_actor_id: None,
+            last_relevant_revision: 0,
+            relevance_lease_until_revision: 0,
+        });
+
+        let error =
+            validate_shared_seed_excludes_locally_owned_subjects(&seed, &[], &["Sable".into()])
+                .unwrap_err()
+                .to_string();
+        assert!(error.contains("member:member-corvid-sable"));
+    }
+
     fn private_actor_test_actor(id: &str, name: &str) -> ActorState {
         ActorState {
             id: id.into(),
