@@ -139,7 +139,7 @@ impl ActionAssessor {
                     output_schema: Some(schema.clone()),
                     source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
                     temperature: Some(0.0),
-                    max_output_tokens: Some(1_800),
+                    max_output_tokens: Some(2_800),
                 },
             )
             .await?;
@@ -288,11 +288,7 @@ fn constrain_effect_schema(
         .and_then(serde_json::Value::as_object_mut)
         .ok_or_else(|| anyhow!("assessment schema has no world effect properties"))?;
 
-    for field in [
-        "actor_conditions",
-        "actor_knowledge_additions",
-        "actor_relationship_updates",
-    ] {
+    for field in ["actor_conditions", "actor_relationship_updates"] {
         constrain_map_keys(
             effect_properties
                 .get_mut(field)
@@ -300,6 +296,14 @@ fn constrain_effect_schema(
             &present_actor_ids,
         )?;
     }
+    constrain_knowledge_map(
+        effect_properties
+            .get_mut("actor_knowledge_additions")
+            .ok_or_else(|| anyhow!("assessment effect schema omitted actor_knowledge_additions"))?,
+        campaign,
+        acting_actor,
+        &present_actor_ids,
+    )?;
     let relationship_targets = effect_properties
         .get_mut("actor_relationship_updates")
         .and_then(|value| value.get_mut("additionalProperties"))
@@ -331,6 +335,57 @@ fn constrain_effect_schema(
             .ok_or_else(|| anyhow!("assessment effect schema omitted institution_postures"))?,
         &institution_ids,
     )?;
+    Ok(())
+}
+
+fn constrain_knowledge_map(
+    schema: &mut serde_json::Value,
+    campaign: &Campaign,
+    acting_actor: &crate::domain::ActorState,
+    present_actor_ids: &BTreeSet<String>,
+) -> Result<()> {
+    let mut properties = serde_json::Map::new();
+    for actor_id in present_actor_ids {
+        let target = campaign
+            .actors
+            .get(actor_id)
+            .ok_or_else(|| anyhow!("present actor vanished while binding knowledge schema"))?;
+        let allowed = campaign
+            .facts
+            .values()
+            .filter(|fact| {
+                let accessible = if actor_id == &acting_actor.id {
+                    fact.discoverable_at_location_ids
+                        .contains(&acting_actor.location_id)
+                } else {
+                    acting_actor.knowledge.contains(&fact.statement)
+                };
+                accessible && !target.knowledge.contains(&fact.statement)
+            })
+            .map(|fact| fact.statement.clone())
+            .collect::<BTreeSet<_>>();
+        if allowed.is_empty() {
+            continue;
+        }
+        let max_items = usize::min(4, allowed.len());
+        properties.insert(
+            actor_id.clone(),
+            serde_json::json!({
+                "type":"array",
+                "items":{"type":"string","enum":allowed},
+                "uniqueItems":true,
+                "minItems":1,
+                "maxItems":max_items
+            }),
+        );
+    }
+    let max_properties = properties.len();
+    *schema = serde_json::json!({
+        "type":"object",
+        "properties":properties,
+        "additionalProperties":false,
+        "maxProperties":max_properties
+    });
     Ok(())
 }
 
@@ -753,6 +808,63 @@ mod tests {
             effect["actor_moves"]["additionalProperties"]["enum"],
             serde_json::json!(["adjacent"])
         );
+    }
+
+    #[test]
+    fn assessment_knowledge_schema_binds_exact_facts_per_recipient() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .knowledge
+            .insert("The clinic director already knows the convoy is delayed.".into());
+        let acting = campaign.actors["player"].clone();
+        let mut nearby = acting.clone();
+        nearby.id = "clinic-director".into();
+        nearby.name = "Clinic Director".into();
+        nearby.knowledge.clear();
+        campaign.actors.insert(nearby.id.clone(), nearby);
+        campaign.facts.insert(
+            "cache".into(),
+            crate::domain::WorldFact {
+                id: "cache".into(),
+                statement: "The emergency cache is behind the north clinic wall.".into(),
+                scope: crate::domain::FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from([acting.location_id.clone()]),
+            },
+        );
+        campaign.facts.insert(
+            "delay".into(),
+            crate::domain::WorldFact {
+                id: "delay".into(),
+                statement: "The clinic director already knows the convoy is delayed.".into(),
+                scope: crate::domain::FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::new(),
+            },
+        );
+
+        let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
+        constrain_assessment_schema(&mut schema, &BTreeSet::new(), &campaign, &acting).unwrap();
+        let knowledge = schema
+            .pointer("/$defs/WorldEffectDelta/properties/actor_knowledge_additions")
+            .unwrap();
+        let validator = jsonschema::validator_for(knowledge).unwrap();
+
+        assert!(validator.is_valid(&serde_json::json!({
+            "player":["The emergency cache is behind the north clinic wall."]
+        })));
+        assert!(validator.is_valid(&serde_json::json!({
+            "clinic-director":["The clinic director already knows the convoy is delayed."]
+        })));
+        assert!(!validator.is_valid(&serde_json::json!({
+            "clinic-director":["The emergency cache is behind the north clinic wall."]
+        })));
+        assert!(!validator.is_valid(&serde_json::json!({
+            "player":["The clinic director already knows the convoy is delayed."]
+        })));
     }
 
     #[test]
