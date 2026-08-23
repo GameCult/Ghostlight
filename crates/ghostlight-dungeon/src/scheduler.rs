@@ -465,11 +465,15 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
         subject.activity_target_ids.retain(|target| {
             !target.starts_with("member:") || selected_member_ids.contains(target)
         });
+        subject.activity_target_names =
+            activity_target_names(campaign, &subject.activity_target_ids)?;
     }
     for member in &mut member_exceptions {
         member.activity_target_ids.retain(|target| {
             !target.starts_with("member:") || selected_member_ids.contains(target)
         });
+        member.activity_target_names =
+            activity_target_names(campaign, &member.activity_target_ids)?;
     }
     let shared_knowledge = intersection(
         constituents
@@ -683,6 +687,7 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                     permitted_state_references,
                     migration_destinations: destinations,
                     activity_target_ids,
+                    activity_target_names: BTreeMap::new(),
                     goals,
                     pressures: member
                         .conditions
@@ -729,6 +734,7 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
         reachable_destination_ids: BTreeSet::new(),
         migration_destinations: BTreeMap::new(),
         activity_target_ids: crate::resolution::strategic_activity_targets(campaign, id),
+        activity_target_names: BTreeMap::new(),
         goals: vec![],
         relationships: BTreeMap::new(),
         memories: vec![],
@@ -797,6 +803,42 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
         }
     }
     Ok(value)
+}
+
+fn activity_target_names(
+    campaign: &Campaign,
+    target_ids: &BTreeSet<String>,
+) -> Result<BTreeMap<String, String>> {
+    target_ids
+        .iter()
+        .map(|target_id| {
+            let name = if let Some(member_id) = target_id.strip_prefix("member:") {
+                campaign
+                    .gestalt_members
+                    .get(member_id)
+                    .map(|member| member.name.clone())
+            } else {
+                campaign
+                    .actors
+                    .get(target_id)
+                    .map(|actor| actor.name.clone())
+                    .or_else(|| {
+                        campaign
+                            .institutions
+                            .get(target_id)
+                            .map(|institution| institution.name.clone())
+                    })
+                    .or_else(|| {
+                        campaign
+                            .gestalts
+                            .get(target_id)
+                            .map(|gestalt| gestalt.name.clone())
+                    })
+            }
+            .ok_or_else(|| anyhow!("activity target {target_id} has no canonical named subject"))?;
+            Ok((target_id.clone(), name))
+        })
+        .collect()
 }
 
 fn intersection(sets: Vec<&BTreeSet<String>>) -> BTreeSet<String> {
@@ -1104,6 +1146,13 @@ mod tests {
                 .activity_target_ids
                 .contains("refugees")
         );
+        assert_eq!(
+            slice.member_exceptions[0]
+                .activity_target_names
+                .get("refugees")
+                .map(String::as_str),
+            Some("Refugees")
+        );
         let selected_member_ids = slice
             .member_exceptions
             .iter()
@@ -1123,6 +1172,20 @@ mod tests {
                 .iter()
                 .filter(|target| target.starts_with("member:"))
                 .all(|target| selected_member_ids.contains(target))
+        }));
+        assert!(slice.constituents.iter().all(|constituent| {
+            constituent
+                .activity_target_names
+                .keys()
+                .collect::<BTreeSet<_>>()
+                == constituent
+                    .activity_target_ids
+                    .iter()
+                    .collect::<BTreeSet<_>>()
+        }));
+        assert!(slice.member_exceptions.iter().all(|member| {
+            member.activity_target_names.keys().collect::<BTreeSet<_>>()
+                == member.activity_target_ids.iter().collect::<BTreeSet<_>>()
         }));
         assert!(
             !serde_json::to_string(&slice)
@@ -1239,6 +1302,7 @@ mod tests {
             permitted_state_references: BTreeSet::new(),
             migration_destinations: BTreeMap::new(),
             activity_target_ids: BTreeSet::new(),
+            activity_target_names: BTreeMap::new(),
             goals: vec![],
             pressures: vec![],
             relationships: BTreeMap::new(),
