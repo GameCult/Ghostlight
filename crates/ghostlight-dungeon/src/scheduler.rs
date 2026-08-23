@@ -96,12 +96,16 @@ pub async fn propose_resolution_wave_with_policy(
         let semaphore = semaphore.clone();
         let slice = cell_slice(campaign, &cell)?;
         jobs.spawn(async move {
+            let cell_id = cell.id;
             let _permit = semaphore
                 .acquire_owned()
                 .await
                 .map_err(|_| anyhow!("provider concurrency gate closed"))?;
-            let terminal = engine.execute(slice).await?;
-            Ok::<_, anyhow::Error>((cell.id, terminal))
+            let terminal = engine
+                .execute(slice)
+                .await
+                .with_context(|| format!("simulation cell {cell_id} pipeline failed"))?;
+            Ok::<_, anyhow::Error>((cell_id, terminal))
         });
     }
     let mut terminals = Vec::new();

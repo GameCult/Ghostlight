@@ -201,7 +201,8 @@ pub async fn run_validated_stage_with_timeout(
                 Ok(value) => {
                     let validation = validator.as_ref().expect("structured validator");
                     if let Err(error) = validation.validate(&value) {
-                        let diagnostic = schema_validation_diagnostic(&request.stage, &error);
+                        let diagnostic =
+                            schema_validation_diagnostic(&request.stage, &error, &value);
                         provider_attempts
                             .last_mut()
                             .expect("attempt was just recorded")
@@ -305,12 +306,49 @@ fn bounded_validation_error(error: &impl std::fmt::Display) -> String {
     error.to_string().chars().take(1_000).collect()
 }
 
-fn schema_validation_diagnostic(stage: &str, error: &jsonschema::ValidationError<'_>) -> String {
-    format!(
+fn schema_validation_diagnostic(
+    stage: &str,
+    error: &jsonschema::ValidationError<'_>,
+    rejected: &serde_json::Value,
+) -> String {
+    let mut diagnostic = format!(
         "stage {stage}, instance {}, schema {}: {error}",
         error.instance_path(),
         error.schema_path()
-    )
+    );
+    if let Some((path, value)) =
+        nearest_rejected_object(rejected, &error.instance_path().to_string())
+        && let Ok(serialized) = serde_json::to_string(value)
+    {
+        let bounded: String = serialized.chars().take(2_000).collect();
+        diagnostic.push_str(&format!(
+            "; rejected containing value at {}: {bounded}",
+            if path.is_empty() { "/" } else { &path }
+        ));
+    }
+    diagnostic
+}
+
+fn nearest_rejected_object<'a>(
+    rejected: &'a serde_json::Value,
+    instance_path: &str,
+) -> Option<(String, &'a serde_json::Value)> {
+    let mut path = instance_path.to_owned();
+    loop {
+        if let Some(value) = rejected.pointer(&path)
+            && value.is_object()
+        {
+            return Some((path, value));
+        }
+        if path.is_empty() {
+            return None;
+        }
+        match path.rfind('/') {
+            Some(0) => path.clear(),
+            Some(index) => path.truncate(index),
+            None => return None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -388,6 +426,11 @@ mod tests {
             assert_eq!(request.snapshot_binding, "campaign:one:revision:4");
             self.calls.fetch_add(1, Ordering::SeqCst);
             Ok(if request.lived_stream.contains("LOCAL VALIDATOR") {
+                assert!(
+                    request
+                        .lived_stream
+                        .contains("rejected containing value at /: {\"wrong\":\"shape\"}")
+                );
                 r#"{"answer":"corrected"}"#.into()
             } else {
                 r#"{"wrong":"shape"}"#.into()
@@ -495,6 +538,49 @@ mod tests {
         assert!(error.contains("stage outcome-fixture"));
         assert!(error.contains("instance /answer"));
         assert!(error.contains("minItems"));
+        assert!(error.contains("rejected containing value at /"));
+        assert!(error.contains("{\"answer\":[]}"));
+    }
+
+    #[test]
+    fn schema_diagnostic_projects_only_the_nearest_rejected_object() {
+        let schema = serde_json::json!({
+            "type":"object",
+            "properties":{
+                "actions":{
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "properties":{
+                            "effect":{
+                                "type":"object",
+                                "properties":{
+                                    "activity":{"type":"string"},
+                                    "target_subject_ids":{"type":"array","minItems":1}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        let rejected = serde_json::json!({
+            "actions":[{
+                "subject_id":"member:reed",
+                "effect":{"activity":"coordinate","target_subject_ids":[]}
+            }],
+            "unrelated":"must not be repeated to the model"
+        });
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let error = validator.validate(&rejected).unwrap_err();
+
+        let diagnostic = schema_validation_diagnostic("cell_interpreter", &error, &rejected);
+
+        assert!(diagnostic.contains("instance /actions/0/effect/target_subject_ids"));
+        assert!(diagnostic.contains("rejected containing value at /actions/0/effect"));
+        assert!(diagnostic.contains("\"activity\":\"coordinate\""));
+        assert!(!diagnostic.contains("member:reed"));
+        assert!(!diagnostic.contains("must not be repeated"));
     }
 
     #[tokio::test]
