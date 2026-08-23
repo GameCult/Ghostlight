@@ -120,13 +120,17 @@ inherits non-scarce population baseline through typed lineage while
 partitioning every exact resource and named member once; the resolution organ
 only changes profiles and cover epoch. Region expansion admits exact place and
 proposition profiles and a reciprocal origin/destination topology before
-reconstructing compatibility rows. Initial compiler publication, explicit
-classification of materialisation/dematerialisation, removal of legacy model
-effect schemas, and the 300-case reviewed agency corpus remain the migration
-frontier. See `docs/architecture/ghostlight-transition-algebra.md`.
+reconstructing compatibility rows. Initial compiler publication is now
+explicitly bounded as an empty-store creation transaction owned by the
+CampaignRegistry, not a runtime mutation. Named-person presence is a resolution
+transaction: it preserves the member delta, invalidates the prior cover and
+epoch, and has no authority to rewrite Gestalt-wide knowledge, custody, or
+pressure. Removal of remaining legacy model effect schemas and the 300-case
+reviewed agency corpus remain the migration frontier. See
+`docs/architecture/ghostlight-transition-algebra.md`.
 
 Idunn's locked Linux test/build gate admitted this cut as immutable Yggdrasil
-release `636828f509e2e3cc82280bc2edf02ba6fcbc4712` with Eve
+release `2686f9f2973f6bfdb2c1a7fd7311f32e6a81c192` with Eve
 `19c3dcf9173dce848a6253e975324ea239a02d24`. Live health, the release symlink,
 deployment witness, binary hash, zero-restart service state, and signed Idunn
 health agree. The Idunn Linux success receipt reports 265 library tests before
@@ -170,11 +174,11 @@ leak. It used 90,030 tokens at a 76.3% prompt-cache-hit ratio; the retained
 invalid receipts expose one repeated institution posture and one repeated
 pressure without letting either mutate the world.
 
-The next engineering gate is explicitly classifying seed publication and
-materialisation/dematerialisation, then growing the agency corpus beyond its 36
-candidate cases without cosmetic reskins. After that cut, resume the 20-plus-
-power live Aetheria skeleton across budgets `1`, `4`, `8`, and `32`, including
-nested refugee dispersal and later rematerialization. The existing large-
+The next engineering gate is growing the agency corpus beyond its 36 candidate
+cases without cosmetic reskins and removing the remaining legacy model effect
+schemas. Then resume the 20-plus-power live Aetheria skeleton across budgets
+`1`, `4`, `8`, and `32`, including nested refugee dispersal and later
+rematerialization. The existing large-
 document RUDP transport defect remains a separate discovery workstream; do not
 truncate Ghostlight's operator truth to make the catalog look fresh.
 Separate-account two-player and eight-player Session Zero and shared-scene

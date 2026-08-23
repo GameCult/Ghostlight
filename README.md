@@ -99,12 +99,14 @@ current acceptance surface covers:
 - exact-build deployment, state migration, public cutover, and restart
   verification on Yggdrasil.
 
-The remaining forge gates are explicit classification of initial compiler seed
-publication and named-person materialisation/dematerialisation, expansion and
-review of the agency corpus beyond its current candidate seed, multi-account
-human pressure testing of Session Zero privacy/publication and bounded co-op,
-and continued multiresolution Gestalt agency pressure. The public site is
-provisional; checkout is not live.
+Initial compiler seed publication is a bounded empty-store creation
+transaction. Named-person materialisation and folding are resolution
+transactions that preserve individual deltas without rewriting their Gestalt.
+The remaining forge gates are expansion and review of the agency corpus beyond
+its current candidate seed, removal of legacy model effect schemas,
+multi-account human pressure testing of Session Zero privacy/publication and
+bounded co-op, and continued multiresolution Gestalt agency pressure. The
+public site is provisional; checkout is not live.
 
 ## Bounded Co-op
 

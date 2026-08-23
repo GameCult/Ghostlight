@@ -1,9 +1,10 @@
 # Ghostlight World Transition Algebra
 
 Status: adopted architecture; foreground, reaction, strategic, time, travel,
-and approval-gated fission writes use the mutation reducer. Region expansion,
-initial compiler publication, and aggregate-storage removal remain migration
-work.
+approval-gated fission, and bounded region expansion use the mutation reducer.
+Initial compiler publication is classified as a one-time creation transaction,
+and named-person materialisation is classified as a resolution transaction.
+Aggregate-storage removal remains migration work.
 
 ## Objective
 
@@ -94,8 +95,8 @@ The migration is not complete while any of these can decide canonical state:
 - `apply_strategic_outcome_effect`;
 - the direct private-delta loop in `ResolveReactionWave`;
 - bespoke actor, Gestalt, or member movement and migration writers;
-- Gestalt folding code that unions private knowledge or possessions into a
-  population without an admitted mutation;
+- any Gestalt folding code that unions private knowledge, possessions, or
+  pressure into a population;
 - model output, browser payloads, narration, news generation, retrieval, or a
   derived simulation cell.
 
@@ -105,8 +106,8 @@ broader administrative authority envelope, but not another state-writing
 mechanism. Approval-gated population fission likewise lowers to entity
 admission, lineage, custody, and membership mutations; the fission projector
 owns only the derived resolution profiles and cover epoch. Initial compiler
-publication remains a separately named seed authority until its ownership is
-explicitly classified; it must not quietly grow into a second runtime writer.
+publication is not a transition over an existing world; its separate creation
+authority is bounded below.
 
 ### Shared paths
 
@@ -123,7 +124,8 @@ All of these lower to `WorldMutationBatch` before state changes:
 - population migration and approval-gated fission;
 - contract amendments that are permitted to change forward-looking world
   state;
-- compiler-admitted entities and later bounded region expansion.
+- compiler-admitted entities added after publication and later bounded region
+  expansion.
 
 ### Cut line
 
@@ -136,6 +138,60 @@ they never re-enter a commit path.
 
 No repair loop, converter with independent policy, or post-commit reconciler is
 allowed to preserve a second opinion about the result.
+
+## Transactions outside the mutation algebra
+
+Two operations change canonical storage without claiming to be fictional
+world effects. They remain narrow because forcing them into `WorldMutation`
+would lie about what happened.
+
+### Initial campaign publication
+
+There is no prior campaign state to mutate at revision zero. The
+`CampaignRegistry` therefore owns discoverability of an approved seed, while
+`CampaignStore` owns its atomic installation:
+
+- input is one validated `approved_campaign_brief.v1`, its exact evidence and
+  model receipts, membership, governance, DM state, and approval digest;
+- every row is written to a fresh `.creating-<campaign>-<nonce>` store through
+  one empty-store compare-and-swap batch;
+- the staging directory becomes discoverable only through one atomic rename;
+- retry is idempotent by campaign ID plus approved seed digest;
+- a nonempty store, conflicting digest, failed row write, or failed rename
+  publishes nothing.
+
+The seed installer may establish initial subjects and components because no
+world exists yet. It cannot target a published campaign, advance fictional
+time, or serve imports, reloads, expansion, or later compiler output. The
+legacy internal `CreateCampaign` message is initialization plumbing, not a
+runtime action authority; public player ingress rejects it. Once the directory
+is published, every fictional change belongs to the normal kernel path.
+
+### Named-person materialisation and folding
+
+A dormant `GestaltMemberDelta` and its foreground `ActorState` are two
+resolutions of one persistent person. `WorldKernel` owns the resolution
+transaction at a safe command boundary:
+
+- materialisation derives the foreground actor projection from the Gestalt
+  baseline plus the exact member delta;
+- folding writes changed individual capabilities, knowledge, equipment,
+  conditions, obligations, relationships, goals, memories, and location back
+  to that member delta, then retires only the foreground projection;
+- the transaction advances world revision so stale actor-bound commands and
+  surfaces fail, advances `resolution_epoch`, and clears the old derived cover;
+- it does not advance fictional time, relocate the person, transfer custody,
+  communicate knowledge, change population pressure, or alter the Gestalt
+  baseline;
+- one atomic world receipt plus materialisation receipt binds the member,
+  projection actor, baseline/member versions, world revision, and resolution
+  epoch.
+
+The removed `GestaltAggregateDelta` was an obsolete writer: direct demotion
+could previously smuggle private knowledge, resources, and pressures into the
+population while automatic demotion rejected the same payload. Those changes
+now require explicit semantic mutations under their own authority. Presence
+resolution has no vocabulary with which to perform them.
 
 ## Canonical state model
 
@@ -393,11 +449,12 @@ Migration order:
    delete direct `ActorStateDelta` writes.
 4. Lower strategic outcome generation to the same operations; delete
    `apply_strategic_outcome_effect` and string-resource helpers.
-5. Normalize named Gestalt members into stable actor subjects and resource,
-   membership, identity, and occupancy components. Remove materialized actor as
-   a second identity owner.
-6. Lower travel, waits, fission, expansion, and compiler publication. Travel,
-   waits, and fission are complete; expansion and initial publication remain.
+5. Classify named-person materialisation as a resolution transaction, remove
+   aggregate mutation from folding, and invalidate the active cover. Complete.
+   Normalizing remaining legacy member fields into component rows remains.
+6. Lower travel, waits, fission, and bounded expansion. Classify initial
+   publication as an empty-store creation transaction rather than a world
+   mutation. Complete.
 7. Migrate persisted campaign rows transactionally, quarantine ambiguous legacy
    resources or identities, and make the old campaign fields projection-only.
 8. Remove legacy schemas from model boundaries. Retain schema readers solely

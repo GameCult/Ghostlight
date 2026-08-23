@@ -907,11 +907,16 @@ the aggregate `Location`, `Route`, and `WorldFact` rows are reconstructed only
 from accepted component state. The previous direct location/fact insertion
 loops are gone.
 
-The runtime migration is not yet complete. Initial compiler publication remains
-a separate seed authority. Materialisation and dematerialisation are resolution
-changes over one persistent person and require an explicit review of why they
-currently advance aggregate world revision. These are named writer frontiers,
-not silently equivalent paths. See
+Initial compiler publication is a bounded creation transaction, not a fictional
+world transition. `CampaignRegistry` owns discoverability, installs the
+approved seed into a fresh staging store with one empty-store CAS, and exposes
+it only by atomic directory rename. It cannot target a published campaign.
+Named-person materialisation and dematerialisation are resolution transactions
+over one persistent member identity. They advance world revision to stale old
+actor-bound commands, advance `resolution_epoch`, clear the derived cover, and
+atomically preserve the exact individual delta. They cannot change fictional
+time or Gestalt-wide knowledge, resources, or pressure; the obsolete
+`GestaltAggregateDelta` writer has been deleted. See
 `docs/architecture/ghostlight-transition-algebra.md`.
 
 Relationship documents in the schema catalog are revision-bound projections
@@ -920,7 +925,8 @@ Vault manifests summarize the exact provider/source/authority/temporal lanes
 covered by evidence receipts and do not own Vault content. Strategic tick and
 gestalt materialization receipts are different: they are atomic commit
 companions binding the generic world commit to the causal model output or
-baseline/member presence transition.
+baseline/member presence transition. Materialisation receipts additionally bind
+the previous and next resolution epochs.
 
 ## Control Flow
 

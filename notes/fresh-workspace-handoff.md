@@ -38,13 +38,14 @@ agency, offscreen strategic activity, knowledge-filtered news, and actor-filtere
 Eve/CultMesh surfaces.
 
 The immediate engineering gate is completion of the principled world-transition
-migration before adversarial hosted play resumes. Bounded region expansion now
-uses the mutation reducer; initial compiler seed publication and named-person
-materialisation/dematerialisation still require explicit classification. The
-36-case agency corpus is only a candidate seed against a 300-reviewed-case
-target. Separate-account multiplayer privacy and unanimity proof also remains
-required, but the previously expected D&D test group is no longer available;
-record that gate as unproven rather than silently lowering it.
+migration before adversarial hosted play resumes. Bounded region expansion uses
+the mutation reducer; seed publication is now a bounded creation transaction;
+named-person materialisation/folding is a resolution transaction without
+Gestalt-wide effect authority. The 36-case agency corpus is only a candidate
+seed against a 300-reviewed-case target. Separate-account multiplayer privacy
+and unanimity proof also remains required, but the previously expected D&D test
+group is no longer available; record that gate as unproven rather than silently
+lowering it.
 
 ## Authority map
 
@@ -90,11 +91,11 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `636828f509e2e3cc82280bc2edf02ba6fcbc4712`
+  `2686f9f2973f6bfdb2c1a7fd7311f32e6a81c192`
 - Executable SHA-256:
-  `f0647726fb6e54b8ab0851665edefb94667406466d472bd30d2a8ee4639afd7c`
+  `f27d7865b9caaa762e1f71d3fe0484f126463f98d744dd3f5dea4ddaaf355731`
 - Artifact SHA-256:
-  `sha256-e5dfeb43f95be622918a9897c854360ddbdfbdb25f33aa8829dd043679c59ed1`
+  `sha256-24e6d5a812c6c6c531428d329677e99b923c99a6e00a627b9bc8a826e1b8e791`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -152,7 +153,7 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `636828f…`; its locked Linux package test and
+- Idunn admitted exact release `2686f9f…`; its locked Linux package test and
   immutable build completed before atomic activation. Idunn's Linux journal
   reports 265 library tests before the remaining package targets in its
   truncated success receipt; the complete package test and release build
@@ -163,12 +164,20 @@ messages.
   region-expansion writes now use the typed mutation reducer. Each successful
   batch advances a touched subject version once and persists its authority,
   mutations, receipt, causal receipt, and aggregate projection atomically.
-  Component-only mutation ingress rejects aggregate campaign rows.
+  Component-only mutation ingress rejects aggregate campaign rows. Initial
+  publication is separately bounded to a fresh empty store plus atomic
+  discoverability rename; it cannot mutate a published campaign.
 - Region expansion admits typed place and proposition profiles, validates
   evidence and containment, and requires an exact reciprocal route between the
   stable origin and every newly compiled destination. Aggregate locations,
   routes, and facts are rebuilt from accepted component state; the direct
   insertion loops have been deleted.
+- Named Gestalt members now change foreground resolution without gaining a
+  second effect vocabulary. Promotion/folding advances world revision and
+  `resolution_epoch`, clears the prior cover, preserves the exact individual
+  delta, and leaves fictional time and the Gestalt baseline unchanged. The
+  direct `GestaltAggregateDelta` path that could union one person's knowledge,
+  resources, or pressures into the whole population has been deleted.
 - Population fission cannot copy scarce custody into every child. Approved
   fission assigns every parent resource to exactly one child, transfers each
   named member exactly once, preserves the shared non-scarce baseline through
@@ -236,11 +245,10 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 ## Next action
 
-1. Classify initial compiler publication and materialisation/dematerialisation
-   explicitly rather than quietly treating their current aggregate writes as
-   equivalent. Continue the negative writer audit after each classification.
-2. Expand and review the agency corpus from its current 36 candidate cases
+1. Expand and review the agency corpus from its current 36 candidate cases
    toward 300 behaviorally distinct cases; do not inflate it with reskins.
+2. Remove the remaining legacy model effect schemas and continue the negative
+   writer audit until aggregate campaign fields are projections only.
 3. Repair or pressure the existing large-document RUDP discovery defect in its
    owning transport workstream without truncating Ghostlight's private operator
    truth.
