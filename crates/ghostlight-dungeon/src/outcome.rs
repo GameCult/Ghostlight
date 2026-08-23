@@ -1239,7 +1239,15 @@ fn admissible_effect_kinds(
         if member.memories.len() < 64 {
             kinds.push(OutcomeEffectKind::MemberMemory);
         }
-        if member.obligations.len() < 64 {
+        if member.obligations.len() < 64
+            && matches!(
+                activity,
+                StrategicActivityKind::Communicate
+                    | StrategicActivityKind::Coordinate
+                    | StrategicActivityKind::Recruit
+                    | StrategicActivityKind::Trade
+            )
+        {
             kinds.push(OutcomeEffectKind::MemberObligation);
         }
         if !targets.is_empty() {
@@ -2570,6 +2578,67 @@ mod tests {
             !context
                 .admissible_effect_kinds
                 .contains(&OutcomeEffectKind::KnowledgeLearned)
+        );
+    }
+
+    #[test]
+    fn physical_member_activity_cannot_mint_an_unrelated_obligation() {
+        let mut value = campaign();
+        value.gestalt_members.insert(
+            "mira".into(),
+            crate::domain::GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "mira".into(),
+                gestalt_id: "dockers".into(),
+                version: 0,
+                name: "Mira".into(),
+                capability_additions: BTreeSet::from(["pull relays".into()]),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec!["keep the harbor working".into()],
+                memories: vec![],
+                last_location_id: Some("dock".into()),
+                materialized_actor_id: None,
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 0,
+            },
+        );
+        ensure_agency_profiles(&mut value);
+        let mut action = CellActionProposal {
+            subject_id: "member:mira".into(),
+            intent: "pull the local relay".into(),
+            intended_effect: "interrupt the local signal".into(),
+            priority: 70,
+            state_references: vec!["capability:pull relays".into(), "location:dock".into()],
+            public_channels: vec![],
+            effect: StrategicCellEffect::MemberActivity {
+                member_id: "mira".into(),
+                activity: StrategicActivityKind::Obstruct,
+                target_subject_ids: vec![],
+                location_ids: vec!["dock".into()],
+            },
+        };
+
+        let physical = action_context(&value, &action).unwrap();
+        assert!(
+            !physical
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::MemberObligation)
+        );
+
+        if let StrategicCellEffect::MemberActivity { activity, .. } = &mut action.effect {
+            *activity = StrategicActivityKind::Communicate;
+        }
+        let social = action_context(&value, &action).unwrap();
+        assert!(
+            social
+                .admissible_effect_kinds
+                .contains(&OutcomeEffectKind::MemberObligation)
         );
     }
 
