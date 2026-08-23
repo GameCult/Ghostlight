@@ -96,6 +96,17 @@ lane, so it may accompany a direct mundane character patch without being
 silently granted. The model-facing schema requests a same-snapshot correction for a
 split-lane output, and the kernel repeats the invariant before mutation.
 
+Decision metadata is not part of the general Interpreter's ontology. Its
+schema carries only the prompt, proposed resolution, and one or more typed
+semantic payloads. The Director assigns a fresh durable decision ID, exact
+private-channel owner (or shared ownership), material status, and clean
+lifecycle state. Extraordinary-permission proposals similarly contain terms
+only; Ghostlight assigns the permission ID and binds the exact entitled actor.
+Model output cannot reuse a decision ID, target another actor, replace an
+existing permission by guessing its ID, or claim evidence custody. Focused
+counter replacement preserves the already committed permission identity while
+allowing only its negotiated terms to change.
+
 Generated opening and role suggestions are non-material decisions: the player
 may accept, counter, discuss, or ignore them without blocking a fully custom
 draft. They are UI affordances, not implicit DM memory. On daemon load, the registry demotes pre-cut payloadless questions and

@@ -442,14 +442,34 @@ pub struct SessionZeroDelta {
     pub suggested_replies: Vec<String>,
 }
 
-/// Model-facing typed extraction. The Persona owns the natural DM utterance;
-/// the Interpreter may only propose typed state and reply affordances.
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
-#[serde(deny_unknown_fields)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 struct SessionZeroInterpretation {
     pub contract_patch: CampaignContractPatch,
     pub character_patch: Option<CharacterDraftPatch>,
     pub decisions: Vec<SessionZeroDecision>,
+    pub suggested_replies: Vec<String>,
+}
+
+/// Model-facing decision content. Durable identity, channel ownership,
+/// materiality, evidence custody, and lifecycle state belong to Ghostlight.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct SessionZeroDecisionProposal {
+    pub prompt: String,
+    pub proposed_resolution: String,
+    pub proposed_extraordinary_permission: Option<FocusedPermissionTerms>,
+    pub proposed_contract_patch: Option<CampaignContractPatch>,
+    pub proposed_character_patch: Option<CharacterDraftPatch>,
+}
+
+/// Model-facing typed extraction. The Persona owns the natural DM utterance;
+/// the Interpreter may only propose typed state and reply affordances.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+#[serde(deny_unknown_fields)]
+struct SessionZeroModelInterpretation {
+    pub contract_patch: CampaignContractPatch,
+    pub character_patch: Option<CharacterDraftPatch>,
+    pub decisions: Vec<SessionZeroDecisionProposal>,
     pub suggested_replies: Vec<String>,
 }
 
@@ -1467,7 +1487,7 @@ impl SessionZeroDirector {
                 supersedes_countered_decision_id,
             )?;
             let mut interpreter_schema =
-                serde_json::to_value(schema_for!(SessionZeroInterpretation))?;
+                serde_json::to_value(schema_for!(SessionZeroModelInterpretation))?;
             require_typed_decision_payloads(&mut interpreter_schema)?;
             require_single_lane_ownership(&mut interpreter_schema)?;
             let interpreter = run_validated_stage(
@@ -1477,7 +1497,7 @@ impl SessionZeroDirector {
                     model: self.interpreter_model.clone(),
                     snapshot_binding: binding,
                     lived_stream: format!(
-                        "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation during ordinary conversation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. If turn_focus is present, it is the one exception: use countered_decision as the exact basis, preserve its unchanged typed fields, apply the pending counter, and emit exactly one fresh decision with the required owner and materiality. Do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
+                        "Extract only NEW typed changes proposed by the DM response. You do not own or reproduce the DM's speech. Never copy current contract fields or existing unresolved decisions into the interpretation during ordinary conversation. Do not infer acceptance from mere discussion. Material character bargains must become unresolved decisions, not direct character grants. Every decision must carry at least one non-null typed proposed_extraordinary_permission, proposed_contract_patch, or proposed_character_patch payload; questions without an exact state change stay in DM speech or suggested replies. Ghostlight owns durable decision IDs, channel ownership, actor binding, permission IDs, materiality, evidence custody, and lifecycle state, so they are absent from your output. If turn_focus is present, it is the one exception: use countered_decision as the exact basis, preserve its unchanged typed fields, apply the pending counter, and emit exactly one replacement decision. Do not emit unrelated decisions or a direct patch. Shared channels cannot alter private character state. Private channels cannot alter the shared contract. Use empty arrays, empty objects, or null for sections with no new change. Return one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC TYPED EXTRACTION CONTEXT:\n{}\n\nDYNAMIC DM RESPONSE:\n{}",
                         serde_json::to_string(&interpreter_schema)?,
                         serde_json::to_string(&interpreter_context)?,
                         serde_json::to_string(&persona.narrative)?
@@ -1489,12 +1509,13 @@ impl SessionZeroDirector {
                 },
             )
             .await?;
-            let interpretation: SessionZeroInterpretation = serde_json::from_value(
+            let proposed: SessionZeroModelInterpretation = serde_json::from_value(
                 interpreter
                     .structured
                     .clone()
                     .ok_or_else(|| anyhow!("interpreter omitted structured output"))?,
             )?;
+            let interpretation = admit_model_interpretation(state, member_id, proposed)?;
             (interpretation, interpreter.receipt)
         };
         let delta = SessionZeroDelta {
@@ -1509,6 +1530,70 @@ impl SessionZeroDirector {
         receipts.push(interpreter_receipt);
         Ok((delta, receipts))
     }
+}
+
+fn admit_model_interpretation(
+    state: &SessionZeroState,
+    member_id: Option<&str>,
+    proposed: SessionZeroModelInterpretation,
+) -> Result<SessionZeroInterpretation> {
+    let actor_id = member_id
+        .map(|member_id| {
+            state
+                .character_drafts
+                .get(member_id)
+                .map(|draft| draft.actor_id.clone())
+                .ok_or_else(|| anyhow!("private character draft is missing"))
+        })
+        .transpose()?;
+    let decisions = proposed
+        .decisions
+        .into_iter()
+        .map(|proposal| {
+            let permission = proposal
+                .proposed_extraordinary_permission
+                .map(|terms| {
+                    let actor_id = actor_id.clone().ok_or_else(|| {
+                        anyhow!("shared DM decision cannot propose an extraordinary permission")
+                    })?;
+                    Ok::<ExtraordinaryPermission, anyhow::Error>(ExtraordinaryPermission {
+                        schema: "ghostlight.extraordinary_permission.v1".into(),
+                        id: format!("permission:{}", Uuid::new_v4().simple()),
+                        actor_id,
+                        name: terms.name,
+                        reliable_scope: terms.reliable_scope,
+                        prerequisites: terms.prerequisites,
+                        costs: terms.costs,
+                        limits: terms.limits,
+                        exposure: terms.exposure,
+                        effect_ceiling: terms.effect_ceiling,
+                        evidence_receipt_ids: vec![],
+                        branch_local: terms.branch_local,
+                    })
+                })
+                .transpose()?;
+            Ok(SessionZeroDecision {
+                schema: "ghostlight.session_zero_decision.v1".into(),
+                id: format!("decision:{}", Uuid::new_v4().simple()),
+                owner_member_id: member_id.map(str::to_owned),
+                prompt: proposal.prompt,
+                proposed_resolution: proposal.proposed_resolution,
+                proposed_extraordinary_permission: permission,
+                proposed_contract_patch: proposal.proposed_contract_patch,
+                proposed_character_patch: proposal.proposed_character_patch,
+                evidence_receipt_ids: vec![],
+                pending_counter: None,
+                material: true,
+                resolved: false,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(SessionZeroInterpretation {
+        contract_patch: proposed.contract_patch,
+        character_patch: proposed.character_patch,
+        decisions,
+        suggested_replies: proposed.suggested_replies,
+    })
 }
 
 fn focused_replacement_lane(decision: &SessionZeroDecision) -> Option<FocusedReplacementLane<'_>> {
@@ -1635,7 +1720,7 @@ async fn run_focused_counter_interpreter(
 fn require_typed_decision_payloads(schema: &mut serde_json::Value) -> Result<()> {
     let decision_schema = schema
         .get_mut("$defs")
-        .and_then(|defs| defs.get_mut("SessionZeroDecision"))
+        .and_then(|defs| defs.get_mut("SessionZeroDecisionProposal"))
         .and_then(serde_json::Value::as_object_mut)
         .ok_or_else(|| anyhow!("Session Zero Interpreter schema omitted its decision contract"))?;
     decision_schema.insert(
@@ -4205,6 +4290,28 @@ mod tests {
 
     const PERSONA_SPEECH: &str = "**Mars holds.** Your sung name remains ‘The last lamp carried between storms, learning each stranger by the weight they refuse to abandon.’ Does the revised contamination bargain fit Sable’s ability?";
 
+    fn model_decision_proposal(decision: &SessionZeroDecision) -> SessionZeroDecisionProposal {
+        SessionZeroDecisionProposal {
+            prompt: decision.prompt.clone(),
+            proposed_resolution: decision.proposed_resolution.clone(),
+            proposed_extraordinary_permission: decision
+                .proposed_extraordinary_permission
+                .as_ref()
+                .map(|permission| FocusedPermissionTerms {
+                    name: permission.name.clone(),
+                    reliable_scope: permission.reliable_scope.clone(),
+                    prerequisites: permission.prerequisites.clone(),
+                    costs: permission.costs.clone(),
+                    limits: permission.limits.clone(),
+                    exposure: permission.exposure.clone(),
+                    effect_ceiling: permission.effect_ceiling.clone(),
+                    branch_local: permission.branch_local,
+                }),
+            proposed_contract_patch: decision.proposed_contract_patch.clone(),
+            proposed_character_patch: decision.proposed_character_patch.clone(),
+        }
+    }
+
     #[async_trait]
     impl ModelPort for SchemaAwareDirectorModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
@@ -4594,7 +4701,7 @@ mod tests {
     #[test]
     fn focused_counter_schema_excludes_the_full_decision_union() {
         let focused = serde_json::to_string(&schema_for!(CharacterDraftPatch)).unwrap();
-        let mut full = serde_json::to_value(schema_for!(SessionZeroInterpretation)).unwrap();
+        let mut full = serde_json::to_value(schema_for!(SessionZeroModelInterpretation)).unwrap();
         require_typed_decision_payloads(&mut full).unwrap();
         let full = serde_json::to_string(&full).unwrap();
         assert!(!focused.contains("SessionZeroDecision"));
@@ -4610,7 +4717,7 @@ mod tests {
 
     #[test]
     fn interpreter_schema_rejects_decisions_without_typed_payloads() {
-        let mut schema = serde_json::to_value(schema_for!(SessionZeroInterpretation)).unwrap();
+        let mut schema = serde_json::to_value(schema_for!(SessionZeroModelInterpretation)).unwrap();
         require_typed_decision_payloads(&mut schema).unwrap();
         let validator = jsonschema::validator_for(&schema).unwrap();
         let decision = SessionZeroDecision {
@@ -4627,8 +4734,8 @@ mod tests {
             material: true,
             resolved: false,
         };
-        let invalid = SessionZeroInterpretation {
-            decisions: vec![decision.clone()],
+        let invalid = SessionZeroModelInterpretation {
+            decisions: vec![model_decision_proposal(&decision)],
             ..Default::default()
         };
         assert!(!validator.is_valid(&serde_json::to_value(invalid).unwrap()));
@@ -4638,11 +4745,76 @@ mod tests {
             name: Some("Sable".into()),
             ..Default::default()
         });
-        let valid = SessionZeroInterpretation {
-            decisions: vec![actionable],
+        let valid = SessionZeroModelInterpretation {
+            decisions: vec![model_decision_proposal(&actionable)],
             ..Default::default()
         };
         assert!(validator.is_valid(&serde_json::to_value(valid).unwrap()));
+    }
+
+    #[test]
+    fn ghostlight_owns_interpreted_decision_and_permission_identity() {
+        let state = state();
+        let member_id = state.host_member_id.clone();
+        let schema = serde_json::to_value(schema_for!(SessionZeroModelInterpretation)).unwrap();
+        let decision_properties = schema["$defs"]["SessionZeroDecisionProposal"]["properties"]
+            .as_object()
+            .unwrap();
+        for forbidden in [
+            "id",
+            "owner_member_id",
+            "pending_counter",
+            "material",
+            "resolved",
+        ] {
+            assert!(!decision_properties.contains_key(forbidden));
+        }
+        let permission_properties = schema["$defs"]["FocusedPermissionTerms"]["properties"]
+            .as_object()
+            .unwrap();
+        for forbidden in ["id", "actor_id", "evidence_receipt_ids"] {
+            assert!(!permission_properties.contains_key(forbidden));
+        }
+        let proposed = SessionZeroModelInterpretation {
+            decisions: vec![SessionZeroDecisionProposal {
+                prompt: "Accept bounded pressure sensing?".into(),
+                proposed_resolution: "Touch reveals recent local stress only.".into(),
+                proposed_extraordinary_permission: Some(FocusedPermissionTerms {
+                    name: "Pressure Echo".into(),
+                    reliable_scope: "One touched pressure-bearing machine".into(),
+                    prerequisites: vec!["Direct touch".into()],
+                    costs: vec!["Vertigo".into()],
+                    limits: vec!["No causes or remote history".into()],
+                    exposure: vec!["A breathing-rhythm trace".into()],
+                    effect_ceiling: "Recent local stress map".into(),
+                    branch_local: true,
+                }),
+                proposed_contract_patch: None,
+                proposed_character_patch: None,
+            }],
+            ..Default::default()
+        };
+
+        let admitted =
+            admit_model_interpretation(&state, Some(&member_id), proposed.clone()).unwrap();
+        let decision = &admitted.decisions[0];
+        assert!(decision.id.starts_with("decision:"));
+        assert_eq!(
+            decision.owner_member_id.as_deref(),
+            Some(member_id.as_str())
+        );
+        assert!(decision.material);
+        assert!(!decision.resolved);
+        assert!(decision.evidence_receipt_ids.is_empty());
+        let permission = decision.proposed_extraordinary_permission.as_ref().unwrap();
+        assert!(permission.id.starts_with("permission:"));
+        assert_eq!(
+            permission.actor_id,
+            state.character_drafts[&member_id].actor_id
+        );
+        assert!(permission.evidence_receipt_ids.is_empty());
+
+        assert!(admit_model_interpretation(&state, None, proposed).is_err());
     }
 
     #[test]
@@ -4729,19 +4901,23 @@ mod tests {
             ..Default::default()
         };
 
-        let mut schema = serde_json::to_value(schema_for!(SessionZeroInterpretation)).unwrap();
+        let mut schema = serde_json::to_value(schema_for!(SessionZeroModelInterpretation)).unwrap();
         require_typed_decision_payloads(&mut schema).unwrap();
         require_single_lane_ownership(&mut schema).unwrap();
         let validator = jsonschema::validator_for(&schema).unwrap();
-        let split_interpretation = SessionZeroInterpretation {
+        let split_interpretation = SessionZeroModelInterpretation {
             contract_patch: duplicate_contract.contract_patch.clone(),
-            decisions: duplicate_contract.decisions.clone(),
+            decisions: duplicate_contract
+                .decisions
+                .iter()
+                .map(model_decision_proposal)
+                .collect(),
             ..Default::default()
         };
         assert!(!validator.is_valid(&serde_json::to_value(&split_interpretation).unwrap()));
         assert!(
             validator.is_valid(
-                &serde_json::to_value(SessionZeroInterpretation {
+                &serde_json::to_value(SessionZeroModelInterpretation {
                     contract_patch: duplicate_contract.contract_patch.clone(),
                     ..Default::default()
                 })
@@ -4750,8 +4926,12 @@ mod tests {
         );
         assert!(
             validator.is_valid(
-                &serde_json::to_value(SessionZeroInterpretation {
-                    decisions: duplicate_contract.decisions.clone(),
+                &serde_json::to_value(SessionZeroModelInterpretation {
+                    decisions: duplicate_contract
+                        .decisions
+                        .iter()
+                        .map(model_decision_proposal)
+                        .collect(),
                     ..Default::default()
                 })
                 .unwrap()
@@ -4801,9 +4981,13 @@ mod tests {
         };
         assert!(
             validator.is_valid(
-                &serde_json::to_value(SessionZeroInterpretation {
+                &serde_json::to_value(SessionZeroModelInterpretation {
                     character_patch: character_and_permission.character_patch.clone(),
-                    decisions: character_and_permission.decisions.clone(),
+                    decisions: character_and_permission
+                        .decisions
+                        .iter()
+                        .map(model_decision_proposal)
+                        .collect(),
                     ..Default::default()
                 })
                 .unwrap()
