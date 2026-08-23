@@ -139,7 +139,12 @@ pub async fn run_validated_stage_with_timeout(
         .as_ref()
         .map(jsonschema::validator_for)
         .transpose()
-        .map_err(|error| anyhow!("invalid local output schema: {error}"))?;
+        .map_err(|error| {
+            anyhow!(
+                "model stage {} has an invalid local output schema: {error}",
+                request.stage
+            )
+        })?;
     let mut attempt_request = request.clone();
     let stage_started = Instant::now();
     let mut provider_attempts = Vec::new();
@@ -196,6 +201,7 @@ pub async fn run_validated_stage_with_timeout(
                 Ok(value) => {
                     let validation = validator.as_ref().expect("structured validator");
                     if let Err(error) = validation.validate(&value) {
+                        let diagnostic = schema_validation_diagnostic(&request.stage, &error);
                         provider_attempts
                             .last_mut()
                             .expect("attempt was just recorded")
@@ -203,14 +209,16 @@ pub async fn run_validated_stage_with_timeout(
                         provider_attempts
                             .last_mut()
                             .expect("attempt was just recorded")
-                            .local_validation_error = Some(bounded_validation_error(&error));
+                            .local_validation_error = Some(bounded_validation_error(&diagnostic));
                         if attempt == 0 {
                             attempt_request.lived_stream.push_str(&format!(
-                                "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS JSON: {error}\nReturn one corrected complete JSON object against the same snapshot and schema."
+                                "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS JSON: {diagnostic}\nReturn one corrected complete JSON object against the same snapshot and schema."
                             ));
                             continue;
                         }
-                        return Err(anyhow!("model returned schema-invalid JSON twice: {error}"));
+                        return Err(anyhow!(
+                            "model returned schema-invalid JSON twice: {diagnostic}"
+                        ));
                     }
                     Some(value)
                 }
@@ -297,6 +305,14 @@ fn bounded_validation_error(error: &impl std::fmt::Display) -> String {
     error.to_string().chars().take(1_000).collect()
 }
 
+fn schema_validation_diagnostic(stage: &str, error: &jsonschema::ValidationError<'_>) -> String {
+    format!(
+        "stage {stage}, instance {}, schema {}: {error}",
+        error.instance_path(),
+        error.schema_path()
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -308,6 +324,7 @@ mod tests {
 
     struct NeverReturns;
     struct ShortDeadlineNeverReturns;
+    struct AlwaysSchemaInvalid;
     struct CorrectionAware {
         calls: AtomicUsize,
     }
@@ -336,6 +353,17 @@ mod tests {
 
         fn attempt_timeout(&self, _: &ModelStageRequest) -> std::time::Duration {
             std::time::Duration::from_millis(5)
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for AlwaysSchemaInvalid {
+        async fn run(&self, _: &ModelStageRequest) -> Result<String> {
+            Ok(r#"{"answer":[]}"#.into())
+        }
+
+        fn provider(&self) -> &'static str {
+            "invalid-fixture"
         }
     }
 
@@ -441,6 +469,32 @@ mod tests {
         assert_eq!(port.calls.load(Ordering::SeqCst), 2);
         assert_eq!(output.structured.unwrap()["answer"], "corrected");
         assert_eq!(output.receipt.snapshot_binding, request.snapshot_binding);
+    }
+
+    #[tokio::test]
+    async fn repeated_schema_failure_names_stage_and_exact_instance_path() {
+        let request = ModelStageRequest {
+            stage: "outcome-fixture".into(),
+            model: "fixture".into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "fixture".into(),
+            output_schema: Some(serde_json::json!({
+                "type":"object",
+                "required":["answer"],
+                "properties":{"answer":{"type":"array","minItems":1}}
+            })),
+            source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: None,
+        };
+        let error = run_validated_stage(&AlwaysSchemaInvalid, &request)
+            .await
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("stage outcome-fixture"));
+        assert!(error.contains("instance /answer"));
+        assert!(error.contains("minItems"));
     }
 
     #[tokio::test]
