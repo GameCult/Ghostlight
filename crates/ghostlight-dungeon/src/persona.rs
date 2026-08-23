@@ -1056,6 +1056,13 @@ impl CellProjectionEngine {
                                 Some(error.to_string().chars().take(1_000).collect());
                             stage_receipts.push(verified.receipt);
                             if attempt == 0 {
+                                exclude_rejected_cell_effects(
+                                    request.output_schema.as_mut().ok_or_else(|| {
+                                        anyhow!("cell correction lost its output schema")
+                                    })?,
+                                    &appraisal.actions,
+                                    &rejected_action_indices,
+                                )?;
                                 append_cell_correction(
                                     &mut request,
                                     &error,
@@ -1166,6 +1173,112 @@ fn rejected_action_diagnostic(
     .chars()
     .take(2_000)
     .collect()
+}
+
+fn exclude_rejected_cell_effects(
+    schema: &mut serde_json::Value,
+    actions: &[crate::domain::CellActionProposal],
+    rejected_action_indices: &[usize],
+) -> Result<()> {
+    let candidate = schema
+        .pointer_mut("/$defs/CellActionCandidate")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("cell correction schema has no action candidate"))?;
+    let constraints = candidate
+        .entry("allOf")
+        .or_insert_with(|| serde_json::json!([]))
+        .as_array_mut()
+        .ok_or_else(|| anyhow!("cell correction action constraints are not an array"))?;
+    for index in rejected_action_indices {
+        let Some(action) = actions.get(*index) else {
+            continue;
+        };
+        constraints.push(serde_json::json!({
+            "not":{
+                "type":"object",
+                "required":["subject_id", "effect"],
+                "properties":{
+                    "subject_id":{"const":action.subject_id},
+                    "effect":{"const":cell_effect_candidate_value(&action.effect)}
+                }
+            }
+        }));
+    }
+    Ok(())
+}
+
+fn cell_effect_candidate_value(effect: &crate::domain::StrategicCellEffect) -> serde_json::Value {
+    match effect {
+        crate::domain::StrategicCellEffect::Institution {
+            posture,
+            location_ids,
+            ..
+        } => serde_json::json!({
+            "type":"institution",
+            "posture":posture,
+            "location_ids":location_ids,
+        }),
+        crate::domain::StrategicCellEffect::Gestalt {
+            pressure_additions,
+            pressure_resolutions,
+            ..
+        } => serde_json::json!({
+            "type":"gestalt",
+            "pressure_additions":pressure_additions,
+            "pressure_resolutions":pressure_resolutions,
+        }),
+        crate::domain::StrategicCellEffect::GestaltActivity {
+            activity,
+            target_subject_ids,
+            location_ids,
+            ..
+        } => serde_json::json!({
+            "type":"gestalt_activity",
+            "activity":activity,
+            "target_subject_ids":target_subject_ids,
+            "location_ids":location_ids,
+        }),
+        crate::domain::StrategicCellEffect::GestaltMigration {
+            destination_gestalt_id,
+        } => serde_json::json!({
+            "type":"gestalt_migration",
+            "destination_gestalt_id":destination_gestalt_id,
+        }),
+        crate::domain::StrategicCellEffect::ActorMove { destination_id, .. } => {
+            serde_json::json!({
+                "type":"actor_move",
+                "destination_id":destination_id,
+            })
+        }
+        crate::domain::StrategicCellEffect::ActorActivity {
+            activity,
+            target_subject_ids,
+            location_ids,
+            ..
+        } => serde_json::json!({
+            "type":"actor_activity",
+            "activity":activity,
+            "target_subject_ids":target_subject_ids,
+            "location_ids":location_ids,
+        }),
+        crate::domain::StrategicCellEffect::MemberActivity {
+            activity,
+            target_subject_ids,
+            location_ids,
+            ..
+        } => serde_json::json!({
+            "type":"member_activity",
+            "activity":activity,
+            "target_subject_ids":target_subject_ids,
+            "location_ids":location_ids,
+        }),
+        crate::domain::StrategicCellEffect::MemberMigration {
+            destination_gestalt_id,
+        } => serde_json::json!({
+            "type":"member_migration",
+            "destination_gestalt_id":destination_gestalt_id,
+        }),
+    }
 }
 
 fn cell_correction_guidance(error: &anyhow::Error) -> &'static str {
@@ -2712,6 +2825,61 @@ mod tests {
         assert!(diagnostic.contains("member_migration"));
         assert!(diagnostic.contains("refugee-encampment"));
         assert_eq!(rejected_action_diagnostic(&[], &[4]), "[]");
+    }
+
+    #[test]
+    fn semantic_retry_schema_forbids_the_exact_rejected_effect_but_not_a_faithful_lane() {
+        let mut slice = fixture_cell_slice();
+        let actor_id = {
+            let actor = &mut slice.constituents[0];
+            actor.subject_kind = AgencySubjectKind::Actor;
+            actor.current_posture = None;
+            actor.reachable_destinations =
+                BTreeMap::from([("encampment".into(), "Refugee Encampment".into())]);
+            actor.subject_id.clone()
+        };
+        let active = BTreeSet::from([actor_id.clone()]);
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
+        let rejected = crate::domain::CellActionProposal {
+            subject_id: actor_id.clone(),
+            intent: "move the patients now".into(),
+            intended_effect: "lead the patients out".into(),
+            priority: 80,
+            state_references: vec!["institution:faction-06".into()],
+            public_channels: vec![],
+            effect: StrategicCellEffect::ActorMove {
+                actor_id,
+                destination_id: "encampment".into(),
+            },
+        };
+        exclude_rejected_cell_effects(&mut schema, &[rejected], &[0]).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let appraisal = |effect| {
+            serde_json::json!({
+                "actions":[{
+                    "subject_id":"faction-06",
+                    "intent":"announce the departure plan",
+                    "intended_effect":"tell the patients the plan",
+                    "priority":80,
+                    "state_references":["institution:faction-06"],
+                    "public_channels":[],
+                    "effect":effect,
+                }],
+                "inactions":[],
+            })
+        };
+
+        assert!(!validator.is_valid(&appraisal(serde_json::json!({
+            "type":"actor_move",
+            "destination_id":"encampment",
+        }))));
+        assert!(validator.is_valid(&appraisal(serde_json::json!({
+            "type":"actor_activity",
+            "activity":"communicate",
+            "target_subject_ids":[],
+            "location_ids":["forum"],
+        }))));
     }
 
     #[test]
