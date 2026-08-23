@@ -4296,12 +4296,7 @@ async fn command(
             )
             .await
             {
-                Ok(Some(result)) => {
-                    if let Err(error) = refresh_mesh(&state).await {
-                        tracing::warn!(%error, "player strategic wait CultMesh publication failed");
-                    }
-                    Json(player_command_projection(&result, None)).into_response()
-                }
+                Ok(Some(result)) => Json(player_command_projection(&result, None)).into_response(),
                 Ok(None) => (
                     StatusCode::SERVICE_UNAVAILABLE,
                     Json(ErrorBody {
@@ -5398,7 +5393,7 @@ async fn advance_one_strategic_tick(
     if yield_to_live_turns && state.live_turns.load(Ordering::SeqCst) > 0 {
         return Ok(None);
     }
-    runtime
+    let result = runtime
         .kernel
         .command(WorldCommand::AdvanceStrategicTick {
             expected_revision: campaign.revision,
@@ -5408,8 +5403,16 @@ async fn advance_one_strategic_tick(
             resolution_wave,
         })
         .await
-        .map(Some)
-        .map_err(Into::into)
+        .map_err(anyhow::Error::from)?;
+    if let Err(error) = refresh_mesh(state).await {
+        tracing::warn!(
+            campaign_id = %campaign.id,
+            revision = campaign.revision.saturating_add(1),
+            %error,
+            "post-strategic-commit CultMesh publication failed"
+        );
+    }
+    Ok(Some(result))
 }
 
 async fn await_background_work<T>(
@@ -6262,6 +6265,14 @@ mod tests {
             original_time + chrono::Duration::hours(12)
         );
         assert_eq!(advanced.actors["player"], original_player);
+        let operator = state.mesh.operator_surface(campaign.id).unwrap();
+        let operator_title = operator["surface"]["root"]["children"][0]["props"]["title"]
+            .as_str()
+            .unwrap();
+        assert!(
+            operator_title.starts_with(&format!("Revision {} ·", advanced.revision)),
+            "strategic commits must publish their own derived operator projection"
+        );
     }
 
     #[tokio::test]
