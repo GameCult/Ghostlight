@@ -648,7 +648,7 @@ async fn main() -> anyhow::Result<()> {
         model: model.clone(),
         model_name: "deepseek-v4-flash".into(),
     };
-    let (presence_plan, presence_receipt) = presence_planner.plan(&advanced, return_event).await?;
+    let (presence_plan, presence_receipts) = presence_planner.plan(&advanced, return_event).await?;
     std::fs::write(
         root.join("presence-preflight.json"),
         serde_json::to_vec_pretty(&serde_json::json!({
@@ -656,7 +656,7 @@ async fn main() -> anyhow::Result<()> {
             "campaign_revision":advanced.revision,
             "return_event":return_event,
             "plan":presence_plan,
-            "receipt":presence_receipt,
+            "receipts":presence_receipts,
         }))?,
     )?;
     if presence_plan.individuations.len() != 0
@@ -670,12 +670,14 @@ async fn main() -> anyhow::Result<()> {
             serde_json::to_string(&presence_plan)?
         )
     }
-    store.insert(
-        "persona_stage_receipt.v1",
-        "ghostlight.persona_stage_receipt.v1",
-        presence_receipt.storage_key(),
-        &presence_receipt,
-    )?;
+    for receipt in &presence_receipts {
+        store.insert(
+            "persona_stage_receipt.v1",
+            "ghostlight.persona_stage_receipt.v1",
+            receipt.storage_key(),
+            receipt,
+        )?;
+    }
     let materialized = kernel
         .command(WorldCommand::ReconcileGestaltPresence {
             expected_revision: advanced.revision,
@@ -744,7 +746,7 @@ async fn main() -> anyhow::Result<()> {
         "commit":committed,
         "materialization":materialized,
         "automatic_presence_plan":presence_plan,
-        "automatic_presence_receipt":presence_receipt,
+        "automatic_presence_receipts":presence_receipts,
         "identity_preserved":true,
         "member_delta_changes_bound_to_outcomes":true,
         "player_unchanged":true,

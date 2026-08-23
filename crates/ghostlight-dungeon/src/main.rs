@@ -3863,6 +3863,47 @@ async fn publish_latest_narration(
     Ok(Some(projection))
 }
 
+async fn committed_after_failure(
+    state: &AppState,
+    runtime: &CampaignRuntime,
+    result: &CommandResult,
+    stage: &str,
+    reason: String,
+) -> Response {
+    tracing::warn!(stage, %reason, "post-commit aftermath stopped");
+    if let Ok(campaign) = load_campaign(&runtime.store) {
+        let receipt = RejectedProposalReceipt {
+            schema: "ghostlight.rejected_proposal_receipt.v1".into(),
+            id: uuid::Uuid::new_v4().to_string(),
+            campaign_id: campaign.id,
+            revision: campaign.revision,
+            command_kind: stage.into(),
+            reason: reason.clone(),
+            rejected_at: chrono::Utc::now(),
+        };
+        let _ = runtime.store.insert(
+            "rejected_proposal_receipt.v1",
+            "ghostlight.rejected_proposal_receipt.v1",
+            &receipt.id,
+            &receipt,
+        );
+    }
+    let narration = publish_latest_narration(state, runtime)
+        .await
+        .ok()
+        .flatten();
+    if let Err(error) = refresh_mesh(state).await {
+        tracing::warn!(%error, "post-commit CultMesh publication failed");
+    }
+    let message = format!(
+        "The player action committed, but {stage} stopped: {reason}. Every world change remains separately receipted."
+    );
+    Json(player_command_projection_with_message(
+        result, narration, &message,
+    ))
+    .into_response()
+}
+
 async fn propose_time_advance(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -4292,13 +4333,15 @@ async fn command(
                                 model_name: MODEL_FAST.into(),
                             };
                             match planner.plan(campaign, &summary).await {
-                                Ok((plan, receipt)) => {
-                                    let _ = runtime.store.insert(
-                                        "persona_stage_receipt.v1",
-                                        "ghostlight.persona_stage_receipt.v1",
-                                        receipt.storage_key(),
-                                        &receipt,
-                                    );
+                                Ok((plan, receipts)) => {
+                                    for receipt in receipts {
+                                        let _ = runtime.store.insert(
+                                            "persona_stage_receipt.v1",
+                                            "ghostlight.persona_stage_receipt.v1",
+                                            receipt.storage_key(),
+                                            &receipt,
+                                        );
+                                    }
                                     if !plan.individuations.is_empty()
                                         || !plan.promotions.is_empty()
                                         || !plan.demotions.is_empty()
@@ -4315,18 +4358,28 @@ async fn command(
                                                 presence_result = Some(committed);
                                             }
                                             Ok(_) => unreachable!(),
-                                            Err(error) => return (StatusCode::CONFLICT, Json(ErrorBody { error: error.to_string() })).into_response(),
+                                            Err(error) => {
+                                                return committed_after_failure(
+                                                    &state,
+                                                    &runtime,
+                                                    &result,
+                                                    &format!("{command_kind}.gestalt_presence"),
+                                                    error.to_string(),
+                                                )
+                                                .await;
+                                            }
                                         }
                                     }
                                 }
                                 Err(error) => {
-                                    return (
-                                        StatusCode::BAD_GATEWAY,
-                                        Json(ErrorBody {
-                                            error: error.to_string(),
-                                        }),
+                                    return committed_after_failure(
+                                        &state,
+                                        &runtime,
+                                        &result,
+                                        &format!("{command_kind}.gestalt_presence_planner"),
+                                        error.to_string(),
                                     )
-                                        .into_response();
+                                    .await;
                                 }
                             }
                         }
@@ -4369,13 +4422,14 @@ async fn command(
                                             {
                                                 Ok(value) => value,
                                                 Err(error) => {
-                                                    return (
-                                                        StatusCode::BAD_GATEWAY,
-                                                        Json(ErrorBody {
-                                                            error: error.to_string(),
-                                                        }),
+                                                    return committed_after_failure(
+                                                        &state,
+                                                        &runtime,
+                                                        &result,
+                                                        &format!("{command_kind}.npc_initiative"),
+                                                        error.to_string(),
                                                     )
-                                                        .into_response();
+                                                    .await;
                                                 }
                                             };
                                             let narration =
@@ -4392,25 +4446,27 @@ async fn command(
                                             .into_response();
                                         }
                                         Err(error) => {
-                                            return (
-                                                StatusCode::CONFLICT,
-                                                Json(ErrorBody {
-                                                    error: error.to_string(),
-                                                }),
+                                            return committed_after_failure(
+                                                &state,
+                                                &runtime,
+                                                &result,
+                                                &format!("{command_kind}.reaction_commit"),
+                                                error.to_string(),
                                             )
-                                                .into_response();
+                                            .await;
                                         }
                                     }
                                 }
                                 Ok(_) => {}
                                 Err(error) => {
-                                    return (
-                                        StatusCode::BAD_GATEWAY,
-                                        Json(ErrorBody {
-                                            error: error.to_string(),
-                                        }),
+                                    return committed_after_failure(
+                                        &state,
+                                        &runtime,
+                                        &result,
+                                        &format!("{command_kind}.reaction_appraisal"),
+                                        error.to_string(),
                                     )
-                                        .into_response();
+                                    .await;
                                 }
                             }
                         }
@@ -4726,6 +4782,18 @@ fn player_command_projection(
             "proposal":proposal,
         }),
     }
+}
+
+fn player_command_projection_with_message(
+    result: &CommandResult,
+    narration: Option<NarrationProjection>,
+    message: &str,
+) -> serde_json::Value {
+    let mut projection = player_command_projection(result, narration);
+    if let Some(object) = projection.as_object_mut() {
+        object.insert("message".into(), message.into());
+    }
+    projection
 }
 
 fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) -> bool {
@@ -6197,6 +6265,43 @@ mod tests {
             None,
         );
         assert_eq!(created, serde_json::json!({"kind":"created"}));
+    }
+
+    #[test]
+    fn post_commit_failure_remains_an_accepted_committed_projection() {
+        let campaign = seed("Private state");
+        let result = CommandResult::Committed {
+            receipt: ghostlight_dungeon::domain::WorldCommitReceipt {
+                schema: "ghostlight.world_commit_receipt.v1".into(),
+                campaign_id: campaign.id,
+                previous_revision: 4,
+                revision: 5,
+                command_kind: "speak".into(),
+                committed_at: chrono::Utc::now(),
+                roll: None,
+            },
+            campaign,
+        };
+
+        let projection = player_command_projection_with_message(
+            &result,
+            None,
+            "The player action committed, but reaction appraisal stopped.",
+        );
+
+        assert_eq!(projection["kind"], "committed");
+        assert_eq!(projection["revision"], 5);
+        assert!(
+            projection["message"]
+                .as_str()
+                .unwrap()
+                .contains("committed")
+        );
+        assert!(
+            !serde_json::to_string(&projection)
+                .unwrap()
+                .contains("Private state")
+        );
     }
 
     #[test]

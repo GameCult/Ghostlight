@@ -132,6 +132,14 @@ cast; `WorldKernel` validates exact member, gestalt, location, and versions
 before materialization. Live harnesses persist the private presence preflight
 even when their acceptance assertion fails.
 
+The presence-planner schema enumerates promotion IDs only from the supplied
+nearby dormant roster, demotion IDs only from supplied materialized actors, and
+gestalt and location IDs only from the exact scene candidates. A structurally
+valid plan that mismatches member, gestalt, location, or version receives one
+same-snapshot semantic correction. When that correction succeeds, both the
+rejected and accepted stage receipts remain durable; the rejected receipt is
+marked `semantic_invalid` with the bounded local reason.
+
 ## Canonical population migration
 
 Population fission and population movement are separate decisions. Fission

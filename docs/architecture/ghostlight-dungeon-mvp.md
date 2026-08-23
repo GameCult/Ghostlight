@@ -682,6 +682,12 @@ to their own snapshot versions. Initiative selects compatible reactions for a
 later `WorldCommand`; it does not suppress perception for actors outside the
 current conversational focus.
 
+The primary player event commits before optional presence casting, reaction
+appraisal, initiative, and narration. A failure in those later stages is stored
+as a rejected-proposal receipt and returned as an accepted committed result
+with a visible warning. It cannot be reported as rejection of the already
+persisted player action, and a browser retry cannot duplicate that action.
+
 ### Away-time agency
 
 The service pulses every five minutes. After fifteen minutes without player
