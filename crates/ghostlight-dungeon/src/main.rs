@@ -4421,13 +4421,8 @@ async fn command(
                     *proposal = Some(assessment);
                 }
                 Err(error) => {
-                    return (
-                        StatusCode::UNPROCESSABLE_ENTITY,
-                        Json(ErrorBody {
-                            error: error.to_string(),
-                        }),
-                    )
-                        .into_response();
+                    let body = player_safe_assessment_failure(&error);
+                    return (StatusCode::UNPROCESSABLE_ENTITY, Json(body)).into_response();
                 }
             }
         }
@@ -5791,6 +5786,18 @@ fn player_safe_strategic_failure(error: &anyhow::Error) -> ErrorBody {
     }
 }
 
+fn player_safe_assessment_failure(error: &anyhow::Error) -> ErrorBody {
+    let private_error_chain: String = format!("{error:#}").chars().take(4_000).collect();
+    tracing::warn!(
+        error = %private_error_chain,
+        "private action assessment failed without mutation"
+    );
+    ErrorBody {
+        error: "Ghostlight could not produce a valid stakes assessment after one correction. No world state changed; your draft is preserved so you can retry or revise the attempt."
+            .into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5811,6 +5818,22 @@ mod tests {
         );
         assert!(!projected.error.contains("convoy"));
         assert!(!projected.error.contains("verifier"));
+    }
+
+    #[test]
+    fn assessment_failure_projection_never_contains_private_model_diagnostics() {
+        let private = anyhow::anyhow!(
+            "stage action_assessment, instance /strong_effect/clock_advances/secret, schema /minimum: rejected hidden value"
+        );
+        let projected = player_safe_assessment_failure(&private);
+
+        assert_eq!(
+            projected.error,
+            "Ghostlight could not produce a valid stakes assessment after one correction. No world state changed; your draft is preserved so you can retry or revise the attempt."
+        );
+        assert!(!projected.error.contains("action_assessment"));
+        assert!(!projected.error.contains("clock_advances"));
+        assert!(!projected.error.contains("schema"));
     }
 
     fn seed(name: &str) -> Campaign {
