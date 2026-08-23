@@ -41,6 +41,38 @@ pub fn player_surface_for_actor(
     let story = story_nodes(campaign, narrations);
     let player = &campaign.actors[viewer_actor_id];
     let location = &campaign.locations[&player.location_id];
+    let mut present_characters = campaign
+        .actors
+        .values()
+        .filter(|actor| actor.id != viewer_actor_id && actor.location_id == player.location_id)
+        .map(|actor| actor.name.clone())
+        .collect::<Vec<_>>();
+    present_characters.sort();
+    let mut local_populations = campaign
+        .gestalts
+        .values()
+        .filter(|gestalt| {
+            campaign
+                .agency_profiles
+                .get(&gestalt.id)
+                .is_some_and(|profile| profile.location_ids.contains(&player.location_id))
+        })
+        .map(|gestalt| gestalt.name.clone())
+        .collect::<Vec<_>>();
+    local_populations.sort();
+    let scene_presence = format!(
+        "Present characters: {}\nLocal populations: {}",
+        if present_characters.is_empty() {
+            "none".into()
+        } else {
+            present_characters.join(", ")
+        },
+        if local_populations.is_empty() {
+            "none".into()
+        } else {
+            local_populations.join(", ")
+        },
+    );
     let relationships = if player.relationships.is_empty() {
         "none".into()
     } else {
@@ -133,6 +165,7 @@ pub fn player_surface_for_actor(
     let mut children = vec![
         json!({"id":"dungeon.status","kind":"card","props":{"title":format!("{} · revision {} · {}",campaign.name,campaign.revision,campaign.world_time)},"children":[]}),
         json!({"id":"dungeon.location","kind":"card","props":{"title":format!("{} · {}",location.name,player.name)},"children":[]}),
+        json!({"id":"dungeon.scene-presence","kind":"card","props":{"title":"Scene presence"},"children":[{"id":"dungeon.scene-presence.text","kind":"text","props":{"value":scene_presence},"children":[]}]}),
         json!({"id":"dungeon.ledger","kind":"card","props":{"title":"Character ledger"},"children":[{"id":"dungeon.ledger.text","kind":"text","props":{"value":ledger},"children":[]}]}),
         json!({"id":"dungeon.resolution","kind":"card","props":{"title":format!("World resolution · {} configured / {} effective",campaign.resolution_policy.active_cell_budget,effective_budget)},"children":[{"id":"dungeon.resolution.text","kind":"text","props":{"value":format!("Resolution epoch {} · {} pins · {} temporary overage",campaign.resolution_policy.resolution_epoch,campaign.resolution_pins.len(),campaign.resolution_cover.as_ref().map(|cover| cover.mandatory_overage).unwrap_or(0))},"children":[]}]}),
         json!({"id":"dungeon.news","kind":"card","props":{"title":"Accessible news and rumors"},"children":news}),
@@ -513,6 +546,38 @@ mod tests {
             .insert("faction-0000".into(), "owes me safe passage".into());
         campaign.player_actor_id = player.id.clone();
         campaign.actors.insert(player.id.clone(), player);
+        campaign.actors.insert(
+            "local-witness".into(),
+            crate::domain::ActorState {
+                id: "local-witness".into(),
+                name: "Local Witness".into(),
+                location_id: "center".into(),
+                capabilities: Default::default(),
+                knowledge: Default::default(),
+                equipment: Default::default(),
+                conditions: Default::default(),
+                obligations: Default::default(),
+                relationships: Default::default(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        campaign.actors.insert(
+            "remote-witness".into(),
+            crate::domain::ActorState {
+                id: "remote-witness".into(),
+                name: "SECRET_REMOTE_WITNESS".into(),
+                location_id: "remote".into(),
+                capabilities: Default::default(),
+                knowledge: Default::default(),
+                equipment: Default::default(),
+                conditions: Default::default(),
+                obligations: Default::default(),
+                relationships: Default::default(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
 
         let surface = player_surface(&campaign, &[]);
 
@@ -523,6 +588,9 @@ mod tests {
                 .unwrap()
                 .contains("Relationships: Faction 0: owes me safe passage")
         );
+        let encoded = serde_json::to_string(&surface).unwrap();
+        assert!(encoded.contains("Present characters: Local Witness"));
+        assert!(!encoded.contains("SECRET_REMOTE_WITNESS"));
     }
 
     #[test]
