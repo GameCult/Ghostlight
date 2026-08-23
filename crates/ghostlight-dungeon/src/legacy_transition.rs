@@ -8,8 +8,9 @@
 
 use crate::{
     domain::{
-        ActorReaction, Campaign, OutcomeBand, StrategicActivityOutcome, StrategicOutcomeEffect,
-        StrategicTickPlan, WorldEffectDelta,
+        ActorReaction, Campaign, GestaltFissionPreview, GestaltLineage, GestaltPersonaState,
+        OutcomeBand, StrategicActivityOutcome, StrategicOutcomeEffect, StrategicTickPlan,
+        WorldEffectDelta,
     },
     transition::*,
 };
@@ -140,6 +141,253 @@ pub fn lower_group_travel(
         ))?),
         expires_at,
     )
+}
+
+pub fn lower_fission(
+    campaign: &Campaign,
+    preview: &GestaltFissionPreview,
+    expires_at: DateTime<Utc>,
+) -> Result<LoweredLegacyTransition> {
+    crate::resolution::validate_fission(campaign, preview)?;
+    let preview_digest = digest_serializable(preview)?;
+    let source_receipt_id = format!(
+        "fission-preview:{}",
+        preview_digest.trim_start_matches("sha256:")
+    );
+    let parent = population_subject(&preview.parent_gestalt_id);
+    let mut mutations = Vec::new();
+    for child in &preview.children {
+        let subject = population_subject(&child.id);
+        mutations.push(WorldMutation::AdmitEntity {
+            subject: subject.clone(),
+            initial_components: BTreeSet::from([
+                WorldComponentKind::Identity,
+                WorldComponentKind::Occupancy,
+                WorldComponentKind::Capability,
+                WorldComponentKind::Knowledge,
+                WorldComponentKind::Commitment,
+                WorldComponentKind::Pressure,
+                WorldComponentKind::PopulationLineage,
+            ]),
+            initial_place: Some(place_subject(&child.home_location_id)),
+            admission_receipt_id: source_receipt_id.clone(),
+        });
+        mutations.push(WorldMutation::ChangeIdentity {
+            subject,
+            operation: IdentityMutationOperation::Adopt,
+            handle_id: format!("identity:canonical:{}", child.id),
+            handle_value: Some(child.name.clone()),
+            audience: Vec::new(),
+        });
+    }
+    mutations.push(WorldMutation::ChangePopulationLineage {
+        operation: PopulationLineageOperation::Split,
+        parent_populations: vec![parent.clone()],
+        child_populations: preview
+            .children
+            .iter()
+            .map(|child| population_subject(&child.id))
+            .collect(),
+        remainder_population: Some(population_subject(&preview.residual_child_id)),
+    });
+    for (resource, child_id) in &preview.resource_child_assignments {
+        mutations.push(WorldMutation::TransferCustody {
+            resource: resource_subject(campaign, resource),
+            from_custodian: parent.clone(),
+            to_custodian: population_subject(child_id),
+        });
+    }
+    for member in campaign
+        .gestalt_members
+        .values()
+        .filter(|member| member.gestalt_id == preview.parent_gestalt_id)
+    {
+        let destination = preview
+            .member_child_assignments
+            .get(&member.id)
+            .unwrap_or(&preview.residual_child_id);
+        mutations.push(WorldMutation::ChangePopulationMembership {
+            actor: actor_subject(&format!("member:{}", member.id)),
+            operation: PopulationMembershipOperation::Transfer,
+            source_population: Some(parent.clone()),
+            destination_population: Some(population_subject(destination)),
+        });
+    }
+    lower_exact_mutations(
+        campaign,
+        mutations,
+        MutationProcedure::CompilerAdmission,
+        None,
+        MutationOutcomeBinding::Deterministic,
+        Some(campaign.resolution_policy.resolution_epoch),
+        "Admit the approved child populations, preserve their inherited baseline, partition each exact resource once, transfer each named member once, and record one population lineage split.",
+        &source_receipt_id,
+        Some(digest_serializable(&(
+            "fission",
+            &preview.parent_gestalt_id,
+            &preview.partition_axis,
+        ))?),
+        Some(preview_digest),
+        expires_at,
+    )
+}
+
+pub fn apply_lowered_fission(
+    campaign: &mut Campaign,
+    preview: &GestaltFissionPreview,
+    transition: &LoweredLegacyTransition,
+    now: DateTime<Utc>,
+) -> Result<WorldMutationReceipt> {
+    crate::resolution::validate_fission(campaign, preview)?;
+    let snapshot = component_snapshot(campaign)?;
+    let application =
+        apply_component_world_batch(&snapshot, &transition.authority, &transition.batch, now)?;
+    project_accepted_fission(campaign, preview, &application.state)?;
+    Ok(application.receipt)
+}
+
+fn project_accepted_fission(
+    campaign: &mut Campaign,
+    preview: &GestaltFissionPreview,
+    next: &ComponentWorldState,
+) -> Result<()> {
+    let parent = campaign
+        .gestalts
+        .get(&preview.parent_gestalt_id)
+        .cloned()
+        .ok_or_else(|| anyhow!("accepted fission parent vanished"))?;
+    let inherited_relations = campaign
+        .agency_relations
+        .values()
+        .filter(|relation| {
+            relation.active
+                && (relation.from_subject_id == preview.parent_gestalt_id
+                    || relation.to_subject_id == preview.parent_gestalt_id)
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+
+    for approved in &preview.children {
+        let subject = population_subject(&approved.id);
+        let place = next
+            .occupancy
+            .get(&subject)
+            .filter(|place| place.kind == SubjectKind::Place)
+            .ok_or_else(|| anyhow!("accepted fission child lacks exact occupancy"))?;
+        let identity = next
+            .identities
+            .get(&format!("identity:canonical:{}", approved.id))
+            .filter(|identity| identity.subject == subject && identity.active)
+            .ok_or_else(|| anyhow!("accepted fission child lacks exact identity"))?;
+        campaign.gestalts.insert(
+            approved.id.clone(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: approved.id.clone(),
+                name: identity.value.clone(),
+                version: 0,
+                home_location_id: place.id.clone(),
+                shared_capabilities: parent.shared_capabilities.clone(),
+                shared_knowledge: parent.shared_knowledge.clone(),
+                resources: BTreeSet::new(),
+                goals: parent.goals.clone(),
+                pressures: parent.pressures.clone(),
+            },
+        );
+    }
+
+    let member_ids = campaign
+        .gestalt_members
+        .values()
+        .filter(|member| member.gestalt_id == preview.parent_gestalt_id)
+        .map(|member| member.id.clone())
+        .collect::<Vec<_>>();
+    for member_id in member_ids {
+        let expected_destination = preview
+            .member_child_assignments
+            .get(&member_id)
+            .unwrap_or(&preview.residual_child_id);
+        let actor = actor_subject(&format!("member:{member_id}"));
+        let active_destinations = next
+            .memberships
+            .iter()
+            .filter(|(key, value)| key.actor == actor && value.active)
+            .map(|(key, _)| key.population.id.as_str())
+            .collect::<Vec<_>>();
+        if active_destinations != [expected_destination.as_str()] {
+            return Err(anyhow!(
+                "accepted fission member does not have one exact destination"
+            ));
+        }
+        project_member_population_transfer(
+            campaign,
+            &member_id,
+            &preview.parent_gestalt_id,
+            expected_destination,
+        )?;
+        let member = campaign
+            .gestalt_members
+            .get_mut(&member_id)
+            .expect("member was projected");
+        member.version = member.version.saturating_add(1);
+    }
+
+    project_all_resources(campaign, next)?;
+    for child in &preview.children {
+        if campaign.gestalts[&child.id].resources != child.resources {
+            return Err(anyhow!(
+                "accepted fission resource custody does not match the approved partition"
+            ));
+        }
+    }
+    campaign
+        .gestalts
+        .get_mut(&preview.parent_gestalt_id)
+        .expect("parent existence checked")
+        .version = parent.version.saturating_add(1);
+
+    for relation in inherited_relations {
+        for child in &preview.children {
+            let id = format!("{}:fission:{}", relation.id, child.id);
+            let component = next
+                .relationships
+                .get(&id)
+                .ok_or_else(|| anyhow!("accepted fission lost inherited agency relation"))?;
+            let mut inherited = relation.clone();
+            inherited.id = id.clone();
+            if inherited.from_subject_id == preview.parent_gestalt_id {
+                inherited.from_subject_id = child.id.clone();
+            }
+            if inherited.to_subject_id == preview.parent_gestalt_id {
+                inherited.to_subject_id = child.id.clone();
+            }
+            if component.source.id != inherited.from_subject_id
+                || component.target.id != inherited.to_subject_id
+                || component.strength != Some(i64::from(inherited.strength))
+            {
+                return Err(anyhow!("accepted fission agency relation was rewritten"));
+            }
+            campaign.agency_relations.insert(id, inherited);
+        }
+    }
+    campaign.gestalt_lineages.insert(
+        preview.parent_gestalt_id.clone(),
+        GestaltLineage {
+            schema: "ghostlight.gestalt_lineage.v1".into(),
+            parent_gestalt_id: preview.parent_gestalt_id.clone(),
+            child_gestalt_ids: preview
+                .children
+                .iter()
+                .map(|child| child.id.clone())
+                .collect(),
+            partition_axis: preview.partition_axis.clone(),
+            partition_values: preview.child_partition_values.clone(),
+            residual_child_id: preview.residual_child_id.clone(),
+            source_revision: campaign.revision,
+        },
+    );
+    crate::resolution::project_fission_resolution(campaign, preview)?;
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

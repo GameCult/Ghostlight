@@ -615,6 +615,11 @@ pub struct GestaltFissionPreview {
     pub residual_child_id: String,
     #[serde(default)]
     pub member_child_assignments: BTreeMap<String, String>,
+    /// Exact scarce-resource custody after the split. Every resource owned by
+    /// the parent appears once and names one child; it is never inherited by
+    /// every child as population baseline.
+    #[serde(default)]
+    pub resource_child_assignments: BTreeMap<String, String>,
     pub evidence_receipt_ids: Vec<String>,
     pub gaps: Vec<String>,
     #[serde(default)]

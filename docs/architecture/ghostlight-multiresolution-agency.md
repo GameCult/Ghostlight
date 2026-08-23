@@ -47,10 +47,19 @@ leaves. A material split uses approval-gated `FissionGestalt`:
 2. every requested enumerated facet gets a child and one `other/unknown`
    remainder is mandatory;
 3. children inherit the parent baseline and own only later deltas;
-4. member deltas are assigned to one child without rewriting identity;
-5. the parent remains as inactive lineage rather than being destroyed;
-6. the kernel validates the preview, evidence, versions, assignments, and
+4. every exact scarce resource is assigned to one child rather than copied as
+   an inheritable trait;
+5. member deltas are assigned to one child without rewriting identity;
+6. the parent remains as inactive lineage rather than being destroyed;
+7. the kernel validates the preview, evidence, versions, assignments, and
    residual child before one atomic commit.
+
+The commit is a canonical `WorldMutationBatch`: child admission establishes
+identity and occupancy, the lineage mutation inherits non-scarce baseline
+components, custody transfers partition resources, and membership transfers
+move exact named people. Agency profiles, inherited partition facets, and the
+discarded cover are resolution projections of that accepted transition; they
+cannot create a second result.
 
 Reversible simulation aggregation never invokes fission and never deletes or
 reverses this lineage.

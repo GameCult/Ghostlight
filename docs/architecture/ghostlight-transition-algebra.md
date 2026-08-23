@@ -1,7 +1,9 @@
 # Ghostlight World Transition Algebra
 
-Status: adopted architecture; production migration is incomplete until the
-legacy effect writers named below are deleted.
+Status: adopted architecture; foreground, reaction, strategic, time, travel,
+and approval-gated fission writes use the mutation reducer. Region expansion,
+initial compiler publication, and aggregate-storage removal remain migration
+work.
 
 ## Objective
 
@@ -97,9 +99,12 @@ The migration is not complete while any of these can decide canonical state:
 - model output, browser payloads, narration, news generation, retrieval, or a
   derived simulation cell.
 
-Administrative world creation, compiler publication, and approval-gated
-population fission must ultimately lower to the same batch primitive. They may
-possess broader authority envelopes, but not another state-writing mechanism.
+Administrative world creation, compiler publication, and region expansion must
+ultimately lower to the same batch primitive. They may possess broader
+authority envelopes, but not another state-writing mechanism. Approval-gated
+population fission already lowers to entity admission, lineage, custody, and
+membership mutations; the fission projector owns only the derived resolution
+profiles and cover epoch.
 
 ### Shared paths
 
@@ -217,8 +222,12 @@ Complex effects are batches, not new verbs. Giving half a medicine lot to a
 clinic composes resource split, custody transfer, and perhaps an obligation.
 Evacuating a named refugee composes relocation, population-membership transfer,
 and accessible knowledge. Population fission composes entity admission,
-lineage, and exact member transfers while preserving an `other/unknown`
-remainder.
+lineage, exact member transfers, and one custody transfer per scarce resource
+while preserving an `other/unknown` remainder. Capabilities, shared knowledge,
+goals, and active pressures inherit through the lineage reducer. Resources do
+not: every parent resource must be assigned to exactly one child in the
+approved preview, so aggregation cannot mint a granary for every ideological
+subgroup.
 
 ## Means, intended effect, and committed mutation
 
@@ -385,7 +394,8 @@ Migration order:
 5. Normalize named Gestalt members into stable actor subjects and resource,
    membership, identity, and occupancy components. Remove materialized actor as
    a second identity owner.
-6. Lower travel, waits, fission, expansion, and compiler publication.
+6. Lower travel, waits, fission, expansion, and compiler publication. Travel,
+   waits, and fission are complete; expansion and initial publication remain.
 7. Migrate persisted campaign rows transactionally, quarantine ambiguous legacy
    resources or identities, and make the old campaign fields projection-only.
 8. Remove legacy schemas from model boundaries. Retain schema readers solely
@@ -478,4 +488,3 @@ The algebra cut is complete only when:
 - the agency corpus meets its coverage and stability gates;
 - adversarial play through the typed Eve surface still proves the homepage
   promises after migration.
-

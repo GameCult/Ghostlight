@@ -216,6 +216,7 @@ pub enum MutationSubjectRole {
     TopologyOrigin,
     TopologyDestination,
     Entity,
+    InitialPlace,
 }
 
 #[derive(
@@ -548,6 +549,8 @@ pub enum WorldMutation {
     AdmitEntity {
         subject: SubjectRef,
         initial_components: BTreeSet<WorldComponentKind>,
+        #[serde(default)]
+        initial_place: Option<SubjectRef>,
         admission_receipt_id: String,
     },
     RetireEntity {
@@ -1246,6 +1249,7 @@ fn apply_component_mutation(
         AdmitEntity {
             subject,
             initial_components,
+            initial_place,
             ..
         } => {
             if subject.kind == SubjectKind::Resource {
@@ -1264,6 +1268,11 @@ fn apply_component_mutation(
                     version: next_component_version(state),
                 },
             );
+            if let Some(place) = initial_place {
+                active_subject(state, place)?;
+                require_kind(place, SubjectKind::Place)?;
+                state.occupancy.insert(subject.clone(), place.clone());
+            }
         }
         RetireEntity { subject, .. } => retire_entity(state, subject)?,
         AdvanceWorldTime { campaign, minutes } => {
@@ -2086,6 +2095,7 @@ fn apply_lineage_mutation(
             if !child_set.contains(remainder) {
                 return Err(anyhow!("population split remainder is not a child"));
             }
+            inherit_population_baseline(state, &parents[0], children)?;
         }
         PopulationLineageOperation::Merge => {
             if parents.len() < 2 || children.len() != 1 || remainder.is_some() {
@@ -2110,6 +2120,122 @@ fn apply_lineage_mutation(
         },
     );
     Ok(())
+}
+
+fn inherit_population_baseline(
+    state: &mut ComponentWorldState,
+    parent: &SubjectRef,
+    children: &[SubjectRef],
+) -> Result<()> {
+    let version = next_component_version(state);
+    let capabilities = state
+        .capabilities
+        .iter()
+        .filter(|(key, _)| key.subject == *parent)
+        .map(|(key, value)| (key.entry_id.clone(), value.clone()))
+        .collect::<Vec<_>>();
+    let commitments = state
+        .commitments
+        .iter()
+        .filter(|(key, _)| key.subject == *parent)
+        .map(|(key, value)| (key.entry_id.clone(), value.clone()))
+        .collect::<Vec<_>>();
+    let knowledge = state
+        .knowledge
+        .iter()
+        .filter(|(key, _)| key.knower == *parent)
+        .map(|(key, value)| (key.proposition.clone(), value.clone()))
+        .collect::<Vec<_>>();
+    let pressures = state
+        .pressures
+        .iter()
+        .filter(|(_, value)| value.owner == *parent)
+        .map(|(subject, value)| (subject.clone(), value.clone()))
+        .collect::<Vec<_>>();
+    let relationships = state
+        .relationships
+        .iter()
+        .filter(|(_, value)| value.source == *parent || value.target == *parent)
+        .map(|(id, value)| (id.clone(), value.clone()))
+        .collect::<Vec<_>>();
+
+    for child in children {
+        for (entry_id, mut value) in capabilities.clone() {
+            value.version = version;
+            state.capabilities.insert(
+                SubjectEntryKey {
+                    subject: child.clone(),
+                    entry_id,
+                },
+                value,
+            );
+        }
+        for (entry_id, mut value) in commitments.clone() {
+            value.version = version;
+            state.commitments.insert(
+                SubjectEntryKey {
+                    subject: child.clone(),
+                    entry_id,
+                },
+                value,
+            );
+        }
+        for (proposition, mut value) in knowledge.clone() {
+            value.version = version;
+            state.knowledge.insert(
+                KnowledgeKey {
+                    knower: child.clone(),
+                    proposition,
+                },
+                value,
+            );
+        }
+        for (_source_pressure, mut value) in pressures.clone() {
+            let pressure = SubjectRef {
+                kind: SubjectKind::Pressure,
+                id: format!("gestalt-pressure:{}:{}", child.id, short_hash(&value.label)),
+            };
+            if state.subjects.contains_key(&pressure) || state.pressures.contains_key(&pressure) {
+                return Err(anyhow!("population split pressure identity collides"));
+            }
+            state.subjects.insert(
+                pressure.clone(),
+                TypedSubject {
+                    schema: "ghostlight.typed_subject.v1".into(),
+                    subject: pressure.clone(),
+                    lifecycle: LifecycleStatus::Admitted,
+                    admitted_components: BTreeSet::from([WorldComponentKind::Pressure]),
+                    version,
+                },
+            );
+            value.pressure = pressure.clone();
+            value.owner = child.clone();
+            value.version = version;
+            state.pressures.insert(pressure, value);
+        }
+        for (source_id, mut value) in relationships.clone() {
+            let id = format!("{source_id}:fission:{}", child.id);
+            if state.relationships.contains_key(&id) {
+                return Err(anyhow!("population split relationship identity collides"));
+            }
+            if value.source == *parent {
+                value.source = child.clone();
+            }
+            if value.target == *parent {
+                value.target = child.clone();
+            }
+            value.version = version;
+            state.relationships.insert(id, value);
+        }
+    }
+    Ok(())
+}
+
+fn short_hash(value: &str) -> String {
+    format!("{:x}", Sha256::digest(value.as_bytes()))
+        .chars()
+        .take(16)
+        .collect()
 }
 
 fn apply_identity_mutation(
@@ -2517,9 +2643,18 @@ fn mutation_component_refs(
             Component::Topology,
             Some(edge_id.clone()),
         )],
-        AdmitEntity { subject, .. } | RetireEntity { subject, .. } => {
-            vec![(subject.clone(), Component::Lifecycle, None)]
-        }
+        AdmitEntity {
+            subject,
+            initial_place,
+            ..
+        } => std::iter::once((subject.clone(), Component::Lifecycle, None))
+            .chain(
+                initial_place
+                    .iter()
+                    .map(|_| (subject.clone(), Component::Occupancy, None)),
+            )
+            .collect(),
+        RetireEntity { subject, .. } => vec![(subject.clone(), Component::Lifecycle, None)],
         AdvanceWorldTime { campaign, .. } => vec![(campaign.clone(), Component::WorldTime, None)],
     }
 }
@@ -2842,7 +2977,11 @@ fn subject_schema_fields(
             (TopologyOrigin, "from_place", Required),
             (TopologyDestination, "to_place", Required),
         ],
-        AdmitEntity | RetireEntity => vec![(Entity, "subject", Required)],
+        AdmitEntity => vec![
+            (Entity, "subject", Required),
+            (InitialPlace, "initial_place", Optional),
+        ],
+        RetireEntity => vec![(Entity, "subject", Required)],
         AdvanceWorldTime => vec![(Subject, "campaign", Required)],
     }
 }
@@ -3310,9 +3449,17 @@ impl WorldMutation {
                 add(MutationSubjectRole::TopologyOrigin, from_place);
                 add(MutationSubjectRole::TopologyDestination, to_place);
             }
-            AdmitEntity { subject, .. } | RetireEntity { subject, .. } => {
-                add(MutationSubjectRole::Entity, subject)
+            AdmitEntity {
+                subject,
+                initial_place,
+                ..
+            } => {
+                add(MutationSubjectRole::Entity, subject);
+                if let Some(place) = initial_place {
+                    add(MutationSubjectRole::InitialPlace, place);
+                }
             }
+            RetireEntity { subject, .. } => add(MutationSubjectRole::Entity, subject),
             AdvanceWorldTime { campaign, .. } => add(MutationSubjectRole::Subject, campaign),
         }
         roles
@@ -3692,11 +3839,22 @@ impl WorldMutation {
             }
             AdmitEntity {
                 initial_components,
+                initial_place,
                 admission_receipt_id,
                 ..
             } => {
                 if initial_components.is_empty() {
                     return Err(anyhow!("entity admission requires initial components"));
+                }
+                if initial_components.contains(&WorldComponentKind::Occupancy)
+                    != initial_place.is_some()
+                {
+                    return Err(anyhow!(
+                        "entity admission occupancy requires one exact initial place"
+                    ));
+                }
+                if let Some(place) = initial_place {
+                    require_kind(place, SubjectKind::Place)?;
                 }
                 nonempty("admission receipt id", admission_receipt_id)?;
             }

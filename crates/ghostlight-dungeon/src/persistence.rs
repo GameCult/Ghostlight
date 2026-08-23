@@ -646,15 +646,20 @@ impl CampaignStore {
         Ok(next_campaign_row)
     }
 
-    pub fn append_world_commit<T: Serialize, R: Serialize>(
+    pub fn append_world_commit<T: Serialize>(
         &self,
         expected: &CultCacheEnvelope,
         next: &T,
         receipt_key: &str,
-        receipt: &R,
+        receipt: &WorldCommitReceipt,
         evidence: &[VaultEvidenceReceipt],
         candidates: &[crate::domain::CanonCandidate],
         model_receipts: &[crate::model::ModelStageReceipt],
+        mutation: Option<(
+            &MutationAuthorityEnvelope,
+            &WorldMutationBatch,
+            &WorldMutationReceipt,
+        )>,
     ) -> Result<CultCacheEnvelope> {
         let next_row = envelope(
             &expected.r#type,
@@ -703,6 +708,9 @@ impl CampaignStore {
                 item.storage_key(),
                 item,
             )?);
+        }
+        if let Some(mutation) = mutation {
+            append_mutation_proof(&mut rows, receipt, mutation)?;
         }
         let mut expected_rows = vec![expected.clone()];
         if let Some((row, _)) = existing_manifest {

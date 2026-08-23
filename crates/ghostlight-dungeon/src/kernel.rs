@@ -870,8 +870,19 @@ fn execute(
                     "fission preview evidence receipts were not supplied".into(),
                 ));
             }
-            crate::resolution::apply_fission(&mut campaign, &preview)
-                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let transition = crate::legacy_transition::lower_fission(
+                &campaign,
+                &preview,
+                Utc::now() + Duration::minutes(5),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let mutation_receipt = crate::legacy_transition::apply_lowered_fission(
+                &mut campaign,
+                &preview,
+                &transition,
+                Utc::now(),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
             for candidate in &preview.canon_candidates {
                 campaign
                     .canon_candidates
@@ -885,6 +896,7 @@ fn execute(
                 evidence_receipts,
                 preview.canon_candidates,
                 model_stage_receipts,
+                Some((transition, mutation_receipt)),
             )
         }
         WorldCommand::AdvanceStrategicTick {
@@ -1097,6 +1109,7 @@ fn execute(
                 evidence_receipts,
                 canon_candidates,
                 model_stage_receipts,
+                None,
             )
         }
         WorldCommand::MaterializeGestaltMember {
@@ -3098,17 +3111,32 @@ fn commit_with_records(
     evidence: Vec<VaultEvidenceReceipt>,
     candidates: Vec<CanonCandidate>,
     model_receipts: Vec<crate::model::ModelStageReceipt>,
+    mutation: Option<(
+        crate::legacy_transition::LoweredLegacyTransition,
+        crate::transition::WorldMutationReceipt,
+    )>,
 ) -> Result<CommandResult, KernelError> {
     crate::resolution::ensure_agency_profiles(&mut campaign);
     let previous_revision = campaign.revision;
     campaign.revision += 1;
+    if let Some((_, mutation_receipt)) = &mutation
+        && (mutation_receipt.previous_world_revision != previous_revision
+            || mutation_receipt.world_revision != campaign.revision)
+    {
+        return Err(KernelError::Invalid(
+            "mutation receipt does not bind the recorded world commit".into(),
+        ));
+    }
     let receipt = WorldCommitReceipt {
         schema: "ghostlight.world_commit_receipt.v1".into(),
         campaign_id: campaign.id,
         previous_revision,
         revision: campaign.revision,
         command_kind: kind.into(),
-        committed_at: Utc::now(),
+        committed_at: mutation
+            .as_ref()
+            .map(|(_, receipt)| receipt.committed_at)
+            .unwrap_or_else(Utc::now),
         roll: None,
     };
     store
@@ -3120,6 +3148,9 @@ fn commit_with_records(
             &evidence,
             &candidates,
             &model_receipts,
+            mutation
+                .as_ref()
+                .map(|(transition, receipt)| (&transition.authority, &transition.batch, receipt)),
         )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
@@ -3511,6 +3542,103 @@ mod tests {
             },
         );
         value
+    }
+
+    #[tokio::test]
+    async fn approved_fission_commits_one_typed_lineage_batch_and_no_parallel_writer() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let seed = hierarchical_refugee_campaign();
+        let parent = seed.gestalts["refugees-east"].clone();
+        let child = |id: &str, name: &str| GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: id.into(),
+            name: name.into(),
+            version: 0,
+            home_location_id: parent.home_location_id.clone(),
+            shared_capabilities: parent.shared_capabilities.clone(),
+            shared_knowledge: parent.shared_knowledge.clone(),
+            resources: BTreeSet::new(),
+            goals: parent.goals.clone(),
+            pressures: parent.pressures.clone(),
+        };
+        let preview = GestaltFissionPreview {
+            schema: "ghostlight.gestalt_fission_preview.v1".into(),
+            campaign_id: seed.id,
+            expected_world_revision: seed.revision,
+            parent_gestalt_id: parent.id.clone(),
+            partition_axis: AgencyAxis::Ideology,
+            children: vec![
+                child("refugees-returning", "Refugees planning to return"),
+                child("refugees-other", "Other eastern transit refugees"),
+            ],
+            child_partition_values: BTreeMap::from([
+                ("refugees-returning".into(), "returning".into()),
+                ("refugees-other".into(), "other/unknown".into()),
+            ]),
+            residual_child_id: "refugees-other".into(),
+            member_child_assignments: BTreeMap::from([(
+                "mira".into(),
+                "refugees-returning".into(),
+            )]),
+            resource_child_assignments: BTreeMap::new(),
+            evidence_receipt_ids: vec![],
+            gaps: vec![],
+            canon_candidates: vec![],
+            requires_approval: true,
+        };
+        let kernel = WorldKernel::start(store.clone());
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let result = kernel
+            .command(WorldCommand::FissionGestalt {
+                expected_revision: seed.revision,
+                preview,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, receipt } = result else {
+            panic!("fission did not commit")
+        };
+        assert_eq!(receipt.command_kind, "fission_gestalt");
+        assert_eq!(campaign.revision, seed.revision + 1);
+        assert_eq!(campaign.gestalt_members["mira"].id, "mira");
+        assert_eq!(
+            campaign.gestalt_members["mira"].gestalt_id,
+            "refugees-returning"
+        );
+        assert!(!campaign.agency_profiles["refugees-east"].active_leaf);
+        assert!(campaign.agency_profiles["refugees-returning"].active_leaf);
+        assert_eq!(
+            store.keys("mutation_authority_envelope.v1").unwrap().len(),
+            1
+        );
+        assert_eq!(store.keys("world_mutation_batch.v1").unwrap().len(), 1);
+        assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
+        let batch = store
+            .load_all::<crate::transition::WorldMutationBatch>("world_mutation_batch.v1")
+            .unwrap()
+            .pop()
+            .unwrap();
+        let operations = batch
+            .mutations
+            .iter()
+            .map(|mutation| mutation.mutation.operation())
+            .collect::<BTreeSet<_>>();
+        assert!(operations.contains(&crate::transition::WorldMutationOperation::AdmitEntity));
+        assert!(operations.contains(&crate::transition::WorldMutationOperation::PopulationSplit));
+        assert!(
+            operations.contains(&crate::transition::WorldMutationOperation::PopulationTransfer)
+        );
+        assert!(!operations.contains(&crate::transition::WorldMutationOperation::ResourceCreate));
     }
 
     #[test]

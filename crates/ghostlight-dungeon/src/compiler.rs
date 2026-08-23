@@ -285,6 +285,7 @@ struct CompiledFissionSeed {
     child_partition_values: BTreeMap<String, String>,
     #[serde(default)]
     member_child_assignments: BTreeMap<String, String>,
+    resource_child_assignments: BTreeMap<String, String>,
     gaps: Vec<String>,
 }
 
@@ -971,7 +972,7 @@ impl WorldCompiler {
             .retrieve_all(&queries, &campaign.branch_origin.canon_cutoff, 12)
             .await?;
         let base_prompt = format!(
-            "Refine one canonical leaf gestalt along exactly the requested facet. Produce one child per requested value plus one mandatory child whose value is exactly 'other/unknown'. Children inherit the parent baseline and contain only justified refinements; every child starts at version 0 and uses an existing campaign location. Do not erase or rewrite member deltas. Assign a member only when evidence or durable existing delta supports the cut; unassigned members will remain in other/unknown. List every material lore gap. This is an approval preview, not a commit. SUBJECT:\n{}\nEVIDENCE:\n{}",
+            "Refine one canonical leaf gestalt along exactly the requested facet. Produce one child per requested value plus one mandatory child whose value is exactly 'other/unknown'. Every child starts at version 0 and uses an existing campaign location. Each child must copy the parent's shared capabilities, shared knowledge, goals, and pressures exactly; the partition facet belongs to the agency profile and does not silently rewrite the population baseline. Exact scarce resources are not inheritable traits: assign every parent resource to exactly one child in resource_child_assignments, and make each child's resources set equal exactly the resources assigned to that child. Do not create, duplicate, omit, or rename a resource. Do not erase or rewrite member deltas. Assign a member only when evidence or durable existing delta supports the cut; unassigned members will remain in other/unknown. List every material lore gap. This is an approval preview, not a commit. SUBJECT:\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(&subject)?,
             evidence_text(&receipts),
         );
@@ -1044,6 +1045,7 @@ impl WorldCompiler {
                 child_partition_values: compiled.child_partition_values,
                 residual_child_id: residual_child_id.unwrap_or_default(),
                 member_child_assignments: compiled.member_child_assignments,
+                resource_child_assignments: compiled.resource_child_assignments,
                 evidence_receipt_ids,
                 gaps,
                 canon_candidates,

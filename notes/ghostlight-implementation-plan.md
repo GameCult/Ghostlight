@@ -110,6 +110,18 @@ responses are spoiler-safe projections rather than serialized campaigns. The
 browser renders these projections as labeled, escaped human-readable controls,
 and narration receives only the latest causal turn rather than a route dump.
 
+World transition authority is now a closed semantic mutation algebra rather
+than four empirical effect universes. Foreground attempts, NPC initiative,
+reaction appraisal, strategic actor/institution/Gestalt outcomes, waits,
+unanimous group travel, and approval-gated population fission lower through one
+revision-bound batch reducer and persist its authority, batch, and receipt with
+the aggregate campaign projection. Fission inherits non-scarce population
+baseline through typed lineage while partitioning every exact resource and
+named member once; the resolution organ only changes profiles and cover epoch.
+Region expansion, initial compiler publication, removal of legacy model effect
+schemas, and the 300-case reviewed agency corpus remain the explicit migration
+frontier. See `docs/architecture/ghostlight-transition-algebra.md`.
+
 Live local evidence now covers grounded VoidBot compilation, a four-actor wave,
 impossible and receipted d20 actions, grounded narration, strategic cells, and a
 24-faction budget-4 wave. The first scale baseline used 37,327 prompt tokens and

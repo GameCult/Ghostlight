@@ -2694,13 +2694,13 @@ fn is_sha256(value: &str) -> bool {
         .is_some_and(|hex| hex.len() == 64 && hex.bytes().all(|byte| byte.is_ascii_hexdigit()))
 }
 
-pub fn apply_fission(campaign: &mut Campaign, preview: &GestaltFissionPreview) -> Result<()> {
-    validate_fission(campaign, preview)?;
-    let parent = campaign
-        .gestalts
-        .get_mut(&preview.parent_gestalt_id)
-        .ok_or_else(|| anyhow!("fission parent vanished"))?;
-    parent.version = parent.version.saturating_add(1);
+/// Project the resolution-only consequences of an already accepted population
+/// split. Canonical populations, memberships, lineage, and resource custody
+/// must already have been committed by the world mutation reducer.
+pub(crate) fn project_fission_resolution(
+    campaign: &mut Campaign,
+    preview: &GestaltFissionPreview,
+) -> Result<()> {
     let parent_profile = campaign
         .agency_profiles
         .get_mut(&preview.parent_gestalt_id)
@@ -2732,59 +2732,6 @@ pub fn apply_fission(campaign: &mut Campaign, preview: &GestaltFissionPreview) -
         }
         campaign.agency_profiles.insert(child.id.clone(), profile);
     }
-    for member in campaign
-        .gestalt_members
-        .values_mut()
-        .filter(|member| member.gestalt_id == preview.parent_gestalt_id)
-    {
-        member.gestalt_id = preview
-            .member_child_assignments
-            .get(&member.id)
-            .cloned()
-            .unwrap_or_else(|| preview.residual_child_id.clone());
-        member.version = member.version.saturating_add(1);
-    }
-    let inherited_relations: Vec<_> = campaign
-        .agency_relations
-        .values()
-        .filter(|relation| {
-            relation.active
-                && (relation.from_subject_id == preview.parent_gestalt_id
-                    || relation.to_subject_id == preview.parent_gestalt_id)
-        })
-        .cloned()
-        .collect();
-    for relation in inherited_relations {
-        for child in &preview.children {
-            let mut inherited_relation = relation.clone();
-            inherited_relation.id = format!("{}:fission:{}", relation.id, child.id);
-            if inherited_relation.from_subject_id == preview.parent_gestalt_id {
-                inherited_relation.from_subject_id = child.id.clone();
-            }
-            if inherited_relation.to_subject_id == preview.parent_gestalt_id {
-                inherited_relation.to_subject_id = child.id.clone();
-            }
-            campaign
-                .agency_relations
-                .insert(inherited_relation.id.clone(), inherited_relation);
-        }
-    }
-    campaign.gestalt_lineages.insert(
-        preview.parent_gestalt_id.clone(),
-        GestaltLineage {
-            schema: "ghostlight.gestalt_lineage.v1".into(),
-            parent_gestalt_id: preview.parent_gestalt_id.clone(),
-            child_gestalt_ids: preview
-                .children
-                .iter()
-                .map(|child| child.id.clone())
-                .collect(),
-            partition_axis: preview.partition_axis.clone(),
-            partition_values: preview.child_partition_values.clone(),
-            residual_child_id: preview.residual_child_id.clone(),
-            source_revision: campaign.revision,
-        },
-    );
     campaign.resolution_cover = None;
     campaign.resolution_policy.resolution_epoch = campaign
         .resolution_policy
@@ -2812,6 +2759,26 @@ pub fn validate_fission(campaign: &Campaign, preview: &GestaltFissionPreview) ->
         .child_partition_values
         .get(&preview.residual_child_id)
         .map(|value| value.trim().to_ascii_lowercase());
+    let assigned_resources = preview
+        .resource_child_assignments
+        .keys()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let child_resources = preview
+        .children
+        .iter()
+        .flat_map(|child| {
+            child
+                .resources
+                .iter()
+                .cloned()
+                .map(move |resource| (resource, child.id.clone()))
+        })
+        .collect::<Vec<_>>();
+    let unique_child_resources = child_resources
+        .iter()
+        .map(|(resource, _)| resource.clone())
+        .collect::<BTreeSet<_>>();
     if preview.campaign_id != campaign.id
         || preview.expected_world_revision != campaign.revision
         || !preview.requires_approval
@@ -2828,6 +2795,10 @@ pub fn validate_fission(campaign: &Campaign, preview: &GestaltFissionPreview) ->
                 || !campaign.locations.contains_key(&child.home_location_id)
                 || (preview.partition_axis != AgencyAxis::Geography
                     && child.home_location_id != parent.home_location_id)
+                || child.shared_capabilities != parent.shared_capabilities
+                || child.shared_knowledge != parent.shared_knowledge
+                || child.goals != parent.goals
+                || child.pressures != parent.pressures
                 || !preview.child_partition_values.contains_key(&child.id)
         })
         || preview
@@ -2839,6 +2810,22 @@ pub fn validate_fission(campaign: &Campaign, preview: &GestaltFissionPreview) ->
                     .get(member)
                     .is_none_or(|value| value.gestalt_id != parent.id)
                     || !child_ids.contains(child.as_str())
+            })
+        || campaign
+            .gestalt_members
+            .values()
+            .any(|member| member.gestalt_id == parent.id && member.materialized_actor_id.is_some())
+        || assigned_resources != parent.resources
+        || unique_child_resources != parent.resources
+        || child_resources.len() != unique_child_resources.len()
+        || preview
+            .resource_child_assignments
+            .iter()
+            .any(|(resource, child)| {
+                !child_ids.contains(child.as_str())
+                    || !preview.children.iter().any(|candidate| {
+                        candidate.id == *child && candidate.resources.contains(resource)
+                    })
             })
         || parent_profile.subject_kind != AgencySubjectKind::Gestalt
     {
@@ -3777,36 +3764,58 @@ pub(crate) mod tests {
             home_location_id: "center".into(),
             shared_capabilities: BTreeSet::from(["farm".into()]),
             shared_knowledge: BTreeSet::from(["local roads".into()]),
-            resources: BTreeSet::from(["granary".into()]),
+            resources: BTreeSet::new(),
             goals: vec!["survive winter".into()],
             pressures: vec![],
         };
+        let mut other = child("other", "Other villagers");
+        other.resources.insert("granary".into());
         let preview = GestaltFissionPreview {
             schema: "ghostlight.gestalt_fission_preview.v1".into(),
             campaign_id: value.id,
             expected_world_revision: value.revision,
             parent_gestalt_id: "villagers".into(),
             partition_axis: AgencyAxis::Ideology,
-            children: vec![
-                child("traditionalists", "Traditionalists"),
-                child("other", "Other villagers"),
-            ],
+            children: vec![child("traditionalists", "Traditionalists"), other],
             child_partition_values: BTreeMap::from([
                 ("traditionalists".into(), "traditionalist".into()),
                 ("other".into(), "other/unknown".into()),
             ]),
             residual_child_id: "other".into(),
             member_child_assignments: BTreeMap::new(),
+            resource_child_assignments: BTreeMap::from([("granary".into(), "other".into())]),
             evidence_receipt_ids: vec![],
             gaps: vec![],
             canon_candidates: vec![],
             requires_approval: true,
         };
-        apply_fission(&mut value, &preview).unwrap();
+        let mut duplicated = preview.clone();
+        duplicated.children[0].resources.insert("granary".into());
+        assert!(validate_fission(&value, &duplicated).is_err());
+        let transition = crate::legacy_transition::lower_fission(
+            &value,
+            &preview,
+            Utc::now() + chrono::Duration::minutes(5),
+        )
+        .unwrap();
+        crate::legacy_transition::apply_lowered_fission(
+            &mut value,
+            &preview,
+            &transition,
+            Utc::now(),
+        )
+        .unwrap();
+        value.revision += 1;
         assert!(value.gestalts.contains_key("villagers"));
         assert!(!value.agency_profiles["villagers"].active_leaf);
         assert!(value.agency_profiles["traditionalists"].active_leaf);
         assert!(value.agency_profiles["other"].active_leaf);
+        assert!(value.gestalts["villagers"].resources.is_empty());
+        assert!(value.gestalts["traditionalists"].resources.is_empty());
+        assert_eq!(
+            value.gestalts["other"].resources,
+            BTreeSet::from(["granary".into()])
+        );
         assert_eq!(value.gestalt_members["john"].gestalt_id, "other");
         assert_eq!(value.gestalt_members["john"].version, 4);
         assert!(
@@ -3819,6 +3828,8 @@ pub(crate) mod tests {
             "other"
         );
 
+        let mut nested_residual = child("other-unknown", "Other unclassified villagers");
+        nested_residual.resources.insert("granary".into());
         let nested = GestaltFissionPreview {
             schema: "ghostlight.gestalt_fission_preview.v1".into(),
             campaign_id: value.id,
@@ -3827,7 +3838,7 @@ pub(crate) mod tests {
             partition_axis: AgencyAxis::EconomyRole,
             children: vec![
                 child("other-smiths", "Smiths among the other villagers"),
-                child("other-unknown", "Other unclassified villagers"),
+                nested_residual,
             ],
             child_partition_values: BTreeMap::from([
                 ("other-smiths".into(), "smith".into()),
@@ -3835,14 +3846,36 @@ pub(crate) mod tests {
             ]),
             residual_child_id: "other-unknown".into(),
             member_child_assignments: BTreeMap::from([("john".into(), "other-smiths".into())]),
+            resource_child_assignments: BTreeMap::from([(
+                "granary".into(),
+                "other-unknown".into(),
+            )]),
             evidence_receipt_ids: vec![],
             gaps: vec![],
             canon_candidates: vec![],
             requires_approval: true,
         };
-        apply_fission(&mut value, &nested).unwrap();
+        let transition = crate::legacy_transition::lower_fission(
+            &value,
+            &nested,
+            Utc::now() + chrono::Duration::minutes(5),
+        )
+        .unwrap();
+        crate::legacy_transition::apply_lowered_fission(
+            &mut value,
+            &nested,
+            &transition,
+            Utc::now(),
+        )
+        .unwrap();
         assert!(!value.agency_profiles["other"].active_leaf);
         assert!(value.agency_profiles["other-smiths"].active_leaf);
+        assert!(value.gestalts["other"].resources.is_empty());
+        assert!(value.gestalts["other-smiths"].resources.is_empty());
+        assert_eq!(
+            value.gestalts["other-unknown"].resources,
+            BTreeSet::from(["granary".into()])
+        );
         assert_eq!(value.gestalt_members["john"].gestalt_id, "other-smiths");
         assert_eq!(value.gestalt_members["john"].version, 5);
         assert_eq!(
