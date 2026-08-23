@@ -122,6 +122,14 @@ Region expansion, initial compiler publication, removal of legacy model effect
 schemas, and the 300-case reviewed agency corpus remain the explicit migration
 frontier. See `docs/architecture/ghostlight-transition-algebra.md`.
 
+Idunn's locked Linux test/build gate admitted this cut as immutable Yggdrasil
+release `c7463c050620c69342c0cb84973beaefb09295cb` with Eve
+`19c3dcf9173dce848a6253e975324ea239a02d24`. Live health, the release symlink,
+deployment witness, binary hash, zero-restart service state, signed Idunn
+health, and fresh Odin catalog publication agree. The local Windows witness is
+263 library, 33 daemon, and one provenance test; the Idunn Linux success receipt
+reports 262 library tests before its truncated remaining package-target output.
+
 Live local evidence now covers grounded VoidBot compilation, a four-actor wave,
 impossible and receipted d20 actions, grounded narration, strategic cells, and a
 24-faction budget-4 wave. The first scale baseline used 37,327 prompt tokens and
@@ -156,11 +164,15 @@ leak. It used 90,030 tokens at a 76.3% prompt-cache-hit ratio; the retained
 invalid receipts expose one repeated institution posture and one repeated
 pressure without letting either mutate the world.
 
-The next simulation gate is a 20-plus-power live Aetheria skeleton across
-budgets `1`, `4`, `8`, and `32`, including nested refugee dispersal and later
-rematerialization. Separate-account two-player and eight-player Session Zero
-and shared-scene pressure remains an independent unproven gate; no human cohort
-is currently waiting. The browser never
+The next engineering gate is lowering bounded region expansion through the
+mutation reducer, explicitly classifying seed publication and
+materialisation/dematerialisation, and growing the agency corpus beyond its 36
+candidate cases without cosmetic reskins. After that cut, resume the
+20-plus-power live Aetheria skeleton across budgets `1`, `4`, `8`, and `32`,
+including nested refugee dispersal and later rematerialization.
+Separate-account two-player and eight-player Session Zero and shared-scene
+pressure remains an independent unproven gate; no human cohort is currently
+waiting. The browser never
 receives the Heimdall access token; it adopts a server-verified login attempt
 into an HttpOnly Ghostlight session. Treat player confusion, dramatic flatness, composite consequences,
 and token-heavy low-consequence stages as evidence about missing context or

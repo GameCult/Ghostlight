@@ -16,6 +16,10 @@ multiresolution agency graph for keeping large settings active at finite cost.
 - `WorldKernel` is the sole owner of committed campaign state and revisions.
 - Every player command, NPC action, strategic tick, wait, import, and reload
   enters the same validated campaign mailbox and atomic CultCache commit path.
+- Foreground actions, NPC reactions, strategic Gestalt activity, waits, travel,
+  and population fission lower into one closed semantic world-mutation algebra.
+  Means and intended effects remain proposals; only an admitted mutation batch
+  can change canonical components. There is no model-authored JSON Patch path.
 - Vault evidence grounds world compilation; branch-local invention remains
   distinct from canon.
 - Hosted lore Vaults are planned as Git-synchronized, Obsidian-compatible
@@ -88,14 +92,18 @@ current acceptance surface covers:
 - Gestalt materialisation, folding, member deltas, migration, and later
   rematerialisation of the same person;
 - atomic rejection of malformed, stale, or semantically invalid model waves;
+- one kernel-owned mutation reducer for foreground, reaction, strategic, time,
+  travel, and population-fission consequences, with exact component versions
+  and mutation proof receipts;
 - provider, token, cache, latency, validation, state-version, and build receipts;
 - exact-build deployment, state migration, public cutover, and restart
   verification on Yggdrasil.
 
-The remaining forge gate is multi-account human pressure testing of Session
-Zero privacy/publication and bounded co-op alongside continued
-multiresolution Gestalt agency pressure. The public site is provisional;
-checkout is not live.
+The remaining forge gates are completion of the mutation migration for bounded
+region expansion, expansion and review of the agency corpus beyond its current
+candidate seed, multi-account human pressure testing of Session Zero
+privacy/publication and bounded co-op, and continued multiresolution Gestalt
+agency pressure. The public site is provisional; checkout is not live.
 
 ## Bounded Co-op
 
@@ -130,6 +138,7 @@ The shortest reliable re-entry path is:
 - [`docs/architecture/ghostlight-dungeon-session-zero.md`](docs/architecture/ghostlight-dungeon-session-zero.md): campaign negotiation, privacy, publication, membership, and bounded co-op;
 - [`docs/architecture/ghostlight-multiresolution-agency.md`](docs/architecture/ghostlight-multiresolution-agency.md): dynamic Gestalt partitioning, cohesive and arena cells, fairness, and atomic strategic waves;
 - [`docs/architecture/ghostlight-eve-native-interface.md`](docs/architecture/ghostlight-eve-native-interface.md): Eve bindings, the stable provider surface, private Heimdall command plane, app-session custody, and browser cut line;
+- [`docs/architecture/ghostlight-transition-algebra.md`](docs/architecture/ghostlight-transition-algebra.md): canonical subjects and components, semantic mutations, admission envelopes, atomic reduction, and the remaining writer migration;
 - [`notes/ghostlight-current-system-map.md`](notes/ghostlight-current-system-map.md): current implemented pipeline;
 - [`notes/ghostlight-implementation-plan.md`](notes/ghostlight-implementation-plan.md): live sequence and next pressure tests;
 - [`state/map.yaml`](state/map.yaml): canonical human-readable project state.

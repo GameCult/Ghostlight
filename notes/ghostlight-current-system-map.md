@@ -853,7 +853,12 @@ The player surface also projects the canonical current location ID. The
 destination compiler binds that value into a read-only origin field and shows
 the proposed locations, containment, routes, persistent features, and material
 gaps before approval. Population fission approval similarly shows each named
-child leaf, partition value (including `other/unknown`), and home location.
+child leaf, partition value (including `other/unknown`), home location, and the
+exact child receiving each parent-owned resource. Shared capabilities,
+knowledge, goals, pressures, and relationships inherit through population
+lineage; custody does not. Each scarce resource crosses exactly one typed
+custody transfer, so a fission cannot copy one granary, vehicle, or medicine lot
+into every child.
 Fission admission runs before parent lookup, retrieval planning, or inference:
 one request may contain at most 16 distinct cuts of at most 160 readable
 characters and one 500-character reason. The browser mirrors these bounds.
@@ -866,6 +871,39 @@ preview. Received non-success HTTP responses are rendered as server refusals;
 only missing or undecodable responses receive the ambiguous-transport warning
 that a commit may have preceded the lost response. The production web build
 runs strict TypeScript checking before Vite emits assets.
+
+## World Transition Authority
+
+`WorldKernel` owns one closed semantic `WorldMutationBatch` reducer. Foreground
+attempts, NPC reaction waves, strategic actor/institution/Gestalt outcomes,
+waits, group travel, and approval-gated population fission all lower their
+accepted outcomes into that vocabulary before canonical state changes.
+`ActionMeans` records what an actor did, and the intended effect records what
+they hoped to change; neither is a committed fact. The mutation batch contains
+only exact component changes admitted by a state-derived authority envelope.
+
+The reducer validates the complete batch on an isolated component overlay,
+advances each touched subject version once, and persists component state,
+mutation authority envelope, mutation batch, mutation receipt, causal command
+receipt, events, and aggregate compatibility projection atomically. The
+aggregate campaign row is rejected as a component-only mutation target.
+`WorldEffectDelta`, `ActorStateDelta`, and strategic effect variants are model
+boundary migration inputs, not writers or independent physical ontologies.
+
+Population fission now composes admitted child entities, stable child
+identities, one lineage split, exact resource custody transfers, and exact
+named-member membership transfers. The old fission function that directly
+wrote campaign state has been removed. Its surviving projector updates only
+agency profiles, facets, cover invalidation, and `resolution_epoch` after the
+canonical mutation batch succeeds.
+
+The runtime migration is not yet complete. Bounded region expansion still
+inserts compiled locations and facts directly, and initial compiler publication
+remains a separate seed authority. Materialisation and dematerialisation are
+resolution changes over one persistent person and require an explicit review
+of why they currently advance aggregate world revision. These are named writer
+frontiers, not silently equivalent paths. See
+`docs/architecture/ghostlight-transition-algebra.md`.
 
 Relationship documents in the schema catalog are revision-bound projections
 of actor-owned relationship maps; they are not a second relationship writer.

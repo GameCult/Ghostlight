@@ -37,9 +37,11 @@ d20 resolution, persistent locations and institutions, multiresolution Gestalt
 agency, offscreen strategic activity, knowledge-filtered news, and actor-filtered
 Eve/CultMesh surfaces.
 
-The immediate product gate is continued adversarial play against the hosted
-compiler and multiresolution agency loop. Separate-account multiplayer privacy
-and unanimity proof remains required, but the previously expected D&D test
+The immediate engineering gate is completion of the principled world-transition
+migration before adversarial hosted play resumes. Region expansion remains a
+named direct writer, and the 36-case agency corpus is only a candidate seed
+against a 300-reviewed-case target. Separate-account multiplayer privacy and
+unanimity proof also remains required, but the previously expected D&D test
 group is no longer available; record that gate as unproven rather than silently
 lowering it.
 
@@ -52,6 +54,11 @@ lowering it.
 - Each campaign `WorldKernel` mailbox is the sole owner of canonical world state
   and revision. Player commands, NPC proposals, ticks, travel, waits, imports,
   reloads, and contract amendments share its validated atomic commit path.
+- Accepted foreground, reaction, strategic, time, travel, and population-fission
+  outcomes lower into one closed `WorldMutationBatch` vocabulary. Means and
+  intended effects remain proposals; only the kernel reducer can alter typed
+  canonical components. Legacy effect enums are model-boundary migration input,
+  not alternate physical laws.
 - Ghostlight owns the generalized Projector → Persona → Interpreter membrane.
   Projectors, Personas, Interpreters, retrieval, narration, dice previews, and
   browsers may propose or project; none may commit canonical state.
@@ -82,12 +89,12 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `a10a0125fc87a1262c50c85a0f1bf52133989feb`
+  `c7463c050620c69342c0cb84973beaefb09295cb`
 - Executable SHA-256:
-  `87ae68139375f507c54456907c687c397f18d7591a6a93d814ba7f4bc0ef3513`
+  `7b1aed52797f0845d896e9a1de2aa0b973a837353e8a76087845a50d9a429b06`
 - Artifact SHA-256:
-  `sha256-c0d1ab58fe711ff98502d4fad495c7a4d90e2aa079f08ac43e7981e26056cf92`
-- Eve release: `e5a81185bb790906bea5eeba40507673b0d9b5bb`
+  `sha256-d5aa68cc1162f7bf145a5b96b10284842638a8751810cd532a6d7f17ed93610d`
+- Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
 - Public route: `https://yggdrasil.gamecult.org/ghostlight/`
@@ -104,8 +111,9 @@ Do not start both writers.
   and rotates the locally wrapped claim without returning the browser to the
   access gate.
 
-Manifest, embedded commit, executable hash, typed health, persistent stores,
-restart recovery, public crossing, and anonymous rejection agree.
+Manifest, embedded commit, executable hash, typed health, `current` symlink,
+zero-restart service state, fresh signed Idunn health, fresh Odin catalog
+publication, public crossing, and anonymous rejection agree.
 
 ## Deployment and discovery truth
 
@@ -139,11 +147,25 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `a10a012…`; its locked package test and immutable
-  build completed before atomic activation. The same source passes 239 library,
-  32 daemon, and one build-provenance test locally. Typed health, manifest,
+- Idunn admitted exact release `c7463c0…`; its locked Linux package test and
+  immutable build completed before atomic activation. The same source passes
+  263 library, 33 daemon, and one build-provenance test in the local Windows
+  witness; Idunn's Linux journal reports 262 library tests before the remaining
+  package targets in its truncated success receipt. Typed health, manifest,
   embedded source, executable hash, provider readiness, nine campaigns, two
   Session Zero drafts, and zero daemon restarts agree.
+- Foreground, reaction, strategic, wait, travel, and population-fission writes
+  now use the typed mutation reducer. Each successful batch advances a touched
+  subject version once and persists its authority, mutations, receipt, causal
+  receipt, and aggregate projection atomically. Component-only mutation ingress
+  rejects aggregate campaign rows.
+- Population fission cannot copy scarce custody into every child. Approved
+  fission assigns every parent resource to exactly one child, transfers each
+  named member exactly once, preserves the shared non-scarce baseline through
+  lineage, removes the old direct campaign writer, and leaves only derived
+  agency-profile/cover projection outside the reducer. The nested regression
+  moves one granary through two successive fissions without duplication while
+  preserving John's exact identity and delta.
 - Live refresh pressure reproduced and removed two contract faults: reuse of a
   private-command idempotency key across separately sealed attempts, and
   validation of a refresh receipt as if it carried the initial-login account
@@ -204,14 +226,20 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 ## Next action
 
-1. Fork or compile a denser 20-plus-power Aetheria agency skeleton and pressure
-   budgets 1, 4, 8, and 32 with real provider output, including nested refugee
-   dispersal and later rematerialization.
-2. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
+1. Route bounded region expansion through the admitted mutation batch and prove
+   that no production direct writer can bypass the reducer. Classify initial
+   compiler publication and materialisation/dematerialisation explicitly rather
+   than quietly treating their current aggregate writes as equivalent.
+2. Expand and review the agency corpus from its current 36 candidate cases
+   toward 300 behaviorally distinct cases; do not inflate it with reskins.
+3. Resume adversarial Eve play, then fork or compile a denser 20-plus-power
+   Aetheria skeleton and pressure budgets 1, 4, 8, and 32 with real provider
+   output, including nested refugee dispersal and later rematerialization.
+4. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
-3. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
+5. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
    unanimous-approval, unanimous-time/travel, stale-command, and restart smoke.
-4. Continue human pressure on multiresolution Gestalt agency: meaningful
+6. Continue human pressure on multiresolution Gestalt agency: meaningful
    background surprises, exact attributed rival activity inside arenas,
    information boundaries, nested fission/folding, migration, and return
    encounters.
@@ -226,6 +254,7 @@ capacity.
 - MVP authority: `docs/architecture/ghostlight-dungeon-mvp.md`
 - Interface authority: `docs/architecture/ghostlight-eve-native-interface.md`
 - Gestalt authority: `docs/architecture/ghostlight-multiresolution-agency.md`
+- Transition authority: `docs/architecture/ghostlight-transition-algebra.md`
 - Live system map: `notes/ghostlight-current-system-map.md`
 - Implementation program: `notes/ghostlight-implementation-plan.md`
 - Human-readable state: `state/map.yaml`
