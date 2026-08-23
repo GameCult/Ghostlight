@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
-const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. The remaining permitted fields are owner_subject_id, other_subject_id, relation_id, strength_delta, resource, pressure_additions, pressure_resolutions, member_id, memory, obligation, relationship_description, fact_id, and reason. pressure_additions and pressure_resolutions are arrays of plain strings, never objects. Omit every optional field not used by the chosen effect_kind. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable source-owned result, the resource field names that resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
+const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. Fields are conditionally required, not optional suggestions: no_material_change requires reason; resource_created and resource_consumed require owner_subject_id and resource; resource_transferred requires owner_subject_id, other_subject_id, and resource; gestalt_pressure requires owner_subject_id plus both pressure arrays; agency_relation_shift requires relation_id and strength_delta; member_memory requires member_id and memory; member_obligation requires member_id and obligation; member_relationship requires member_id, other_subject_id, and relationship_description; knowledge_learned requires owner_subject_id and fact_id. Omit every field not named for the chosen effect_kind. pressure_additions and pressure_resolutions are arrays of plain strings, never objects. no_material_change uses an empty supporting_state_references array; every material effect cites the smallest causally decisive set of one to eight exact supplied references. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable source-owned result, the resource field names that resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
 const OUTCOME_VERIFIER_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named verdicts—never verifications, outcomes, results, or resolutions. verdicts is an array with one item per supplied action_digest. Every item has exactly action_digest, result, and repair_guidance. Example: {"verdicts":[{"action_digest":"sha256:<copy exact supplied digest>","result":"match","repair_guidance":null}]}"#;
 
 #[derive(Clone, Debug, Serialize)]
@@ -143,7 +143,7 @@ pub async fn resolve_activity_outcomes(
         &digests,
     );
     let mut schema = serde_json::to_value(schema_for!(OutcomeProposalBundle))?;
-    constrain_digest_schema(&mut schema, &digests);
+    constrain_outcome_schema(&mut schema, &context.actions)?;
     let source_receipt_ids: Vec<String> = proposals
         .iter()
         .flat_map(|proposal| outcome_source_receipts(campaign, proposal))
@@ -1501,14 +1501,313 @@ fn outcome_source_receipts(campaign: &Campaign, proposal: &CellActionProposal) -
     ids
 }
 
-fn constrain_digest_schema(schema: &mut serde_json::Value, digests: &[String]) {
-    if let Some(value) = schema.pointer_mut("/properties/outcomes/items/properties/action_digest") {
-        value["enum"] = serde_json::json!(digests);
+fn constrain_outcome_schema(
+    schema: &mut serde_json::Value,
+    actions: &[ActionOutcomeContext],
+) -> Result<()> {
+    let outcomes = schema
+        .pointer_mut("/properties/outcomes")
+        .ok_or_else(|| anyhow!("strategic outcome schema has no outcomes property"))?;
+    outcomes["minItems"] = serde_json::json!(actions.len());
+    outcomes["maxItems"] = serde_json::json!(actions.len());
+    let proposal = outcomes
+        .pointer_mut("/items")
+        .ok_or_else(|| anyhow!("strategic outcome schema has no proposal item"))?;
+    proposal["required"] = serde_json::json!([
+        "action_digest",
+        "band",
+        "effect_kind",
+        "supporting_state_references"
+    ]);
+    proposal["allOf"] = serde_json::json!([
+        {"oneOf":outcome_effect_shape_schemas()},
+        {"oneOf":actions.iter().map(outcome_action_scope_schema).collect::<Vec<_>>()}
+    ]);
+    Ok(())
+}
+
+fn outcome_effect_shape_schemas() -> Vec<serde_json::Value> {
+    vec![
+        outcome_effect_shape(OutcomeEffectKind::NoMaterialChange, &["reason"], false),
+        outcome_effect_shape(
+            OutcomeEffectKind::ResourceCreated,
+            &["owner_subject_id", "resource"],
+            true,
+        ),
+        outcome_effect_shape(
+            OutcomeEffectKind::ResourceConsumed,
+            &["owner_subject_id", "resource"],
+            true,
+        ),
+        outcome_effect_shape(
+            OutcomeEffectKind::ResourceTransferred,
+            &["owner_subject_id", "other_subject_id", "resource"],
+            true,
+        ),
+        outcome_effect_shape(
+            OutcomeEffectKind::GestaltPressure,
+            &[
+                "owner_subject_id",
+                "pressure_additions",
+                "pressure_resolutions",
+            ],
+            true,
+        ),
+        outcome_effect_shape(
+            OutcomeEffectKind::AgencyRelationShift,
+            &["relation_id", "strength_delta"],
+            true,
+        ),
+        outcome_effect_shape(
+            OutcomeEffectKind::MemberMemory,
+            &["member_id", "memory"],
+            true,
+        ),
+        outcome_effect_shape(
+            OutcomeEffectKind::MemberObligation,
+            &["member_id", "obligation"],
+            true,
+        ),
+        outcome_effect_shape(
+            OutcomeEffectKind::MemberRelationship,
+            &["member_id", "other_subject_id", "relationship_description"],
+            true,
+        ),
+        outcome_effect_shape(
+            OutcomeEffectKind::KnowledgeLearned,
+            &["owner_subject_id", "fact_id"],
+            true,
+        ),
+    ]
+}
+
+fn outcome_effect_shape(
+    effect_kind: OutcomeEffectKind,
+    required_effect_fields: &[&str],
+    material: bool,
+) -> serde_json::Value {
+    const EFFECT_FIELDS: [&str; 13] = [
+        "owner_subject_id",
+        "other_subject_id",
+        "relation_id",
+        "strength_delta",
+        "resource",
+        "pressure_additions",
+        "pressure_resolutions",
+        "member_id",
+        "memory",
+        "obligation",
+        "relationship_description",
+        "fact_id",
+        "reason",
+    ];
+    let forbidden = EFFECT_FIELDS
+        .iter()
+        .filter(|field| !required_effect_fields.contains(field))
+        .map(|field| serde_json::json!({"required":[field]}))
+        .collect::<Vec<_>>();
+    let mut required = vec!["effect_kind"];
+    required.extend_from_slice(required_effect_fields);
+    let mut shape = serde_json::json!({
+        "properties":{
+            "effect_kind":{"const":effect_kind},
+            "supporting_state_references":if material {
+                serde_json::json!({"minItems":1,"maxItems":8})
+            } else {
+                serde_json::json!({"maxItems":0})
+            }
+        },
+        "required":required
+    });
+    if !forbidden.is_empty() {
+        shape["not"] = serde_json::json!({"anyOf":forbidden});
     }
-    if let Some(outcomes) = schema.pointer_mut("/properties/outcomes") {
-        outcomes["minItems"] = serde_json::json!(digests.len());
-        outcomes["maxItems"] = serde_json::json!(digests.len());
+    shape
+}
+
+fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Value {
+    let mut constraints = Vec::new();
+    let source_resources = action
+        .source_state
+        .get("resources")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(serde_json::Value::as_str)
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    constraints.push(effect_scope_condition(
+        &[
+            OutcomeEffectKind::ResourceCreated,
+            OutcomeEffectKind::ResourceConsumed,
+            OutcomeEffectKind::ResourceTransferred,
+        ],
+        serde_json::json!({
+            "properties":{"owner_subject_id":{"const":action.resource_owner_id}}
+        }),
+    ));
+    constraints.push(effect_scope_condition(
+        &[OutcomeEffectKind::ResourceCreated],
+        serde_json::json!({
+            "properties":{"resource":{"type":"string","minLength":1,"maxLength":160}}
+        }),
+    ));
+    constraints.push(effect_scope_condition(
+        &[
+            OutcomeEffectKind::ResourceConsumed,
+            OutcomeEffectKind::ResourceTransferred,
+        ],
+        serde_json::json!({
+            "properties":{"resource":exact_string_value_schema(&source_resources)}
+        }),
+    ));
+    constraints.push(effect_scope_condition(
+        &[OutcomeEffectKind::ResourceTransferred],
+        serde_json::json!({
+            "properties":{"other_subject_id":exact_string_value_schema(&action.resource_recipient_ids)}
+        }),
+    ));
+    let pressure_owner_schemas = action
+        .pressure_owner_subject_ids
+        .iter()
+        .map(|owner| {
+            let prefix = format!("pressure:{owner}:");
+            let current = action
+                .allowed_state_references
+                .iter()
+                .filter_map(|reference| reference.strip_prefix(&prefix).map(str::to_owned))
+                .collect::<Vec<_>>();
+            serde_json::json!({
+                "properties":{
+                    "owner_subject_id":{"const":owner},
+                    "pressure_resolutions":exact_string_array_value_schema(&current, 0, 4)
+                },
+                "required":["owner_subject_id"]
+            })
+        })
+        .collect::<Vec<_>>();
+    constraints.push(effect_scope_condition(
+        &[OutcomeEffectKind::GestaltPressure],
+        serde_json::json!({
+            "properties":{
+                "owner_subject_id":exact_string_value_schema(&action.pressure_owner_subject_ids),
+                "pressure_additions":{
+                    "type":"array","uniqueItems":true,"maxItems":4,
+                    "items":{"type":"string","minLength":1,"maxLength":240}
+                }
+            },
+            "oneOf":pressure_owner_schemas
+        }),
+    ));
+    let relation_ids = action
+        .active_relations
+        .iter()
+        .filter_map(|relation| relation.get("relation_id"))
+        .filter_map(serde_json::Value::as_str)
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    constraints.push(effect_scope_condition(
+        &[OutcomeEffectKind::AgencyRelationShift],
+        serde_json::json!({
+            "properties":{
+                "relation_id":exact_string_value_schema(&relation_ids),
+                "strength_delta":{"type":"integer","enum":[-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9,10]}
+            }
+        }),
+    ));
+    if let Some(member_id) = &action.member_state_owner_id {
+        constraints.push(effect_scope_condition(
+            &[
+                OutcomeEffectKind::MemberMemory,
+                OutcomeEffectKind::MemberObligation,
+                OutcomeEffectKind::MemberRelationship,
+            ],
+            serde_json::json!({
+                "properties":{"member_id":{"const":member_id}}
+            }),
+        ));
     }
+    constraints.push(effect_scope_condition(
+        &[OutcomeEffectKind::MemberMemory],
+        serde_json::json!({"properties":{"memory":{"type":"string","minLength":1,"maxLength":240}}}),
+    ));
+    constraints.push(effect_scope_condition(
+        &[OutcomeEffectKind::MemberObligation],
+        serde_json::json!({"properties":{"obligation":{"type":"string","minLength":1,"maxLength":240}}}),
+    ));
+    constraints.push(effect_scope_condition(
+        &[OutcomeEffectKind::MemberRelationship],
+        serde_json::json!({
+            "properties":{
+                "other_subject_id":exact_string_value_schema(&action.target_subject_ids),
+                "relationship_description":{"type":"string","minLength":1,"maxLength":240}
+            }
+        }),
+    ));
+    let fact_ids = action
+        .discoverable_facts
+        .iter()
+        .filter_map(|fact| fact.get("fact_id"))
+        .filter_map(serde_json::Value::as_str)
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    constraints.push(effect_scope_condition(
+        &[OutcomeEffectKind::KnowledgeLearned],
+        serde_json::json!({
+            "properties":{
+                "owner_subject_id":{"const":action.source_subject_id},
+                "fact_id":exact_string_value_schema(&fact_ids)
+            }
+        }),
+    ));
+    constraints.push(effect_scope_condition(
+        &[OutcomeEffectKind::NoMaterialChange],
+        serde_json::json!({"properties":{"reason":{"type":"string","minLength":1,"maxLength":240}}}),
+    ));
+    serde_json::json!({
+        "properties":{
+            "action_digest":{"const":action.action_digest},
+            "effect_kind":{"enum":action.admissible_effect_kinds},
+            "supporting_state_references":exact_string_array_value_schema(
+                &action.allowed_state_references,
+                0,
+                action.allowed_state_references.len().min(8)
+            )
+        },
+        "required":["action_digest"],
+        "allOf":constraints
+    })
+}
+
+fn effect_scope_condition(
+    effect_kinds: &[OutcomeEffectKind],
+    consequence: serde_json::Value,
+) -> serde_json::Value {
+    serde_json::json!({
+        "if":{
+            "properties":{"effect_kind":{"enum":effect_kinds}},
+            "required":["effect_kind"]
+        },
+        "then":consequence
+    })
+}
+
+fn exact_string_value_schema(values: &[String]) -> serde_json::Value {
+    serde_json::json!({"type":"string","enum":values})
+}
+
+fn exact_string_array_value_schema(
+    values: &[String],
+    min_items: usize,
+    max_items: usize,
+) -> serde_json::Value {
+    serde_json::json!({
+        "type":"array",
+        "uniqueItems":true,
+        "minItems":min_items,
+        "maxItems":max_items,
+        "items":exact_string_value_schema(values)
+    })
 }
 
 fn constrain_verifier_schema(schema: &mut serde_json::Value, digests: &[String]) -> Result<()> {
@@ -1896,6 +2195,50 @@ mod tests {
     fn missing_outcome_is_rejected() {
         let value = campaign();
         assert!(validate_activity_outcomes(&value, &[proposal()], &[]).is_err());
+    }
+
+    #[test]
+    fn outcome_schema_binds_required_fields_and_exact_action_authority() {
+        let value = campaign();
+        let action = proposal();
+        let context = build_context(&value, std::slice::from_ref(&action)).unwrap();
+        let digest = context.actions[0].action_digest.clone();
+        let mut schema = serde_json::to_value(schema_for!(OutcomeProposalBundle)).unwrap();
+        constrain_outcome_schema(&mut schema, &context.actions).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let outcome = |owner: Option<&str>, extra: Option<(&str, serde_json::Value)>| {
+            let mut item = serde_json::json!({
+                "action_digest":digest,
+                "band":"success",
+                "effect_kind":"knowledge_learned",
+                "supporting_state_references":["fact:fact:safe-route"],
+                "fact_id":"fact:safe-route"
+            });
+            if let Some(owner) = owner {
+                item["owner_subject_id"] = serde_json::json!(owner);
+            }
+            if let Some((field, value)) = extra {
+                item[field] = value;
+            }
+            serde_json::json!({"outcomes":[item]})
+        };
+
+        assert!(validator.is_valid(&outcome(Some("dockers"), None)));
+        assert!(!validator.is_valid(&outcome(None, None)));
+        assert!(!validator.is_valid(&outcome(Some("invented-owner"), None)));
+        assert!(!validator.is_valid(&outcome(
+            Some("dockers"),
+            Some(("resource", serde_json::json!("spare rope")))
+        )));
+        assert!(!validator.is_valid(&serde_json::json!({
+            "outcomes":[{
+                "action_digest":format!("sha256:{}", "f".repeat(64)),
+                "band":"mixed",
+                "effect_kind":"no_material_change",
+                "supporting_state_references":[],
+                "reason":"No durable state changes."
+            }]
+        })));
     }
 
     #[test]
