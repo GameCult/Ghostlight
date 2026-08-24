@@ -316,9 +316,12 @@ fn schema_validation_diagnostic(
         error.instance_path(),
         error.schema_path()
     );
-    if let Some((path, value)) =
-        nearest_rejected_object(rejected, &error.instance_path().to_string())
-        && let Ok(serialized) = serde_json::to_string(value)
+    let instance_path = error.instance_path().to_string();
+    let rejected_context = action_rejected_context(rejected, &instance_path).or_else(|| {
+        nearest_rejected_object(rejected, &instance_path).map(|(path, value)| (path, value.clone()))
+    });
+    if let Some((path, value)) = rejected_context
+        && let Ok(serialized) = serde_json::to_string(&value)
     {
         let bounded: String = serialized.chars().take(2_000).collect();
         diagnostic.push_str(&format!(
@@ -327,6 +330,29 @@ fn schema_validation_diagnostic(
         ));
     }
     diagnostic
+}
+
+fn action_rejected_context(
+    rejected: &serde_json::Value,
+    instance_path: &str,
+) -> Option<(String, serde_json::Value)> {
+    let mut segments = instance_path.split('/').skip(1);
+    if segments.next()? != "actions" {
+        return None;
+    }
+    let action_index = segments.next()?.parse::<usize>().ok()?;
+    let action_path = format!("/actions/{action_index}");
+    let action = rejected.pointer(&action_path)?.as_object()?;
+    let (_, rejected_value) = nearest_rejected_object(rejected, instance_path)?;
+    Some((
+        action_path,
+        serde_json::json!({
+            "subject_id":action.get("subject_id"),
+            "intent":action.get("intent"),
+            "intended_effect":action.get("intended_effect"),
+            "rejected_value":rejected_value,
+        }),
+    ))
 }
 
 fn nearest_rejected_object<'a>(
@@ -543,7 +569,7 @@ mod tests {
     }
 
     #[test]
-    fn schema_diagnostic_projects_only_the_nearest_rejected_object() {
+    fn schema_diagnostic_preserves_action_ownership_without_unrelated_output() {
         let schema = serde_json::json!({
             "type":"object",
             "properties":{
@@ -577,9 +603,9 @@ mod tests {
         let diagnostic = schema_validation_diagnostic("cell_interpreter", &error, &rejected);
 
         assert!(diagnostic.contains("instance /actions/0/effect/target_subject_ids"));
-        assert!(diagnostic.contains("rejected containing value at /actions/0/effect"));
+        assert!(diagnostic.contains("rejected containing value at /actions/0"));
         assert!(diagnostic.contains("\"activity\":\"coordinate\""));
-        assert!(!diagnostic.contains("member:reed"));
+        assert!(diagnostic.contains("member:reed"));
         assert!(!diagnostic.contains("must not be repeated"));
     }
 
