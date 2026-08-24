@@ -1835,52 +1835,68 @@ fn transient_result_projection(
                 }
             })
             .unwrap_or_else(|| "Modifiers: none".into());
-        let summary = format!(
-            "{}\nDC {} · modifier {} · ceiling {}\n{}\nSuccess: {}\nMixed: {}\nFailure: {}{}",
-            if admissible {
-                "The attempt is admissible."
-            } else {
-                "The attempt is not currently admissible."
-            },
-            assessment
-                .get("dc")
-                .and_then(serde_json::Value::as_u64)
-                .unwrap_or(0),
-            assessment
-                .get("modifier_total")
-                .and_then(serde_json::Value::as_i64)
-                .unwrap_or(0),
-            assessment
-                .get("effect_ceiling")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("bounded"),
-            modifier_details,
-            assessment
-                .get("success_stake")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or(""),
-            assessment
-                .get("mixed_stake")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or(""),
-            assessment
-                .get("failure_stake")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or(""),
-            assessment
-                .get("bargains")
-                .and_then(serde_json::Value::as_array)
-                .filter(|values| !values.is_empty())
-                .map(|values| format!(
-                    "\nBargains: {}",
-                    values
-                        .iter()
-                        .filter_map(serde_json::Value::as_str)
-                        .collect::<Vec<_>>()
-                        .join("; ")
-                ))
-                .unwrap_or_default(),
-        );
+        let bargains = assessment
+            .get("bargains")
+            .and_then(serde_json::Value::as_array)
+            .filter(|values| !values.is_empty())
+            .map(|values| {
+                values
+                    .iter()
+                    .filter_map(serde_json::Value::as_str)
+                    .map(|value| format!("- {value}"))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            })
+            .unwrap_or_default();
+        let summary = if admissible {
+            format!(
+                "The attempt is admissible.\nDC {} · modifier {} · ceiling {}\n{}\nSuccess: {}\nMixed: {}\nFailure: {}",
+                assessment
+                    .get("dc")
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(0),
+                assessment
+                    .get("modifier_total")
+                    .and_then(serde_json::Value::as_i64)
+                    .unwrap_or(0),
+                assessment
+                    .get("effect_ceiling")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("bounded"),
+                modifier_details,
+                assessment
+                    .get("success_stake")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or(""),
+                assessment
+                    .get("mixed_stake")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or(""),
+                assessment
+                    .get("failure_stake")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or(""),
+            )
+        } else {
+            format!(
+                "The attempt is not currently admissible. No roll occurs.\nMissing permission: {}\nEffect ceiling: {}\nResult: {}{}",
+                assessment
+                    .get("missing_permission")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("The intended effect is outside the actor's current authority."),
+                assessment
+                    .get("effect_ceiling")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("No canonical effect."),
+                assessment
+                    .get("failure_stake")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("The overreach is refused."),
+                (!bargains.is_empty())
+                    .then(|| format!("\nWays to make a narrower attempt possible:\n{bargains}"))
+                    .unwrap_or_default(),
+            )
+        };
         children.push(serde_json::json!({"id":"ghostlight.assessment.summary","kind":"text","props":{"value":summary},"children":[]}));
         if admissible {
             children.push(eve_button(
@@ -6782,6 +6798,7 @@ mod tests {
                 "assessment": {
                     "digest": "sha256:assessment",
                     "admissible": false,
+                    "missing_permission": "No admitted authority reaches the garrison command.",
                     "dc": 30,
                     "modifier_total": -10,
                     "effect_ceiling": "No effect",
@@ -6799,6 +6816,13 @@ mod tests {
         assert_eq!(projection["version"], 4_000_000_000_000_u64);
         assert!(projection["surface"]["styles"].is_object());
         assert!(projection["surface"]["root"]["children"].is_array());
+        let summary = projection["surface"]["root"]["children"][0]["props"]["value"]
+            .as_str()
+            .unwrap();
+        assert!(summary.contains("No roll occurs"));
+        assert!(summary.contains("No admitted authority reaches the garrison command"));
+        assert!(summary.contains("Ways to make a narrower attempt possible"));
+        assert!(!summary.contains("DC 30"));
     }
 
     #[test]

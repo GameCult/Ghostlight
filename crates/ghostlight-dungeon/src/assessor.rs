@@ -18,12 +18,12 @@ use std::{
 };
 
 const ASSESSMENT_PROPOSAL_CACHE_KIND: &str = "assessment_proposal_cache.v1";
-const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v3";
+const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v4";
 const ASSESSMENT_SCOPE_CACHE_KIND: &str = "assessment_mutation_scope_cache.v1";
-const ASSESSMENT_SCOPE_CACHE_SCHEMA: &str = "ghostlight.private.assessment_mutation_scope_cache.v2";
-const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v7";
+const ASSESSMENT_SCOPE_CACHE_SCHEMA: &str = "ghostlight.private.assessment_mutation_scope_cache.v3";
+const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v8";
 
-const ASSESSMENT_SCOPE_INSTRUCTIONS: &str = "You select the smallest causally plausible typed mutation vocabulary for one fiction-first attempt. This is schema projection, not outcome resolution. Select a lane only when the exact attempted means could directly cause it or the exact intended effect asks for it. Availability is never relevance. Put every selected lane in lanes. Also put in required_success_lanes every lane whose non-empty mutation is necessary for strong and ordinary success to actually realize the stated intended effect; direct costs or incidental consequences are allowed lanes but are not required success lanes. actor_conditions changes bodily or situational conditions. actor_knowledge_additions means an exact existing fact is investigated, perceived, or deliberately communicated; do not select it for ordinary speech, promises, persuasion, trust, or scene texture. actor_relationship_updates changes durable trust, regard, leverage, or another exact relationship. actor_moves relocates the acting character along an admitted route. clock_advances and clock_reductions change an existing pressure. institution_postures changes an institution's durable policy or stance. Return only the minimal lane sets as JSON. Both may be empty when no canonical mutation lane is causally appropriate or the assessor should negotiate a bargain. required_success_lanes must be a subset of lanes. Never infer a new lane, target, fact, route, clock, or institution. Shape: {\"lanes\":[\"actor_relationship_updates\"],\"required_success_lanes\":[\"actor_relationship_updates\"]}.";
+const ASSESSMENT_SCOPE_INSTRUCTIONS: &str = "You own the compact admission and mutation-scope preflight for one fiction-first attempt. Decide 'deny' only when no d20 outcome can realize the exact intended effect from the supplied authority: the attempt lacks required capability, custody, access, spatial reach, extraordinary permission, or control over another subject's independent future choices. Difficulty, opposition, danger, or a costly but bounded effect are not reasons to deny; use 'assess' and let the full assessor set the DC and ceiling. For 'assess', select the smallest causally plausible typed mutation vocabulary. Availability is never relevance. Put every selected lane in lanes. Also put in required_success_lanes every lane whose non-empty mutation is necessary for strong and ordinary success to realize the intended effect; direct costs or incidental consequences are allowed lanes but are not required success lanes. actor_conditions changes bodily or situational conditions. actor_knowledge_additions means an exact existing fact is investigated, perceived, or deliberately communicated; do not select it for ordinary speech, promises, persuasion, trust, or scene texture. actor_relationship_updates changes durable trust, regard, leverage, or another exact relationship. actor_moves relocates the acting character along an admitted route. clock_advances and clock_reductions change an existing pressure. institution_postures changes an institution's durable policy or stance. For 'deny', both lane sets must be empty and denial must state the exact missing permission, the maximum effect declaration alone can have, one concise refusal stake, and one to four actionable bargains that could admit a narrower future assessment. For 'assess', denial must be null. Never infer a new lane, target, fact, route, clock, institution, possession, or permission. Return only the typed JSON.";
 
 const ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between the fiction-first action assessor and the world kernel. Structural authority, reach, knowledge access, and mutation shape were already checked. Judge the complete four-band typed effect bundle against the player's exact means and intended effect. Every non-empty mutation must be a direct realization of the intended effect or a concrete, previewed consequence of the attempted means in that exact outcome band. A fact being true, nearby, discoverable, or useful does not make communicating or acquiring it a consequence of an unrelated action. A plausible general reaction does not justify changing a relationship, condition, clock, posture, movement, or knowledge record that the attempted means and stakes do not cause. Failure and mixed effects may impose direct costs or complications, but not arbitrary available state changes. The effect ceiling and visible stakes must describe the same bounded consequences as the typed effects. Do not reassess admissibility, DC, or modifiers, and do not choose replacement effects. Return one JSON object. If every typed mutation is causally faithful, use result 'match' with null mismatch_kind and null repair_guidance. Otherwise use result 'mismatch', one mismatch_kind, and one concrete repair sentence of at most 240 characters naming what must be removed or aligned. Shape: {\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}.";
 
@@ -105,7 +105,8 @@ struct AssessmentProposalCacheEntry {
     source_model: String,
     source_scope_receipt_hash: String,
     source_receipt_hash: String,
-    source_effect_verifier_receipt_hash: String,
+    #[serde(default)]
+    source_effect_verifier_receipt_hash: Option<String>,
     created_at: chrono::DateTime<Utc>,
 }
 
@@ -123,10 +124,28 @@ enum AssessmentMutationLane {
     InstitutionPostures,
 }
 
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum AssessmentScopeDecision {
+    Assess,
+    Deny,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+struct AssessmentDenial {
+    normalized_intent: String,
+    missing_permission: String,
+    effect_ceiling: String,
+    refusal_stake: String,
+    bargains: Vec<String>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 struct AssessmentMutationScope {
+    decision: AssessmentScopeDecision,
     lanes: BTreeSet<AssessmentMutationLane>,
     required_success_lanes: BTreeSet<AssessmentMutationLane>,
+    denial: Option<AssessmentDenial>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -284,8 +303,16 @@ impl ActionAssessor {
                 })
             })
             .collect();
-        let (mutation_scope, source_scope_receipt_hash) = self
-            .select_mutation_scope(store, campaign, &intent, actor)
+        let (mutation_scope, scope_receipt) = self
+            .select_mutation_scope(
+                store,
+                campaign,
+                &intent,
+                actor,
+                extraordinary_permissions,
+                campaign_contract,
+                aggregate_boundaries,
+            )
             .await?;
         let information_facts = if mutation_scope
             .lanes
@@ -302,6 +329,18 @@ impl ActionAssessor {
                 .iter()
                 .map(|permission| format!("extraordinary_permission:{}", permission.id)),
         );
+        if matches!(mutation_scope.decision, AssessmentScopeDecision::Deny) {
+            let proposal = denied_assessment_proposal(&mutation_scope)?;
+            let proposal = validate_and_bind_proposal(
+                proposal,
+                campaign,
+                actor,
+                &allowed_references,
+                &mutation_scope,
+            )?;
+            return Ok((build_assessment(campaign, intent, proposal)?, scope_receipt));
+        }
+        let source_scope_receipt_hash = scope_receipt.receipt_hash.clone();
         let agency_guidance = action_agency_guidance(
             campaign
                 .agency_profiles
@@ -396,6 +435,12 @@ impl ActionAssessor {
             })();
             match candidate {
                 Ok(proposal) => {
+                    if !proposal.admissible {
+                        if let Some(store) = store {
+                            persist_private_stage_receipt(store, &out.receipt)?;
+                        }
+                        break (proposal, out, None);
+                    }
                     let (verification, verifier_receipt) = verify_assessment_effects(
                         self.model.as_ref(),
                         &self.verifier_model_id,
@@ -420,7 +465,7 @@ impl ActionAssessor {
                     match verification.result {
                         AssessmentEffectMatchResult::Match => {
                             validate_effect_verification(&verification)?;
-                            break (proposal, out, verifier_receipt);
+                            break (proposal, out, Some(verifier_receipt));
                         }
                         AssessmentEffectMatchResult::Mismatch if attempts == 1 => {
                             validate_effect_verification(&verification)?;
@@ -485,7 +530,8 @@ impl ActionAssessor {
                 source_model: selected_receipt.model.clone(),
                 source_scope_receipt_hash: source_scope_receipt_hash.clone(),
                 source_receipt_hash: selected_receipt.receipt_hash.clone(),
-                source_effect_verifier_receipt_hash: effect_verifier_receipt.receipt_hash,
+                source_effect_verifier_receipt_hash: effect_verifier_receipt
+                    .map(|receipt| receipt.receipt_hash),
                 created_at: Utc::now(),
             };
             if let Err(insert_error) = store.insert(
@@ -537,14 +583,22 @@ impl ActionAssessor {
         campaign: &Campaign,
         intent: &ActionIntent,
         actor: &crate::domain::ActorState,
-    ) -> Result<(AssessmentMutationScope, String)> {
+        extraordinary_permissions: &[ExtraordinaryPermission],
+        campaign_contract: Option<&CampaignContract>,
+        aggregate_boundaries: &[AggregatedBoundary],
+    ) -> Result<(AssessmentMutationScope, ModelStageReceipt)> {
         let available_lanes = available_mutation_lanes(campaign, actor);
         let mut schema = serde_json::to_value(schema_for!(AssessmentMutationScope))?;
         constrain_mutation_scope_schema(&mut schema, &available_lanes)?;
+        let authority = assessment_admission_authority(campaign, actor);
         let scope_prompt = format!(
-            "{ASSESSMENT_SCOPE_INSTRUCTIONS}\nOUTPUT JSON SCHEMA (follow exactly):\n{}\nEXACT ATTEMPT:\n{}\nSTRUCTURALLY AVAILABLE LANES:\n{}",
+            "{ASSESSMENT_SCOPE_INSTRUCTIONS}\nOUTPUT JSON SCHEMA (follow exactly):\n{}\nEXACT ATTEMPT:\n{}\nEXACT CURRENT AUTHORITY:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nSTRUCTURALLY AVAILABLE LANES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(intent)?,
+            serde_json::to_string(&authority)?,
+            serde_json::to_string(extraordinary_permissions)?,
+            serde_json::to_string(&campaign_contract)?,
+            serde_json::to_string(aggregate_boundaries)?,
             serde_json::to_string(&available_lanes)?,
         );
         let basis_digest = format!(
@@ -568,32 +622,65 @@ impl ActionAssessor {
                 return Err(anyhow!("assessment mutation scope cache identity mismatch"));
             }
             validate_mutation_scope(&cached.scope, &available_lanes)?;
-            return Ok((cached.scope, cached.source_receipt_hash));
+            let receipt = scope_cache_hit_receipt(
+                &cached,
+                &snapshot_binding_for_scope(campaign, &basis_digest),
+                &scope_prompt,
+            )?;
+            return Ok((cached.scope, receipt));
         }
-        let snapshot_binding = format!(
-            "campaign:{}:revision:{}:assessment-mutation-scope:{}",
-            campaign.id, campaign.revision, basis_digest
-        );
-        let out = run_validated_stage(
-            self.model.as_ref(),
-            &ModelStageRequest {
-                stage: "assessment_mutation_scope".into(),
-                model: self.verifier_model_id.clone(),
-                snapshot_binding,
-                lived_stream: scope_prompt,
-                output_schema: Some(schema),
-                source_receipt_ids: Vec::new(),
-                temperature: Some(0.0),
-                max_output_tokens: Some(256),
-            },
-        )
-        .await?;
-        let scope: AssessmentMutationScope = serde_json::from_value(
-            out.structured
-                .clone()
-                .ok_or_else(|| anyhow!("assessment mutation scope returned no typed output"))?,
-        )?;
-        validate_mutation_scope(&scope, &available_lanes)?;
+        let snapshot_binding = snapshot_binding_for_scope(campaign, &basis_digest);
+        let mut correction = String::new();
+        let mut attempt = 0_u8;
+        let (scope, out) = loop {
+            attempt += 1;
+            let mut out = run_validated_stage(
+                self.model.as_ref(),
+                &ModelStageRequest {
+                    stage: "assessment_mutation_scope".into(),
+                    model: self.verifier_model_id.clone(),
+                    snapshot_binding: snapshot_binding.clone(),
+                    lived_stream: format!("{scope_prompt}{correction}"),
+                    output_schema: Some(schema.clone()),
+                    source_receipt_ids: Vec::new(),
+                    temperature: Some(0.0),
+                    max_output_tokens: Some(900),
+                },
+            )
+            .await?;
+            let candidate = (|| -> Result<AssessmentMutationScope> {
+                let scope = serde_json::from_value(out.structured.clone().ok_or_else(|| {
+                    anyhow!("assessment mutation scope returned no typed output")
+                })?)?;
+                validate_mutation_scope(&scope, &available_lanes)?;
+                Ok(scope)
+            })();
+            match candidate {
+                Ok(scope) => break (scope, out),
+                Err(error) if attempt == 1 => {
+                    out.receipt.validation_result = "semantic_invalid".into();
+                    out.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                    if let Some(store) = store {
+                        persist_private_stage_receipt(store, &out.receipt)?;
+                    }
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ADMISSION SCOPE: {error}\nReturn one corrected complete object against the same snapshot. An assessable scope has no denial. A denied scope has a denial, one to four bargains, and no lanes."
+                    );
+                }
+                Err(error) => {
+                    out.receipt.validation_result = "semantic_invalid".into();
+                    out.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                    if let Some(store) = store {
+                        persist_private_stage_receipt(store, &out.receipt)?;
+                    }
+                    return Err(anyhow!(
+                        "assessment mutation scope failed local validation after one correction: {error}"
+                    ));
+                }
+            }
+        };
         if let Some(store) = store {
             persist_private_stage_receipt(store, &out.receipt)?;
             let entry = AssessmentMutationScopeCacheEntry {
@@ -629,10 +716,11 @@ impl ActionAssessor {
                     ));
                 }
                 validate_mutation_scope(&winner.scope, &available_lanes)?;
-                return Ok((winner.scope, winner.source_receipt_hash));
+                let receipt = scope_cache_hit_receipt(&winner, &snapshot_binding, &scope_prompt)?;
+                return Ok((winner.scope, receipt));
             }
         }
-        Ok((scope, out.receipt.receipt_hash))
+        Ok((scope, out.receipt))
     }
 }
 
@@ -1057,6 +1145,76 @@ fn persist_private_stage_receipt(store: &CampaignStore, receipt: &ModelStageRece
     }
 }
 
+fn snapshot_binding_for_scope(campaign: &Campaign, basis_digest: &str) -> String {
+    format!(
+        "campaign:{}:revision:{}:assessment-mutation-scope:{}",
+        campaign.id, campaign.revision, basis_digest
+    )
+}
+
+fn scope_cache_hit_receipt(
+    cached: &AssessmentMutationScopeCacheEntry,
+    snapshot_binding: &str,
+    scope_prompt: &str,
+) -> Result<ModelStageReceipt> {
+    let output = serde_json::to_string(&cached.scope)?;
+    let output_hash = format!("sha256:{:x}", Sha256::digest(output.as_bytes()));
+    let request_hash = format!(
+        "sha256:{:x}",
+        Sha256::digest(
+            format!(
+                "{}|{}|{}|{}",
+                cached.basis_digest, snapshot_binding, cached.source_model, scope_prompt
+            )
+            .as_bytes()
+        )
+    );
+    let receipt_hash = format!(
+        "sha256:{:x}",
+        Sha256::digest(
+            format!(
+                "{}|{}|assessment_mutation_scope|{}|{}|{}|{}",
+                cached.source_provider,
+                cached.source_model,
+                snapshot_binding,
+                request_hash,
+                output_hash,
+                cached.source_receipt_hash
+            )
+            .as_bytes()
+        )
+    );
+    Ok(ModelStageReceipt {
+        schema: "ghostlight.persona_stage_receipt.v1".into(),
+        receipt_hash,
+        provider: cached.source_provider.clone(),
+        model: cached.source_model.clone(),
+        stage: "assessment_mutation_scope".into(),
+        snapshot_binding: snapshot_binding.into(),
+        request_hash,
+        output_hash,
+        source_receipt_ids: Vec::new(),
+        latency_ms: 0,
+        validation_result: "valid_cache_hit".into(),
+        local_validation_error: None,
+        input_chars: scope_prompt.chars().count(),
+        output_chars: output.chars().count(),
+        provider_attempts: vec![ModelProviderAttemptReceipt {
+            provider_request_id: None,
+            system_fingerprint: None,
+            finish_reason: Some("cache_hit".into()),
+            latency_ms: 0,
+            token_usage: Some(ModelTokenUsage::default()),
+            transport_features: vec![
+                "cultcache.output-cache".into(),
+                format!("source-receipt:{}", cached.source_receipt_hash),
+            ],
+            local_validation_result: "valid_cache_hit".into(),
+            local_validation_error: None,
+        }],
+    })
+}
+
 fn cache_hit_receipt(
     cached: &AssessmentProposalCacheEntry,
     proposal: &AssessmentProposal,
@@ -1116,15 +1274,17 @@ fn cache_hit_receipt(
             finish_reason: Some("cache_hit".into()),
             latency_ms: 0,
             token_usage: Some(ModelTokenUsage::default()),
-            transport_features: vec![
-                "cultcache.output-cache".into(),
-                format!("source-mutation-scope:{}", cached.source_scope_receipt_hash),
-                format!("source-receipt:{}", cached.source_receipt_hash),
-                format!(
-                    "source-effect-verifier:{}",
-                    cached.source_effect_verifier_receipt_hash
-                ),
-            ],
+            transport_features: {
+                let mut features = vec![
+                    "cultcache.output-cache".into(),
+                    format!("source-mutation-scope:{}", cached.source_scope_receipt_hash),
+                    format!("source-receipt:{}", cached.source_receipt_hash),
+                ];
+                if let Some(hash) = &cached.source_effect_verifier_receipt_hash {
+                    features.push(format!("source-effect-verifier:{hash}"));
+                }
+                features
+            },
             local_validation_result: "valid_cache_hit".into(),
             local_validation_error: None,
         }],
@@ -1201,9 +1361,9 @@ fn constrain_effect_schema(
         .get(&acting_actor.location_id)
         .ok_or_else(|| anyhow!("acting actor location vanished while binding effect schema"))?
         .routes
-        .keys()
-        .filter(|destination| campaign.locations.contains_key(*destination))
-        .cloned()
+        .values()
+        .map(|route| route.destination_id.clone())
+        .filter(|destination| campaign.locations.contains_key(destination))
         .collect::<BTreeSet<_>>();
     let clock_ids = campaign.clocks.keys().cloned().collect::<BTreeSet<_>>();
     for field in ["add", "remove"] {
@@ -1491,6 +1651,113 @@ fn typed_string_enum(values: &[String]) -> serde_json::Value {
     serde_json::json!({"type":"string","enum":values})
 }
 
+fn assessment_admission_authority(
+    campaign: &Campaign,
+    acting_actor: &crate::domain::ActorState,
+) -> serde_json::Value {
+    let location = campaign.locations.get(&acting_actor.location_id);
+    let routes = location
+        .into_iter()
+        .flat_map(|location| {
+            location.routes.iter().map(|(route_id, route)| {
+                serde_json::json!({
+                    "route_id":route_id,
+                    "destination_id":route.destination_id,
+                    "destination_name":campaign.locations.get(&route.destination_id).map(|value| value.name.as_str()),
+                    "distance":route.distance,
+                    "travel_minutes":route.travel_minutes,
+                })
+            })
+        })
+        .collect::<Vec<_>>();
+    let present_actors = campaign
+        .actors
+        .values()
+        .filter(|candidate| candidate.location_id == acting_actor.location_id)
+        .map(|candidate| {
+            serde_json::json!({
+                "id":candidate.id,
+                "name":candidate.name,
+                "conditions":candidate.conditions,
+                "relationship_to_actor":candidate.relationships.get(&acting_actor.id),
+            })
+        })
+        .collect::<Vec<_>>();
+    let institutions = campaign
+        .institutions
+        .values()
+        .map(|institution| {
+            let profile = campaign.agency_profiles.get(&institution.id);
+            serde_json::json!({
+                "id":institution.id,
+                "name":institution.name,
+                "posture":institution.posture,
+                "location_ids":profile.map(|value| &value.location_ids),
+                "collective_authority_id":profile.and_then(|value| value.collective_authority_id.as_deref()),
+                "information_channels":profile.map(|value| &value.information_channels),
+            })
+        })
+        .collect::<Vec<_>>();
+    let clocks = campaign
+        .clocks
+        .values()
+        .map(|clock| {
+            serde_json::json!({
+                "id":clock.id,
+                "label":clock.label,
+                "progress":clock.progress,
+                "threshold":clock.threshold,
+                "consequence":clock.consequence,
+            })
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "actor":{
+            "id":acting_actor.id,
+            "location_id":acting_actor.location_id,
+            "capabilities":acting_actor.capabilities,
+            "knowledge":acting_actor.knowledge,
+            "equipment":acting_actor.equipment,
+            "conditions":acting_actor.conditions,
+            "obligations":acting_actor.obligations,
+            "relationships":acting_actor.relationships,
+        },
+        "location":location.map(|value| serde_json::json!({
+            "id":value.id,
+            "name":value.name,
+            "persistent_features":value.persistent_features,
+        })),
+        "routes":routes,
+        "present_actors":present_actors,
+        "institutions":institutions,
+        "clocks":clocks,
+        "accessible_information_facts":available_information_facts(campaign, acting_actor),
+    })
+}
+
+fn denied_assessment_proposal(scope: &AssessmentMutationScope) -> Result<AssessmentProposal> {
+    let denial = scope
+        .denial
+        .as_ref()
+        .ok_or_else(|| anyhow!("denied assessment scope omitted its denial"))?;
+    Ok(AssessmentProposal {
+        normalized_intent: denial.normalized_intent.clone(),
+        admissible: false,
+        missing_permission: Some(denial.missing_permission.clone()),
+        dc: 30,
+        modifiers: Vec::new(),
+        effect_ceiling: denial.effect_ceiling.clone(),
+        success_stake: denial.refusal_stake.clone(),
+        mixed_stake: denial.refusal_stake.clone(),
+        failure_stake: denial.refusal_stake.clone(),
+        strong_effect: WorldEffectDelta::default(),
+        success_effect: WorldEffectDelta::default(),
+        mixed_effect: WorldEffectDelta::default(),
+        failure_effect: WorldEffectDelta::default(),
+        bargains: denial.bargains.clone(),
+    })
+}
+
 fn available_mutation_lanes(
     campaign: &Campaign,
     acting_actor: &crate::domain::ActorState,
@@ -1520,8 +1787,8 @@ fn available_mutation_lanes(
         .is_some_and(|location| {
             location
                 .routes
-                .keys()
-                .any(|destination| campaign.locations.contains_key(destination))
+                .values()
+                .any(|route| campaign.locations.contains_key(&route.destination_id))
         });
     if has_destination {
         lanes.insert(AssessmentMutationLane::ActorMoves);
@@ -1565,6 +1832,44 @@ fn validate_mutation_scope(
         return Err(anyhow!(
             "assessment mutation scope required a success lane it did not select"
         ));
+    }
+    match (&scope.decision, &scope.denial) {
+        (AssessmentScopeDecision::Assess, None) => {}
+        (AssessmentScopeDecision::Deny, Some(denial)) => {
+            if !scope.lanes.is_empty() || !scope.required_success_lanes.is_empty() {
+                return Err(anyhow!("denied assessment scope selected a mutation lane"));
+            }
+            for (field, value) in [
+                ("normalized_intent", denial.normalized_intent.as_str()),
+                ("missing_permission", denial.missing_permission.as_str()),
+                ("effect_ceiling", denial.effect_ceiling.as_str()),
+                ("refusal_stake", denial.refusal_stake.as_str()),
+            ] {
+                let count = value.trim().chars().count();
+                if count == 0 || count > 600 {
+                    return Err(anyhow!(
+                        "assessment denial {field} must contain 1 to 600 characters"
+                    ));
+                }
+            }
+            if denial.bargains.is_empty()
+                || denial.bargains.len() > 4
+                || denial
+                    .bargains
+                    .iter()
+                    .any(|value| value.trim().is_empty() || value.chars().count() > 600)
+            {
+                return Err(anyhow!(
+                    "assessment denial must contain one to four bounded bargains"
+                ));
+            }
+        }
+        (AssessmentScopeDecision::Assess, Some(_)) => {
+            return Err(anyhow!("assessable mutation scope included a denial"));
+        }
+        (AssessmentScopeDecision::Deny, None) => {
+            return Err(anyhow!("denied assessment scope omitted its denial"));
+        }
     }
     Ok(())
 }
@@ -2099,7 +2404,8 @@ pub(crate) fn validate_effect(
             || !campaign.locations.contains_key(destination)
             || !campaign.locations[&acting_actor.location_id]
                 .routes
-                .contains_key(destination)
+                .values()
+                .any(|route| &route.destination_id == destination)
         {
             return Err(anyhow!("outcome movement exceeds spatial reach"));
         }
@@ -2168,6 +2474,93 @@ mod tests {
 
     struct DriftingAssessmentModel {
         calls: AtomicUsize,
+    }
+
+    struct DenyingScopeModel {
+        calls: AtomicUsize,
+    }
+
+    #[async_trait]
+    impl ModelPort for DenyingScopeModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            assert_eq!(request.stage, "assessment_mutation_scope");
+            assert!(request.lived_stream.contains("EXACT CURRENT AUTHORITY"));
+            assert!(request.lived_stream.contains("present_actors"));
+            Ok(serde_json::json!({
+                "decision":"deny",
+                "lanes":[],
+                "required_success_lanes":[],
+                "denial":{
+                    "normalized_intent":"Take permanent command of an independent institution by declaration.",
+                    "missing_permission":"The actor has no authority, leverage, custody, or extraordinary permission that can compel the institution's surrender.",
+                    "effect_ceiling":"The actor may make the demand; the declaration cannot transfer institutional authority or custody.",
+                    "refusal_stake":"No roll occurs and no institutional authority, custody, or obedience changes.",
+                    "bargains":[
+                        "Seek a specific local concession from a present official.",
+                        "Acquire leverage or recognized authority that the institution must answer."
+                    ]
+                }
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "denying-scope-fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn impossible_overreach_terminates_after_one_compact_admission_stage() {
+        let model = Arc::new(DenyingScopeModel {
+            calls: AtomicUsize::new(0),
+        });
+        let assessor = ActionAssessor::with_models(model.clone(), "fast", "capable");
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let intent = ActionIntent {
+            actor_id: "player".into(),
+            description: "I declare myself the ruler of every institution.".into(),
+            intended_effect: "Every institution surrenders its authority and obeys forever.".into(),
+        };
+
+        let (first, first_receipt) = assessor
+            .assess_with_context_cached(&store, &campaign, intent.clone(), &[], None, &[])
+            .await
+            .unwrap();
+        assert!(!first.admissible);
+        assert!(first.missing_permission.is_some());
+        assert_eq!(first.bargains.len(), 2);
+        assert_eq!(first.strong_effect, WorldEffectDelta::default());
+        assert_eq!(first.success_effect, WorldEffectDelta::default());
+        assert_eq!(first_receipt.stage, "assessment_mutation_scope");
+        assert_eq!(model.calls.load(Ordering::SeqCst), 1);
+        assert!(
+            store
+                .keys(ASSESSMENT_PROPOSAL_CACHE_KIND)
+                .unwrap()
+                .is_empty()
+        );
+        assert_eq!(store.keys(ASSESSMENT_SCOPE_CACHE_KIND).unwrap().len(), 1);
+        let stages = store
+            .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")
+            .unwrap()
+            .into_iter()
+            .map(|receipt| receipt.stage)
+            .collect::<BTreeSet<_>>();
+        assert_eq!(stages, BTreeSet::from(["assessment_mutation_scope".into()]));
+
+        campaign.revision += 1;
+        let (second, second_receipt) = assessor
+            .assess_with_context_cached(&store, &campaign, intent, &[], None, &[])
+            .await
+            .unwrap();
+        assert_eq!(model.calls.load(Ordering::SeqCst), 1);
+        assert!(!second.admissible);
+        assert_eq!(second.revision, 1);
+        assert_ne!(first.digest, second.digest);
+        assert_eq!(second_receipt.validation_result, "valid_cache_hit");
     }
 
     fn proposal_value_for_request(
@@ -2297,7 +2690,10 @@ mod tests {
     impl ModelPort for DriftingAssessmentModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             if request.stage == "assessment_mutation_scope" {
-                return Ok(r#"{"lanes":[],"required_success_lanes":[]}"#.into());
+                return Ok(
+                    r#"{"decision":"assess","lanes":[],"required_success_lanes":[],"denial":null}"#
+                        .into(),
+                );
             }
             if request.stage == "assessment_effect_verifier" {
                 return Ok(
@@ -2411,8 +2807,10 @@ mod tests {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
                 "assessment_mutation_scope" => Ok(serde_json::json!({
+                    "decision":"assess",
                     "lanes":["actor_knowledge_additions","actor_relationship_updates"],
-                    "required_success_lanes":["actor_relationship_updates"]
+                    "required_success_lanes":["actor_relationship_updates"],
+                    "denial":null
                 })
                 .to_string()),
                 "action_assessment" => {
@@ -2807,8 +3205,10 @@ mod tests {
         );
 
         let scope = AssessmentMutationScope {
+            decision: AssessmentScopeDecision::Assess,
             lanes: required.clone(),
             required_success_lanes: required,
+            denial: None,
         };
         let mut candidate = proposal("actor:player");
         let error = validate_required_success_lanes(&candidate, &scope)
