@@ -211,6 +211,12 @@ messages.
   both the model schema and `WorldKernel` close that lane. This cut followed a
   live relay attempt that correctly targeted two refugees but whose plural
   outcome prose caused a third `Relay Volunteer` to be created.
+- The live replay held gestalt membership at four and then exposed an NPC
+  assessment failure: the model twice returned `null` for an unavailable
+  knowledge map. Foreground assessment schemas now remove unavailable
+  knowledge, movement, clock, and institution lanes entirely, close the effect
+  object to undeclared properties, and default omitted maps to no mutation.
+  The focused regression and full 285-test library pass cover the cut.
 - Live refresh pressure reproduced and removed two contract faults: reuse of a
   private-command idempotency key across separately sealed attempts, and
   validation of a refresh receipt as if it carried the initial-login account

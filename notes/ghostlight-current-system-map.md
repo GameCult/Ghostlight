@@ -942,6 +942,11 @@ receipt, events, and aggregate compatibility projection atomically. The
 aggregate campaign row is rejected as a component-only mutation target.
 `WorldEffectDelta`, `ActorStateDelta`, and strategic effect variants are model
 boundary migration inputs, not writers or independent physical ontologies.
+The foreground assessor now derives a closed effect schema from the exact
+snapshot and removes unavailable knowledge, movement, clock, and institution
+lanes before inference. Missing maps lower to no mutation. This keeps both the
+prompt and correction surface smaller and prevents provider `null` placeholders
+from stalling an NPC initiative on an operation the actor could not perform.
 
 Population fission now composes admitted child entities, stable child
 identities, one lineage split, exact resource custody transfers, and exact

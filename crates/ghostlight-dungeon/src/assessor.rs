@@ -109,7 +109,7 @@ impl ActionAssessor {
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
         constrain_assessment_schema(&mut schema, &allowed_references, campaign, actor)?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both maps for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, leave knowledge deltas empty and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep a delta empty only when the outcome truly has no canonical state change.\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may use only the mutation lanes present in the supplied schema; omit an unavailable or unused lane. A missing mutation map means no mutation in that lane. Supplied lanes may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both maps for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, omit the knowledge lane and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(&campaign_contract)?,
             serde_json::to_string(aggregate_boundaries)?,
@@ -257,6 +257,7 @@ fn constrain_effect_schema(
     campaign: &Campaign,
     acting_actor: &crate::domain::ActorState,
 ) -> Result<()> {
+    schema["$defs"]["WorldEffectDelta"]["additionalProperties"] = serde_json::json!(false);
     let present_actor_ids = campaign
         .actors
         .values()
@@ -300,7 +301,7 @@ fn constrain_effect_schema(
             &present_actor_ids,
         )?;
     }
-    constrain_knowledge_map(
+    let knowledge_available = constrain_knowledge_map(
         effect_properties
             .get_mut("actor_knowledge_additions")
             .ok_or_else(|| anyhow!("assessment effect schema omitted actor_knowledge_additions"))?,
@@ -347,6 +348,22 @@ fn constrain_effect_schema(
     constrain_map_keys(institution_postures, &institution_ids)?;
     institution_postures["additionalProperties"] =
         serde_json::json!({"type":"string","minLength":1});
+    let mut unavailable_lanes = Vec::new();
+    if !knowledge_available {
+        unavailable_lanes.push("actor_knowledge_additions");
+    }
+    if destination_ids.is_empty() {
+        unavailable_lanes.push("actor_moves");
+    }
+    if clock_ids.is_empty() {
+        unavailable_lanes.extend(["clock_advances", "clock_reductions"]);
+    }
+    if institution_ids.is_empty() {
+        unavailable_lanes.push("institution_postures");
+    }
+    for field in unavailable_lanes {
+        remove_effect_lane(schema, field)?;
+    }
     Ok(())
 }
 
@@ -355,7 +372,7 @@ fn constrain_knowledge_map(
     campaign: &Campaign,
     acting_actor: &crate::domain::ActorState,
     present_actor_ids: &BTreeSet<String>,
-) -> Result<()> {
+) -> Result<bool> {
     let mut properties = serde_json::Map::new();
     for actor_id in present_actor_ids {
         let target = campaign
@@ -398,6 +415,25 @@ fn constrain_knowledge_map(
         "additionalProperties":false,
         "maxProperties":max_properties
     });
+    Ok(max_properties > 0)
+}
+
+fn remove_effect_lane(schema: &mut serde_json::Value, field: &str) -> Result<()> {
+    let definition = schema
+        .pointer_mut("/$defs/WorldEffectDelta")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("assessment schema has no world effect definition"))?;
+    definition
+        .get_mut("properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("assessment schema has no world effect properties"))?
+        .remove(field);
+    if let Some(required) = definition
+        .get_mut("required")
+        .and_then(serde_json::Value::as_array_mut)
+    {
+        required.retain(|value| value.as_str() != Some(field));
+    }
     Ok(())
 }
 
@@ -773,6 +809,26 @@ mod tests {
     fn assessment_effect_schema_binds_exact_visible_and_spatial_scope() {
         let mut campaign = crate::resolution::tests::campaign(0, 1);
         let acting = campaign.actors["player"].clone();
+        campaign.clocks.insert(
+            "clinic-failure".into(),
+            crate::domain::WorldClock {
+                id: "clinic-failure".into(),
+                label: "Clinic failure".into(),
+                progress: 1,
+                threshold: 4,
+                consequence: "The clinic fails.".into(),
+            },
+        );
+        campaign.institutions.insert(
+            "clinic".into(),
+            crate::domain::InstitutionState {
+                id: "clinic".into(),
+                name: "Clinic".into(),
+                resources: vec![],
+                goals: vec!["remain operational".into()],
+                posture: "strained".into(),
+            },
+        );
         let mut nearby = acting.clone();
         nearby.id = "clinic-director".into();
         nearby.name = "Clinic Director".into();
@@ -866,6 +922,62 @@ mod tests {
             schema["$defs"]["ConditionDelta"]["properties"]["add"]["items"]["minLength"],
             1
         );
+    }
+
+    #[test]
+    fn assessment_effect_schema_omits_unavailable_mutation_lanes() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        campaign.clocks.clear();
+        campaign.institutions.clear();
+        campaign.facts.clear();
+        let actor_id = campaign.player_actor_id.clone();
+        let location_id = campaign.actors[&actor_id].location_id.clone();
+        campaign
+            .locations
+            .get_mut(&location_id)
+            .unwrap()
+            .routes
+            .clear();
+        campaign
+            .actors
+            .get_mut(&actor_id)
+            .unwrap()
+            .knowledge
+            .clear();
+        let acting = campaign.actors[&actor_id].clone();
+
+        let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
+        constrain_assessment_schema(&mut schema, &BTreeSet::new(), &campaign, &acting).unwrap();
+        let effect = schema.pointer("/$defs/WorldEffectDelta").unwrap();
+        let properties = effect["properties"].as_object().unwrap();
+
+        assert!(properties.contains_key("actor_conditions"));
+        assert!(properties.contains_key("actor_relationship_updates"));
+        for unavailable in [
+            "actor_knowledge_additions",
+            "actor_moves",
+            "clock_advances",
+            "clock_reductions",
+            "institution_postures",
+        ] {
+            assert!(!properties.contains_key(unavailable));
+            assert!(
+                effect["required"]
+                    .as_array()
+                    .is_none_or(|required| required.iter().all(|value| value != unavailable))
+            );
+        }
+        let effect_contract = serde_json::json!({
+            "$ref":"#/$defs/WorldEffectDelta",
+            "$defs":schema["$defs"].clone(),
+        });
+        let validator = jsonschema::validator_for(&effect_contract).unwrap();
+        assert!(validator.is_valid(&serde_json::json!({})));
+        assert!(!validator.is_valid(&serde_json::json!({
+            "actor_knowledge_additions":null
+        })));
+        let decoded: WorldEffectDelta = serde_json::from_value(serde_json::json!({})).unwrap();
+        assert_eq!(decoded, WorldEffectDelta::default());
     }
 
     #[test]

@@ -1072,6 +1072,7 @@ pub struct ConditionDelta {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+#[serde(default)]
 pub struct WorldEffectDelta {
     pub actor_conditions: BTreeMap<String, ConditionDelta>,
     /// Exact player-readable natural-language findings learned by each actor.

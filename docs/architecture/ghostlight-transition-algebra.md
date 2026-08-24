@@ -287,6 +287,14 @@ not: every parent resource must be assigned to exactly one child in the
 approved preview, so aggregation cannot mint a granary for every ideological
 subgroup.
 
+Foreground assessment uses the same authority-shaped contract principle. Its
+model schema contains only mutation lanes available in the current snapshot:
+no route means no movement lane, no accessible undisclosed proposition means
+no knowledge lane, and absent clocks or institutions remove their lanes. Empty
+or unused maps may be omitted and deserialize to no mutation. The closed
+dynamic schema rejects an unavailable lane even when the model tries to emit it
+as `null`; provider formatting cannot manufacture authority.
+
 ## Means, intended effect, and committed mutation
 
 ### Means
