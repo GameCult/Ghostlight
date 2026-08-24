@@ -1,7 +1,8 @@
 use anyhow::{Context, Result};
 use ghostlight_dungeon::{
     domain::{
-        Campaign, CellAppraisal, ResolutionCover, StrategicActivityOutcome, StrategicTickReceipt,
+        Campaign, CellAppraisal, GestaltMaterializationReceipt, RejectedProposalReceipt,
+        ResolutionCover, StrategicActivityOutcome, StrategicTickReceipt,
     },
     model::ModelStageReceipt,
     persistence::CampaignStore,
@@ -63,6 +64,20 @@ fn main() -> Result<()> {
         }
         _ => Vec::new(),
     };
+    let mut rejected = store.load_all::<RejectedProposalReceipt>("rejected_proposal_receipt.v1")?;
+    rejected.sort_by_key(|receipt| (receipt.revision, receipt.rejected_at));
+    let rejected = rejected
+        .into_iter()
+        .rev()
+        .take(16)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<Vec<_>>();
+    let mut presence =
+        store.load_all::<GestaltMaterializationReceipt>("gestalt_materialization_receipt.v1")?;
+    presence.sort_by_key(|receipt| receipt.revision);
+    let presence = presence.into_iter().rev().take(16).collect::<Vec<_>>();
 
     let receipt_hashes = latest_tick
         .map(|tick| tick.model_receipt_hashes.iter().cloned().collect())
@@ -91,14 +106,29 @@ fn main() -> Result<()> {
             }));
         }
     }
+    let recent_revision_bindings = (campaign.revision.saturating_sub(3)..=campaign.revision)
+        .map(|revision| format!("campaign:{}:revision:{revision}", campaign.id))
+        .collect::<Vec<_>>();
+    let recent_model_receipts = store
+        .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")?
+        .into_iter()
+        .filter(|receipt| {
+            recent_revision_bindings
+                .iter()
+                .any(|binding| receipt.snapshot_binding.contains(binding))
+        })
+        .collect::<Vec<_>>();
 
     let mut subjects = BTreeMap::new();
     for actor in campaign.actors.values() {
+        let profile = campaign.agency_profiles.get(&actor.id);
         subjects.insert(
             actor.id.clone(),
             json!({
                 "kind": "actor",
                 "name": actor.name,
+                "locationId": actor.location_id,
+                "simulationEligible": profile.is_none_or(|profile| profile.simulation_eligible),
                 "goals": actor.goals,
                 "obligations": actor.obligations,
                 "relationships": actor.relationships,
@@ -176,6 +206,12 @@ fn main() -> Result<()> {
             "cover": cover,
             "appraisals": appraisals,
             "activityOutcomes": outcomes,
+            "rejectedProposals": rejected,
+            "recentPresenceReceipts": presence,
+            "recentTranscript": campaign.transcript.iter().rev().take(24).collect::<Vec<_>>(),
+            "recentWorldEvents": campaign.events.iter().rev().take(24).collect::<Vec<_>>(),
+            "pendingWorldProposals": campaign.pending_world_proposals,
+            "recentModelReceipts": recent_model_receipts,
             "events": events,
             "news": news,
             "modelReceipts": model_receipts,
