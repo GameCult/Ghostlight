@@ -641,8 +641,16 @@ mod tests {
         let kind_variants = schema["properties"]["kind"]["anyOf"]
             .as_array()
             .context("optional enum was not projected as nullable")?;
-        assert!(kind_variants.iter().any(|variant| variant["type"] == "string"));
-        assert!(kind_variants.iter().any(|variant| variant["type"] == "null"));
+        assert!(
+            kind_variants
+                .iter()
+                .any(|variant| variant["type"] == "string")
+        );
+        assert!(
+            kind_variants
+                .iter()
+                .any(|variant| variant["type"] == "null")
+        );
         assert!(schema["properties"]["note"]["anyOf"].is_array());
         assert!(responses_schema_is_strict(&schema));
         Ok(())
