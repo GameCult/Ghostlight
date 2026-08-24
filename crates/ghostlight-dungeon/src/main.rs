@@ -337,8 +337,9 @@ async fn main() -> anyhow::Result<()> {
                 MODEL_FAST,
                 MODEL_CAPABLE,
             ))),
-            Some(Arc::new(ActionAssessor::new(
+            Some(Arc::new(ActionAssessor::with_models(
                 provider.clone(),
+                MODEL_FAST,
                 MODEL_CAPABLE,
             ))),
             Some(provider),

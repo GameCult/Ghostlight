@@ -960,6 +960,14 @@ snapshot and removes unavailable knowledge, movement, clock, and institution
 lanes before inference. Missing maps lower to no mutation. This keeps both the
 prompt and correction surface smaller and prevents provider `null` placeholders
 from stalling an NPC initiative on an operation the actor could not perform.
+After structural binding, a compact independent verifier compares the complete
+four-band typed effect bundle with the player's exact means and intended
+effect. Structurally legal state is not automatically causally relevant. The
+verifier can only accept or return one bounded mismatch classification and
+repair sentence; it cannot reassess difficulty, choose an effect, or commit.
+One mismatch returns to the assessor against the same snapshot, while a second
+mismatch aborts. Every verifier receipt is private audit state and only a
+verified proposal may enter the assessment cache.
 Pending NPC actions are revision-scoped reaction-window state. The next
 reaction wave atomically replaces the set, and the kernel resolves an action
 only when the current last event is the exact current-revision reaction wave.
@@ -970,14 +978,15 @@ aborts the whole wave without private deltas, transcript additions, initiative,
 or revision change; observers may still choose to speak from their own goals.
 
 Action assessment separates semantic inference identity from commit identity.
-The exact model, stable instructions, action-specific schema, and permitted
-typed packet form a content-addressed private `assessment_proposal_cache.v1`
-key. Revision and expiry still bind the consumable assessment and roll but do
-not force the capable model to reconsider an otherwise byte-identical packet.
-A cache hit revalidates the complete proposal against current state, emits a
-zero-token receipt linked to the source receipt, and creates a fresh digest at
-the current revision. Changed authority changes the key. The Eve command-result
-projection shows every signed modifier with its exact references.
+The exact assessor and verifier models, stable instructions, action-specific
+schema, and permitted typed packet form a content-addressed private
+`assessment_proposal_cache.v1` key. Revision and expiry still bind the
+consumable assessment and roll but do not force the capable model to reconsider
+an otherwise byte-identical packet. A cache hit revalidates the complete
+proposal against current state, emits a zero-token receipt linked to the source
+assessment and verifier receipts, and creates a fresh digest at the current
+revision. Changed authority changes the key. The Eve command-result projection
+shows every signed modifier with its exact references.
 
 Population fission now composes admitted child entities, stable child
 identities, one lineage split, exact resource custody transfers, and exact

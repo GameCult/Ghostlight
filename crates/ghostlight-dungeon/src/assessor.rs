@@ -12,11 +12,16 @@ use chrono::{Duration, Utc};
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{collections::BTreeSet, sync::Arc};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
 
 const ASSESSMENT_PROPOSAL_CACHE_KIND: &str = "assessment_proposal_cache.v1";
-const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v1";
-const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v2";
+const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v2";
+const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v3";
+
+const ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between the fiction-first action assessor and the world kernel. Structural authority, reach, knowledge access, and mutation shape were already checked. Judge the complete four-band typed effect bundle against the player's exact means and intended effect. Every non-empty mutation must be a direct realization of the intended effect or a concrete, previewed consequence of the attempted means in that exact outcome band. A fact being true, nearby, discoverable, or useful does not make communicating or acquiring it a consequence of an unrelated action. A plausible general reaction does not justify changing a relationship, condition, clock, posture, movement, or knowledge record that the attempted means and stakes do not cause. Failure and mixed effects may impose direct costs or complications, but not arbitrary available state changes. The effect ceiling and visible stakes must describe the same bounded consequences as the typed effects. Do not reassess admissibility, DC, or modifiers, and do not choose replacement effects. Return one JSON object. If every typed mutation is causally faithful, use result 'match' with null mismatch_kind and null repair_guidance. Otherwise use result 'mismatch', one mismatch_kind, and one concrete repair sentence of at most 240 characters naming what must be removed or aligned. Shape: {\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}.";
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct AssessmentProposal {
@@ -44,17 +49,59 @@ struct AssessmentProposalCacheEntry {
     source_provider: String,
     source_model: String,
     source_receipt_hash: String,
+    source_effect_verifier_receipt_hash: String,
     created_at: chrono::DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum AssessmentEffectMatchResult {
+    Match,
+    Mismatch,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum AssessmentEffectMismatchKind {
+    UnrelatedMutation,
+    EffectOmission,
+    EffectReversal,
+    TargetSubstitution,
+    InventedOutcome,
+    WrongEffectKind,
+    StakeMutationMismatch,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+struct AssessmentEffectVerification {
+    result: AssessmentEffectMatchResult,
+    mismatch_kind: Option<AssessmentEffectMismatchKind>,
+    repair_guidance: Option<String>,
 }
 
 pub struct ActionAssessor {
     model: Arc<dyn ModelPort>,
+    verifier_model_id: String,
     model_id: String,
 }
 impl ActionAssessor {
     pub fn new(model: Arc<dyn ModelPort>, model_id: impl Into<String>) -> Self {
+        let model_id = model_id.into();
         Self {
             model,
+            verifier_model_id: model_id.clone(),
+            model_id,
+        }
+    }
+
+    pub fn with_models(
+        model: Arc<dyn ModelPort>,
+        verifier_model_id: impl Into<String>,
+        model_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            model,
+            verifier_model_id: verifier_model_id.into(),
             model_id: model_id.into(),
         }
     }
@@ -184,7 +231,8 @@ impl ActionAssessor {
             serde_json::to_string(&allowed_references)?
         );
         let snapshot_binding = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
-        let basis_digest = assessment_basis_digest(&self.model_id, &base_prompt);
+        let basis_digest =
+            assessment_basis_digest(&self.verifier_model_id, &self.model_id, &base_prompt);
         if let Some(store) = store
             && let Some((_, cached)) = store.load::<AssessmentProposalCacheEntry>(
                 ASSESSMENT_PROPOSAL_CACHE_KIND,
@@ -214,7 +262,7 @@ impl ActionAssessor {
         }
         let mut correction = String::new();
         let mut attempts = 0;
-        let (proposal, out) = loop {
+        let (proposal, out, effect_verifier_receipt) = loop {
             attempts += 1;
             let out = run_validated_stage(
                 self.model.as_ref(),
@@ -239,7 +287,47 @@ impl ActionAssessor {
                 validate_and_bind_proposal(proposal, campaign, actor, &allowed_references)
             })();
             match candidate {
-                Ok(proposal) => break (proposal, out),
+                Ok(proposal) => {
+                    let (verification, verifier_receipt) = verify_assessment_effects(
+                        self.model.as_ref(),
+                        &self.verifier_model_id,
+                        campaign,
+                        &intent,
+                        &proposal,
+                        &snapshot_binding,
+                    )
+                    .await?;
+                    if let Some(store) = store {
+                        persist_private_stage_receipt(store, &verifier_receipt)?;
+                    }
+                    match verification.result {
+                        AssessmentEffectMatchResult::Match => {
+                            validate_effect_verification(&verification)?;
+                            break (proposal, out, verifier_receipt);
+                        }
+                        AssessmentEffectMatchResult::Mismatch if attempts == 1 => {
+                            validate_effect_verification(&verification)?;
+                            let rejected = serde_json::to_string(&proposal)?;
+                            let guidance = verification
+                                .repair_guidance
+                                .as_deref()
+                                .expect("validated mismatch requires repair guidance");
+                            correction = format!(
+                                "\n\nSEMANTIC EFFECT VERIFIER REJECTED THE PREVIOUS ASSESSMENT.\nREPAIR GUIDANCE: {guidance}\nPREVIOUS ASSESSMENT:\n{rejected}\nReturn one corrected complete assessment against the same snapshot. Preserve the exact means, intended effect, admissibility, and all causally faithful stakes and mutations. Remove or align the rejected mutation; do not replace it with another merely available fact or unrelated side effect."
+                            );
+                        }
+                        AssessmentEffectMatchResult::Mismatch => {
+                            validate_effect_verification(&verification)?;
+                            return Err(anyhow!(
+                                "assessment failed semantic effect verification after one correction: {}",
+                                verification
+                                    .repair_guidance
+                                    .as_deref()
+                                    .unwrap_or("effect mismatch")
+                            ));
+                        }
+                    }
+                }
                 Err(error) if attempts == 1 => {
                     let rejected = out
                         .structured
@@ -267,6 +355,7 @@ impl ActionAssessor {
                 source_provider: selected_receipt.provider.clone(),
                 source_model: selected_receipt.model.clone(),
                 source_receipt_hash: selected_receipt.receipt_hash.clone(),
+                source_effect_verifier_receipt_hash: effect_verifier_receipt.receipt_hash,
                 created_at: Utc::now(),
             };
             if let Err(insert_error) = store.insert(
@@ -364,13 +453,193 @@ fn build_assessment(
     Ok(assessment)
 }
 
-fn assessment_basis_digest(model_id: &str, base_prompt: &str) -> String {
+fn assessment_basis_digest(verifier_model_id: &str, model_id: &str, base_prompt: &str) -> String {
     format!(
         "sha256:{:x}",
         Sha256::digest(
-            format!("{ASSESSMENT_SEMANTICS_VERSION}|{model_id}|{base_prompt}").as_bytes()
+            format!(
+                "{ASSESSMENT_SEMANTICS_VERSION}|{verifier_model_id}|{ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS}|{model_id}|{base_prompt}"
+            )
+            .as_bytes()
         )
     )
+}
+
+async fn verify_assessment_effects(
+    model: &dyn ModelPort,
+    verifier_model_id: &str,
+    campaign: &Campaign,
+    intent: &ActionIntent,
+    proposal: &AssessmentProposal,
+    snapshot_binding: &str,
+) -> Result<(AssessmentEffectVerification, ModelStageReceipt)> {
+    let referenced_state = assessment_effect_reference_context(campaign, proposal);
+    let context = serde_json::json!({
+        "means":intent.description,
+        "intended_effect":intent.intended_effect,
+        "effect_ceiling":proposal.effect_ceiling,
+        "success_stake":proposal.success_stake,
+        "mixed_stake":proposal.mixed_stake,
+        "failure_stake":proposal.failure_stake,
+        "typed_effects":{
+            "strong_success":proposal.strong_effect,
+            "success":proposal.success_effect,
+            "mixed":proposal.mixed_effect,
+            "failure":proposal.failure_effect,
+        },
+        "referenced_state":referenced_state,
+    });
+    let request = ModelStageRequest {
+        stage: "assessment_effect_verifier".into(),
+        model: verifier_model_id.into(),
+        snapshot_binding: format!(
+            "{}:assessment-effect:{}",
+            snapshot_binding,
+            format!("{:x}", Sha256::digest(serde_json::to_vec(&context)?))
+        ),
+        lived_stream: format!(
+            "{ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS}\n\nCANDIDATE:\n{}",
+            serde_json::to_string(&context)?
+        ),
+        output_schema: Some(serde_json::to_value(schema_for!(
+            AssessmentEffectVerification
+        ))?),
+        source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
+        temperature: Some(0.0),
+        max_output_tokens: Some(192),
+    };
+    let output = run_validated_stage(model, &request).await?;
+    let verification: AssessmentEffectVerification = serde_json::from_value(
+        output
+            .structured
+            .clone()
+            .ok_or_else(|| anyhow!("assessment effect verifier produced no typed verdict"))?,
+    )?;
+    validate_effect_verification(&verification)?;
+    let mut receipt = output.receipt;
+    if matches!(verification.result, AssessmentEffectMatchResult::Mismatch) {
+        receipt.validation_result = "semantic_invalid".into();
+        receipt.local_validation_error = verification
+            .repair_guidance
+            .as_deref()
+            .map(|guidance| guidance.chars().take(1_000).collect());
+    }
+    Ok((verification, receipt))
+}
+
+fn assessment_effect_reference_context(
+    campaign: &Campaign,
+    proposal: &AssessmentProposal,
+) -> serde_json::Value {
+    let mut actor_ids = BTreeSet::new();
+    let mut institution_ids = BTreeSet::new();
+    let mut clock_ids = BTreeSet::new();
+    let mut location_ids = BTreeSet::new();
+    for effect in [
+        &proposal.strong_effect,
+        &proposal.success_effect,
+        &proposal.mixed_effect,
+        &proposal.failure_effect,
+    ] {
+        actor_ids.extend(effect.actor_conditions.keys().cloned());
+        actor_ids.extend(effect.actor_knowledge_additions.keys().cloned());
+        actor_ids.extend(effect.actor_relationship_updates.keys().cloned());
+        actor_ids.extend(effect.actor_moves.keys().cloned());
+        for target_id in effect
+            .actor_relationship_updates
+            .values()
+            .flat_map(|relationships| relationships.keys())
+        {
+            if campaign.actors.contains_key(target_id) {
+                actor_ids.insert(target_id.clone());
+            } else if campaign.institutions.contains_key(target_id) {
+                institution_ids.insert(target_id.clone());
+            }
+        }
+        location_ids.extend(effect.actor_moves.values().cloned());
+        clock_ids.extend(effect.clock_advances.keys().cloned());
+        clock_ids.extend(effect.clock_reductions.keys().cloned());
+        institution_ids.extend(effect.institution_postures.keys().cloned());
+    }
+    let actors = actor_ids
+        .into_iter()
+        .filter_map(|id| {
+            campaign
+                .actors
+                .get(&id)
+                .map(|actor| (id, actor.name.clone()))
+        })
+        .collect::<BTreeMap<_, _>>();
+    let institutions = institution_ids
+        .into_iter()
+        .filter_map(|id| {
+            campaign
+                .institutions
+                .get(&id)
+                .map(|institution| (id, institution.name.clone()))
+        })
+        .collect::<BTreeMap<_, _>>();
+    let clocks = clock_ids
+        .into_iter()
+        .filter_map(|id| {
+            campaign
+                .clocks
+                .get(&id)
+                .map(|clock| (id, clock.label.clone()))
+        })
+        .collect::<BTreeMap<_, _>>();
+    let locations = location_ids
+        .into_iter()
+        .filter_map(|id| {
+            campaign
+                .locations
+                .get(&id)
+                .map(|location| (id, location.name.clone()))
+        })
+        .collect::<BTreeMap<_, _>>();
+    serde_json::json!({
+        "actors":actors,
+        "institutions":institutions,
+        "clocks":clocks,
+        "locations":locations,
+    })
+}
+
+fn validate_effect_verification(verification: &AssessmentEffectVerification) -> Result<()> {
+    match (
+        &verification.result,
+        &verification.mismatch_kind,
+        &verification.repair_guidance,
+    ) {
+        (AssessmentEffectMatchResult::Match, None, None) => Ok(()),
+        (AssessmentEffectMatchResult::Mismatch, Some(_), Some(guidance))
+            if !guidance.trim().is_empty() && guidance.chars().count() <= 240 =>
+        {
+            Ok(())
+        }
+        _ => Err(anyhow!(
+            "assessment effect verifier returned an incoherent verdict"
+        )),
+    }
+}
+
+fn persist_private_stage_receipt(store: &CampaignStore, receipt: &ModelStageReceipt) -> Result<()> {
+    match store.insert(
+        "persona_stage_receipt.v1",
+        "ghostlight.persona_stage_receipt.v1",
+        receipt.storage_key(),
+        receipt,
+    ) {
+        Ok(_) => Ok(()),
+        Err(_error)
+            if store
+                .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
+                .is_some() =>
+        {
+            Ok(())
+        }
+        Err(error) => Err(error),
+    }
 }
 
 fn cache_hit_receipt(
@@ -434,6 +703,10 @@ fn cache_hit_receipt(
             transport_features: vec![
                 "cultcache.output-cache".into(),
                 format!("source-receipt:{}", cached.source_receipt_hash),
+                format!(
+                    "source-effect-verifier:{}",
+                    cached.source_effect_verifier_receipt_hash
+                ),
             ],
             local_validation_result: "valid_cache_hit".into(),
             local_validation_error: None,
@@ -981,30 +1254,43 @@ mod tests {
         calls: AtomicUsize,
     }
 
+    fn proposal_value_for_request(
+        request: &ModelStageRequest,
+        proposal: AssessmentProposal,
+    ) -> Result<serde_json::Value> {
+        let mut value = serde_json::to_value(proposal)?;
+        let allowed_effect_fields = request
+            .output_schema
+            .as_ref()
+            .and_then(|schema| schema.pointer("/$defs/WorldEffectDelta/properties"))
+            .and_then(serde_json::Value::as_object)
+            .map(|properties| properties.keys().cloned().collect::<BTreeSet<_>>())
+            .unwrap_or_default();
+        for field in [
+            "strong_effect",
+            "success_effect",
+            "mixed_effect",
+            "failure_effect",
+        ] {
+            value[field]
+                .as_object_mut()
+                .expect("fixture effect is an object")
+                .retain(|key, _| allowed_effect_fields.contains(key));
+        }
+        Ok(value)
+    }
+
     #[async_trait]
     impl ModelPort for DriftingAssessmentModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
-            let call = self.calls.fetch_add(1, Ordering::SeqCst);
-            let mut value = serde_json::to_value(proposal("actor:player"))?;
-            value["modifiers"][0]["value"] = serde_json::json!(if call == 0 { 2 } else { 6 });
-            let allowed_effect_fields = request
-                .output_schema
-                .as_ref()
-                .and_then(|schema| schema.pointer("/$defs/WorldEffectDelta/properties"))
-                .and_then(serde_json::Value::as_object)
-                .map(|properties| properties.keys().cloned().collect::<BTreeSet<_>>())
-                .unwrap_or_default();
-            for field in [
-                "strong_effect",
-                "success_effect",
-                "mixed_effect",
-                "failure_effect",
-            ] {
-                value[field]
-                    .as_object_mut()
-                    .expect("fixture effect is an object")
-                    .retain(|key, _| allowed_effect_fields.contains(key));
+            if request.stage == "assessment_effect_verifier" {
+                return Ok(
+                    r#"{"result":"match","mismatch_kind":null,"repair_guidance":null}"#.into(),
+                );
             }
+            let call = self.calls.fetch_add(1, Ordering::SeqCst);
+            let mut value = proposal_value_for_request(request, proposal("actor:player"))?;
+            value["modifiers"][0]["value"] = serde_json::json!(if call == 0 { 2 } else { 6 });
             Ok(serde_json::to_string(&value)?)
         }
 
@@ -1075,7 +1361,241 @@ mod tests {
                 .transport_features
                 .contains(&"cultcache.output-cache".to_string())
         );
+        assert!(
+            second_receipt.provider_attempts[0]
+                .transport_features
+                .iter()
+                .any(|feature| feature.starts_with("source-effect-verifier:sha256:"))
+        );
         assert_eq!(store.keys(ASSESSMENT_PROPOSAL_CACHE_KIND).unwrap().len(), 1);
+        assert_eq!(store.keys("persona_stage_receipt.v1").unwrap().len(), 1);
+    }
+
+    struct CorrectingEffectModel {
+        assessment_calls: AtomicUsize,
+        verifier_calls: AtomicUsize,
+        corrects: bool,
+    }
+
+    #[async_trait]
+    impl ModelPort for CorrectingEffectModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "action_assessment" => {
+                    self.assessment_calls.fetch_add(1, Ordering::SeqCst);
+                    let correction = request
+                        .lived_stream
+                        .contains("SEMANTIC EFFECT VERIFIER REJECTED");
+                    if correction {
+                        assert!(
+                            request
+                                .lived_stream
+                                .contains("Remove the ration knowledge transfer")
+                        );
+                    }
+                    let mut value = proposal_value_for_request(request, proposal("actor:target"))?;
+                    value["normalized_intent"] =
+                        serde_json::json!("honor the target's consent boundary");
+                    value["effect_ceiling"] = serde_json::json!(
+                        "The target may trust the player more while retaining control of their identity."
+                    );
+                    value["success_stake"] = serde_json::json!("The target's trust deepens.");
+                    value["mixed_stake"] = serde_json::json!("The target remains cautious.");
+                    value["failure_stake"] = serde_json::json!("The promise sounds hollow.");
+                    value["success_effect"]["actor_relationship_updates"] = serde_json::json!({
+                        "target":{"player":"trusts the player to respect their consent boundary"}
+                    });
+                    if !correction || !self.corrects {
+                        for effect in ["strong_effect", "success_effect"] {
+                            value[effect]["actor_knowledge_additions"] = serde_json::json!({
+                                "target":["Rations are restricted."]
+                            });
+                        }
+                    }
+                    Ok(serde_json::to_string(&value)?)
+                }
+                "assessment_effect_verifier" => {
+                    assert!(request.lived_stream.contains("\"target\":\"Target\""));
+                    self.verifier_calls.fetch_add(1, Ordering::SeqCst);
+                    let mismatch = request.lived_stream.contains("Rations are restricted.");
+                    Ok(if mismatch {
+                        serde_json::json!({
+                            "result":"mismatch",
+                            "mismatch_kind":"unrelated_mutation",
+                            "repair_guidance":"Remove the ration knowledge transfer; the trust promise does not communicate ration policy."
+                        })
+                    } else {
+                        serde_json::json!({
+                            "result":"match",
+                            "mismatch_kind":null,
+                            "repair_guidance":null
+                        })
+                    }
+                    .to_string())
+                }
+                stage => Err(anyhow!("unexpected fixture stage {stage}")),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "correcting-effect-fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn semantic_verifier_removes_a_legal_but_unrelated_effect_before_caching() {
+        let model = Arc::new(CorrectingEffectModel {
+            assessment_calls: AtomicUsize::new(0),
+            verifier_calls: AtomicUsize::new(0),
+            corrects: true,
+        });
+        let assessor = ActionAssessor::with_models(model.clone(), "flash", "capable");
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = campaign.actors["player"].clone();
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .knowledge
+            .insert("Rations are restricted.".into());
+        let mut target = acting.clone();
+        target.id = "target".into();
+        target.name = "Target".into();
+        target.knowledge.clear();
+        campaign.actors.insert(target.id.clone(), target);
+        campaign.facts.insert(
+            "ration-policy".into(),
+            crate::domain::WorldFact {
+                id: "ration-policy".into(),
+                statement: "Rations are restricted.".into(),
+                scope: crate::domain::FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::new(),
+            },
+        );
+
+        let (assessment, _) =
+            assessor
+                .assess_with_context_cached(
+                    &store,
+                    &campaign,
+                    ActionIntent {
+                        actor_id: "player".into(),
+                        description:
+                            "Promise not to record the target's route role without consent.".into(),
+                        intended_effect:
+                            "The target trusts the player more while retaining identity control."
+                                .into(),
+                    },
+                    &[],
+                    None,
+                    &[],
+                )
+                .await
+                .unwrap();
+
+        assert_eq!(model.assessment_calls.load(Ordering::SeqCst), 2);
+        assert_eq!(model.verifier_calls.load(Ordering::SeqCst), 2);
+        assert!(
+            assessment
+                .success_effect
+                .actor_knowledge_additions
+                .is_empty()
+        );
+        assert_eq!(
+            assessment.success_effect.actor_relationship_updates["target"]["player"],
+            "trusts the player to respect their consent boundary"
+        );
+        let verifier_receipts = store
+            .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")
+            .unwrap();
+        assert_eq!(verifier_receipts.len(), 2);
+        assert_eq!(
+            verifier_receipts
+                .iter()
+                .filter(|receipt| receipt.validation_result == "semantic_invalid")
+                .count(),
+            1
+        );
+        assert_eq!(
+            verifier_receipts
+                .iter()
+                .filter(|receipt| receipt.validation_result == "valid")
+                .count(),
+            1
+        );
+        assert_eq!(store.keys(ASSESSMENT_PROPOSAL_CACHE_KIND).unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn repeated_semantic_mismatch_aborts_without_a_cache_entry() {
+        let model = Arc::new(CorrectingEffectModel {
+            assessment_calls: AtomicUsize::new(0),
+            verifier_calls: AtomicUsize::new(0),
+            corrects: false,
+        });
+        let assessor = ActionAssessor::with_models(model.clone(), "flash", "capable");
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = campaign.actors["player"].clone();
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .knowledge
+            .insert("Rations are restricted.".into());
+        let mut target = acting;
+        target.id = "target".into();
+        target.name = "Target".into();
+        target.knowledge.clear();
+        campaign.actors.insert(target.id.clone(), target);
+        campaign.facts.insert(
+            "ration-policy".into(),
+            crate::domain::WorldFact {
+                id: "ration-policy".into(),
+                statement: "Rations are restricted.".into(),
+                scope: crate::domain::FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::new(),
+            },
+        );
+
+        let error = assessor
+            .assess_with_context_cached(
+                &store,
+                &campaign,
+                ActionIntent {
+                    actor_id: "player".into(),
+                    description: "Promise not to record the target without consent.".into(),
+                    intended_effect: "The target trusts the player more.".into(),
+                },
+                &[],
+                None,
+                &[],
+            )
+            .await
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("failed semantic effect verification after one correction"));
+        assert_eq!(model.assessment_calls.load(Ordering::SeqCst), 2);
+        assert_eq!(model.verifier_calls.load(Ordering::SeqCst), 2);
+        assert!(
+            store
+                .keys(ASSESSMENT_PROPOSAL_CACHE_KIND)
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            store
+                .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")
+                .unwrap()
+                .iter()
+                .all(|receipt| receipt.validation_result == "semantic_invalid")
+        );
     }
 
     #[test]

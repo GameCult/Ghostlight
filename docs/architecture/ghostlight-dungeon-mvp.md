@@ -624,7 +624,20 @@ model cannot invent a reference namespace or cite context it was not given.
 The player projection lists every modifier label, signed value, and exact
 supporting reference rather than exposing only the capped total.
 
-The validated semantic proposal is content-addressed by the exact model,
+After structural binding, a separate compact effect verifier receives only the
+player's exact means, intended effect, effect ceiling, visible stakes, and the
+four typed outcome deltas. It does not reassess admissibility, DC, or modifiers
+and cannot choose, rewrite, or commit an effect. Every non-empty mutation must
+be a direct realization of the intended effect or a concrete consequence of
+the attempted means in that outcome band. A structurally available fact,
+relationship, clock, posture, or route is not thereby a causal outcome. A
+mismatch marks the verifier receipt `semantic_invalid` and returns one bounded
+repair sentence to the assessor for one same-snapshot correction; a second
+mismatch or malformed verifier output aborts without an assessment or world
+mutation.
+
+Only a structurally and semantically verified proposal may enter the cache. It
+is content-addressed by the exact assessor and verifier models, stable
 instructions, action-specific schema, and permitted typed state packet. Its
 private `assessment_proposal_cache.v1` row is derived inference evidence, not an
 assessment or world authority. Campaign revision and expiry remain commit
@@ -635,7 +648,9 @@ new revision-bound assessment digest without provider inference. Any change to
 the model contract, schema, actor slice, occupancy, facts, institutions,
 permissions, campaign contract, or boundaries changes the content address and
 requires a fresh assessment. Cache hits emit an explicit zero-token model-stage
-receipt pointing at the originating receipt.
+receipt pointing at both the originating assessment and semantic-verifier
+receipts. They do not rerun inference, but the cached proposal still passes the
+same local and kernel admission checks against the exact current packet.
 
 Outcome-delta maps are bound to the same snapshot rather than accepting a
 free-form identifier namespace. Actor effects may name only co-located actors;
