@@ -3421,9 +3421,11 @@ mod tests {
         let schema = exact_string_array_schema(&BTreeSet::new(), 0, 8);
         assert_eq!(schema["maxItems"], 0);
         assert_eq!(schema["items"]["type"], "string");
-        assert!(jsonschema::validator_for(&schema)
-            .unwrap()
-            .is_valid(&serde_json::json!([])));
+        assert!(
+            jsonschema::validator_for(&schema)
+                .unwrap()
+                .is_valid(&serde_json::json!([]))
+        );
     }
 
     #[test]
