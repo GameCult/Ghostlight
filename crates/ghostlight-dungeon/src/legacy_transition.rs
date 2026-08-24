@@ -1142,6 +1142,75 @@ fn foreground_mutations(
             });
         }
     }
+    for (actor_id, delta) in &effect.actor_commitments {
+        let actor = campaign
+            .actors
+            .get(actor_id)
+            .ok_or_else(|| anyhow!("outcome actor vanished"))?;
+        let subject = actor_subject(actor_id);
+        for goal in &delta.goals_add {
+            if actor.goals.contains(goal) {
+                return Err(anyhow!("outcome commitment already exists"));
+            }
+            mutations.push(WorldMutation::ChangeCommitment {
+                subject: subject.clone(),
+                operation: CommitmentMutationOperation::Create,
+                kind: CommitmentKind::Goal,
+                commitment_id: format!(
+                    "goal:foreground:{}:{}",
+                    campaign.revision,
+                    short_digest(goal)
+                ),
+                counterparty: None,
+                description: Some(goal.clone()),
+            });
+        }
+        for goal in &delta.goals_retire {
+            let index = actor
+                .goals
+                .iter()
+                .position(|existing| existing == goal)
+                .ok_or_else(|| anyhow!("outcome commitment does not exist"))?;
+            mutations.push(WorldMutation::ChangeCommitment {
+                subject: subject.clone(),
+                operation: CommitmentMutationOperation::Retire,
+                kind: CommitmentKind::Goal,
+                commitment_id: format!("goal:{index}:{}", short_digest(goal)),
+                counterparty: None,
+                description: None,
+            });
+        }
+        for obligation in &delta.obligations_add {
+            if actor.obligations.contains(obligation) {
+                return Err(anyhow!("outcome commitment already exists"));
+            }
+            mutations.push(WorldMutation::ChangeCommitment {
+                subject: subject.clone(),
+                operation: CommitmentMutationOperation::Create,
+                kind: CommitmentKind::Obligation,
+                commitment_id: format!(
+                    "obligation:foreground:{}:{}",
+                    campaign.revision,
+                    short_digest(obligation)
+                ),
+                counterparty: None,
+                description: Some(obligation.clone()),
+            });
+        }
+        for obligation in &delta.obligations_retire {
+            if !actor.obligations.contains(obligation) {
+                return Err(anyhow!("outcome commitment does not exist"));
+            }
+            mutations.push(WorldMutation::ChangeCommitment {
+                subject: subject.clone(),
+                operation: CommitmentMutationOperation::Retire,
+                kind: CommitmentKind::Obligation,
+                commitment_id: format!("obligation:{}", short_digest(obligation)),
+                counterparty: None,
+                description: None,
+            });
+        }
+    }
     for (actor_id, additions) in &effect.actor_knowledge_additions {
         if !campaign.actors.contains_key(actor_id) {
             return Err(anyhow!("outcome actor vanished"));
@@ -2565,8 +2634,8 @@ fn short_digest(value: &str) -> String {
 mod tests {
     use super::*;
     use crate::domain::{
-        ActorState, BranchOrigin, ConditionDelta, InstitutionState, Location, ResolutionPolicy,
-        Route, StrategicOutcomeBand, WorldClock, WorldFact,
+        ActorState, BranchOrigin, CommitmentDelta, ConditionDelta, InstitutionState, Location,
+        ResolutionPolicy, Route, StrategicOutcomeBand, WorldClock, WorldFact,
     };
     use chrono::Duration;
     use uuid::Uuid;
@@ -2709,6 +2778,15 @@ mod tests {
                     remove: BTreeSet::new(),
                 },
             )]),
+            actor_commitments: BTreeMap::from([(
+                "witness".into(),
+                CommitmentDelta {
+                    obligations_add: BTreeSet::from([
+                        "permit a supervised inventory inspection".into()
+                    ]),
+                    ..CommitmentDelta::default()
+                },
+            )]),
             actor_knowledge_additions: BTreeMap::from([(
                 "player".into(),
                 BTreeSet::from(["The west stair bypasses the checkpoint.".into()]),
@@ -2735,7 +2813,7 @@ mod tests {
             Utc::now() + Duration::minutes(5),
         )
         .unwrap();
-        assert_eq!(transition.batch.mutations.len(), 6);
+        assert_eq!(transition.batch.mutations.len(), 7);
         let receipt = apply_lowered_transition(&mut campaign, &transition, Utc::now()).unwrap();
         assert_eq!(receipt.previous_world_revision, 4);
         assert_eq!(receipt.world_revision, 5);
@@ -2752,6 +2830,43 @@ mod tests {
         );
         assert_eq!(campaign.clocks["alarm"].progress, 3);
         assert_eq!(campaign.institutions["watch"].posture, "searching");
+        assert!(
+            campaign.actors["witness"]
+                .obligations
+                .contains("permit a supervised inventory inspection")
+        );
+
+        let retirement = WorldEffectDelta {
+            actor_commitments: BTreeMap::from([(
+                "witness".into(),
+                CommitmentDelta {
+                    obligations_retire: BTreeSet::from([
+                        "permit a supervised inventory inspection".into(),
+                    ]),
+                    ..CommitmentDelta::default()
+                },
+            )]),
+            ..WorldEffectDelta::default()
+        };
+        let transition = lower_foreground_effect(
+            &campaign,
+            "player",
+            &retirement,
+            OutcomeBand::Success,
+            MutationProcedure::ForegroundAttempt,
+            "The witness retires the supervised-inspection obligation.",
+            "assessment:retire",
+            None,
+            None,
+            Utc::now() + Duration::minutes(5),
+        )
+        .unwrap();
+        apply_lowered_transition(&mut campaign, &transition, Utc::now()).unwrap();
+        assert!(
+            !campaign.actors["witness"]
+                .obligations
+                .contains("permit a supervised inventory inspection")
+        );
     }
 
     #[test]

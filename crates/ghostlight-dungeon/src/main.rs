@@ -4598,6 +4598,7 @@ async fn command(
                             effect
                                 .actor_conditions
                                 .keys()
+                                .chain(effect.actor_commitments.keys())
                                 .chain(effect.actor_knowledge_additions.keys())
                                 .chain(effect.actor_relationship_updates.keys())
                                 .any(|target| {

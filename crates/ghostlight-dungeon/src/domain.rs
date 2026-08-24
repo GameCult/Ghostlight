@@ -1090,9 +1090,22 @@ pub struct ConditionDelta {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
+pub struct CommitmentDelta {
+    pub goals_add: BTreeSet<String>,
+    pub goals_retire: BTreeSet<String>,
+    pub obligations_add: BTreeSet<String>,
+    pub obligations_retire: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
 #[serde(default)]
 pub struct WorldEffectDelta {
     pub actor_conditions: BTreeMap<String, ConditionDelta>,
+    /// Bounded changes to goals or obligations owned by exact present actors.
+    /// A social outcome may create a voluntary commitment; it may not transfer
+    /// custody of the actor or guarantee behavior beyond that commitment.
+    #[serde(default)]
+    pub actor_commitments: BTreeMap<String, CommitmentDelta>,
     /// Exact player-readable natural-language findings learned by each actor.
     /// Values are declarative statements, never fact IDs, labels, or keys.
     #[serde(default)]

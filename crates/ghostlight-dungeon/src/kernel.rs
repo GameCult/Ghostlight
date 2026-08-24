@@ -3053,6 +3053,7 @@ fn validate_bounded_coop_effect(
     }
     let mut protected_targets = BTreeSet::new();
     protected_targets.extend(effect.actor_conditions.keys().cloned());
+    protected_targets.extend(effect.actor_commitments.keys().cloned());
     protected_targets.extend(effect.actor_knowledge_additions.keys().cloned());
     protected_targets.extend(effect.actor_relationship_updates.keys().cloned());
     if protected_targets
