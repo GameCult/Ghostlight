@@ -82,12 +82,14 @@ struct AppState {
     fission_previews: Arc<Mutex<BTreeMap<String, OwnedFissionPreview>>>,
     live_turns: Arc<AtomicUsize>,
     live_turn_started: Arc<Notify>,
+    live_turn_finished: Arc<Notify>,
     live_commit_gate: Arc<RwLock<()>>,
     mesh: MeshPublisher,
 }
 
 struct LiveTurnGuard {
     counter: Arc<AtomicUsize>,
+    finished: Arc<Notify>,
     mesh: MeshPublisher,
     _commit_read: Option<OwnedRwLockReadGuard<()>>,
 }
@@ -95,6 +97,7 @@ impl LiveTurnGuard {
     async fn enter(state: &AppState) -> Self {
         let mut guard = Self {
             counter: state.live_turns.clone(),
+            finished: state.live_turn_finished.clone(),
             mesh: state.mesh.clone(),
             _commit_read: None,
         };
@@ -109,10 +112,17 @@ impl LiveTurnGuard {
 }
 impl Drop for LiveTurnGuard {
     fn drop(&mut self) {
+        // Release the read side before announcing an idle boundary. Background
+        // aftermath may use that boundary only when no foreground commit guard
+        // remains held.
+        self._commit_read.take();
         let previous = self.counter.fetch_sub(1, Ordering::SeqCst);
         let pressure = previous.saturating_sub(1);
         if let Err(error) = self.mesh.publish_live_turn_pressure(pressure) {
             tracing::warn!(%error, pressure, "live-turn pressure CultMesh release failed");
+        }
+        if pressure == 0 {
+            self.finished.notify_waiters();
         }
     }
 }
@@ -407,9 +417,11 @@ async fn main() -> anyhow::Result<()> {
         fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
         live_turns: Arc::new(AtomicUsize::new(0)),
         live_turn_started: Arc::new(Notify::new()),
+        live_turn_finished: Arc::new(Notify::new()),
         live_commit_gate: Arc::new(RwLock::new(())),
         mesh,
     };
+    schedule_recovered_npc_initiatives(&state).await?;
     native_cultmesh::start(state.clone())?;
     refresh_mesh(&state).await?;
     tokio::spawn(scheduler_loop(state.clone()));
@@ -3902,15 +3914,23 @@ async fn approve_fission(
 async fn resolve_npc_initiative(
     state: &AppState,
     runtime: &CampaignRuntime,
-    reaction: &CommandResult,
-) -> anyhow::Result<serde_json::Value> {
-    let CommandResult::Committed { campaign, .. } = reaction else {
-        return Ok(serde_json::Value::Null);
-    };
+    campaign: &Campaign,
+) -> anyhow::Result<bool> {
+    if !has_current_npc_initiative(campaign) {
+        return Ok(true);
+    }
     let Some(proposal) = ghostlight_dungeon::initiative::winner(&campaign.pending_world_proposals)
     else {
-        return Ok(serde_json::Value::Null);
+        return Ok(true);
     };
+    let current = load_campaign(&runtime.store)?;
+    if current.revision != campaign.revision
+        || !has_current_npc_initiative(&current)
+        || ghostlight_dungeon::initiative::winner(&current.pending_world_proposals)
+            != Some(proposal.clone())
+    {
+        return Ok(true);
+    }
     let assessor = state
         .assessor
         .as_ref()
@@ -3920,12 +3940,12 @@ async fn resolve_npc_initiative(
         description: proposal.intent.clone(),
         intended_effect: proposal.intended_effect.clone(),
     };
-    let (contract, boundaries) = campaign_model_policy(&runtime.store, campaign.id);
+    let (contract, boundaries) = campaign_model_policy(&runtime.store, current.id);
     let permissions = runtime
         .store
         .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
             "campaign_membership.v1",
-            &campaign.id.to_string(),
+            &current.id.to_string(),
         )?
         .and_then(|(_, membership)| {
             membership
@@ -3934,31 +3954,139 @@ async fn resolve_npc_initiative(
                 .cloned()
         })
         .unwrap_or_default();
-    let (assessment, receipt) = assessor
-        .assess_with_context_cached(
+    let Some((assessment, receipt)) = await_background_work(
+        state,
+        true,
+        assessor.assess_with_context_cached(
             &runtime.store,
-            campaign,
+            &current,
             intent,
             &permissions,
             contract.as_ref(),
             &boundaries,
-        )
-        .await?;
+        ),
+    )
+    .await?
+    else {
+        return Ok(false);
+    };
+    if state.live_turns.load(Ordering::SeqCst) > 0 {
+        return Ok(false);
+    }
+    let _background_commit = match state.live_commit_gate.clone().try_write_owned() {
+        Ok(guard) => guard,
+        Err(_) => return Ok(false),
+    };
+    if state.live_turns.load(Ordering::SeqCst) > 0 {
+        return Ok(false);
+    }
     let _ = runtime.store.insert(
         "persona_stage_receipt.v1",
         "ghostlight.persona_stage_receipt.v1",
         receipt.storage_key(),
         &receipt,
     );
-    let resolved = runtime
+    runtime
         .kernel
         .command(WorldCommand::ResolveNpcAction {
-            expected_revision: campaign.revision,
+            expected_revision: current.revision,
             proposal: proposal.clone(),
             assessment,
         })
         .await?;
-    Ok(serde_json::to_value(resolved)?)
+    Ok(true)
+}
+
+fn has_current_npc_initiative(campaign: &Campaign) -> bool {
+    !campaign.pending_world_proposals.is_empty()
+        && campaign.events.last().is_some_and(|event| {
+            event.kind == "reaction_wave"
+                && event.id == format!("reaction-wave:{}", campaign.revision)
+        })
+}
+
+async fn await_live_turn_idle(state: &AppState) {
+    loop {
+        let finished = state.live_turn_finished.notified();
+        tokio::pin!(finished);
+        finished.as_mut().enable();
+        if state.live_turns.load(Ordering::SeqCst) == 0 {
+            return;
+        }
+        finished.await;
+    }
+}
+
+fn schedule_npc_initiative(
+    state: &AppState,
+    runtime: &CampaignRuntime,
+    campaign: Campaign,
+    command_kind: String,
+) {
+    let state = state.clone();
+    let runtime = runtime.clone();
+    tokio::spawn(async move {
+        loop {
+            await_live_turn_idle(&state).await;
+            match resolve_npc_initiative(&state, &runtime, &campaign).await {
+                Ok(true) => {
+                    if let Err(error) = refresh_mesh(&state).await {
+                        tracing::warn!(%error, "post-initiative CultMesh publication failed");
+                    }
+                    return;
+                }
+                Ok(false) => tokio::task::yield_now().await,
+                Err(error) => {
+                    record_rejected_proposal(
+                        &runtime,
+                        &format!("{command_kind}.npc_initiative"),
+                        error.to_string(),
+                    );
+                    tracing::warn!(%error, command_kind, "deferred NPC initiative stopped");
+                    if let Err(refresh_error) = refresh_mesh(&state).await {
+                        tracing::warn!(%refresh_error, "post-initiative failure CultMesh publication failed");
+                    }
+                    return;
+                }
+            }
+        }
+    });
+}
+
+async fn schedule_recovered_npc_initiatives(state: &AppState) -> anyhow::Result<()> {
+    for id in state.registry.list().await {
+        let runtime = state.registry.runtime(id).await?;
+        let campaign = load_campaign(&runtime.store)?;
+        if has_current_npc_initiative(&campaign) {
+            schedule_npc_initiative(
+                state,
+                &runtime,
+                campaign,
+                "startup.recovered_npc_initiative".into(),
+            );
+        }
+    }
+    Ok(())
+}
+
+fn record_rejected_proposal(runtime: &CampaignRuntime, command_kind: &str, reason: String) {
+    if let Ok(campaign) = load_campaign(&runtime.store) {
+        let receipt = RejectedProposalReceipt {
+            schema: "ghostlight.rejected_proposal_receipt.v1".into(),
+            id: uuid::Uuid::new_v4().to_string(),
+            campaign_id: campaign.id,
+            revision: campaign.revision,
+            command_kind: command_kind.into(),
+            reason,
+            rejected_at: chrono::Utc::now(),
+        };
+        let _ = runtime.store.insert(
+            "rejected_proposal_receipt.v1",
+            "ghostlight.rejected_proposal_receipt.v1",
+            &receipt.id,
+            &receipt,
+        );
+    }
 }
 
 async fn committed_after_failure(
@@ -3969,23 +4097,7 @@ async fn committed_after_failure(
     reason: String,
 ) -> Response {
     tracing::warn!(stage, %reason, "post-commit aftermath stopped");
-    if let Ok(campaign) = load_campaign(&runtime.store) {
-        let receipt = RejectedProposalReceipt {
-            schema: "ghostlight.rejected_proposal_receipt.v1".into(),
-            id: uuid::Uuid::new_v4().to_string(),
-            campaign_id: campaign.id,
-            revision: campaign.revision,
-            command_kind: stage.into(),
-            reason: reason.clone(),
-            rejected_at: chrono::Utc::now(),
-        };
-        let _ = runtime.store.insert(
-            "rejected_proposal_receipt.v1",
-            "ghostlight.rejected_proposal_receipt.v1",
-            &receipt.id,
-            &receipt,
-        );
-    }
+    record_rejected_proposal(runtime, stage, reason.clone());
     if let Err(error) = refresh_mesh(state).await {
         tracing::warn!(%error, "post-commit CultMesh publication failed");
     }
@@ -4622,23 +4734,16 @@ async fn command(
                                         .await
                                     {
                                         Ok(reaction) => {
-                                            let _initiative = match resolve_npc_initiative(
-                                                &state, &runtime, &reaction,
-                                            )
-                                            .await
+                                            if let CommandResult::Committed { campaign, .. } =
+                                                reaction
                                             {
-                                                Ok(value) => value,
-                                                Err(error) => {
-                                                    return committed_after_failure(
-                                                        &state,
-                                                        &runtime,
-                                                        &result,
-                                                        &format!("{command_kind}.npc_initiative"),
-                                                        error.to_string(),
-                                                    )
-                                                    .await;
-                                                }
-                                            };
+                                                schedule_npc_initiative(
+                                                    &state,
+                                                    &runtime,
+                                                    campaign,
+                                                    command_kind.clone(),
+                                                );
+                                            }
                                             if let Err(error) = refresh_mesh(&state).await {
                                                 tracing::warn!(%error, "post-command CultMesh publication failed");
                                             }
@@ -4779,23 +4884,7 @@ async fn command(
                     }
                 }
             }
-            if let Ok(campaign) = load_campaign(&runtime.store) {
-                let receipt = RejectedProposalReceipt {
-                    schema: "ghostlight.rejected_proposal_receipt.v1".into(),
-                    id: uuid::Uuid::new_v4().to_string(),
-                    campaign_id: campaign.id,
-                    revision: campaign.revision,
-                    command_kind,
-                    reason: error.to_string(),
-                    rejected_at: chrono::Utc::now(),
-                };
-                let _ = runtime.store.insert(
-                    "rejected_proposal_receipt.v1",
-                    "ghostlight.rejected_proposal_receipt.v1",
-                    &receipt.id,
-                    &receipt,
-                );
-            }
+            record_rejected_proposal(&runtime, &command_kind, error.to_string());
             (
                 StatusCode::CONFLICT,
                 Json(ErrorBody {
@@ -5091,6 +5180,28 @@ async fn scheduler_loop(state: AppState) {
         for id in state.registry.list().await {
             match state.registry.runtime(id).await {
                 Ok(runtime) => {
+                    let campaign = match load_campaign(&runtime.store) {
+                        Ok(campaign) => campaign,
+                        Err(error) => {
+                            tracing::warn!(%id,%error,"campaign vanished during scheduler pulse");
+                            continue;
+                        }
+                    };
+                    if has_current_npc_initiative(&campaign) {
+                        match resolve_npc_initiative(&state, &runtime, &campaign).await {
+                            Ok(true) => {}
+                            Ok(false) => continue,
+                            Err(error) => {
+                                record_rejected_proposal(
+                                    &runtime,
+                                    "scheduler.recovered_npc_initiative",
+                                    error.to_string(),
+                                );
+                                tracing::warn!(%id,%error,"recovered NPC initiative refused");
+                            }
+                        }
+                        continue;
+                    }
                     if let Err(error) = process_due_ticks(
                         &state,
                         &runtime,
@@ -5967,6 +6078,7 @@ mod tests {
             fission_previews: Arc::new(Mutex::new(BTreeMap::new())),
             live_turns: Arc::new(AtomicUsize::new(0)),
             live_turn_started: Arc::new(Notify::new()),
+            live_turn_finished: Arc::new(Notify::new()),
             live_commit_gate: Arc::new(RwLock::new(())),
             mesh: MeshPublisher::open(root.join("mesh.cc"), None).unwrap(),
         }
@@ -6306,6 +6418,25 @@ mod tests {
             state.mesh.health().unwrap()["scheduler"]["live_turn_pressure"],
             0
         );
+        assert!(state.live_commit_gate.clone().try_write_owned().is_ok());
+    }
+
+    #[tokio::test]
+    async fn live_turn_completion_announces_only_after_releasing_its_commit_guard() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let live = LiveTurnGuard::enter(&state).await;
+        let finished = state.live_turn_finished.notified();
+        tokio::pin!(finished);
+        finished.as_mut().enable();
+
+        assert!(state.live_commit_gate.clone().try_write_owned().is_err());
+        drop(live);
+
+        tokio::time::timeout(std::time::Duration::from_millis(100), &mut finished)
+            .await
+            .expect("idle boundary was not announced");
+        assert_eq!(state.live_turns.load(Ordering::SeqCst), 0);
         assert!(state.live_commit_gate.clone().try_write_owned().is_ok());
     }
 
