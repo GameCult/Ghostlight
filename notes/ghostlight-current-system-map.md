@@ -988,6 +988,16 @@ Pending NPC actions are revision-scoped reaction-window state. The next
 reaction wave atomically replaces the set, and the kernel resolves an action
 only when the current last event is the exact current-revision reaction wave.
 Same-wave assessment correction remains possible; cross-turn rebasing is not.
+The foreground command owns committed player speech, presence reconciliation,
+and the directly addressed Persona response. Once that response is committed,
+the request returns without waiting for a second NPC action assessment. The
+accepted action proposal remains in `Campaign.pending_world_proposals`; an
+idle-boundary continuation runs its assessment with background priority and
+calls the same `WorldKernel::ResolveNpcAction` command. A new live turn cancels
+in-flight background inference. The proposal may commit only against its exact
+reaction revision, and startup plus the strategic scheduler rediscover current
+reaction-wave proposals after daemon interruption. The continuation is an
+actuator, not another queue or state owner.
 The same reaction commit validates its response duty against the exact
 committed source turn. A missing directly addressed Persona or a null response
 aborts the whole wave without private deltas, transcript additions, initiative,

@@ -96,13 +96,13 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `06ed2c5ac27c7d9f32f51444e51b5acec3e1942b`
+  `4057e11dc2f44266ea8c4a0ca2947f0dd941d191`
 - Executable SHA-256:
-  `4398b9947870a2ec7610c8f059e5790b67e7255e9fac11d40c53a69f3eff6a7b`
+  `ba65b1b573a614e6132c99368d79da202eba564142a3ecb5c74645aa81ac2b05`
 - Native client SHA-256:
-  `3a0556e46d78625c4c31509164fe15e6b8e3df28cbbaf0026fc9d57325d1d956`
+  `e153eb61f84aca22ac7b9494c669f4e3de17e30bfdafcbe23da3dcbd1237a2a4`
 - Artifact SHA-256:
-  `sha256-245c079762da925c30f02b539ef28e9aa1d619c395ddb9a90be71c5f1cf764ab`
+  `sha256-7f87f14585eb48176fdcccd0cc2c7e4879b3a45c5d93dd418163a7cba2ebf98d`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -289,7 +289,7 @@ only after explicit acknowledgement; keep the transport and durable-snapshot
 regressions in the fleet gate.
 
 The live canary campaign `34929b8d-7b04-49af-9936-1c798fd79760` is at world
-revision 76. Release `99a2508` constrained the trust attempt to its independently
+revision 87. Release `99a2508` constrained the trust attempt to its independently
 verified relationship lane. Stale confirmation recompiled against revision 71;
 the server-side d20 rolled 10, applied +4 against DC 5, and committed Member 1's
 increased trust without granting knowledge or mutating the other two present
@@ -310,6 +310,27 @@ revision. The return route then advanced to revision 76 and the encampment
 rematerialized with the same persistent location, Refugee Convoy population,
 Member 1, Member 2, Relay Volunteer, relationship outcome, and player ledger.
 
+The canary then reached the garrison and pressured institutional authority.
+Release `bb5948c` makes the compact mutation-scope stage the owner of structural
+admission: an impossible demand for Zhestokost's total surrender, resource
+transfer, and permanent obedience returned an explicit no-roll refusal and four
+bounded bargains after one model stage; the identical retry used the semantic
+cache without advancing world state. Mira later stayed inside her clinic
+authority, admitted that she did not know Voss's location or a magic citation,
+and failed a separately receipted attempt to find acting authority.
+
+Release `4057e11` keeps directly addressed Persona response generation in the
+foreground command but schedules accepted NPC action proposals after the live
+turn releases its commit guard. `Campaign.pending_world_proposals` remains the
+only durable queue. Startup and the five-minute scheduler rediscover exact
+current-reaction-wave proposals; assessment cancels when a player turn starts,
+and `ResolveNpcAction` rejects any proposal whose revision window has moved.
+Live native CultMesh evidence returned Mira's grounded records answer in 25.8
+seconds at revision 86. Twelve seconds later the deferred initiative advanced
+to revision 87 with an explicit spatial refusal: Mira could not inspect clinic
+records while still at the garrison, and the kernel did not teleport her or
+invent the missing findings.
+
 Acceptance witnesses live under `F:\GameCult\GhostlightDungeon\acceptance`.
 Operational release and rollback truth remains in `gamecult-ops`.
 
@@ -317,8 +338,8 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 1. Continue adversarial play through the authenticated native CultMesh client;
    its Heimdall grant and Ghostlight app session are persisted in CultCache.
-2. Pressure institution self-interest, away-time strategic activity, and
-   character-accessible news in the current revision-76 canary. Prove that the
+2. Pressure away-time strategic activity and character-accessible news in the
+   current revision-87 canary. Prove that the
    player is not puppeted and inaccessible remote facts remain private.
 3. Compile an obscure Vault-grounded start or receive an explicit material-gap
    preview without borrowing fixture cast, geography, or plot.

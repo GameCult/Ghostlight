@@ -127,6 +127,14 @@ closes the live failure where every present actor perceived a direct question
 but all Interpreters returned `speech: null`, without forcing observers to seize
 conversational focus or admitting a free-text reaction-effect lane.
 
+Foreground speech returns after the committed directly addressed response.
+NPC action proposals emitted by that reaction remain exact-revision canonical
+state and resolve through `WorldKernel::ResolveNpcAction` at the first idle
+boundary. Live turns cancel background assessment before commit, daemon startup
+and the scheduler recover an unresolved current reaction window, and no stale
+proposal is rebased. Provider concurrency and strategic scheduling remain
+separate from this response-delivery boundary.
+
 World transition authority is now a closed semantic mutation algebra rather
 than four empirical effect universes. Foreground attempts, NPC initiative,
 reaction appraisal, strategic actor/institution/Gestalt outcomes, waits,
@@ -146,15 +154,9 @@ pressure. Removal of remaining legacy model effect schemas and the 300-case
 reviewed agency corpus remain the migration frontier. See
 `docs/architecture/ghostlight-transition-algebra.md`.
 
-Idunn's locked Linux test/build gate admitted the current cut as immutable
-Yggdrasil release `447f4027c37f13c83afb4431421d8d66b9384bcd` with Eve
-`19c3dcf9173dce848a6253e975324ea239a02d24`, daemon SHA-256
-`084e01d22453d0c99c9fe2b375aeead455a970139b0cc8f0f1e1f38c87086d0f`,
-native-client SHA-256
-`d3f49d2b5459ace468af0c75a02052e099ffc086f9a88b6937b0a49dc67199cd`,
-and artifact `sha256-d8f944778c09d0696bc1bd76dc94e613c448053416f5300f0870a968496757cc`.
-The locked 265-test package gate, release build, web build, active symlink,
-zero-restart service state, and signed Idunn health agree. CultLib
+Idunn's locked Linux package gate owns Ghostlight tests, release builds,
+immutable publication, and exact-source provenance. The current release witness
+lives in the state map and fresh-workspace handoff rather than this plan. CultLib
 `75c180782aeba7cfd22d6412877397708a4ed28f` owns the five-runtime RUDP repair:
 32-packet admission, session-owned FIFO pressure, cumulative ACKs inside the
 horizon, exact ACKs for older retransmits, and explicit flush completion.
