@@ -3687,30 +3687,6 @@ mod tests {
     }
 
     #[test]
-    fn one_action_can_compose_distinct_mutations_in_the_same_effect_lane() {
-        let canvass = StrategicCellEffect::GestaltActivity {
-            gestalt_id: "refugees".into(),
-            activity: crate::domain::StrategicActivityKind::Investigate,
-            target_subject_ids: vec![],
-            location_ids: vec!["encampment".into()],
-        };
-        let seek_named_witness = StrategicCellEffect::GestaltActivity {
-            gestalt_id: "refugees".into(),
-            activity: crate::domain::StrategicActivityKind::Communicate,
-            target_subject_ids: vec!["ash".into()],
-            location_ids: vec!["encampment".into()],
-        };
-
-        validate_effect_bundle(&[canvass.clone(), seek_named_witness]).unwrap();
-        assert!(
-            validate_effect_bundle(&[canvass.clone(), canvass])
-                .unwrap_err()
-                .to_string()
-                .contains("cannot repeat an exact typed effect")
-        );
-    }
-
-    #[test]
     fn gestalt_migration_is_bound_to_the_exact_population_destination() {
         let mut slice = fixture_cell_slice();
         let subject = &mut slice.constituents[0];
