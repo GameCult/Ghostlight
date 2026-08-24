@@ -636,6 +636,12 @@ repair sentence to the assessor for one same-snapshot correction; a second
 mismatch or malformed verifier output aborts without an assessment or world
 mutation.
 
+The assessor receives that same causal-relevance rule before generation:
+structural availability is an upper bound, not an instruction to spend every
+available lane. Each structurally valid assessor attempt and each verifier
+verdict receives its own private stage receipt, including failed corrections,
+so a refusal cannot erase the model work that caused it.
+
 Only a structurally and semantically verified proposal may enter the cache. It
 is content-addressed by the exact assessor and verifier models, stable
 instructions, action-specific schema, and permitted typed state packet. Its

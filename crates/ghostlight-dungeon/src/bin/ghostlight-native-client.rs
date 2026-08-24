@@ -21,6 +21,7 @@ const DEFAULT_ENDPOINT: &str = "127.0.0.1:4102";
 const CONNECTION_TIMEOUT: Duration = Duration::from_secs(120);
 const DEFAULT_OPERATION_TIMEOUT: Duration = Duration::from_secs(120);
 const EVE_INVOCATION_TIMEOUT: Duration = Duration::from_secs(600);
+const NATIVE_OPERATION_KEEPALIVE_INTERVAL: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct NativeClientState {
@@ -358,6 +359,7 @@ fn invoke<T: DeserializeOwned>(
         target_runtime_id: Some(TARGET_RUNTIME_ID.into()),
     })?;
     let operation_deadline = Instant::now() + operation_timeout(operation);
+    let mut next_keepalive = Instant::now() + NATIVE_OPERATION_KEEPALIVE_INTERVAL;
     while Instant::now() < operation_deadline {
         if let Some(response) = transport.receive_schema_message_once()? {
             let CultNetMessage::OperationResponse {
@@ -384,6 +386,10 @@ fn invoke<T: DeserializeOwned>(
                 bail!("Ghostlight returned an unsupported native payload encoding");
             }
             return Ok(rmp_serde::from_slice(&STANDARD.decode(payload)?)?);
+        }
+        if Instant::now() >= next_keepalive {
+            transport.ping(message_id.as_bytes().to_vec())?;
+            next_keepalive = Instant::now() + NATIVE_OPERATION_KEEPALIVE_INTERVAL;
         }
         transport.poll_resends()?;
     }
@@ -464,5 +470,6 @@ mod tests {
             Duration::from_secs(120)
         );
         assert_eq!(CONNECTION_TIMEOUT, Duration::from_secs(120));
+        assert!(NATIVE_OPERATION_KEEPALIVE_INTERVAL < DEFAULT_OPERATION_TIMEOUT);
     }
 }

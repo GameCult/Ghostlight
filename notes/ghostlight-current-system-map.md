@@ -670,7 +670,9 @@ same app-session record used by HTTP, then derives every actor and campaign
 binding server-side. The installed native client stores only the opaque
 Ghostlight bearer in a mode-0600 CultCache file. It never receives a Heimdall
 access or refresh claim and cannot submit actor, member, account, or authority
-identifiers.
+identifiers. While a model-backed Eve invocation is pending, the client sends a
+bounded transport keepalive every five seconds; the operation and its result
+remain owned by the server-side idempotency reservation and kernel path.
 
 Odin advertises the redacted native route and operation names in the provider
 document. It does not proxy native commands or persist session tokens, attempt

@@ -19,7 +19,7 @@ use std::{
 
 const ASSESSMENT_PROPOSAL_CACHE_KIND: &str = "assessment_proposal_cache.v1";
 const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v2";
-const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v3";
+const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v4";
 
 const ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between the fiction-first action assessor and the world kernel. Structural authority, reach, knowledge access, and mutation shape were already checked. Judge the complete four-band typed effect bundle against the player's exact means and intended effect. Every non-empty mutation must be a direct realization of the intended effect or a concrete, previewed consequence of the attempted means in that exact outcome band. A fact being true, nearby, discoverable, or useful does not make communicating or acquiring it a consequence of an unrelated action. A plausible general reaction does not justify changing a relationship, condition, clock, posture, movement, or knowledge record that the attempted means and stakes do not cause. Failure and mixed effects may impose direct costs or complications, but not arbitrary available state changes. The effect ceiling and visible stakes must describe the same bounded consequences as the typed effects. Do not reassess admissibility, DC, or modifiers, and do not choose replacement effects. Return one JSON object. If every typed mutation is causally faithful, use result 'match' with null mismatch_kind and null repair_guidance. Otherwise use result 'mismatch', one mismatch_kind, and one concrete repair sentence of at most 240 characters naming what must be removed or aligned. Shape: {\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}.";
 
@@ -215,7 +215,7 @@ impl ActionAssessor {
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
         constrain_assessment_schema(&mut schema, &allowed_references, campaign, actor)?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Outcome deltas may use only the mutation lanes present in the supplied schema; omit an unavailable or unused lane. A missing mutation map means no mutation in that lane. Supplied lanes may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both maps for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, omit the knowledge lane and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Structural availability is an upper bound, not a request to use a mutation lane. Every non-empty mutation must be directly caused by the exact attempted means or realize the exact intended effect in that outcome band. A fact, relationship, clock, posture, or route being true, nearby, discoverable, or useful does not make changing it a consequence of an unrelated attempt. Do not append scene context as an observed finding unless the attempted means actually communicates it or the intended effect actually investigates or discloses it. Outcome deltas may use only the mutation lanes present in the supplied schema; omit an unavailable, causally unrelated, or unused lane. A missing mutation map means no mutation in that lane. Supplied lanes may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both maps for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, omit the knowledge lane and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(&campaign_contract)?,
             serde_json::to_string(aggregate_boundaries)?,
@@ -261,10 +261,10 @@ impl ActionAssessor {
             return Ok((assessment, receipt));
         }
         let mut correction = String::new();
-        let mut attempts = 0;
+        let mut attempts = 0_u8;
         let (proposal, out, effect_verifier_receipt) = loop {
             attempts += 1;
-            let out = run_validated_stage(
+            let mut out = run_validated_stage(
                 self.model.as_ref(),
                 &ModelStageRequest {
                     stage: "action_assessment".into(),
@@ -295,9 +295,18 @@ impl ActionAssessor {
                         &intent,
                         &proposal,
                         &snapshot_binding,
+                        attempts,
                     )
                     .await?;
+                    if matches!(verification.result, AssessmentEffectMatchResult::Mismatch) {
+                        out.receipt.validation_result = "semantic_invalid".into();
+                        out.receipt.local_validation_error = verification
+                            .repair_guidance
+                            .as_deref()
+                            .map(|guidance| guidance.chars().take(1_000).collect());
+                    }
                     if let Some(store) = store {
+                        persist_private_stage_receipt(store, &out.receipt)?;
                         persist_private_stage_receipt(store, &verifier_receipt)?;
                     }
                     match verification.result {
@@ -329,6 +338,12 @@ impl ActionAssessor {
                     }
                 }
                 Err(error) if attempts == 1 => {
+                    out.receipt.validation_result = "semantic_invalid".into();
+                    out.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                    if let Some(store) = store {
+                        persist_private_stage_receipt(store, &out.receipt)?;
+                    }
                     let rejected = out
                         .structured
                         .as_ref()
@@ -339,6 +354,12 @@ impl ActionAssessor {
                     );
                 }
                 Err(error) => {
+                    out.receipt.validation_result = "semantic_invalid".into();
+                    out.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                    if let Some(store) = store {
+                        persist_private_stage_receipt(store, &out.receipt)?;
+                    }
                     return Err(anyhow!(
                         "assessor failed local validation after one correction: {error}"
                     ));
@@ -472,6 +493,7 @@ async fn verify_assessment_effects(
     intent: &ActionIntent,
     proposal: &AssessmentProposal,
     snapshot_binding: &str,
+    assessment_attempt: u8,
 ) -> Result<(AssessmentEffectVerification, ModelStageReceipt)> {
     let referenced_state = assessment_effect_reference_context(campaign, proposal);
     let context = serde_json::json!({
@@ -493,8 +515,9 @@ async fn verify_assessment_effects(
         stage: "assessment_effect_verifier".into(),
         model: verifier_model_id.into(),
         snapshot_binding: format!(
-            "{}:assessment-effect:{}",
+            "{}:assessment-attempt:{}:assessment-effect:{}",
             snapshot_binding,
+            assessment_attempt,
             format!("{:x}", Sha256::digest(serde_json::to_vec(&context)?))
         ),
         lived_stream: format!(
@@ -1288,6 +1311,11 @@ mod tests {
                     r#"{"result":"match","mismatch_kind":null,"repair_guidance":null}"#.into(),
                 );
             }
+            assert!(
+                request
+                    .lived_stream
+                    .contains("Structural availability is an upper bound")
+            );
             let call = self.calls.fetch_add(1, Ordering::SeqCst);
             let mut value = proposal_value_for_request(request, proposal("actor:player"))?;
             value["modifiers"][0]["value"] = serde_json::json!(if call == 0 { 2 } else { 6 });
@@ -1368,7 +1396,7 @@ mod tests {
                 .any(|feature| feature.starts_with("source-effect-verifier:sha256:"))
         );
         assert_eq!(store.keys(ASSESSMENT_PROPOSAL_CACHE_KIND).unwrap().len(), 1);
-        assert_eq!(store.keys("persona_stage_receipt.v1").unwrap().len(), 1);
+        assert_eq!(store.keys("persona_stage_receipt.v1").unwrap().len(), 2);
     }
 
     struct CorrectingEffectModel {
@@ -1508,23 +1536,37 @@ mod tests {
             assessment.success_effect.actor_relationship_updates["target"]["player"],
             "trusts the player to respect their consent boundary"
         );
-        let verifier_receipts = store
+        let stage_receipts = store
             .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")
             .unwrap();
-        assert_eq!(verifier_receipts.len(), 2);
+        assert_eq!(stage_receipts.len(), 4);
         assert_eq!(
-            verifier_receipts
+            stage_receipts
                 .iter()
                 .filter(|receipt| receipt.validation_result == "semantic_invalid")
                 .count(),
-            1
+            2
         );
         assert_eq!(
-            verifier_receipts
+            stage_receipts
                 .iter()
                 .filter(|receipt| receipt.validation_result == "valid")
                 .count(),
-            1
+            2
+        );
+        assert_eq!(
+            stage_receipts
+                .iter()
+                .filter(|receipt| receipt.stage == "action_assessment")
+                .count(),
+            2
+        );
+        assert_eq!(
+            stage_receipts
+                .iter()
+                .filter(|receipt| receipt.stage == "assessment_effect_verifier")
+                .count(),
+            2
         );
         assert_eq!(store.keys(ASSESSMENT_PROPOSAL_CACHE_KIND).unwrap().len(), 1);
     }
@@ -1589,10 +1631,12 @@ mod tests {
                 .unwrap()
                 .is_empty()
         );
+        let receipts = store
+            .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")
+            .unwrap();
+        assert_eq!(receipts.len(), 4);
         assert!(
-            store
-                .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")
-                .unwrap()
+            receipts
                 .iter()
                 .all(|receipt| receipt.validation_result == "semantic_invalid")
         );
