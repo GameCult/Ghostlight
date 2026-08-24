@@ -5,7 +5,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Duration, Utc};
-use schemars::{JsonSchema, schema_for};
+use schemars::{JsonSchema, generate::SchemaSettings, schema_for};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -1739,10 +1739,8 @@ async fn run_focused_counter_interpreter(
 }
 
 fn require_typed_decision_payloads(schema: &mut serde_json::Value) -> Result<()> {
-    let decision_schema = schema
-        .get_mut("$defs")
-        .and_then(|defs| defs.get_mut("SessionZeroDecisionProposal"))
-        .and_then(serde_json::Value::as_object_mut)
+    let decision_schema = session_zero_decision_schema_mut(schema)?
+        .as_object_mut()
         .ok_or_else(|| anyhow!("Session Zero Interpreter schema omitted its decision contract"))?;
     decision_schema.insert(
         "anyOf".into(),
@@ -1767,45 +1765,49 @@ fn require_typed_decision_payloads(schema: &mut serde_json::Value) -> Result<()>
 fn session_zero_interpreter_schema(
     channel_kind: &SessionZeroChannelKind,
 ) -> Result<serde_json::Value> {
-    let mut schema = serde_json::to_value(schema_for!(SessionZeroModelInterpretation))?;
+    let mut settings = SchemaSettings::default();
+    settings.inline_subschemas = true;
+    let mut schema = serde_json::to_value(
+        settings
+            .into_generator()
+            .into_root_schema_for::<SessionZeroModelInterpretation>(),
+    )?;
     require_typed_decision_payloads(&mut schema)?;
     require_single_lane_ownership(&mut schema)?;
-    let (root_removals, decision_removals, retained_definitions): (&[&str], &[&str], &[&str]) =
-        match channel_kind {
-            SessionZeroChannelKind::SharedTable => (
-                &["character_patch"],
-                &[
-                    "proposed_character_patch",
-                    "proposed_extraordinary_permission",
-                ],
-                &["CampaignContractPatch", "SessionZeroDecisionProposal"],
-            ),
-            SessionZeroChannelKind::PrivateDm => (
-                &["contract_patch"],
-                &["proposed_contract_patch"],
-                &[
-                    "CharacterDraftPatch",
-                    "FocusedPermissionTerms",
-                    "SessionZeroDecisionProposal",
-                ],
-            ),
-        };
+    let (root_removals, decision_removals): (&[&str], &[&str]) = match channel_kind {
+        SessionZeroChannelKind::SharedTable => (
+            &["character_patch"],
+            &[
+                "proposed_character_patch",
+                "proposed_extraordinary_permission",
+            ],
+        ),
+        SessionZeroChannelKind::PrivateDm => (&["contract_patch"], &["proposed_contract_patch"]),
+    };
     for name in root_removals {
         remove_schema_property(&mut schema, name)?;
     }
-    let decision_schema = schema
-        .get_mut("$defs")
-        .and_then(|defs| defs.get_mut("SessionZeroDecisionProposal"))
-        .ok_or_else(|| anyhow!("Session Zero Interpreter schema omitted its decision contract"))?;
+    let decision_schema = session_zero_decision_schema_mut(&mut schema)?;
     for name in decision_removals {
         remove_schema_property(decision_schema, name)?;
     }
-    schema
-        .get_mut("$defs")
-        .and_then(serde_json::Value::as_object_mut)
-        .ok_or_else(|| anyhow!("Session Zero Interpreter schema omitted its definitions"))?
-        .retain(|name, _| retained_definitions.contains(&name.as_str()));
     Ok(schema)
+}
+
+fn session_zero_decision_schema_mut(
+    schema: &mut serde_json::Value,
+) -> Result<&mut serde_json::Value> {
+    if schema
+        .pointer("/$defs/SessionZeroDecisionProposal")
+        .is_some()
+    {
+        return schema
+            .pointer_mut("/$defs/SessionZeroDecisionProposal")
+            .ok_or_else(|| anyhow!("Session Zero decision definition disappeared"));
+    }
+    schema
+        .pointer_mut("/properties/decisions/items")
+        .ok_or_else(|| anyhow!("Session Zero Interpreter schema omitted inline decisions"))
 }
 
 fn remove_schema_property(schema: &mut serde_json::Value, name: &str) -> Result<()> {
@@ -4910,29 +4912,27 @@ mod tests {
         let shared_root = shared["properties"].as_object().unwrap();
         assert!(shared_root.contains_key("contract_patch"));
         assert!(!shared_root.contains_key("character_patch"));
-        let shared_decision = shared["$defs"]["SessionZeroDecisionProposal"]["properties"]
-            .as_object()
+        let shared_decision = shared
+            .pointer("/properties/decisions/items/properties")
+            .and_then(serde_json::Value::as_object)
             .unwrap();
         assert!(shared_decision.contains_key("proposed_contract_patch"));
         assert!(!shared_decision.contains_key("proposed_character_patch"));
         assert!(!shared_decision.contains_key("proposed_extraordinary_permission"));
-        assert!(shared["$defs"].get("CampaignContractPatch").is_some());
-        assert!(shared["$defs"].get("CharacterDraftPatch").is_none());
-        assert!(shared["$defs"].get("FocusedPermissionTerms").is_none());
+        assert!(shared.get("$defs").is_none());
 
         let private = session_zero_interpreter_schema(&SessionZeroChannelKind::PrivateDm).unwrap();
         let private_root = private["properties"].as_object().unwrap();
         assert!(!private_root.contains_key("contract_patch"));
         assert!(private_root.contains_key("character_patch"));
-        let private_decision = private["$defs"]["SessionZeroDecisionProposal"]["properties"]
-            .as_object()
+        let private_decision = private
+            .pointer("/properties/decisions/items/properties")
+            .and_then(serde_json::Value::as_object)
             .unwrap();
         assert!(!private_decision.contains_key("proposed_contract_patch"));
         assert!(private_decision.contains_key("proposed_character_patch"));
         assert!(private_decision.contains_key("proposed_extraordinary_permission"));
-        assert!(private["$defs"].get("CampaignContractPatch").is_none());
-        assert!(private["$defs"].get("CharacterDraftPatch").is_some());
-        assert!(private["$defs"].get("FocusedPermissionTerms").is_some());
+        assert!(private.get("$defs").is_none());
 
         for mut provider_schema in [shared, private] {
             crate::model_connector::project_strict_responses_schema(&mut provider_schema).unwrap();
