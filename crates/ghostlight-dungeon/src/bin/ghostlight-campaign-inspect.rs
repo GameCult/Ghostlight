@@ -2,7 +2,8 @@ use anyhow::{Context, Result};
 use ghostlight_dungeon::{
     domain::{
         Campaign, CellAppraisal, GestaltMaterializationReceipt, RejectedProposalReceipt,
-        ResolutionCover, StrategicActivityOutcome, StrategicTickReceipt,
+        ResolutionCover, RollReceipt, StrategicActivityOutcome, StrategicTickReceipt,
+        WorldCommitReceipt,
     },
     model::ModelStageReceipt,
     persistence::CampaignStore,
@@ -120,6 +121,16 @@ fn main() -> Result<()> {
         .collect::<Vec<_>>();
     let assessment_mutation_scopes =
         store.load_all::<serde_json::Value>("assessment_mutation_scope_cache.v1")?;
+    let mut roll_receipts = store.load_all::<RollReceipt>("roll_receipt.v1")?;
+    roll_receipts.reverse();
+    roll_receipts.truncate(16);
+    let mut commit_receipts = store.load_all::<WorldCommitReceipt>("world_commit_receipt.v1")?;
+    commit_receipts.sort_by_key(|receipt| receipt.revision);
+    let commit_receipts = commit_receipts
+        .into_iter()
+        .rev()
+        .take(16)
+        .collect::<Vec<_>>();
 
     let mut subjects = BTreeMap::new();
     for actor in campaign.actors.values() {
@@ -204,6 +215,7 @@ fn main() -> Result<()> {
                 },
             },
             "subjectDirectory": subjects,
+            "locations": campaign.locations,
             "latestStrategicTick": latest_tick,
             "cover": cover,
             "appraisals": appraisals,
@@ -215,6 +227,8 @@ fn main() -> Result<()> {
             "pendingWorldProposals": campaign.pending_world_proposals,
             "recentModelReceipts": recent_model_receipts,
             "assessmentMutationScopes": assessment_mutation_scopes,
+            "recentRollReceipts": roll_receipts,
+            "recentCommitReceipts": commit_receipts,
             "events": events,
             "news": news,
             "modelReceipts": model_receipts,
