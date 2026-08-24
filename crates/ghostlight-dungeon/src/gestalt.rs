@@ -70,10 +70,19 @@ impl GestaltPresencePlanner {
                 let actor_id = member.materialized_actor_id.as_ref()?;
                 let actor = campaign.actors.get(actor_id)?;
                 Some(serde_json::json!({
+                    "gestalt_id":member.gestalt_id,
                     "member_id":member.id,
+                    "member_name":member.name,
                     "member_version":member.version,
                     "actor_id":actor_id,
+                    "actor_name":actor.name,
                     "actor_location_id":actor.location_id,
+                    "conditions":actor.conditions,
+                    "goals":actor.goals,
+                    "obligations":actor.obligations,
+                    "recent_memories":actor.memories.iter().rev().take(8).collect::<Vec<_>>(),
+                    "player_relationship_to_member":player.relationships.get(actor_id),
+                    "member_relationship_to_player":actor.relationships.get(&player.id),
                     "relevance_lease_until_revision":member.relevance_lease_until_revision,
                 }))
             })
@@ -89,6 +98,7 @@ impl GestaltPresencePlanner {
             .is_some_and(|stimulus| stimulus == event_summary);
         let candidates = serde_json::json!({
             "player_location_id": player_location,
+            "addressed_existing_actor_ids": automatic_individuation_addressed_actor_ids(campaign),
             "nearby_active_leaf_gestalts": nearby_gestalts,
             "nearby_dormant_members": nearby_dormant_members,
             "materialized_members": materialized_members,
@@ -108,7 +118,7 @@ impl GestaltPresencePlanner {
             "The immediately committed event does not admit a new canonical person. The individuations array must be empty. Cast only supplied existing members."
         };
         let base_prompt = format!(
-            "Cast reversible Persona population presence for the next scene after this event. The purpose is to make causal continuity visible without crowding the scene or inventing coincidence. Promote an existing member when their exact durable history makes them individually relevant. When a nearby dormant member has a reciprocal player relationship and an unresolved callback signal such as an obligation, memory, or goal, promote the single strongest earned callback unless the event makes their presence implausible or dramatically harmful. An ordinary shared-location event is enough opportunity for an earned callback; do not require the player to ask for that person. Prefer an existing person over anonymous individuation whenever their exact delta supports the scene. Return no promotion when there is no earned callback or the current event conflicts with it. {individuation_instruction} Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
+            "Cast reversible Persona population presence for the next scene after this event. The purpose is to make causal continuity visible without crowding the scene or inventing coincidence. Every materialized_members entry is an already-individualized canonical person, including their stable public identity and current actor state. Never individuate another instance, substitute, or namesake for a supplied materialized person; addressed_existing_actor_ids already satisfy the exact direct addresses resolved before this stage. Promote an existing dormant member when their exact durable history makes them individually relevant. When a nearby dormant member has a reciprocal player relationship and an unresolved callback signal such as an obligation, memory, or goal, promote the single strongest earned callback unless the event makes their presence implausible or dramatically harmful. An ordinary shared-location event is enough opportunity for an earned callback; do not require the player to ask for that person. Prefer an existing person over anonymous individuation whenever their exact delta supports the scene. Return no promotion when there is no earned callback or the current event conflicts with it. {individuation_instruction} Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
             serde_json::to_string_pretty(&schema)?,
             candidates,
             event_summary
@@ -256,6 +266,11 @@ fn validate_plan(
         ));
     }
     let mut members = BTreeSet::new();
+    let addressed_public_identities = automatic_individuation_addressed_actor_ids(campaign)
+        .iter()
+        .filter_map(|actor_id| campaign.actors.get(actor_id))
+        .map(|actor| normalized_public_identity(&actor.name))
+        .collect::<BTreeSet<_>>();
     for individuation in &plan.individuations {
         let member = &individuation.member;
         let gestalt = campaign
@@ -279,6 +294,11 @@ fn validate_plan(
         {
             return Err(anyhow!(
                 "presence individuation does not match its snapshot"
+            ));
+        }
+        if addressed_public_identities.contains(&normalized_public_identity(&member.name)) {
+            return Err(anyhow!(
+                "presence individuation duplicates an already-addressed actor"
             ));
         }
     }
@@ -336,6 +356,21 @@ fn validate_plan(
     Ok(())
 }
 
+fn normalized_public_identity(value: &str) -> String {
+    value.trim().to_lowercase()
+}
+
+pub(crate) fn automatic_individuation_addressed_actor_ids(campaign: &Campaign) -> BTreeSet<String> {
+    campaign
+        .transcript
+        .last()
+        .filter(|turn| {
+            turn.revision == campaign.revision && turn.speaker == campaign.player_actor_id
+        })
+        .map(|turn| turn.persona_response_actor_ids.clone())
+        .unwrap_or_default()
+}
+
 pub(crate) fn automatic_individuation_stimulus(campaign: &Campaign) -> Option<String> {
     let turn = campaign.transcript.last()?;
     (turn.revision == campaign.revision && turn.speaker == campaign.player_actor_id)
@@ -346,7 +381,7 @@ pub(crate) fn automatic_individuation_stimulus(campaign: &Campaign) -> Option<St
 mod tests {
     use super::*;
     use crate::{
-        domain::{GestaltMemberDelta, GestaltPersonaState, Location, NarrativeTurn},
+        domain::{ActorState, GestaltMemberDelta, GestaltPersonaState, Location, NarrativeTurn},
         model::ModelStageRequest,
     };
     use async_trait::async_trait;
@@ -503,6 +538,116 @@ mod tests {
         assert!(automatic_individuation_stimulus(&campaign).is_none());
     }
 
+    #[test]
+    fn individuation_cannot_duplicate_an_existing_public_identity() {
+        let mut campaign = crate::resolution::tests::campaign(0, 8);
+        campaign.revision = 7;
+        campaign.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "center".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        campaign.gestalt_members.insert(
+            "oxygen_patient".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "oxygen_patient".into(),
+                gestalt_id: "refugees".into(),
+                version: 1,
+                name: "Taren".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+                last_location_id: Some("center".into()),
+                materialized_actor_id: Some("member:oxygen_patient".into()),
+                last_relevant_revision: 7,
+                relevance_lease_until_revision: 9,
+            },
+        );
+        campaign.actors.insert(
+            "member:oxygen_patient".into(),
+            ActorState {
+                id: "member:oxygen_patient".into(),
+                name: "Taren".into(),
+                location_id: "center".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        campaign.transcript.push(NarrativeTurn {
+            revision: 7,
+            at: chrono::Utc::now(),
+            speaker: campaign.player_actor_id.clone(),
+            text: "Taren, tell me whether the regulator is holding.".into(),
+            persona_response_actor_ids: BTreeSet::from(["member:oxygen_patient".into()]),
+        });
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        let plan = GestaltPresencePlan {
+            individuations: vec![crate::domain::GestaltIndividuation {
+                gestalt_id: "refugees".into(),
+                expected_gestalt_version: 0,
+                member: GestaltMemberDelta {
+                    schema: "ghostlight.gestalt_member_delta.v1".into(),
+                    id: "second_taren".into(),
+                    gestalt_id: "refugees".into(),
+                    version: 0,
+                    name: " tArEn ".into(),
+                    capability_additions: BTreeSet::new(),
+                    capability_removals: BTreeSet::new(),
+                    knowledge_additions: BTreeSet::new(),
+                    knowledge_removals: BTreeSet::new(),
+                    equipment: BTreeSet::new(),
+                    conditions: BTreeSet::new(),
+                    obligations: BTreeSet::new(),
+                    relationships: BTreeMap::new(),
+                    goals: vec![],
+                    memories: vec![],
+                    last_location_id: Some("center".into()),
+                    materialized_actor_id: None,
+                    last_relevant_revision: 0,
+                    relevance_lease_until_revision: 0,
+                },
+                location_id: "center".into(),
+            }],
+            promotions: vec![],
+            demotions: vec![],
+        };
+        let event = format!(
+            "{} says: Taren, tell me whether the regulator is holding.",
+            campaign.player_actor_id
+        );
+
+        assert!(
+            validate_plan(&campaign, &plan, "center", &event)
+                .unwrap_err()
+                .to_string()
+                .contains("already-addressed actor")
+        );
+    }
+
     #[tokio::test]
     async fn presence_planner_corrects_one_semantic_failure_against_the_same_snapshot() {
         let mut campaign = crate::resolution::tests::campaign(0, 8);
@@ -652,6 +797,27 @@ mod tests {
             "far-person".into(),
             member("far-person", "Far Person", "far-leaf", "far"),
         );
+        let mut taren = member("taren", "Taren", "nearby-leaf", "center");
+        taren.version = 3;
+        taren.materialized_actor_id = Some("member:taren".into());
+        taren.relevance_lease_until_revision = 12;
+        campaign.gestalt_members.insert("taren".into(), taren);
+        campaign.actors.insert(
+            "member:taren".into(),
+            ActorState {
+                id: "member:taren".into(),
+                name: "Taren".into(),
+                location_id: "center".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::from(["oxygen regulator holding for now".into()]),
+                obligations: BTreeSet::from(["remain with the convoy".into()]),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec!["Ash repaired the regulator".into()],
+            },
+        );
         crate::resolution::ensure_agency_profiles(&mut campaign);
         let parent = campaign.agency_profiles.get_mut("inactive-parent").unwrap();
         parent.active_leaf = false;
@@ -672,6 +838,10 @@ mod tests {
         assert!(prompt.contains("Mira Nearby"));
         assert!(prompt.contains("helped her cross the flood"));
         assert!(prompt.contains("thank the player if they meet again"));
+        assert!(prompt.contains("Taren"));
+        assert!(prompt.contains("oxygen regulator holding for now"));
+        assert!(prompt.contains("Ash repaired the regulator"));
+        assert!(prompt.contains("materialized person"));
         assert!(prompt.contains("do not require the player to ask for that person"));
         assert!(!prompt.contains("Far leaf"));
         assert!(!prompt.contains("Far Person"));

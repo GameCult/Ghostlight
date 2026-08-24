@@ -1247,6 +1247,20 @@ fn execute(
                     "one player speech can admit at most one first-relevance person".into(),
                 ));
             }
+            let addressed_public_identities =
+                crate::gestalt::automatic_individuation_addressed_actor_ids(&campaign)
+                    .iter()
+                    .filter_map(|actor_id| campaign.actors.get(actor_id))
+                    .map(|actor| actor.name.trim().to_lowercase())
+                    .collect::<BTreeSet<_>>();
+            if plan.individuations.iter().any(|individuation| {
+                addressed_public_identities
+                    .contains(&individuation.member.name.trim().to_lowercase())
+            }) {
+                return Err(KernelError::Invalid(
+                    "presence individuation duplicates an already-addressed actor".into(),
+                ));
+            }
             let player_location = &campaign.actors[&campaign.player_actor_id].location_id;
             if plan
                 .individuations
@@ -3538,6 +3552,111 @@ mod tests {
         assert_eq!(persisted.revision, 0);
         assert!(persisted.gestalt_members.is_empty());
         assert_eq!(persisted.transcript.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn kernel_rejects_individuation_that_duplicates_addressed_actor_without_mutation() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.actors.insert(
+            "taren".into(),
+            ActorState {
+                id: "taren".into(),
+                name: "Taren".into(),
+                location_id: "room".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        seed.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        let speech = "Taren, tell me whether the regulator is holding.";
+        let reason = format!("{} says: {speech}", seed.player_actor_id);
+        seed.transcript.push(NarrativeTurn {
+            revision: 0,
+            at: Utc::now(),
+            speaker: seed.player_actor_id.clone(),
+            text: speech.into(),
+            persona_response_actor_ids: BTreeSet::from(["taren".into()]),
+        });
+        crate::resolution::ensure_agency_profiles(&mut seed);
+        let campaign_id = seed.id;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let error = kernel
+            .command(WorldCommand::ReconcileGestaltPresence {
+                expected_revision: 0,
+                reason,
+                plan: GestaltPresencePlan {
+                    individuations: vec![GestaltIndividuation {
+                        gestalt_id: "refugees".into(),
+                        expected_gestalt_version: 0,
+                        member: GestaltMemberDelta {
+                            schema: "ghostlight.gestalt_member_delta.v1".into(),
+                            id: "second-taren".into(),
+                            gestalt_id: "refugees".into(),
+                            version: 0,
+                            name: " tArEn ".into(),
+                            capability_additions: BTreeSet::new(),
+                            capability_removals: BTreeSet::new(),
+                            knowledge_additions: BTreeSet::new(),
+                            knowledge_removals: BTreeSet::new(),
+                            equipment: BTreeSet::new(),
+                            conditions: BTreeSet::new(),
+                            obligations: BTreeSet::new(),
+                            relationships: BTreeMap::new(),
+                            goals: vec![],
+                            memories: vec![],
+                            last_location_id: Some("room".into()),
+                            materialized_actor_id: None,
+                            last_relevant_revision: 0,
+                            relevance_lease_until_revision: 0,
+                        },
+                        location_id: "room".into(),
+                    }],
+                    promotions: vec![],
+                    demotions: vec![],
+                },
+            })
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("already-addressed actor"));
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &campaign_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(persisted.revision, 0);
+        assert!(!persisted.gestalt_members.contains_key("second-taren"));
+        assert_eq!(persisted.actors["taren"].name, "Taren");
     }
 
     #[test]
