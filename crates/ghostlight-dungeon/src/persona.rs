@@ -1,6 +1,6 @@
 use crate::model::{ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage};
 use crate::session_zero::{AggregatedBoundary, CampaignContract};
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use async_trait::async_trait;
 use ghostlight_persona_projection::{
     InterpreterPrompt, MEMBRANE_SCHEMA, PersonaPrompt, ProjectorPrompt, build_interpreter_prompt,
@@ -1041,8 +1041,9 @@ impl CellProjectionEngine {
         };
         let mut projector_receipts = Vec::new();
         let (projected_narrative, active_subject_ids, projector_receipt) = loop {
-            let mut projected =
-                run_validated_stage(self.model.as_ref(), &projection_request).await?;
+            let mut projected = run_validated_stage(self.model.as_ref(), &projection_request)
+                .await
+                .context("cell projector model stage failed")?;
             let proposal = projected
                 .structured
                 .clone()
@@ -1100,7 +1101,8 @@ impl CellProjectionEngine {
                 max_output_tokens: Some(512),
             },
         )
-        .await?;
+        .await
+        .context("cell Persona model stage failed")?;
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_interpreter")
             .await?;
@@ -1146,7 +1148,9 @@ impl CellProjectionEngine {
         let mut stage_receipts = projector_receipts;
         stage_receipts.push(persona.receipt);
         for attempt in 0..2 {
-            let mut interpreted = run_validated_stage(self.model.as_ref(), &request).await?;
+            let mut interpreted = run_validated_stage(self.model.as_ref(), &request)
+                .await
+                .context("cell interpreter model stage failed")?;
             let proposal = interpreted
                 .structured
                 .clone()
