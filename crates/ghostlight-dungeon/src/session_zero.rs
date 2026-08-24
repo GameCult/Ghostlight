@@ -475,6 +475,7 @@ struct SessionZeroDecisionProposal {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
 #[serde(deny_unknown_fields)]
 struct SessionZeroModelInterpretation {
+    #[serde(default)]
     pub contract_patch: CampaignContractPatch,
     pub character_patch: Option<CharacterDraftPatch>,
     pub decisions: Vec<SessionZeroDecisionProposal>,
@@ -1504,10 +1505,12 @@ impl SessionZeroDirector {
                 member_id,
                 supersedes_countered_decision_id,
             )?;
-            let mut interpreter_schema =
-                serde_json::to_value(schema_for!(SessionZeroModelInterpretation))?;
-            require_typed_decision_payloads(&mut interpreter_schema)?;
-            require_single_lane_ownership(&mut interpreter_schema)?;
+            let channel_kind = state
+                .channels
+                .get(channel_id)
+                .map(|channel| &channel.kind)
+                .ok_or_else(|| anyhow!("Session Zero Interpreter channel disappeared"))?;
+            let interpreter_schema = session_zero_interpreter_schema(channel_kind)?;
             let interpreter = run_validated_stage(
                 self.model.as_ref(),
                 &ModelStageRequest {
@@ -1758,6 +1761,68 @@ fn require_typed_decision_payloads(schema: &mut serde_json::Value) -> Result<()>
             }
         ]),
     );
+    Ok(())
+}
+
+fn session_zero_interpreter_schema(
+    channel_kind: &SessionZeroChannelKind,
+) -> Result<serde_json::Value> {
+    let mut schema = serde_json::to_value(schema_for!(SessionZeroModelInterpretation))?;
+    require_typed_decision_payloads(&mut schema)?;
+    require_single_lane_ownership(&mut schema)?;
+    let (root_removals, decision_removals, retained_definitions): (&[&str], &[&str], &[&str]) =
+        match channel_kind {
+            SessionZeroChannelKind::SharedTable => (
+                &["character_patch"],
+                &[
+                    "proposed_character_patch",
+                    "proposed_extraordinary_permission",
+                ],
+                &["CampaignContractPatch", "SessionZeroDecisionProposal"],
+            ),
+            SessionZeroChannelKind::PrivateDm => (
+                &["contract_patch"],
+                &["proposed_contract_patch"],
+                &[
+                    "CharacterDraftPatch",
+                    "FocusedPermissionTerms",
+                    "SessionZeroDecisionProposal",
+                ],
+            ),
+        };
+    for name in root_removals {
+        remove_schema_property(&mut schema, name)?;
+    }
+    let decision_schema = schema
+        .get_mut("$defs")
+        .and_then(|defs| defs.get_mut("SessionZeroDecisionProposal"))
+        .ok_or_else(|| anyhow!("Session Zero Interpreter schema omitted its decision contract"))?;
+    for name in decision_removals {
+        remove_schema_property(decision_schema, name)?;
+    }
+    schema
+        .get_mut("$defs")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("Session Zero Interpreter schema omitted its definitions"))?
+        .retain(|name, _| retained_definitions.contains(&name.as_str()));
+    Ok(schema)
+}
+
+fn remove_schema_property(schema: &mut serde_json::Value, name: &str) -> Result<()> {
+    let schema = schema
+        .as_object_mut()
+        .ok_or_else(|| anyhow!("Session Zero schema lane is not an object"))?;
+    schema
+        .get_mut("properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("Session Zero schema lane omitted its properties"))?
+        .remove(name);
+    if let Some(required) = schema
+        .get_mut("required")
+        .and_then(serde_json::Value::as_array_mut)
+    {
+        required.retain(|value| value.as_str() != Some(name));
+    }
     Ok(())
 }
 
@@ -4837,6 +4902,54 @@ mod tests {
             focused.len(),
             full.len()
         );
+    }
+
+    #[test]
+    fn interpreter_schema_exposes_only_the_current_channel_authority() {
+        let shared = session_zero_interpreter_schema(&SessionZeroChannelKind::SharedTable).unwrap();
+        let shared_root = shared["properties"].as_object().unwrap();
+        assert!(shared_root.contains_key("contract_patch"));
+        assert!(!shared_root.contains_key("character_patch"));
+        let shared_decision = shared["$defs"]["SessionZeroDecisionProposal"]["properties"]
+            .as_object()
+            .unwrap();
+        assert!(shared_decision.contains_key("proposed_contract_patch"));
+        assert!(!shared_decision.contains_key("proposed_character_patch"));
+        assert!(!shared_decision.contains_key("proposed_extraordinary_permission"));
+        assert!(shared["$defs"].get("CampaignContractPatch").is_some());
+        assert!(shared["$defs"].get("CharacterDraftPatch").is_none());
+        assert!(shared["$defs"].get("FocusedPermissionTerms").is_none());
+
+        let private = session_zero_interpreter_schema(&SessionZeroChannelKind::PrivateDm).unwrap();
+        let private_root = private["properties"].as_object().unwrap();
+        assert!(!private_root.contains_key("contract_patch"));
+        assert!(private_root.contains_key("character_patch"));
+        let private_decision = private["$defs"]["SessionZeroDecisionProposal"]["properties"]
+            .as_object()
+            .unwrap();
+        assert!(!private_decision.contains_key("proposed_contract_patch"));
+        assert!(private_decision.contains_key("proposed_character_patch"));
+        assert!(private_decision.contains_key("proposed_extraordinary_permission"));
+        assert!(private["$defs"].get("CampaignContractPatch").is_none());
+        assert!(private["$defs"].get("CharacterDraftPatch").is_some());
+        assert!(private["$defs"].get("FocusedPermissionTerms").is_some());
+
+        for mut provider_schema in [shared, private] {
+            crate::model_connector::project_strict_responses_schema(&mut provider_schema).unwrap();
+            jsonschema::validator_for(&provider_schema).unwrap();
+        }
+    }
+
+    #[test]
+    fn private_interpretation_defaults_the_absent_shared_lane() {
+        let interpreted: SessionZeroModelInterpretation =
+            serde_json::from_value(serde_json::json!({
+                "character_patch": null,
+                "decisions": [],
+                "suggested_replies": []
+            }))
+            .unwrap();
+        assert_eq!(interpreted.contract_patch, CampaignContractPatch::default());
     }
 
     #[test]
