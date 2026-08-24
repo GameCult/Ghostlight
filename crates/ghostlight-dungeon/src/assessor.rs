@@ -1101,7 +1101,10 @@ fn constrain_mutation_scope_schema(
     let lane_items = schema
         .pointer_mut("/properties/lanes/items")
         .ok_or_else(|| anyhow!("assessment mutation scope schema has no lane items"))?;
-    lane_items["enum"] = serde_json::to_value(available_lanes)?;
+    *lane_items = serde_json::json!({
+        "type":"string",
+        "enum":available_lanes,
+    });
     Ok(())
 }
 
@@ -1989,6 +1992,27 @@ mod tests {
             .map(String::as_str)
             .collect::<BTreeSet<_>>();
         assert_eq!(fields, BTreeSet::from(["actor_relationship_updates"]));
+    }
+
+    #[test]
+    fn mutation_scope_schema_inlines_the_provider_enum_without_ref_siblings() {
+        let mut schema = serde_json::to_value(schema_for!(AssessmentMutationScope)).unwrap();
+        constrain_mutation_scope_schema(
+            &mut schema,
+            &BTreeSet::from([
+                AssessmentMutationLane::ActorConditions,
+                AssessmentMutationLane::ActorRelationshipUpdates,
+            ]),
+        )
+        .unwrap();
+
+        let items = schema.pointer("/properties/lanes/items").unwrap();
+        assert_eq!(items["type"], "string");
+        assert!(items.get("$ref").is_none());
+        assert_eq!(
+            items["enum"],
+            serde_json::json!(["actor_conditions", "actor_relationship_updates"])
+        );
     }
 
     #[test]
