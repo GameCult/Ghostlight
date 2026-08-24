@@ -3941,7 +3941,7 @@ mod tests {
         value.strong_effect.actor_knowledge_additions = additions.clone();
         value.success_effect.actor_knowledge_additions = additions;
 
-        bind_visible_knowledge(&mut value).unwrap();
+        bind_visible_effects(&mut value).unwrap();
 
         assert!(value.success_stake.contains(&finding));
         assert_eq!(value.success_stake.matches(&finding).count(), 1);
