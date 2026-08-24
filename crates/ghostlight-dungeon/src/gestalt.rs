@@ -103,7 +103,7 @@ impl GestaltPresencePlanner {
             individuation_admitted,
         )?;
         let individuation_instruction = if individuation_admitted {
-            "The immediately committed event is direct player speech. If that speech makes one anonymous population member individually relevant and no supplied member fits, you may individuate exactly one durable member delta from the gestalt baseline. Use a new stable lowercase id, version 0, the exact gestalt id/version, no materialized actor id, and record only personal departures from the shared baseline."
+            "The immediately committed event is direct player speech. If that speech makes one anonymous population member individually relevant and no supplied member fits, you may individuate exactly one durable member delta from the gestalt baseline. Give that person a stable personal self-identifier suitable to the setting, never a role, condition, manifest category, or descriptive placeholder. Use a new stable lowercase id, version 0, the exact gestalt id/version, no materialized actor id, and record only personal departures from the shared baseline."
         } else {
             "The immediately committed event does not admit a new canonical person. The individuations array must be empty. Cast only supplied existing members."
         };

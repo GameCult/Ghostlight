@@ -642,6 +642,11 @@ pub struct GestaltFissionPreview {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
 pub struct ActorStateDelta {
     pub memories_add: Vec<String>,
+    /// One public self-identifier explicitly adopted in the actor's own
+    /// speech. WorldKernel binds the subject and derives the identity handle;
+    /// the model never supplies either authority value.
+    #[serde(default)]
+    pub identity_adoption: Option<String>,
     pub conditions_add: BTreeSet<String>,
     pub conditions_remove: BTreeSet<String>,
     pub goals_add: Vec<String>,

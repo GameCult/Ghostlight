@@ -1313,6 +1313,19 @@ fn execute(
                         "reaction Interpreter cannot write actor memory".into(),
                     ));
                 }
+                if let Some(identity) = reaction.private_delta.identity_adoption.as_deref() {
+                    validate_bounded_text("reaction identity adoption", identity, 160)?;
+                    let speech = reaction.speech.as_deref().ok_or_else(|| {
+                        KernelError::Invalid(
+                            "reaction identity adoption requires public speech".into(),
+                        )
+                    })?;
+                    if !speech.to_lowercase().contains(&identity.to_lowercase()) {
+                        return Err(KernelError::Invalid(
+                            "reaction identity adoption must copy an exact spoken handle".into(),
+                        ));
+                    }
+                }
                 if let Some(speech) = &reaction.speech {
                     validate_bounded_text("reaction speech", speech, 1_000)?;
                 }
@@ -6053,6 +6066,25 @@ mod tests {
             .await;
         assert!(
             matches!(result, Err(KernelError::Invalid(message)) if message.contains("cannot write actor memory"))
+        );
+        let identity_result = kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "player says: Tell me which seal I repaired.".into(),
+                reactions: vec![ActorReaction {
+                    actor_id: "anna".into(),
+                    speech: Some("My name is Anna.".into()),
+                    deliberate_silence: false,
+                    private_delta: ActorStateDelta {
+                        identity_adoption: Some("Taren".into()),
+                        ..Default::default()
+                    },
+                    action_proposals: vec![],
+                }],
+            })
+            .await;
+        assert!(
+            matches!(identity_result, Err(KernelError::Invalid(message)) if message.contains("exact spoken handle"))
         );
         let persisted = store
             .load::<Campaign>("campaign.v1", &seed.id.to_string())

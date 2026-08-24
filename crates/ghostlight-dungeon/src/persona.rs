@@ -443,7 +443,7 @@ fn actor_interpreter_guidance(slice: &PermittedActorSlice) -> String {
         }
     };
     format!(
-        "{response_guidance} Record only private changes supported by the lived stream and typed context. World actions are attempts, not completed effects. Speech is extracted separately and is already complete. Do not emit a world action merely to make another actor answer, choose, consent, believe, disclose, feel, or obey; the other actor retains agency and any requested response remains unresolved. actor_id must be {:?}. Exact allowed state references are {:?}. Relationship update keys may only be {:?}.",
+        "{response_guidance} Record only private changes supported by the lived stream and typed context. identity_adoption is null unless the Persona explicitly adopts or presents one public self-identifier in its own speech; when set, copy the exact spoken handle and nothing else. World actions are attempts, not completed effects. Speech is extracted separately and is already complete. Do not emit a world action merely to make another actor answer, choose, consent, believe, disclose, feel, or obey; the other actor retains agency and any requested response remains unresolved. actor_id must be {:?}. Exact allowed state references are {:?}. Relationship update keys may only be {:?}.",
         slice.actor_id,
         allowed_actor_references(slice),
         slice.perceived_actors.keys().collect::<Vec<_>>()
@@ -451,6 +451,11 @@ fn actor_interpreter_guidance(slice: &PermittedActorSlice) -> String {
 }
 
 fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> String {
+    let identity = if slice.identity_experience.is_empty() {
+        "no more specific self-identity than your exact actor identity".to_owned()
+    } else {
+        slice.identity_experience.join("; ")
+    };
     let reliable_knowledge = if slice.knowledge.is_empty() {
         "no additional external fact beyond what is happening in front of you".to_owned()
     } else {
@@ -486,7 +491,7 @@ fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> S
         }
     };
     format!(
-        "{projection}\n\n{interaction} Your reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
+        "{projection}\n\nYour active self-identity: {identity}. {interaction} Your reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
     )
 }
 
@@ -513,6 +518,23 @@ fn validate_actor_proposals(
         .is_some_and(|value| value.trim().is_empty() || value.chars().count() > 1_000)
     {
         return Err(anyhow!("Persona speech must contain 1 to 1000 characters"));
+    }
+    if let Some(identity) = proposals.private_delta.identity_adoption.as_deref() {
+        let identity = identity.trim();
+        if identity.is_empty() || identity.chars().count() > 160 {
+            return Err(anyhow!(
+                "Persona identity adoption must contain 1 to 160 characters"
+            ));
+        }
+        let speech = proposals
+            .speech
+            .as_deref()
+            .ok_or_else(|| anyhow!("Persona identity adoption requires public speech"))?;
+        if !speech.to_lowercase().contains(&identity.to_lowercase()) {
+            return Err(anyhow!(
+                "Persona identity adoption must copy an exact spoken handle"
+            ));
+        }
     }
     Ok(())
 }
@@ -2725,6 +2747,11 @@ fn constrain_interpreter_schema(
         .and_then(|value| value.as_object_mut())
         .ok_or_else(|| anyhow!("Persona proposal schema has no memory additions"))?;
     memories_add.insert("maxItems".into(), serde_json::json!(0));
+    let identity_adoption = schema
+        .pointer_mut("/$defs/ActorStateDelta/properties/identity_adoption")
+        .ok_or_else(|| anyhow!("Persona proposal schema has no identity adoption"))?;
+    *identity_adoption =
+        serde_json::json!({"type":["string","null"],"minLength":1,"maxLength":160});
     let root = schema
         .as_object_mut()
         .ok_or_else(|| anyhow!("Persona proposal schema is not an object"))?;
@@ -4128,12 +4155,52 @@ mod tests {
         assert!(guidance.contains("other actor retains agency"));
         assert!(guidance.contains("requested response remains unresolved"));
         let grounded = ground_actor_lived_stream(&slice, "The crowd turns toward you.");
+        assert!(grounded.contains("Your active self-identity: A tired navigator"));
         assert!(grounded.contains("What you remember experiencing or being told"));
         assert!(grounded.contains("Proposed the eastern trail evacuation at dusk."));
         assert!(grounded.contains("not omniscient proof"));
         let result = engine.execute(slice).await.unwrap();
         assert_eq!(result.stage_receipts.len(), 3);
         assert_eq!(result.proposals.reaction_priority, 0);
+    }
+
+    #[test]
+    fn persona_identity_adoption_must_be_spoken_exactly() {
+        let slice = PermittedActorSlice {
+            actor_id: "npc".into(),
+            location_id: "room".into(),
+            snapshot_binding: "campaign:1".into(),
+            interaction_role: ActorInteractionRole::DirectResponseExpected,
+            identity_experience: vec!["You are an unnamed patient.".into()],
+            memories: vec![],
+            perceived_events: vec!["The player asks your name.".into()],
+            perceived_actors: BTreeMap::from([("player".into(), "Player".into())]),
+            relationships: vec![],
+            goals: vec![],
+            knowledge: vec![],
+            capabilities: vec![],
+            pressures: vec![],
+            affordances: vec![],
+            source_receipt_ids: vec![],
+        };
+        let mut proposals = PersonaProposalBundle {
+            private_delta: crate::domain::ActorStateDelta {
+                identity_adoption: Some("Taren".into()),
+                ..Default::default()
+            },
+            speech: Some("Call me Rook.".into()),
+            deliberate_silence: false,
+            reaction_priority: 0,
+            world_actions: vec![],
+        };
+        assert!(
+            validate_actor_proposals(&slice, &proposals)
+                .unwrap_err()
+                .to_string()
+                .contains("exact spoken handle")
+        );
+        proposals.speech = Some("My name is Taren.".into());
+        validate_actor_proposals(&slice, &proposals).unwrap();
     }
 
     #[test]

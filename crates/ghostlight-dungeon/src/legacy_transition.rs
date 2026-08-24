@@ -700,6 +700,39 @@ pub fn lower_reaction_wave(
                 summary: Some(witnessed_memory.into()),
             });
         }
+        if let Some(identity) = reaction.private_delta.identity_adoption.as_deref()
+            && identity != actor.name
+        {
+            let handle_id = format!(
+                "identity:adopted:{}:{}",
+                reaction.actor_id,
+                short_digest(identity)
+            );
+            let audience = campaign
+                .actors
+                .values()
+                .filter(|observer| {
+                    observer.id != reaction.actor_id && observer.location_id == actor.location_id
+                })
+                .map(|observer| actor_subject(&observer.id))
+                .collect::<Vec<_>>();
+            mutations.push(WorldMutation::ChangeIdentity {
+                subject: subject.clone(),
+                operation: IdentityMutationOperation::Adopt,
+                handle_id: handle_id.clone(),
+                handle_value: Some(identity.into()),
+                audience: Vec::new(),
+            });
+            if !audience.is_empty() {
+                mutations.push(WorldMutation::ChangeIdentity {
+                    subject: subject.clone(),
+                    operation: IdentityMutationOperation::Disclose,
+                    handle_id,
+                    handle_value: Some(identity.into()),
+                    audience,
+                });
+            }
+        }
         for condition in &reaction.private_delta.conditions_add {
             mutations.push(WorldMutation::ChangeCondition {
                 subject: subject.clone(),
@@ -763,7 +796,7 @@ pub fn lower_reaction_wave(
         None,
         MutationOutcomeBinding::Deterministic,
         None,
-        "Each exact reacting actor may update only their private memory, conditions, goals, and directed relationships.",
+        "Each exact reacting actor may update only their own public self-identity, private memory, conditions, goals, and directed relationships.",
         source_receipt_id,
         Some(digest_serializable(reactions)?),
         None,
@@ -1923,6 +1956,39 @@ fn project_mutated_components(
                 profile.location_ids = BTreeSet::from([destination.id.clone()]);
                 profile.profile_version = profile.profile_version.saturating_add(1);
             }
+            WorldMutation::ChangeIdentity {
+                subject,
+                operation: IdentityMutationOperation::Adopt,
+                handle_id,
+                ..
+            } if subject.kind == SubjectKind::Actor => {
+                let identity = next
+                    .identities
+                    .get(handle_id)
+                    .filter(|identity| identity.active && identity.subject == *subject)
+                    .ok_or_else(|| anyhow!("accepted identity adoption vanished"))?;
+                if let Some(member_id) = subject.id.strip_prefix("member:") {
+                    campaign
+                        .gestalt_members
+                        .get_mut(member_id)
+                        .ok_or_else(|| anyhow!("accepted identity member vanished"))?
+                        .name = identity.value.clone();
+                    touched_members.insert(member_id.to_string());
+                }
+                campaign
+                    .actors
+                    .get_mut(&subject.id)
+                    .ok_or_else(|| anyhow!("accepted identity actor vanished"))?
+                    .name = identity.value.clone();
+            }
+            WorldMutation::ChangeIdentity {
+                subject,
+                operation: IdentityMutationOperation::Disclose,
+                ..
+            } if subject.kind == SubjectKind::Actor => {
+                // Exact audience knowledge lives in the component world. The
+                // aggregate actor/member projection has no rival audience map.
+            }
             WorldMutation::ChangeCondition {
                 subject,
                 condition_id,
@@ -2634,8 +2700,9 @@ fn short_digest(value: &str) -> String {
 mod tests {
     use super::*;
     use crate::domain::{
-        ActorState, BranchOrigin, CommitmentDelta, ConditionDelta, InstitutionState, Location,
-        ResolutionPolicy, Route, StrategicOutcomeBand, WorldClock, WorldFact,
+        ActorState, BranchOrigin, CommitmentDelta, ConditionDelta, GestaltMemberDelta,
+        InstitutionState, Location, ResolutionPolicy, Route, StrategicOutcomeBand, WorldClock,
+        WorldFact,
     };
     use chrono::Duration;
     use uuid::Uuid;
@@ -2765,6 +2832,105 @@ mod tests {
             resolution_cover: None,
             strategic_tick_count: 0,
         }
+    }
+
+    #[test]
+    fn reaction_identity_adoption_updates_materialized_member_and_delta() {
+        let mut campaign = campaign();
+        campaign.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        campaign.gestalt_members.insert(
+            "oxygen_patient".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "oxygen_patient".into(),
+                gestalt_id: "refugees".into(),
+                version: 0,
+                name: "Refugee Convoy Oxygen Patient".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+                last_location_id: Some("room".into()),
+                materialized_actor_id: Some("member:oxygen_patient".into()),
+                last_relevant_revision: 4,
+                relevance_lease_until_revision: 6,
+            },
+        );
+        campaign.actors.insert(
+            "member:oxygen_patient".into(),
+            ActorState {
+                id: "member:oxygen_patient".into(),
+                name: "Refugee Convoy Oxygen Patient".into(),
+                location_id: "room".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        let reactions = vec![ActorReaction {
+            actor_id: "member:oxygen_patient".into(),
+            speech: Some("My name is Taren.".into()),
+            deliberate_silence: false,
+            private_delta: crate::domain::ActorStateDelta {
+                identity_adoption: Some("Taren".into()),
+                ..Default::default()
+            },
+            action_proposals: vec![],
+        }];
+        let transition = lower_reaction_wave(
+            &campaign,
+            "Witnessed: the player asks your name.",
+            &reactions,
+            "reaction:test",
+            Utc::now() + Duration::minutes(5),
+        )
+        .unwrap();
+        assert!(transition.batch.mutations.iter().any(|permitted| matches!(
+            &permitted.mutation,
+            WorldMutation::ChangeIdentity {
+                operation: IdentityMutationOperation::Adopt,
+                handle_value: Some(value),
+                ..
+            } if value == "Taren"
+        )));
+        assert!(transition.batch.mutations.iter().any(|permitted| matches!(
+            &permitted.mutation,
+            WorldMutation::ChangeIdentity {
+                operation: IdentityMutationOperation::Disclose,
+                handle_value: Some(value),
+                audience,
+                ..
+            } if value == "Taren"
+                && audience == &vec![actor_subject("player"), actor_subject("witness")]
+        )));
+        apply_lowered_transition(&mut campaign, &transition, Utc::now()).unwrap();
+        assert_eq!(campaign.actors["member:oxygen_patient"].name, "Taren");
+        assert_eq!(campaign.gestalt_members["oxygen_patient"].name, "Taren");
     }
 
     #[test]
