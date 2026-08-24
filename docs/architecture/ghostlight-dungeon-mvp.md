@@ -134,8 +134,7 @@ The following may never decide or repair canonical campaign truth:
 - browser handlers and chat transport;
 - Eve renderers and command lowering;
 - model-provider responses;
-- Projectors, Personas, Interpreters, narrators, retrievers, rerankers, and
-  verifiers;
+- Projectors, Personas, Interpreters, retrievers, rerankers, and verifiers;
 - initiative and reaction selection;
 - scheduler loops and return-time catch-up calculations;
 - Vault providers and evidence caches;
@@ -174,8 +173,8 @@ source intent
   outcome, and stores the roll and commit receipts atomically.
 - **Derived state:** priority ordering and the selected winner are calculations,
   not world truth and not commits.
-- **Forbidden writers:** Persona output, the initiative selector, narrator, and
-  HTTP handler cannot begin or resolve an NPC action directly.
+- **Forbidden writers:** Persona output, the initiative selector, and the HTTP
+  handler cannot begin or resolve an NPC action directly.
 - **Shared paths:** live reactions, interrupts, and future offscreen
   individualized actions all submit `ResolveNpcAction`; it applies the same
   assessment validation, d20 bands, and typed outcome rules as player attempts.
@@ -205,31 +204,29 @@ transition. Return catch-up invokes that same command before the next fictional
 player action is admitted. Private assessment and resolution-policy edits do
 not enter catch-up because neither advances or enters the fiction.
 
-### Narration projection authority
+### Story projection authority
 
-- **Owner:** committed campaign state and events own what happened; the
-  narrator owns only a readable projection of one exact revision.
-- **Inputs:** a player-visible slice of location, visible actors, explicit
-  speech/stakes, recent committed events, and evidence receipts.
-- **Outputs:** immutable `narration_projection.v1` CultCache rows bound to a
-  campaign ID and source revision, plus private model-stage receipts.
-- **Derived state:** story prose and the Eve transcript card are projections;
-  neither is a world fact, actor memory, action, or correction path.
-- **Forbidden writers:** narrator output cannot append events, speech, facts,
-  deltas, memories, clocks, topology, or campaign revision.
-- **Shared paths:** player attempts, NPC attempts, waits, strategic ticks, and
-  other committed transitions invoke the same post-commit narrator projection.
-- **Cut line:** the existing campaign transcript retains explicit speech and
-  deterministic stake text only. Generated connective prose lives outside the
-  campaign row and cannot be read back as canonical input except as a display
-  projection.
+- **Owner:** the committed campaign transcript owns the exact player-visible
+  speech and outcome prose for each world revision.
+- **Inputs:** revision-bound `NarrativeTurn` rows already admitted by the
+  `WorldKernel` transaction.
+- **Outputs:** one deterministic chronological Eve story projection. No model
+  stage sits between committed prose and the player.
+- **Derived state:** Eve text nodes and transport responses are disposable
+  lowerings; neither is a world fact, memory, action, or correction path.
+- **Forbidden writers:** display projections cannot invent, replace, suppress,
+  summarize, or reinterpret a committed turn.
+- **Shared paths:** every client—browser, native CultMesh, and generic Verse
+  consumer—receives the same ordered transcript through the provider surface.
+- **Cut line:** historical `narration_projection.v1` rows are inert migration
+  evidence. The runtime neither reads nor writes them, and the narrator and
+  verifier model stages have no executable target.
 
-The narrator rechecks the campaign revision after inference. Its typed public
-slice identifies the exact viewer actor separately from the latest turn's
-speaker. Second-person narration belongs only to that viewer; another actor's
-speech, knowledge, uncertainty, choice, or action cannot be transferred to the
-player by prose. Stale or malformed prose is discarded. Successful projections
-survive refresh without acquiring write authority over the world they describe.
+Outcome assessment and Persona stages already emit bounded natural prose. A
+second generative rewrite added token cost and a new factual-authority failure
+surface without owning any state. Exact transcript lowering makes invented
+names, dialogue, injuries, and actions structurally unavailable to the display
+layer.
 
 ### Cut line
 
@@ -297,7 +294,7 @@ but it is not required to predict every future person at campaign creation.
 
 First-relevance identity admission is bound to the exact immediately committed
 player-speech turn. Existing dormant members may be recast after any relevant
-committed foreground event, but an attempt result, narration, event summary, or
+committed foreground event, but an attempt result, story text, event summary, or
 plural outcome phrase cannot authorize a new canonical person. One admitted
 speech may introduce at most one member delta; the kernel rederives that
 permission from the canonical transcript rather than trusting the planner or
@@ -679,9 +676,9 @@ Authority map:
   actor knowledge, and the attempted effect.
 - Output: an assessment whose information deltas are a subset of existing
   accessible facts.
-- Derived state: the visible stake and narration are projections of that exact
+- Derived state: the visible stake and story are projections of that exact
   assessment and committed revision.
-- Forbidden writers: Personas, Interpreters, assessors, narrators, and
+- Forbidden writers: Personas, Interpreters, assessors, and
   `apply_world_effect` cannot create facts.
 - Shared path: player `Attempt` and `ResolveNpcAction` call the same fact-access
   validator and atomic commit primitive.
@@ -698,7 +695,7 @@ later `WorldCommand`; it does not suppress perception for actors outside the
 current conversational focus.
 
 The primary player event commits before optional presence casting, reaction
-appraisal, initiative, and narration. A failure in those later stages is stored
+appraisal and initiative. A failure in those later stages is stored
 as a rejected-proposal receipt and returned as an accepted committed result
 with a visible warning. It cannot be reported as rejection of the already
 persisted player action, and a browser retry cannot duplicate that action.
@@ -739,7 +736,7 @@ transport, sessions, and local rendering. It does not invent a parallel UI
 state model.
 
 The player HTTP command boundary returns a dedicated spoiler-safe projection:
-assessments, public commit receipts, roll results, and narration. It never
+assessments, public commit receipts, and roll results. It never
 serializes the canonical campaign snapshot. Full actor, institution, evidence,
 and model-stage state belongs to the authenticated operator projection only.
 Player and model strings enter the DOM through text nodes rather than HTML

@@ -66,7 +66,7 @@ One successful commit produces, atomically:
 - the command or strategic receipt that caused the transition;
 - any knowledge-channel-aware news inputs derivable from committed events.
 
-Eve, CultMesh, narration, and news projections refresh only after the commit.
+Eve, CultMesh, story, and news projections refresh only after the commit.
 
 ### Derived and demoted state
 
@@ -78,8 +78,9 @@ Eve, CultMesh, narration, and news projections refresh only after the commit.
   and do not become true because a model narrated them.
 - Simulation cells, covers, leases, salience, and detail debt choose inference
   resolution. They are not fictional world components.
-- Transcript prose and narration are projections over committed events. They
-  do not repair or create state.
+- The transcript contains exact committed speech and outcome prose. Eve lowers
+  it chronologically without a generative rewrite; display text cannot repair
+  or create state.
 - Actor equipment lists, institution resource lists, and Gestalt resource sets
   become projections over resource subjects plus custody. A resource does not
   change ontology when its owner changes.
@@ -97,7 +98,7 @@ The migration is not complete while any of these can decide canonical state:
 - bespoke actor, Gestalt, or member movement and migration writers;
 - any Gestalt folding code that unions private knowledge, possessions, or
   pressure into a population;
-- model output, browser payloads, narration, news generation, retrieval, or a
+- model output, browser payloads, story rendering, news generation, retrieval, or a
   derived simulation cell.
 
 Bounded region expansion now lowers to the same batch primitive through typed

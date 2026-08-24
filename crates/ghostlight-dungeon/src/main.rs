@@ -16,7 +16,7 @@ use ghostlight_dungeon::{
     assessor::ActionAssessor,
     compiler::{GestaltFissionRequest, OpeningRequest, OpeningSuggestion, WorldCompiler},
     domain::{
-        ActionIntent, Campaign, GestaltFissionPreview, NarrationProjection, RegionExpansionPreview,
+        ActionIntent, Campaign, GestaltFissionPreview, RegionExpansionPreview,
         RejectedProposalReceipt, WorldCommand,
     },
     gestalt::GestaltPresencePlanner,
@@ -31,7 +31,6 @@ use ghostlight_dungeon::{
         DeepSeekPort, MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelRuntimeStatus, OpenRouterPort,
     },
     model_connector::CultMeshModelPort,
-    narrator::Narrator,
     persistence::CampaignStore,
     persona::PersonaProjectionEngine,
     registry::{CampaignRegistry, CampaignRuntime},
@@ -3406,23 +3405,7 @@ async fn surface(
                         return (StatusCode::FORBIDDEN, error.to_string()).into_response();
                     }
                 };
-            let mut narrations = runtime
-                .store
-                .keys("narration_projection.v1")
-                .unwrap_or_default()
-                .into_iter()
-                .filter_map(|key| {
-                    runtime
-                        .store
-                        .load::<NarrationProjection>("narration_projection.v1", &key)
-                        .ok()
-                        .flatten()
-                        .map(|(_, value)| value)
-                })
-                .filter(|value| value.campaign_id == campaign.id)
-                .collect::<Vec<_>>();
-            narrations.sort_by_key(|value| value.source_revision);
-            let mut projected = player_surface_for_actor(&campaign, &viewer_actor_id, &narrations);
+            let mut projected = player_surface_for_actor(&campaign, &viewer_actor_id);
             if let Ok(Some((_, membership))) = runtime
                 .store
                 .load::<ghostlight_dungeon::session_zero::CampaignMembership>(
@@ -3753,7 +3736,7 @@ async fn approve_destination(
         })
         .await
     {
-        Ok(value) => Json(player_command_projection(&value, None)).into_response(),
+        Ok(value) => Json(player_command_projection(&value)).into_response(),
         Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
     }
 }
@@ -3854,7 +3837,7 @@ async fn approve_fission(
             if let Err(error) = refresh_mesh(&state).await {
                 tracing::warn!(%error, "gestalt fission CultMesh publication failed");
             }
-            Json(player_command_projection(&value, None)).into_response()
+            Json(player_command_projection(&value)).into_response()
         }
         Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
     }
@@ -3921,45 +3904,6 @@ async fn resolve_npc_initiative(
     Ok(serde_json::to_value(resolved)?)
 }
 
-async fn publish_latest_narration(
-    state: &AppState,
-    runtime: &CampaignRuntime,
-) -> anyhow::Result<Option<NarrationProjection>> {
-    let campaign = load_campaign(&runtime.store)?;
-    let key = format!("{}:{}", campaign.id, campaign.revision);
-    if let Some((_, existing)) = runtime
-        .store
-        .load::<NarrationProjection>("narration_projection.v1", &key)?
-    {
-        return Ok(Some(existing));
-    }
-    let model = state
-        .model
-        .as_ref()
-        .ok_or_else(|| anyhow::anyhow!("narration requires the model provider"))?;
-    let narrator = Narrator {
-        model: model.clone(),
-        model_name: MODEL_CAPABLE.into(),
-        verifier_model_name: MODEL_FAST.into(),
-    };
-    let (projection, receipts) = narrator.project(&runtime.store, &campaign).await?;
-    runtime.store.insert(
-        "narration_projection.v1",
-        "ghostlight.narration_projection.v1",
-        &projection.id,
-        &projection,
-    )?;
-    for receipt in receipts {
-        let _ = runtime.store.insert(
-            "persona_stage_receipt.v1",
-            "ghostlight.persona_stage_receipt.v1",
-            receipt.storage_key(),
-            &receipt,
-        );
-    }
-    Ok(Some(projection))
-}
-
 async fn committed_after_failure(
     state: &AppState,
     runtime: &CampaignRuntime,
@@ -3985,20 +3929,13 @@ async fn committed_after_failure(
             &receipt,
         );
     }
-    let narration = publish_latest_narration(state, runtime)
-        .await
-        .ok()
-        .flatten();
     if let Err(error) = refresh_mesh(state).await {
         tracing::warn!(%error, "post-commit CultMesh publication failed");
     }
     let message = format!(
         "The player action committed, but {stage} stopped: {reason}. Every world change remains separately receipted."
     );
-    Json(player_command_projection_with_message(
-        result, narration, &message,
-    ))
-    .into_response()
+    Json(player_command_projection_with_message(result, &message)).into_response()
 }
 
 async fn propose_time_advance(
@@ -4128,7 +4065,7 @@ async fn governed_campaign_command(
             {
                 tracing::warn!(%error, "governed time advance mesh refresh failed");
             }
-            Json(player_command_projection(&result, None)).into_response()
+            Json(player_command_projection(&result)).into_response()
         }
         Err(KernelError::Stale { expected, actual }) => (
             StatusCode::CONFLICT,
@@ -4319,7 +4256,7 @@ async fn command(
             )
             .await
             {
-                Ok(Some(result)) => Json(player_command_projection(&result, None)).into_response(),
+                Ok(Some(result)) => Json(player_command_projection(&result)).into_response(),
                 Ok(None) => (
                     StatusCode::SERVICE_UNAVAILABLE,
                     Json(ErrorBody {
@@ -4585,18 +4522,11 @@ async fn command(
                                                     .await;
                                                 }
                                             };
-                                            let narration =
-                                                publish_latest_narration(&state, &runtime)
-                                                    .await
-                                                    .ok()
-                                                    .flatten();
                                             if let Err(error) = refresh_mesh(&state).await {
                                                 tracing::warn!(%error, "post-command CultMesh publication failed");
                                             }
-                                            return Json(player_command_projection(
-                                                &result, narration,
-                                            ))
-                                            .into_response();
+                                            return Json(player_command_projection(&result))
+                                                .into_response();
                                         }
                                         Err(error) => {
                                             return committed_after_failure(
@@ -4624,15 +4554,10 @@ async fn command(
                             }
                         }
                         if presence_result.is_some() {
-                            let narration = publish_latest_narration(&state, &runtime)
-                                .await
-                                .ok()
-                                .flatten();
                             if let Err(error) = refresh_mesh(&state).await {
                                 tracing::warn!(%error, "post-command CultMesh publication failed");
                             }
-                            return Json(player_command_projection(&result, narration))
-                                .into_response();
+                            return Json(player_command_projection(&result)).into_response();
                         }
                     }
                 }
@@ -4641,20 +4566,12 @@ async fn command(
                 &result,
                 CommandResult::Committed { .. } | CommandResult::Created { .. }
             ) {
-                let narration = if should_react {
-                    publish_latest_narration(&state, &runtime)
-                        .await
-                        .ok()
-                        .flatten()
-                } else {
-                    None
-                };
                 if let Err(error) = refresh_mesh(&state).await {
                     tracing::warn!(%error, "post-command CultMesh publication failed");
                 }
-                Json(player_command_projection(&result, narration)).into_response()
+                Json(player_command_projection(&result)).into_response()
             } else {
-                Json(player_command_projection(&result, None)).into_response()
+                Json(player_command_projection(&result)).into_response()
             }
         }
         Err(error) => {
@@ -4723,9 +4640,7 @@ async fn command(
                             })
                             .await
                         {
-                            Ok(result) => {
-                                Json(player_command_projection(&result, None)).into_response()
-                            }
+                            Ok(result) => Json(player_command_projection(&result)).into_response(),
                             Err(recompile_error) => (
                                 StatusCode::CONFLICT,
                                 Json(ErrorBody {
@@ -4906,10 +4821,7 @@ fn gestalt_fission_preview_projection(preview: &GestaltFissionPreview) -> serde_
     })
 }
 
-fn player_command_projection(
-    result: &CommandResult,
-    narration: Option<NarrationProjection>,
-) -> serde_json::Value {
+fn player_command_projection(result: &CommandResult) -> serde_json::Value {
     match result {
         CommandResult::Assessed { assessment } => serde_json::json!({
             "kind":"assessed",
@@ -4919,7 +4831,6 @@ fn player_command_projection(
             "kind":"committed",
             "revision":receipt.revision,
             "receipt":receipt,
-            "narration":narration,
         }),
         CommandResult::ResolutionUpdated { receipt, .. } => serde_json::json!({
             "kind":"resolution_updated",
@@ -4950,10 +4861,9 @@ fn player_command_projection(
 
 fn player_command_projection_with_message(
     result: &CommandResult,
-    narration: Option<NarrationProjection>,
     message: &str,
 ) -> serde_json::Value {
-    let mut projection = player_command_projection(result, narration);
+    let mut projection = player_command_projection(result);
     if let Some(object) = projection.as_object_mut() {
         object.insert("message".into(), message.into());
     }
@@ -5086,21 +4996,6 @@ async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
     for id in state.registry.list().await {
         let runtime = state.registry.runtime(id).await?;
         let campaign = load_campaign(&runtime.store)?;
-        let mut narrations = runtime
-            .store
-            .keys("narration_projection.v1")?
-            .into_iter()
-            .filter_map(|key| {
-                runtime
-                    .store
-                    .load::<NarrationProjection>("narration_projection.v1", &key)
-                    .ok()
-                    .flatten()
-                    .map(|(_, value)| value)
-            })
-            .filter(|value| value.campaign_id == campaign.id)
-            .collect::<Vec<_>>();
-        narrations.sort_by_key(|value| value.source_revision);
         snapshots.push(CampaignMeshSnapshot {
             membership: runtime
                 .store
@@ -5110,7 +5005,6 @@ async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
                 )?
                 .map(|(_, membership)| membership),
             campaign,
-            narrations,
             evidence: runtime.store.load_all("vault_evidence_receipt.v1")?,
             commits: runtime.store.load_all("world_commit_receipt.v1")?,
             stages: runtime.store.load_all("persona_stage_receipt.v1")?,
@@ -6708,20 +6602,18 @@ mod tests {
             },
             campaign,
         };
-        let projection = player_command_projection(&result, None);
+        let projection = player_command_projection(&result);
         assert_eq!(projection["kind"], "committed");
         assert_eq!(projection["revision"], 1);
         let encoded = serde_json::to_string(&projection).unwrap();
         assert!(!encoded.contains("Private state"));
         assert!(!encoded.contains("actors"));
         assert!(!encoded.contains("facts"));
+        assert!(!encoded.contains("narration"));
 
-        let created = player_command_projection(
-            &CommandResult::Created {
-                campaign: seed("Hidden seed"),
-            },
-            None,
-        );
+        let created = player_command_projection(&CommandResult::Created {
+            campaign: seed("Hidden seed"),
+        });
         assert_eq!(created, serde_json::json!({"kind":"created"}));
     }
 
@@ -6743,7 +6635,6 @@ mod tests {
 
         let projection = player_command_projection_with_message(
             &result,
-            None,
             "The player action committed, but reaction appraisal stopped.",
         );
 

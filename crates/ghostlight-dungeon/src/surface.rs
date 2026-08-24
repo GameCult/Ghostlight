@@ -1,7 +1,7 @@
 use crate::{
     domain::{
-        Campaign, GestaltMaterializationReceipt, NarrationProjection, RejectedProposalReceipt,
-        StrategicTickReceipt, VaultEvidenceReceipt, WorldCommitReceipt,
+        Campaign, GestaltMaterializationReceipt, RejectedProposalReceipt, StrategicTickReceipt,
+        VaultEvidenceReceipt, WorldCommitReceipt,
     },
     model::ModelStageReceipt,
 };
@@ -28,17 +28,13 @@ pub fn rebase_campaign_surface_revision(source_version: u64, campaign_revision: 
         .saturating_add(source_version % CAMPAIGN_REVISION_SCALE)
 }
 
-pub fn player_surface(campaign: &Campaign, narrations: &[NarrationProjection]) -> Value {
-    player_surface_for_actor(campaign, &campaign.player_actor_id, narrations)
+pub fn player_surface(campaign: &Campaign) -> Value {
+    player_surface_for_actor(campaign, &campaign.player_actor_id)
 }
 
-pub fn player_surface_for_actor(
-    campaign: &Campaign,
-    viewer_actor_id: &str,
-    narrations: &[NarrationProjection],
-) -> Value {
+pub fn player_surface_for_actor(campaign: &Campaign, viewer_actor_id: &str) -> Value {
     let interface_version = campaign_interface_version(campaign);
-    let story = story_nodes(campaign, narrations);
+    let story = story_nodes(campaign);
     let player = &campaign.actors[viewer_actor_id];
     let location = &campaign.locations[&player.location_id];
     let mut present_characters = campaign
@@ -325,33 +321,17 @@ fn eve_command(command: &str, payload_schema: &str, bindings: &[&str], authority
     json!({"schema":"gamecult.eve.command.v1","command":command,"payloadSchema":payload_schema,"captureBindings":bindings,"transport":"https-json","authority":authority})
 }
 
-fn story_nodes(campaign: &Campaign, narrations: &[NarrationProjection]) -> Vec<Value> {
-    let narrated_revisions = narrations
-        .iter()
-        .map(|narration| narration.source_revision)
-        .collect::<std::collections::BTreeSet<_>>();
+fn story_nodes(campaign: &Campaign) -> Vec<Value> {
     let mut entries = Vec::new();
     for (index, turn) in campaign.transcript.iter().enumerate() {
-        if turn.speaker == "world" && narrated_revisions.contains(&turn.revision) {
-            continue;
-        }
         entries.push((
             turn.revision,
-            0_u8,
             index,
             json!({"id":format!("turn-{}-{}-{}",turn.revision,index,turn.speaker),"kind":"text","props":{"value":format!("{}: {}",turn.speaker,turn.text)},"children":[]}),
         ));
     }
-    for (index, narration) in narrations.iter().enumerate() {
-        entries.push((
-            narration.source_revision,
-            1_u8,
-            index,
-            json!({"id":format!("narration-{}",narration.source_revision),"kind":"text","props":{"value":narration.text},"children":[]}),
-        ));
-    }
-    entries.sort_by_key(|(revision, phase, index, _)| (*revision, *phase, *index));
-    entries.into_iter().map(|(_, _, _, node)| node).collect()
+    entries.sort_by_key(|(revision, index, _)| (*revision, *index));
+    entries.into_iter().map(|(_, _, node)| node).collect()
 }
 
 pub fn operator_surface(
@@ -487,7 +467,7 @@ mod tests {
     use chrono::Utc;
 
     #[test]
-    fn story_is_chronological_and_narration_replaces_same_revision_world_prose() {
+    fn story_is_chronological_and_uses_only_committed_turns() {
         let mut campaign = crate::resolution::tests::campaign(1, 1);
         campaign.transcript = vec![
             NarrativeTurn {
@@ -509,18 +489,7 @@ mod tests {
                 text: "I answer directly.".into(),
             },
         ];
-        let narration = NarrationProjection {
-            schema: "ghostlight.narration_projection.v1".into(),
-            id: "narration-2".into(),
-            campaign_id: campaign.id,
-            source_revision: 2,
-            text: "The bounded outcome is visible.".into(),
-            event_ids: vec![],
-            model_receipt_hash: "sha256:test".into(),
-            published_at: Utc::now(),
-        };
-
-        let story = story_nodes(&campaign, &[narration]);
+        let story = story_nodes(&campaign);
         let values = story
             .iter()
             .map(|node| node["props"]["value"].as_str().unwrap())
@@ -529,11 +498,11 @@ mod tests {
             values,
             vec![
                 "player: I ask the question.",
-                "The bounded outcome is visible.",
+                "world: raw outcome",
                 "npc: I answer directly."
             ]
         );
-        assert!(!values.iter().any(|value| value.contains("raw outcome")));
+        assert!(values.iter().all(|value| !value.contains("narration")));
     }
 
     #[test]
@@ -579,7 +548,7 @@ mod tests {
             },
         );
 
-        let surface = player_surface(&campaign, &[]);
+        let surface = player_surface(&campaign);
 
         assert_eq!(surface["viewer_actor_id"], "pilot-nyx");
         assert_eq!(surface["player_location_id"], "center");
@@ -637,7 +606,7 @@ mod tests {
             },
         );
 
-        let surface = player_surface(&campaign, &[]);
+        let surface = player_surface(&campaign);
         let encoded = serde_json::to_string(&surface).unwrap();
 
         assert!(!encoded.contains("SECRET_REMOTE_COUP_POSTURE"));
@@ -667,7 +636,7 @@ mod tests {
             .knowledge
             .insert("sealed command wire".into());
 
-        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+        let encoded = serde_json::to_string(&player_surface(&campaign)).unwrap();
 
         assert!(!encoded.contains("SECRET_COMMAND_MOVEMENT"));
     }
@@ -700,7 +669,7 @@ mod tests {
             },
         ]);
 
-        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+        let encoded = serde_json::to_string(&player_surface(&campaign)).unwrap();
 
         assert!(encoded.contains("The junction workers reopen the water line."));
         assert!(!encoded.contains("SECRET_REMOTE_EVENT"));
@@ -756,7 +725,7 @@ mod tests {
             },
         ]);
 
-        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+        let encoded = serde_json::to_string(&player_surface(&campaign)).unwrap();
 
         assert!(!encoded.contains("PLAYER_PRIVATE_ACTIVITY_SUMMARY"));
         assert!(!encoded.contains("PLAYER_SPEECH_DUPLICATE"));
@@ -789,7 +758,7 @@ mod tests {
         }
         crate::resolution::ensure_agency_profiles(&mut campaign);
 
-        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+        let encoded = serde_json::to_string(&player_surface(&campaign)).unwrap();
 
         assert!(encoded.contains("Local neighbors"));
         assert!(!encoded.contains("SECRET_REMOTE_POPULATION"));
@@ -817,7 +786,7 @@ mod tests {
             },
         );
 
-        let encoded = serde_json::to_string(&player_surface(&campaign, &[])).unwrap();
+        let encoded = serde_json::to_string(&player_surface(&campaign)).unwrap();
         for binding in [
             "time_advance_minutes",
             "destination_location_id",

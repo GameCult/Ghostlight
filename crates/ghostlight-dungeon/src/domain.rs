@@ -849,18 +849,6 @@ pub struct NarrativeTurn {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
-pub struct NarrationProjection {
-    pub schema: String,
-    pub id: String,
-    pub campaign_id: Uuid,
-    pub source_revision: u64,
-    pub text: String,
-    pub event_ids: Vec<String>,
-    pub model_receipt_hash: String,
-    pub published_at: DateTime<Utc>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct CampaignLifecycleReceipt {
     pub schema: String,
     pub campaign_id: Uuid,

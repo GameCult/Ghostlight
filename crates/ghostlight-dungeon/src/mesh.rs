@@ -1,8 +1,8 @@
 use crate::{
     domain::{
-        Campaign, CellAppraisal, GestaltMaterializationReceipt, NarrationProjection,
-        RejectedProposalReceipt, ResolutionControlReceipt, ResolutionPlanReceipt,
-        StrategicActivityOutcome, StrategicTickReceipt, VaultEvidenceReceipt, WorldCommitReceipt,
+        Campaign, CellAppraisal, GestaltMaterializationReceipt, RejectedProposalReceipt,
+        ResolutionControlReceipt, ResolutionPlanReceipt, StrategicActivityOutcome,
+        StrategicTickReceipt, VaultEvidenceReceipt, WorldCommitReceipt,
     },
     model::{ModelRuntimeStatus, ModelStageReceipt},
     session_zero::{CampaignMembership, SessionZeroState},
@@ -51,7 +51,6 @@ impl Default for MeshRuntimeIdentity {
 pub struct CampaignMeshSnapshot {
     pub campaign: Campaign,
     pub membership: Option<CampaignMembership>,
-    pub narrations: Vec<NarrationProjection>,
     pub evidence: Vec<VaultEvidenceReceipt>,
     pub commits: Vec<WorldCommitReceipt>,
     pub stages: Vec<ModelStageReceipt>,
@@ -311,8 +310,7 @@ impl MeshPublisher {
                 as i64;
             if let Some(membership) = &snapshot.membership {
                 for member in membership.members.values().filter(|member| member.active) {
-                    let surface =
-                        player_surface_for_actor(campaign, &member.actor_id, &snapshot.narrations);
+                    let surface = player_surface_for_actor(campaign, &member.actor_id);
                     let key = format!(
                         "eve:surface:ghostlight.campaign.{}.{}",
                         campaign.id, member.member_id
@@ -334,17 +332,13 @@ impl MeshPublisher {
                             title: campaign.name.clone(),
                             version: interface_version,
                             updated_at: updated_at.clone(),
-                            surface: player_surface_for_actor(
-                                campaign,
-                                &member.actor_id,
-                                &snapshot.narrations,
-                            ),
+                            surface: player_surface_for_actor(campaign, &member.actor_id),
                         },
                         &mut remote_messages,
                     )?;
                 }
             } else {
-                let surface = player_surface(campaign, &snapshot.narrations);
+                let surface = player_surface(campaign);
                 let key = format!("eve:surface:ghostlight.campaign.{}", campaign.id);
                 self.put_and_stage(
                     &mut node,
@@ -360,7 +354,7 @@ impl MeshPublisher {
                         title: campaign.name.clone(),
                         version: interface_version,
                         updated_at: updated_at.clone(),
-                        surface: player_surface(campaign, &snapshot.narrations),
+                        surface: player_surface(campaign),
                     },
                     &mut remote_messages,
                 )?;

@@ -12,7 +12,6 @@ async fn main() -> anyhow::Result<()> {
         domain::{ActionIntent, Campaign, WorldCommand},
         kernel::{CommandResult, KernelError, WorldKernel},
         model::{DeepSeekPort, ModelPort},
-        narrator::Narrator,
         persistence::CampaignStore,
     };
     use std::{path::PathBuf, sync::Arc, time::Instant};
@@ -137,22 +136,7 @@ async fn main() -> anyhow::Result<()> {
             receipt,
         )?;
     }
-    let narrator = Narrator {
-        model,
-        model_name: "deepseek-v4-pro".into(),
-        verifier_model_name: "deepseek-v4-flash".into(),
-    };
-    let (narration, narration_receipts) = narrator.project(&store, &post).await?;
-    for receipt in &narration_receipts {
-        store.insert(
-            "persona_stage_receipt.v1",
-            "ghostlight.persona_stage_receipt.v1",
-            receipt.storage_key(),
-            receipt,
-        )?;
-    }
-    let mut model_stage_receipts = vec![impossible_receipt, feasible_receipt];
-    model_stage_receipts.extend(narration_receipts);
+    let model_stage_receipts = vec![impossible_receipt, feasible_receipt];
 
     let result = serde_json::json!({
         "schema":"ghostlight.action_smoke.v1",
@@ -162,7 +146,6 @@ async fn main() -> anyhow::Result<()> {
         "impossible_attempt_error":impossible_error.to_string(),
         "feasible_assessment":feasible,
         "attempt":attempt,
-        "narration":narration,
         "model_stage_receipts":model_stage_receipts,
         "campaign_revision":post.revision,
         "store":root.join("campaign.cc"),

@@ -13,7 +13,6 @@ pub mod legacy_transition;
 pub mod mesh;
 pub mod model;
 pub mod model_connector;
-pub mod narrator;
 pub mod outcome;
 pub mod persistence;
 pub mod persona;

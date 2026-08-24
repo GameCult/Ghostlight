@@ -62,8 +62,10 @@ unanimity proof also remains unproven.
   only the kernel reducer can alter typed canonical components. Legacy effect
   enums are model-boundary migration input, not alternate physical laws.
 - Ghostlight owns the generalized Projector → Persona → Interpreter membrane.
-  Projectors, Personas, Interpreters, retrieval, narration, dice previews, and
-  browsers may propose or project; none may commit canonical state.
+  Projectors, Personas, Interpreters, retrieval, dice previews, and browsers
+  may propose or project; none may commit canonical state. The player story is
+  a deterministic lowering of exact committed transcript turns; no narrator
+  model owns or rewrites it.
 - Canonical actors, institutions, Gestalts, member deltas, knowledge, topology,
   and relationships persist independently of the derived simulation cover.
   Arena cells never become synthetic collective actors or union knowledge.
@@ -222,6 +224,13 @@ messages.
   belongs to one exact reaction-wave revision: a new wave replaces the old set,
   and the kernel rejects resolution after any intervening revision. Same-wave
   retry remains valid without allowing stale Persona output to rebase.
+- The same live transcript exposed a second derived-authority breach: a
+  two-stage narrator invented names, dialogue, and participation after the
+  kernel had committed a narrower event. The narrator module, verifier, smoke
+  target, runtime calls, response field, mesh snapshot lane, and surface
+  replacement logic are deleted. Historical narration rows remain inert in old
+  stores and are never projected. Browser and native clients now receive only
+  exact chronological committed turns.
 - Live refresh pressure reproduced and removed two contract faults: reuse of a
   private-command idempotency key across separately sealed attempts, and
   validation of a refresh receipt as if it carried the initial-login account
@@ -284,10 +293,9 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 ## Next action
 
-1. Complete the one-time Heimdall OAuth grant for the native client, fetch the
-   actor-filtered surface over CultMesh, and resume adversarial play without the
-   browser.
-2. Repair the first compiler, world, action, or agency failure at its owning
+1. Continue adversarial play through the authenticated native CultMesh client;
+   its Heimdall grant and Ghostlight app session are persisted in CultCache.
+2. Repair the first compiler, world, action, identity, or agency failure at its owning
    state/projection seam; do not add output bans around missing context.
 3. Then fork or compile a denser 20-plus-power
    Aetheria skeleton and pressure budgets 1, 4, 8, and 32 with real provider

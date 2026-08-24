@@ -17,7 +17,7 @@ consequence authority.
 
 The hosted runtime owns persistent DM-led Session Zero, exact VoidBot evidence,
 campaign mailboxes, fiction-first d20 resolution, parallel Persona appraisal,
-narration, reversible gestalt materialization, actor-bound membership,
+exact committed story projection, reversible gestalt materialization, actor-bound membership,
 CultMesh/Eve publication, and away-time scheduling. One to eight authenticated
 players negotiate one shared contract and private character states before the
 host can atomically publish an unanimously approved seed. Strategic ticks now project six-axis
@@ -115,7 +115,8 @@ must name the exact finding they commit, which the runtime binds into the
 player-visible stake before validation; and player HTTP command
 responses are spoiler-safe projections rather than serialized campaigns. The
 browser renders these projections as labeled, escaped human-readable controls,
-and narration receives only the latest causal turn rather than a route dump.
+    and the player story lowers exact committed transcript turns without a
+    generative rewrite.
 
 World transition authority is now a closed semantic mutation algebra rather
 than four empirical effect universes. Foreground attempts, NPC initiative,

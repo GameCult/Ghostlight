@@ -715,8 +715,8 @@ until their verified expiry. Campaign access always comes from
 auth store is frozen rollback evidence and does not participate in admission.
 
 That boundary also projects less state outward than the kernel returns inward.
-Player HTTP responses contain only assessment, public commit/roll receipts, and
-narration. Canonical campaign state and spoiler-bearing actor or institution
+Player command responses contain only assessment and public commit/roll
+receipts. Canonical campaign state and spoiler-bearing actor or institution
 state are operator-only. Informational rolls add only their exact previewed
 finding to the acting character and a provisional branch fact. The assessor
 deterministically binds typed findings into visible stakes before validation,
@@ -726,12 +726,13 @@ before generation. Only direct-seed source text enters causal world compilation;
 background and excluded sources remain coverage provenance and cannot donate
 story incidents or cast.
 
-Player-facing narration is a verified projection. Pro drafts from the latest
-causal committed turn; an independent Flash stage checks the draft against the
-same actor-filtered state and returns either that exact draft or a minimal
-grounded correction. Both receipts bind the published projection. Narration
-cannot reverse the committed outcome band or invent locations, objects,
-participants, or discoveries merely because they make prettier prose.
+The player-facing story is the chronological lowering of exact committed
+`NarrativeTurn` rows. Player speech, Persona speech, and resolved outcome prose
+already enter the transcript through the kernel transaction that owns their
+revision. The surface does not run a second narrator or verifier model, replace
+world turns, or read historical `narration_projection.v1` rows. This removes two
+calls per live turn and makes display-layer invention of names, dialogue,
+injuries, participants, or actions structurally impossible.
 
 `ghostlight-campaign-inspect` is a read-only typed-store witness. It reports the
 latest strategic cover, attributed appraisals and inactions, activity outcomes,
