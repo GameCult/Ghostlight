@@ -2764,26 +2764,13 @@ fn proposal_target_key(proposal: &CellActionProposal) -> String {
 fn validate_strategic_effect_lanes(effects: &[StrategicCellEffect]) -> Result<()> {
     let mut lanes = BTreeSet::new();
     for effect in effects {
-        if !lanes.insert(strategic_effect_lane(effect)) {
+        if !lanes.insert(effect.lane()) {
             return Err(anyhow!(
                 "one strategic action may use each orthogonal effect lane at most once"
             ));
         }
     }
     Ok(())
-}
-
-fn strategic_effect_lane(effect: &StrategicCellEffect) -> &'static str {
-    match effect {
-        StrategicCellEffect::Institution { .. } => "institution",
-        StrategicCellEffect::Gestalt { .. } => "gestalt_pressure",
-        StrategicCellEffect::GestaltActivity { .. } => "gestalt_activity",
-        StrategicCellEffect::GestaltMigration { .. } => "gestalt_migration",
-        StrategicCellEffect::ActorMove { .. } => "actor_move",
-        StrategicCellEffect::ActorActivity { .. } => "actor_activity",
-        StrategicCellEffect::MemberActivity { .. } => "member_activity",
-        StrategicCellEffect::MemberMigration { .. } => "member_migration",
-    }
 }
 
 fn is_sha256(value: &str) -> bool {

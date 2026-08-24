@@ -464,6 +464,21 @@ pub enum StrategicCellEffect {
     },
 }
 
+impl StrategicCellEffect {
+    pub(crate) fn lane(&self) -> &'static str {
+        match self {
+            Self::Institution { .. } => "institution",
+            Self::Gestalt { .. } => "gestalt_pressure",
+            Self::GestaltActivity { .. } => "gestalt_activity",
+            Self::GestaltMigration { .. } => "gestalt_migration",
+            Self::ActorMove { .. } => "actor_move",
+            Self::ActorActivity { .. } => "actor_activity",
+            Self::MemberActivity { .. } => "member_activity",
+            Self::MemberMigration { .. } => "member_migration",
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum StrategicActivityKind {

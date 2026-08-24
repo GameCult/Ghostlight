@@ -4362,17 +4362,30 @@ async fn command(
     if let Err(error) = validate_player_http_command(&command) {
         return (StatusCode::UNPROCESSABLE_ENTITY, Json(ErrorBody { error })).into_response();
     }
-    if player_command_requires_return_catch_up(&command)
-        && let Err(error) = process_due_ticks(
+    if player_command_requires_return_catch_up(&command) {
+        let catch_up_start_revision = admission_campaign.revision;
+        if let Err(error) = process_due_ticks(
             &state,
             &runtime,
             ghostlight_dungeon::domain::TickSource::ReturnCatchUp,
             false,
         )
         .await
-    {
-        let body = player_safe_strategic_failure(&error);
-        return (StatusCode::CONFLICT, Json(body)).into_response();
+        {
+            let current_revision = load_campaign(&runtime.store)
+                .map(|campaign| campaign.revision)
+                .unwrap_or(catch_up_start_revision);
+            let body = if current_revision > catch_up_start_revision {
+                player_safe_partial_catch_up_failure(
+                    &error,
+                    catch_up_start_revision,
+                    current_revision,
+                )
+            } else {
+                player_safe_strategic_failure(&error)
+            };
+            return (StatusCode::CONFLICT, Json(body)).into_response();
+        }
     }
     if let WorldCommand::Speak {
         expected_revision,
@@ -5943,6 +5956,27 @@ fn player_safe_strategic_failure(error: &anyhow::Error) -> ErrorBody {
     }
 }
 
+fn player_safe_partial_catch_up_failure(
+    error: &anyhow::Error,
+    start_revision: u64,
+    current_revision: u64,
+) -> ErrorBody {
+    let private_error_chain: String = format!("{error:#}").chars().take(4_000).collect();
+    let committed_ticks = current_revision.saturating_sub(start_revision);
+    tracing::warn!(
+        error = %private_error_chain,
+        start_revision,
+        current_revision,
+        committed_ticks,
+        "private return catch-up failed after earlier atomic ticks committed"
+    );
+    ErrorBody {
+        error: format!(
+            "The world advanced {committed_ticks} strategic tick(s) while you were away, then the next atomic wave was rejected without changing revision {current_revision}. Refresh campaign state before acting again."
+        ),
+    }
+}
+
 fn player_safe_assessment_failure(error: &anyhow::Error) -> ErrorBody {
     let private_error_chain: String = format!("{error:#}").chars().take(4_000).collect();
     tracing::warn!(
@@ -5975,6 +6009,22 @@ mod tests {
         );
         assert!(!projected.error.contains("convoy"));
         assert!(!projected.error.contains("verifier"));
+    }
+
+    #[test]
+    fn partial_catch_up_failure_reports_committed_progress_without_private_diagnostics() {
+        let private = anyhow::anyhow!(
+            "the hidden convoy emitted two actor_activity effects from a private Persona"
+        );
+        let projected = player_safe_partial_catch_up_failure(&private, 92, 94);
+
+        assert_eq!(
+            projected.error,
+            "The world advanced 2 strategic tick(s) while you were away, then the next atomic wave was rejected without changing revision 94. Refresh campaign state before acting again."
+        );
+        assert!(!projected.error.contains("convoy"));
+        assert!(!projected.error.contains("actor_activity"));
+        assert!(!projected.error.contains("Persona"));
     }
 
     #[test]

@@ -1113,7 +1113,7 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
-                "Each action carries one to four distinct typed effects in execution order. Copy each subject's exact allowed_effect_types. A lane absent from that list is structurally unavailable: do not emit it and do not invent a destination. The same lane may appear more than once only for genuinely different means, targets, or mutations; never repeat an exact effect. When one chosen act includes travel followed by a local attempt at the supplied destination, preserve both means in one action: movement first, then the activity at that exact destination. Never split one subject's single choice into multiple actions. ",
+                "Each action carries one to four distinct typed effects in execution order. Copy each subject's exact allowed_effect_types. A lane absent from that list is structurally unavailable: do not emit it and do not invent a destination. Each effect type may appear at most once in one action; combine all targets or pressure changes belonging to that lane into its single typed effect. When one chosen act includes travel followed by a local attempt at the supplied destination, preserve both means in one action: movement first, then the activity at that exact destination. Never split one subject's single choice into multiple actions. ",
                 "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
@@ -2035,10 +2035,16 @@ fn validate_effect_bundle(effects: &[crate::domain::StrategicCellEffect]) -> Res
             "a strategic action requires one to four exact effects"
         ));
     }
+    let mut lanes = BTreeSet::new();
     for (index, effect) in effects.iter().enumerate() {
         if effects[..index].contains(effect) {
             return Err(anyhow!(
                 "a strategic action cannot repeat an exact typed effect"
+            ));
+        }
+        if !lanes.insert(effect.lane()) {
+            return Err(anyhow!(
+                "one strategic action may use each orthogonal effect lane at most once"
             ));
         }
     }
@@ -2634,12 +2640,45 @@ fn constrain_interpreter_schema(
 mod tests {
     use super::*;
     use crate::{
-        domain::{AgencySubjectKind, SimulationCellMode, StrategicCellEffect},
+        domain::{
+            AgencySubjectKind, SimulationCellMode, StrategicActivityKind, StrategicCellEffect,
+        },
         model::{FixtureModel, ModelStageRequest},
     };
     use std::sync::Mutex;
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     use tokio::sync::Barrier;
+
+    #[test]
+    fn interpreter_rejects_duplicate_effect_lanes_before_resolution() {
+        let first_activity = StrategicCellEffect::ActorActivity {
+            actor_id: "actor:director".into(),
+            activity: StrategicActivityKind::Investigate,
+            target_subject_ids: vec![],
+            location_ids: vec!["clinic".into()],
+        };
+        let second_activity = StrategicCellEffect::ActorActivity {
+            actor_id: "actor:director".into(),
+            activity: StrategicActivityKind::Communicate,
+            target_subject_ids: vec!["institution:garrison".into()],
+            location_ids: vec!["clinic".into()],
+        };
+        let movement = StrategicCellEffect::ActorMove {
+            actor_id: "actor:director".into(),
+            destination_id: "garrison".into(),
+        };
+
+        assert!(
+            validate_effect_bundle(&[movement.clone(), first_activity.clone()]).is_ok(),
+            "different orthogonal lanes must remain composable"
+        );
+        assert!(
+            validate_effect_bundle(&[first_activity, second_activity])
+                .unwrap_err()
+                .to_string()
+                .contains("each orthogonal effect lane at most once")
+        );
+    }
 
     struct CorrectingCellModel {
         interpreter_calls: AtomicUsize,
