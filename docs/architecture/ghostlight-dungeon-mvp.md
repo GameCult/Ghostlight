@@ -631,8 +631,18 @@ can only subtract from the authority-derived set: the projection cannot invent
 a lane, fact, subject, route, clock, or institution. Ghostlight removes every
 unselected lane from the generated `WorldEffectDelta` schema and withholds
 information facts entirely when investigation, perception, or disclosure is
-outside the selected scope. The scope is derived inference evidence, not world
-or assessment authority, and failure leaves state unchanged. Its private
+outside the selected scope. It separately names the selected lanes whose
+non-empty mutations are required for strong and ordinary success to realize the
+intended effect. At the strict model boundary, Ghostlight projects the canonical
+dynamic mutation maps into bounded entry arrays whose ID and value enums come
+from that exact authority snapshot. This keeps authorized mutations expressible
+without exposing open object keys; validated entries lower once into canonical
+`WorldEffectDelta` maps. Required success arrays receive `minItems: 1` and are
+checked again after lowering, so success stakes cannot claim a canonical change
+while omitting its state transition. The model schema binds that requirement to
+the admissible branch; the inadmissible branch permits only zero-length effect
+arrays, and local validation repeats that no-mutation rule. The scope is derived inference evidence,
+not world or assessment authority, and failure leaves state unchanged. Its private
 content-addressed cache prevents an unchanged attempt from paying for the scope
 projection again.
 

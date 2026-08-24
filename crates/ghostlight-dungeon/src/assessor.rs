@@ -20,10 +20,10 @@ use std::{
 const ASSESSMENT_PROPOSAL_CACHE_KIND: &str = "assessment_proposal_cache.v1";
 const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v3";
 const ASSESSMENT_SCOPE_CACHE_KIND: &str = "assessment_mutation_scope_cache.v1";
-const ASSESSMENT_SCOPE_CACHE_SCHEMA: &str = "ghostlight.private.assessment_mutation_scope_cache.v1";
-const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v5";
+const ASSESSMENT_SCOPE_CACHE_SCHEMA: &str = "ghostlight.private.assessment_mutation_scope_cache.v2";
+const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v7";
 
-const ASSESSMENT_SCOPE_INSTRUCTIONS: &str = "You select the smallest causally plausible typed mutation vocabulary for one fiction-first attempt. This is schema projection, not outcome resolution. Select a lane only when the exact attempted means could directly cause it or the exact intended effect asks for it. Availability is never relevance. actor_conditions changes bodily or situational conditions. actor_knowledge_additions means an exact existing fact is investigated, perceived, or deliberately communicated; do not select it for ordinary speech, promises, persuasion, trust, or scene texture. actor_relationship_updates changes durable trust, regard, leverage, or another exact relationship. actor_moves relocates the acting character along an admitted route. clock_advances and clock_reductions change an existing pressure. institution_postures changes an institution's durable policy or stance. Return only the minimal lane set as JSON. Empty is valid when no canonical mutation lane is causally appropriate or the assessor should negotiate a bargain. Never infer a new lane, target, fact, route, clock, or institution. Shape: {\"lanes\":[\"actor_relationship_updates\"]}.";
+const ASSESSMENT_SCOPE_INSTRUCTIONS: &str = "You select the smallest causally plausible typed mutation vocabulary for one fiction-first attempt. This is schema projection, not outcome resolution. Select a lane only when the exact attempted means could directly cause it or the exact intended effect asks for it. Availability is never relevance. Put every selected lane in lanes. Also put in required_success_lanes every lane whose non-empty mutation is necessary for strong and ordinary success to actually realize the stated intended effect; direct costs or incidental consequences are allowed lanes but are not required success lanes. actor_conditions changes bodily or situational conditions. actor_knowledge_additions means an exact existing fact is investigated, perceived, or deliberately communicated; do not select it for ordinary speech, promises, persuasion, trust, or scene texture. actor_relationship_updates changes durable trust, regard, leverage, or another exact relationship. actor_moves relocates the acting character along an admitted route. clock_advances and clock_reductions change an existing pressure. institution_postures changes an institution's durable policy or stance. Return only the minimal lane sets as JSON. Both may be empty when no canonical mutation lane is causally appropriate or the assessor should negotiate a bargain. required_success_lanes must be a subset of lanes. Never infer a new lane, target, fact, route, clock, or institution. Shape: {\"lanes\":[\"actor_relationship_updates\"],\"required_success_lanes\":[\"actor_relationship_updates\"]}.";
 
 const ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between the fiction-first action assessor and the world kernel. Structural authority, reach, knowledge access, and mutation shape were already checked. Judge the complete four-band typed effect bundle against the player's exact means and intended effect. Every non-empty mutation must be a direct realization of the intended effect or a concrete, previewed consequence of the attempted means in that exact outcome band. A fact being true, nearby, discoverable, or useful does not make communicating or acquiring it a consequence of an unrelated action. A plausible general reaction does not justify changing a relationship, condition, clock, posture, movement, or knowledge record that the attempted means and stakes do not cause. Failure and mixed effects may impose direct costs or complications, but not arbitrary available state changes. The effect ceiling and visible stakes must describe the same bounded consequences as the typed effects. Do not reassess admissibility, DC, or modifiers, and do not choose replacement effects. Return one JSON object. If every typed mutation is causally faithful, use result 'match' with null mismatch_kind and null repair_guidance. Otherwise use result 'mismatch', one mismatch_kind, and one concrete repair sentence of at most 240 characters naming what must be removed or aligned. Shape: {\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}.";
 
@@ -43,6 +43,57 @@ struct AssessmentProposal {
     mixed_effect: WorldEffectDelta,
     failure_effect: WorldEffectDelta,
     bargains: Vec<String>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum ConditionMutationOperation {
+    Add,
+    Remove,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct ActorConditionMutation {
+    actor_id: String,
+    operation: ConditionMutationOperation,
+    condition: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct ActorKnowledgeMutation {
+    actor_id: String,
+    statement: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct ActorRelationshipMutation {
+    actor_id: String,
+    target_id: String,
+    relationship: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct ActorMoveMutation {
+    actor_id: String,
+    destination_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct ClockMutation {
+    clock_id: String,
+    amount: u8,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct InstitutionPostureMutation {
+    institution_id: String,
+    posture: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -75,6 +126,7 @@ enum AssessmentMutationLane {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 struct AssessmentMutationScope {
     lanes: BTreeSet<AssessmentMutationLane>,
+    required_success_lanes: BTreeSet<AssessmentMutationLane>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -259,9 +311,11 @@ impl ActionAssessor {
         );
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
         constrain_assessment_schema(&mut schema, &allowed_references, campaign, actor)?;
+        project_effect_schema_to_mutation_entries(&mut schema)?;
         constrain_effect_schema_to_scope(&mut schema, &mutation_scope.lanes)?;
+        require_success_scope(&mut schema, &mutation_scope.required_success_lanes)?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. The private scope projection has already removed mutation lanes that are not causally plausible for this exact attempt. The remaining lanes are an upper bound, not a request to use all of them. Every non-empty mutation must be directly caused by the exact attempted means or realize the exact intended effect in that outcome band. A fact, relationship, clock, posture, or route being true, nearby, discoverable, or useful does not make changing it a consequence of an unrelated attempt. Do not append scene context as an observed finding unless the attempted means actually communicates it or the intended effect actually investigates or discloses it. Outcome deltas may use only the mutation lanes present in the supplied schema; omit an unavailable, causally unrelated, or unused lane. A missing mutation map means no mutation in that lane. Supplied lanes may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both maps for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, omit the knowledge lane and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nMUTATION SCOPE:\n{}\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. The private scope projection has already removed mutation lanes that are not causally plausible for this exact attempt. The remaining lanes are an upper bound, not a request to use all of them. When admissible, every required_success_lane in MUTATION SCOPE must contain at least one mutation entry in both strong_effect and success_effect; a success stake may not claim an intended canonical change that its typed effect omits. Every non-empty mutation must be directly caused by the exact attempted means or realize the exact intended effect in that outcome band. A fact, relationship, clock, posture, or route being true, nearby, discoverable, or useful does not make changing it a consequence of an unrelated attempt. Do not append scene context as an observed finding unless the attempted means actually communicates it or the intended effect actually investigates or discloses it. Each supplied mutation lane is a bounded array of exact entries. Use an empty array when that lane does not change in an outcome; never add a duplicate or contradictory entry. Supplied entries may only name IDs copied exactly from PRESENT ACTORS and the enumerated schema, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both arrays for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. Each actor_knowledge_additions entry contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, leave the knowledge array empty and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nMUTATION SCOPE:\n{}\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(&mutation_scope)?,
             serde_json::to_string(&campaign_contract)?,
@@ -296,6 +350,7 @@ impl ActionAssessor {
                 campaign,
                 actor,
                 &allowed_references,
+                &mutation_scope,
             )?;
             let assessment = build_assessment(campaign, intent, proposal.clone())?;
             let receipt = cache_hit_receipt(
@@ -326,12 +381,18 @@ impl ActionAssessor {
             )
             .await?;
             let candidate = (|| -> Result<AssessmentProposal> {
-                let proposal: AssessmentProposal = serde_json::from_value(
+                let proposal = decode_assessment_proposal(
                     out.structured
                         .clone()
                         .ok_or_else(|| anyhow!("assessor returned no typed proposal"))?,
                 )?;
-                validate_and_bind_proposal(proposal, campaign, actor, &allowed_references)
+                validate_and_bind_proposal(
+                    proposal,
+                    campaign,
+                    actor,
+                    &allowed_references,
+                    &mutation_scope,
+                )
             })();
             match candidate {
                 Ok(proposal) => {
@@ -397,7 +458,7 @@ impl ActionAssessor {
                         .and_then(|value| serde_json::to_string(value).ok())
                         .unwrap_or_else(|| "unavailable".into());
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ASSESSMENT: {error}\nPREVIOUS ASSESSMENT:\n{rejected}\nReturn a corrected complete assessment against the same snapshot. Copy every modifier reference from ALLOWED REFERENCES exactly; omit a modifier rather than paraphrasing or inventing its reference. Copy every actor and destination ID exactly from the supplied state. Every knowledge addition must copy one exact statement from AVAILABLE INFORMATION FACTS and obey its access mode; strong and ordinary success must use identical knowledge additions. Otherwise leave the typed delta empty."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS ASSESSMENT: {error}\nPREVIOUS ASSESSMENT:\n{rejected}\nReturn a corrected complete assessment against the same snapshot. Copy every modifier reference from ALLOWED REFERENCES exactly; omit a modifier rather than paraphrasing or inventing its reference. Copy every actor and destination ID exactly from the supplied state. Every knowledge addition must copy one exact statement from AVAILABLE INFORMATION FACTS and obey its access mode; strong and ordinary success must use identical knowledge additions. Otherwise leave the corresponding mutation array empty."
                     );
                 }
                 Err(error) => {
@@ -455,6 +516,7 @@ impl ActionAssessor {
                     campaign,
                     actor,
                     &allowed_references,
+                    &mutation_scope,
                 )?;
                 selected_receipt = cache_hit_receipt(
                     &winner,
@@ -574,11 +636,188 @@ impl ActionAssessor {
     }
 }
 
+fn decode_assessment_proposal(value: serde_json::Value) -> Result<AssessmentProposal> {
+    let mut wrapper = value
+        .as_object()
+        .cloned()
+        .ok_or_else(|| anyhow!("assessor output is not an object"))?;
+    if wrapper.len() != 1 || !wrapper.contains_key("proposal") {
+        return Err(anyhow!(
+            "assessor output must contain exactly one admission-bound proposal"
+        ));
+    }
+    let mut value = wrapper
+        .remove("proposal")
+        .ok_or_else(|| anyhow!("assessor output omitted proposal"))?;
+    let proposal = value
+        .as_object_mut()
+        .ok_or_else(|| anyhow!("assessor proposal is not an object"))?;
+    for field in [
+        "strong_effect",
+        "success_effect",
+        "mixed_effect",
+        "failure_effect",
+    ] {
+        let effect = proposal
+            .get(field)
+            .ok_or_else(|| anyhow!("assessor output omitted {field}"))?;
+        proposal.insert(
+            field.into(),
+            serde_json::to_value(decode_effect_entries(effect)?)?,
+        );
+    }
+    serde_json::from_value(value).map_err(Into::into)
+}
+
+fn decode_effect_entries(value: &serde_json::Value) -> Result<WorldEffectDelta> {
+    let fields = value
+        .as_object()
+        .ok_or_else(|| anyhow!("assessor effect is not an object"))?;
+    let allowed_fields = BTreeSet::from([
+        "actor_conditions",
+        "actor_knowledge_additions",
+        "actor_relationship_updates",
+        "actor_moves",
+        "clock_advances",
+        "clock_reductions",
+        "institution_postures",
+    ]);
+    if let Some(field) = fields
+        .keys()
+        .find(|field| !allowed_fields.contains(field.as_str()))
+    {
+        return Err(anyhow!(
+            "assessor effect contains unknown mutation lane {field}"
+        ));
+    }
+
+    let mut effect = WorldEffectDelta::default();
+    for entry in decode_mutation_entries::<ActorConditionMutation>(fields, "actor_conditions")? {
+        let delta = effect
+            .actor_conditions
+            .entry(entry.actor_id.clone())
+            .or_default();
+        let (selected, opposite) = match entry.operation {
+            ConditionMutationOperation::Add => (&mut delta.add, &delta.remove),
+            ConditionMutationOperation::Remove => (&mut delta.remove, &delta.add),
+        };
+        if opposite.contains(&entry.condition) {
+            return Err(anyhow!(
+                "condition mutation both adds and removes {:?} for {}",
+                entry.condition,
+                entry.actor_id
+            ));
+        }
+        if !selected.insert(entry.condition.clone()) {
+            return Err(anyhow!(
+                "duplicate condition mutation {:?} for {}",
+                entry.condition,
+                entry.actor_id
+            ));
+        }
+    }
+    for entry in
+        decode_mutation_entries::<ActorKnowledgeMutation>(fields, "actor_knowledge_additions")?
+    {
+        if !effect
+            .actor_knowledge_additions
+            .entry(entry.actor_id.clone())
+            .or_default()
+            .insert(entry.statement.clone())
+        {
+            return Err(anyhow!(
+                "duplicate knowledge mutation {:?} for {}",
+                entry.statement,
+                entry.actor_id
+            ));
+        }
+    }
+    for entry in
+        decode_mutation_entries::<ActorRelationshipMutation>(fields, "actor_relationship_updates")?
+    {
+        if effect
+            .actor_relationship_updates
+            .entry(entry.actor_id.clone())
+            .or_default()
+            .insert(entry.target_id.clone(), entry.relationship)
+            .is_some()
+        {
+            return Err(anyhow!(
+                "duplicate relationship mutation from {} to {}",
+                entry.actor_id,
+                entry.target_id
+            ));
+        }
+    }
+    for entry in decode_mutation_entries::<ActorMoveMutation>(fields, "actor_moves")? {
+        if effect
+            .actor_moves
+            .insert(entry.actor_id.clone(), entry.destination_id)
+            .is_some()
+        {
+            return Err(anyhow!(
+                "duplicate movement mutation for {}",
+                entry.actor_id
+            ));
+        }
+    }
+    for entry in decode_mutation_entries::<ClockMutation>(fields, "clock_advances")? {
+        if effect
+            .clock_advances
+            .insert(entry.clock_id.clone(), entry.amount)
+            .is_some()
+        {
+            return Err(anyhow!("duplicate clock advance for {}", entry.clock_id));
+        }
+    }
+    for entry in decode_mutation_entries::<ClockMutation>(fields, "clock_reductions")? {
+        if effect
+            .clock_reductions
+            .insert(entry.clock_id.clone(), entry.amount)
+            .is_some()
+        {
+            return Err(anyhow!("duplicate clock reduction for {}", entry.clock_id));
+        }
+    }
+    for entry in
+        decode_mutation_entries::<InstitutionPostureMutation>(fields, "institution_postures")?
+    {
+        if effect
+            .institution_postures
+            .insert(entry.institution_id.clone(), entry.posture)
+            .is_some()
+        {
+            return Err(anyhow!(
+                "duplicate institution posture mutation for {}",
+                entry.institution_id
+            ));
+        }
+    }
+    Ok(effect)
+}
+
+fn decode_mutation_entries<T>(
+    fields: &serde_json::Map<String, serde_json::Value>,
+    lane: &str,
+) -> Result<Vec<T>>
+where
+    T: serde::de::DeserializeOwned,
+{
+    match fields.get(lane) {
+        None | Some(serde_json::Value::Null) => Ok(Vec::new()),
+        Some(value @ serde_json::Value::Array(_)) => {
+            serde_json::from_value(value.clone()).map_err(Into::into)
+        }
+        Some(_) => Err(anyhow!("assessor mutation lane {lane} is not an array")),
+    }
+}
+
 fn validate_and_bind_proposal(
     mut proposal: AssessmentProposal,
     campaign: &Campaign,
     actor: &crate::domain::ActorState,
     allowed_references: &BTreeSet<String>,
+    mutation_scope: &AssessmentMutationScope,
 ) -> Result<AssessmentProposal> {
     bind_visible_knowledge(&mut proposal)?;
     validate_proposal(&proposal, allowed_references)?;
@@ -590,6 +829,7 @@ fn validate_and_bind_proposal(
     ] {
         validate_effect(campaign, actor, effect, stake)?;
     }
+    validate_required_success_lanes(&proposal, mutation_scope)?;
     Ok(proposal)
 }
 
@@ -1049,6 +1289,208 @@ fn constrain_effect_schema(
     Ok(())
 }
 
+fn project_effect_schema_to_mutation_entries(schema: &mut serde_json::Value) -> Result<()> {
+    let properties = schema
+        .pointer_mut("/$defs/WorldEffectDelta/properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("assessment schema has no world effect properties"))?;
+
+    if let Some(map) = properties.get("actor_conditions").cloned() {
+        let actor_ids = constrained_map_keys(&map, "actor_conditions")?;
+        properties.insert(
+            "actor_conditions".into(),
+            mutation_entry_array(
+                serde_json::json!({
+                    "type":"object",
+                    "properties":{
+                        "actor_id":typed_string_enum(&actor_ids),
+                        "operation":{"type":"string","enum":["add","remove"]},
+                        "condition":{"type":"string","minLength":1}
+                    },
+                    "required":["actor_id","operation","condition"],
+                    "additionalProperties":false
+                }),
+                bounded_entry_count(actor_ids.len().saturating_mul(4)),
+            ),
+        );
+    }
+
+    if let Some(map) = properties.get("actor_knowledge_additions").cloned() {
+        let recipient_schemas = map
+            .get("properties")
+            .and_then(serde_json::Value::as_object)
+            .ok_or_else(|| anyhow!("assessment knowledge lane has no recipient properties"))?;
+        let mut alternatives = Vec::new();
+        let mut maximum = 0_usize;
+        for (actor_id, statements) in recipient_schemas {
+            let statement_schema = statements
+                .get("items")
+                .cloned()
+                .ok_or_else(|| anyhow!("assessment knowledge recipient has no statement schema"))?;
+            maximum = maximum.saturating_add(
+                statements
+                    .get("maxItems")
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(1) as usize,
+            );
+            alternatives.push(serde_json::json!({
+                "type":"object",
+                "properties":{
+                    "actor_id":{"type":"string","enum":[actor_id]},
+                    "statement":statement_schema
+                },
+                "required":["actor_id","statement"],
+                "additionalProperties":false
+            }));
+        }
+        if alternatives.is_empty() {
+            return Err(anyhow!(
+                "assessment knowledge lane survived without an authorized recipient"
+            ));
+        }
+        let items = if alternatives.len() == 1 {
+            alternatives.remove(0)
+        } else {
+            serde_json::json!({"anyOf":alternatives})
+        };
+        properties.insert(
+            "actor_knowledge_additions".into(),
+            mutation_entry_array(items, bounded_entry_count(maximum)),
+        );
+    }
+
+    if let Some(map) = properties.get("actor_relationship_updates").cloned() {
+        let actor_ids = constrained_map_keys(&map, "actor_relationship_updates")?;
+        let target_map = map
+            .get("additionalProperties")
+            .ok_or_else(|| anyhow!("assessment relationship lane has no target map"))?;
+        let target_ids = constrained_map_keys(target_map, "actor_relationship_updates targets")?;
+        properties.insert(
+            "actor_relationship_updates".into(),
+            mutation_entry_array(
+                serde_json::json!({
+                    "type":"object",
+                    "properties":{
+                        "actor_id":typed_string_enum(&actor_ids),
+                        "target_id":typed_string_enum(&target_ids),
+                        "relationship":{"type":"string","minLength":1}
+                    },
+                    "required":["actor_id","target_id","relationship"],
+                    "additionalProperties":false
+                }),
+                bounded_entry_count(actor_ids.len().saturating_mul(target_ids.len())),
+            ),
+        );
+    }
+
+    if let Some(map) = properties.get("actor_moves").cloned() {
+        let actor_ids = constrained_map_keys(&map, "actor_moves")?;
+        let destination_ids = constrained_value_enum(&map, "actor_moves destinations")?;
+        properties.insert(
+            "actor_moves".into(),
+            mutation_entry_array(
+                serde_json::json!({
+                    "type":"object",
+                    "properties":{
+                        "actor_id":typed_string_enum(&actor_ids),
+                        "destination_id":typed_string_enum(&destination_ids)
+                    },
+                    "required":["actor_id","destination_id"],
+                    "additionalProperties":false
+                }),
+                bounded_entry_count(actor_ids.len()),
+            ),
+        );
+    }
+
+    for field in ["clock_advances", "clock_reductions"] {
+        if let Some(map) = properties.get(field).cloned() {
+            let clock_ids = constrained_map_keys(&map, field)?;
+            properties.insert(
+                field.into(),
+                mutation_entry_array(
+                    serde_json::json!({
+                        "type":"object",
+                        "properties":{
+                            "clock_id":typed_string_enum(&clock_ids),
+                            "amount":{"type":"integer","minimum":1,"maximum":255}
+                        },
+                        "required":["clock_id","amount"],
+                        "additionalProperties":false
+                    }),
+                    bounded_entry_count(clock_ids.len()),
+                ),
+            );
+        }
+    }
+
+    if let Some(map) = properties.get("institution_postures").cloned() {
+        let institution_ids = constrained_map_keys(&map, "institution_postures")?;
+        properties.insert(
+            "institution_postures".into(),
+            mutation_entry_array(
+                serde_json::json!({
+                    "type":"object",
+                    "properties":{
+                        "institution_id":typed_string_enum(&institution_ids),
+                        "posture":{"type":"string","minLength":1}
+                    },
+                    "required":["institution_id","posture"],
+                    "additionalProperties":false
+                }),
+                bounded_entry_count(institution_ids.len()),
+            ),
+        );
+    }
+    Ok(())
+}
+
+fn bounded_entry_count(available: usize) -> usize {
+    available.clamp(1, 16)
+}
+
+fn mutation_entry_array(items: serde_json::Value, max_items: usize) -> serde_json::Value {
+    serde_json::json!({
+        "type":"array",
+        "items":items,
+        "maxItems":max_items
+    })
+}
+
+fn constrained_map_keys(schema: &serde_json::Value, lane: &str) -> Result<Vec<String>> {
+    schema
+        .pointer("/propertyNames/enum")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| anyhow!("assessment {lane} lane has no authorized keys"))?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .map(ToOwned::to_owned)
+                .ok_or_else(|| anyhow!("assessment {lane} lane has a non-string key"))
+        })
+        .collect()
+}
+
+fn constrained_value_enum(schema: &serde_json::Value, lane: &str) -> Result<Vec<String>> {
+    schema
+        .pointer("/additionalProperties/enum")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| anyhow!("assessment {lane} lane has no authorized values"))?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .map(ToOwned::to_owned)
+                .ok_or_else(|| anyhow!("assessment {lane} lane has a non-string value"))
+        })
+        .collect()
+}
+
+fn typed_string_enum(values: &[String]) -> serde_json::Value {
+    serde_json::json!({"type":"string","enum":values})
+}
+
 fn available_mutation_lanes(
     campaign: &Campaign,
     acting_actor: &crate::domain::ActorState,
@@ -1098,13 +1540,15 @@ fn constrain_mutation_scope_schema(
     schema: &mut serde_json::Value,
     available_lanes: &BTreeSet<AssessmentMutationLane>,
 ) -> Result<()> {
-    let lane_items = schema
-        .pointer_mut("/properties/lanes/items")
-        .ok_or_else(|| anyhow!("assessment mutation scope schema has no lane items"))?;
-    *lane_items = serde_json::json!({
-        "type":"string",
-        "enum":available_lanes,
-    });
+    for field in ["lanes", "required_success_lanes"] {
+        let lane_items = schema
+            .pointer_mut(&format!("/properties/{field}/items"))
+            .ok_or_else(|| anyhow!("assessment mutation scope schema has no {field} items"))?;
+        *lane_items = serde_json::json!({
+            "type":"string",
+            "enum":available_lanes,
+        });
+    }
     Ok(())
 }
 
@@ -1115,6 +1559,11 @@ fn validate_mutation_scope(
     if !scope.lanes.is_subset(available_lanes) {
         return Err(anyhow!(
             "assessment mutation scope selected a structurally unavailable lane"
+        ));
+    }
+    if !scope.required_success_lanes.is_subset(&scope.lanes) {
+        return Err(anyhow!(
+            "assessment mutation scope required a success lane it did not select"
         ));
     }
     Ok(())
@@ -1147,6 +1596,184 @@ fn constrain_effect_schema_to_scope(
         }
     }
     Ok(())
+}
+
+fn require_success_scope(
+    schema: &mut serde_json::Value,
+    required_lanes: &BTreeSet<AssessmentMutationLane>,
+) -> Result<()> {
+    let base_effect = schema
+        .pointer("/$defs/WorldEffectDelta")
+        .cloned()
+        .ok_or_else(|| anyhow!("assessment schema has no scoped world effect definition"))?;
+    let mut required_success_effect = base_effect.clone();
+    let required_properties = required_success_effect
+        .get_mut("properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("scoped success effect has no properties"))?;
+    for lane in required_lanes {
+        let field = mutation_lane_field(*lane);
+        let property = required_properties.get_mut(field).ok_or_else(|| {
+            anyhow!("required success lane {field} was removed from the scoped schema")
+        })?;
+        if property.get("type").and_then(serde_json::Value::as_str) != Some("array") {
+            return Err(anyhow!(
+                "required success lane {field} is not a model mutation-entry array"
+            ));
+        }
+        property["minItems"] = serde_json::json!(1);
+    }
+
+    let mut no_mutation_effect = base_effect;
+    let no_mutation_properties = no_mutation_effect
+        .get_mut("properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("scoped no-mutation effect has no properties"))?;
+    for property in no_mutation_properties.values_mut() {
+        if property.get("type").and_then(serde_json::Value::as_str) != Some("array") {
+            return Err(anyhow!(
+                "scoped no-mutation effect contains a non-array mutation lane"
+            ));
+        }
+        property["maxItems"] = serde_json::json!(0);
+    }
+
+    let defs = schema
+        .get_mut("$defs")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("assessment schema has no definitions"))?;
+    defs.insert(
+        "RequiredSuccessWorldEffectDelta".into(),
+        required_success_effect,
+    );
+    defs.insert("NoMutationWorldEffectDelta".into(), no_mutation_effect);
+
+    let proposal_properties = schema
+        .get("properties")
+        .and_then(serde_json::Value::as_object)
+        .cloned()
+        .ok_or_else(|| anyhow!("assessment schema has no proposal properties"))?;
+    let required = proposal_properties
+        .keys()
+        .cloned()
+        .map(serde_json::Value::String)
+        .collect::<Vec<_>>();
+    let mut admitted_properties = proposal_properties.clone();
+    admitted_properties.insert(
+        "admissible".into(),
+        serde_json::json!({"type":"boolean","enum":[true]}),
+    );
+    admitted_properties.insert(
+        "missing_permission".into(),
+        serde_json::json!({"type":"null"}),
+    );
+    for field in ["strong_effect", "success_effect"] {
+        admitted_properties.insert(
+            field.into(),
+            serde_json::json!({"$ref":"#/$defs/RequiredSuccessWorldEffectDelta"}),
+        );
+    }
+    let admitted = serde_json::json!({
+        "type":"object",
+        "properties":admitted_properties,
+        "required":required.clone(),
+        "additionalProperties":false
+    });
+
+    let mut denied_properties = proposal_properties;
+    denied_properties.insert(
+        "admissible".into(),
+        serde_json::json!({"type":"boolean","enum":[false]}),
+    );
+    denied_properties.insert(
+        "missing_permission".into(),
+        serde_json::json!({"type":"string","minLength":1}),
+    );
+    for field in [
+        "strong_effect",
+        "success_effect",
+        "mixed_effect",
+        "failure_effect",
+    ] {
+        denied_properties.insert(
+            field.into(),
+            serde_json::json!({"$ref":"#/$defs/NoMutationWorldEffectDelta"}),
+        );
+    }
+    let denied = serde_json::json!({
+        "type":"object",
+        "properties":denied_properties,
+        "required":required,
+        "additionalProperties":false
+    });
+
+    let defs = schema
+        .get("$defs")
+        .cloned()
+        .ok_or_else(|| anyhow!("assessment schema lost its definitions"))?;
+    *schema = serde_json::json!({
+        "type":"object",
+        "properties":{
+            "proposal":{"anyOf":[admitted,denied]}
+        },
+        "required":["proposal"],
+        "additionalProperties":false,
+        "$defs":defs
+    });
+    Ok(())
+}
+
+fn validate_required_success_lanes(
+    proposal: &AssessmentProposal,
+    scope: &AssessmentMutationScope,
+) -> Result<()> {
+    if !proposal.admissible {
+        return Ok(());
+    }
+    for lane in &scope.required_success_lanes {
+        if !effect_uses_lane(&proposal.strong_effect, *lane)
+            || !effect_uses_lane(&proposal.success_effect, *lane)
+        {
+            return Err(anyhow!(
+                "admissible assessment omitted required success mutation lane {}",
+                mutation_lane_field(*lane)
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn mutation_lane_field(lane: AssessmentMutationLane) -> &'static str {
+    match lane {
+        AssessmentMutationLane::ActorConditions => "actor_conditions",
+        AssessmentMutationLane::ActorKnowledgeAdditions => "actor_knowledge_additions",
+        AssessmentMutationLane::ActorRelationshipUpdates => "actor_relationship_updates",
+        AssessmentMutationLane::ActorMoves => "actor_moves",
+        AssessmentMutationLane::ClockAdvances => "clock_advances",
+        AssessmentMutationLane::ClockReductions => "clock_reductions",
+        AssessmentMutationLane::InstitutionPostures => "institution_postures",
+    }
+}
+
+fn effect_uses_lane(effect: &WorldEffectDelta, lane: AssessmentMutationLane) -> bool {
+    match lane {
+        AssessmentMutationLane::ActorConditions => effect
+            .actor_conditions
+            .values()
+            .any(|delta| !delta.add.is_empty() || !delta.remove.is_empty()),
+        AssessmentMutationLane::ActorKnowledgeAdditions => effect
+            .actor_knowledge_additions
+            .values()
+            .any(|additions| !additions.is_empty()),
+        AssessmentMutationLane::ActorRelationshipUpdates => effect
+            .actor_relationship_updates
+            .values()
+            .any(|updates| !updates.is_empty()),
+        AssessmentMutationLane::ActorMoves => !effect.actor_moves.is_empty(),
+        AssessmentMutationLane::ClockAdvances => !effect.clock_advances.is_empty(),
+        AssessmentMutationLane::ClockReductions => !effect.clock_reductions.is_empty(),
+        AssessmentMutationLane::InstitutionPostures => !effect.institution_postures.is_empty(),
+    }
 }
 
 fn constrain_knowledge_map(
@@ -1374,6 +2001,18 @@ fn validate_proposal(p: &AssessmentProposal, allowed: &BTreeSet<String>) -> Resu
             "inadmissible assessment omitted missing permission"
         ));
     }
+    if !p.admissible
+        && [
+            &p.strong_effect,
+            &p.success_effect,
+            &p.mixed_effect,
+            &p.failure_effect,
+        ]
+        .into_iter()
+        .any(|effect| effect != &WorldEffectDelta::default())
+    {
+        return Err(anyhow!("inadmissible assessment proposed a world mutation"));
+    }
     Ok(())
 }
 
@@ -1549,19 +2188,116 @@ mod tests {
             "mixed_effect",
             "failure_effect",
         ] {
-            value[field]
-                .as_object_mut()
-                .expect("fixture effect is an object")
-                .retain(|key, _| allowed_effect_fields.contains(key));
+            let canonical: WorldEffectDelta = serde_json::from_value(value[field].clone())?;
+            value[field] = encode_effect_entries(&canonical, &allowed_effect_fields);
         }
-        Ok(value)
+        Ok(serde_json::json!({"proposal":value}))
+    }
+
+    fn encode_effect_entries(
+        effect: &WorldEffectDelta,
+        allowed_fields: &BTreeSet<String>,
+    ) -> serde_json::Value {
+        let mut fields = serde_json::Map::new();
+        if allowed_fields.contains("actor_conditions") {
+            let mut entries = Vec::new();
+            for (actor_id, delta) in &effect.actor_conditions {
+                entries.extend(delta.add.iter().map(|condition| {
+                    serde_json::json!({
+                        "actor_id":actor_id,
+                        "operation":"add",
+                        "condition":condition
+                    })
+                }));
+                entries.extend(delta.remove.iter().map(|condition| {
+                    serde_json::json!({
+                        "actor_id":actor_id,
+                        "operation":"remove",
+                        "condition":condition
+                    })
+                }));
+            }
+            fields.insert("actor_conditions".into(), serde_json::Value::Array(entries));
+        }
+        if allowed_fields.contains("actor_knowledge_additions") {
+            let entries = effect
+                .actor_knowledge_additions
+                .iter()
+                .flat_map(|(actor_id, statements)| {
+                    statements.iter().map(move
+                        |statement| serde_json::json!({"actor_id":actor_id,"statement":statement}),
+                    )
+                })
+                .collect();
+            fields.insert(
+                "actor_knowledge_additions".into(),
+                serde_json::Value::Array(entries),
+            );
+        }
+        if allowed_fields.contains("actor_relationship_updates") {
+            let entries = effect
+                .actor_relationship_updates
+                .iter()
+                .flat_map(|(actor_id, targets)| {
+                    targets.iter().map(move |(target_id, relationship)| {
+                        serde_json::json!({
+                            "actor_id":actor_id,
+                            "target_id":target_id,
+                            "relationship":relationship
+                        })
+                    })
+                })
+                .collect();
+            fields.insert(
+                "actor_relationship_updates".into(),
+                serde_json::Value::Array(entries),
+            );
+        }
+        if allowed_fields.contains("actor_moves") {
+            let entries = effect
+                .actor_moves
+                .iter()
+                .map(|(actor_id, destination_id)| {
+                    serde_json::json!({"actor_id":actor_id,"destination_id":destination_id})
+                })
+                .collect();
+            fields.insert("actor_moves".into(), serde_json::Value::Array(entries));
+        }
+        for (field, clocks) in [
+            ("clock_advances", &effect.clock_advances),
+            ("clock_reductions", &effect.clock_reductions),
+        ] {
+            if allowed_fields.contains(field) {
+                let entries = clocks
+                    .iter()
+                    .map(|(clock_id, amount)| {
+                        serde_json::json!({"clock_id":clock_id,"amount":amount})
+                    })
+                    .collect();
+                fields.insert(field.into(), serde_json::Value::Array(entries));
+            }
+        }
+        if allowed_fields.contains("institution_postures") {
+            let entries = effect
+                .institution_postures
+                .iter()
+                .map(|(institution_id, posture)| {
+                    serde_json::json!({"institution_id":institution_id,"posture":posture})
+                })
+                .collect();
+            fields.insert(
+                "institution_postures".into(),
+                serde_json::Value::Array(entries),
+            );
+        }
+        serde_json::Value::Object(fields)
     }
 
     #[async_trait]
     impl ModelPort for DriftingAssessmentModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             if request.stage == "assessment_mutation_scope" {
-                return Ok(r#"{"lanes":[]}"#.into());
+                return Ok(r#"{"lanes":[],"required_success_lanes":[]}"#.into());
             }
             if request.stage == "assessment_effect_verifier" {
                 return Ok(
@@ -1575,7 +2311,8 @@ mod tests {
             );
             let call = self.calls.fetch_add(1, Ordering::SeqCst);
             let mut value = proposal_value_for_request(request, proposal("actor:player"))?;
-            value["modifiers"][0]["value"] = serde_json::json!(if call == 0 { 2 } else { 6 });
+            value["proposal"]["modifiers"][0]["value"] =
+                serde_json::json!(if call == 0 { 2 } else { 6 });
             Ok(serde_json::to_string(&value)?)
         }
 
@@ -1674,7 +2411,8 @@ mod tests {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
                 "assessment_mutation_scope" => Ok(serde_json::json!({
-                    "lanes":["actor_knowledge_additions","actor_relationship_updates"]
+                    "lanes":["actor_knowledge_additions","actor_relationship_updates"],
+                    "required_success_lanes":["actor_relationship_updates"]
                 })
                 .to_string()),
                 "action_assessment" => {
@@ -1690,22 +2428,30 @@ mod tests {
                         );
                     }
                     let mut value = proposal_value_for_request(request, proposal("actor:target"))?;
-                    value["normalized_intent"] =
+                    value["proposal"]["normalized_intent"] =
                         serde_json::json!("honor the target's consent boundary");
-                    value["effect_ceiling"] = serde_json::json!(
+                    value["proposal"]["effect_ceiling"] = serde_json::json!(
                         "The target may trust the player more while retaining control of their identity."
                     );
-                    value["success_stake"] = serde_json::json!("The target's trust deepens.");
-                    value["mixed_stake"] = serde_json::json!("The target remains cautious.");
-                    value["failure_stake"] = serde_json::json!("The promise sounds hollow.");
-                    value["success_effect"]["actor_relationship_updates"] = serde_json::json!({
-                        "target":{"player":"trusts the player to respect their consent boundary"}
-                    });
+                    value["proposal"]["success_stake"] =
+                        serde_json::json!("The target's trust deepens.");
+                    value["proposal"]["mixed_stake"] =
+                        serde_json::json!("The target remains cautious.");
+                    value["proposal"]["failure_stake"] =
+                        serde_json::json!("The promise sounds hollow.");
+                    for effect in ["strong_effect", "success_effect"] {
+                        value["proposal"][effect]["actor_relationship_updates"] = serde_json::json!([{
+                            "actor_id":"target",
+                            "target_id":"player",
+                            "relationship":"trusts the player to respect their consent boundary"
+                        }]);
+                    }
                     if !correction || !self.corrects {
                         for effect in ["strong_effect", "success_effect"] {
-                            value[effect]["actor_knowledge_additions"] = serde_json::json!({
-                                "target":["Rations are restricted."]
-                            });
+                            value["proposal"][effect]["actor_knowledge_additions"] = serde_json::json!([{
+                                "actor_id":"target",
+                                "statement":"Rations are restricted."
+                            }]);
                         }
                     }
                     Ok(serde_json::to_string(&value)?)
@@ -1978,6 +2724,7 @@ mod tests {
             acting,
         )
         .unwrap();
+        project_effect_schema_to_mutation_entries(&mut schema).unwrap();
         constrain_effect_schema_to_scope(
             &mut schema,
             &BTreeSet::from([AssessmentMutationLane::ActorRelationshipUpdates]),
@@ -2006,13 +2753,75 @@ mod tests {
         )
         .unwrap();
 
-        let items = schema.pointer("/properties/lanes/items").unwrap();
-        assert_eq!(items["type"], "string");
-        assert!(items.get("$ref").is_none());
+        for field in ["lanes", "required_success_lanes"] {
+            let items = schema
+                .pointer(&format!("/properties/{field}/items"))
+                .unwrap();
+            assert_eq!(items["type"], "string");
+            assert!(items.get("$ref").is_none());
+            assert_eq!(
+                items["enum"],
+                serde_json::json!(["actor_conditions", "actor_relationship_updates"])
+            );
+        }
+    }
+
+    #[test]
+    fn required_success_lane_is_structural_and_locally_rechecked() {
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = &campaign.actors["player"];
+        let required = BTreeSet::from([AssessmentMutationLane::ActorRelationshipUpdates]);
+        let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
+        constrain_assessment_schema(
+            &mut schema,
+            &BTreeSet::from(["actor:player".into()]),
+            &campaign,
+            acting,
+        )
+        .unwrap();
+        project_effect_schema_to_mutation_entries(&mut schema).unwrap();
+        constrain_effect_schema_to_scope(&mut schema, &required).unwrap();
+        require_success_scope(&mut schema, &required).unwrap();
+        assert!(schema.get("anyOf").is_none());
         assert_eq!(
-            items["enum"],
-            serde_json::json!(["actor_conditions", "actor_relationship_updates"])
+            schema["properties"]["proposal"]["anyOf"][0]["properties"]["success_effect"]["$ref"],
+            "#/$defs/RequiredSuccessWorldEffectDelta"
         );
+        assert_eq!(
+            schema["properties"]["proposal"]["anyOf"][0]["properties"]["admissible"]["enum"],
+            serde_json::json!([true])
+        );
+        assert_eq!(
+            schema["properties"]["proposal"]["anyOf"][1]["properties"]["admissible"]["enum"],
+            serde_json::json!([false])
+        );
+        assert_eq!(
+            schema["$defs"]["RequiredSuccessWorldEffectDelta"]["properties"]["actor_relationship_updates"]
+                ["minItems"],
+            1
+        );
+        assert_eq!(
+            schema["$defs"]["NoMutationWorldEffectDelta"]["properties"]["actor_relationship_updates"]
+                ["maxItems"],
+            0
+        );
+
+        let scope = AssessmentMutationScope {
+            lanes: required.clone(),
+            required_success_lanes: required,
+        };
+        let mut candidate = proposal("actor:player");
+        let error = validate_required_success_lanes(&candidate, &scope)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("actor_relationship_updates"));
+        for effect in [&mut candidate.strong_effect, &mut candidate.success_effect] {
+            effect.actor_relationship_updates.insert(
+                "player".into(),
+                BTreeMap::from([("player".into(), "trust deepens".into())]),
+            );
+        }
+        validate_required_success_lanes(&candidate, &scope).unwrap();
     }
 
     #[test]
@@ -2084,10 +2893,11 @@ mod tests {
 
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
         constrain_assessment_schema(&mut schema, &BTreeSet::new(), &campaign, &acting).unwrap();
+        project_effect_schema_to_mutation_entries(&mut schema).unwrap();
         let effect = schema
             .pointer("/$defs/WorldEffectDelta/properties")
             .unwrap();
-        let actor_targets = effect["actor_conditions"]["propertyNames"]["enum"]
+        let actor_targets = effect["actor_conditions"]["items"]["properties"]["actor_id"]["enum"]
             .as_array()
             .unwrap()
             .iter()
@@ -2095,7 +2905,7 @@ mod tests {
             .collect::<BTreeSet<_>>();
         assert_eq!(actor_targets, BTreeSet::from(["clinic-director", "player"]));
         let relationship_targets =
-            effect["actor_relationship_updates"]["additionalProperties"]["propertyNames"]["enum"]
+            effect["actor_relationship_updates"]["items"]["properties"]["target_id"]["enum"]
                 .as_array()
                 .unwrap()
                 .iter()
@@ -2105,33 +2915,37 @@ mod tests {
         assert!(relationship_targets.contains("player"));
         assert!(!relationship_targets.contains("remote-commander"));
         assert_eq!(
-            effect["actor_moves"]["propertyNames"]["enum"],
+            effect["actor_moves"]["items"]["properties"]["actor_id"]["enum"],
             serde_json::json!(["player"])
         );
         assert_eq!(
-            effect["actor_moves"]["additionalProperties"]["enum"],
+            effect["actor_moves"]["items"]["properties"]["destination_id"]["enum"],
             serde_json::json!(["adjacent"])
         );
         assert_eq!(
-            effect["clock_advances"]["additionalProperties"]["minimum"],
+            effect["clock_advances"]["items"]["properties"]["amount"]["minimum"],
             1
         );
         assert_eq!(
-            effect["clock_reductions"]["additionalProperties"]["minimum"],
+            effect["clock_reductions"]["items"]["properties"]["amount"]["minimum"],
             1
         );
         assert_eq!(
-            effect["institution_postures"]["additionalProperties"]["minLength"],
+            effect["institution_postures"]["items"]["properties"]["posture"]["minLength"],
             1
         );
         assert_eq!(
-            effect["actor_relationship_updates"]["additionalProperties"]["additionalProperties"]["minLength"],
+            effect["actor_relationship_updates"]["items"]["properties"]["relationship"]["minLength"],
             1
         );
         assert_eq!(
-            schema["$defs"]["ConditionDelta"]["properties"]["add"]["items"]["minLength"],
+            effect["actor_conditions"]["items"]["properties"]["condition"]["minLength"],
             1
         );
+        let effect_text = serde_json::to_string(effect).unwrap();
+        for erased_dynamic_map_keyword in ["propertyNames", "minProperties", "maxProperties"] {
+            assert!(!effect_text.contains(erased_dynamic_map_keyword));
+        }
     }
 
     #[test]
@@ -2158,6 +2972,7 @@ mod tests {
 
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
         constrain_assessment_schema(&mut schema, &BTreeSet::new(), &campaign, &acting).unwrap();
+        project_effect_schema_to_mutation_entries(&mut schema).unwrap();
         let effect = schema.pointer("/$defs/WorldEffectDelta").unwrap();
         let properties = effect["properties"].as_object().unwrap();
 
@@ -2228,23 +3043,28 @@ mod tests {
 
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
         constrain_assessment_schema(&mut schema, &BTreeSet::new(), &campaign, &acting).unwrap();
+        project_effect_schema_to_mutation_entries(&mut schema).unwrap();
         let knowledge = schema
             .pointer("/$defs/WorldEffectDelta/properties/actor_knowledge_additions")
             .unwrap();
         let validator = jsonschema::validator_for(knowledge).unwrap();
 
-        assert!(validator.is_valid(&serde_json::json!({
-            "player":["The emergency cache is behind the north clinic wall."]
-        })));
-        assert!(validator.is_valid(&serde_json::json!({
-            "clinic-director":["The clinic director already knows the convoy is delayed."]
-        })));
-        assert!(!validator.is_valid(&serde_json::json!({
-            "clinic-director":["The emergency cache is behind the north clinic wall."]
-        })));
-        assert!(!validator.is_valid(&serde_json::json!({
-            "player":["The clinic director already knows the convoy is delayed."]
-        })));
+        assert!(validator.is_valid(&serde_json::json!([{
+            "actor_id":"player",
+            "statement":"The emergency cache is behind the north clinic wall."
+        }])));
+        assert!(validator.is_valid(&serde_json::json!([{
+            "actor_id":"clinic-director",
+            "statement":"The clinic director already knows the convoy is delayed."
+        }])));
+        assert!(!validator.is_valid(&serde_json::json!([{
+            "actor_id":"clinic-director",
+            "statement":"The emergency cache is behind the north clinic wall."
+        }])));
+        assert!(!validator.is_valid(&serde_json::json!([{
+            "actor_id":"player",
+            "statement":"The clinic director already knows the convoy is delayed."
+        }])));
     }
 
     #[test]
@@ -2370,6 +3190,22 @@ mod tests {
         let mut value = proposal("equipment:key");
         value.dc = 17;
         assert!(validate_proposal(&value, &BTreeSet::from(["equipment:key".into()])).is_err());
+    }
+
+    #[test]
+    fn inadmissible_assessment_cannot_smuggle_a_world_mutation() {
+        let mut value = proposal("equipment:key");
+        value.admissible = false;
+        value.missing_permission = Some("No admitted route reaches that destination.".into());
+        value
+            .success_effect
+            .actor_moves
+            .insert("player".into(), "elsewhere".into());
+
+        let error = validate_proposal(&value, &BTreeSet::from(["equipment:key".into()]))
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("inadmissible assessment proposed a world mutation"));
     }
 
     #[test]

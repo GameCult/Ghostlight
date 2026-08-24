@@ -963,9 +963,19 @@ institution lanes. A compact private scope projection then receives only the
 exact attempt and those remaining lane names. Its locally validated output can
 only subtract: every causally unselected lane disappears from the assessor's
 schema, and unselected knowledge prevents scene facts from entering the prompt
-at all. Scope rows and receipts are derived inference evidence, never assessment
-or world authority, and their content-addressed cache avoids repeated scope
-inference for an unchanged attempt. Missing maps lower to no mutation.
+at all. The scope also distinguishes lanes required to realize strong and
+ordinary success from lanes merely available for direct consequences. Required
+success lanes receive a non-empty structural constraint and a post-lowering
+local check, so stakes cannot claim a canonical success that the typed effect
+omits. Canonical dynamic effect maps cross the strict model boundary as bounded
+entry arrays containing only authority-enumerated IDs and values; validated
+entries lower once into `WorldEffectDelta`, while empty arrays mean no mutation.
+The admission-bound model schema requires those success entries only for an
+admissible assessment and structurally forces every inadmissible effect array
+empty; local validation repeats both rules before verification or caching.
+Scope rows and receipts are derived inference evidence, never assessment or
+world authority, and their content-addressed cache avoids repeated scope
+inference for an unchanged attempt.
 After structural binding, a compact independent verifier compares the complete
 four-band typed effect bundle with the player's exact means and intended
 effect. Structurally legal state is not automatically causally relevant. The

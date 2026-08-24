@@ -118,6 +118,8 @@ fn main() -> Result<()> {
                 .any(|binding| receipt.snapshot_binding.contains(binding))
         })
         .collect::<Vec<_>>();
+    let assessment_mutation_scopes =
+        store.load_all::<serde_json::Value>("assessment_mutation_scope_cache.v1")?;
 
     let mut subjects = BTreeMap::new();
     for actor in campaign.actors.values() {
@@ -212,6 +214,7 @@ fn main() -> Result<()> {
             "recentWorldEvents": campaign.events.iter().rev().take(24).collect::<Vec<_>>(),
             "pendingWorldProposals": campaign.pending_world_proposals,
             "recentModelReceipts": recent_model_receipts,
+            "assessmentMutationScopes": assessment_mutation_scopes,
             "events": events,
             "news": news,
             "modelReceipts": model_receipts,
