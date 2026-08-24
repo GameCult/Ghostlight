@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-08-23
+Updated: 2026-08-24
 
 This is the compact re-entry packet. It records current authority, deployed
 truth, proof, and the next decision. Git history owns chronology; the system map
@@ -37,15 +37,14 @@ d20 resolution, persistent locations and institutions, multiresolution Gestalt
 agency, offscreen strategic activity, knowledge-filtered news, and actor-filtered
 Eve/CultMesh surfaces.
 
-The immediate gate is direct adversarial play through Ghostlight's native
-CultMesh boundary. The native client performs a one-time Heimdall OAuth grant,
-persists only an opaque Ghostlight app-session bearer, fetches the same
-actor-filtered `ghostlight.play` surface, and submits the same canonical Eve
-invocations as the browser. The remaining first-run gate is human Discord
-approval; after redemption, server-side refresh preserves the grant between
-client launches. The 36-case agency corpus remains only a candidate seed
-against a 300-reviewed-case target. Separate-account multiplayer privacy and
-unanimity proof also remains unproven.
+The immediate gate is continued adversarial play through Ghostlight's native
+CultMesh boundary. The client has completed Heimdall OAuth, persists only an
+opaque Ghostlight app-session bearer, fetches the same actor-filtered
+`ghostlight.play` surface, and submits the same canonical Eve invocations as the
+browser. Server-side refresh preserves that grant between client launches. The
+36-case agency corpus remains only a candidate seed against a 300-reviewed-case
+target. Separate-account multiplayer privacy and unanimity proof also remains
+unproven.
 
 ## Authority map
 
@@ -97,13 +96,13 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `447f4027c37f13c83afb4431421d8d66b9384bcd`
+  `b8d3fe69ee3ae433966623563bdcaaeab4b39861`
 - Executable SHA-256:
-  `084e01d22453d0c99c9fe2b375aeead455a970139b0cc8f0f1e1f38c87086d0f`
+  `08ed0f76fd1e1037b8fd206567efed00c443680ceff4312406d61bcf9223fb88`
 - Native client SHA-256:
-  `d3f49d2b5459ace468af0c75a02052e099ffc086f9a88b6937b0a49dc67199cd`
+  `7a04eca6540aa98d62f506ca6816bc2b001766d76bf8ff7062ddac49bc4b4030`
 - Artifact SHA-256:
-  `sha256-d8f944778c09d0696bc1bd76dc94e613c448053416f5300f0870a968496757cc`
+  `sha256-4c1984ab1c0b3e6516df78819e89d8b497895bb5510884d14165ee27bbbe030f`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -111,8 +110,9 @@ Do not start both writers.
 - Public route: `https://yggdrasil.gamecult.org/ghostlight/`
 - Vault retrieval: local VoidBot at `127.0.0.1:17875/mcp`
 - Stored state at the last witness: nine campaigns and two Session Zero drafts
-- Provider state: DeepSeek ready; fast stages use `deepseek-v4-flash` and
-  capable stages use `deepseek-v4-pro`
+- Model connector release:
+  `7d384a6277c74fb35b8e51297ffbccda59746ce9`; provider `epiphany-codex`,
+  physical fast/capable model `gpt-5.4`
 - Access witness: anonymous Eve gate 200; canonical `heimdall.auth.begin`
   accepted through Odin-discovered Heimdall; no actor or campaign state in the
   anonymous surface. A retained Heimdall grant completed fresh authentication,
@@ -288,6 +288,20 @@ Large operator documents now traverse bounded reliable windows and complete
 only after explicit acknowledgement; keep the transport and durable-snapshot
 regressions in the fleet gate.
 
+The live canary campaign `34929b8d-7b04-49af-9936-1c798fd79760` is at world
+revision 69. Release `fb9c42c` bound player speech to exact response actors:
+Member 1 retained the eastern-trails memory, Member 2 explicitly refused to
+borrow it, and the third present Persona remained an autonomous observer.
+Release `b8d3fe6` content-addressed the complete semantic assessment packet.
+The first trust assessment at revision 68 took 25.7 seconds; stale confirmation
+after a one-minute revision change returned in 1.04 seconds with byte-identical
+DC, modifiers, stakes, and effects, a fresh digest, zero tokens, and a
+`valid_cache_hit` receipt linked to the source receipt. The same assessment also
+exposed the next owning failure: a relationship attempt acquired an unrelated
+ration-law fact because foreground outcomes lack an independent semantic
+effect verifier. Do not patch that with keywords; reuse the model-based causal
+verification doctrine already protecting strategic cell effects.
+
 Acceptance witnesses live under `F:\GameCult\GhostlightDungeon\acceptance`.
 Operational release and rollback truth remains in `gamecult-ops`.
 
@@ -295,19 +309,23 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 1. Continue adversarial play through the authenticated native CultMesh client;
    its Heimdall grant and Ghostlight app session are persisted in CultCache.
-2. Repair the first compiler, world, action, identity, or agency failure at its owning
-   state/projection seam; do not add output bans around missing context.
-3. Then fork or compile a denser 20-plus-power
+2. Give foreground assessments an independent compact semantic effect verifier
+   so every typed mutation is causally entailed by the player's exact means and
+   intended effect. Preserve the content-addressed assessment cache and record
+   every verifier receipt; do not add keyword or lane-specific bans.
+3. Replay departure, daemon restart, return, strategic time, permitted news,
+   and institution-pressure acceptance paths in the current canary.
+4. Then fork or compile a denser 20-plus-power
    Aetheria skeleton and pressure budgets 1, 4, 8, and 32 with real provider
    output, including nested refugee dispersal and later rematerialization.
-4. Expand and review the agency corpus from its current 36 candidate cases
+5. Expand and review the agency corpus from its current 36 candidate cases
    toward 300 behaviorally distinct cases, and remove remaining legacy model
    effect schemas.
-5. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
+6. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
-6. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
+7. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
    unanimous-approval, unanimous-time/travel, stale-command, and restart smoke.
-7. Continue human pressure on multiresolution Gestalt agency: meaningful
+8. Continue human pressure on multiresolution Gestalt agency: meaningful
    background surprises, exact attributed rival activity inside arenas,
    information boundaries, nested fission/folding, migration, and return
    encounters.
