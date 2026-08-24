@@ -295,6 +295,14 @@ cannot write aggregate gestalt learning. A malformed, conflicting, stale, or
 partially invalid plan changes nothing. The compiler may seed likely members,
 but it is not required to predict every future person at campaign creation.
 
+First-relevance identity admission is bound to the exact immediately committed
+player-speech turn. Existing dormant members may be recast after any relevant
+committed foreground event, but an attempt result, narration, event summary, or
+plural outcome phrase cannot authorize a new canonical person. One admitted
+speech may introduce at most one member delta; the kernel rederives that
+permission from the canonical transcript rather than trusting the planner or
+its freeform reason.
+
 ### The ownership decision
 
 Ghostlight owns the reusable Persona projection machinery:

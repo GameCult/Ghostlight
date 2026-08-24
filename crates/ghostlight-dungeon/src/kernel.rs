@@ -1210,6 +1210,20 @@ fn execute(
             if reason.trim().is_empty() {
                 return Err(KernelError::Invalid("presence plan has no reason".into()));
             }
+            if !plan.individuations.is_empty()
+                && crate::gestalt::automatic_individuation_stimulus(&campaign).as_deref()
+                    != Some(reason.as_str())
+            {
+                return Err(KernelError::Invalid(
+                    "automatic individuation is admitted only by the exact immediately committed player speech"
+                        .into(),
+                ));
+            }
+            if plan.individuations.len() > 1 {
+                return Err(KernelError::Invalid(
+                    "one player speech can admit at most one first-relevance person".into(),
+                ));
+            }
             let player_location = &campaign.actors[&campaign.player_actor_id].location_id;
             if plan
                 .individuations
@@ -3345,6 +3359,97 @@ mod tests {
             resolution_cover: None,
             strategic_tick_count: 0,
         }
+    }
+
+    #[tokio::test]
+    async fn resolved_outcome_cannot_admit_an_unrequested_gestalt_member() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.transcript.push(NarrativeTurn {
+            revision: 0,
+            at: Utc::now(),
+            speaker: "world".into(),
+            text: "They agree to help design the relay.".into(),
+        });
+        seed.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut seed);
+        let campaign_id = seed.id;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let member = GestaltMemberDelta {
+            schema: "ghostlight.gestalt_member_delta.v1".into(),
+            id: "relay-volunteer".into(),
+            gestalt_id: "refugees".into(),
+            version: 0,
+            name: "Relay Volunteer".into(),
+            capability_additions: BTreeSet::new(),
+            capability_removals: BTreeSet::new(),
+            knowledge_additions: BTreeSet::new(),
+            knowledge_removals: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::new(),
+            goals: vec!["help with the relay".into()],
+            memories: vec!["agreed to help".into()],
+            last_location_id: Some("room".into()),
+            materialized_actor_id: None,
+            last_relevant_revision: 0,
+            relevance_lease_until_revision: 0,
+        };
+        let error = kernel
+            .command(WorldCommand::ReconcileGestaltPresence {
+                expected_revision: 0,
+                reason: "They agree to help design the relay.".into(),
+                plan: GestaltPresencePlan {
+                    individuations: vec![GestaltIndividuation {
+                        gestalt_id: "refugees".into(),
+                        expected_gestalt_version: 0,
+                        member,
+                        location_id: "room".into(),
+                    }],
+                    promotions: vec![],
+                    demotions: vec![],
+                },
+            })
+            .await
+            .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("immediately committed player speech")
+        );
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &campaign_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(persisted.revision, 0);
+        assert!(persisted.gestalt_members.is_empty());
+        assert_eq!(persisted.transcript.len(), 1);
     }
 
     #[test]

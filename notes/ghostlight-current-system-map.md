@@ -621,6 +621,14 @@ nearby dormant member. The planner owns reversible scene casting and may surface
 an earned callback without a player prompt; it cannot move a remote person or
 commit the cast. Failed live casts retain a private presence-preflight artifact.
 
+Automatic presence has two different authorities. Recasting an existing exact
+member is reversible and may follow any relevant foreground event. Admitting a
+first-relevance member is canonical entity creation and is available only when
+the planner reason exactly matches the immediately committed player-speech
+turn. The generated schema closes the individuation lane for resolved attempts,
+and `WorldKernel` independently rejects any such plan. Outcome prose and
+narration are not entity-admission inputs.
+
 Institution `already_committed_posture` is projected as durable state, distinct
 from unresolved pressure and fresh choice. Maintaining it is inaction. A model
 may propose only a materially different posture; repeated posture remains a

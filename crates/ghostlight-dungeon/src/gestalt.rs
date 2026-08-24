@@ -83,6 +83,10 @@ impl GestaltPresencePlanner {
             .values()
             .filter_map(|member| member.materialized_actor_id.clone())
             .collect::<BTreeSet<_>>();
+        let admitted_individuation_stimulus = automatic_individuation_stimulus(campaign);
+        let individuation_admitted = admitted_individuation_stimulus
+            .as_deref()
+            .is_some_and(|stimulus| stimulus == event_summary);
         let candidates = serde_json::json!({
             "player_location_id": player_location,
             "nearby_active_leaf_gestalts": nearby_gestalts,
@@ -96,9 +100,15 @@ impl GestaltPresencePlanner {
             &nearby_dormant_member_ids,
             &materialized_actor_ids,
             player_location,
+            individuation_admitted,
         )?;
+        let individuation_instruction = if individuation_admitted {
+            "The immediately committed event is direct player speech. If that speech makes one anonymous population member individually relevant and no supplied member fits, you may individuate exactly one durable member delta from the gestalt baseline. Use a new stable lowercase id, version 0, the exact gestalt id/version, no materialized actor id, and record only personal departures from the shared baseline."
+        } else {
+            "The immediately committed event does not admit a new canonical person. The individuations array must be empty. Cast only supplied existing members."
+        };
         let base_prompt = format!(
-            "Cast reversible Persona population presence for the next scene after this event. The purpose is to make causal continuity visible without crowding the scene or inventing coincidence. Promote an existing member when their exact durable history makes them individually relevant. When a nearby dormant member has a reciprocal player relationship and an unresolved callback signal such as an obligation, memory, or goal, promote the single strongest earned callback unless the event makes their presence implausible or dramatically harmful. An ordinary shared-location event is enough opportunity for an earned callback; do not require the player to ask for that person. Prefer an existing person over anonymous individuation whenever their exact delta supports the scene. Return no promotion when there is no earned callback or the current event conflicts with it. If the event makes an anonymous population member individually relevant and no supplied member fits, individuate exactly one durable member delta from the gestalt baseline; use a new stable lowercase id, version 0, the exact gestalt id/version, no materialized actor id, and record only personal departures from the shared baseline. Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
+            "Cast reversible Persona population presence for the next scene after this event. The purpose is to make causal continuity visible without crowding the scene or inventing coincidence. Promote an existing member when their exact durable history makes them individually relevant. When a nearby dormant member has a reciprocal player relationship and an unresolved callback signal such as an obligation, memory, or goal, promote the single strongest earned callback unless the event makes their presence implausible or dramatically harmful. An ordinary shared-location event is enough opportunity for an earned callback; do not require the player to ask for that person. Prefer an existing person over anonymous individuation whenever their exact delta supports the scene. Return no promotion when there is no earned callback or the current event conflicts with it. {individuation_instruction} Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
             serde_json::to_string_pretty(&schema)?,
             candidates,
             event_summary
@@ -127,7 +137,7 @@ impl GestaltPresencePlanner {
                 .ok_or_else(|| anyhow!("presence planner produced no plan"))
                 .and_then(|value| serde_json::from_value(value).map_err(Into::into))
                 .and_then(|plan| {
-                    validate_plan(campaign, &plan, player_location)?;
+                    validate_plan(campaign, &plan, player_location, event_summary)?;
                     Ok(plan)
                 });
             match candidate {
@@ -165,6 +175,7 @@ fn constrain_presence_schema(
     dormant_member_ids: &BTreeSet<String>,
     materialized_actor_ids: &BTreeSet<String>,
     player_location: &str,
+    individuation_admitted: bool,
 ) -> Result<()> {
     constrain_candidate_array(
         schema,
@@ -187,6 +198,13 @@ fn constrain_presence_schema(
         "gestalt_id",
         nearby_gestalt_ids,
     )?;
+    schema["properties"]["individuations"]["maxItems"] = serde_json::json!(
+        if individuation_admitted && !nearby_gestalt_ids.is_empty() {
+            1
+        } else {
+            0
+        }
+    );
     for definition in ["GestaltPromotion", "GestaltIndividuation"] {
         if !nearby_gestalt_ids.is_empty() {
             schema["$defs"][definition]["properties"]["gestalt_id"] =
@@ -227,7 +245,16 @@ fn validate_plan(
     campaign: &Campaign,
     plan: &GestaltPresencePlan,
     player_location: &str,
+    event_summary: &str,
 ) -> Result<()> {
+    let individuation_admitted = automatic_individuation_stimulus(campaign)
+        .as_deref()
+        .is_some_and(|stimulus| stimulus == event_summary);
+    if plan.individuations.len() > usize::from(individuation_admitted) {
+        return Err(anyhow!(
+            "automatic individuation requires the exact immediately committed player speech and admits at most one person"
+        ));
+    }
     let mut members = BTreeSet::new();
     for individuation in &plan.individuations {
         let member = &individuation.member;
@@ -309,11 +336,17 @@ fn validate_plan(
     Ok(())
 }
 
+pub(crate) fn automatic_individuation_stimulus(campaign: &Campaign) -> Option<String> {
+    let turn = campaign.transcript.last()?;
+    (turn.revision == campaign.revision && turn.speaker == campaign.player_actor_id)
+        .then(|| format!("{} says: {}", turn.speaker, turn.text.trim()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
-        domain::{GestaltMemberDelta, GestaltPersonaState, Location},
+        domain::{GestaltMemberDelta, GestaltPersonaState, Location, NarrativeTurn},
         model::ModelStageRequest,
     };
     use async_trait::async_trait;
@@ -398,6 +431,7 @@ mod tests {
             &BTreeSet::from(["mira".into()]),
             &BTreeSet::from(["member:already-here".into()]),
             "center",
+            true,
         )
         .unwrap();
 
@@ -428,6 +462,7 @@ mod tests {
             &BTreeSet::new(),
             &BTreeSet::new(),
             "center",
+            false,
         )
         .unwrap();
 
@@ -435,6 +470,35 @@ mod tests {
             assert_eq!(schema["properties"][field]["maxItems"], 0);
         }
         jsonschema::validator_for(&schema).unwrap();
+    }
+
+    #[test]
+    fn only_exact_immediately_committed_player_speech_admits_individuation() {
+        let mut campaign = crate::resolution::tests::campaign(0, 8);
+        campaign.revision = 7;
+        campaign.transcript.push(NarrativeTurn {
+            revision: 7,
+            at: chrono::Utc::now(),
+            speaker: campaign.player_actor_id.clone(),
+            text: "I ask the unnamed porter for their name.".into(),
+        });
+        let exact = format!(
+            "{} says: I ask the unnamed porter for their name.",
+            campaign.player_actor_id
+        );
+        assert_eq!(
+            automatic_individuation_stimulus(&campaign).as_deref(),
+            Some(exact.as_str())
+        );
+
+        campaign.transcript.push(NarrativeTurn {
+            revision: 8,
+            at: chrono::Utc::now(),
+            speaker: "world".into(),
+            text: "They agree to help.".into(),
+        });
+        campaign.revision = 8;
+        assert!(automatic_individuation_stimulus(&campaign).is_none());
     }
 
     #[tokio::test]

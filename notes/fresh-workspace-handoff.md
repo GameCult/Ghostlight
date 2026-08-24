@@ -204,6 +204,13 @@ messages.
   agency-profile/cover projection outside the reducer. The nested regression
   moves one granary through two successive fissions without duplication while
   preserving John's exact identity and delta.
+- Automatic gestalt presence may recast exact dormant members after a relevant
+  foreground event. It may admit one new first-relevance member only when the
+  reason exactly matches the immediately committed player-speech turn.
+  Resolved-attempt stakes, narration, and event summaries cannot mint people;
+  both the model schema and `WorldKernel` close that lane. This cut followed a
+  live relay attempt that correctly targeted two refugees but whose plural
+  outcome prose caused a third `Relay Volunteer` to be created.
 - Live refresh pressure reproduced and removed two contract faults: reuse of a
   private-command idempotency key across separately sealed attempts, and
   validation of a refresh receipt as if it carried the initial-login account
