@@ -9,7 +9,7 @@ use crate::{
         ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage,
         run_validated_stage_with_timeout,
     },
-    session_zero::{ApprovedCampaignBrief, actor_from_character},
+    session_zero::{ApprovedCampaignBrief, MAX_SESSION_ZERO_MEMBERS, actor_from_character},
     vault::{VaultProvider, VaultQuery},
 };
 use anyhow::{Result, anyhow};
@@ -22,6 +22,8 @@ use std::{
     sync::Arc,
 };
 use uuid::Uuid;
+
+const MAX_PARTY_IDENTITY_CHARS: usize = MAX_SESSION_ZERO_MEMBERS * 1_000;
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct OpeningRequest {
@@ -463,7 +465,7 @@ impl WorldCompiler {
         private_operational_context: Option<&serde_json::Value>,
     ) -> Result<(WorldCompilePreview, Vec<ModelStageReceipt>)> {
         validate_user_text("campaign name", &start.campaign_name, 80)?;
-        validate_user_text("player identity", &start.who, 500)?;
+        validate_user_text("player identity", &start.who, MAX_PARTY_IDENTITY_CHARS)?;
         validate_user_text("starting location", &start.where_, 500)?;
         validate_user_text("starting time", &start.when, 500)?;
         validate_user_text("player goal", &start.goal, 1_000)?;
@@ -3377,6 +3379,26 @@ fn validate_opening_playability(campaign: &Campaign) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn party_identity_bound_covers_long_approved_names_without_truncation() {
+        let name = "N".repeat(144);
+        let premise = "P".repeat(308);
+        let identity = format!(
+            "A cooperative party whose public starting identities are: {name} — {premise}. Private histories, secrets, and individual knowledge are deliberately withheld from world generation."
+        );
+        assert_eq!(identity.chars().count(), 616);
+        assert!(validate_user_text("player identity", &identity, 500).is_err());
+        validate_user_text("player identity", &identity, MAX_PARTY_IDENTITY_CHARS).unwrap();
+        assert!(
+            validate_user_text(
+                "player identity",
+                &"x".repeat(MAX_PARTY_IDENTITY_CHARS + 1),
+                MAX_PARTY_IDENTITY_CHARS,
+            )
+            .is_err()
+        );
+    }
 
     #[test]
     fn agency_compiler_cannot_disguise_private_knowledge_as_a_channel() {
