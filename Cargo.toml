@@ -22,6 +22,7 @@ async-stream = "0.3"
 axum = { version = "0.8", features = ["macros"] }
 chrono = { version = "0.4", features = ["serde"] }
 base64 = "0.22"
+codex-connector = { git = "https://github.com/GameCult/CodexConnector.git", rev = "548ee73b01c0c99d4e613677cf6d5ce63c63a240" }
 cultcache-legacy = { package = "cultcache-rs", git = "https://github.com/GameCult/cultcache-rs.git", rev = "0ba87453115e3d44e8fcb7419866cd7dd70fb096" }
 cultcache-rs = { path = "vendor/cultcache-rs" }
 cultnet-rs = { path = "vendor/cultnet-rs" }

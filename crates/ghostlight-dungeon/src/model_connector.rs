@@ -1,16 +1,15 @@
-use std::net::{SocketAddr, TcpStream};
+use std::collections::BTreeSet;
+use std::net::SocketAddr;
 use std::path::Path;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result, bail};
 use async_trait::async_trait;
-use cultnet_rs::{
-    CultNetClientSecurityOptions, CultNetMessage, CultNetRawDocumentRecord,
-    CultNetRawPayloadEncoding, CultNetSecret, CultNetWireContract, TcpFramedTransportConnection,
-    TcpFramedTransportProfileOptions, create_tcp_framed_transport_profile,
-    decode_cultnet_message_from_slice, encode_cultnet_message_to_vec,
+use codex_connector::{
+    CodexConnectorClient, CodexInputItem, CodexProviderRequest, CodexToolChoice,
+    CodexTransportDisposition, CodexTransportEventPayload, CodexTransportInvocation,
+    CodexTransportOutcome,
 };
-use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
 
@@ -18,147 +17,18 @@ use crate::model::{
     MODEL_CAPABLE, ModelPort, ModelProviderOutput, ModelStageRequest, ModelTokenUsage,
 };
 
-const CONNECTOR_ENVELOPE_SCHEMA: &str = "epiphany.model_connector_envelope.v1";
-const CONNECTOR_INVOCATION_SCHEMA: &str = "epiphany.model_connector_invocation.v1";
-const CONNECTOR_RESULT_SCHEMA: &str = "epiphany.model_connector_result.v1";
-const MODEL_REQUEST_SCHEMA: &str = "epiphany.model_request.v0";
-const MODEL_EVENT_SCHEMA: &str = "epiphany.model_stream_event.v0";
-const MODEL_RECEIPT_SCHEMA: &str = "epiphany.model_receipt.v0";
-const REQUEST_KIND: &str = "model_request";
-const RESULT_KIND: &str = "model_result";
-const MAX_PAYLOAD_BYTES: u32 = 1_048_576;
+const MAX_FRAME_BYTES: usize = 1_052_672;
 const REQUEST_EXPIRY: Duration = Duration::from_secs(150);
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-struct ConnectorEnvelope {
-    schema_id: String,
-    request_id: String,
-    message_kind: String,
-    nonce: Vec<u8>,
-    ciphertext: Vec<u8>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct ConnectorInvocation {
-    schema_id: String,
-    request_id: String,
-    caller_runtime_id: String,
-    expires_at_unix_ms: u64,
-    request: ConnectorModelRequest,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct ConnectorResult {
-    schema_id: String,
-    request_id: String,
-    accepted: bool,
-    #[serde(default)]
-    events: Vec<ConnectorModelEvent>,
-    #[serde(default)]
-    error: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct ConnectorModelRequest {
-    schema_id: String,
-    request_id: String,
-    conversation_id: String,
-    provider: String,
-    model: String,
-    instructions: String,
-    input: Vec<ConnectorModelInput>,
-    reasoning_effort: Option<String>,
-    reasoning_summary: Option<String>,
-    service_tier: Option<String>,
-    output_contract_id: Option<String>,
-    previous_response_id: Option<String>,
-    tools: Vec<ConnectorModelTool>,
-    output_schema_json: Option<String>,
-    source_worker_job_id: Option<String>,
-    reasoning_basis_id: Option<String>,
-    max_output_tokens: Option<u32>,
-    prompt_cache_key: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-enum ConnectorModelInput {
-    UserText {
-        text: String,
-    },
-    AssistantText {
-        text: String,
-    },
-    ToolCall {
-        call_id: String,
-        name: String,
-        arguments: String,
-    },
-    ToolResult {
-        call_id: String,
-        output: String,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-struct ConnectorModelTool {
-    name: String,
-    description: String,
-    parameters_json: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct ConnectorModelEvent {
-    schema_id: String,
-    request_id: String,
-    provider: String,
-    sequence: u64,
-    payload: ConnectorModelPayload,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-enum ConnectorModelPayload {
-    TextDelta {
-        text: String,
-    },
-    ReasoningDelta {
-        text: String,
-    },
-    ToolCall {
-        call_id: String,
-        name: String,
-        arguments: String,
-    },
-    Completed {
-        receipt: ConnectorModelReceipt,
-    },
-    Failed {
-        message: String,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-struct ConnectorModelReceipt {
-    schema_id: String,
-    request_id: String,
-    provider: String,
-    model: String,
-    provider_response_id: Option<String>,
-    input_tokens: Option<u64>,
-    output_tokens: Option<u64>,
-    reasoning_output_tokens: Option<u64>,
-    transport: Option<String>,
-    cached_input_tokens: Option<u64>,
-}
-
-pub struct CultMeshModelPort {
-    endpoint: SocketAddr,
-    security: CultNetClientSecurityOptions,
+#[derive(Clone)]
+pub struct CodexConnectorModelPort {
+    client: CodexConnectorClient,
     caller_runtime_id: String,
     fast_model: String,
     capable_model: String,
 }
 
-impl CultMeshModelPort {
+impl CodexConnectorModelPort {
     pub fn new(
         endpoint: SocketAddr,
         connection_key: String,
@@ -167,15 +37,12 @@ impl CultMeshModelPort {
         capable_model: impl Into<String>,
     ) -> Result<Self> {
         let caller_runtime_id = caller_runtime_id.into();
-        if caller_runtime_id.trim().is_empty() {
-            bail!("model connector caller runtime must be non-empty")
+        if caller_runtime_id.trim().is_empty() || caller_runtime_id.trim() != caller_runtime_id {
+            bail!("CodexConnector caller runtime must be a non-empty exact identity")
         }
-        if !endpoint.ip().is_loopback() {
-            bail!("model connector endpoint must be loopback-only")
-        }
+        let client = CodexConnectorClient::new(endpoint, connection_key, MAX_FRAME_BYTES, None)?;
         Ok(Self {
-            endpoint,
-            security: CultNetClientSecurityOptions::new(connection_key)?,
+            client,
             caller_runtime_id,
             fast_model: fast_model.into(),
             capable_model: capable_model.into(),
@@ -190,15 +57,14 @@ impl CultMeshModelPort {
         capable_model: impl Into<String>,
     ) -> Result<Self> {
         let bytes = Zeroizing::new(std::fs::read(path.as_ref())?);
-        let connection_key = std::str::from_utf8(bytes.as_slice())?.trim().to_owned();
-        if connection_key.is_empty()
-            || std::str::from_utf8(bytes.as_slice())?.trim_matches(['\r', '\n']) != connection_key
-        {
-            bail!("model connector key file is empty or contains surrounding whitespace")
+        let raw = std::str::from_utf8(bytes.as_slice())?;
+        let connection_key = raw.trim_end_matches(['\r', '\n']);
+        if connection_key.is_empty() || connection_key.len() != raw.trim().len() {
+            bail!("CodexConnector key file is empty or contains surrounding whitespace")
         }
         Self::new(
             endpoint,
-            connection_key,
+            connection_key.to_owned(),
             caller_runtime_id,
             fast_model,
             capable_model,
@@ -212,148 +78,60 @@ impl CultMeshModelPort {
             MODEL_CAPABLE => self.capable_model.clone(),
             explicit => explicit.to_string(),
         };
-        let model_request = ConnectorModelRequest {
-            schema_id: MODEL_REQUEST_SCHEMA.to_string(),
-            request_id: request_id.clone(),
-            conversation_id: request_id.clone(),
-            provider: "openai-codex".to_string(),
-            model: resolved_model,
-            instructions: "Execute the supplied Ghostlight model stage. Treat it as projected context, obey its output contract, and return only the requested public answer.".to_string(),
-            input: vec![ConnectorModelInput::UserText {
-                text: request.lived_stream.clone(),
-            }],
-            reasoning_effort: Some(
-                if request.model == MODEL_CAPABLE {
-                    "medium"
-                } else {
-                    "low"
-                }
-                .to_string(),
-            ),
-            reasoning_summary: None,
-            service_tier: None,
-            output_contract_id: request.output_schema.as_ref().map(|_| request.stage.clone()),
-            previous_response_id: None,
-            tools: Vec::new(),
-            output_schema_json: request
-                .output_schema
-                .as_ref()
-                .map(serde_json::to_string)
-                .transpose()?,
-            source_worker_job_id: None,
-            reasoning_basis_id: Some(request.snapshot_binding.clone()),
-            max_output_tokens: request.max_output_tokens,
-            prompt_cache_key: Some(prompt_cache_key(request)?),
-        };
-        let invocation = ConnectorInvocation {
-            schema_id: CONNECTOR_INVOCATION_SCHEMA.to_string(),
-            request_id: request_id.clone(),
-            caller_runtime_id: self.caller_runtime_id.clone(),
-            expires_at_unix_ms: unix_ms()?.saturating_add(REQUEST_EXPIRY.as_millis() as u64),
-            request: model_request,
-        };
-        let envelope = encrypt_invocation(&invocation, &self.security)?;
-        let document = CultNetRawDocumentRecord {
-            schema_id: CONNECTOR_ENVELOPE_SCHEMA.to_string(),
-            record_key: request_id.clone(),
-            stored_at: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-            payload_encoding: CultNetRawPayloadEncoding::Messagepack,
-            payload: rmp_serde::to_vec_named(&envelope)?,
-            source_runtime_id: Some(self.caller_runtime_id.clone()),
-            source_agent_id: None,
-            source_role: Some("model-consumer".to_string()),
-            tags: Some(vec!["model.generate.structured".to_string()]),
-        };
-        let message = CultNetMessage::DocumentPutRaw {
-            message_id: request_id.clone(),
-            document,
-        };
-        let payload =
-            encode_cultnet_message_to_vec(&message, CultNetWireContract::CultNetSchemaV0)?;
-        if payload.len() > MAX_PAYLOAD_BYTES as usize {
-            bail!("model connector invocation exceeds the transport payload bound")
-        }
-
-        let stream = TcpStream::connect_timeout(&self.endpoint, Duration::from_secs(5))?;
-        stream.set_nodelay(true)?;
-        stream.set_read_timeout(Some(REQUEST_EXPIRY))?;
-        stream.set_write_timeout(Some(Duration::from_secs(10)))?;
-        let profile = create_tcp_framed_transport_profile(
-            &self.caller_runtime_id,
-            TcpFramedTransportProfileOptions {
-                host: Some(self.endpoint.ip().to_string()),
-                port: Some(self.endpoint.port()),
-                max_payload_bytes: Some(MAX_PAYLOAD_BYTES),
-                ..TcpFramedTransportProfileOptions::default()
-            },
+        let mut provider_request = CodexProviderRequest::new(
+            request_id.clone(),
+            request_id,
+            resolved_model,
+            "Execute the supplied Ghostlight model stage. Treat it as projected context, obey its output contract, and return only the requested public answer.",
         );
-        let mut connection = TcpFramedTransportConnection::new(stream, profile);
-        connection.send("schema", &payload)?;
-        let frame = connection.receive()?;
-        let response = decode_cultnet_message_from_slice(
-            &frame.payload,
-            CultNetWireContract::CultNetSchemaV0,
+        provider_request.input = vec![CodexInputItem::UserText {
+            text: request.lived_stream.clone(),
+        }];
+        provider_request.reasoning_effort = Some(
+            if request.model == MODEL_CAPABLE {
+                "medium"
+            } else {
+                "low"
+            }
+            .to_string(),
+        );
+        provider_request.tools = Vec::new();
+        provider_request.tool_choice = CodexToolChoice::Auto;
+        provider_request.parallel_tool_calls = false;
+        if let Some(schema) = request.output_schema.as_ref() {
+            let mut schema = schema.clone();
+            project_strict_responses_schema(&mut schema)?;
+            provider_request.output_format_name = Some(output_format_name(&request.stage));
+            provider_request.output_schema_json = Some(serde_json::to_string(&schema)?);
+        }
+        provider_request.max_output_tokens = request.max_output_tokens;
+        provider_request.prompt_cache_key = Some(prompt_cache_key(request)?);
+
+        let native_request_sha256 = Sha256::digest(rmp_serde::to_vec(request)?).into();
+        let invocation = CodexTransportInvocation::new(
+            self.caller_runtime_id.clone(),
+            unix_ms()?.saturating_add(REQUEST_EXPIRY.as_millis() as u64),
+            native_request_sha256,
+            provider_request,
         )?;
-        let response_document = match response {
-            CultNetMessage::SnapshotResponseRaw {
-                message_id,
-                mut documents,
-            } if message_id == request_id && documents.len() == 1 => documents.remove(0),
-            CultNetMessage::Error { error } => bail!("model connector refused request: {error}"),
-            _ => bail!("model connector returned an unexpected CultNet response"),
-        };
-        if response_document.schema_id != CONNECTOR_ENVELOPE_SCHEMA
-            || response_document.record_key != request_id
-            || response_document.payload_encoding != CultNetRawPayloadEncoding::Messagepack
-        {
-            bail!("model connector response substituted its document identity")
-        }
-        let response_envelope: ConnectorEnvelope =
-            rmp_serde::from_slice(&response_document.payload)?;
-        let result = decrypt_result(&response_envelope, &self.security)?;
-        if result.request_id != request_id {
-            bail!("model connector result substituted its request identity")
-        }
-        if !result.accepted {
-            bail!(
-                "model connector rejected request: {}",
-                result
-                    .error
-                    .unwrap_or_else(|| "unspecified refusal".to_string())
-            )
-        }
-        observed_output(&request_id, result.events)
+        observed_output(self.client.execute(&invocation)?)
     }
 }
 
 #[async_trait]
-impl ModelPort for CultMeshModelPort {
+impl ModelPort for CodexConnectorModelPort {
     async fn run(&self, request: &ModelStageRequest) -> Result<String> {
         Ok(self.run_observed(request).await?.content)
     }
 
     async fn run_observed(&self, request: &ModelStageRequest) -> Result<ModelProviderOutput> {
-        let endpoint = self.endpoint;
-        let security = self.security.clone();
-        let caller_runtime_id = self.caller_runtime_id.clone();
-        let fast_model = self.fast_model.clone();
-        let capable_model = self.capable_model.clone();
+        let port = self.clone();
         let request = request.clone();
-        tokio::task::spawn_blocking(move || {
-            Self {
-                endpoint,
-                security,
-                caller_runtime_id,
-                fast_model,
-                capable_model,
-            }
-            .invoke(&request)
-        })
-        .await?
+        tokio::task::spawn_blocking(move || port.invoke(&request)).await?
     }
 
     fn provider(&self) -> &'static str {
-        "epiphany-codex"
+        "codex-connector"
     }
 
     fn attempt_timeout(&self, _request: &ModelStageRequest) -> Duration {
@@ -361,79 +139,46 @@ impl ModelPort for CultMeshModelPort {
     }
 }
 
-fn encrypt_invocation(
-    invocation: &ConnectorInvocation,
-    security: &CultNetClientSecurityOptions,
-) -> Result<ConnectorEnvelope> {
-    let nonce = CultNetSecret::new_nonce();
-    // Connector invocation documents use CultCache's indexed MessagePack
-    // representation. A named map is not the published wire contract.
-    let plaintext = rmp_serde::to_vec(invocation)?;
-    Ok(ConnectorEnvelope {
-        schema_id: CONNECTOR_ENVELOPE_SCHEMA.to_string(),
-        request_id: invocation.request_id.clone(),
-        message_kind: REQUEST_KIND.to_string(),
-        ciphertext: CultNetSecret::encrypt_bytes(&plaintext, &nonce, security)?,
-        nonce: nonce.to_vec(),
-    })
-}
-
-fn decrypt_result(
-    envelope: &ConnectorEnvelope,
-    security: &CultNetClientSecurityOptions,
-) -> Result<ConnectorResult> {
-    if envelope.schema_id != CONNECTOR_ENVELOPE_SCHEMA || envelope.message_kind != RESULT_KIND {
-        bail!("model connector returned an unexpected encrypted envelope")
-    }
-    let plaintext = CultNetSecret::decrypt_bytes(&envelope.ciphertext, &envelope.nonce, security)?;
-    let result: ConnectorResult = rmp_serde::from_slice(&plaintext)?;
-    if result.schema_id != CONNECTOR_RESULT_SCHEMA || result.request_id != envelope.request_id {
-        bail!("model connector encrypted result substituted request identity")
-    }
-    Ok(result)
-}
-
-fn observed_output(
-    request_id: &str,
-    events: Vec<ConnectorModelEvent>,
-) -> Result<ModelProviderOutput> {
+fn observed_output(result: codex_connector::CodexTransportResult) -> Result<ModelProviderOutput> {
+    let (events, receipt) = match result.disposition {
+        CodexTransportDisposition::Refused(reason) => {
+            bail!("CodexConnector refused request: {reason:?}")
+        }
+        CodexTransportDisposition::Transported { events, receipt } => (events, receipt),
+    };
     let mut content = String::new();
-    let mut receipt = None;
-    for (index, event) in events.into_iter().enumerate() {
-        if event.schema_id != MODEL_EVENT_SCHEMA
-            || event.request_id != request_id
-            || event.provider != "openai-codex"
-            || event.sequence != index as u64
-            || receipt.is_some()
-        {
-            bail!("model connector returned an invalid event sequence")
-        }
+    for event in events {
         match event.payload {
-            ConnectorModelPayload::TextDelta { text } => content.push_str(&text),
-            ConnectorModelPayload::Completed { receipt: completed } => receipt = Some(completed),
-            ConnectorModelPayload::Failed { message } => {
-                bail!("model connector provider failed: {message}")
-            }
-            ConnectorModelPayload::ReasoningDelta { .. }
-            | ConnectorModelPayload::ToolCall { .. } => {
-                bail!("model connector exposed a private or unsupported event")
+            CodexTransportEventPayload::TextDelta { text } => content.push_str(&text),
+            CodexTransportEventPayload::ToolCall { .. } => {
+                bail!("CodexConnector exposed an inadmissible tool call")
             }
         }
     }
-    let receipt = receipt.context("model connector response had no completion receipt")?;
-    if receipt.schema_id != MODEL_RECEIPT_SCHEMA
-        || receipt.request_id != request_id
-        || receipt.provider != "openai-codex"
-    {
-        bail!("model connector completion receipt substituted identity")
-    }
-    let prompt_tokens = receipt.input_tokens.unwrap_or_default();
-    let completion_tokens = receipt.output_tokens.unwrap_or_default();
-    let cache_hits = receipt.cached_input_tokens.unwrap_or_default();
+    let (provider_response_id, prompt_tokens, completion_tokens, reasoning_tokens, cache_hits) =
+        match receipt.outcome {
+            CodexTransportOutcome::Completed {
+                provider_response_id,
+                input_tokens,
+                output_tokens,
+                reasoning_output_tokens,
+                cached_input_tokens,
+            } => (
+                provider_response_id,
+                input_tokens.unwrap_or_default(),
+                output_tokens.unwrap_or_default(),
+                reasoning_output_tokens.unwrap_or_default(),
+                cached_input_tokens.unwrap_or_default(),
+            ),
+            CodexTransportOutcome::Failed {
+                failure_kind,
+                message,
+            } => bail!("Codex provider failed ({failure_kind}): {message}"),
+        };
     Ok(ModelProviderOutput {
         content,
         resolved_model: Some(receipt.model),
-        provider_request_id: receipt.provider_response_id,
+        provider_request_id: provider_response_id,
         system_fingerprint: None,
         finish_reason: Some("completed".to_string()),
         token_usage: Some(ModelTokenUsage {
@@ -442,16 +187,33 @@ fn observed_output(
             total_tokens: prompt_tokens.saturating_add(completion_tokens),
             prompt_cache_hit_tokens: cache_hits,
             prompt_cache_miss_tokens: prompt_tokens.saturating_sub(cache_hits),
-            reasoning_tokens: receipt.reasoning_output_tokens.unwrap_or_default(),
+            reasoning_tokens,
         }),
         transport_features: vec![
-            "cultnet.tcp-framed".to_string(),
-            "cultmesh.provider:epiphany.codex-model".to_string(),
-            receipt
-                .transport
-                .unwrap_or_else(|| "epiphany-codex-transport".to_string()),
+            "cultnet.direct-pipe".to_string(),
+            "gamecult.codex.transport.v2".to_string(),
+            receipt.transport,
         ],
     })
+}
+
+fn output_format_name(stage: &str) -> String {
+    let name = stage
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() || matches!(character, '_' | '-') {
+                character
+            } else {
+                '_'
+            }
+        })
+        .take(64)
+        .collect::<String>();
+    if name.is_empty() {
+        "ghostlight_output".to_string()
+    } else {
+        name
+    }
 }
 
 fn prompt_cache_key(request: &ModelStageRequest) -> Result<String> {
@@ -471,7 +233,7 @@ fn prompt_cache_key(request: &ModelStageRequest) -> Result<String> {
         ]
         .concat(),
     );
-    Ok(format!("ghostlight:{:x}", digest))
+    Ok(format!("ghostlight:{digest:x}"))
 }
 
 fn unix_ms() -> Result<u64> {
@@ -483,152 +245,344 @@ fn unix_ms() -> Result<u64> {
         .context("system clock does not fit u64 milliseconds")?)
 }
 
+fn project_strict_responses_schema(schema: &mut serde_json::Value) -> Result<()> {
+    lower_schema_for_responses_format(schema);
+    require_closed_responses_objects(schema, "$")?;
+    if !responses_schema_is_strict(schema) {
+        bail!("projected Responses output schema is not strict")
+    }
+    Ok(())
+}
+
+fn responses_schema_is_strict(schema: &serde_json::Value) -> bool {
+    match schema {
+        serde_json::Value::Object(map) => {
+            if (map.contains_key("const") || map.contains_key("enum")) && !map.contains_key("type")
+            {
+                return false;
+            }
+            if schema_map_describes_object(map) {
+                if map.get("additionalProperties") != Some(&serde_json::Value::Bool(false)) {
+                    return false;
+                }
+                let Some(properties) = map.get("properties").and_then(serde_json::Value::as_object)
+                else {
+                    return false;
+                };
+                let Some(required) = map.get("required").and_then(serde_json::Value::as_array)
+                else {
+                    return false;
+                };
+                if properties
+                    .keys()
+                    .any(|key| !required.iter().any(|item| item.as_str() == Some(key)))
+                {
+                    return false;
+                }
+            }
+            map.values().all(responses_schema_is_strict)
+        }
+        serde_json::Value::Array(values) => values.iter().all(responses_schema_is_strict),
+        _ => true,
+    }
+}
+
+fn require_closed_responses_objects(schema: &mut serde_json::Value, path: &str) -> Result<()> {
+    match schema {
+        serde_json::Value::Object(map) => {
+            let describes_object = schema_map_describes_object(map);
+            if describes_object {
+                map.insert("type".to_string(), serde_json::json!("object"));
+                let properties = map
+                    .get("properties")
+                    .and_then(serde_json::Value::as_object)
+                    .cloned()
+                    .unwrap_or_default();
+                let canonical_required = map
+                    .get("required")
+                    .and_then(serde_json::Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
+                for required in &canonical_required {
+                    let required = required.as_str().ok_or_else(|| {
+                        anyhow::anyhow!("Responses schema {path} has a non-string required key")
+                    })?;
+                    if !properties.contains_key(required) {
+                        bail!("Responses schema {path} requires undeclared property {required:?}")
+                    }
+                }
+                let canonical_required = canonical_required
+                    .into_iter()
+                    .filter_map(|value| value.as_str().map(ToString::to_string))
+                    .collect::<BTreeSet<_>>();
+                let mut projected = serde_json::Map::new();
+                for (name, mut property) in properties {
+                    require_closed_responses_objects(
+                        &mut property,
+                        &format!("{path}.properties.{name}"),
+                    )?;
+                    if !canonical_required.contains(&name) {
+                        property = nullable_responses_property(property);
+                    }
+                    projected.insert(name, property);
+                }
+                let required = projected
+                    .keys()
+                    .cloned()
+                    .map(serde_json::Value::String)
+                    .collect();
+                map.insert("properties".to_string(), projected.into());
+                map.insert("required".to_string(), serde_json::Value::Array(required));
+                map.insert("additionalProperties".to_string(), serde_json::json!(false));
+            }
+            for (name, value) in map.iter_mut() {
+                if name != "properties" || !describes_object {
+                    require_closed_responses_objects(value, &format!("{path}.{name}"))?;
+                }
+            }
+            Ok(())
+        }
+        serde_json::Value::Array(values) => {
+            for (index, value) in values.iter_mut().enumerate() {
+                require_closed_responses_objects(value, &format!("{path}[{index}]"))?;
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
+fn schema_map_describes_object(map: &serde_json::Map<String, serde_json::Value>) -> bool {
+    map.get("type").and_then(serde_json::Value::as_str) == Some("object")
+        || [
+            "properties",
+            "required",
+            "additionalProperties",
+            "patternProperties",
+            "propertyNames",
+            "minProperties",
+            "maxProperties",
+        ]
+        .iter()
+        .any(|keyword| map.contains_key(*keyword))
+}
+
+fn parent_relative_object_alternatives(value: &serde_json::Value) -> bool {
+    value.as_array().is_some_and(|alternatives| {
+        !alternatives.is_empty()
+            && alternatives.iter().all(|alternative| {
+                alternative.as_object().is_some_and(|map| {
+                    !map.contains_key("type")
+                        && !map.contains_key("$ref")
+                        && map
+                            .keys()
+                            .any(|key| matches!(key.as_str(), "properties" | "required"))
+                        && map.keys().all(|key| {
+                            matches!(
+                                key.as_str(),
+                                "properties" | "required" | "title" | "description" | "$comment"
+                            )
+                        })
+                })
+            })
+    })
+}
+
+fn inferred_json_type(value: &serde_json::Value) -> &'static str {
+    match value {
+        serde_json::Value::Null => "null",
+        serde_json::Value::Bool(_) => "boolean",
+        serde_json::Value::Number(number) if number.is_i64() || number.is_u64() => "integer",
+        serde_json::Value::Number(_) => "number",
+        serde_json::Value::String(_) => "string",
+        serde_json::Value::Array(_) => "array",
+        serde_json::Value::Object(_) => "object",
+    }
+}
+
+fn infer_responses_literal_type(map: &mut serde_json::Map<String, serde_json::Value>) {
+    if map.contains_key("type") {
+        return;
+    }
+    let mut types = BTreeSet::new();
+    if let Some(value) = map.get("const") {
+        types.insert(inferred_json_type(value));
+    } else if let Some(values) = map.get("enum").and_then(serde_json::Value::as_array) {
+        for value in values {
+            types.insert(inferred_json_type(value));
+        }
+    }
+    match types.len() {
+        0 => {}
+        1 => {
+            map.insert(
+                "type".to_string(),
+                serde_json::json!(types.into_iter().next().expect("one literal type")),
+            );
+        }
+        _ => {
+            map.insert(
+                "type".to_string(),
+                types.into_iter().collect::<Vec<_>>().into(),
+            );
+        }
+    }
+}
+
+fn nullable_responses_property(property: serde_json::Value) -> serde_json::Value {
+    if property
+        .get("anyOf")
+        .and_then(serde_json::Value::as_array)
+        .is_some_and(|variants| {
+            variants.iter().any(|variant| {
+                variant.get("type").and_then(serde_json::Value::as_str) == Some("null")
+            })
+        })
+    {
+        property
+    } else {
+        serde_json::json!({"anyOf":[property,{"type":"null"}]})
+    }
+}
+
+const RESPONSES_UNSUPPORTED_SCHEMA_KEYWORDS: &[&str] = &[
+    "allOf",
+    "not",
+    "dependentRequired",
+    "dependentSchemas",
+    "if",
+    "then",
+    "else",
+    "patternProperties",
+    "propertyNames",
+    "minProperties",
+    "maxProperties",
+    "unevaluatedProperties",
+    "uniqueItems",
+    "contains",
+    "minContains",
+    "maxContains",
+    "prefixItems",
+    "unevaluatedItems",
+    "default",
+    "examples",
+    "readOnly",
+    "writeOnly",
+    "$schema",
+    "$id",
+    "$anchor",
+    "$dynamicAnchor",
+    "$dynamicRef",
+    "$vocabulary",
+];
+
+fn lower_schema_for_responses_format(schema: &mut serde_json::Value) {
+    let serde_json::Value::Object(map) = schema else {
+        return;
+    };
+    infer_responses_literal_type(map);
+    if map.get("format").and_then(serde_json::Value::as_str) == Some("uuid") {
+        map.remove("format");
+        map.entry("pattern".to_string()).or_insert_with(|| {
+            serde_json::json!(
+                "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+            )
+        });
+    }
+    for unsupported in RESPONSES_UNSUPPORTED_SCHEMA_KEYWORDS {
+        map.remove(*unsupported);
+    }
+    if let Some(one_of) = map.remove("oneOf") {
+        map.insert("anyOf".to_string(), one_of);
+    }
+    if map
+        .get("anyOf")
+        .is_some_and(parent_relative_object_alternatives)
+    {
+        map.remove("anyOf");
+    }
+    for collection in ["properties", "$defs", "definitions"] {
+        if let Some(serde_json::Value::Object(children)) = map.get_mut(collection) {
+            for child in children.values_mut() {
+                lower_schema_for_responses_format(child);
+            }
+        }
+    }
+    if let Some(items) = map.get_mut("items") {
+        match items {
+            serde_json::Value::Array(items) => {
+                for item in items {
+                    lower_schema_for_responses_format(item);
+                }
+            }
+            item => lower_schema_for_responses_format(item),
+        }
+    }
+    if let Some(serde_json::Value::Array(alternatives)) = map.get_mut("anyOf") {
+        for alternative in alternatives {
+            lower_schema_for_responses_format(alternative);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::{Read, Write};
     use std::net::TcpListener;
 
-    #[test]
-    fn connector_invocation_uses_cultcache_indexed_messagepack() -> Result<()> {
-        let invocation = ConnectorInvocation {
-            schema_id: CONNECTOR_INVOCATION_SCHEMA.to_string(),
-            request_id: "request-1".to_string(),
-            caller_runtime_id: "ghostlight-dungeon-yggdrasil".to_string(),
-            expires_at_unix_ms: 42,
-            request: ConnectorModelRequest {
-                schema_id: MODEL_REQUEST_SCHEMA.to_string(),
-                request_id: "request-1".to_string(),
-                conversation_id: "request-1".to_string(),
-                provider: "openai-codex".to_string(),
-                model: "gpt-5.4".to_string(),
-                instructions: "Return the requested public answer.".to_string(),
-                input: vec![ConnectorModelInput::UserText {
-                    text: "projected context".to_string(),
-                }],
-                reasoning_effort: None,
-                reasoning_summary: None,
-                service_tier: None,
-                output_contract_id: None,
-                previous_response_id: None,
-                tools: Vec::new(),
-                output_schema_json: None,
-                source_worker_job_id: None,
-                reasoning_basis_id: None,
-                max_output_tokens: None,
-                prompt_cache_key: None,
-            },
-        };
-
-        let encoded = rmp_serde::to_vec(&invocation)?;
-        assert_eq!(
-            encoded[0], 0x95,
-            "invocation must begin with a five-field array"
-        );
-        let decoded: ConnectorInvocation = rmp_serde::from_slice(&encoded)?;
-        assert_eq!(decoded, invocation);
-        Ok(())
-    }
+    use codex_connector::{
+        CodexTransportEvent, CodexTransportKey, CodexTransportReceipt, decrypt_invocation,
+        encrypt_result,
+    };
 
     #[tokio::test]
-    async fn cultmesh_model_port_round_trips_typed_encrypted_cultnet_cargo() -> Result<()> {
+    async fn connector_port_uses_the_shared_v2_transport_and_exact_provider_request() -> Result<()>
+    {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let endpoint = listener.local_addr()?;
-        let security = CultNetClientSecurityOptions::new("connector-test-key")?;
-        let server_security = security.clone();
-        let server = std::thread::spawn(move || -> Result<ConnectorInvocation> {
-            let (stream, _) = listener.accept()?;
-            let profile = create_tcp_framed_transport_profile(
-                "test-connector",
-                TcpFramedTransportProfileOptions {
-                    max_payload_bytes: Some(MAX_PAYLOAD_BYTES),
-                    ..TcpFramedTransportProfileOptions::default()
+        let server = std::thread::spawn(move || -> Result<CodexTransportInvocation> {
+            let (mut stream, _) = listener.accept()?;
+            let mut length = [0_u8; 4];
+            stream.read_exact(&mut length)?;
+            let mut payload = vec![0_u8; u32::from_be_bytes(length) as usize];
+            stream.read_exact(&mut payload)?;
+            let envelope = rmp_serde::from_slice(&payload)?;
+            let key = CodexTransportKey::from_connection_secret("connector-test-key")?;
+            let invocation = decrypt_invocation(&envelope, &key)?;
+            let receipt = CodexTransportReceipt {
+                schema_id: codex_connector::RECEIPT_SCHEMA_ID.to_string(),
+                request_id: invocation.request_id().to_string(),
+                caller_runtime_id: invocation.caller_runtime_id.clone(),
+                native_request_sha256: invocation.native_request_sha256,
+                provider_request_sha256: invocation.provider_request_sha256,
+                model: invocation.request.model.clone(),
+                transport: "codex-connector-test".to_string(),
+                outcome: CodexTransportOutcome::Completed {
+                    provider_response_id: Some("response-1".to_string()),
+                    input_tokens: Some(100),
+                    output_tokens: Some(10),
+                    reasoning_output_tokens: Some(3),
+                    cached_input_tokens: Some(80),
                 },
+            };
+            let result = codex_connector::CodexTransportResult::transported(
+                &invocation,
+                vec![CodexTransportEvent {
+                    sequence: 0,
+                    payload: CodexTransportEventPayload::TextDelta {
+                        text: "{\"answer\":\"ready\"}".to_string(),
+                    },
+                }],
+                receipt,
             );
-            let mut connection = TcpFramedTransportConnection::new(stream, profile);
-            let frame = connection.receive()?;
-            let message = decode_cultnet_message_from_slice(
-                &frame.payload,
-                CultNetWireContract::CultNetSchemaV0,
-            )?;
-            let CultNetMessage::DocumentPutRaw { document, .. } = message else {
-                bail!("expected raw invocation")
-            };
-            let envelope: ConnectorEnvelope = rmp_serde::from_slice(&document.payload)?;
-            let plaintext = CultNetSecret::decrypt_bytes(
-                &envelope.ciphertext,
-                &envelope.nonce,
-                &server_security,
-            )?;
-            let invocation: ConnectorInvocation = rmp_serde::from_slice(&plaintext)?;
-            let result = ConnectorResult {
-                schema_id: CONNECTOR_RESULT_SCHEMA.to_string(),
-                request_id: invocation.request_id.clone(),
-                accepted: true,
-                events: vec![
-                    ConnectorModelEvent {
-                        schema_id: MODEL_EVENT_SCHEMA.to_string(),
-                        request_id: invocation.request_id.clone(),
-                        provider: "openai-codex".to_string(),
-                        sequence: 0,
-                        payload: ConnectorModelPayload::TextDelta {
-                            text: "{\"answer\":\"ready\"}".to_string(),
-                        },
-                    },
-                    ConnectorModelEvent {
-                        schema_id: MODEL_EVENT_SCHEMA.to_string(),
-                        request_id: invocation.request_id.clone(),
-                        provider: "openai-codex".to_string(),
-                        sequence: 1,
-                        payload: ConnectorModelPayload::Completed {
-                            receipt: ConnectorModelReceipt {
-                                schema_id: MODEL_RECEIPT_SCHEMA.to_string(),
-                                request_id: invocation.request_id.clone(),
-                                provider: "openai-codex".to_string(),
-                                model: "gpt-5.4".to_string(),
-                                provider_response_id: Some("response-1".to_string()),
-                                input_tokens: Some(100),
-                                output_tokens: Some(10),
-                                reasoning_output_tokens: Some(3),
-                                transport: Some("epiphany_direct_responses_http".to_string()),
-                                cached_input_tokens: Some(80),
-                            },
-                        },
-                    },
-                ],
-                error: None,
-            };
-            let nonce = CultNetSecret::new_nonce();
-            let plaintext = rmp_serde::to_vec_named(&result)?;
-            let envelope = ConnectorEnvelope {
-                schema_id: CONNECTOR_ENVELOPE_SCHEMA.to_string(),
-                request_id: invocation.request_id.clone(),
-                message_kind: RESULT_KIND.to_string(),
-                ciphertext: CultNetSecret::encrypt_bytes(&plaintext, &nonce, &server_security)?,
-                nonce: nonce.to_vec(),
-            };
-            let document = CultNetRawDocumentRecord {
-                schema_id: CONNECTOR_ENVELOPE_SCHEMA.to_string(),
-                record_key: invocation.request_id.clone(),
-                stored_at: "2026-08-24T00:00:00Z".to_string(),
-                payload_encoding: CultNetRawPayloadEncoding::Messagepack,
-                payload: rmp_serde::to_vec_named(&envelope)?,
-                source_runtime_id: Some("test-connector".to_string()),
-                source_agent_id: None,
-                source_role: Some("model-provider-connector".to_string()),
-                tags: None,
-            };
-            let payload = encode_cultnet_message_to_vec(
-                &CultNetMessage::SnapshotResponseRaw {
-                    message_id: invocation.request_id.clone(),
-                    documents: vec![document],
-                },
-                CultNetWireContract::CultNetSchemaV0,
-            )?;
-            connection.send("schema", &payload)?;
+            let response = rmp_serde::to_vec(&encrypt_result(&result, &key)?)?;
+            stream.write_all(&(response.len() as u32).to_be_bytes())?;
+            stream.write_all(&response)?;
             Ok(invocation)
         });
 
-        let port = CultMeshModelPort::new(
+        let port = CodexConnectorModelPort::new(
             endpoint,
             "connector-test-key".to_string(),
             "ghostlight-dungeon-yggdrasil",
@@ -642,10 +596,10 @@ mod tests {
                 snapshot_binding: "revision:7".to_string(),
                 lived_stream: "Return the typed answer.".to_string(),
                 output_schema: Some(serde_json::json!({
-                    "type": "object",
-                    "required": ["answer"],
-                    "properties": {"answer": {"type": "string"}},
-                    "additionalProperties": false
+                    "type":"object",
+                    "required":["answer"],
+                    "properties":{"answer":{"type":"string"}},
+                    "additionalProperties":false
                 })),
                 source_receipt_ids: Vec::new(),
                 temperature: Some(0.0),
@@ -653,10 +607,12 @@ mod tests {
             })
             .await?;
         let invocation = server.join().expect("server thread")?;
-        assert_eq!(invocation.caller_runtime_id, "ghostlight-dungeon-yggdrasil");
         assert_eq!(invocation.request.model, "gpt-5.4");
         assert_eq!(invocation.request.max_output_tokens, Some(512));
-        assert!(invocation.request.prompt_cache_key.is_some());
+        assert_eq!(
+            invocation.request.output_format_name.as_deref(),
+            Some("test_interpreter")
+        );
         assert_eq!(output.content, "{\"answer\":\"ready\"}");
         assert_eq!(
             output.token_usage.expect("usage").prompt_cache_hit_tokens,
@@ -666,18 +622,26 @@ mod tests {
     }
 
     #[test]
-    fn event_sequence_refuses_reasoning_and_missing_terminal_receipts() {
-        let reasoning = ConnectorModelEvent {
-            schema_id: MODEL_EVENT_SCHEMA.to_string(),
-            request_id: "request-1".to_string(),
-            provider: "openai-codex".to_string(),
-            sequence: 0,
-            payload: ConnectorModelPayload::ReasoningDelta {
-                text: "private".to_string(),
-            },
-        };
-        assert!(observed_output("request-1", vec![reasoning]).is_err());
-        assert!(observed_output("request-1", Vec::new()).is_err());
+    fn strict_schema_projection_closes_objects_and_makes_optional_fields_nullable() -> Result<()> {
+        let mut schema = serde_json::json!({
+            "type":"object",
+            "required":["answer"],
+            "properties":{
+                "answer":{"type":"string"},
+                "note":{"type":"string","default":""},
+                "kind":{"enum":["one","two"]}
+            }
+        });
+        project_strict_responses_schema(&mut schema)?;
+        assert_eq!(schema["additionalProperties"], false);
+        assert_eq!(
+            schema["required"],
+            serde_json::json!(["answer", "kind", "note"])
+        );
+        assert_eq!(schema["properties"]["kind"]["type"], "string");
+        assert!(schema["properties"]["note"]["anyOf"].is_array());
+        assert!(responses_schema_is_strict(&schema));
+        Ok(())
     }
 
     #[test]
@@ -688,8 +652,8 @@ mod tests {
             snapshot_binding: "revision:7".to_string(),
             lived_stream: "A changing world slice.".to_string(),
             output_schema: Some(serde_json::json!({
-                "type": "object",
-                "properties": {"action": {"type": "string"}}
+                "type":"object",
+                "properties":{"action":{"type":"string"}}
             })),
             source_receipt_ids: vec!["receipt:one".to_string()],
             temperature: Some(0.3),
@@ -698,17 +662,9 @@ mod tests {
         let mut changed_context = request.clone();
         changed_context.snapshot_binding = "revision:8".to_string();
         changed_context.lived_stream = "A different world slice.".to_string();
-        changed_context.source_receipt_ids = vec!["receipt:two".to_string()];
         assert_eq!(
             prompt_cache_key(&request)?,
             prompt_cache_key(&changed_context)?
-        );
-
-        let mut changed_contract = request.clone();
-        changed_contract.stage = "persona".to_string();
-        assert_ne!(
-            prompt_cache_key(&request)?,
-            prompt_cache_key(&changed_contract)?
         );
         Ok(())
     }

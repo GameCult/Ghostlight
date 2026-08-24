@@ -30,7 +30,7 @@ use ghostlight_dungeon::{
     model::{
         DeepSeekPort, MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelRuntimeStatus, OpenRouterPort,
     },
-    model_connector::CultMeshModelPort,
+    model_connector::CodexConnectorModelPort,
     persistence::CampaignStore,
     persona::PersonaProjectionEngine,
     registry::{CampaignRegistry, CampaignRuntime},
@@ -297,7 +297,7 @@ async fn main() -> anyhow::Result<()> {
         match provider_name.as_str() {
             "deepseek" => ("deepseek-v4-flash", "deepseek-v4-pro", "deepseek.dpapi"),
             "openrouter" => ("stealth/ox-alpha", "stealth/ox-alpha", "openrouter.key"),
-            "epiphany-codex" => ("gpt-5.4", "gpt-5.4", "epiphany-model-connector.key"),
+            "codex-connector" => ("gpt-5.4", "gpt-5.4", "codex-connector.key"),
             unsupported => anyhow::bail!("unsupported model provider {unsupported}"),
         };
     let fast_model =
@@ -325,7 +325,7 @@ async fn main() -> anyhow::Result<()> {
                 fast_model.clone(),
                 capable_model.clone(),
             )?),
-            "epiphany-codex" => Arc::new(CultMeshModelPort::from_runtime_secret(
+            "codex-connector" => Arc::new(CodexConnectorModelPort::from_runtime_secret(
                 std::env::var("GHOSTLIGHT_MODEL_CONNECTOR")
                     .unwrap_or_else(|_| "127.0.0.1:4103".to_string())
                     .parse()?,

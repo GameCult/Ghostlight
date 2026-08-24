@@ -203,15 +203,19 @@ the planner already owns. Stable prompt prefixes are deliberately placed before
 dynamic state, and provider receipts expose per-attempt token/cache usage plus
 bounded local validation failures.
 
-`ModelPort` remains Ghostlight's single inference seam. The
-`epiphany-codex` implementation is an ordinary typed consumer of Epiphany's
-loopback model-provider connector: it emits an encrypted, expiring MessagePack
-request over bounded TCP-framed CultNet and accepts only a correlated ordered
-text stream plus terminal receipt. A stable cache key is derived from stage,
-logical model class, and output schema rather than mutable campaign content.
-Epiphany owns Codex credential custody and physical calls; Ghostlight still
-owns stage projection, schemas, retries, semantic validation, receipts, and all
-kernel admission. Neither side can borrow the other's state authority.
+`ModelPort` remains Ghostlight's single inference seam. The Codex-backed
+implementation is an ordinary typed consumer of the independent CodexConnector
+daemon: it emits an encrypted, expiring MessagePack request over bounded
+TCP-framed CultNet and accepts only a correlated ordered text stream plus
+terminal receipt. A stable cache key is derived from stage, logical model class,
+and output schema rather than mutable campaign content. CodexConnector owns
+credential custody, caller admission, bounded provider transport, replay, and
+transport receipts. Ghostlight owns provider-request derivation, stage
+projection, schemas, retry between passes, semantic validation, model-stage
+receipts, and every kernel admission. Epiphany is a separate consumer and owns
+neither side. The currently installed Yggdrasil connector remains the legacy
+Epiphany-built release `7d384a6277c74fb35b8e51297ffbccda59746ce9` until
+Idunn admits and selects the independent CodexConnector release.
 
 Canonical actor cell slices include that actor's exact goals, obligations,
 relationships, and bounded memories. Named Gestalt-member exceptions receive

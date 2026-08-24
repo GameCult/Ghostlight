@@ -197,6 +197,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
+name = "base64"
+version = "0.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
+
+[[package]]
 name = "base64ct"
 version = "1.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -311,6 +317,22 @@ checksum = "773f3b9af64447d2ce9850330c473515014aa235e6a783b02db81ff39e4a3dad"
 dependencies = [
  "crypto-common",
  "inout",
+]
+
+[[package]]
+name = "codex-connector"
+version = "0.1.0"
+source = "git+https://github.com/GameCult/CodexConnector.git?rev=548ee73b01c0c99d4e613677cf6d5ce63c63a240#548ee73b01c0c99d4e613677cf6d5ce63c63a240"
+dependencies = [
+ "aes-gcm",
+ "base64 0.23.1",
+ "rand_core 0.6.4",
+ "rmp-serde",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "zeroize",
 ]
 
 [[package]]
@@ -436,7 +458,7 @@ version = "0.1.0"
 dependencies = [
  "aes-gcm",
  "anyhow",
- "base64",
+ "base64 0.22.1",
  "chrono",
  "cultcache-rs 0.1.0",
  "ed25519-dalek",
@@ -792,8 +814,9 @@ dependencies = [
  "async-stream",
  "async-trait",
  "axum",
- "base64",
+ "base64 0.22.1",
  "chrono",
+ "codex-connector",
  "cultcache-rs 0.1.0",
  "cultcache-rs 0.1.0 (git+https://github.com/GameCult/cultcache-rs.git?rev=0ba87453115e3d44e8fcb7419866cd7dd70fb096)",
  "cultmesh-rs",
@@ -950,7 +973,7 @@ version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96547c2556ec9d12fb1578c4eaf448b04993e7fb79cbaad930a656880a6bdfa0"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "bytes",
  "futures-channel",
  "futures-util",
@@ -1185,7 +1208,7 @@ version = "9.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a87cc7a48537badeae96744432de36f4be2b4a34a05a5ef32e9dd8a1c169dde"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "js-sys",
  "pem",
  "ring",
@@ -1433,7 +1456,7 @@ version = "3.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d30c53c26bc5b31a98cd02d20f25a7c8567146caf63ed593a9d87b2775291be"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "serde_core",
 ]
 
@@ -1745,7 +1768,7 @@ version = "0.12.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eddd3ca559203180a307f12d114c268abf583f59b03cb906fd0b3ff8646c1147"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "bytes",
  "futures-core",
  "futures-util",
