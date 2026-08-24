@@ -96,13 +96,13 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `b8d3fe69ee3ae433966623563bdcaaeab4b39861`
+  `06ed2c5ac27c7d9f32f51444e51b5acec3e1942b`
 - Executable SHA-256:
-  `08ed0f76fd1e1037b8fd206567efed00c443680ceff4312406d61bcf9223fb88`
+  `4398b9947870a2ec7610c8f059e5790b67e7255e9fac11d40c53a69f3eff6a7b`
 - Native client SHA-256:
-  `7a04eca6540aa98d62f506ca6816bc2b001766d76bf8ff7062ddac49bc4b4030`
+  `3a0556e46d78625c4c31509164fe15e6b8e3df28cbbaf0026fc9d57325d1d956`
 - Artifact SHA-256:
-  `sha256-4c1984ab1c0b3e6516df78819e89d8b497895bb5510884d14165ee27bbbe030f`
+  `sha256-245c079762da925c30f02b539ef28e9aa1d619c395ddb9a90be71c5f1cf764ab`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -289,18 +289,26 @@ only after explicit acknowledgement; keep the transport and durable-snapshot
 regressions in the fleet gate.
 
 The live canary campaign `34929b8d-7b04-49af-9936-1c798fd79760` is at world
-revision 69. Release `fb9c42c` bound player speech to exact response actors:
-Member 1 retained the eastern-trails memory, Member 2 explicitly refused to
-borrow it, and the third present Persona remained an autonomous observer.
-Release `b8d3fe6` content-addressed the complete semantic assessment packet.
-The first trust assessment at revision 68 took 25.7 seconds; stale confirmation
-after a one-minute revision change returned in 1.04 seconds with byte-identical
-DC, modifiers, stakes, and effects, a fresh digest, zero tokens, and a
-`valid_cache_hit` receipt linked to the source receipt. The same assessment also
-exposed the next owning failure: a relationship attempt acquired an unrelated
-ration-law fact because foreground outcomes lack an independent semantic
-effect verifier. Do not patch that with keywords; reuse the model-based causal
-verification doctrine already protecting strategic cell effects.
+revision 76. Release `99a2508` constrained the trust attempt to its independently
+verified relationship lane. Stale confirmation recompiled against revision 71;
+the server-side d20 rolled 10, applied +4 against DC 5, and committed Member 1's
+increased trust without granting knowledge or mutating the other two present
+Personas. All three appraised the public event through their exact perspectives.
+
+The same campaign then exposed a topology authority split: canonical route keys
+are local to their origin, while the transition overlay had flattened them into
+one global map. A surface-advertised camp-to-junction route therefore collided
+with unrelated routes sharing its local key. Release `fc5cce0` derives component
+edge identity from `(origin_location_id, local_route_id)` and keeps surface
+destinations exact. The old failed command had durably reached unanimous
+governance approval without committing the world; release `06ed2c5` makes that
+uncommitted unanimous state idempotently finalizable through the same approval
+operation. The exact old proposal advanced revision 74 to 75, moved only Ash to
+Kostolom Junction, and added fifteen minutes. An Idunn same-release restart
+changed the daemon PID while preserving release, app session, campaign, and
+revision. The return route then advanced to revision 76 and the encampment
+rematerialized with the same persistent location, Refugee Convoy population,
+Member 1, Member 2, Relay Volunteer, relationship outcome, and player ledger.
 
 Acceptance witnesses live under `F:\GameCult\GhostlightDungeon\acceptance`.
 Operational release and rollback truth remains in `gamecult-ops`.
@@ -309,12 +317,11 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 1. Continue adversarial play through the authenticated native CultMesh client;
    its Heimdall grant and Ghostlight app session are persisted in CultCache.
-2. Give foreground assessments an independent compact semantic effect verifier
-   so every typed mutation is causally entailed by the player's exact means and
-   intended effect. Preserve the content-addressed assessment cache and record
-   every verifier receipt; do not add keyword or lane-specific bans.
-3. Replay departure, daemon restart, return, strategic time, permitted news,
-   and institution-pressure acceptance paths in the current canary.
+2. Pressure institution self-interest, away-time strategic activity, and
+   character-accessible news in the current revision-76 canary. Prove that the
+   player is not puppeted and inaccessible remote facts remain private.
+3. Compile an obscure Vault-grounded start or receive an explicit material-gap
+   preview without borrowing fixture cast, geography, or plot.
 4. Then fork or compile a denser 20-plus-power
    Aetheria skeleton and pressure budgets 1, 4, 8, and 32 with real provider
    output, including nested refugee dispersal and later rematerialization.
