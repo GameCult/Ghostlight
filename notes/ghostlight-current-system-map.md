@@ -957,11 +957,15 @@ receipt, events, and aggregate compatibility projection atomically. The
 aggregate campaign row is rejected as a component-only mutation target.
 `WorldEffectDelta`, `ActorStateDelta`, and strategic effect variants are model
 boundary migration inputs, not writers or independent physical ontologies.
-The foreground assessor now derives a closed effect schema from the exact
-snapshot and removes unavailable knowledge, movement, clock, and institution
-lanes before inference. Missing maps lower to no mutation. This keeps both the
-prompt and correction surface smaller and prevents provider `null` placeholders
-from stalling an NPC initiative on an operation the actor could not perform.
+The foreground assessor derives a closed effect schema from the exact snapshot
+and first removes structurally unavailable knowledge, movement, clock, and
+institution lanes. A compact private scope projection then receives only the
+exact attempt and those remaining lane names. Its locally validated output can
+only subtract: every causally unselected lane disappears from the assessor's
+schema, and unselected knowledge prevents scene facts from entering the prompt
+at all. Scope rows and receipts are derived inference evidence, never assessment
+or world authority, and their content-addressed cache avoids repeated scope
+inference for an unchanged attempt. Missing maps lower to no mutation.
 After structural binding, a compact independent verifier compares the complete
 four-band typed effect bundle with the player's exact means and intended
 effect. Structurally legal state is not automatically causally relevant. The
@@ -980,13 +984,13 @@ aborts the whole wave without private deltas, transcript additions, initiative,
 or revision change; observers may still choose to speak from their own goals.
 
 Action assessment separates semantic inference identity from commit identity.
-The exact assessor and verifier models, stable instructions, action-specific
-schema, and permitted typed packet form a content-addressed private
+The exact scope, assessor, and verifier models, stable instructions, scoped
+action-specific schema, and permitted typed packet form a content-addressed private
 `assessment_proposal_cache.v1` key. Revision and expiry still bind the
 consumable assessment and roll but do not force the capable model to reconsider
 an otherwise byte-identical packet. A cache hit revalidates the complete
 proposal against current state, emits a zero-token receipt linked to the source
-assessment and verifier receipts, and creates a fresh digest at the current
+scope, assessment, and verifier receipts, and creates a fresh digest at the current
 revision. Changed authority changes the key. The Eve command-result projection
 shows every signed modifier with its exact references.
 

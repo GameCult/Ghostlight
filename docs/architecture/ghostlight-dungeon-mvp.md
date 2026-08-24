@@ -624,6 +624,18 @@ model cannot invent a reference namespace or cite context it was not given.
 The player projection lists every modifier label, signed value, and exact
 supporting reference rather than exposing only the capped total.
 
+Before assessment, a compact private scope projection receives only the exact
+attempt and the mutation-lane names that current structural authority makes
+possible. It selects the smallest causally plausible subset. Local validation
+can only subtract from the authority-derived set: the projection cannot invent
+a lane, fact, subject, route, clock, or institution. Ghostlight removes every
+unselected lane from the generated `WorldEffectDelta` schema and withholds
+information facts entirely when investigation, perception, or disclosure is
+outside the selected scope. The scope is derived inference evidence, not world
+or assessment authority, and failure leaves state unchanged. Its private
+content-addressed cache prevents an unchanged attempt from paying for the scope
+projection again.
+
 After structural binding, a separate compact effect verifier receives only the
 player's exact means, intended effect, effect ceiling, visible stakes, and the
 four typed outcome deltas. It does not reassess admissibility, DC, or modifiers
@@ -643,8 +655,8 @@ verdict receives its own private stage receipt, including failed corrections,
 so a refusal cannot erase the model work that caused it.
 
 Only a structurally and semantically verified proposal may enter the cache. It
-is content-addressed by the exact assessor and verifier models, stable
-instructions, action-specific schema, and permitted typed state packet. Its
+is content-addressed by the exact scope, assessor, and verifier models, stable
+instructions, scoped action-specific schema, and permitted typed state packet. Its
 private `assessment_proposal_cache.v1` row is derived inference evidence, not an
 assessment or world authority. Campaign revision and expiry remain commit
 bindings but are absent from this semantic identity. A stale confirmation whose
@@ -654,7 +666,7 @@ new revision-bound assessment digest without provider inference. Any change to
 the model contract, schema, actor slice, occupancy, facts, institutions,
 permissions, campaign contract, or boundaries changes the content address and
 requires a fresh assessment. Cache hits emit an explicit zero-token model-stage
-receipt pointing at both the originating assessment and semantic-verifier
+receipt pointing at the originating scope, assessment, and semantic-verifier
 receipts. They do not rerun inference, but the cached proposal still passes the
 same local and kernel admission checks against the exact current packet.
 

@@ -18,8 +18,12 @@ use std::{
 };
 
 const ASSESSMENT_PROPOSAL_CACHE_KIND: &str = "assessment_proposal_cache.v1";
-const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v2";
-const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v4";
+const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v3";
+const ASSESSMENT_SCOPE_CACHE_KIND: &str = "assessment_mutation_scope_cache.v1";
+const ASSESSMENT_SCOPE_CACHE_SCHEMA: &str = "ghostlight.private.assessment_mutation_scope_cache.v1";
+const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v5";
+
+const ASSESSMENT_SCOPE_INSTRUCTIONS: &str = "You select the smallest causally plausible typed mutation vocabulary for one fiction-first attempt. This is schema projection, not outcome resolution. Select a lane only when the exact attempted means could directly cause it or the exact intended effect asks for it. Availability is never relevance. actor_conditions changes bodily or situational conditions. actor_knowledge_additions means an exact existing fact is investigated, perceived, or deliberately communicated; do not select it for ordinary speech, promises, persuasion, trust, or scene texture. actor_relationship_updates changes durable trust, regard, leverage, or another exact relationship. actor_moves relocates the acting character along an admitted route. clock_advances and clock_reductions change an existing pressure. institution_postures changes an institution's durable policy or stance. Return only the minimal lane set as JSON. Empty is valid when no canonical mutation lane is causally appropriate or the assessor should negotiate a bargain. Never infer a new lane, target, fact, route, clock, or institution. Shape: {\"lanes\":[\"actor_relationship_updates\"]}.";
 
 const ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between the fiction-first action assessor and the world kernel. Structural authority, reach, knowledge access, and mutation shape were already checked. Judge the complete four-band typed effect bundle against the player's exact means and intended effect. Every non-empty mutation must be a direct realization of the intended effect or a concrete, previewed consequence of the attempted means in that exact outcome band. A fact being true, nearby, discoverable, or useful does not make communicating or acquiring it a consequence of an unrelated action. A plausible general reaction does not justify changing a relationship, condition, clock, posture, movement, or knowledge record that the attempted means and stakes do not cause. Failure and mixed effects may impose direct costs or complications, but not arbitrary available state changes. The effect ceiling and visible stakes must describe the same bounded consequences as the typed effects. Do not reassess admissibility, DC, or modifiers, and do not choose replacement effects. Return one JSON object. If every typed mutation is causally faithful, use result 'match' with null mismatch_kind and null repair_guidance. Otherwise use result 'mismatch', one mismatch_kind, and one concrete repair sentence of at most 240 characters naming what must be removed or aligned. Shape: {\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}.";
 
@@ -48,8 +52,39 @@ struct AssessmentProposalCacheEntry {
     proposal: AssessmentProposal,
     source_provider: String,
     source_model: String,
+    source_scope_receipt_hash: String,
     source_receipt_hash: String,
     source_effect_verifier_receipt_hash: String,
+    created_at: chrono::DateTime<Utc>,
+}
+
+#[derive(
+    Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord,
+)]
+#[serde(rename_all = "snake_case")]
+enum AssessmentMutationLane {
+    ActorConditions,
+    ActorKnowledgeAdditions,
+    ActorRelationshipUpdates,
+    ActorMoves,
+    ClockAdvances,
+    ClockReductions,
+    InstitutionPostures,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+struct AssessmentMutationScope {
+    lanes: BTreeSet<AssessmentMutationLane>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct AssessmentMutationScopeCacheEntry {
+    schema: String,
+    basis_digest: String,
+    scope: AssessmentMutationScope,
+    source_provider: String,
+    source_model: String,
+    source_receipt_hash: String,
     created_at: chrono::DateTime<Utc>,
 }
 
@@ -197,7 +232,17 @@ impl ActionAssessor {
                 })
             })
             .collect();
-        let information_facts = available_information_facts(campaign, actor);
+        let (mutation_scope, source_scope_receipt_hash) = self
+            .select_mutation_scope(store, campaign, &intent, actor)
+            .await?;
+        let information_facts = if mutation_scope
+            .lanes
+            .contains(&AssessmentMutationLane::ActorKnowledgeAdditions)
+        {
+            available_information_facts(campaign, actor)
+        } else {
+            Vec::new()
+        };
         let mut allowed_references = allowed_references(campaign, actor);
         allowed_references.extend(present_actor_references(campaign, actor));
         allowed_references.extend(
@@ -214,9 +259,11 @@ impl ActionAssessor {
         );
         let mut schema = serde_json::to_value(schema_for!(AssessmentProposal))?;
         constrain_assessment_schema(&mut schema, &allowed_references, campaign, actor)?;
+        constrain_effect_schema_to_scope(&mut schema, &mutation_scope.lanes)?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. Structural availability is an upper bound, not a request to use a mutation lane. Every non-empty mutation must be directly caused by the exact attempted means or realize the exact intended effect in that outcome band. A fact, relationship, clock, posture, or route being true, nearby, discoverable, or useful does not make changing it a consequence of an unrelated attempt. Do not append scene context as an observed finding unless the attempted means actually communicates it or the intended effect actually investigates or discloses it. Outcome deltas may use only the mutation lanes present in the supplied schema; omit an unavailable, causally unrelated, or unused lane. A missing mutation map means no mutation in that lane. Supplied lanes may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both maps for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, omit the knowledge lane and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. The private scope projection has already removed mutation lanes that are not causally plausible for this exact attempt. The remaining lanes are an upper bound, not a request to use all of them. Every non-empty mutation must be directly caused by the exact attempted means or realize the exact intended effect in that outcome band. A fact, relationship, clock, posture, or route being true, nearby, discoverable, or useful does not make changing it a consequence of an unrelated attempt. Do not append scene context as an observed finding unless the attempted means actually communicates it or the intended effect actually investigates or discloses it. Outcome deltas may use only the mutation lanes present in the supplied schema; omit an unavailable, causally unrelated, or unused lane. A missing mutation map means no mutation in that lane. Supplied lanes may only name actor IDs copied exactly from PRESENT ACTORS, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both maps for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. actor_knowledge_additions contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, omit the knowledge lane and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nMUTATION SCOPE:\n{}\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
+            serde_json::to_string(&mutation_scope)?,
             serde_json::to_string(&campaign_contract)?,
             serde_json::to_string(aggregate_boundaries)?,
             agency_guidance,
@@ -375,6 +422,7 @@ impl ActionAssessor {
                 proposal: selected_proposal.clone(),
                 source_provider: selected_receipt.provider.clone(),
                 source_model: selected_receipt.model.clone(),
+                source_scope_receipt_hash: source_scope_receipt_hash.clone(),
                 source_receipt_hash: selected_receipt.receipt_hash.clone(),
                 source_effect_verifier_receipt_hash: effect_verifier_receipt.receipt_hash,
                 created_at: Utc::now(),
@@ -419,6 +467,110 @@ impl ActionAssessor {
         }
         let assessment = build_assessment(campaign, intent, selected_proposal)?;
         Ok((assessment, selected_receipt))
+    }
+
+    async fn select_mutation_scope(
+        &self,
+        store: Option<&CampaignStore>,
+        campaign: &Campaign,
+        intent: &ActionIntent,
+        actor: &crate::domain::ActorState,
+    ) -> Result<(AssessmentMutationScope, String)> {
+        let available_lanes = available_mutation_lanes(campaign, actor);
+        let mut schema = serde_json::to_value(schema_for!(AssessmentMutationScope))?;
+        constrain_mutation_scope_schema(&mut schema, &available_lanes)?;
+        let scope_prompt = format!(
+            "{ASSESSMENT_SCOPE_INSTRUCTIONS}\nOUTPUT JSON SCHEMA (follow exactly):\n{}\nEXACT ATTEMPT:\n{}\nSTRUCTURALLY AVAILABLE LANES:\n{}",
+            serde_json::to_string(&schema)?,
+            serde_json::to_string(intent)?,
+            serde_json::to_string(&available_lanes)?,
+        );
+        let basis_digest = format!(
+            "sha256:{:x}",
+            Sha256::digest(
+                format!(
+                    "{}|assessment_mutation_scope|{}|{}",
+                    ASSESSMENT_SEMANTICS_VERSION, self.verifier_model_id, scope_prompt
+                )
+                .as_bytes()
+            )
+        );
+        if let Some(store) = store
+            && let Some((_, cached)) = store.load::<AssessmentMutationScopeCacheEntry>(
+                ASSESSMENT_SCOPE_CACHE_KIND,
+                &basis_digest,
+            )?
+        {
+            if cached.schema != ASSESSMENT_SCOPE_CACHE_SCHEMA || cached.basis_digest != basis_digest
+            {
+                return Err(anyhow!("assessment mutation scope cache identity mismatch"));
+            }
+            validate_mutation_scope(&cached.scope, &available_lanes)?;
+            return Ok((cached.scope, cached.source_receipt_hash));
+        }
+        let snapshot_binding = format!(
+            "campaign:{}:revision:{}:assessment-mutation-scope:{}",
+            campaign.id, campaign.revision, basis_digest
+        );
+        let out = run_validated_stage(
+            self.model.as_ref(),
+            &ModelStageRequest {
+                stage: "assessment_mutation_scope".into(),
+                model: self.verifier_model_id.clone(),
+                snapshot_binding,
+                lived_stream: scope_prompt,
+                output_schema: Some(schema),
+                source_receipt_ids: Vec::new(),
+                temperature: Some(0.0),
+                max_output_tokens: Some(256),
+            },
+        )
+        .await?;
+        let scope: AssessmentMutationScope = serde_json::from_value(
+            out.structured
+                .clone()
+                .ok_or_else(|| anyhow!("assessment mutation scope returned no typed output"))?,
+        )?;
+        validate_mutation_scope(&scope, &available_lanes)?;
+        if let Some(store) = store {
+            persist_private_stage_receipt(store, &out.receipt)?;
+            let entry = AssessmentMutationScopeCacheEntry {
+                schema: ASSESSMENT_SCOPE_CACHE_SCHEMA.into(),
+                basis_digest: basis_digest.clone(),
+                scope: scope.clone(),
+                source_provider: out.receipt.provider.clone(),
+                source_model: out.receipt.model.clone(),
+                source_receipt_hash: out.receipt.receipt_hash.clone(),
+                created_at: Utc::now(),
+            };
+            if let Err(insert_error) = store.insert(
+                ASSESSMENT_SCOPE_CACHE_KIND,
+                ASSESSMENT_SCOPE_CACHE_SCHEMA,
+                &basis_digest,
+                &entry,
+            ) {
+                let (_, winner) = store
+                    .load::<AssessmentMutationScopeCacheEntry>(
+                        ASSESSMENT_SCOPE_CACHE_KIND,
+                        &basis_digest,
+                    )?
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "assessment mutation scope cache insert failed without an existing winner: {insert_error}"
+                        )
+                    })?;
+                if winner.schema != ASSESSMENT_SCOPE_CACHE_SCHEMA
+                    || winner.basis_digest != basis_digest
+                {
+                    return Err(anyhow!(
+                        "assessment mutation scope cache winner identity mismatch"
+                    ));
+                }
+                validate_mutation_scope(&winner.scope, &available_lanes)?;
+                return Ok((winner.scope, winner.source_receipt_hash));
+            }
+        }
+        Ok((scope, out.receipt.receipt_hash))
     }
 }
 
@@ -691,12 +843,13 @@ fn cache_hit_receipt(
         "sha256:{:x}",
         Sha256::digest(
             format!(
-                "{}|{}|action_assessment|{}|{}|{}|{}",
+                "{}|{}|action_assessment|{}|{}|{}|{}|{}",
                 cached.source_provider,
                 cached.source_model,
                 snapshot_binding,
                 request_hash,
                 output_hash,
+                cached.source_scope_receipt_hash,
                 cached.source_receipt_hash
             )
             .as_bytes()
@@ -725,6 +878,7 @@ fn cache_hit_receipt(
             token_usage: Some(ModelTokenUsage::default()),
             transport_features: vec![
                 "cultcache.output-cache".into(),
+                format!("source-mutation-scope:{}", cached.source_scope_receipt_hash),
                 format!("source-receipt:{}", cached.source_receipt_hash),
                 format!(
                     "source-effect-verifier:{}",
@@ -891,6 +1045,103 @@ fn constrain_effect_schema(
     }
     for field in unavailable_lanes {
         remove_effect_lane(schema, field)?;
+    }
+    Ok(())
+}
+
+fn available_mutation_lanes(
+    campaign: &Campaign,
+    acting_actor: &crate::domain::ActorState,
+) -> BTreeSet<AssessmentMutationLane> {
+    let mut lanes = BTreeSet::from([
+        AssessmentMutationLane::ActorConditions,
+        AssessmentMutationLane::ActorRelationshipUpdates,
+    ]);
+    let has_knowledge_target = campaign.actors.values().any(|target| {
+        target.location_id == acting_actor.location_id
+            && campaign.facts.values().any(|fact| {
+                let accessible = if target.id == acting_actor.id {
+                    fact.discoverable_at_location_ids
+                        .contains(&acting_actor.location_id)
+                } else {
+                    acting_actor.knowledge.contains(&fact.statement)
+                };
+                accessible && !target.knowledge.contains(&fact.statement)
+            })
+    });
+    if has_knowledge_target {
+        lanes.insert(AssessmentMutationLane::ActorKnowledgeAdditions);
+    }
+    let has_destination = campaign
+        .locations
+        .get(&acting_actor.location_id)
+        .is_some_and(|location| {
+            location
+                .routes
+                .keys()
+                .any(|destination| campaign.locations.contains_key(destination))
+        });
+    if has_destination {
+        lanes.insert(AssessmentMutationLane::ActorMoves);
+    }
+    if !campaign.clocks.is_empty() {
+        lanes.insert(AssessmentMutationLane::ClockAdvances);
+        lanes.insert(AssessmentMutationLane::ClockReductions);
+    }
+    if !campaign.institutions.is_empty() {
+        lanes.insert(AssessmentMutationLane::InstitutionPostures);
+    }
+    lanes
+}
+
+fn constrain_mutation_scope_schema(
+    schema: &mut serde_json::Value,
+    available_lanes: &BTreeSet<AssessmentMutationLane>,
+) -> Result<()> {
+    let lane_items = schema
+        .pointer_mut("/properties/lanes/items")
+        .ok_or_else(|| anyhow!("assessment mutation scope schema has no lane items"))?;
+    lane_items["enum"] = serde_json::to_value(available_lanes)?;
+    Ok(())
+}
+
+fn validate_mutation_scope(
+    scope: &AssessmentMutationScope,
+    available_lanes: &BTreeSet<AssessmentMutationLane>,
+) -> Result<()> {
+    if !scope.lanes.is_subset(available_lanes) {
+        return Err(anyhow!(
+            "assessment mutation scope selected a structurally unavailable lane"
+        ));
+    }
+    Ok(())
+}
+
+fn constrain_effect_schema_to_scope(
+    schema: &mut serde_json::Value,
+    selected_lanes: &BTreeSet<AssessmentMutationLane>,
+) -> Result<()> {
+    for (lane, field) in [
+        (AssessmentMutationLane::ActorConditions, "actor_conditions"),
+        (
+            AssessmentMutationLane::ActorKnowledgeAdditions,
+            "actor_knowledge_additions",
+        ),
+        (
+            AssessmentMutationLane::ActorRelationshipUpdates,
+            "actor_relationship_updates",
+        ),
+        (AssessmentMutationLane::ActorMoves, "actor_moves"),
+        (AssessmentMutationLane::ClockAdvances, "clock_advances"),
+        (AssessmentMutationLane::ClockReductions, "clock_reductions"),
+        (
+            AssessmentMutationLane::InstitutionPostures,
+            "institution_postures",
+        ),
+    ] {
+        if !selected_lanes.contains(&lane) {
+            remove_effect_lane(schema, field)?;
+        }
     }
     Ok(())
 }
@@ -1306,6 +1557,9 @@ mod tests {
     #[async_trait]
     impl ModelPort for DriftingAssessmentModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            if request.stage == "assessment_mutation_scope" {
+                return Ok(r#"{"lanes":[]}"#.into());
+            }
             if request.stage == "assessment_effect_verifier" {
                 return Ok(
                     r#"{"result":"match","mismatch_kind":null,"repair_guidance":null}"#.into(),
@@ -1314,7 +1568,7 @@ mod tests {
             assert!(
                 request
                     .lived_stream
-                    .contains("Structural availability is an upper bound")
+                    .contains("remaining lanes are an upper bound")
             );
             let call = self.calls.fetch_add(1, Ordering::SeqCst);
             let mut value = proposal_value_for_request(request, proposal("actor:player"))?;
@@ -1393,10 +1647,17 @@ mod tests {
             second_receipt.provider_attempts[0]
                 .transport_features
                 .iter()
+                .any(|feature| feature.starts_with("source-mutation-scope:sha256:"))
+        );
+        assert!(
+            second_receipt.provider_attempts[0]
+                .transport_features
+                .iter()
                 .any(|feature| feature.starts_with("source-effect-verifier:sha256:"))
         );
         assert_eq!(store.keys(ASSESSMENT_PROPOSAL_CACHE_KIND).unwrap().len(), 1);
-        assert_eq!(store.keys("persona_stage_receipt.v1").unwrap().len(), 2);
+        assert_eq!(store.keys(ASSESSMENT_SCOPE_CACHE_KIND).unwrap().len(), 1);
+        assert_eq!(store.keys("persona_stage_receipt.v1").unwrap().len(), 3);
     }
 
     struct CorrectingEffectModel {
@@ -1409,6 +1670,10 @@ mod tests {
     impl ModelPort for CorrectingEffectModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
+                "assessment_mutation_scope" => Ok(serde_json::json!({
+                    "lanes":["actor_knowledge_additions","actor_relationship_updates"]
+                })
+                .to_string()),
                 "action_assessment" => {
                     self.assessment_calls.fetch_add(1, Ordering::SeqCst);
                     let correction = request
@@ -1539,7 +1804,7 @@ mod tests {
         let stage_receipts = store
             .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")
             .unwrap();
-        assert_eq!(stage_receipts.len(), 4);
+        assert_eq!(stage_receipts.len(), 5);
         assert_eq!(
             stage_receipts
                 .iter()
@@ -1552,7 +1817,14 @@ mod tests {
                 .iter()
                 .filter(|receipt| receipt.validation_result == "valid")
                 .count(),
-            2
+            3
+        );
+        assert_eq!(
+            stage_receipts
+                .iter()
+                .filter(|receipt| receipt.stage == "assessment_mutation_scope")
+                .count(),
+            1
         );
         assert_eq!(
             stage_receipts
@@ -1569,6 +1841,7 @@ mod tests {
             2
         );
         assert_eq!(store.keys(ASSESSMENT_PROPOSAL_CACHE_KIND).unwrap().len(), 1);
+        assert_eq!(store.keys(ASSESSMENT_SCOPE_CACHE_KIND).unwrap().len(), 1);
     }
 
     #[tokio::test]
@@ -1634,11 +1907,20 @@ mod tests {
         let receipts = store
             .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")
             .unwrap();
-        assert_eq!(receipts.len(), 4);
-        assert!(
+        assert_eq!(receipts.len(), 5);
+        assert_eq!(
             receipts
                 .iter()
-                .all(|receipt| receipt.validation_result == "semantic_invalid")
+                .filter(|receipt| receipt.validation_result == "semantic_invalid")
+                .count(),
+            4
+        );
+        assert_eq!(
+            receipts
+                .iter()
+                .filter(|receipt| receipt.stage == "assessment_mutation_scope")
+                .count(),
+            1
         );
     }
 
@@ -1679,6 +1961,34 @@ mod tests {
                 "equipment:audit-seal"
             ])
         );
+    }
+
+    #[test]
+    fn mutation_scope_removes_every_causally_unselected_effect_lane() {
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = &campaign.actors["player"];
+        let mut schema = serde_json::to_value(schema_for!(AssessmentProposal)).unwrap();
+        constrain_assessment_schema(
+            &mut schema,
+            &BTreeSet::from(["actor:player".into()]),
+            &campaign,
+            acting,
+        )
+        .unwrap();
+        constrain_effect_schema_to_scope(
+            &mut schema,
+            &BTreeSet::from([AssessmentMutationLane::ActorRelationshipUpdates]),
+        )
+        .unwrap();
+
+        let fields = schema
+            .pointer("/$defs/WorldEffectDelta/properties")
+            .and_then(serde_json::Value::as_object)
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect::<BTreeSet<_>>();
+        assert_eq!(fields, BTreeSet::from(["actor_relationship_updates"]));
     }
 
     #[test]
