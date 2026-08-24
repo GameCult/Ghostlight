@@ -366,7 +366,9 @@ fn encrypt_invocation(
     security: &CultNetClientSecurityOptions,
 ) -> Result<ConnectorEnvelope> {
     let nonce = CultNetSecret::new_nonce();
-    let plaintext = rmp_serde::to_vec_named(invocation)?;
+    // Connector invocation documents use CultCache's indexed MessagePack
+    // representation. A named map is not the published wire contract.
+    let plaintext = rmp_serde::to_vec(invocation)?;
     Ok(ConnectorEnvelope {
         schema_id: CONNECTOR_ENVELOPE_SCHEMA.to_string(),
         request_id: invocation.request_id.clone(),
@@ -485,6 +487,47 @@ fn unix_ms() -> Result<u64> {
 mod tests {
     use super::*;
     use std::net::TcpListener;
+
+    #[test]
+    fn connector_invocation_uses_cultcache_indexed_messagepack() -> Result<()> {
+        let invocation = ConnectorInvocation {
+            schema_id: CONNECTOR_INVOCATION_SCHEMA.to_string(),
+            request_id: "request-1".to_string(),
+            caller_runtime_id: "ghostlight-dungeon-yggdrasil".to_string(),
+            expires_at_unix_ms: 42,
+            request: ConnectorModelRequest {
+                schema_id: MODEL_REQUEST_SCHEMA.to_string(),
+                request_id: "request-1".to_string(),
+                conversation_id: "request-1".to_string(),
+                provider: "openai-codex".to_string(),
+                model: "gpt-5.4".to_string(),
+                instructions: "Return the requested public answer.".to_string(),
+                input: vec![ConnectorModelInput::UserText {
+                    text: "projected context".to_string(),
+                }],
+                reasoning_effort: None,
+                reasoning_summary: None,
+                service_tier: None,
+                output_contract_id: None,
+                previous_response_id: None,
+                tools: Vec::new(),
+                output_schema_json: None,
+                source_worker_job_id: None,
+                reasoning_basis_id: None,
+                max_output_tokens: None,
+                prompt_cache_key: None,
+            },
+        };
+
+        let encoded = rmp_serde::to_vec(&invocation)?;
+        assert_eq!(
+            encoded[0], 0x95,
+            "invocation must begin with a five-field array"
+        );
+        let decoded: ConnectorInvocation = rmp_serde::from_slice(&encoded)?;
+        assert_eq!(decoded, invocation);
+        Ok(())
+    }
 
     #[tokio::test]
     async fn cultmesh_model_port_round_trips_typed_encrypted_cultnet_cargo() -> Result<()> {
