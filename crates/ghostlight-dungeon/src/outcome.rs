@@ -1576,14 +1576,16 @@ fn constrain_outcome_schema(
     schema: &mut serde_json::Value,
     actions: &[ActionOutcomeContext],
 ) -> Result<()> {
-    let outcomes = schema
-        .pointer_mut("/properties/outcomes")
-        .ok_or_else(|| anyhow!("strategic outcome schema has no outcomes property"))?;
-    outcomes["minItems"] = serde_json::json!(actions.len());
-    outcomes["maxItems"] = serde_json::json!(actions.len());
-    let proposal = outcomes
-        .pointer_mut("/items")
-        .ok_or_else(|| anyhow!("strategic outcome schema has no proposal item"))?;
+    {
+        let outcomes = schema
+            .pointer_mut("/properties/outcomes")
+            .ok_or_else(|| anyhow!("strategic outcome schema has no outcomes property"))?;
+        outcomes["minItems"] = serde_json::json!(actions.len());
+        outcomes["maxItems"] = serde_json::json!(actions.len());
+    }
+    let proposal = schema
+        .pointer_mut("/$defs/OutcomeProposal")
+        .ok_or_else(|| anyhow!("strategic outcome schema has no proposal definition"))?;
     proposal["required"] = serde_json::json!([
         "action_digest",
         "band",
@@ -2479,6 +2481,18 @@ mod tests {
         let digest = context.actions[0].action_digest.clone();
         let mut schema = serde_json::to_value(schema_for!(OutcomeProposalBundle)).unwrap();
         constrain_outcome_schema(&mut schema, &context.actions).unwrap();
+        assert!(
+            schema
+                .pointer("/properties/outcomes/items/properties")
+                .is_none(),
+            "runtime constraints belong to the referenced proposal definition"
+        );
+        assert!(
+            schema
+                .pointer("/$defs/OutcomeProposal/properties/band")
+                .is_some(),
+            "every required field must remain declared on the constrained definition"
+        );
         let validator = jsonschema::validator_for(&schema).unwrap();
         let outcome = |owner: Option<&str>, extra: Option<(&str, serde_json::Value)>| {
             let mut item = serde_json::json!({
