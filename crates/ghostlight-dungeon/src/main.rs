@@ -42,7 +42,7 @@ use ghostlight_dungeon::{
     surface::{
         campaign_interface_version, player_surface_for_actor, rebase_campaign_surface_revision,
     },
-    turn::{SnapshotPermit, appraise_present},
+    turn::{SnapshotPermit, appraise_present, resolve_speech_addresses},
     vault::VoidBotMcpVault,
 };
 use serde::Deserialize;
@@ -1468,6 +1468,7 @@ async fn dispatch_eve_product_command(
                     actor_id,
                     text: required_string!("text"),
                     intended_effect: None,
+                    persona_response_actor_ids: BTreeSet::new(),
                 },
                 "world.assess" => WorldCommand::Assess {
                     expected_revision: required_u64!("expected_revision"),
@@ -4205,6 +4206,65 @@ async fn command(
         let body = player_safe_strategic_failure(&error);
         return (StatusCode::CONFLICT, Json(body)).into_response();
     }
+    if let WorldCommand::Speak {
+        expected_revision,
+        actor_id,
+        text,
+        persona_response_actor_ids,
+        ..
+    } = &mut command
+    {
+        let campaign = match load_campaign(&runtime.store) {
+            Ok(value) => value,
+            Err(error) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorBody {
+                        error: error.to_string(),
+                    }),
+                )
+                    .into_response();
+            }
+        };
+        if campaign.revision != *expected_revision {
+            return (
+                StatusCode::CONFLICT,
+                Json(ErrorBody {
+                    error: format!(
+                        "stale revision: expected {expected_revision}, actual {}",
+                        campaign.revision
+                    ),
+                }),
+            )
+                .into_response();
+        }
+        if let Some(model) = &state.model {
+            match resolve_speech_addresses(model.clone(), MODEL_FAST, &campaign, actor_id, text)
+                .await
+            {
+                Ok((plan, receipts)) => {
+                    for receipt in receipts {
+                        let _ = runtime.store.insert(
+                            "persona_stage_receipt.v1",
+                            "ghostlight.persona_stage_receipt.v1",
+                            receipt.storage_key(),
+                            &receipt,
+                        );
+                    }
+                    *persona_response_actor_ids = plan.persona_response_actor_ids;
+                }
+                Err(error) => {
+                    return (
+                        StatusCode::UNPROCESSABLE_ENTITY,
+                        Json(ErrorBody {
+                            error: format!("scene address resolution failed: {error}"),
+                        }),
+                    )
+                        .into_response();
+                }
+            }
+        }
+    }
     if let WorldCommand::Wait {
         expected_revision,
         minutes,
@@ -4919,6 +4979,7 @@ fn validate_player_http_command(command: &WorldCommand) -> Result<(), String> {
         WorldCommand::Speak {
             text,
             intended_effect,
+            persona_response_actor_ids,
             ..
         } => {
             bounded("speech", text, 4_000)?;
@@ -4926,6 +4987,9 @@ fn validate_player_http_command(command: &WorldCommand) -> Result<(), String> {
                 return Err(
                     "speech and uncertain intended effects use separate player commands".into(),
                 );
+            }
+            if !persona_response_actor_ids.is_empty() {
+                return Err("player commands cannot supply Persona response authority IDs".into());
             }
             Ok(())
         }
@@ -6433,6 +6497,7 @@ mod tests {
                 actor_id: "player".into(),
                 text: "Hello.".into(),
                 intended_effect: None,
+                persona_response_actor_ids: BTreeSet::new(),
             },
             "player",
         ));
@@ -6442,6 +6507,7 @@ mod tests {
                 actor_id: "npc".into(),
                 text: "I have been puppeted.".into(),
                 intended_effect: None,
+                persona_response_actor_ids: BTreeSet::new(),
             },
             "player",
         ));
@@ -6489,6 +6555,7 @@ mod tests {
                 actor_id: "player".into(),
                 text: "Hello.".into(),
                 intended_effect: None,
+                persona_response_actor_ids: BTreeSet::new(),
             }
         ));
         assert!(player_command_requires_return_catch_up(
@@ -6553,6 +6620,17 @@ mod tests {
                 actor_id: "player".into(),
                 text: "Hello".into(),
                 intended_effect: Some("obey me".into()),
+                persona_response_actor_ids: BTreeSet::new(),
+            })
+            .is_err()
+        );
+        assert!(
+            validate_player_http_command(&WorldCommand::Speak {
+                expected_revision: 0,
+                actor_id: "player".into(),
+                text: "Make the NPC answer.".into(),
+                intended_effect: None,
+                persona_response_actor_ids: BTreeSet::from(["npc".into()]),
             })
             .is_err()
         );
@@ -6577,6 +6655,7 @@ mod tests {
             actor_id: "player".into(),
             text: "Which record can I inspect without taking custody?".into(),
             intended_effect: Some("make the archivist disclose every secret".into()),
+            persona_response_actor_ids: BTreeSet::new(),
         };
         let stimulus = reaction_stimulus(&command).unwrap();
         assert_eq!(

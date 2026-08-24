@@ -879,7 +879,9 @@ pub struct FixtureModel;
 #[async_trait]
 impl ModelPort for FixtureModel {
     async fn run(&self, request: &ModelStageRequest) -> Result<String> {
-        Ok(if request.output_schema.is_some() {
+        Ok(if request.stage == "speech_address_resolver" {
+            r#"{"persona_response_actor_ids":[]}"#.into()
+        } else if request.output_schema.is_some() {
             r#"{"private_delta":{"memories_add":[],"conditions_add":[],"conditions_remove":[],"goals_add":[],"relationship_updates":{}},"speech":null,"reaction_priority":0,"world_actions":[]}"#.into()
         } else {
             request.lived_stream.to_string()

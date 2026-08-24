@@ -348,6 +348,7 @@ fn execute(
                 at: Utc::now(),
                 speaker: "world".into(),
                 text: text.clone(),
+                persona_response_actor_ids: BTreeSet::new(),
             });
             commit_mutation_transition(
                 store,
@@ -364,20 +365,40 @@ fn execute(
             actor_id,
             text,
             intended_effect,
+            persona_response_actor_ids,
         } => {
             require_revision(&campaign, expected_revision)?;
             validate_bounded_text("speech", &text, 4_000)?;
             if let Some(effect) = &intended_effect {
                 validate_bounded_text("intended effect", effect, 1_000)?;
             }
-            if !campaign.actors.contains_key(&actor_id) {
-                return Err(KernelError::Invalid("unknown actor".into()));
+            let speaker = campaign
+                .actors
+                .get(&actor_id)
+                .ok_or_else(|| KernelError::Invalid("unknown actor".into()))?;
+            for response_actor_id in &persona_response_actor_ids {
+                let response_actor = campaign.actors.get(response_actor_id).ok_or_else(|| {
+                    KernelError::Invalid("speech response actor is unknown".into())
+                })?;
+                if response_actor_id == &actor_id
+                    || response_actor.location_id != speaker.location_id
+                    || campaign
+                        .agency_profiles
+                        .get(response_actor_id)
+                        .is_some_and(|profile| !profile.simulation_eligible)
+                {
+                    return Err(KernelError::Invalid(
+                        "speech response actor is not an eligible present Persona".into(),
+                    ));
+                }
             }
+            let response_actor_ids = persona_response_actor_ids.clone();
             campaign.transcript.push(NarrativeTurn {
                 revision: campaign.revision + 1,
                 at: Utc::now(),
                 speaker: actor_id.clone(),
                 text,
+                persona_response_actor_ids,
             });
             if let Some(effect) = intended_effect {
                 campaign.transcript.push(NarrativeTurn {
@@ -385,11 +406,13 @@ fn execute(
                     at: Utc::now(),
                     speaker: "system".into(),
                     text: format!("Intended effect requires assessment: {effect}"),
+                    persona_response_actor_ids: BTreeSet::new(),
                 });
             }
             refresh_materialized_member_relevance(
                 &mut campaign,
-                std::iter::once(actor_id.as_str()),
+                std::iter::once(actor_id.as_str())
+                    .chain(response_actor_ids.iter().map(String::as_str)),
             );
             if is_human_controlled_actor(&campaign, &actor_id) {
                 campaign.last_player_activity = Utc::now();
@@ -1265,7 +1288,9 @@ fn execute(
             reactions,
         } => {
             require_revision(&campaign, expected_revision)?;
-            let witnessed_memory = canonical_witnessed_memory(&campaign, &event_summary)?;
+            let witnessed_turn = canonical_witnessed_turn(&campaign, &event_summary)?;
+            let response_expected_actor_ids = witnessed_turn.persona_response_actor_ids.clone();
+            let witnessed_memory = format!("Witnessed: {}", canonical_turn_text(witnessed_turn));
             let player_location = campaign.actors[&campaign.player_actor_id]
                 .location_id
                 .clone();
@@ -1288,8 +1313,31 @@ fn execute(
                         "reaction Interpreter cannot write actor memory".into(),
                     ));
                 }
+                if let Some(speech) = &reaction.speech {
+                    validate_bounded_text("reaction speech", speech, 1_000)?;
+                }
                 for proposal in &reaction.action_proposals {
                     validate_world_proposal(actor, proposal)?;
+                }
+            }
+            for response_actor_id in &response_expected_actor_ids {
+                let reaction = reactions
+                    .iter()
+                    .find(|reaction| &reaction.actor_id == response_actor_id)
+                    .ok_or_else(|| {
+                        KernelError::Invalid(
+                            "directly addressed Persona is absent from the reaction wave".into(),
+                        )
+                    })?;
+                if reaction
+                    .speech
+                    .as_deref()
+                    .is_none_or(|value| value.trim().is_empty())
+                    && !reaction.deliberate_silence
+                {
+                    return Err(KernelError::Invalid(
+                        "directly addressed Persona produced no observable response".into(),
+                    ));
                 }
             }
             let source_receipt_id = format!(
@@ -1319,6 +1367,16 @@ fn execute(
                         at: Utc::now(),
                         speaker: reaction.actor_id.clone(),
                         text: speech,
+                        persona_response_actor_ids: BTreeSet::new(),
+                    });
+                }
+                if reaction.deliberate_silence {
+                    campaign.transcript.push(NarrativeTurn {
+                        revision: campaign.revision + 1,
+                        at: Utc::now(),
+                        speaker: reaction.actor_id.clone(),
+                        text: "deliberately does not answer.".into(),
+                        persona_response_actor_ids: BTreeSet::new(),
                     });
                 }
                 campaign
@@ -1450,6 +1508,7 @@ fn execute(
                     at: Utc::now(),
                     speaker: "world".into(),
                     text: text.clone(),
+                    persona_response_actor_ids: BTreeSet::new(),
                 });
                 Some((roll, transition, mutation_receipt))
             } else {
@@ -1708,26 +1767,29 @@ fn validate_world_proposal(
     Ok(())
 }
 
-fn canonical_witnessed_memory(
-    campaign: &Campaign,
+fn canonical_witnessed_turn<'a>(
+    campaign: &'a Campaign,
     event_summary: &str,
-) -> Result<String, KernelError> {
+) -> Result<&'a NarrativeTurn, KernelError> {
     let event_summary = event_summary.trim();
-    let witnessed = campaign.transcript.iter().rev().find_map(|turn| {
-        let canonical = if turn.speaker == "world" {
-            turn.text.trim().to_owned()
-        } else {
-            format!("{} says: {}", turn.speaker, turn.text.trim())
-        };
-        (canonical == event_summary).then_some(canonical)
-    });
-    witnessed
-        .map(|canonical| format!("Witnessed: {canonical}"))
+    campaign
+        .transcript
+        .iter()
+        .rev()
+        .find(|turn| canonical_turn_text(turn) == event_summary)
         .ok_or_else(|| {
             KernelError::Invalid(
                 "reaction stimulus does not match a committed transcript turn".into(),
             )
         })
+}
+
+fn canonical_turn_text(turn: &NarrativeTurn) -> String {
+    if turn.speaker == "world" {
+        turn.text.trim().to_owned()
+    } else {
+        format!("{} says: {}", turn.speaker, turn.text.trim())
+    }
 }
 
 fn overlay(
@@ -3383,6 +3445,7 @@ mod tests {
             at: Utc::now(),
             speaker: "world".into(),
             text: "They agree to help design the relay.".into(),
+            persona_response_actor_ids: BTreeSet::new(),
         });
         seed.gestalts.insert(
             "refugees".into(),
@@ -5020,6 +5083,7 @@ mod tests {
                     actor_id: "player".into(),
                     text: "x".repeat(4_001),
                     intended_effect: None,
+                    persona_response_actor_ids: BTreeSet::new(),
                 })
                 .await
                 .is_err()
@@ -5059,6 +5123,7 @@ mod tests {
                 actor_id: "npc".into(),
                 text: "The world does not wait.".into(),
                 intended_effect: None,
+                persona_response_actor_ids: BTreeSet::new(),
             })
             .await
             .unwrap();
@@ -5224,6 +5289,7 @@ mod tests {
                 actor_id: "player".into(),
                 text: "Wait.".into(),
                 intended_effect: None,
+                persona_response_actor_ids: BTreeSet::new(),
             })
             .await
             .unwrap();
@@ -5765,6 +5831,94 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn directly_addressed_persona_must_commit_an_observable_response() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.actors.insert(
+            "anna".into(),
+            ActorState {
+                id: "anna".into(),
+                name: "Anna".into(),
+                location_id: "room".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        seed.transcript.push(NarrativeTurn {
+            revision: 0,
+            at: seed.world_time,
+            speaker: "player".into(),
+            text: "Anna, answer me.".into(),
+            persona_response_actor_ids: BTreeSet::from(["anna".into()]),
+        });
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let silent = ActorReaction {
+            actor_id: "anna".into(),
+            speech: None,
+            deliberate_silence: false,
+            private_delta: ActorStateDelta::default(),
+            action_proposals: vec![],
+        };
+        let error = kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "player says: Anna, answer me.".into(),
+                reactions: vec![silent],
+            })
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("no observable response"));
+        assert_eq!(
+            store
+                .load::<Campaign>("campaign.v1", &seed.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .revision,
+            0
+        );
+
+        let committed = kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "player says: Anna, answer me.".into(),
+                reactions: vec![ActorReaction {
+                    actor_id: "anna".into(),
+                    speech: None,
+                    deliberate_silence: true,
+                    private_delta: ActorStateDelta::default(),
+                    action_proposals: vec![],
+                }],
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = committed else {
+            panic!()
+        };
+        assert_eq!(campaign.revision, 1);
+        assert_eq!(
+            campaign.transcript.last().unwrap().text,
+            "deliberately does not answer."
+        );
+    }
+
+    #[tokio::test]
     async fn invalid_reaction_rejects_the_entire_wave_without_mutation() {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
@@ -5800,6 +5954,7 @@ mod tests {
             ActorReaction {
                 actor_id: "anna".into(),
                 speech: Some("I saw that.".into()),
+                deliberate_silence: false,
                 private_delta: ActorStateDelta {
                     memories_add: vec!["saw the event".into()],
                     ..Default::default()
@@ -5809,6 +5964,7 @@ mod tests {
             ActorReaction {
                 actor_id: "bert".into(),
                 speech: None,
+                deliberate_silence: false,
                 private_delta: ActorStateDelta::default(),
                 action_proposals: vec![WorldActionProposal {
                     actor_id: "bert".into(),
@@ -5851,6 +6007,7 @@ mod tests {
             at: seed.world_time,
             speaker: "player".into(),
             text: "Tell me which seal I repaired.".into(),
+            persona_response_actor_ids: BTreeSet::new(),
         });
         seed.actors.insert(
             "anna".into(),
@@ -5884,6 +6041,7 @@ mod tests {
                 reactions: vec![ActorReaction {
                     actor_id: "anna".into(),
                     speech: None,
+                    deliberate_silence: false,
                     private_delta: ActorStateDelta {
                         memories_add: vec!["I repaired the seal.".into()],
                         ..Default::default()
@@ -5915,6 +6073,7 @@ mod tests {
             at: seed.world_time,
             speaker: "player".into(),
             text: "Tell me which seal I repaired.".into(),
+            persona_response_actor_ids: BTreeSet::new(),
         });
         seed.actors.insert(
             "anna".into(),
@@ -5948,6 +6107,7 @@ mod tests {
                 reactions: vec![ActorReaction {
                     actor_id: "anna".into(),
                     speech: Some("I did not witness it.".into()),
+                    deliberate_silence: false,
                     private_delta: ActorStateDelta::default(),
                     action_proposals: vec![],
                 }],
@@ -5977,6 +6137,7 @@ mod tests {
             at: seed.world_time,
             speaker: "world".into(),
             text: "a disturbance".into(),
+            persona_response_actor_ids: BTreeSet::new(),
         });
         seed.last_player_activity = Utc::now() - Duration::hours(2);
         for id in ["anna", "bert"] {
@@ -6024,12 +6185,14 @@ mod tests {
                     ActorReaction {
                         actor_id: "anna".into(),
                         speech: None,
+                        deliberate_silence: false,
                         private_delta: ActorStateDelta::default(),
                         action_proposals: vec![anna.clone()],
                     },
                     ActorReaction {
                         actor_id: "bert".into(),
                         speech: None,
+                        deliberate_silence: false,
                         private_delta: ActorStateDelta::default(),
                         action_proposals: vec![bert.clone()],
                     },
@@ -6138,6 +6301,7 @@ mod tests {
             at: seed.world_time,
             speaker: "world".into(),
             text: "a disturbance".into(),
+            persona_response_actor_ids: BTreeSet::new(),
         });
         seed.actors.insert(
             "anna".into(),
@@ -6178,6 +6342,7 @@ mod tests {
                 reactions: vec![ActorReaction {
                     actor_id: "anna".into(),
                     speech: None,
+                    deliberate_silence: false,
                     private_delta: ActorStateDelta::default(),
                     action_proposals: vec![proposal.clone()],
                 }],
@@ -6190,6 +6355,7 @@ mod tests {
                 actor_id: "player".into(),
                 text: "I move on before Anna acts.".into(),
                 intended_effect: None,
+                persona_response_actor_ids: BTreeSet::new(),
             })
             .await
             .unwrap();
@@ -6226,6 +6392,7 @@ mod tests {
                 reactions: vec![ActorReaction {
                     actor_id: "anna".into(),
                     speech: None,
+                    deliberate_silence: false,
                     private_delta: ActorStateDelta::default(),
                     action_proposals: vec![],
                 }],

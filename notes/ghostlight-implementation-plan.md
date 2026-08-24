@@ -118,6 +118,15 @@ browser renders these projections as labeled, escaped human-readable controls,
     and the player story lowers exact committed transcript turns without a
     generative rewrite.
 
+Foreground speech now carries explicit response ownership. A private bounded
+address stage selects only exact co-present Persona IDs; `WorldKernel` commits
+that set with the speech turn and projects direct-addressee versus observer
+roles into parallel Persona appraisal. Direct addressees must speak or choose
+typed deliberate silence, which the kernel lowers deterministically. This
+closes the live failure where every present actor perceived a direct question
+but all Interpreters returned `speech: null`, without forcing observers to seize
+conversational focus or admitting a free-text reaction-effect lane.
+
 World transition authority is now a closed semantic mutation algebra rather
 than four empirical effect universes. Foreground attempts, NPC initiative,
 reaction appraisal, strategic actor/institution/Gestalt outcomes, waits,

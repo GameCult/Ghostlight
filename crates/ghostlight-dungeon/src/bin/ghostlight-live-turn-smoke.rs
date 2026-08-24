@@ -41,6 +41,7 @@ async fn main() -> anyhow::Result<()> {
         at: campaign.world_time,
         speaker: "world".into(),
         text: event_summary.clone(),
+        persona_response_actor_ids: Default::default(),
     });
     let store = CampaignStore::open(root.join("campaign.cc"))?;
     store.create_campaign(&campaign, &[], &[])?;

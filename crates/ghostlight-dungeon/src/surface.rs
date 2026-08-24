@@ -475,18 +475,21 @@ mod tests {
                 at: Utc::now(),
                 speaker: "player".into(),
                 text: "I ask the question.".into(),
+                persona_response_actor_ids: Default::default(),
             },
             NarrativeTurn {
                 revision: 2,
                 at: Utc::now(),
                 speaker: "world".into(),
                 text: "raw outcome".into(),
+                persona_response_actor_ids: Default::default(),
             },
             NarrativeTurn {
                 revision: 3,
                 at: Utc::now(),
                 speaker: "npc".into(),
                 text: "I answer directly.".into(),
+                persona_response_actor_ids: Default::default(),
             },
         ];
         let story = story_nodes(&campaign);

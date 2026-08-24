@@ -12,11 +12,19 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ActorInteractionRole {
+    DirectResponseExpected,
+    PresentObserver,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct PermittedActorSlice {
     pub actor_id: String,
     pub location_id: String,
     pub snapshot_binding: String,
+    pub interaction_role: ActorInteractionRole,
     pub identity_experience: Vec<String>,
     pub memories: Vec<String>,
     pub perceived_events: Vec<String>,
@@ -41,6 +49,10 @@ pub struct LivedNarrativeStream {
 pub struct PersonaProposalBundle {
     pub private_delta: crate::domain::ActorStateDelta,
     pub speech: Option<String>,
+    /// Typed refusal lane for a directly addressed actor. WorldKernel lowers
+    /// it deterministically; this field cannot carry free-form effects.
+    #[serde(default)]
+    pub deliberate_silence: bool,
     pub reaction_priority: i16,
     pub world_actions: Vec<crate::domain::WorldActionProposal>,
 }
@@ -362,7 +374,7 @@ impl PersonaProjectionEngine {
                 lived_stream: build_persona_prompt(&PersonaPrompt {
                     identity: &slice.actor_id,
                     lived_stream: &lived.text,
-                    domain_guidance: "Respond as a situated character. Answer direct questions at human conversational length. Speech and attempted effects are distinct; the world kernel resolves consequences. Asking, inviting, persuading, threatening, or demanding completes only your own speech: never supply the other person's answer, choice, consent, belief, disclosure, or obedience.",
+                    domain_guidance: "Respond as a situated character. When the lived stream says a response is expected from you, make your answer, refusal, or deliberate silence observable now. Speech and attempted effects are distinct; the world kernel resolves consequences. Asking, inviting, persuading, threatening, or demanding completes only your own speech: never supply the other person's answer, choice, consent, belief, disclosure, or obedience.",
                     word_budget: 160,
                 }),
                 output_schema: None,
@@ -395,7 +407,7 @@ impl PersonaProjectionEngine {
                     domain_guidance: &permission_guidance,
                 }),
                 output_schema: Some(schema),
-                source_receipt_ids: slice.source_receipt_ids,
+                source_receipt_ids: slice.source_receipt_ids.clone(),
                 temperature: Some(0.0),
                 max_output_tokens: Some(768),
             },
@@ -410,6 +422,7 @@ impl PersonaProjectionEngine {
                 .clone()
                 .ok_or_else(|| anyhow!("interpreter produced no typed proposal"))?,
         )?;
+        validate_actor_proposals(&slice, &proposals)?;
         Ok(PersonaTerminalBundle {
             lived_stream: lived,
             persona_output: persona.narrative,
@@ -420,8 +433,16 @@ impl PersonaProjectionEngine {
 }
 
 fn actor_interpreter_guidance(slice: &PermittedActorSlice) -> String {
+    let response_guidance = match slice.interaction_role {
+        ActorInteractionRole::DirectResponseExpected => {
+            "This actor is an exact direct addressee. Extract an explicit spoken response, or set deliberate_silence true only when the Persona deliberately refuses or remains silent. Do not erase the Persona's response into null fields."
+        }
+        ActorInteractionRole::PresentObserver => {
+            "This actor is present but was not directly asked to respond. Speech or observable action remains optional and must follow only from this actor's projected choice."
+        }
+    };
     format!(
-        "Record only private changes supported by the lived stream and typed context. World actions are attempts, not completed effects. Speech is extracted separately and is already complete. Do not emit a world action merely to make another actor answer, choose, consent, believe, disclose, feel, or obey; the other actor retains agency and any requested response remains unresolved. actor_id must be {:?}. Exact allowed state references are {:?}. Relationship update keys may only be {:?}.",
+        "{response_guidance} Record only private changes supported by the lived stream and typed context. World actions are attempts, not completed effects. Speech is extracted separately and is already complete. Do not emit a world action merely to make another actor answer, choose, consent, believe, disclose, feel, or obey; the other actor retains agency and any requested response remains unresolved. actor_id must be {:?}. Exact allowed state references are {:?}. Relationship update keys may only be {:?}.",
         slice.actor_id,
         allowed_actor_references(slice),
         slice.perceived_actors.keys().collect::<Vec<_>>()
@@ -455,9 +476,44 @@ fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> S
     } else {
         slice.memories[recent_memory_start..].join("; ")
     };
+    let interaction = match slice.interaction_role {
+        ActorInteractionRole::DirectResponseExpected => {
+            "You are an exact direct addressee of the current speech. A response is expected from you now. You retain the agency to answer, refuse, or remain silent, but refusal or silence must be made observable rather than disappearing from the scene."
+        }
+        ActorInteractionRole::PresentObserver => {
+            "You are present and perceive the current event, but you were not directly asked to respond. You may react from your own goals and pressures; you need not seize conversational focus."
+        }
+    };
     format!(
-        "{projection}\n\nYour reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
+        "{projection}\n\n{interaction} Your reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
     )
+}
+
+fn validate_actor_proposals(
+    slice: &PermittedActorSlice,
+    proposals: &PersonaProposalBundle,
+) -> Result<()> {
+    if matches!(
+        slice.interaction_role,
+        ActorInteractionRole::DirectResponseExpected
+    ) && proposals
+        .speech
+        .as_deref()
+        .is_none_or(|value| value.trim().is_empty())
+        && !proposals.deliberate_silence
+    {
+        return Err(anyhow!(
+            "directly addressed Persona produced no observable response"
+        ));
+    }
+    if proposals
+        .speech
+        .as_deref()
+        .is_some_and(|value| value.trim().is_empty() || value.chars().count() > 1_000)
+    {
+        return Err(anyhow!("Persona speech must contain 1 to 1000 characters"));
+    }
+    Ok(())
 }
 
 fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
@@ -2537,6 +2593,36 @@ fn constrain_interpreter_schema(
         .and_then(|value| value.as_object_mut())
         .ok_or_else(|| anyhow!("Persona proposal schema has no memory additions"))?;
     memories_add.insert("maxItems".into(), serde_json::json!(0));
+    let root = schema
+        .as_object_mut()
+        .ok_or_else(|| anyhow!("Persona proposal schema is not an object"))?;
+    let properties = root
+        .get_mut("properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("Persona proposal schema has no root properties"))?;
+    properties.insert(
+        "speech".into(),
+        serde_json::json!({"type":["string","null"],"minLength":1,"maxLength":1000}),
+    );
+    properties.insert(
+        "deliberate_silence".into(),
+        serde_json::json!({"type":"boolean"}),
+    );
+    if matches!(
+        slice.interaction_role,
+        ActorInteractionRole::DirectResponseExpected
+    ) {
+        root.entry("allOf")
+            .or_insert_with(|| serde_json::json!([]))
+            .as_array_mut()
+            .ok_or_else(|| anyhow!("Persona proposal schema allOf is not an array"))?
+            .push(serde_json::json!({
+                "anyOf":[
+                    {"required":["speech"],"properties":{"speech":{"type":"string","minLength":1,"maxLength":1000}}},
+                    {"required":["deliberate_silence"],"properties":{"deliberate_silence":{"const":true}}}
+                ]
+            }));
+    }
     Ok(())
 }
 
@@ -3834,6 +3920,7 @@ mod tests {
             actor_id: "npc".into(),
             location_id: "room".into(),
             snapshot_binding: "campaign:1".into(),
+            interaction_role: ActorInteractionRole::PresentObserver,
             identity_experience: vec!["A tired navigator".into()],
             memories: vec!["Proposed the eastern trail evacuation at dusk.".into()],
             perceived_events: vec![],

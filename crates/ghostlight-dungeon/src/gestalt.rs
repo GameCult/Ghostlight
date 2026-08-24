@@ -481,6 +481,7 @@ mod tests {
             at: chrono::Utc::now(),
             speaker: campaign.player_actor_id.clone(),
             text: "I ask the unnamed porter for their name.".into(),
+            persona_response_actor_ids: BTreeSet::new(),
         });
         let exact = format!(
             "{} says: I ask the unnamed porter for their name.",
@@ -496,6 +497,7 @@ mod tests {
             at: chrono::Utc::now(),
             speaker: "world".into(),
             text: "They agree to help.".into(),
+            persona_response_actor_ids: BTreeSet::new(),
         });
         campaign.revision = 8;
         assert!(automatic_individuation_stimulus(&campaign).is_none());

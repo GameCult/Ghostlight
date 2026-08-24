@@ -646,6 +646,11 @@ pub struct WorldActionProposal {
 pub struct ActorReaction {
     pub actor_id: String,
     pub speech: Option<String>,
+    /// A typed, actor-owned refusal to answer. The kernel lowers this to a
+    /// deterministic visible transcript turn, so an Interpreter cannot smuggle
+    /// an unassessed physical effect through free-form reaction prose.
+    #[serde(default)]
+    pub deliberate_silence: bool,
     pub private_delta: ActorStateDelta,
     pub action_proposals: Vec<WorldActionProposal>,
 }
@@ -846,6 +851,11 @@ pub struct NarrativeTurn {
     pub at: DateTime<Utc>,
     pub speaker: String,
     pub text: String,
+    /// Exact model-controlled actors whom this committed speech asks to
+    /// respond. Other present actors still perceive and appraise the turn, but
+    /// they are not response-bound. Human-controlled actors never appear here.
+    #[serde(default)]
+    pub persona_response_actor_ids: BTreeSet<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -890,6 +900,11 @@ pub enum WorldCommand {
         actor_id: String,
         text: String,
         intended_effect: Option<String>,
+        /// Filled by the server-side scene-address resolver from the exact
+        /// present-actor catalog. Player boundaries must not accept authority
+        /// IDs in this field.
+        #[serde(default)]
+        persona_response_actor_ids: BTreeSet<String>,
     },
     Assess {
         expected_revision: u64,

@@ -2918,6 +2918,7 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
             at: now,
             speaker: "world".into(),
             text: seed.opening_narration,
+            persona_response_actor_ids: BTreeSet::new(),
         }],
         last_player_activity: now,
         pending_ticks: 0,

@@ -734,6 +734,18 @@ world turns, or read historical `narration_projection.v1` rows. This removes two
 calls per live turn and makes display-layer invention of names, dialogue,
 injuries, participants, or actions structurally impossible.
 
+Player speech address is also typed before it can steer a reaction. A compact
+Flash projection receives only the exact co-present simulation-eligible actor
+IDs and names, bounded recent public turns, prior conversational focus, and the
+new utterance. It returns the exact Persona actors from whom the utterance asks
+for a response. `WorldKernel` revalidates those IDs and commits them with the
+speech `NarrativeTurn`; neither Eve nor the native client may submit them.
+Every present actor continues to appraise the turn, but the private actor slice
+now distinguishes `direct_response_expected` from `present_observer`. A direct
+addressee must speak or select typed deliberate silence. The kernel lowers
+silence to a deterministic visible refusal, so no free-text gesture lane can
+claim an unassessed world effect.
+
 `ghostlight-campaign-inspect` is a read-only typed-store witness. It reports the
 latest strategic cover, attributed appraisals and inactions, activity outcomes,
 events, news, subject continuity, and model receipt/token metadata without
@@ -952,6 +964,10 @@ Pending NPC actions are revision-scoped reaction-window state. The next
 reaction wave atomically replaces the set, and the kernel resolves an action
 only when the current last event is the exact current-revision reaction wave.
 Same-wave assessment correction remains possible; cross-turn rebasing is not.
+The same reaction commit validates its response duty against the exact
+committed source turn. A missing directly addressed Persona or a null response
+aborts the whole wave without private deltas, transcript additions, initiative,
+or revision change; observers may still choose to speak from their own goals.
 
 Population fission now composes admitted child entities, stable child
 identities, one lineage split, exact resource custody transfers, and exact

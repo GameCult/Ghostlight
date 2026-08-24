@@ -694,6 +694,19 @@ to their own snapshot versions. Initiative selects compatible reactions for a
 later `WorldCommand`; it does not suppress perception for actors outside the
 current conversational focus.
 
+Player speech first passes through a small private address projection against
+the exact co-present, simulation-eligible actor catalog. The projection may
+select only supplied actor IDs and identifies only actors from whom the speech
+actually requests a response; people who are merely mentioned or able to hear
+remain observers. `WorldKernel` validates co-presence and simulation custody,
+then commits the selected response set with the exact speech turn. Browser and
+native callers cannot supply those IDs. Each actor's permitted slice carries
+either `direct_response_expected` or `present_observer`, while every present
+actor still appraises the event. A direct addressee must emit speech or choose
+typed deliberate silence. The latter lowers to deterministic visible refusal;
+it is not a free-text effect lane. The complete reaction wave still validates
+and commits atomically.
+
 The primary player event commits before optional presence casting, reaction
 appraisal and initiative. A failure in those later stages is stored
 as a rejected-proposal receipt and returned as an accepted committed result
