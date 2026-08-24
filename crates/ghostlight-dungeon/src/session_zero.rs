@@ -4520,7 +4520,7 @@ mod tests {
                             .lived_stream
                             .contains("Never duplicate a proposed change into a direct patch")
                     );
-                    Ok(r#"{"contract_patch":{"starting_where":"Mars in Zhestokost space","tone":["serious","political"]},"character_patch":null,"decisions":[],"suggested_replies":[]}"#.into())
+                    Ok(r#"{"contract_patch":{"starting_where":"Mars in Zhestokost space","tone":["serious","political"]},"decisions":[],"suggested_replies":[]}"#.into())
                 }
                 stage => panic!("unexpected Session Zero model stage {stage}"),
             }
