@@ -284,6 +284,14 @@ batch and an explicit explanation. Speech is an event in the means record;
 persuasion, obligation, relationship, and knowledge consequences are separate
 mutations.
 
+Governed time, travel, and resolution-budget proposals persist approvals before
+their unanimous finalization. A fully approved but uncommitted proposal is a
+retryable commit request: any already-approved active member may invoke its
+advertised approval operation again, and the kernel revalidates the exact world
+and governance boundary before attempting the same atomic finalization. A
+duplicate vote on a proposal that is not unanimous is still rejected, and a
+committed or stale proposal can never replay.
+
 Complex effects are batches, not new verbs. Giving half a medicine lot to a
 clinic composes resource split, custody transfer, and perhaps an obligation.
 Evacuating a named refugee composes relocation, population-membership transfer,

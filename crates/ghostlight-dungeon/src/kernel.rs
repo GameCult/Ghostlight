@@ -532,13 +532,13 @@ fn execute(
                     "time proposal is committed, stale, or belongs to another campaign".into(),
                 ));
             }
-            if !proposal.approvals.insert(member_id) {
-                return Err(KernelError::Invalid(
-                    "member already approved this time proposal".into(),
-                ));
-            }
+            let newly_approved = proposal.approvals.insert(member_id);
             if active_member_ids(&membership) == proposal.approvals {
                 commit_governed_time_advance(store, row, campaign, proposal_row, proposal)
+            } else if !newly_approved {
+                Err(KernelError::Invalid(
+                    "member already approved this time proposal".into(),
+                ))
             } else {
                 store
                     .replace(
@@ -659,11 +659,7 @@ fn execute(
                     "group-travel proposal is committed, stale, or belongs elsewhere".into(),
                 ));
             }
-            if !proposal.approvals.insert(member_id) {
-                return Err(KernelError::Invalid(
-                    "member already approved this group-travel proposal".into(),
-                ));
-            }
+            let newly_approved = proposal.approvals.insert(member_id);
             if active_member_ids(&membership) == proposal.approvals {
                 commit_governed_group_travel(
                     store,
@@ -673,6 +669,10 @@ fn execute(
                     proposal,
                     &membership,
                 )
+            } else if !newly_approved {
+                Err(KernelError::Invalid(
+                    "member already approved this group-travel proposal".into(),
+                ))
             } else {
                 store
                     .replace(
@@ -793,13 +793,13 @@ fn execute(
                     "cell-budget proposal is committed, stale, or belongs elsewhere".into(),
                 ));
             }
-            if !proposal.approvals.insert(member_id) {
-                return Err(KernelError::Invalid(
-                    "member already approved this cell-budget proposal".into(),
-                ));
-            }
+            let newly_approved = proposal.approvals.insert(member_id);
             if active_member_ids(&membership) == proposal.approvals {
                 commit_governed_cell_budget(store, row, campaign, proposal_row, proposal)
+            } else if !newly_approved {
+                Err(KernelError::Invalid(
+                    "member already approved this cell-budget proposal".into(),
+                ))
             } else {
                 store
                     .replace(
@@ -7224,7 +7224,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn group_travel_moves_every_member_once_after_unanimous_revision_bound_approval() {
+    async fn group_travel_retries_uncommitted_unanimous_approval_and_moves_every_member_once() {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let mut seed = campaign();
@@ -7297,11 +7297,23 @@ mod tests {
         assert_eq!(campaign.revision, 0);
         assert_eq!(campaign.actors["player"].location_id, "room");
         let proposal_id = proposal.id;
+        let (proposal_row, mut persisted_proposal) = store
+            .load::<GroupTravelProposal>("group_travel_proposal.v1", &proposal_id)
+            .unwrap()
+            .unwrap();
+        persisted_proposal.approvals.insert("member:guest".into());
+        store
+            .replace(
+                &proposal_row,
+                "ghostlight.group_travel_proposal.v1",
+                &persisted_proposal,
+            )
+            .unwrap();
         let committed = kernel
             .command(WorldCommand::ApproveGroupTravel {
                 expected_revision: 0,
                 proposal_id: proposal_id.clone(),
-                member_id: "member:guest".into(),
+                member_id: "member:host".into(),
             })
             .await
             .unwrap();

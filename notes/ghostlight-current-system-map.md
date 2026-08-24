@@ -1026,6 +1026,14 @@ region expansion restores the original local key. Reusing `road`, `harbor`, or
 a destination-shaped key under another location cannot overwrite an unrelated
 edge or make a surface-advertised route fail transition admission.
 
+Governance approval and governed finalization are distinct durable states.
+When unanimous time, travel, or Persona-cell approval exists but finalization
+did not commit, the advertised approval operation retries the exact revision-
+bound finalization even for a member whose approval is already present. This
+does not add another writer: the same WorldKernel validation and atomic commit
+path runs again. Duplicate non-unanimous votes, stale boundaries, and committed
+proposals still reject.
+
 Initial compiler publication is a bounded creation transaction, not a fictional
 world transition. `CampaignRegistry` owns discoverability, installs the
 approved seed into a fresh staging store with one empty-store CAS, and exposes
