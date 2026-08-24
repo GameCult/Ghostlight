@@ -621,6 +621,21 @@ actors, supplied institutions, accessible facts, branch evidence, and accepted
 extraordinary permissions. A remote actor is not a valid modifier reference.
 The same set is shown to the assessor and enforced by local validation, so a
 model cannot invent a reference namespace or cite context it was not given.
+The player projection lists every modifier label, signed value, and exact
+supporting reference rather than exposing only the capped total.
+
+The validated semantic proposal is content-addressed by the exact model,
+instructions, action-specific schema, and permitted typed state packet. Its
+private `assessment_proposal_cache.v1` row is derived inference evidence, not an
+assessment or world authority. Campaign revision and expiry remain commit
+bindings but are absent from this semantic identity. A stale confirmation whose
+permitted packet is unchanged therefore reuses the byte-identical validated DC,
+modifiers, stakes, and outcome deltas, locally revalidates them, and issues a
+new revision-bound assessment digest without provider inference. Any change to
+the model contract, schema, actor slice, occupancy, facts, institutions,
+permissions, campaign contract, or boundaries changes the content address and
+requires a fresh assessment. Cache hits emit an explicit zero-token model-stage
+receipt pointing at the originating receipt.
 
 Outcome-delta maps are bound to the same snapshot rather than accepting a
 free-form identifier namespace. Actor effects may name only co-located actors;

@@ -1,6 +1,10 @@
 use crate::{
     domain::{ActionAssessment, ActionIntent, Campaign, ContextModifier, WorldEffectDelta},
-    model::{ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage},
+    model::{
+        ModelPort, ModelProviderAttemptReceipt, ModelStageReceipt, ModelStageRequest,
+        ModelTokenUsage, run_validated_stage,
+    },
+    persistence::CampaignStore,
     session_zero::{AggregatedBoundary, CampaignContract, ExtraordinaryPermission},
 };
 use anyhow::{Result, anyhow};
@@ -10,7 +14,11 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{collections::BTreeSet, sync::Arc};
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+const ASSESSMENT_PROPOSAL_CACHE_KIND: &str = "assessment_proposal_cache.v1";
+const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v1";
+const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v2";
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct AssessmentProposal {
     normalized_intent: String,
     admissible: bool,
@@ -26,6 +34,17 @@ struct AssessmentProposal {
     mixed_effect: WorldEffectDelta,
     failure_effect: WorldEffectDelta,
     bargains: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+struct AssessmentProposalCacheEntry {
+    schema: String,
+    basis_digest: String,
+    proposal: AssessmentProposal,
+    source_provider: String,
+    source_model: String,
+    source_receipt_hash: String,
+    created_at: chrono::DateTime<Utc>,
 }
 
 pub struct ActionAssessor {
@@ -59,6 +78,46 @@ impl ActionAssessor {
 
     pub async fn assess_with_context(
         &self,
+        campaign: &Campaign,
+        intent: ActionIntent,
+        extraordinary_permissions: &[ExtraordinaryPermission],
+        campaign_contract: Option<&CampaignContract>,
+        aggregate_boundaries: &[AggregatedBoundary],
+    ) -> Result<(ActionAssessment, ModelStageReceipt)> {
+        self.assess_with_context_inner(
+            None,
+            campaign,
+            intent,
+            extraordinary_permissions,
+            campaign_contract,
+            aggregate_boundaries,
+        )
+        .await
+    }
+
+    pub async fn assess_with_context_cached(
+        &self,
+        store: &CampaignStore,
+        campaign: &Campaign,
+        intent: ActionIntent,
+        extraordinary_permissions: &[ExtraordinaryPermission],
+        campaign_contract: Option<&CampaignContract>,
+        aggregate_boundaries: &[AggregatedBoundary],
+    ) -> Result<(ActionAssessment, ModelStageReceipt)> {
+        self.assess_with_context_inner(
+            Some(store),
+            campaign,
+            intent,
+            extraordinary_permissions,
+            campaign_contract,
+            aggregate_boundaries,
+        )
+        .await
+    }
+
+    async fn assess_with_context_inner(
+        &self,
+        store: Option<&CampaignStore>,
         campaign: &Campaign,
         intent: ActionIntent,
         extraordinary_permissions: &[ExtraordinaryPermission],
@@ -125,6 +184,34 @@ impl ActionAssessor {
             serde_json::to_string(&allowed_references)?
         );
         let snapshot_binding = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
+        let basis_digest = assessment_basis_digest(&self.model_id, &base_prompt);
+        if let Some(store) = store
+            && let Some((_, cached)) = store.load::<AssessmentProposalCacheEntry>(
+                ASSESSMENT_PROPOSAL_CACHE_KIND,
+                &basis_digest,
+            )?
+        {
+            if cached.schema != ASSESSMENT_PROPOSAL_CACHE_SCHEMA
+                || cached.basis_digest != basis_digest
+            {
+                return Err(anyhow!("assessment proposal cache identity mismatch"));
+            }
+            let proposal = validate_and_bind_proposal(
+                cached.proposal.clone(),
+                campaign,
+                actor,
+                &allowed_references,
+            )?;
+            let assessment = build_assessment(campaign, intent, proposal.clone())?;
+            let receipt = cache_hit_receipt(
+                &cached,
+                &proposal,
+                &snapshot_binding,
+                &base_prompt,
+                &campaign.branch_origin.evidence_receipt_ids,
+            )?;
+            return Ok((assessment, receipt));
+        }
         let mut correction = String::new();
         let mut attempts = 0;
         let (proposal, out) = loop {
@@ -144,22 +231,12 @@ impl ActionAssessor {
             )
             .await?;
             let candidate = (|| -> Result<AssessmentProposal> {
-                let mut proposal: AssessmentProposal = serde_json::from_value(
+                let proposal: AssessmentProposal = serde_json::from_value(
                     out.structured
                         .clone()
                         .ok_or_else(|| anyhow!("assessor returned no typed proposal"))?,
                 )?;
-                bind_visible_knowledge(&mut proposal)?;
-                validate_proposal(&proposal, &allowed_references)?;
-                for (effect, stake) in [
-                    (&proposal.strong_effect, &proposal.success_stake),
-                    (&proposal.success_effect, &proposal.success_stake),
-                    (&proposal.mixed_effect, &proposal.mixed_stake),
-                    (&proposal.failure_effect, &proposal.failure_stake),
-                ] {
-                    validate_effect(campaign, actor, effect, stake)?;
-                }
-                Ok(proposal)
+                validate_and_bind_proposal(proposal, campaign, actor, &allowed_references)
             })();
             match candidate {
                 Ok(proposal) => break (proposal, out),
@@ -180,33 +257,188 @@ impl ActionAssessor {
                 }
             }
         };
-        let modifier_total =
-            crate::d20::capped_modifier(proposal.modifiers.iter().map(|m| m.value));
-        let mut assessment = ActionAssessment {
-            schema: "ghostlight.player_action_assessment.v1".into(),
-            campaign_id: campaign.id,
-            revision: campaign.revision,
-            intent,
-            admissible: proposal.admissible,
-            missing_permission: proposal.missing_permission,
-            dc: proposal.dc,
-            modifiers: proposal.modifiers,
-            modifier_total,
-            effect_ceiling: proposal.effect_ceiling,
-            success_stake: proposal.success_stake,
-            mixed_stake: proposal.mixed_stake,
-            failure_stake: proposal.failure_stake,
-            strong_effect: proposal.strong_effect,
-            success_effect: proposal.success_effect,
-            mixed_effect: proposal.mixed_effect,
-            failure_effect: proposal.failure_effect,
-            bargains: proposal.bargains,
-            expires_at: Utc::now() + Duration::minutes(10),
-            digest: String::new(),
-        };
-        assessment.digest = assessment_digest(&assessment)?;
-        Ok((assessment, out.receipt))
+        let mut selected_proposal = proposal;
+        let mut selected_receipt = out.receipt;
+        if let Some(store) = store {
+            let entry = AssessmentProposalCacheEntry {
+                schema: ASSESSMENT_PROPOSAL_CACHE_SCHEMA.into(),
+                basis_digest: basis_digest.clone(),
+                proposal: selected_proposal.clone(),
+                source_provider: selected_receipt.provider.clone(),
+                source_model: selected_receipt.model.clone(),
+                source_receipt_hash: selected_receipt.receipt_hash.clone(),
+                created_at: Utc::now(),
+            };
+            if let Err(insert_error) = store.insert(
+                ASSESSMENT_PROPOSAL_CACHE_KIND,
+                ASSESSMENT_PROPOSAL_CACHE_SCHEMA,
+                &basis_digest,
+                &entry,
+            ) {
+                let (_, winner) = store
+                    .load::<AssessmentProposalCacheEntry>(
+                        ASSESSMENT_PROPOSAL_CACHE_KIND,
+                        &basis_digest,
+                    )?
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "assessment proposal cache insert failed without an existing winner: {insert_error}"
+                        )
+                    })?;
+                if winner.schema != ASSESSMENT_PROPOSAL_CACHE_SCHEMA
+                    || winner.basis_digest != basis_digest
+                {
+                    return Err(anyhow!(
+                        "assessment proposal cache winner identity mismatch"
+                    ));
+                }
+                selected_proposal = validate_and_bind_proposal(
+                    winner.proposal.clone(),
+                    campaign,
+                    actor,
+                    &allowed_references,
+                )?;
+                selected_receipt = cache_hit_receipt(
+                    &winner,
+                    &selected_proposal,
+                    &snapshot_binding,
+                    &base_prompt,
+                    &campaign.branch_origin.evidence_receipt_ids,
+                )?;
+            }
+        }
+        let assessment = build_assessment(campaign, intent, selected_proposal)?;
+        Ok((assessment, selected_receipt))
     }
+}
+
+fn validate_and_bind_proposal(
+    mut proposal: AssessmentProposal,
+    campaign: &Campaign,
+    actor: &crate::domain::ActorState,
+    allowed_references: &BTreeSet<String>,
+) -> Result<AssessmentProposal> {
+    bind_visible_knowledge(&mut proposal)?;
+    validate_proposal(&proposal, allowed_references)?;
+    for (effect, stake) in [
+        (&proposal.strong_effect, &proposal.success_stake),
+        (&proposal.success_effect, &proposal.success_stake),
+        (&proposal.mixed_effect, &proposal.mixed_stake),
+        (&proposal.failure_effect, &proposal.failure_stake),
+    ] {
+        validate_effect(campaign, actor, effect, stake)?;
+    }
+    Ok(proposal)
+}
+
+fn build_assessment(
+    campaign: &Campaign,
+    intent: ActionIntent,
+    proposal: AssessmentProposal,
+) -> Result<ActionAssessment> {
+    let modifier_total =
+        crate::d20::capped_modifier(proposal.modifiers.iter().map(|modifier| modifier.value));
+    let mut assessment = ActionAssessment {
+        schema: "ghostlight.player_action_assessment.v1".into(),
+        campaign_id: campaign.id,
+        revision: campaign.revision,
+        intent,
+        admissible: proposal.admissible,
+        missing_permission: proposal.missing_permission,
+        dc: proposal.dc,
+        modifiers: proposal.modifiers,
+        modifier_total,
+        effect_ceiling: proposal.effect_ceiling,
+        success_stake: proposal.success_stake,
+        mixed_stake: proposal.mixed_stake,
+        failure_stake: proposal.failure_stake,
+        strong_effect: proposal.strong_effect,
+        success_effect: proposal.success_effect,
+        mixed_effect: proposal.mixed_effect,
+        failure_effect: proposal.failure_effect,
+        bargains: proposal.bargains,
+        expires_at: Utc::now() + Duration::minutes(10),
+        digest: String::new(),
+    };
+    assessment.digest = assessment_digest(&assessment)?;
+    Ok(assessment)
+}
+
+fn assessment_basis_digest(model_id: &str, base_prompt: &str) -> String {
+    format!(
+        "sha256:{:x}",
+        Sha256::digest(
+            format!("{ASSESSMENT_SEMANTICS_VERSION}|{model_id}|{base_prompt}").as_bytes()
+        )
+    )
+}
+
+fn cache_hit_receipt(
+    cached: &AssessmentProposalCacheEntry,
+    proposal: &AssessmentProposal,
+    snapshot_binding: &str,
+    base_prompt: &str,
+    source_receipt_ids: &[String],
+) -> Result<ModelStageReceipt> {
+    let output = serde_json::to_string(proposal)?;
+    let output_hash = format!("sha256:{:x}", Sha256::digest(output.as_bytes()));
+    let request_hash = format!(
+        "sha256:{:x}",
+        Sha256::digest(
+            format!(
+                "{}|{}|{}|{}",
+                cached.basis_digest,
+                snapshot_binding,
+                cached.source_model,
+                source_receipt_ids.join("|")
+            )
+            .as_bytes()
+        )
+    );
+    let receipt_hash = format!(
+        "sha256:{:x}",
+        Sha256::digest(
+            format!(
+                "{}|{}|action_assessment|{}|{}|{}|{}",
+                cached.source_provider,
+                cached.source_model,
+                snapshot_binding,
+                request_hash,
+                output_hash,
+                cached.source_receipt_hash
+            )
+            .as_bytes()
+        )
+    );
+    Ok(ModelStageReceipt {
+        schema: "ghostlight.persona_stage_receipt.v1".into(),
+        receipt_hash,
+        provider: cached.source_provider.clone(),
+        model: cached.source_model.clone(),
+        stage: "action_assessment".into(),
+        snapshot_binding: snapshot_binding.into(),
+        request_hash,
+        output_hash,
+        source_receipt_ids: source_receipt_ids.to_vec(),
+        latency_ms: 0,
+        validation_result: "valid_cache_hit".into(),
+        local_validation_error: None,
+        input_chars: base_prompt.chars().count(),
+        output_chars: output.chars().count(),
+        provider_attempts: vec![ModelProviderAttemptReceipt {
+            provider_request_id: None,
+            system_fingerprint: None,
+            finish_reason: Some("cache_hit".into()),
+            latency_ms: 0,
+            token_usage: Some(ModelTokenUsage::default()),
+            transport_features: vec![
+                "cultcache.output-cache".into(),
+                format!("source-receipt:{}", cached.source_receipt_hash),
+            ],
+            local_validation_result: "valid_cache_hit".into(),
+            local_validation_error: None,
+        }],
+    })
 }
 
 fn constrain_assessment_schema(
@@ -742,6 +974,44 @@ pub fn assessment_digest(assessment: &ActionAssessment) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use async_trait::async_trait;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    struct DriftingAssessmentModel {
+        calls: AtomicUsize,
+    }
+
+    #[async_trait]
+    impl ModelPort for DriftingAssessmentModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            let call = self.calls.fetch_add(1, Ordering::SeqCst);
+            let mut value = serde_json::to_value(proposal("actor:player"))?;
+            value["modifiers"][0]["value"] = serde_json::json!(if call == 0 { 2 } else { 6 });
+            let allowed_effect_fields = request
+                .output_schema
+                .as_ref()
+                .and_then(|schema| schema.pointer("/$defs/WorldEffectDelta/properties"))
+                .and_then(serde_json::Value::as_object)
+                .map(|properties| properties.keys().cloned().collect::<BTreeSet<_>>())
+                .unwrap_or_default();
+            for field in [
+                "strong_effect",
+                "success_effect",
+                "mixed_effect",
+                "failure_effect",
+            ] {
+                value[field]
+                    .as_object_mut()
+                    .expect("fixture effect is an object")
+                    .retain(|key, _| allowed_effect_fields.contains(key));
+            }
+            Ok(serde_json::to_string(&value)?)
+        }
+
+        fn provider(&self) -> &'static str {
+            "drifting-fixture"
+        }
+    }
 
     fn proposal(reference: &str) -> AssessmentProposal {
         AssessmentProposal {
@@ -764,6 +1034,48 @@ mod tests {
             failure_effect: WorldEffectDelta::default(),
             bargains: vec![],
         }
+    }
+
+    #[tokio::test]
+    async fn unchanged_semantic_packet_reuses_exact_validated_assessment_proposal() {
+        let model = Arc::new(DriftingAssessmentModel {
+            calls: AtomicUsize::new(0),
+        });
+        let assessor = ActionAssessor::new(model.clone(), "fixture-model");
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let intent = ActionIntent {
+            actor_id: "player".into(),
+            description: "inspect the gate".into(),
+            intended_effect: "learn whether it is open".into(),
+        };
+
+        let (first, first_receipt) = assessor
+            .assess_with_context_cached(&store, &campaign, intent.clone(), &[], None, &[])
+            .await
+            .unwrap();
+        campaign.revision += 1;
+        let (second, second_receipt) = assessor
+            .assess_with_context_cached(&store, &campaign, intent, &[], None, &[])
+            .await
+            .unwrap();
+
+        assert_eq!(model.calls.load(Ordering::SeqCst), 1);
+        assert_eq!(first.modifiers, second.modifiers);
+        assert_eq!(first.modifier_total, 2);
+        assert_eq!(second.modifier_total, 2);
+        assert_eq!(first.revision, 0);
+        assert_eq!(second.revision, 1);
+        assert_ne!(first.digest, second.digest);
+        assert_eq!(first_receipt.validation_result, "valid");
+        assert_eq!(second_receipt.validation_result, "valid_cache_hit");
+        assert!(
+            second_receipt.provider_attempts[0]
+                .transport_features
+                .contains(&"cultcache.output-cache".to_string())
+        );
+        assert_eq!(store.keys(ASSESSMENT_PROPOSAL_CACHE_KIND).unwrap().len(), 1);
     }
 
     #[test]

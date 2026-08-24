@@ -969,6 +969,16 @@ committed source turn. A missing directly addressed Persona or a null response
 aborts the whole wave without private deltas, transcript additions, initiative,
 or revision change; observers may still choose to speak from their own goals.
 
+Action assessment separates semantic inference identity from commit identity.
+The exact model, stable instructions, action-specific schema, and permitted
+typed packet form a content-addressed private `assessment_proposal_cache.v1`
+key. Revision and expiry still bind the consumable assessment and roll but do
+not force the capable model to reconsider an otherwise byte-identical packet.
+A cache hit revalidates the complete proposal against current state, emits a
+zero-token receipt linked to the source receipt, and creates a fresh digest at
+the current revision. Changed authority changes the key. The Eve command-result
+projection shows every signed modifier with its exact references.
+
 Population fission now composes admitted child entities, stable child
 identities, one lineage split, exact resource custody transfers, and exact
 named-member membership transfers. The old fission function that directly

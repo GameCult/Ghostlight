@@ -1797,8 +1797,45 @@ fn transient_result_projection(
             .get("admissible")
             .and_then(serde_json::Value::as_bool)
             .unwrap_or(false);
+        let modifier_details = assessment
+            .get("modifiers")
+            .and_then(serde_json::Value::as_array)
+            .map(|modifiers| {
+                if modifiers.is_empty() {
+                    "Modifiers: none".to_string()
+                } else {
+                    let lines = modifiers
+                        .iter()
+                        .map(|modifier| {
+                            let label = modifier
+                                .get("label")
+                                .and_then(serde_json::Value::as_str)
+                                .unwrap_or("context");
+                            let value = modifier
+                                .get("value")
+                                .and_then(serde_json::Value::as_i64)
+                                .unwrap_or(0);
+                            let references = modifier
+                                .get("references")
+                                .and_then(serde_json::Value::as_array)
+                                .into_iter()
+                                .flatten()
+                                .filter_map(serde_json::Value::as_str)
+                                .collect::<Vec<_>>();
+                            if references.is_empty() {
+                                format!("- {value:+} {label}")
+                            } else {
+                                format!("- {value:+} {label} [{}]", references.join(", "))
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    format!("Modifiers:\n{lines}")
+                }
+            })
+            .unwrap_or_else(|| "Modifiers: none".into());
         let summary = format!(
-            "{}\nDC {} · modifier {} · ceiling {}\nSuccess: {}\nMixed: {}\nFailure: {}{}",
+            "{}\nDC {} · modifier {} · ceiling {}\n{}\nSuccess: {}\nMixed: {}\nFailure: {}{}",
             if admissible {
                 "The attempt is admissible."
             } else {
@@ -1816,6 +1853,7 @@ fn transient_result_projection(
                 .get("effect_ceiling")
                 .and_then(serde_json::Value::as_str)
                 .unwrap_or("bounded"),
+            modifier_details,
             assessment
                 .get("success_stake")
                 .and_then(serde_json::Value::as_str)
@@ -3880,7 +3918,8 @@ async fn resolve_npc_initiative(
         })
         .unwrap_or_default();
     let (assessment, receipt) = assessor
-        .assess_with_context(
+        .assess_with_context_cached(
+            &runtime.store,
             campaign,
             intent,
             &permissions,
@@ -4374,7 +4413,8 @@ async fn command(
                 .unwrap_or_default();
             let (contract, boundaries) = campaign_model_policy(&runtime.store, campaign.id);
             match assessor
-                .assess_with_context(
+                .assess_with_context_cached(
+                    &runtime.store,
                     &campaign,
                     intent.clone(),
                     &extraordinary_permissions,
@@ -4675,7 +4715,8 @@ async fn command(
                     .unwrap_or_default();
                 let (contract, boundaries) = campaign_model_policy(&runtime.store, campaign.id);
                 match assessor
-                    .assess_with_context(
+                    .assess_with_context_cached(
+                        &runtime.store,
                         &campaign,
                         intent.clone(),
                         &permissions,
@@ -6771,6 +6812,13 @@ mod tests {
                     "admissible": true,
                     "dc": 15,
                     "modifier_total": 2,
+                    "modifiers": [
+                        {
+                            "label":"The audit seal matches the lock",
+                            "value":2,
+                            "references":["equipment:audit-seal","location:archive"]
+                        }
+                    ],
                     "effect_ceiling": "Supervised access only",
                     "success_stake": "The ledger is opened.",
                     "mixed_stake": "The ledger is opened under scrutiny.",
@@ -6790,6 +6838,11 @@ mod tests {
             roll["props"]["action"]["assessment_digest"],
             "sha256:fresh-assessment"
         );
+        let summary = projection["surface"]["root"]["children"][0]["props"]["value"]
+            .as_str()
+            .unwrap();
+        assert!(summary.contains("+2 The audit seal matches the lock"));
+        assert!(summary.contains("equipment:audit-seal, location:archive"));
     }
 
     #[test]
