@@ -138,6 +138,8 @@ pub struct ExtraordinaryPermission {
     pub prerequisites: Vec<String>,
     pub costs: Vec<String>,
     pub limits: Vec<String>,
+    #[serde(default)]
+    pub opposition: Vec<String>,
     pub exposure: Vec<String>,
     pub effect_ceiling: String,
     pub evidence_receipt_ids: Vec<String>,
@@ -490,6 +492,7 @@ struct FocusedPermissionTerms {
     pub prerequisites: Vec<String>,
     pub costs: Vec<String>,
     pub limits: Vec<String>,
+    pub opposition: Vec<String>,
     pub exposure: Vec<String>,
     pub effect_ceiling: String,
     pub branch_local: bool,
@@ -1366,13 +1369,6 @@ pub struct SessionZeroDirector {
     interpreter_model: String,
 }
 
-#[derive(Clone, Copy)]
-enum FocusedReplacementLane<'a> {
-    Permission(&'a ExtraordinaryPermission),
-    Contract,
-    Character,
-}
-
 impl SessionZeroDirector {
     pub fn new(
         model: Arc<dyn ModelPort>,
@@ -1486,14 +1482,13 @@ impl SessionZeroDirector {
         validate_bounded("DM speech", &persona.narrative, 1, 6_000)?;
         let focused = supersedes_countered_decision_id
             .and_then(|decision_id| state.decisions.get(decision_id))
-            .and_then(|decision| focused_replacement_lane(decision).map(|lane| (decision, lane)));
-        let (interpretation, interpreter_receipt) = if let Some((decision, lane)) = focused {
+            .filter(|decision| decision_has_typed_payload(decision));
+        let (interpretation, interpreter_receipt) = if let Some(decision) = focused {
             run_focused_counter_interpreter(
                 self.model.as_ref(),
                 &self.interpreter_model,
                 &binding,
                 decision,
-                lane,
                 &lived.lived_stream,
                 &persona.narrative,
             )
@@ -1586,6 +1581,7 @@ fn admit_model_interpretation(
                         prerequisites: terms.prerequisites,
                         costs: terms.costs,
                         limits: terms.limits,
+                        opposition: terms.opposition,
                         exposure: terms.exposure,
                         effect_ceiling: terms.effect_ceiling,
                         evidence_receipt_ids: vec![],
@@ -1617,45 +1613,15 @@ fn admit_model_interpretation(
     })
 }
 
-fn focused_replacement_lane(decision: &SessionZeroDecision) -> Option<FocusedReplacementLane<'_>> {
-    match (
-        decision.proposed_extraordinary_permission.as_ref(),
-        decision.proposed_contract_patch.as_ref(),
-        decision.proposed_character_patch.as_ref(),
-    ) {
-        (Some(permission), None, None) => Some(FocusedReplacementLane::Permission(permission)),
-        (None, Some(_), None) => Some(FocusedReplacementLane::Contract),
-        (None, None, Some(_)) => Some(FocusedReplacementLane::Character),
-        _ => None,
-    }
-}
-
 async fn run_focused_counter_interpreter(
     model: &dyn ModelPort,
     model_id: &str,
     binding: &str,
     decision: &SessionZeroDecision,
-    lane: FocusedReplacementLane<'_>,
     exact_lived_stream: &str,
     persona_response: &str,
 ) -> Result<(SessionZeroInterpretation, ModelStageReceipt)> {
-    let (lane_name, schema, max_output_tokens) = match lane {
-        FocusedReplacementLane::Permission(_) => (
-            "extraordinary-permission terms",
-            serde_json::to_value(schema_for!(FocusedPermissionTerms))?,
-            1600,
-        ),
-        FocusedReplacementLane::Contract => (
-            "campaign-contract patch",
-            serde_json::to_value(schema_for!(CampaignContractPatch))?,
-            1200,
-        ),
-        FocusedReplacementLane::Character => (
-            "private-character patch",
-            serde_json::to_value(schema_for!(CharacterDraftPatch))?,
-            1800,
-        ),
-    };
+    let (lane_name, schema, max_output_tokens) = focused_counter_schema(decision)?;
     let interpreter = run_validated_stage(
         model,
         &ModelStageRequest {
@@ -1663,7 +1629,7 @@ async fn run_focused_counter_interpreter(
             model: model_id.into(),
             snapshot_binding: binding.into(),
             lived_stream: format!(
-                "Translate the player's exact counterproposal into one replacement {lane_name}. Preserve every previous typed field the counter does not change; apply every requested removal or replacement exactly; add nothing. Ghostlight owns decision identity, owner, materiality, evidence bindings, and speech, so emit only the replacement payload described by this schema. The Persona response is social context only and cannot override the exact factual basis. Return one complete JSON object matching the schema.\n\nOUTPUT JSON SCHEMA:\n{}\n\nEXACT FACTUAL BASIS:\n{}\n\nPERSONA RESPONSE:\n{}",
+                "Translate the player's exact counterproposal into one replacement containing exactly these typed lanes: {lane_name}. Preserve every previous typed field the counter does not change; apply every requested removal or replacement exactly; add nothing. Ghostlight owns decision identity, permission identity, actor binding, owner, materiality, evidence bindings, and speech, so they are absent from your output. Emit only the replacement payload described by this schema. The Persona response is social context only and cannot override the exact factual basis. Return one complete JSON object matching the schema.\n\nOUTPUT JSON SCHEMA:\n{}\n\nEXACT FACTUAL BASIS:\n{}\n\nPERSONA RESPONSE:\n{}",
                 serde_json::to_string(&schema)?,
                 exact_lived_stream,
                 serde_json::to_string(persona_response)?,
@@ -1696,38 +1662,52 @@ async fn run_focused_counter_interpreter(
         material: decision.material,
         resolved: false,
     };
-    match lane {
-        FocusedReplacementLane::Permission(previous) => {
-            let terms: FocusedPermissionTerms = serde_json::from_value(structured)?;
-            let mut permission = previous.clone();
-            permission.name = terms.name;
-            permission.reliable_scope = terms.reliable_scope;
-            permission.prerequisites = terms.prerequisites;
-            permission.costs = terms.costs;
-            permission.limits = terms.limits;
-            permission.exposure = terms.exposure;
-            permission.effect_ceiling = terms.effect_ceiling;
-            permission.branch_local = terms.branch_local;
-            replacement.proposed_extraordinary_permission = Some(permission);
+    if let Some(previous) = decision.proposed_extraordinary_permission.as_ref() {
+        let terms: FocusedPermissionTerms = serde_json::from_value(
+            structured
+                .get("proposed_extraordinary_permission")
+                .cloned()
+                .ok_or_else(|| anyhow!("focused counter omitted extraordinary-permission terms"))?,
+        )?;
+        let mut permission = previous.clone();
+        permission.name = terms.name;
+        permission.reliable_scope = terms.reliable_scope;
+        permission.prerequisites = terms.prerequisites;
+        permission.costs = terms.costs;
+        permission.limits = terms.limits;
+        permission.opposition = terms.opposition;
+        permission.exposure = terms.exposure;
+        permission.effect_ceiling = terms.effect_ceiling;
+        permission.branch_local = terms.branch_local;
+        replacement.proposed_extraordinary_permission = Some(permission);
+    }
+    if decision.proposed_contract_patch.is_some() {
+        let patch: CampaignContractPatch = serde_json::from_value(
+            structured
+                .get("proposed_contract_patch")
+                .cloned()
+                .ok_or_else(|| anyhow!("focused counter omitted campaign-contract patch"))?,
+        )?;
+        if patch == CampaignContractPatch::default() {
+            return Err(anyhow!(
+                "focused counter interpreter returned an empty contract patch"
+            ));
         }
-        FocusedReplacementLane::Contract => {
-            let patch: CampaignContractPatch = serde_json::from_value(structured)?;
-            if patch == CampaignContractPatch::default() {
-                return Err(anyhow!(
-                    "focused counter interpreter returned an empty contract patch"
-                ));
-            }
-            replacement.proposed_contract_patch = Some(patch);
+        replacement.proposed_contract_patch = Some(patch);
+    }
+    if decision.proposed_character_patch.is_some() {
+        let patch: CharacterDraftPatch = serde_json::from_value(
+            structured
+                .get("proposed_character_patch")
+                .cloned()
+                .ok_or_else(|| anyhow!("focused counter omitted private-character patch"))?,
+        )?;
+        if patch == CharacterDraftPatch::default() {
+            return Err(anyhow!(
+                "focused counter interpreter returned an empty character patch"
+            ));
         }
-        FocusedReplacementLane::Character => {
-            let patch: CharacterDraftPatch = serde_json::from_value(structured)?;
-            if patch == CharacterDraftPatch::default() {
-                return Err(anyhow!(
-                    "focused counter interpreter returned an empty character patch"
-                ));
-            }
-            replacement.proposed_character_patch = Some(patch);
-        }
+        replacement.proposed_character_patch = Some(patch);
     }
     Ok((
         SessionZeroInterpretation {
@@ -1736,6 +1716,62 @@ async fn run_focused_counter_interpreter(
         },
         interpreter.receipt,
     ))
+}
+
+fn focused_counter_schema(
+    decision: &SessionZeroDecision,
+) -> Result<(String, serde_json::Value, u32)> {
+    let mut properties = serde_json::Map::new();
+    let mut required = Vec::new();
+    let mut lane_names = Vec::new();
+    let mut max_output_tokens = 400;
+    if decision.proposed_extraordinary_permission.is_some() {
+        properties.insert(
+            "proposed_extraordinary_permission".into(),
+            inline_provider_schema_for::<FocusedPermissionTerms>()?,
+        );
+        required.push("proposed_extraordinary_permission");
+        lane_names.push("extraordinary-permission terms");
+        max_output_tokens += 1400;
+    }
+    if decision.proposed_contract_patch.is_some() {
+        properties.insert(
+            "proposed_contract_patch".into(),
+            inline_provider_schema_for::<CampaignContractPatch>()?,
+        );
+        required.push("proposed_contract_patch");
+        lane_names.push("campaign-contract patch");
+        max_output_tokens += 800;
+    }
+    if decision.proposed_character_patch.is_some() {
+        properties.insert(
+            "proposed_character_patch".into(),
+            inline_provider_schema_for::<CharacterDraftPatch>()?,
+        );
+        required.push("proposed_character_patch");
+        lane_names.push("private-character patch");
+        max_output_tokens += 1600;
+    }
+    if properties.is_empty() {
+        return Err(anyhow!("focused counter has no typed state lane"));
+    }
+    Ok((
+        lane_names.join(" and "),
+        serde_json::json!({
+            "type":"object",
+            "additionalProperties":false,
+            "properties":properties,
+            "required":required,
+        }),
+        max_output_tokens.min(3600),
+    ))
+}
+
+fn inline_provider_schema_for<T: JsonSchema>() -> Result<serde_json::Value> {
+    let mut settings = SchemaSettings::default();
+    settings.inline_subschemas = true;
+    let mut generator = settings.into_generator();
+    Ok(serde_json::to_value(generator.subschema_for::<T>())?)
 }
 
 fn require_typed_decision_payloads(schema: &mut serde_json::Value) -> Result<()> {
@@ -2243,12 +2279,13 @@ fn display_relationships(values: &BTreeMap<String, String>) -> String {
 
 fn display_extraordinary_permission(permission: &ExtraordinaryPermission) -> String {
     format!(
-        "{}\n  Reliable scope: {}\n  Prerequisites: {}\n  Costs: {}\n  Limits: {}\n  Exposure: {}\n  Effect ceiling: {}\n  Branch-local: {}",
+        "{}\n  Reliable scope: {}\n  Prerequisites: {}\n  Costs: {}\n  Limits: {}\n  Opposition: {}\n  Exposure: {}\n  Effect ceiling: {}\n  Branch-local: {}",
         permission.name,
         permission.reliable_scope,
         display_list(&permission.prerequisites),
         display_list(&permission.costs),
         display_list(&permission.limits),
+        display_list(&permission.opposition),
         display_list(&permission.exposure),
         permission.effect_ceiling,
         if permission.branch_local { "yes" } else { "no" },
@@ -4449,6 +4486,7 @@ mod tests {
     struct SchemaAwareDirectorModel;
     struct FocusedCounterDirectorModel;
     struct FocusedPermissionModel;
+    struct CompositeFocusedCounterModel;
 
     const PERSONA_SPEECH: &str = "**Mars holds.** Your sung name remains ‘The last lamp carried between storms, learning each stranger by the weight they refuse to abandon.’ Does the revised contamination bargain fit Sable’s ability?";
 
@@ -4465,6 +4503,7 @@ mod tests {
                     prerequisites: permission.prerequisites.clone(),
                     costs: permission.costs.clone(),
                     limits: permission.limits.clone(),
+                    opposition: permission.opposition.clone(),
                     exposure: permission.exposure.clone(),
                     effect_ceiling: permission.effect_ceiling.clone(),
                     branch_local: permission.branch_local,
@@ -4554,11 +4593,14 @@ mod tests {
                     assert!(request.lived_stream.contains("private-character patch"));
                     assert!(!request.lived_stream.contains("SessionZeroDecision"));
                     assert!(!request.lived_stream.contains("owner_member_id"));
-                    assert_eq!(request.max_output_tokens, Some(1800));
-                    Ok(serde_json::to_string(&CharacterDraftPatch {
-                        name: Some("Sable, whose sung name remains whole".into()),
-                        ..Default::default()
-                    })?)
+                    assert_eq!(request.max_output_tokens, Some(2000));
+                    Ok(serde_json::json!({
+                        "proposed_character_patch": CharacterDraftPatch {
+                            name: Some("Sable, whose sung name remains whole".into()),
+                            ..Default::default()
+                        }
+                    })
+                    .to_string())
                 }
                 stage => panic!("unexpected focused Session Zero model stage {stage}"),
             }
@@ -4580,16 +4622,59 @@ mod tests {
             );
             assert!(!request.lived_stream.contains("permission:stable"));
             assert!(!request.lived_stream.contains("actor:stable"));
-            Ok(serde_json::to_string(&FocusedPermissionTerms {
-                name: "Fork-memory synchronization".into(),
-                reliable_scope: "One willing nearby mind".into(),
-                prerequisites: vec!["Fresh consent".into()],
-                costs: vec!["Ordinary contamination fades with rest".into()],
-                limits: vec!["No unwilling reading".into()],
-                exposure: vec!["Traceable signature".into()],
-                effect_ceiling: "Bounded memory sharing".into(),
-                branch_local: false,
-            })?)
+            Ok(serde_json::json!({
+                "proposed_extraordinary_permission": FocusedPermissionTerms {
+                    name: "Fork-memory synchronization".into(),
+                    reliable_scope: "One willing nearby mind".into(),
+                    prerequisites: vec!["Fresh consent".into()],
+                    costs: vec!["Ordinary contamination fades with rest".into()],
+                    limits: vec!["No unwilling reading".into()],
+                    opposition: vec!["Active shielding".into()],
+                    exposure: vec!["Traceable signature".into()],
+                    effect_ceiling: "Bounded memory sharing".into(),
+                    branch_local: false,
+                }
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for CompositeFocusedCounterModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            assert_eq!(request.stage, "session_zero_interpreter");
+            assert!(
+                request
+                    .lived_stream
+                    .contains("extraordinary-permission terms")
+            );
+            assert!(request.lived_stream.contains("private-character patch"));
+            assert!(!request.lived_stream.contains("permission:stable"));
+            assert!(!request.lived_stream.contains("actor:stable"));
+            assert_eq!(request.max_output_tokens, Some(3400));
+            Ok(serde_json::json!({
+                "proposed_extraordinary_permission": FocusedPermissionTerms {
+                    name: "Machine-listening".into(),
+                    reliable_scope: "Actionable suspicion at close range".into(),
+                    prerequisites: vec!["Physical proximity".into(), "Audible or tactile path".into()],
+                    costs: vec!["Vocal strain".into()],
+                    limits: vec!["No certain cause".into(), "No access bypass".into()],
+                    opposition: vec!["Active damping".into(), "Hostile interruption".into()],
+                    exposure: vec!["Audible at close range".into()],
+                    effect_ceiling: "Narrowed diagnostic possibilities, never certainty".into(),
+                    branch_local: true,
+                },
+                "proposed_character_patch": CharacterDraftPatch {
+                    equipment_add: vec!["Portable acoustic diagnostic pickup".into()],
+                    obligations_add: vec!["Protect the mutual-aid route".into()],
+                    ..Default::default()
+                }
+            })
+            .to_string())
         }
 
         fn provider(&self) -> &'static str {
@@ -4836,6 +4921,7 @@ mod tests {
             prerequisites: vec!["Fresh consent".into()],
             costs: vec!["Borrowed memories do not fully leave".into()],
             limits: vec!["No unwilling reading".into()],
+            opposition: vec!["Active shielding".into()],
             exposure: vec!["Traceable signature".into()],
             effect_ceiling: "Bounded memory sharing".into(),
             evidence_receipt_ids: vec!["receipt:stable".into()],
@@ -4860,7 +4946,6 @@ mod tests {
             "fixture",
             "binding",
             &decision,
-            FocusedReplacementLane::Permission(&permission),
             "Exact factual basis without persistence identifiers.",
             "Please review the replacement.",
         )
@@ -4889,9 +4974,121 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn focused_composite_counter_preserves_every_lane_and_permission_identity() {
+        let permission = ExtraordinaryPermission {
+            schema: "ghostlight.extraordinary_permission.v1".into(),
+            id: "permission:stable".into(),
+            actor_id: "actor:stable".into(),
+            name: "Machine-listening".into(),
+            reliable_scope: "Nearby machine rhythm".into(),
+            prerequisites: vec!["Close range".into()],
+            costs: vec!["Fatigue".into()],
+            limits: vec!["No certainty".into()],
+            opposition: vec![],
+            exposure: vec!["Audible use".into()],
+            effect_ceiling: "A diagnostic lead".into(),
+            evidence_receipt_ids: vec!["receipt:stable".into()],
+            branch_local: true,
+        };
+        let decision = SessionZeroDecision {
+            schema: "ghostlight.session_zero_decision.v1".into(),
+            id: "decision:composite".into(),
+            owner_member_id: Some("member:stable".into()),
+            prompt: "Review the character and permission?".into(),
+            proposed_resolution: "Old composite terms".into(),
+            proposed_extraordinary_permission: Some(permission.clone()),
+            proposed_contract_patch: None,
+            proposed_character_patch: Some(CharacterDraftPatch {
+                equipment_add: vec!["Vague audit tools".into()],
+                ..Default::default()
+            }),
+            evidence_receipt_ids: vec!["decision-receipt:stable".into()],
+            pending_counter: Some("Restore the exact equipment and opposition.".into()),
+            material: true,
+            resolved: false,
+        };
+        let (interpretation, _) = run_focused_counter_interpreter(
+            &CompositeFocusedCounterModel,
+            "fixture",
+            "binding",
+            &decision,
+            "Exact factual basis without persistence identifiers.",
+            "Please review the replacement.",
+        )
+        .await
+        .unwrap();
+        let replacement = &interpretation.decisions[0];
+        assert_eq!(
+            decision_payload_lanes(replacement),
+            decision_payload_lanes(&decision)
+        );
+        assert_eq!(replacement.owner_member_id, decision.owner_member_id);
+        assert_eq!(replacement.material, decision.material);
+        assert_eq!(
+            replacement.evidence_receipt_ids,
+            decision.evidence_receipt_ids
+        );
+        let replaced_permission = replacement
+            .proposed_extraordinary_permission
+            .as_ref()
+            .unwrap();
+        assert_eq!(replaced_permission.id, permission.id);
+        assert_eq!(replaced_permission.actor_id, permission.actor_id);
+        assert_eq!(
+            replaced_permission.evidence_receipt_ids,
+            permission.evidence_receipt_ids
+        );
+        assert_eq!(
+            replaced_permission.opposition,
+            ["Active damping", "Hostile interruption"]
+        );
+        let patch = replacement.proposed_character_patch.as_ref().unwrap();
+        assert_eq!(patch.equipment_add, ["Portable acoustic diagnostic pickup"]);
+        assert_eq!(patch.obligations_add, ["Protect the mutual-aid route"]);
+    }
+
+    #[test]
+    fn legacy_extraordinary_permission_defaults_missing_opposition() {
+        let permission: ExtraordinaryPermission = serde_json::from_value(serde_json::json!({
+            "schema":"ghostlight.extraordinary_permission.v1",
+            "id":"permission:legacy",
+            "actor_id":"actor:legacy",
+            "name":"Legacy gift",
+            "reliable_scope":"One bounded effect",
+            "prerequisites":[],
+            "costs":[],
+            "limits":[],
+            "exposure":[],
+            "effect_ceiling":"One bounded effect",
+            "evidence_receipt_ids":[],
+            "branch_local":true
+        }))
+        .unwrap();
+        assert!(permission.opposition.is_empty());
+    }
+
     #[test]
     fn focused_counter_schema_excludes_the_full_decision_union() {
-        let focused = serde_json::to_string(&schema_for!(CharacterDraftPatch)).unwrap();
+        let decision = SessionZeroDecision {
+            schema: "ghostlight.session_zero_decision.v1".into(),
+            id: "decision:focused".into(),
+            owner_member_id: Some("member:focused".into()),
+            prompt: "Review the character?".into(),
+            proposed_resolution: "Replace the character patch.".into(),
+            proposed_extraordinary_permission: None,
+            proposed_contract_patch: None,
+            proposed_character_patch: Some(CharacterDraftPatch {
+                name: Some("Sable".into()),
+                ..Default::default()
+            }),
+            evidence_receipt_ids: vec![],
+            pending_counter: Some("Keep the sung name whole.".into()),
+            material: true,
+            resolved: false,
+        };
+        let (_, focused, _) = focused_counter_schema(&decision).unwrap();
+        let focused = serde_json::to_string(&focused).unwrap();
         let mut full = serde_json::to_value(schema_for!(SessionZeroModelInterpretation)).unwrap();
         require_typed_decision_payloads(&mut full).unwrap();
         let full = serde_json::to_string(&full).unwrap();
@@ -5022,6 +5219,7 @@ mod tests {
                     prerequisites: vec!["Direct touch".into()],
                     costs: vec!["Vertigo".into()],
                     limits: vec!["No causes or remote history".into()],
+                    opposition: vec!["Active damping".into()],
                     exposure: vec!["A breathing-rhythm trace".into()],
                     effect_ceiling: "Recent local stress map".into(),
                     branch_local: true,
@@ -5211,6 +5409,7 @@ mod tests {
                     prerequisites: vec!["Direct touch".into()],
                     costs: vec!["Vertigo".into()],
                     limits: vec!["No causes or remote history".into()],
+                    opposition: vec!["Active damping".into()],
                     exposure: vec!["Traceable breathing rhythm".into()],
                     effect_ceiling: "Recent local thermal and pressure stress map".into(),
                     evidence_receipt_ids: vec![],
@@ -5420,6 +5619,7 @@ mod tests {
             prerequisites: vec!["Fresh consent".into()],
             costs: vec!["Borrowed memories do not fully leave".into()],
             limits: vec!["No unwilling reading".into()],
+            opposition: vec!["Active shielding".into()],
             exposure: vec!["Traceable synchronization signature".into()],
             effect_ceiling: "Bounded memory and procedural-skill sharing".into(),
             evidence_receipt_ids: vec![],
@@ -6218,6 +6418,7 @@ mod tests {
             prerequisites: vec!["FRESH-CONSENT".into()],
             costs: vec!["MIGRAINE".into()],
             limits: vec!["NO-COMPULSION".into()],
+            opposition: vec!["ACTIVE-SHIELDING".into()],
             exposure: vec!["TECHNICAL-SIGNATURE".into()],
             effect_ceiling: "BOUNDED-MEMORY-OR-SKILL".into(),
             evidence_receipt_ids: vec![],
@@ -6508,6 +6709,7 @@ mod tests {
             prerequisites: vec!["A charged storm is overhead".into()],
             costs: vec!["Become visibly marked by the storm".into()],
             limits: vec!["Cannot carry another person".into()],
+            opposition: vec!["Grounded containment".into()],
             exposure: vec!["Grounding wards can detect the transit".into()],
             effect_ceiling: "Movement only; never bypasses a sealed ward".into(),
             evidence_receipt_ids: vec![],
@@ -6637,6 +6839,7 @@ mod tests {
             prerequisites: vec!["The other mind gives informed consent".into()],
             costs,
             limits: vec!["Cannot read an unwilling mind".into()],
+            opposition: vec!["Active shielding".into()],
             exposure: vec!["Leaves a traceable synchronization signature".into()],
             effect_ceiling: "Shared impressions, never identity overwrite".into(),
             evidence_receipt_ids: vec![],

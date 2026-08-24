@@ -791,6 +791,7 @@ impl WorldCompiler {
                     "prerequisites":permission.prerequisites,
                     "costs":permission.costs,
                     "limits":permission.limits,
+                    "opposition":permission.opposition,
                     "exposure":permission.exposure,
                     "effect_ceiling":permission.effect_ceiling,
                 })).collect::<Vec<_>>(),
