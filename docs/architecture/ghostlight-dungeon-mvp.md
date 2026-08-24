@@ -703,6 +703,12 @@ as a rejected-proposal receipt and returned as an accepted committed result
 with a visible warning. It cannot be reported as rejection of the already
 persisted player action, and a browser retry cannot duplicate that action.
 
+Pending NPC initiative belongs to exactly one committed reaction-wave revision.
+A fresh reaction wave replaces the previous proposal set rather than appending
+to it, and `WorldKernel` rejects resolution unless the current revision's last
+event is that exact wave. A malformed same-snapshot assessment may be retried;
+a later player action, tick, or reaction wave cannot rebase the old proposal.
+
 ### Away-time agency
 
 The service pulses every five minutes. After fifteen minutes without player

@@ -947,6 +947,10 @@ snapshot and removes unavailable knowledge, movement, clock, and institution
 lanes before inference. Missing maps lower to no mutation. This keeps both the
 prompt and correction surface smaller and prevents provider `null` placeholders
 from stalling an NPC initiative on an operation the actor could not perform.
+Pending NPC actions are revision-scoped reaction-window state. The next
+reaction wave atomically replaces the set, and the kernel resolves an action
+only when the current last event is the exact current-revision reaction wave.
+Same-wave assessment correction remains possible; cross-turn rebasing is not.
 
 Population fission now composes admitted child entities, stable child
 identities, one lineage split, exact resource custody transfers, and exact

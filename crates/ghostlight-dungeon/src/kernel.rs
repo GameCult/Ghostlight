@@ -1311,6 +1311,7 @@ fn execute(
                 Utc::now(),
             )
             .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            campaign.pending_world_proposals.clear();
             for reaction in reactions {
                 if let Some(speech) = reaction.speech {
                     campaign.transcript.push(NarrativeTurn {
@@ -1352,6 +1353,16 @@ fn execute(
             assessment,
         } => {
             require_revision(&campaign, expected_revision)?;
+            let current_window_id = format!("reaction-wave:{}", campaign.revision);
+            if campaign
+                .events
+                .last()
+                .is_none_or(|event| event.kind != "reaction_wave" || event.id != current_window_id)
+            {
+                return Err(KernelError::Invalid(
+                    "pending NPC initiative does not belong to the current reaction wave".into(),
+                ));
+            }
             let selected = crate::initiative::winner(&campaign.pending_world_proposals)
                 .ok_or_else(|| KernelError::Invalid("there is no pending NPC action".into()))?;
             if proposal != selected {
@@ -6114,6 +6125,124 @@ mod tests {
             panic!()
         };
         assert_eq!(campaign.pending_world_proposals.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn npc_initiative_cannot_rebase_across_a_new_foreground_revision() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.transcript.push(NarrativeTurn {
+            revision: 0,
+            at: seed.world_time,
+            speaker: "world".into(),
+            text: "a disturbance".into(),
+        });
+        seed.actors.insert(
+            "anna".into(),
+            ActorState {
+                id: "anna".into(),
+                name: "Anna".into(),
+                location_id: "room".into(),
+                capabilities: BTreeSet::from(["intervene".into()]),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        let campaign_id = seed.id;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let proposal = WorldActionProposal {
+            actor_id: "anna".into(),
+            intent: "intervene".into(),
+            intended_effect: "take control of the immediate situation".into(),
+            priority: 9,
+            state_references: vec!["capability:intervene".into(), "location:room".into()],
+        };
+        kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "a disturbance".into(),
+                reactions: vec![ActorReaction {
+                    actor_id: "anna".into(),
+                    speech: None,
+                    private_delta: ActorStateDelta::default(),
+                    action_proposals: vec![proposal.clone()],
+                }],
+            })
+            .await
+            .unwrap();
+        kernel
+            .command(WorldCommand::Speak {
+                expected_revision: 1,
+                actor_id: "player".into(),
+                text: "I move on before Anna acts.".into(),
+                intended_effect: None,
+            })
+            .await
+            .unwrap();
+        let intent = ActionIntent {
+            actor_id: "anna".into(),
+            description: proposal.intent.clone(),
+            intended_effect: proposal.intended_effect.clone(),
+        };
+        let CommandResult::Assessed { assessment } = kernel
+            .command(WorldCommand::Assess {
+                expected_revision: 2,
+                intent,
+                proposal: None,
+            })
+            .await
+            .unwrap()
+        else {
+            panic!()
+        };
+        let error = kernel
+            .command(WorldCommand::ResolveNpcAction {
+                expected_revision: 2,
+                proposal,
+                assessment,
+            })
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("current reaction wave"));
+
+        let refreshed = kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 2,
+                event_summary: "player says: I move on before Anna acts.".into(),
+                reactions: vec![ActorReaction {
+                    actor_id: "anna".into(),
+                    speech: None,
+                    private_delta: ActorStateDelta::default(),
+                    action_proposals: vec![],
+                }],
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = refreshed else {
+            panic!()
+        };
+        assert_eq!(campaign.revision, 3);
+        assert!(campaign.pending_world_proposals.is_empty());
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &campaign_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert!(persisted.pending_world_proposals.is_empty());
     }
 
     #[tokio::test]

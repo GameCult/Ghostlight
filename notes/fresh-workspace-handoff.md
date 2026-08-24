@@ -217,6 +217,11 @@ messages.
   knowledge, movement, clock, and institution lanes entirely, close the effect
   object to undeclared properties, and default omitted maps to no mutation.
   The focused regression and full 285-test library pass cover the cut.
+- That failed assessment left a pending NPC choice which the next live reaction
+  wave appended to and later resolved at revision 60. Pending initiative now
+  belongs to one exact reaction-wave revision: a new wave replaces the old set,
+  and the kernel rejects resolution after any intervening revision. Same-wave
+  retry remains valid without allowing stale Persona output to rebase.
 - Live refresh pressure reproduced and removed two contract faults: reuse of a
   private-command idempotency key across separately sealed attempts, and
   validation of a refresh receipt as if it carried the initial-login account
