@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
-const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. Fields are conditionally required, not optional suggestions: no_material_change requires reason; resource_created and resource_consumed require owner_subject_id and resource; resource_transferred requires owner_subject_id, other_subject_id, and resource; gestalt_pressure requires owner_subject_id plus both pressure arrays; agency_relation_shift requires relation_id and strength_delta; member_memory requires member_id and memory; member_obligation requires member_id and obligation; member_relationship requires member_id, other_subject_id, and relationship_description; knowledge_learned requires owner_subject_id and fact_id. Omit every field not named for the chosen effect_kind. pressure_additions and pressure_resolutions are arrays of plain strings, never objects. no_material_change uses an empty supporting_state_references array; every material effect cites the smallest causally decisive set of one to eight exact supplied references. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable source-owned result, the resource field names that resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
+const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. Fields are conditionally required, not optional suggestions: no_material_change requires reason; resource_created and resource_consumed require owner_subject_id and resource; resource_transferred requires owner_subject_id, other_subject_id, and resource; gestalt_pressure requires owner_subject_id plus both pressure arrays; agency_relation_shift requires relation_id and strength_delta; member_memory requires member_id and memory; member_obligation requires member_id and obligation; member_relationship requires member_id, other_subject_id, and relationship_description; knowledge_learned requires owner_subject_id and fact_id. Every scalar field not named for the chosen effect_kind is omitted or null; irrelevant pressure arrays are omitted or empty. A non-neutral irrelevant field is invalid. pressure_additions and pressure_resolutions are arrays of plain strings, never objects. no_material_change uses an empty supporting_state_references array; every material effect cites the smallest causally decisive set of one to eight exact supplied references. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable source-owned result, the resource field names that resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
 const OUTCOME_VERIFIER_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named verdicts—never verifications, outcomes, results, or resolutions. verdicts is an array with one item per supplied action_digest. Every item has exactly action_digest, result, and repair_guidance. Example: {"verdicts":[{"action_digest":"sha256:<copy exact supplied digest>","result":"match","repair_guidance":null}]}"#;
 
 #[derive(Clone, Debug, Serialize)]
@@ -1692,7 +1692,19 @@ fn outcome_effect_shape(
     let forbidden = EFFECT_FIELDS
         .iter()
         .filter(|field| !required_effect_fields.contains(field))
-        .map(|field| serde_json::json!({"required":[field]}))
+        .map(|field| {
+            if matches!(*field, "pressure_additions" | "pressure_resolutions") {
+                serde_json::json!({
+                    "required":[field],
+                    "properties":{(*field):{"minItems":1}}
+                })
+            } else {
+                serde_json::json!({
+                    "required":[field],
+                    "properties":{(*field):{"not":{"type":"null"}}}
+                })
+            }
+        })
         .collect::<Vec<_>>();
     let mut required = vec!["effect_kind"];
     required.extend_from_slice(required_effect_fields);
@@ -1707,6 +1719,12 @@ fn outcome_effect_shape(
         },
         "required":required
     });
+    for field in required_effect_fields
+        .iter()
+        .filter(|field| !matches!(**field, "pressure_additions" | "pressure_resolutions"))
+    {
+        shape["properties"][*field] = serde_json::json!({"not":{"type":"null"}});
+    }
     if !forbidden.is_empty() {
         shape["not"] = serde_json::json!({"anyOf":forbidden});
     }
@@ -2512,6 +2530,27 @@ mod tests {
         };
 
         assert!(validator.is_valid(&outcome(Some("dockers"), None)));
+        assert!(validator.is_valid(&serde_json::json!({
+            "outcomes":[{
+                "action_digest":digest,
+                "band":"mixed",
+                "effect_kind":"no_material_change",
+                "supporting_state_references":[],
+                "owner_subject_id":null,
+                "other_subject_id":null,
+                "relation_id":null,
+                "strength_delta":null,
+                "resource":null,
+                "pressure_additions":[],
+                "pressure_resolutions":[],
+                "member_id":null,
+                "memory":null,
+                "obligation":null,
+                "relationship_description":null,
+                "fact_id":null,
+                "reason":"No durable state changes."
+            }]
+        })));
         assert!(!validator.is_valid(&outcome(None, None)));
         assert!(!validator.is_valid(&outcome(Some("invented-owner"), None)));
         assert!(!validator.is_valid(&outcome(
