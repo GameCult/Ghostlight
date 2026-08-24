@@ -928,11 +928,11 @@ fn execute(
             }
             if let Some(wave) = &resolution_wave {
                 let unique_hashes: BTreeSet<_> = wave.model_receipt_hashes.iter().collect();
-                let actionful_cell_count = wave
+                let action_count = wave
                     .appraisals
                     .iter()
-                    .filter(|appraisal| !appraisal.actions.is_empty())
-                    .count();
+                    .map(|appraisal| appraisal.actions.len())
+                    .sum::<usize>();
                 let outcome_digests = resolved_plan
                     .as_ref()
                     .map(crate::outcome::plan_activity_digests)
@@ -945,7 +945,7 @@ fn execute(
                             .cells
                             .len()
                             .saturating_mul(3)
-                            .saturating_add(actionful_cell_count)
+                            .saturating_add(action_count)
                             .saturating_add(outcome_stage_count)
                 {
                     return Err(KernelError::Invalid(
@@ -1000,18 +1000,21 @@ fn execute(
                             .iter()
                             .find(|appraisal| appraisal.cell_id == cell.id)
                             .expect("active cell appraisal was validated");
-                        let verifier_binding = crate::persona::cell_effect_verification_binding(
-                            &binding,
-                            &appraisal.actions,
-                        )
-                        .map_err(|error| KernelError::Invalid(error.to_string()))?;
-                        if !stage_bindings
-                            .contains(&("cell_effect_verifier".into(), verifier_binding))
-                        {
-                            return Err(KernelError::Invalid(format!(
-                                "resolution wave lacks action-bound cell_effect_verifier receipt for {}",
-                                cell.id
-                            )));
+                        for action in &appraisal.actions {
+                            let verifier_binding =
+                                crate::persona::cell_effect_verification_binding(
+                                    &binding,
+                                    std::slice::from_ref(action),
+                                )
+                                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+                            if !stage_bindings
+                                .contains(&("cell_effect_verifier".into(), verifier_binding))
+                            {
+                                return Err(KernelError::Invalid(format!(
+                                    "resolution wave lacks action-bound cell_effect_verifier receipt for {} action by {}",
+                                    cell.id, action.subject_id
+                                )));
+                            }
                         }
                     }
                 }

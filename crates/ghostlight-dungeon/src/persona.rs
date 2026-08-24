@@ -3443,6 +3443,16 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![0, 1]
         );
+        for verification in &verified {
+            assert_eq!(
+                verification.output.receipt.snapshot_binding,
+                cell_effect_verification_binding(
+                    &slice.snapshot_binding,
+                    std::slice::from_ref(&actions[verification.action_index])
+                )
+                .unwrap()
+            );
+        }
         let prompts = prompts.lock().unwrap();
         assert_eq!(prompts.len(), 2);
         let first = prompts
