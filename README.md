@@ -99,6 +99,9 @@ current acceptance surface covers:
   travel, population-fission, and bounded region-expansion consequences, with
   exact component versions and mutation proof receipts;
 - provider, token, cache, latency, validation, state-version, and build receipts;
+- provider-neutral inference through either direct DeepSeek/OpenRouter
+  boundaries or Epiphany's encrypted loopback CultMesh connector, while every
+  prompt, schema, retry, interpretation, and world commit remains Ghostlight's;
 - exact-build deployment, state migration, public cutover, and restart
   verification on Yggdrasil.
 

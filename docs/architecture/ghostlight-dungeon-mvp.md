@@ -812,10 +812,25 @@ Model allocation is provider-neutral inside Ghostlight. Stages request the
 logical classes `ghostlight.fast.v1` or `ghostlight.capable.v1`; the selected
 provider port alone maps those classes to physical model IDs. Receipts record
 the resolved provider and physical model so a routing change cannot masquerade
-as the same inference. The current Yggdrasil test profile maps both classes to
-OpenRouter `stealth/ox-alpha`, using low reasoning for fast stages and high
-reasoning for capable stages. OpenRouter is instructed to exclude reasoning
-from its response, and the decoder never reads or retains that field.
+as the same inference.
+
+The `epiphany-codex` profile maps both logical classes to an operator-admitted
+Codex model through Epiphany's independently supervised model connector. The
+Ghostlight port constructs the native model request, exact output schema,
+reasoning-effort hint, maximum output budget, and a stable prompt-cache key;
+then it sends an expiring encrypted MessagePack invocation through bounded
+TCP-framed CultNet on loopback. It validates every outer and inner request ID,
+schema, provider, sequence, terminal receipt, and absence of reasoning/tool
+events before returning output to the stage owner. Epiphany owns only Codex
+credential custody, provider lowering, physical concurrency, and transport
+receipts. It does not see campaign stores, run its Mind or swarm, interpret
+results, or admit world state. Ghostlight cannot read the Codex credential and
+the connector cannot commit a campaign mutation.
+
+OpenRouter remains a supported test profile. It can map both classes to
+`stealth/ox-alpha`, using low reasoning for fast stages and high reasoning for
+capable stages. OpenRouter is instructed to exclude reasoning from its
+response, and the decoder never reads or retains that field.
 
 DeepSeek remains a supported provider profile: its flash model serves the fast
 class and its pro model serves the capable class with thinking disabled. A
@@ -847,6 +862,15 @@ atomic pointer switch, recorded in CultCache, and the rollback runbook lives in
 same installed body through Idunn continuity. Changing the artifact,
 configuration, schema, unit, or authority binding remains a separate
 deployment operation.
+
+The Epiphany model connector, when selected, is a distinct Idunn-managed
+loopback service at `127.0.0.1:4103`. Its shared connection key is readable by
+the connector and Ghostlight service identities; its Codex home is readable
+only by the connector identity. Neither secret appears in service arguments,
+Odin, CultMesh status, health, or release directories. Odin receives only the
+redacted `model.generate.structured` capability advertisement. The connector
+is not part of Epiphany's swarm release and does not wake or bypass a braked
+Epiphany runtime.
 
 The binary owns its build provenance. Release tooling injects the clean-tree
 commit through `GHOSTLIGHT_BUILD_COMMIT`; local builds derive it from Git while

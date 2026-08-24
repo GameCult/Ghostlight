@@ -203,6 +203,16 @@ the planner already owns. Stable prompt prefixes are deliberately placed before
 dynamic state, and provider receipts expose per-attempt token/cache usage plus
 bounded local validation failures.
 
+`ModelPort` remains Ghostlight's single inference seam. The
+`epiphany-codex` implementation is an ordinary typed consumer of Epiphany's
+loopback model-provider connector: it emits an encrypted, expiring MessagePack
+request over bounded TCP-framed CultNet and accepts only a correlated ordered
+text stream plus terminal receipt. A stable cache key is derived from stage,
+logical model class, and output schema rather than mutable campaign content.
+Epiphany owns Codex credential custody and physical calls; Ghostlight still
+owns stage projection, schemas, retries, semantic validation, receipts, and all
+kernel admission. Neither side can borrow the other's state authority.
+
 Canonical actor cell slices include that actor's exact goals, obligations,
 relationships, and bounded memories. Named Gestalt-member exceptions receive
 the same continuity fields. The Projector narrativizes them for the Persona;

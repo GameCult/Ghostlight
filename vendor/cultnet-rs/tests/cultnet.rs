@@ -308,6 +308,23 @@ fn tcp_framed_transport_carries_schema_payloads_with_stats() -> Result<()> {
 }
 
 #[test]
+fn tcp_framed_transport_rejects_oversized_payload_before_reading_it() {
+    let profile = create_tcp_framed_transport_profile(
+        "bounded-rust-transport",
+        TcpFramedTransportProfileOptions {
+            max_payload_bytes: Some(8),
+            ..TcpFramedTransportProfileOptions::default()
+        },
+    );
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&9_u32.to_be_bytes());
+    let mut receiver = TcpFramedTransportConnection::new(std::io::Cursor::new(bytes), profile);
+    let error = receiver.receive().expect_err("oversized frame must fail");
+    assert!(error.to_string().contains("exceeds advertised maximum 8"));
+    assert_eq!(receiver.stats().bytes_received, 0);
+}
+
+#[test]
 fn rudp_packet_codec_uses_deterministic_reliable_ordered_fixture() -> Result<()> {
     let encoded = encode_rudp_packet(&CultNetRudpPacket {
         packet_type: CultNetRudpPacketType::Data,
