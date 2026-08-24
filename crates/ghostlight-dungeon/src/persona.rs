@@ -169,54 +169,59 @@ struct CellActionCandidate {
     priority: i16,
     state_references: Vec<String>,
     public_channels: Vec<String>,
-    #[schemars(length(min = 1, max = 4))]
-    effects: Vec<CellEffectCandidate>,
+    effects: CellEffectBundleCandidate,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellEffectBundleCandidate {
+    institution: Option<CellInstitutionEffectCandidate>,
+    gestalt_pressure: Option<CellGestaltPressureEffectCandidate>,
+    gestalt_activity: Option<CellActivityEffectCandidate>,
+    gestalt_migration: Option<CellMigrationEffectCandidate>,
+    actor_move: Option<CellActorMoveEffectCandidate>,
+    actor_activity: Option<CellActivityEffectCandidate>,
+    member_activity: Option<CellActivityEffectCandidate>,
+    member_migration: Option<CellMigrationEffectCandidate>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-enum CellEffectCandidate {
-    Institution {
-        #[schemars(length(min = 1, max = 240))]
-        posture: String,
-        location_ids: Vec<String>,
-    },
-    Gestalt {
-        #[serde(default)]
-        pressure_additions: Vec<String>,
-        #[serde(default)]
-        pressure_resolutions: Vec<String>,
-    },
-    GestaltActivity {
-        activity: crate::domain::StrategicActivityKind,
-        #[serde(default)]
-        target_subject_ids: Vec<String>,
-        #[serde(default)]
-        location_ids: Vec<String>,
-    },
-    GestaltMigration {
-        destination_gestalt_id: String,
-    },
-    ActorMove {
-        destination_id: String,
-    },
-    ActorActivity {
-        activity: crate::domain::StrategicActivityKind,
-        #[serde(default)]
-        target_subject_ids: Vec<String>,
-        #[serde(default)]
-        location_ids: Vec<String>,
-    },
-    MemberActivity {
-        activity: crate::domain::StrategicActivityKind,
-        #[serde(default)]
-        target_subject_ids: Vec<String>,
-        #[serde(default)]
-        location_ids: Vec<String>,
-    },
-    MemberMigration {
-        destination_gestalt_id: String,
-    },
+#[serde(deny_unknown_fields)]
+struct CellInstitutionEffectCandidate {
+    #[schemars(length(min = 1, max = 240))]
+    posture: String,
+    location_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellGestaltPressureEffectCandidate {
+    #[serde(default)]
+    pressure_additions: Vec<String>,
+    #[serde(default)]
+    pressure_resolutions: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellActivityEffectCandidate {
+    activity: crate::domain::StrategicActivityKind,
+    #[serde(default)]
+    target_subject_ids: Vec<String>,
+    #[serde(default)]
+    location_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellMigrationEffectCandidate {
+    destination_gestalt_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellActorMoveEffectCandidate {
+    destination_id: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -284,16 +289,12 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
     "actions":{"type":"array","items":{"type":"object","required":["subject_id","intent","intended_effect","priority","state_references","public_channels","effects"],"properties":{
       "subject_id":{"type":"string"},"intent":{"type":"string"},"intended_effect":{"type":"string"},"priority":{"type":"integer"},
       "state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},
-      "effects":{"type":"array","minItems":1,"maxItems":4,"items":{"oneOf":[
-        {"type":"object","required":["type","posture","location_ids"],"properties":{"type":{"const":"institution"},"posture":{"type":"string","minLength":1,"maxLength":240},"location_ids":{"type":"array","items":{"type":"string"}}}},
-        {"type":"object","required":["type","pressure_additions","pressure_resolutions"],"properties":{"type":{"const":"gestalt"},"pressure_additions":{"type":"array","maxItems":4,"items":{"type":"string"}},"pressure_resolutions":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
-        {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"gestalt_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":4,"items":{"type":"string"}}}},
-        {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"gestalt_migration"},"destination_gestalt_id":{"type":"string"}}},
-        {"type":"object","required":["type","destination_id"],"properties":{"type":{"const":"actor_move"},"destination_id":{"type":"string"}}},
-        {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"actor_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":1,"items":{"type":"string"}}}},
-        {"type":"object","required":["type","activity","target_subject_ids","location_ids"],"properties":{"type":{"const":"member_activity"},"activity":{"enum":["prepare","coordinate","investigate","recruit","obstruct","trade","communicate"]},"target_subject_ids":{"type":"array","maxItems":4,"items":{"type":"string"}},"location_ids":{"type":"array","maxItems":1,"items":{"type":"string"}}}},
-        {"type":"object","required":["type","destination_gestalt_id"],"properties":{"type":{"const":"member_migration"},"destination_gestalt_id":{"type":"string"}}}
-      ]}}
+      "effects":{"type":"object","description":"Use only the exact subject-specific lane keys present in the supplied schema. Each key occurs once and contains either one typed effect or null. At least one value must be non-null.","properties":{
+        "institution":{"type":["object","null"]},"gestalt_pressure":{"type":["object","null"]},
+        "gestalt_activity":{"type":["object","null"]},"gestalt_migration":{"type":["object","null"]},
+        "actor_move":{"type":["object","null"]},"actor_activity":{"type":["object","null"]},
+        "member_activity":{"type":["object","null"]},"member_migration":{"type":["object","null"]}
+      }}
     }}},
     "inactions":{"type":"array","items":{"type":"object","required":["subject_id","reason"],"properties":{"subject_id":{"type":"string"},"reason":{"type":"string","minLength":1,"maxLength":240}}}}
   }
@@ -1113,7 +1114,7 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
-                "Each action carries one to four distinct typed effects in execution order. Copy each subject's exact allowed_effect_types. A lane absent from that list is structurally unavailable: do not emit it and do not invent a destination. Each effect type may appear at most once in one action; combine all targets or pressure changes belonging to that lane into its single typed effect. When one chosen act includes travel followed by a local attempt at the supplied destination, preserve both means in one action: movement first, then the activity at that exact destination. Never split one subject's single choice into multiple actions. ",
+                "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Set each available key to one typed effect or null, and make at least one lane non-null. A lane absent from the schema is structurally unavailable: do not emit it and do not invent a destination. Each lane has exactly one slot; combine all targets or pressure changes belonging to that lane into its single typed effect. When one chosen act includes travel followed by a local attempt at the supplied destination, preserve both means in one action by filling both movement and activity slots. Runtime lowers movement before the local activity. Never split one subject's single choice into multiple actions. ",
                 "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Map attempts narrowly: communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; prepare means the subject's own concrete work; investigate means seek information; recruit means invite; trade means offer an exchange; obstruct means attempt interference. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
@@ -1445,7 +1446,7 @@ fn append_cell_correction(
 ) {
     let repair_guidance = cell_correction_guidance(error);
     request.lived_stream.push_str(&format!(
-        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. The semantic verifier's concrete repair guidance in REJECTION names the exact mismatch and is the primary correction instruction. {repair_guidance} Every retained action must still carry one to four valid orthogonal typed effects under the original contract. Preserve all distinct chosen means in one action; travel followed by a local attempt at the exact destination uses movement then activity. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destinations or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
+        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. The semantic verifier's concrete repair guidance in REJECTION names the exact mismatch and is the primary correction instruction. {repair_guidance} Every retained action must still carry one to four non-null orthogonal effect slots under the original contract. Preserve all distinct chosen means in one action; travel followed by a local attempt at the exact destination fills movement and activity, which runtime lowers in that order. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destinations or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, inspection, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
     ));
 }
 
@@ -1480,29 +1481,69 @@ fn exclude_rejected_cell_effects(
     actions: &[crate::domain::CellActionProposal],
     rejected_action_indices: &[usize],
 ) -> Result<()> {
-    let candidate = schema
-        .pointer_mut("/$defs/CellActionCandidate")
-        .and_then(serde_json::Value::as_object_mut)
-        .ok_or_else(|| anyhow!("cell correction schema has no action candidate"))?;
-    let constraints = candidate
-        .entry("allOf")
-        .or_insert_with(|| serde_json::json!([]))
-        .as_array_mut()
-        .ok_or_else(|| anyhow!("cell correction action constraints are not an array"))?;
+    let candidates = schema
+        .pointer_mut("/properties/actions/items/anyOf")
+        .and_then(serde_json::Value::as_array_mut)
+        .ok_or_else(|| anyhow!("cell correction schema has no exact action alternatives"))?;
     for index in rejected_action_indices {
         let Some(action) = actions.get(*index) else {
             continue;
         };
-        constraints.push(serde_json::json!({
-            "not":{
-                "type":"object",
-                "required":["subject_id", "effects"],
-                "properties":{
-                    "subject_id":{"const":action.subject_id},
-                    "effects":{"const":cell_effect_candidate_values(&action.effects)}
+        let candidate = candidates
+            .iter_mut()
+            .find(|candidate| {
+                candidate.pointer("/properties/subject_id/const")
+                    == Some(&serde_json::Value::String(action.subject_id.clone()))
+            })
+            .and_then(serde_json::Value::as_object_mut)
+            .ok_or_else(|| {
+                anyhow!(
+                    "cell correction schema has no action alternative for subject {}",
+                    action.subject_id
+                )
+            })?;
+        let compact_effects = cell_effect_candidate_values(&action.effects);
+        let mut strict_effects = candidate
+            .get("properties")
+            .and_then(serde_json::Value::as_object)
+            .and_then(|properties| properties.get("effects"))
+            .and_then(|effects| effects.get("properties"))
+            .and_then(serde_json::Value::as_object)
+            .map(|properties| {
+                properties
+                    .keys()
+                    .cloned()
+                    .map(|lane| (lane, serde_json::Value::Null))
+                    .collect::<serde_json::Map<_, _>>()
+            })
+            .ok_or_else(|| anyhow!("cell correction action has no exact effect slots"))?;
+        strict_effects.extend(
+            compact_effects
+                .as_object()
+                .expect("cell effect candidate values are an object")
+                .clone(),
+        );
+        candidate
+            .entry("allOf")
+            .or_insert_with(|| serde_json::json!([]))
+            .as_array_mut()
+            .ok_or_else(|| anyhow!("cell correction action constraints are not an array"))?
+            .push(serde_json::json!({
+                "not":{
+                    "anyOf":[
+                        {
+                            "type":"object",
+                            "required":["effects"],
+                            "properties":{"effects":{"const":compact_effects}}
+                        },
+                        {
+                            "type":"object",
+                            "required":["effects"],
+                            "properties":{"effects":{"const":strict_effects}}
+                        }
+                    ]
                 }
-            }
-        }));
+            }));
     }
     Ok(())
 }
@@ -1510,80 +1551,102 @@ fn exclude_rejected_cell_effects(
 fn cell_effect_candidate_values(
     effects: &[crate::domain::StrategicCellEffect],
 ) -> serde_json::Value {
-    serde_json::Value::Array(effects.iter().map(cell_effect_candidate_value).collect())
+    serde_json::Value::Object(
+        effects
+            .iter()
+            .map(cell_effect_candidate_value)
+            .map(|(lane, value)| (lane.to_string(), value))
+            .collect(),
+    )
 }
 
-fn cell_effect_candidate_value(effect: &crate::domain::StrategicCellEffect) -> serde_json::Value {
+fn cell_effect_candidate_value(
+    effect: &crate::domain::StrategicCellEffect,
+) -> (&'static str, serde_json::Value) {
     match effect {
         crate::domain::StrategicCellEffect::Institution {
             posture,
             location_ids,
             ..
-        } => serde_json::json!({
-            "type":"institution",
-            "posture":posture,
-            "location_ids":location_ids,
-        }),
+        } => (
+            "institution",
+            serde_json::json!({
+                "posture":posture,
+                "location_ids":location_ids,
+            }),
+        ),
         crate::domain::StrategicCellEffect::Gestalt {
             pressure_additions,
             pressure_resolutions,
             ..
-        } => serde_json::json!({
-            "type":"gestalt",
-            "pressure_additions":pressure_additions,
-            "pressure_resolutions":pressure_resolutions,
-        }),
+        } => (
+            "gestalt_pressure",
+            serde_json::json!({
+                "pressure_additions":pressure_additions,
+                "pressure_resolutions":pressure_resolutions,
+            }),
+        ),
         crate::domain::StrategicCellEffect::GestaltActivity {
             activity,
             target_subject_ids,
             location_ids,
             ..
-        } => serde_json::json!({
-            "type":"gestalt_activity",
-            "activity":activity,
-            "target_subject_ids":target_subject_ids,
-            "location_ids":location_ids,
-        }),
+        } => (
+            "gestalt_activity",
+            serde_json::json!({
+                "activity":activity,
+                "target_subject_ids":target_subject_ids,
+                "location_ids":location_ids,
+            }),
+        ),
         crate::domain::StrategicCellEffect::GestaltMigration {
             destination_gestalt_id,
-        } => serde_json::json!({
-            "type":"gestalt_migration",
-            "destination_gestalt_id":destination_gestalt_id,
-        }),
-        crate::domain::StrategicCellEffect::ActorMove { destination_id, .. } => {
+        } => (
+            "gestalt_migration",
             serde_json::json!({
-                "type":"actor_move",
+                "destination_gestalt_id":destination_gestalt_id,
+            }),
+        ),
+        crate::domain::StrategicCellEffect::ActorMove { destination_id, .. } => (
+            "actor_move",
+            serde_json::json!({
                 "destination_id":destination_id,
-            })
-        }
+            }),
+        ),
         crate::domain::StrategicCellEffect::ActorActivity {
             activity,
             target_subject_ids,
             location_ids,
             ..
-        } => serde_json::json!({
-            "type":"actor_activity",
-            "activity":activity,
-            "target_subject_ids":target_subject_ids,
-            "location_ids":location_ids,
-        }),
+        } => (
+            "actor_activity",
+            serde_json::json!({
+                "activity":activity,
+                "target_subject_ids":target_subject_ids,
+                "location_ids":location_ids,
+            }),
+        ),
         crate::domain::StrategicCellEffect::MemberActivity {
             activity,
             target_subject_ids,
             location_ids,
             ..
-        } => serde_json::json!({
-            "type":"member_activity",
-            "activity":activity,
-            "target_subject_ids":target_subject_ids,
-            "location_ids":location_ids,
-        }),
+        } => (
+            "member_activity",
+            serde_json::json!({
+                "activity":activity,
+                "target_subject_ids":target_subject_ids,
+                "location_ids":location_ids,
+            }),
+        ),
         crate::domain::StrategicCellEffect::MemberMigration {
             destination_gestalt_id,
-        } => serde_json::json!({
-            "type":"member_migration",
-            "destination_gestalt_id":destination_gestalt_id,
-        }),
+        } => (
+            "member_migration",
+            serde_json::json!({
+                "destination_gestalt_id":destination_gestalt_id,
+            }),
+        ),
     }
 }
 
@@ -1720,97 +1783,102 @@ fn bind_cell_appraisal(
         .actions
         .into_iter()
         .map(|candidate| {
-            let effects = candidate
-                .effects
-                .into_iter()
-                .map(|effect| {
-                    let effect = match effect {
-                        CellEffectCandidate::Institution {
-                            posture,
-                            location_ids,
-                        } => crate::domain::StrategicCellEffect::Institution {
-                            institution_id: candidate.subject_id.clone(),
-                            posture,
-                            location_ids,
-                        },
-                        CellEffectCandidate::Gestalt {
-                            pressure_additions,
-                            pressure_resolutions,
-                        } => crate::domain::StrategicCellEffect::Gestalt {
-                            gestalt_id: candidate.subject_id.clone(),
-                            pressure_additions,
-                            pressure_resolutions,
-                        },
-                        CellEffectCandidate::GestaltActivity {
-                            activity,
-                            target_subject_ids,
-                            location_ids,
-                        } => crate::domain::StrategicCellEffect::GestaltActivity {
-                            gestalt_id: candidate.subject_id.clone(),
-                            activity,
-                            target_subject_ids,
-                            location_ids,
-                        },
-                        CellEffectCandidate::GestaltMigration {
-                            destination_gestalt_id,
-                        } => crate::domain::StrategicCellEffect::GestaltMigration {
-                            destination_gestalt_id,
-                        },
-                        CellEffectCandidate::ActorMove { destination_id } => {
-                            crate::domain::StrategicCellEffect::ActorMove {
-                                actor_id: candidate.subject_id.clone(),
-                                destination_id,
-                            }
-                        }
-                        CellEffectCandidate::ActorActivity {
-                            activity,
-                            target_subject_ids,
-                            location_ids,
-                        } => crate::domain::StrategicCellEffect::ActorActivity {
-                            actor_id: candidate.subject_id.clone(),
-                            activity,
-                            target_subject_ids,
-                            location_ids,
-                        },
-                        CellEffectCandidate::MemberActivity {
-                            activity,
-                            target_subject_ids,
-                            location_ids,
-                        } => {
-                            let member_id = slice
+            let CellActionCandidate {
+                subject_id,
+                intent,
+                intended_effect,
+                priority,
+                state_references,
+                public_channels,
+                effects: candidate_effects,
+            } = candidate;
+            let member_id = if candidate_effects.member_activity.is_some()
+                || candidate_effects.member_migration.is_some()
+            {
+                Some(
+                    slice
                         .member_exceptions
                         .iter()
-                        .find(|member| member.subject_id == candidate.subject_id)
+                        .find(|member| member.subject_id == subject_id)
                         .map(|member| member.member_id.clone())
                         .ok_or_else(|| {
                             anyhow!(
-                                "member_activity subject {} is not a selected member exception",
-                                candidate.subject_id
+                                "member effect subject {} is not a selected member exception",
+                                subject_id
                             )
-                        })?;
-                            crate::domain::StrategicCellEffect::MemberActivity {
-                                member_id,
-                                activity,
-                                target_subject_ids,
-                                location_ids,
-                            }
-                        }
-                        CellEffectCandidate::MemberMigration {
-                            destination_gestalt_id,
-                        } => crate::domain::StrategicCellEffect::MemberMigration {
-                            destination_gestalt_id,
-                        },
-                    };
-                    Ok(effect)
-                })
-                .collect::<Result<Vec<_>>>()?;
+                        })?,
+                )
+            } else {
+                None
+            };
+            let mut effects = Vec::with_capacity(4);
+            if let Some(effect) = candidate_effects.actor_move {
+                effects.push(crate::domain::StrategicCellEffect::ActorMove {
+                    actor_id: subject_id.clone(),
+                    destination_id: effect.destination_id,
+                });
+            }
+            if let Some(effect) = candidate_effects.gestalt_migration {
+                effects.push(crate::domain::StrategicCellEffect::GestaltMigration {
+                    destination_gestalt_id: effect.destination_gestalt_id,
+                });
+            }
+            if let Some(effect) = candidate_effects.member_migration {
+                effects.push(crate::domain::StrategicCellEffect::MemberMigration {
+                    destination_gestalt_id: effect.destination_gestalt_id,
+                });
+            }
+            if let Some(effect) = candidate_effects.institution {
+                effects.push(crate::domain::StrategicCellEffect::Institution {
+                    institution_id: subject_id.clone(),
+                    posture: effect.posture,
+                    location_ids: effect.location_ids,
+                });
+            }
+            if let Some(effect) = candidate_effects.gestalt_pressure {
+                effects.push(crate::domain::StrategicCellEffect::Gestalt {
+                    gestalt_id: subject_id.clone(),
+                    pressure_additions: effect.pressure_additions,
+                    pressure_resolutions: effect.pressure_resolutions,
+                });
+            }
+            if let Some(effect) = candidate_effects.gestalt_activity {
+                effects.push(crate::domain::StrategicCellEffect::GestaltActivity {
+                    gestalt_id: subject_id.clone(),
+                    activity: effect.activity,
+                    target_subject_ids: effect.target_subject_ids,
+                    location_ids: effect.location_ids,
+                });
+            }
+            if let Some(effect) = candidate_effects.actor_activity {
+                effects.push(crate::domain::StrategicCellEffect::ActorActivity {
+                    actor_id: subject_id.clone(),
+                    activity: effect.activity,
+                    target_subject_ids: effect.target_subject_ids,
+                    location_ids: effect.location_ids,
+                });
+            }
+            if let Some(effect) = candidate_effects.member_activity {
+                effects.push(crate::domain::StrategicCellEffect::MemberActivity {
+                    member_id: member_id.expect("member effect resolved an exact member"),
+                    activity: effect.activity,
+                    target_subject_ids: effect.target_subject_ids,
+                    location_ids: effect.location_ids,
+                });
+            }
+            if effects.is_empty() || effects.len() > 4 {
+                return Err(anyhow!(
+                    "action for subject {} requires one to four orthogonal effect lanes",
+                    subject_id
+                ));
+            }
             Ok(crate::domain::CellActionProposal {
-                subject_id: candidate.subject_id,
-                intent: candidate.intent,
-                intended_effect: candidate.intended_effect,
-                priority: candidate.priority,
-                state_references: candidate.state_references,
-                public_channels: candidate.public_channels,
+                subject_id,
+                intent,
+                intended_effect,
+                priority,
+                state_references,
+                public_channels,
                 effects,
             })
         })
@@ -2307,6 +2375,44 @@ fn constrain_cell_proposal_schema(
     slice: &PermittedCellSlice,
     active_subject_ids: &BTreeSet<String>,
 ) -> Result<()> {
+    let action_candidate = schema
+        .pointer("/$defs/CellActionCandidate")
+        .cloned()
+        .ok_or_else(|| anyhow!("cell appraisal schema has no action candidate"))?;
+    let exact_subject_actions = slice
+        .constituents
+        .iter()
+        .filter(|subject| active_subject_ids.contains(&subject.subject_id))
+        .map(|subject| {
+            exact_cell_action_schema(
+                action_candidate.clone(),
+                &subject.subject_id,
+                exact_constituent_effect_bundle_schema(subject),
+                &subject.permitted_state_references,
+                &subject.information_channels,
+            )
+        })
+        .chain(
+            slice
+                .member_exceptions
+                .iter()
+                .filter(|member| active_subject_ids.contains(&member.subject_id))
+                .map(|member| {
+                    exact_cell_action_schema(
+                        action_candidate.clone(),
+                        &member.subject_id,
+                        exact_member_effect_bundle_schema(member),
+                        &member.permitted_state_references,
+                        &member.information_channels,
+                    )
+                }),
+        )
+        .collect::<Result<Vec<_>>>()?;
+    if exact_subject_actions.is_empty() {
+        return Err(anyhow!(
+            "cell proposal schema requires at least one exact decision owner"
+        ));
+    }
     let properties = schema
         .pointer_mut("/properties")
         .and_then(serde_json::Value::as_object_mut)
@@ -2316,15 +2422,15 @@ fn constrain_cell_proposal_schema(
         .and_then(serde_json::Value::as_object_mut)
         .ok_or_else(|| anyhow!("cell appraisal schema has no action array"))?;
     actions.insert("maxItems".into(), slice.max_actions.into());
+    actions.insert(
+        "items".into(),
+        serde_json::json!({"anyOf":exact_subject_actions}),
+    );
     let inactions = properties
         .get_mut("inactions")
         .and_then(serde_json::Value::as_object_mut)
         .ok_or_else(|| anyhow!("cell appraisal schema has no inaction array"))?;
     inactions.insert("maxItems".into(), slice.max_actions.into());
-    let proposal = schema
-        .pointer_mut("/$defs/CellActionCandidate/properties")
-        .and_then(serde_json::Value::as_object_mut)
-        .ok_or_else(|| anyhow!("cell appraisal schema has no proposal properties"))?;
     let subject_ids = slice
         .constituents
         .iter()
@@ -2338,14 +2444,6 @@ fn constrain_cell_proposal_schema(
                 .map(|value| value.subject_id.as_str()),
         )
         .collect::<Vec<_>>();
-    proposal.insert(
-        "subject_id".into(),
-        serde_json::json!({"type":"string","enum":subject_ids.clone()}),
-    );
-    proposal.insert(
-        "priority".into(),
-        serde_json::json!({"type":"integer","minimum":0,"maximum":100}),
-    );
     let inaction = schema
         .pointer_mut("/$defs/CellInaction/properties")
         .and_then(serde_json::Value::as_object_mut)
@@ -2354,72 +2452,45 @@ fn constrain_cell_proposal_schema(
         "subject_id".into(),
         serde_json::json!({"type":"string","enum":subject_ids}),
     );
-    let exact_subject_conditions = slice
-        .constituents
-        .iter()
-        .filter(|subject| active_subject_ids.contains(&subject.subject_id))
-        .map(|subject| {
-            exact_cell_action_condition(
-                &subject.subject_id,
-                exact_constituent_effect_schema(subject),
-                &subject.permitted_state_references,
-                &subject.information_channels,
-            )
-        })
-        .chain(
-            slice
-                .member_exceptions
-                .iter()
-                .filter(|member| active_subject_ids.contains(&member.subject_id))
-                .map(|member| {
-                    exact_cell_action_condition(
-                        &member.subject_id,
-                        exact_member_effect_schema(member),
-                        &member.permitted_state_references,
-                        &member.information_channels,
-                    )
-                }),
-        )
-        .collect::<Vec<_>>();
-    let action_candidate = schema
-        .pointer_mut("/$defs/CellActionCandidate")
-        .and_then(serde_json::Value::as_object_mut)
-        .ok_or_else(|| anyhow!("cell appraisal schema has no action candidate"))?;
-    action_candidate.insert(
-        "allOf".into(),
-        serde_json::Value::Array(exact_subject_conditions),
-    );
     Ok(())
 }
 
-fn exact_cell_action_condition(
+fn exact_cell_action_schema(
+    mut action_schema: serde_json::Value,
     subject_id: &str,
     effect_schema: serde_json::Value,
     permitted_state_references: &BTreeSet<String>,
     information_channels: &BTreeSet<String>,
-) -> serde_json::Value {
-    serde_json::json!({
-        "if":{
-            "properties":{"subject_id":{"const":subject_id}},
-            "required":["subject_id"]
-        },
-        "then":{
-            "properties":{
-                "state_references":exact_string_array_schema(permitted_state_references, 0, permitted_state_references.len()),
-                "public_channels":exact_string_array_schema(information_channels, 0, 8),
-                "effects":{
-                    "type":"array",
-                    "minItems":1,
-                    "maxItems":4,
-                    "items":effect_schema
-                }
-            }
-        }
-    })
+) -> Result<serde_json::Value> {
+    let properties = action_schema
+        .pointer_mut("/properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("cell action candidate schema has no properties"))?;
+    properties.insert(
+        "subject_id".into(),
+        serde_json::json!({"type":"string","const":subject_id}),
+    );
+    properties.insert(
+        "priority".into(),
+        serde_json::json!({"type":"integer","minimum":0,"maximum":100}),
+    );
+    properties.insert(
+        "state_references".into(),
+        exact_string_array_schema(
+            permitted_state_references,
+            0,
+            permitted_state_references.len(),
+        ),
+    );
+    properties.insert(
+        "public_channels".into(),
+        exact_string_array_schema(information_channels, 0, 8),
+    );
+    properties.insert("effects".into(), effect_schema);
+    Ok(action_schema)
 }
 
-fn exact_constituent_effect_schema(subject: &CellConstituentSlice) -> serde_json::Value {
-    let allowed_types = allowed_constituent_effect_types(subject);
+fn exact_constituent_effect_bundle_schema(subject: &CellConstituentSlice) -> serde_json::Value {
     let activity_target_ids = subject
         .activity_targets
         .keys()
@@ -2437,57 +2508,83 @@ fn exact_constituent_effect_schema(subject: &CellConstituentSlice) -> serde_json
                 .map(|destination| destination.location_id.clone()),
         )
         .collect::<BTreeSet<_>>();
-    let mut constraints = Vec::new();
+    let mut properties = serde_json::Map::new();
     match subject.subject_kind {
-        crate::domain::AgencySubjectKind::Actor => constraints.push(exact_activity_scope_schema(
-            &activity_target_ids,
-            &activity_location_ids,
-            1,
-            vec!["actor_activity"],
-        )),
-        crate::domain::AgencySubjectKind::Gestalt => constraints.push(exact_activity_scope_schema(
-            &activity_target_ids,
-            &activity_location_ids,
-            0,
-            vec!["gestalt_activity"],
-        )),
-        crate::domain::AgencySubjectKind::Institution => {}
-    }
-    match subject.subject_kind {
-        crate::domain::AgencySubjectKind::Actor if !subject.reachable_destinations.is_empty() => {
-            constraints.push(serde_json::json!({
-                "if":{"properties":{"type":{"const":"actor_move"}},"required":["type"]},
-                "then":{"properties":{"destination_id":{"type":"string","enum":subject.reachable_destinations.keys().collect::<Vec<_>>()}}}
-            }));
-        }
         crate::domain::AgencySubjectKind::Institution => {
-            constraints.push(serde_json::json!({
-                "if":{"properties":{"type":{"const":"institution"}},"required":["type"]},
-                "then":{"properties":{"location_ids":exact_string_array_schema(&subject.location_ids, 0, 4)}}
-            }));
+            properties.insert(
+                "institution".into(),
+                nullable_effect_schema(serde_json::json!({
+                    "type":"object",
+                    "additionalProperties":false,
+                    "required":["posture","location_ids"],
+                    "properties":{
+                        "posture":{"type":"string","minLength":1,"maxLength":240},
+                        "location_ids":exact_string_array_schema(&subject.location_ids, 0, 4)
+                    }
+                })),
+            );
         }
         crate::domain::AgencySubjectKind::Gestalt => {
-            constraints.push(serde_json::json!({
-                "if":{"properties":{"type":{"const":"gestalt"}},"required":["type"]},
-                "then":{"properties":{"pressure_resolutions":exact_string_slice_array_schema(&subject.pressures, 0, 4)}}
-            }));
+            properties.insert(
+                "gestalt_pressure".into(),
+                nullable_effect_schema(serde_json::json!({
+                    "type":"object",
+                    "additionalProperties":false,
+                    "required":["pressure_additions","pressure_resolutions"],
+                    "properties":{
+                        "pressure_additions":{"type":"array","uniqueItems":true,"maxItems":4,"items":{"type":"string"}},
+                        "pressure_resolutions":exact_string_slice_array_schema(&subject.pressures, 0, 4)
+                    }
+                })),
+            );
+            properties.insert(
+                "gestalt_activity".into(),
+                nullable_effect_schema(exact_activity_effect_schema(
+                    &activity_target_ids,
+                    &activity_location_ids,
+                    0,
+                )),
+            );
             if !subject.migration_destinations.is_empty() {
-                constraints.push(serde_json::json!({
-                    "if":{"properties":{"type":{"const":"gestalt_migration"}},"required":["type"]},
-                    "then":{"properties":{"destination_gestalt_id":{"type":"string","enum":subject.migration_destinations.keys().collect::<Vec<_>>()}}}
-                }));
+                properties.insert(
+                    "gestalt_migration".into(),
+                    nullable_effect_schema(exact_migration_effect_schema(
+                        subject.migration_destinations.keys(),
+                    )),
+                );
             }
         }
-        crate::domain::AgencySubjectKind::Actor => {}
+        crate::domain::AgencySubjectKind::Actor => {
+            if !subject.reachable_destinations.is_empty() {
+                properties.insert(
+                    "actor_move".into(),
+                    nullable_effect_schema(serde_json::json!({
+                        "type":"object",
+                        "additionalProperties":false,
+                        "required":["destination_id"],
+                        "properties":{"destination_id":{"type":"string","enum":subject.reachable_destinations.keys().collect::<Vec<_>>()}}
+                    })),
+                );
+            }
+            properties.insert(
+                "actor_activity".into(),
+                nullable_effect_schema(exact_activity_effect_schema(
+                    &activity_target_ids,
+                    &activity_location_ids,
+                    1,
+                )),
+            );
+        }
     }
     serde_json::json!({
-        "properties":{"type":{"type":"string","enum":allowed_types}},
-        "required":["type"],
-        "allOf":constraints
+        "type":"object",
+        "additionalProperties":false,
+        "minProperties":1,
+        "properties":properties
     })
 }
 
-fn exact_member_effect_schema(member: &CellMemberSlice) -> serde_json::Value {
+fn exact_member_effect_bundle_schema(member: &CellMemberSlice) -> serde_json::Value {
     let activity_target_ids = member
         .activity_targets
         .keys()
@@ -2501,49 +2598,69 @@ fn exact_member_effect_schema(member: &CellMemberSlice) -> serde_json::Value {
                 .map(|destination| destination.location_id.clone()),
         )
         .collect::<BTreeSet<_>>();
-    let mut constraints = vec![exact_activity_scope_schema(
-        &activity_target_ids,
-        &activity_location_ids,
-        1,
-        vec!["member_activity"],
-    )];
+    let mut properties = serde_json::Map::from_iter([(
+        "member_activity".into(),
+        nullable_effect_schema(exact_activity_effect_schema(
+            &activity_target_ids,
+            &activity_location_ids,
+            1,
+        )),
+    )]);
     if !member.migration_destinations.is_empty() {
-        constraints.push(serde_json::json!({
-            "if":{"properties":{"type":{"const":"member_migration"}},"required":["type"]},
-            "then":{"properties":{"destination_gestalt_id":{"type":"string","enum":member.migration_destinations.keys().collect::<Vec<_>>()}}}
-        }));
+        properties.insert(
+            "member_migration".into(),
+            nullable_effect_schema(exact_migration_effect_schema(
+                member.migration_destinations.keys(),
+            )),
+        );
     }
     serde_json::json!({
-        "properties":{"type":{"type":"string","enum":allowed_member_effect_types(member)}},
-        "required":["type"],
-        "allOf":constraints
+        "type":"object",
+        "additionalProperties":false,
+        "minProperties":1,
+        "properties":properties
     })
 }
 
-fn exact_activity_scope_schema(
+fn nullable_effect_schema(effect: serde_json::Value) -> serde_json::Value {
+    serde_json::json!({"anyOf":[effect,{"type":"null"}]})
+}
+
+fn exact_migration_effect_schema<'a>(
+    destinations: impl Iterator<Item = &'a String>,
+) -> serde_json::Value {
+    serde_json::json!({
+        "type":"object",
+        "additionalProperties":false,
+        "required":["destination_gestalt_id"],
+        "properties":{
+            "destination_gestalt_id":{"type":"string","enum":destinations.collect::<Vec<_>>()}
+        }
+    })
+}
+
+fn exact_activity_effect_schema(
     target_ids: &BTreeSet<String>,
     location_ids: &BTreeSet<String>,
     minimum_locations: usize,
-    activity_effect_types: Vec<&'static str>,
 ) -> serde_json::Value {
-    serde_json::json!({
-        "if":{
-            "properties":{"type":{"enum":activity_effect_types}},
-            "required":["type"]
-        },
-        "then":{
+    let alternative = |activities: &[&str], minimum_targets: usize| {
+        serde_json::json!({
+            "type":"object",
+            "additionalProperties":false,
+            "required":["activity","target_subject_ids","location_ids"],
             "properties":{
-                "target_subject_ids":exact_string_array_schema(target_ids, 0, 4),
+                "activity":{"type":"string","enum":activities},
+                "target_subject_ids":exact_string_array_schema(target_ids, minimum_targets, 4),
                 "location_ids":exact_string_array_schema(location_ids, minimum_locations, if minimum_locations == 1 { 1 } else { 4 })
-            },
-            "allOf":[{
-                "if":{
-                    "properties":{"activity":{"enum":["coordinate","recruit","trade"]}},
-                    "required":["activity"]
-                },
-                "then":{"properties":{"target_subject_ids":{"minItems":1}}}
-            }]
-        }
+            }
+        })
+    };
+    serde_json::json!({
+        "anyOf":[
+            alternative(&["prepare","investigate","obstruct","communicate"], 0),
+            alternative(&["coordinate","recruit","trade"], 1)
+        ]
     })
 }
 
@@ -2752,7 +2869,7 @@ mod tests {
                                 "priority":5,
                                 "state_references":["institution:faction-06"],
                                 "public_channels":["public bulletin"],
-                                "effects":[{"type":"institution","posture":"weighing whether to publish a position","location_ids":["forum"]}]
+                                "effects":{"institution":{"posture":"weighing whether to publish a position","location_ids":["forum"]}}
                             }],
                             "inactions":[]
                         })
@@ -2766,11 +2883,10 @@ mod tests {
                             "priority":5,
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
-                            "effects":[{
-                                "type":"institution",
+                            "effects":{"institution":{
                                 "posture":"weighing whether to publish a position",
                                 "location_ids":["forum"]
-                            }]
+                            }}
                         }],
                         "inactions":[]
                     });
@@ -2800,7 +2916,7 @@ mod tests {
                             "priority":5,
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
-                            "effects":[{"type":"institution","posture":"published a bounded position","location_ids":["forum"]}]
+                            "effects":{"institution":{"posture":"published a bounded position","location_ids":["forum"]}}
                         }],
                         "inactions":[]
                     }).to_string())
@@ -2955,11 +3071,10 @@ mod tests {
                             "priority":5,
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
-                            "effects":[{
-                                "type":"institution",
+                            "effects":{"institution":{
                                 "posture":if correction {"withholding reserve commitment pending a verified public count"} else {"releases the reserve immediately"},
                                 "location_ids":["forum"]
-                            }]
+                            }}
                         }],
                         "inactions":[]
                     }).to_string())
@@ -3138,7 +3253,7 @@ mod tests {
         let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
         constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
         let validator = jsonschema::validator_for(&schema).unwrap();
-        let action = |effect| {
+        let action = |effects| {
             serde_json::json!({
                 "actions":[{
                     "subject_id":"relationship-anchor:reed",
@@ -3147,59 +3262,84 @@ mod tests {
                     "priority":80,
                     "state_references":["subject:relationship-anchor:reed"],
                     "public_channels":[],
-                    "effects":[effect]
+                    "effects":effects
                 }],
                 "inactions":[]
             })
         };
 
         assert!(validator.is_valid(&action(serde_json::json!({
-            "type":"actor_activity",
-            "activity":"prepare",
-            "target_subject_ids":[],
-            "location_ids":["forum"]
+            "actor_activity":{
+                "activity":"prepare",
+                "target_subject_ids":[],
+                "location_ids":["forum"]
+            }
         }))));
         assert!(!validator.is_valid(&action(serde_json::json!({
-            "type":"actor_move",
-            "destination_id":"forum"
+            "actor_move":{"destination_id":"forum"}
         }))));
         assert!(!validator.is_valid(&action(serde_json::json!({
-            "type":"gestalt_migration",
-            "destination_gestalt_id":"loc_water_ice_rail_corridor"
+            "gestalt_migration":{"destination_gestalt_id":"loc_water_ice_rail_corridor"}
         }))));
         assert!(!validator.is_valid(&action(serde_json::json!({
-            "type":"actor_activity",
-            "activity":"coordinate",
-            "target_subject_ids":[],
-            "location_ids":["forum"]
+            "actor_activity":{
+                "activity":"coordinate",
+                "target_subject_ids":[],
+                "location_ids":["forum"]
+            }
         }))));
         assert!(validator.is_valid(&action(serde_json::json!({
-            "type":"actor_activity",
-            "activity":"obstruct",
-            "target_subject_ids":[],
-            "location_ids":["forum"]
+            "actor_activity":{
+                "activity":"obstruct",
+                "target_subject_ids":[],
+                "location_ids":["forum"]
+            }
         }))));
         assert!(validator.is_valid(&action(serde_json::json!({
-            "type":"actor_activity",
-            "activity":"coordinate",
-            "target_subject_ids":["inst_zhestokost"],
-            "location_ids":["forum"]
+            "actor_activity":{
+                "activity":"coordinate",
+                "target_subject_ids":["inst_zhestokost"],
+                "location_ids":["forum"]
+            }
         }))));
         assert!(!validator.is_valid(&action(serde_json::json!({
-            "type":"actor_activity",
-            "activity":"coordinate",
-            "target_subject_ids":["invented-target"],
-            "location_ids":["forum"]
+            "actor_activity":{
+                "activity":"coordinate",
+                "target_subject_ids":["invented-target"],
+                "location_ids":["forum"]
+            }
         }))));
         assert!(!validator.is_valid(&action(serde_json::json!({
-            "type":"actor_activity",
-            "activity":"prepare",
-            "target_subject_ids":[],
-            "location_ids":["invented-location"]
+            "actor_activity":{
+                "activity":"prepare",
+                "target_subject_ids":[],
+                "location_ids":["invented-location"]
+            }
         }))));
         assert_eq!(
             allowed_constituent_effect_types(&slice.constituents[0]),
             vec!["actor_activity"]
+        );
+        let mut strict_schema = schema;
+        crate::model_connector::project_strict_responses_schema(&mut strict_schema).unwrap();
+        let strict_effect_properties = strict_schema
+            .pointer("/properties/actions/items/anyOf/0/properties/effects/properties")
+            .and_then(serde_json::Value::as_object)
+            .unwrap();
+        assert_eq!(
+            strict_effect_properties.keys().collect::<Vec<_>>(),
+            vec!["actor_activity"]
+        );
+        assert!(
+            jsonschema::validator_for(&strict_schema)
+                .unwrap()
+                .is_valid(&action(serde_json::json!({
+                    "actor_activity":{
+                        "activity":"prepare",
+                        "target_subject_ids":[],
+                        "location_ids":["forum"]
+                    }
+                })))
         );
     }
 
@@ -3260,11 +3400,10 @@ mod tests {
                 "priority":80,
                 "state_references":exact_references,
                 "public_channels":[],
-                "effects":[{
-                    "type":"institution",
+                "effects":{"institution":{
                     "posture":"withhold action pending an exact count",
                     "location_ids":[]
-                }]
+                }}
             }],
             "inactions":[]
         });
@@ -3347,7 +3486,7 @@ mod tests {
         };
         exclude_rejected_cell_effects(&mut schema, &[rejected], &[0]).unwrap();
         let validator = jsonschema::validator_for(&schema).unwrap();
-        let appraisal = |effect| {
+        let appraisal = |effects| {
             serde_json::json!({
                 "actions":[{
                     "subject_id":"faction-06",
@@ -3356,21 +3495,21 @@ mod tests {
                     "priority":80,
                     "state_references":["institution:faction-06"],
                     "public_channels":[],
-                    "effects":[effect],
+                    "effects":effects,
                 }],
                 "inactions":[],
             })
         };
 
         assert!(!validator.is_valid(&appraisal(serde_json::json!({
-            "type":"actor_move",
-            "destination_id":"encampment",
+            "actor_move":{"destination_id":"encampment"},
         }))));
         assert!(validator.is_valid(&appraisal(serde_json::json!({
-            "type":"actor_activity",
-            "activity":"communicate",
-            "target_subject_ids":[],
-            "location_ids":["forum"],
+            "actor_activity":{
+                "activity":"communicate",
+                "target_subject_ids":[],
+                "location_ids":["forum"]
+            }
         }))));
     }
 
@@ -3601,10 +3740,13 @@ mod tests {
                     priority: 1,
                     state_references: vec!["gestalt:crowd".into()],
                     public_channels: vec![],
-                    effects: vec![CellEffectCandidate::Gestalt {
-                        pressure_additions: vec![],
-                        pressure_resolutions: vec![],
-                    }],
+                    effects: CellEffectBundleCandidate {
+                        gestalt_pressure: Some(CellGestaltPressureEffectCandidate {
+                            pressure_additions: vec![],
+                            pressure_resolutions: vec![],
+                        }),
+                        ..Default::default()
+                    },
                 }],
                 inactions: vec![],
             },
@@ -3753,11 +3895,14 @@ mod tests {
                     priority: 70,
                     state_references: vec!["member:mira".into()],
                     public_channels: vec![],
-                    effects: vec![CellEffectCandidate::MemberActivity {
-                        activity: crate::domain::StrategicActivityKind::Communicate,
-                        target_subject_ids: vec!["refugees".into()],
-                        location_ids: vec!["forum".into()],
-                    }],
+                    effects: CellEffectBundleCandidate {
+                        member_activity: Some(CellActivityEffectCandidate {
+                            activity: crate::domain::StrategicActivityKind::Communicate,
+                            target_subject_ids: vec!["refugees".into()],
+                            location_ids: vec!["forum".into()],
+                        }),
+                        ..Default::default()
+                    },
                 }],
                 inactions: vec![],
             },
@@ -3804,11 +3949,14 @@ mod tests {
                     priority: 70,
                     state_references: vec!["subject:actor:liaison".into()],
                     public_channels: vec![],
-                    effects: vec![CellEffectCandidate::ActorActivity {
-                        activity: crate::domain::StrategicActivityKind::Communicate,
-                        target_subject_ids: vec!["clinic".into()],
-                        location_ids: vec!["forum".into()],
-                    }],
+                    effects: CellEffectBundleCandidate {
+                        actor_activity: Some(CellActivityEffectCandidate {
+                            activity: crate::domain::StrategicActivityKind::Communicate,
+                            target_subject_ids: vec!["clinic".into()],
+                            location_ids: vec!["forum".into()],
+                        }),
+                        ..Default::default()
+                    },
                 }],
                 inactions: vec![],
             },
@@ -3830,11 +3978,14 @@ mod tests {
                     priority: 70,
                     state_references: vec!["subject:actor:liaison".into()],
                     public_channels: vec![],
-                    effects: vec![CellEffectCandidate::MemberActivity {
-                        activity: crate::domain::StrategicActivityKind::Communicate,
-                        target_subject_ids: vec!["clinic".into()],
-                        location_ids: vec!["forum".into()],
-                    }],
+                    effects: CellEffectBundleCandidate {
+                        member_activity: Some(CellActivityEffectCandidate {
+                            activity: crate::domain::StrategicActivityKind::Communicate,
+                            target_subject_ids: vec!["clinic".into()],
+                            location_ids: vec!["forum".into()],
+                        }),
+                        ..Default::default()
+                    },
                 }],
                 inactions: vec![],
             },
@@ -3873,16 +4024,17 @@ mod tests {
                     priority: 70,
                     state_references: vec!["subject:actor:director".into()],
                     public_channels: vec![],
-                    effects: vec![
-                        CellEffectCandidate::ActorMove {
+                    effects: CellEffectBundleCandidate {
+                        actor_move: Some(CellActorMoveEffectCandidate {
                             destination_id: "encampment".into(),
-                        },
-                        CellEffectCandidate::ActorActivity {
+                        }),
+                        actor_activity: Some(CellActivityEffectCandidate {
                             activity: crate::domain::StrategicActivityKind::Communicate,
                             target_subject_ids: vec![],
                             location_ids: vec!["encampment".into()],
-                        },
-                    ],
+                        }),
+                        ..Default::default()
+                    },
                 }],
                 inactions: vec![],
             },
@@ -3982,12 +4134,12 @@ mod tests {
         append_cell_correction(
             &mut request,
             &anyhow::anyhow!("the typed effect was unsupported"),
-            r#"{"actions":[{"effects":[{"type":"gestalt"}]}]}"#,
+            r#"{"actions":[{"effects":{"gestalt_pressure":{"pressure_additions":[],"pressure_resolutions":[]}}}]}"#,
         );
         assert!(
             request
                 .lived_stream
-                .contains("one to four valid orthogonal typed effects")
+                .contains("one to four non-null orthogonal effect slots")
         );
         assert!(
             request
@@ -4026,11 +4178,11 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            schema.pointer("/$defs/CellActionCandidate/properties/priority/minimum"),
+            schema.pointer("/properties/actions/items/anyOf/0/properties/priority/minimum"),
             Some(&serde_json::json!(0))
         );
         assert_eq!(
-            schema.pointer("/$defs/CellActionCandidate/properties/priority/maximum"),
+            schema.pointer("/properties/actions/items/anyOf/0/properties/priority/maximum"),
             Some(&serde_json::json!(100))
         );
     }
@@ -4146,9 +4298,9 @@ mod tests {
         constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
         assert_eq!(
             schema
-                .pointer("/$defs/CellActionCandidate/properties/subject_id/enum")
+                .pointer("/properties/actions/items/anyOf/0/properties/subject_id/const")
                 .unwrap(),
-            &serde_json::json!(["faction-06"])
+            &serde_json::json!("faction-06")
         );
     }
 

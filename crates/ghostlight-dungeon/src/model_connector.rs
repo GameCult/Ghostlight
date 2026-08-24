@@ -245,7 +245,7 @@ fn unix_ms() -> Result<u64> {
         .context("system clock does not fit u64 milliseconds")?)
 }
 
-fn project_strict_responses_schema(schema: &mut serde_json::Value) -> Result<()> {
+pub(crate) fn project_strict_responses_schema(schema: &mut serde_json::Value) -> Result<()> {
     lower_schema_for_responses_format(schema);
     require_closed_responses_objects(schema, "$")?;
     if !responses_schema_is_strict(schema) {
