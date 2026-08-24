@@ -2670,7 +2670,12 @@ fn exact_string_array_schema(
     max_items: usize,
 ) -> serde_json::Value {
     if values.is_empty() {
-        serde_json::json!({"type":"array","minItems":min_items,"maxItems":0})
+        serde_json::json!({
+            "type":"array",
+            "minItems":min_items,
+            "maxItems":0,
+            "items":{"type":"string"}
+        })
     } else {
         serde_json::json!({
             "type":"array",
@@ -3409,6 +3414,16 @@ mod tests {
         });
 
         assert!(validator.is_valid(&appraisal));
+    }
+
+    #[test]
+    fn exact_empty_string_arrays_remain_valid_strict_response_schemas() {
+        let schema = exact_string_array_schema(&BTreeSet::new(), 0, 8);
+        assert_eq!(schema["maxItems"], 0);
+        assert_eq!(schema["items"]["type"], "string");
+        assert!(jsonschema::validator_for(&schema)
+            .unwrap()
+            .is_valid(&serde_json::json!([])));
     }
 
     #[test]
