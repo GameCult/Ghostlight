@@ -7246,6 +7246,23 @@ mod tests {
                 travel_minutes: 20,
             },
         );
+        seed.locations.insert(
+            "yard".into(),
+            Location {
+                id: "yard".into(),
+                name: "Yard".into(),
+                container_id: None,
+                routes: BTreeMap::from([(
+                    "harbor".into(),
+                    Route {
+                        destination_id: "harbor".into(),
+                        distance: "farther away".into(),
+                        travel_minutes: 45,
+                    },
+                )]),
+                persistent_features: vec!["freight apron".into()],
+            },
+        );
         let membership = two_player_membership(&mut seed);
         let campaign_id = seed.id;
         let start_time = seed.world_time;

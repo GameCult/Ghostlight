@@ -245,6 +245,13 @@ Components are sparse. A place does not need knowledge; a proposition does not
 need occupancy. Component applicability is determined by subject kind and the
 specific admitted entity, not by a universal bag of optional fields.
 
+Route keys are scoped to their owning origin location. Canonical route identity
+is therefore the pair `(origin_location_id, local_route_id)`, never the bare
+map key. The transition overlay encodes that pair into a collision-free edge
+identity before validation and maps accepted edges back to the original local
+keys. Surface projections use each route's exact `destination_id`; they do not
+reinterpret a local route key as a destination or global edge ID.
+
 ## The mutation vocabulary
 
 `WorldMutation` is a closed tagged union. Each variant owns one semantic

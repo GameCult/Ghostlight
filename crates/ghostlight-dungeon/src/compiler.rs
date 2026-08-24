@@ -1118,7 +1118,7 @@ impl WorldCompiler {
             .await?;
         let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
         let base_prompt = format!(
-            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes owned by origin id {} into the new region, and give every such destination a reciprocal route back to the origin with the same positive travel time. Route IDs are globally unique. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes owned by origin id {} into the new region, and give every such destination a reciprocal route back to the origin with the same positive travel time. Route IDs are stable keys local to their exact origin location; the same local key may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
             origin_location_id,
             serde_json::to_string(&campaign.locations)?,
             destination_request,
@@ -2447,12 +2447,17 @@ pub fn validate_region_expansion(
         .iter()
         .map(|location| (location.id.as_str(), location))
         .collect::<BTreeMap<_, _>>();
-    let existing_route_ids = campaign
+    let existing_origin_route_ids = campaign
         .locations
-        .values()
-        .flat_map(|location| location.routes.keys().map(String::as_str))
-        .collect::<BTreeSet<_>>();
-    let mut new_route_ids = BTreeSet::new();
+        .get(&expansion.origin_location_id)
+        .map(|location| {
+            location
+                .routes
+                .keys()
+                .map(String::as_str)
+                .collect::<BTreeSet<_>>()
+        })
+        .unwrap_or_default();
     if expansion.origin_routes.is_empty() {
         return Err(anyhow!(
             "destination expansion has no explicit route from the origin"
@@ -2460,8 +2465,7 @@ pub fn validate_region_expansion(
     }
     for (route_id, route) in &expansion.origin_routes {
         if route_id.trim().is_empty()
-            || existing_route_ids.contains(route_id.as_str())
-            || !new_route_ids.insert(route_id.as_str())
+            || existing_origin_route_ids.contains(route_id.as_str())
             || route.travel_minutes == 0
             || route.distance.trim().is_empty()
             || !new_ids.contains(route.destination_id.as_str())
@@ -2505,8 +2509,6 @@ pub fn validate_region_expansion(
         }
         for (route_id, route) in &location.routes {
             if route_id.trim().is_empty()
-                || existing_route_ids.contains(route_id.as_str())
-                || !new_route_ids.insert(route_id.as_str())
                 || route.travel_minutes == 0
                 || route.distance.trim().is_empty()
                 || !known(&route.destination_id)
@@ -5063,6 +5065,26 @@ mod tests {
                 .to_string()
                 .contains("explicit route from the origin")
         );
+    }
+
+    #[test]
+    fn region_expansion_route_keys_are_local_to_their_origin() {
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let mut expansion = valid_region_expansion();
+        let outward = expansion
+            .origin_routes
+            .remove("route:center-annex")
+            .unwrap();
+        expansion.origin_routes.insert("road".into(), outward);
+        let returning = expansion.locations[0]
+            .routes
+            .remove("route:annex-center")
+            .unwrap();
+        expansion.locations[0]
+            .routes
+            .insert("road".into(), returning);
+
+        validate_region_expansion(&campaign, &expansion).unwrap();
     }
 
     #[test]

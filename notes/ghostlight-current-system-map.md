@@ -1019,7 +1019,12 @@ proposition content, evidence references, discovery locations, containment,
 route identity, distance, and topology are validated on the component overlay;
 the aggregate `Location`, `Route`, and `WorldFact` rows are reconstructed only
 from accepted component state. The previous direct location/fact insertion
-loops are gone.
+loops are gone. A route map key is local to its exact origin. The component
+overlay derives its edge identity from `(origin_location_id, local_route_id)`;
+the player surface uses the route's exact destination field, and accepted
+region expansion restores the original local key. Reusing `road`, `harbor`, or
+a destination-shaped key under another location cannot overwrite an unrelated
+edge or make a surface-advertised route fail transition admission.
 
 Initial compiler publication is a bounded creation transaction, not a fictional
 world transition. `CampaignRegistry` owns discoverability, installs the

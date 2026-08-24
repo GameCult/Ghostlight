@@ -234,18 +234,19 @@ pub fn player_surface_for_actor(campaign: &Campaign, viewer_actor_id: &str) -> V
     } else {
         let default_destination_id = location
             .routes
-            .keys()
+            .values()
             .next()
+            .map(|route| route.destination_id.as_str())
             .expect("non-empty routes have a first destination");
         children.push(json!({
             "id":"dungeon.travel.destination",
             "kind":"control.select",
             "props":{"label":"Group destination","value":default_destination_id},
             "stateBindings":[local_draft("destination_location_id","choice")],
-            "children":location.routes.iter().filter_map(|(destination_id,route)|campaign.locations.get(destination_id).map(|destination|json!({
-                "id":format!("dungeon.travel.option.{destination_id}"),
+            "children":location.routes.values().filter_map(|route|campaign.locations.get(&route.destination_id).map(|destination|json!({
+                "id":format!("dungeon.travel.option.{}",route.destination_id),
                 "kind":"control.option",
-                "props":{"value":destination_id,"label":format!("{} · {} minutes · {}",destination.name,route.travel_minutes,route.distance)},
+                "props":{"value":route.destination_id,"label":format!("{} · {} minutes · {}",destination.name,route.travel_minutes,route.distance)},
                 "children":[]
             }))).collect::<Vec<_>>()
         }));
@@ -272,7 +273,7 @@ pub fn player_surface_for_actor(campaign: &Campaign, viewer_actor_id: &str) -> V
       "world_revision":campaign.revision,
       "viewer_actor_id":viewer_actor_id,
       "player_location_id":player.location_id,
-      "reachable_destinations":location.routes.iter().filter_map(|(destination_id,route)|campaign.locations.get(destination_id).map(|destination|json!({"id":destination_id,"name":destination.name,"travel_minutes":route.travel_minutes,"distance":route.distance}))).collect::<Vec<_>>(),
+      "reachable_destinations":location.routes.values().filter_map(|route|campaign.locations.get(&route.destination_id).map(|destination|json!({"id":route.destination_id,"name":destination.name,"travel_minutes":route.travel_minutes,"distance":route.distance}))).collect::<Vec<_>>(),
       "resolution":{
         "policy":campaign.resolution_policy,
         "effective_budget":effective_budget,
@@ -781,7 +782,7 @@ mod tests {
             },
         );
         campaign.locations.get_mut("center").unwrap().routes.insert(
-            "harbor".into(),
+            "road-to-harbor".into(),
             crate::domain::Route {
                 destination_id: "harbor".into(),
                 distance: "nearby".into(),

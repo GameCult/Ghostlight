@@ -94,7 +94,12 @@ pub fn lower_group_travel(
     let route_minutes = campaign
         .locations
         .get(origin_location_id)
-        .and_then(|location| location.routes.get(&route_id))
+        .and_then(|location| {
+            location
+                .routes
+                .values()
+                .find(|route| route.destination_id == destination_location_id)
+        })
         .map(|route| route.travel_minutes)
         .ok_or_else(|| anyhow!("group travel route vanished"))?;
     if route_minutes != travel_minutes {
@@ -300,7 +305,7 @@ pub fn lower_region_expansion(
     for (route_id, route) in &expansion.origin_routes {
         mutations.push(WorldMutation::ChangeTopology {
             operation: TopologyMutationOperation::Add,
-            edge_id: route_id.clone(),
+            edge_id: component_route_id(&expansion.origin_location_id, route_id),
             from_place: origin.clone(),
             to_place: place_subject(&route.destination_id),
             distance: Some(route.distance.clone()),
@@ -311,7 +316,7 @@ pub fn lower_region_expansion(
         for (route_id, route) in &location.routes {
             mutations.push(WorldMutation::ChangeTopology {
                 operation: TopologyMutationOperation::Add,
-                edge_id: route_id.clone(),
+                edge_id: component_route_id(&location.id, route_id),
                 from_place: place_subject(&location.id),
                 to_place: place_subject(&route.destination_id),
                 distance: Some(route.distance.clone()),
@@ -362,13 +367,18 @@ fn project_accepted_region_expansion(
             .place_profiles
             .get(&subject)
             .ok_or_else(|| anyhow!("accepted expansion lost a place profile"))?;
-        let routes = next
-            .topology
-            .values()
-            .filter(|edge| edge.from_place == subject && edge.open)
-            .map(|edge| {
+        let routes = requested
+            .routes
+            .keys()
+            .map(|route_id| {
+                let edge_id = component_route_id(&requested.id, route_id);
+                let edge = next
+                    .topology
+                    .get(&edge_id)
+                    .filter(|edge| edge.from_place == subject && edge.open)
+                    .ok_or_else(|| anyhow!("accepted expansion lost a local route"))?;
                 Ok((
-                    edge.id.clone(),
+                    route_id.clone(),
                     crate::domain::Route {
                         destination_id: edge.to_place.id.clone(),
                         distance: edge.distance.clone(),
@@ -398,9 +408,10 @@ fn project_accepted_region_expansion(
         .get_mut(&expansion.origin_location_id)
         .ok_or_else(|| anyhow!("accepted expansion origin vanished"))?;
     for route_id in expansion.origin_routes.keys() {
+        let edge_id = component_route_id(&expansion.origin_location_id, route_id);
         let edge = next
             .topology
-            .get(route_id)
+            .get(&edge_id)
             .filter(|edge| edge.from_place.id == expansion.origin_location_id && edge.open)
             .ok_or_else(|| anyhow!("accepted expansion lost an origin route"))?;
         origin.routes.insert(
@@ -1083,10 +1094,14 @@ fn exact_route_id(campaign: &Campaign, origin: &str, destination: &str) -> Resul
         .get(origin)
         .and_then(|location| {
             location.routes.iter().find_map(|(route_id, route)| {
-                (route.destination_id == destination).then(|| route_id.clone())
+                (route.destination_id == destination).then(|| component_route_id(origin, route_id))
             })
         })
         .ok_or_else(|| anyhow!("strategic relocation has no exact topology edge"))
+}
+
+fn component_route_id(origin: &str, local_route_id: &str) -> String {
+    format!("route:{}:{origin}:{local_route_id}", origin.len())
 }
 
 pub fn digest_serializable<T: serde::Serialize + ?Sized>(value: &T) -> Result<String> {
@@ -1174,17 +1189,8 @@ fn foreground_mutations(
             .actors
             .get(actor_id)
             .ok_or_else(|| anyhow!("outcome actor vanished"))?;
-        let location = campaign
-            .locations
-            .get(&actor.location_id)
-            .ok_or_else(|| anyhow!("actor origin vanished"))?;
-        let route_id = location
-            .routes
-            .iter()
-            .find_map(|(route_id, route)| {
-                (route.destination_id == *destination_id).then(|| route_id.clone())
-            })
-            .ok_or_else(|| anyhow!("outcome movement has no exact route"))?;
+        let route_id = exact_route_id(campaign, &actor.location_id, destination_id)
+            .map_err(|_| anyhow!("outcome movement has no exact route"))?;
         mutations.push(WorldMutation::Relocate {
             subject: actor_subject(actor_id),
             from_place: place_subject(&actor.location_id),
@@ -1695,10 +1701,11 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
     }
     for location in campaign.locations.values() {
         for (route_id, route) in &location.routes {
+            let edge_id = component_route_id(&location.id, route_id);
             state.topology.insert(
-                route_id.clone(),
+                edge_id.clone(),
                 TopologyComponentState {
-                    id: route_id.clone(),
+                    id: edge_id,
                     from_place: place_subject(&location.id),
                     to_place: place_subject(&route.destination_id),
                     distance: route.distance.clone(),
