@@ -595,9 +595,10 @@ mod tests {
             .get_required::<SchemaCatalogRecord>("ghostlight:schema-catalog")
             .unwrap();
         let schemas = catalog.value["schemas"].as_object().unwrap();
-        assert_eq!(schemas.len(), 2);
+        assert_eq!(schemas.len(), 3);
         assert!(schemas["ghostlight.campaign.v1"]["$schema"].is_string());
         assert!(schemas["ghostlight.session_zero.v1"]["$schema"].is_string());
+        assert!(schemas["ghostlight.vault_source_manifest.v1"]["$schema"].is_string());
         assert!(!schemas.contains_key("ghostlight.persona_stage_receipt.v1"));
         assert!(!schemas.contains_key("ghostlight.world_mutation.v1"));
         drop(catalog);
