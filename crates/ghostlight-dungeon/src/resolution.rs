@@ -2808,10 +2808,23 @@ fn proposal_target_key(proposal: &CellActionProposal) -> String {
 
 fn validate_strategic_effect_lanes(effects: &[StrategicCellEffect]) -> Result<()> {
     let mut lanes = BTreeSet::new();
-    for effect in effects {
-        if !lanes.insert(effect.lane()) {
+    for (index, effect) in effects.iter().enumerate() {
+        if effects[..index].contains(effect) {
             return Err(anyhow!(
-                "one strategic action may use each orthogonal effect lane at most once"
+                "a strategic action cannot repeat an exact typed effect"
+            ));
+        }
+        let lane = match effect {
+            StrategicCellEffect::GestaltActivity { activity, .. }
+            | StrategicCellEffect::ActorActivity { activity, .. }
+            | StrategicCellEffect::MemberActivity { activity, .. } => {
+                format!("{}:{activity:?}", effect.lane())
+            }
+            _ => effect.lane().to_owned(),
+        };
+        if !lanes.insert(lane) {
+            return Err(anyhow!(
+                "one strategic action may use each scalar lane and each distinct activity kind at most once"
             ));
         }
     }

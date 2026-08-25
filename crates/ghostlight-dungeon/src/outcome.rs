@@ -33,7 +33,7 @@ struct ActionOutcomeContext {
     source_name: String,
     intent: String,
     intended_effect: String,
-    activity: StrategicActivityKind,
+    activities: Vec<StrategicActivityKind>,
     target_subject_ids: Vec<String>,
     location_ids: Vec<String>,
     source_state: serde_json::Value,
@@ -422,6 +422,8 @@ pub fn plan_activity_digests(plan: &StrategicTickPlan) -> Vec<String> {
                 .iter()
                 .map(|activity| activity.action_digest.clone()),
         )
+        .collect::<BTreeSet<_>>()
+        .into_iter()
         .collect()
 }
 
@@ -894,7 +896,7 @@ fn validate_effect(
     exclusive_effects: &mut BTreeSet<String>,
 ) -> Result<()> {
     let source = proposal.subject_id.as_str();
-    let (activity, targets, locations) = activity_parts(proposal)?;
+    let (activities, targets, locations) = activity_parts(proposal)?;
     let target_set = targets.iter().cloned().collect::<BTreeSet<_>>();
     match &outcome.effect {
         StrategicOutcomeEffect::NoMaterialChange { reason } => {
@@ -912,7 +914,7 @@ fn validate_effect(
                     outcome.action_digest
                 ));
             }
-            if !matches!(activity, StrategicActivityKind::Prepare) {
+            if !activities.contains(&StrategicActivityKind::Prepare) {
                 return Err(anyhow!(
                     "outcome {} resource_created requires a prepare activity",
                     outcome.action_digest
@@ -977,13 +979,15 @@ fn validate_effect(
                 || !subject_resources(campaign, source)?.contains(resource)
                 || contains_normalized(&subject_resources(campaign, to_subject_id)?, resource)
                 || subject_resources(campaign, to_subject_id)?.len() >= 64
-                || !matches!(
-                    activity,
-                    StrategicActivityKind::Trade
-                        | StrategicActivityKind::Communicate
-                        | StrategicActivityKind::Recruit
-                        | StrategicActivityKind::Coordinate
-                )
+                || !activities.iter().any(|activity| {
+                    matches!(
+                        activity,
+                        StrategicActivityKind::Trade
+                            | StrategicActivityKind::Communicate
+                            | StrategicActivityKind::Recruit
+                            | StrategicActivityKind::Coordinate
+                    )
+                })
                 || !exclusive_effects.insert(format!("resource:{source}:{resource}"))
             {
                 return Err(anyhow!(
@@ -1036,14 +1040,16 @@ fn validate_effect(
                 || !target_set.contains(other)
                 || *strength_delta == 0
                 || strength_delta.abs() > 10
-                || !matches!(
-                    activity,
-                    StrategicActivityKind::Coordinate
-                        | StrategicActivityKind::Recruit
-                        | StrategicActivityKind::Obstruct
-                        | StrategicActivityKind::Trade
-                        | StrategicActivityKind::Communicate
-                )
+                || !activities.iter().any(|activity| {
+                    matches!(
+                        activity,
+                        StrategicActivityKind::Coordinate
+                            | StrategicActivityKind::Recruit
+                            | StrategicActivityKind::Obstruct
+                            | StrategicActivityKind::Trade
+                            | StrategicActivityKind::Communicate
+                    )
+                })
             {
                 return Err(anyhow!(
                     "outcome relation shift exceeds exact source or activity"
@@ -1116,10 +1122,12 @@ fn validate_effect(
             fact_id,
         } => {
             if owner_subject_id != source
-                || !matches!(
-                    activity,
-                    StrategicActivityKind::Investigate | StrategicActivityKind::Communicate
-                )
+                || !activities.iter().any(|activity| {
+                    matches!(
+                        activity,
+                        StrategicActivityKind::Investigate | StrategicActivityKind::Communicate
+                    )
+                })
                 || !discoverable_fact_ids(campaign, proposal)?.contains(fact_id)
                 || source_knowledge(campaign, source)?.contains(&campaign.facts[fact_id].statement)
                 || !exclusive_effects.insert(format!("knowledge:{source}:{fact_id}"))
@@ -1170,7 +1178,7 @@ fn action_context(
     campaign: &Campaign,
     proposal: &CellActionProposal,
 ) -> Result<ActionOutcomeContext> {
-    let (activity, targets, locations) = activity_parts(proposal)?;
+    let (activities, targets, locations) = activity_parts(proposal)?;
     let source_name = subject_name(campaign, &proposal.subject_id)?;
     let source_state = subject_summary(campaign, &proposal.subject_id)?;
     let target_state = targets
@@ -1218,7 +1226,7 @@ fn action_context(
         source_name,
         intent: proposal.intent.clone(),
         intended_effect: proposal.intended_effect.clone(),
-        activity,
+        activities,
         target_subject_ids: targets,
         location_ids: locations,
         source_state,
@@ -1254,13 +1262,13 @@ fn admissible_effect_kinds(
     campaign: &Campaign,
     proposal: &CellActionProposal,
 ) -> Result<Vec<OutcomeEffectKind>> {
-    let (activity, targets, _) = activity_parts(proposal)?;
+    let (activities, targets, _) = activity_parts(proposal)?;
     let source = proposal.subject_id.as_str();
     let resources = subject_resources(campaign, source)?;
     let references = allowed_state_references(campaign, proposal)?;
     let mut kinds = vec![OutcomeEffectKind::NoMaterialChange];
 
-    if matches!(activity, StrategicActivityKind::Prepare)
+    if activities.contains(&StrategicActivityKind::Prepare)
         && resources.len() < 64
         && can_hold_resources(campaign, source)
         && references
@@ -1273,13 +1281,15 @@ fn admissible_effect_kinds(
         kinds.push(OutcomeEffectKind::ResourceConsumed);
     }
     if !resources.is_empty()
-        && matches!(
-            activity,
-            StrategicActivityKind::Trade
-                | StrategicActivityKind::Communicate
-                | StrategicActivityKind::Recruit
-                | StrategicActivityKind::Coordinate
-        )
+        && activities.iter().any(|activity| {
+            matches!(
+                activity,
+                StrategicActivityKind::Trade
+                    | StrategicActivityKind::Communicate
+                    | StrategicActivityKind::Recruit
+                    | StrategicActivityKind::Coordinate
+            )
+        })
         && targets.iter().any(|target| {
             !is_human_controlled_actor(campaign, target) && can_hold_resources(campaign, target)
         })
@@ -1290,14 +1300,16 @@ fn admissible_effect_kinds(
         kinds.push(OutcomeEffectKind::GestaltPressure);
     }
     if crate::resolution::dormant_member_id_for_subject(campaign, source).is_none()
-        && matches!(
-            activity,
-            StrategicActivityKind::Coordinate
-                | StrategicActivityKind::Recruit
-                | StrategicActivityKind::Obstruct
-                | StrategicActivityKind::Trade
-                | StrategicActivityKind::Communicate
-        )
+        && activities.iter().any(|activity| {
+            matches!(
+                activity,
+                StrategicActivityKind::Coordinate
+                    | StrategicActivityKind::Recruit
+                    | StrategicActivityKind::Obstruct
+                    | StrategicActivityKind::Trade
+                    | StrategicActivityKind::Communicate
+            )
+        })
         && campaign.agency_relations.values().any(|relation| {
             relation.active
                 && ((relation.from_subject_id == source
@@ -1314,13 +1326,15 @@ fn admissible_effect_kinds(
             kinds.push(OutcomeEffectKind::MemberMemory);
         }
         if member.obligations.len() < 64
-            && matches!(
-                activity,
-                StrategicActivityKind::Communicate
-                    | StrategicActivityKind::Coordinate
-                    | StrategicActivityKind::Recruit
-                    | StrategicActivityKind::Trade
-            )
+            && activities.iter().any(|activity| {
+                matches!(
+                    activity,
+                    StrategicActivityKind::Communicate
+                        | StrategicActivityKind::Coordinate
+                        | StrategicActivityKind::Recruit
+                        | StrategicActivityKind::Trade
+                )
+            })
         {
             kinds.push(OutcomeEffectKind::MemberObligation);
         }
@@ -1328,10 +1342,12 @@ fn admissible_effect_kinds(
             kinds.push(OutcomeEffectKind::MemberRelationship);
         }
     }
-    if matches!(
-        activity,
-        StrategicActivityKind::Investigate | StrategicActivityKind::Communicate
-    ) && !discoverable_fact_ids(campaign, proposal)?.is_empty()
+    if activities.iter().any(|activity| {
+        matches!(
+            activity,
+            StrategicActivityKind::Investigate | StrategicActivityKind::Communicate
+        )
+    }) && !discoverable_fact_ids(campaign, proposal)?.is_empty()
     {
         kinds.push(OutcomeEffectKind::KnowledgeLearned);
     }
@@ -1440,7 +1456,7 @@ fn discoverable_fact_ids(
     campaign: &Campaign,
     proposal: &CellActionProposal,
 ) -> Result<BTreeSet<String>> {
-    let (activity, targets, locations) = activity_parts(proposal)?;
+    let (activities, targets, locations) = activity_parts(proposal)?;
     let mut facts = campaign
         .facts
         .values()
@@ -1452,7 +1468,7 @@ fn discoverable_fact_ids(
         })
         .map(|fact| fact.id.clone())
         .collect::<BTreeSet<_>>();
-    if matches!(activity, StrategicActivityKind::Communicate) {
+    if activities.contains(&StrategicActivityKind::Communicate) {
         for target in targets {
             let known = source_knowledge(campaign, &target)?;
             facts.extend(
@@ -1526,46 +1542,56 @@ fn is_human_controlled_actor(campaign: &Campaign, subject_id: &str) -> bool {
 
 fn activity_parts(
     proposal: &CellActionProposal,
-) -> Result<(StrategicActivityKind, Vec<String>, Vec<String>)> {
-    let mut activities = proposal
+) -> Result<(Vec<StrategicActivityKind>, Vec<String>, Vec<String>)> {
+    let activity_effects = proposal
         .effects
         .iter()
-        .filter(|effect| is_activity_effect(effect));
-    let activity = activities
-        .next()
-        .ok_or_else(|| anyhow!("strategic outcome was requested for a non-activity"))?;
-    if activities.next().is_some() {
+        .filter(|effect| is_activity_effect(effect))
+        .collect::<Vec<_>>();
+    if activity_effects.is_empty() {
         return Err(anyhow!(
-            "one strategic action cannot contain multiple activity effects"
+            "strategic outcome was requested for a non-activity"
         ));
     }
-    match activity {
-        StrategicCellEffect::GestaltActivity {
-            activity,
-            target_subject_ids,
-            location_ids,
-            ..
+    let mut activities = Vec::with_capacity(activity_effects.len());
+    let mut targets = BTreeSet::new();
+    let mut locations = BTreeSet::new();
+    for effect in activity_effects {
+        let (activity, effect_targets, effect_locations) = match effect {
+            StrategicCellEffect::GestaltActivity {
+                activity,
+                target_subject_ids,
+                location_ids,
+                ..
+            }
+            | StrategicCellEffect::ActorActivity {
+                activity,
+                target_subject_ids,
+                location_ids,
+                ..
+            }
+            | StrategicCellEffect::MemberActivity {
+                activity,
+                target_subject_ids,
+                location_ids,
+                ..
+            } => (activity, target_subject_ids, location_ids),
+            _ => unreachable!("activity filter admitted a non-activity"),
+        };
+        if activities.contains(activity) {
+            return Err(anyhow!(
+                "one strategic action cannot repeat an activity kind"
+            ));
         }
-        | StrategicCellEffect::ActorActivity {
-            activity,
-            target_subject_ids,
-            location_ids,
-            ..
-        }
-        | StrategicCellEffect::MemberActivity {
-            activity,
-            target_subject_ids,
-            location_ids,
-            ..
-        } => Ok((
-            activity.clone(),
-            target_subject_ids.clone(),
-            location_ids.clone(),
-        )),
-        _ => Err(anyhow!(
-            "strategic outcome was requested for a non-activity"
-        )),
+        activities.push(activity.clone());
+        targets.extend(effect_targets.iter().cloned());
+        locations.extend(effect_locations.iter().cloned());
     }
+    Ok((
+        activities,
+        targets.into_iter().collect(),
+        locations.into_iter().collect(),
+    ))
 }
 
 fn is_activity_effect(effect: &StrategicCellEffect) -> bool {
@@ -2468,6 +2494,38 @@ mod tests {
                 location_ids: vec!["dock".into()],
             }],
         }
+    }
+
+    #[test]
+    fn compound_strategic_means_share_one_digest_and_union_outcome_authority() {
+        let value = campaign();
+        let mut action = proposal();
+        action.effects.push(StrategicCellEffect::GestaltActivity {
+            gestalt_id: "dockers".into(),
+            activity: StrategicActivityKind::Prepare,
+            target_subject_ids: vec![],
+            location_ids: vec!["dock".into()],
+        });
+
+        let context = action_context(&value, &action).unwrap();
+        assert_eq!(
+            context.activities,
+            vec![
+                StrategicActivityKind::Investigate,
+                StrategicActivityKind::Prepare,
+            ]
+        );
+        assert_eq!(context.location_ids, ["dock"]);
+        let kinds = admissible_effect_kinds(&value, &action).unwrap();
+        assert!(kinds.contains(&OutcomeEffectKind::KnowledgeLearned));
+        assert!(kinds.contains(&OutcomeEffectKind::ResourceCreated));
+        assert_eq!(
+            plan_activity_digests(
+                &crate::resolution::project_selected_actions(&value, vec![action.clone()],)
+                    .unwrap()
+            ),
+            vec![cell_action_digest(&action).unwrap()]
+        );
     }
 
     #[test]

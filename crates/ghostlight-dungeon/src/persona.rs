@@ -208,11 +208,14 @@ struct CellActionCandidate {
 struct CellEffectBundleCandidate {
     institution: Option<CellInstitutionEffectCandidate>,
     gestalt_pressure: Option<CellGestaltPressureEffectCandidate>,
-    gestalt_activity: Option<CellActivityEffectCandidate>,
+    #[serde(default)]
+    gestalt_activities: Vec<CellActivityEffectCandidate>,
     gestalt_migration: Option<CellMigrationEffectCandidate>,
     actor_move: Option<CellActorMoveEffectCandidate>,
-    actor_activity: Option<CellActivityEffectCandidate>,
-    member_activity: Option<CellActivityEffectCandidate>,
+    #[serde(default)]
+    actor_activities: Vec<CellActivityEffectCandidate>,
+    #[serde(default)]
+    member_activities: Vec<CellActivityEffectCandidate>,
     member_migration: Option<CellMigrationEffectCandidate>,
 }
 
@@ -322,9 +325,9 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
       "state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},
       "effects":{"type":"object","description":"Use only the exact subject-specific lane keys present in the supplied schema. Each key occurs once and contains either one typed effect or null. At least one value must be non-null.","properties":{
         "institution":{"type":["object","null"]},"gestalt_pressure":{"type":["object","null"]},
-        "gestalt_activity":{"type":["object","null"]},"gestalt_migration":{"type":["object","null"]},
-        "actor_move":{"type":["object","null"]},"actor_activity":{"type":["object","null"]},
-        "member_activity":{"type":["object","null"]},"member_migration":{"type":["object","null"]}
+        "gestalt_activities":{"type":"array","items":{"type":"object"}},"gestalt_migration":{"type":["object","null"]},
+        "actor_move":{"type":["object","null"]},"actor_activities":{"type":"array","items":{"type":"object"}},
+        "member_activities":{"type":"array","items":{"type":"object"}},"member_migration":{"type":["object","null"]}
       }}
     }}},
     "inactions":{"type":"array","items":{"type":"object","required":["subject_id","reason"],"properties":{"subject_id":{"type":"string"},"reason":{"type":"string","minLength":1,"maxLength":240}}}}
@@ -1083,7 +1086,7 @@ fn required_projection_subject_ids(slice: &PermittedCellSlice) -> BTreeSet<Strin
 fn allowed_constituent_effect_types(subject: &CellConstituentSlice) -> Vec<&'static str> {
     match subject.subject_kind {
         crate::domain::AgencySubjectKind::Actor => {
-            let mut types = vec!["actor_activity"];
+            let mut types = vec!["actor_activities"];
             if !subject.reachable_destinations.is_empty() {
                 types.push("actor_move");
             }
@@ -1091,7 +1094,7 @@ fn allowed_constituent_effect_types(subject: &CellConstituentSlice) -> Vec<&'sta
         }
         crate::domain::AgencySubjectKind::Institution => vec!["institution"],
         crate::domain::AgencySubjectKind::Gestalt => {
-            let mut types = vec!["gestalt", "gestalt_activity"];
+            let mut types = vec!["gestalt_pressure", "gestalt_activities"];
             if !subject.migration_destinations.is_empty() {
                 types.push("gestalt_migration");
             }
@@ -1101,7 +1104,7 @@ fn allowed_constituent_effect_types(subject: &CellConstituentSlice) -> Vec<&'sta
 }
 
 fn allowed_member_effect_types(member: &CellMemberSlice) -> Vec<&'static str> {
-    let mut types = vec!["member_activity"];
+    let mut types = vec!["member_activities"];
     if !member.migration_destinations.is_empty() {
         types.push("member_migration");
     }
@@ -1278,9 +1281,9 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
-                "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Set each available key to one typed effect or null, and make at least one lane non-null. A lane absent from the schema is structurally unavailable: do not emit it and do not invent a destination. Each lane has exactly one slot; combine all targets or pressure changes belonging to that lane into its single typed effect. When one chosen act includes travel followed by a local attempt at the supplied destination, preserve both means in one action by filling both movement and activity slots. Runtime lowers movement before the local activity. Never split one subject's single choice into multiple actions. ",
-                "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. A cohesive Gestalt coordinating its own unnamed internal members uses coordinate with an empty target_subject_ids list; do not invent its containing population, a distant population, or another canonical subject as the target of internal coordination. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
-                "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
+                "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Set each scalar lane to one typed effect or null and each activities lane to an ordered array; make at least one lane non-empty or non-null. A lane absent from the schema is structurally unavailable: do not emit it and do not invent a destination. Pressure and migration lanes each have one slot. An activities array preserves up to three distinct chosen means in causal order. When one chosen act includes travel followed by local attempts at the supplied destination, preserve every means in one action by filling movement and the ordered activities array. Runtime lowers movement before local activity. Never split one subject's single choice into multiple actions. ",
+                "Use gestalt_activities or member_activities for concrete attempts that do not themselves change pressure. A cohesive Gestalt coordinating its own unnamed internal members uses coordinate with an empty target_subject_ids list; do not invent its containing population, a distant population, or another canonical subject as the target of internal coordination. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
+                "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
                 "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. An inaction means that exact subject takes no strategic action in this horizon. Record only a subject that explicitly holds, waits without making another attempt, or merely continues already_committed_posture in the Persona turn as an inaction, using its exact subject_id and a concrete reason of at most 160 characters. Waiting for the result of an action, withholding a different possible action, or declining one option after choosing another does not make the chosen action an inaction. Never invent an inaction for an unvoiced subject or use absence of a Persona decision as a reason. Inactions share the same count limit stated for actions. A subject cannot appear in both actions and inactions. When nobody acts, actions is empty and inactions must still contain at least one exact attributed decision from the Persona turn."
@@ -1737,13 +1740,21 @@ fn exclude_rejected_cell_effects(
 fn cell_effect_candidate_values(
     effects: &[crate::domain::StrategicCellEffect],
 ) -> serde_json::Value {
-    serde_json::Value::Object(
-        effects
-            .iter()
-            .map(cell_effect_candidate_value)
-            .map(|(lane, value)| (lane.to_string(), value))
-            .collect(),
-    )
+    let mut values = serde_json::Map::new();
+    for effect in effects {
+        let (lane, value) = cell_effect_candidate_value(effect);
+        if lane.ends_with("_activities") {
+            values
+                .entry(lane.to_owned())
+                .or_insert_with(|| serde_json::json!([]))
+                .as_array_mut()
+                .expect("activity candidate lane is an array")
+                .push(value);
+        } else {
+            values.insert(lane.to_owned(), value);
+        }
+    }
+    serde_json::Value::Object(values)
 }
 
 fn cell_effect_candidate_value(
@@ -1778,7 +1789,7 @@ fn cell_effect_candidate_value(
             location_ids,
             ..
         } => (
-            "gestalt_activity",
+            "gestalt_activities",
             serde_json::json!({
                 "activity":activity,
                 "target_subject_ids":target_subject_ids,
@@ -1805,7 +1816,7 @@ fn cell_effect_candidate_value(
             location_ids,
             ..
         } => (
-            "actor_activity",
+            "actor_activities",
             serde_json::json!({
                 "activity":activity,
                 "target_subject_ids":target_subject_ids,
@@ -1818,7 +1829,7 @@ fn cell_effect_candidate_value(
             location_ids,
             ..
         } => (
-            "member_activity",
+            "member_activities",
             serde_json::json!({
                 "activity":activity,
                 "target_subject_ids":target_subject_ids,
@@ -1980,7 +1991,7 @@ fn bind_cell_appraisal(
                 public_channels,
                 effects: candidate_effects,
             } = candidate;
-            let member_id = if candidate_effects.member_activity.is_some()
+            let member_id = if !candidate_effects.member_activities.is_empty()
                 || candidate_effects.member_migration.is_some()
             {
                 Some(
@@ -2030,7 +2041,7 @@ fn bind_cell_appraisal(
                     pressure_resolutions: effect.pressure_resolutions,
                 });
             }
-            if let Some(effect) = candidate_effects.gestalt_activity {
+            for effect in candidate_effects.gestalt_activities {
                 effects.push(crate::domain::StrategicCellEffect::GestaltActivity {
                     gestalt_id: subject_id.clone(),
                     activity: effect.activity,
@@ -2038,7 +2049,7 @@ fn bind_cell_appraisal(
                     location_ids: effect.location_ids,
                 });
             }
-            if let Some(effect) = candidate_effects.actor_activity {
+            for effect in candidate_effects.actor_activities {
                 effects.push(crate::domain::StrategicCellEffect::ActorActivity {
                     actor_id: subject_id.clone(),
                     activity: effect.activity,
@@ -2046,7 +2057,7 @@ fn bind_cell_appraisal(
                     location_ids: effect.location_ids,
                 });
             }
-            if let Some(effect) = candidate_effects.member_activity {
+            for effect in candidate_effects.member_activities {
                 effects.push(crate::domain::StrategicCellEffect::MemberActivity {
                     member_id: member_id.expect("member effect resolved an exact member"),
                     activity: effect.activity,
@@ -2302,9 +2313,17 @@ fn validate_effect_bundle(effects: &[crate::domain::StrategicCellEffect]) -> Res
                 "a strategic action cannot repeat an exact typed effect"
             ));
         }
-        if !lanes.insert(effect.lane()) {
+        let lane = match effect {
+            crate::domain::StrategicCellEffect::GestaltActivity { activity, .. }
+            | crate::domain::StrategicCellEffect::ActorActivity { activity, .. }
+            | crate::domain::StrategicCellEffect::MemberActivity { activity, .. } => {
+                format!("{}:{activity:?}", effect.lane())
+            }
+            _ => effect.lane().to_owned(),
+        };
+        if !lanes.insert(lane) {
             return Err(anyhow!(
-                "one strategic action may use each orthogonal effect lane at most once"
+                "one strategic action may use each scalar lane and each distinct activity kind at most once"
             ));
         }
     }
@@ -2730,13 +2749,13 @@ fn exact_constituent_effect_bundle_schema(subject: &CellConstituentSlice) -> ser
                 })),
             );
             properties.insert(
-                "gestalt_activity".into(),
-                nullable_effect_schema(exact_activity_effect_schema(
+                "gestalt_activities".into(),
+                exact_activity_effects_schema(
                     &activity_target_ids,
                     &activity_location_ids,
                     0,
                     true,
-                )),
+                ),
             );
             if !subject.migration_destinations.is_empty() {
                 properties.insert(
@@ -2760,13 +2779,13 @@ fn exact_constituent_effect_bundle_schema(subject: &CellConstituentSlice) -> ser
                 );
             }
             properties.insert(
-                "actor_activity".into(),
-                nullable_effect_schema(exact_activity_effect_schema(
+                "actor_activities".into(),
+                exact_activity_effects_schema(
                     &activity_target_ids,
                     &activity_location_ids,
                     1,
                     false,
-                )),
+                ),
             );
         }
     }
@@ -2793,13 +2812,8 @@ fn exact_member_effect_bundle_schema(member: &CellMemberSlice) -> serde_json::Va
         )
         .collect::<BTreeSet<_>>();
     let mut properties = serde_json::Map::from_iter([(
-        "member_activity".into(),
-        nullable_effect_schema(exact_activity_effect_schema(
-            &activity_target_ids,
-            &activity_location_ids,
-            1,
-            false,
-        )),
+        "member_activities".into(),
+        exact_activity_effects_schema(&activity_target_ids, &activity_location_ids, 1, false),
     )]);
     if !member.migration_destinations.is_empty() {
         properties.insert(
@@ -2873,6 +2887,26 @@ fn exact_activity_effect_schema(
         alternatives.push(alternative(relational_activities, 1));
     }
     serde_json::json!({"anyOf":alternatives})
+}
+
+fn exact_activity_effects_schema(
+    target_ids: &BTreeSet<String>,
+    location_ids: &BTreeSet<String>,
+    minimum_locations: usize,
+    allow_internal_coordination: bool,
+) -> serde_json::Value {
+    serde_json::json!({
+        "type":"array",
+        "minItems":1,
+        "maxItems":3,
+        "uniqueItems":true,
+        "items":exact_activity_effect_schema(
+            target_ids,
+            location_ids,
+            minimum_locations,
+            allow_internal_coordination,
+        )
+    })
 }
 
 fn exact_string_array_schema(
@@ -3028,7 +3062,7 @@ mod tests {
     use tokio::sync::Barrier;
 
     #[test]
-    fn interpreter_rejects_duplicate_effect_lanes_before_resolution() {
+    fn interpreter_composes_distinct_activity_means_but_rejects_duplicates() {
         let first_activity = StrategicCellEffect::ActorActivity {
             actor_id: "actor:director".into(),
             activity: StrategicActivityKind::Investigate,
@@ -3051,10 +3085,14 @@ mod tests {
             "different orthogonal lanes must remain composable"
         );
         assert!(
-            validate_effect_bundle(&[first_activity, second_activity])
+            validate_effect_bundle(&[first_activity.clone(), second_activity]).is_ok(),
+            "one strategic choice may preserve several distinct means"
+        );
+        assert!(
+            validate_effect_bundle(&[first_activity.clone(), first_activity])
                 .unwrap_err()
                 .to_string()
-                .contains("each orthogonal effect lane at most once")
+                .contains("cannot repeat an exact typed effect")
         );
     }
 
@@ -3641,11 +3679,25 @@ mod tests {
         };
 
         assert!(validator.is_valid(&action(serde_json::json!({
-            "actor_activity":{
+            "actor_activities":[{
                 "activity":"prepare",
                 "target_subject_ids":[],
                 "location_ids":["forum"]
-            }
+            }]
+        }))));
+        assert!(validator.is_valid(&action(serde_json::json!({
+            "actor_activities":[
+                {
+                    "activity":"investigate",
+                    "target_subject_ids":[],
+                    "location_ids":["forum"]
+                },
+                {
+                    "activity":"prepare",
+                    "target_subject_ids":[],
+                    "location_ids":["forum"]
+                }
+            ]
         }))));
         assert!(!validator.is_valid(&action(serde_json::json!({
             "actor_move":{"destination_id":"forum"}
@@ -3654,43 +3706,43 @@ mod tests {
             "gestalt_migration":{"destination_gestalt_id":"loc_water_ice_rail_corridor"}
         }))));
         assert!(!validator.is_valid(&action(serde_json::json!({
-            "actor_activity":{
+            "actor_activities":[{
                 "activity":"coordinate",
                 "target_subject_ids":[],
                 "location_ids":["forum"]
-            }
+            }]
         }))));
         assert!(validator.is_valid(&action(serde_json::json!({
-            "actor_activity":{
+            "actor_activities":[{
                 "activity":"obstruct",
                 "target_subject_ids":[],
                 "location_ids":["forum"]
-            }
+            }]
         }))));
         assert!(validator.is_valid(&action(serde_json::json!({
-            "actor_activity":{
+            "actor_activities":[{
                 "activity":"coordinate",
                 "target_subject_ids":["inst_zhestokost"],
                 "location_ids":["forum"]
-            }
+            }]
         }))));
         assert!(!validator.is_valid(&action(serde_json::json!({
-            "actor_activity":{
+            "actor_activities":[{
                 "activity":"coordinate",
                 "target_subject_ids":["invented-target"],
                 "location_ids":["forum"]
-            }
+            }]
         }))));
         assert!(!validator.is_valid(&action(serde_json::json!({
-            "actor_activity":{
+            "actor_activities":[{
                 "activity":"prepare",
                 "target_subject_ids":[],
                 "location_ids":["invented-location"]
-            }
+            }]
         }))));
         assert_eq!(
             allowed_constituent_effect_types(&slice.constituents[0]),
-            vec!["actor_activity"]
+            vec!["actor_activities"]
         );
         let mut strict_schema = schema;
         crate::model_connector::project_strict_responses_schema(&mut strict_schema).unwrap();
@@ -3700,17 +3752,17 @@ mod tests {
             .unwrap();
         assert_eq!(
             strict_effect_properties.keys().collect::<Vec<_>>(),
-            vec!["actor_activity"]
+            vec!["actor_activities"]
         );
         assert!(
             jsonschema::validator_for(&strict_schema)
                 .unwrap()
                 .is_valid(&action(serde_json::json!({
-                    "actor_activity":{
+                    "actor_activities":[{
                         "activity":"prepare",
                         "target_subject_ids":[],
                         "location_ids":["forum"]
-                    }
+                    }]
                 })))
         );
     }
@@ -3889,11 +3941,11 @@ mod tests {
             "actor_move":{"destination_id":"encampment"},
         }))));
         assert!(validator.is_valid(&appraisal(serde_json::json!({
-            "actor_activity":{
+            "actor_activities":[{
                 "activity":"communicate",
                 "target_subject_ids":[],
                 "location_ids":["forum"]
-            }
+            }]
         }))));
     }
 
@@ -4280,11 +4332,11 @@ mod tests {
                     state_references: vec!["member:mira".into()],
                     public_channels: vec![],
                     effects: CellEffectBundleCandidate {
-                        member_activity: Some(CellActivityEffectCandidate {
+                        member_activities: vec![CellActivityEffectCandidate {
                             activity: crate::domain::StrategicActivityKind::Communicate,
                             target_subject_ids: vec!["refugees".into()],
                             location_ids: vec!["forum".into()],
-                        }),
+                        }],
                         ..Default::default()
                     },
                 }],
@@ -4334,11 +4386,11 @@ mod tests {
                     state_references: vec!["subject:actor:liaison".into()],
                     public_channels: vec![],
                     effects: CellEffectBundleCandidate {
-                        actor_activity: Some(CellActivityEffectCandidate {
+                        actor_activities: vec![CellActivityEffectCandidate {
                             activity: crate::domain::StrategicActivityKind::Communicate,
                             target_subject_ids: vec!["clinic".into()],
                             location_ids: vec!["forum".into()],
-                        }),
+                        }],
                         ..Default::default()
                     },
                 }],
@@ -4363,11 +4415,11 @@ mod tests {
                     state_references: vec!["subject:actor:liaison".into()],
                     public_channels: vec![],
                     effects: CellEffectBundleCandidate {
-                        member_activity: Some(CellActivityEffectCandidate {
+                        member_activities: vec![CellActivityEffectCandidate {
                             activity: crate::domain::StrategicActivityKind::Communicate,
                             target_subject_ids: vec!["clinic".into()],
                             location_ids: vec!["forum".into()],
-                        }),
+                        }],
                         ..Default::default()
                     },
                 }],
@@ -4412,11 +4464,11 @@ mod tests {
                         actor_move: Some(CellActorMoveEffectCandidate {
                             destination_id: "encampment".into(),
                         }),
-                        actor_activity: Some(CellActivityEffectCandidate {
+                        actor_activities: vec![CellActivityEffectCandidate {
                             activity: crate::domain::StrategicActivityKind::Communicate,
                             target_subject_ids: vec![],
                             location_ids: vec!["encampment".into()],
-                        }),
+                        }],
                         ..Default::default()
                     },
                 }],

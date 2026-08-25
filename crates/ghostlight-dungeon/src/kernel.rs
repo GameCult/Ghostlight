@@ -2124,6 +2124,30 @@ impl std::ops::Deref for AppliedStrategicTickPlan {
     }
 }
 
+fn merge_strategic_outcome_event_context(
+    contexts: &mut BTreeMap<String, (String, Vec<String>, Vec<String>)>,
+    action_digest: &str,
+    subject_id: &str,
+    location_ids: &[String],
+    public_channels: &[String],
+) -> Result<(), KernelError> {
+    let entry = contexts
+        .entry(action_digest.to_owned())
+        .or_insert_with(|| (subject_id.to_owned(), Vec::new(), Vec::new()));
+    if entry.0 != subject_id {
+        return Err(KernelError::Invalid(
+            "one strategic action digest cannot belong to multiple subjects".into(),
+        ));
+    }
+    entry.1.extend(location_ids.iter().cloned());
+    entry.1.sort();
+    entry.1.dedup();
+    entry.2.extend(public_channels.iter().cloned());
+    entry.2.sort();
+    entry.2.dedup();
+    Ok(())
+}
+
 fn apply_strategic_tick_plan(
     campaign: &mut Campaign,
     plan: crate::domain::StrategicTickPlan,
@@ -2168,36 +2192,34 @@ fn apply_strategic_tick_plan(
         .collect::<BTreeMap<_, _>>();
     let lowering_plan = plan.clone();
     let activity_outcomes = plan.activity_outcomes.clone();
-    let mut outcome_event_context = BTreeMap::new();
+    let mut outcome_event_context: BTreeMap<String, (String, Vec<String>, Vec<String>)> =
+        BTreeMap::new();
     for activity in &plan.gestalt_activities {
-        outcome_event_context.insert(
-            activity.action_digest.clone(),
-            (
-                activity.gestalt_id.clone(),
-                activity.location_ids.clone(),
-                activity.public_channels.clone(),
-            ),
-        );
+        merge_strategic_outcome_event_context(
+            &mut outcome_event_context,
+            &activity.action_digest,
+            &activity.gestalt_id,
+            &activity.location_ids,
+            &activity.public_channels,
+        )?;
     }
     for activity in &plan.actor_activities {
-        outcome_event_context.insert(
-            activity.action_digest.clone(),
-            (
-                activity.actor_id.clone(),
-                activity.location_ids.clone(),
-                activity.public_channels.clone(),
-            ),
-        );
+        merge_strategic_outcome_event_context(
+            &mut outcome_event_context,
+            &activity.action_digest,
+            &activity.actor_id,
+            &activity.location_ids,
+            &activity.public_channels,
+        )?;
     }
     for activity in &plan.member_activities {
-        outcome_event_context.insert(
-            activity.action_digest.clone(),
-            (
-                format!("member:{}", activity.member_id),
-                activity.location_ids.clone(),
-                activity.public_channels.clone(),
-            ),
-        );
+        merge_strategic_outcome_event_context(
+            &mut outcome_event_context,
+            &activity.action_digest,
+            &format!("member:{}", activity.member_id),
+            &activity.location_ids,
+            &activity.public_channels,
+        )?;
     }
     // Every action in a strategic wave was chosen against the same committed
     // snapshot. Keep that snapshot immutable while applying to a private copy
@@ -2346,8 +2368,10 @@ fn apply_strategic_tick_plan(
 
     let mut seen_gestalt_activities = BTreeSet::new();
     for action in plan.gestalt_activities {
-        if !seen_gestalt_activities.insert(action.gestalt_id.clone())
-            || (!canonical_composition && !legacy_seen_gestalts.insert(action.gestalt_id.clone()))
+        if !seen_gestalt_activities.insert((
+            action.gestalt_id.clone(),
+            strategic_activity_id(&action.activity),
+        )) || (!canonical_composition && !legacy_seen_gestalts.insert(action.gestalt_id.clone()))
         {
             return Err(KernelError::Invalid(
                 "gestalt acts twice in one strategic tick".into(),
@@ -2422,8 +2446,9 @@ fn apply_strategic_tick_plan(
         );
         events.push(crate::domain::Event {
             id: format!(
-                "strategic:{revision}:gestalt-activity:{}",
-                action.gestalt_id
+                "strategic:{revision}:gestalt-activity:{}:{}",
+                action.gestalt_id,
+                strategic_activity_id(&action.activity),
             ),
             at,
             kind: "gestalt_activity".into(),
@@ -2493,8 +2518,10 @@ fn apply_strategic_tick_plan(
 
     let mut seen_actor_activities = BTreeSet::new();
     for action in plan.actor_activities {
-        if !seen_actor_activities.insert(action.actor_id.clone())
-            || (!canonical_composition && !legacy_seen_actors.insert(action.actor_id.clone()))
+        if !seen_actor_activities.insert((
+            action.actor_id.clone(),
+            strategic_activity_id(&action.activity),
+        )) || (!canonical_composition && !legacy_seen_actors.insert(action.actor_id.clone()))
         {
             return Err(KernelError::Invalid(
                 "actor acts twice in one strategic tick".into(),
@@ -2564,7 +2591,11 @@ fn apply_strategic_tick_plan(
         gestalt_ids.sort();
         gestalt_ids.dedup();
         events.push(Event {
-            id: format!("strategic:{revision}:actor-activity:{}", action.actor_id),
+            id: format!(
+                "strategic:{revision}:actor-activity:{}:{}",
+                action.actor_id,
+                strategic_activity_id(&action.activity),
+            ),
             at,
             kind: "actor_activity".into(),
             summary: strategic_activity_summary(&actor.name, &action.activity, &target_names),
@@ -2579,8 +2610,10 @@ fn apply_strategic_tick_plan(
     let mut legacy_seen_members = BTreeSet::new();
     let mut seen_member_activities = BTreeSet::new();
     for action in plan.member_activities {
-        if !seen_member_activities.insert(action.member_id.clone())
-            || (!canonical_composition && !legacy_seen_members.insert(action.member_id.clone()))
+        if !seen_member_activities.insert((
+            action.member_id.clone(),
+            strategic_activity_id(&action.activity),
+        )) || (!canonical_composition && !legacy_seen_members.insert(action.member_id.clone()))
         {
             return Err(KernelError::Invalid(
                 "gestalt member acts twice in one strategic tick".into(),
@@ -2658,7 +2691,11 @@ fn apply_strategic_tick_plan(
         gestalt_ids.sort();
         gestalt_ids.dedup();
         events.push(Event {
-            id: format!("strategic:{revision}:member-activity:{}", action.member_id),
+            id: format!(
+                "strategic:{revision}:member-activity:{}:{}",
+                action.member_id,
+                strategic_activity_id(&action.activity),
+            ),
             at,
             kind: "gestalt_member_activity".into(),
             summary: strategic_activity_summary(&member.name, &action.activity, &target_names),
@@ -2866,6 +2903,18 @@ fn strategic_activity_summary(
             format!("{source_name} sends a communication to {targets}.")
         }
         _ => unreachable!("validated strategic activity requires a target"),
+    }
+}
+
+fn strategic_activity_id(activity: &StrategicActivityKind) -> &'static str {
+    match activity {
+        StrategicActivityKind::Prepare => "prepare",
+        StrategicActivityKind::Coordinate => "coordinate",
+        StrategicActivityKind::Investigate => "investigate",
+        StrategicActivityKind::Recruit => "recruit",
+        StrategicActivityKind::Obstruct => "obstruct",
+        StrategicActivityKind::Trade => "trade",
+        StrategicActivityKind::Communicate => "communicate",
     }
 }
 
@@ -3813,8 +3862,9 @@ mod tests {
         crate::resolution::ensure_agency_profiles(&mut value);
         let proposal = CellActionProposal {
             subject_id: "runner".into(),
-            intent: "cross into the yard and inspect it".into(),
-            intended_effect: "arrive in the yard and identify one local hazard".into(),
+            intent: "cross into the yard, inspect it, and brace one loose gate".into(),
+            intended_effect: "arrive, identify one local hazard, and attempt a bounded repair"
+                .into(),
             priority: 80,
             state_references: vec!["subject:runner".into()],
             public_channels: vec![],
@@ -3826,6 +3876,12 @@ mod tests {
                 StrategicCellEffect::ActorActivity {
                     actor_id: "runner".into(),
                     activity: StrategicActivityKind::Investigate,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["yard".into()],
+                },
+                StrategicCellEffect::ActorActivity {
+                    actor_id: "runner".into(),
+                    activity: StrategicActivityKind::Prepare,
                     target_subject_ids: vec![],
                     location_ids: vec!["yard".into()],
                 },
@@ -3862,6 +3918,7 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![
                 "actor_movement",
+                "actor_activity",
                 "actor_activity",
                 "strategic_activity_outcome"
             ]
