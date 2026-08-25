@@ -1279,7 +1279,7 @@ impl CellProjectionEngine {
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
                 "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Set each available key to one typed effect or null, and make at least one lane non-null. A lane absent from the schema is structurally unavailable: do not emit it and do not invent a destination. Each lane has exactly one slot; combine all targets or pressure changes belonging to that lane into its single typed effect. When one chosen act includes travel followed by a local attempt at the supplied destination, preserve both means in one action by filling both movement and activity slots. Runtime lowers movement before the local activity. Never split one subject's single choice into multiple actions. ",
-                "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
+                "Use gestalt_activity or member_activity for a concrete attempt that does not itself change pressure. A cohesive Gestalt coordinating its own unnamed internal members uses coordinate with an empty target_subject_ids list; do not invent its containing population, a distant population, or another canonical subject as the target of internal coordination. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member_activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
@@ -2735,6 +2735,7 @@ fn exact_constituent_effect_bundle_schema(subject: &CellConstituentSlice) -> ser
                     &activity_target_ids,
                     &activity_location_ids,
                     0,
+                    true,
                 )),
             );
             if !subject.migration_destinations.is_empty() {
@@ -2764,6 +2765,7 @@ fn exact_constituent_effect_bundle_schema(subject: &CellConstituentSlice) -> ser
                     &activity_target_ids,
                     &activity_location_ids,
                     1,
+                    false,
                 )),
             );
         }
@@ -2796,6 +2798,7 @@ fn exact_member_effect_bundle_schema(member: &CellMemberSlice) -> serde_json::Va
             &activity_target_ids,
             &activity_location_ids,
             1,
+            false,
         )),
     )]);
     if !member.migration_destinations.is_empty() {
@@ -2835,6 +2838,7 @@ fn exact_activity_effect_schema(
     target_ids: &BTreeSet<String>,
     location_ids: &BTreeSet<String>,
     minimum_locations: usize,
+    allow_internal_coordination: bool,
 ) -> serde_json::Value {
     let alternative = |activities: &[&str], minimum_targets: usize| {
         serde_json::json!({
@@ -2848,12 +2852,25 @@ fn exact_activity_effect_schema(
             }
         })
     };
-    let mut alternatives = vec![alternative(
-        &["prepare", "investigate", "obstruct", "communicate"],
-        0,
-    )];
+    let local_activities = if allow_internal_coordination {
+        &[
+            "prepare",
+            "investigate",
+            "obstruct",
+            "communicate",
+            "coordinate",
+        ][..]
+    } else {
+        &["prepare", "investigate", "obstruct", "communicate"][..]
+    };
+    let mut alternatives = vec![alternative(local_activities, 0)];
     if !target_ids.is_empty() {
-        alternatives.push(alternative(&["coordinate", "recruit", "trade"], 1));
+        let relational_activities = if allow_internal_coordination {
+            &["recruit", "trade"][..]
+        } else {
+            &["coordinate", "recruit", "trade"][..]
+        };
+        alternatives.push(alternative(relational_activities, 1));
     }
     serde_json::json!({"anyOf":alternatives})
 }
@@ -4738,8 +4755,12 @@ mod tests {
 
     #[test]
     fn activity_schema_omits_relation_dependent_choices_without_an_exact_target() {
-        let no_target =
-            exact_activity_effect_schema(&BTreeSet::new(), &BTreeSet::from(["village".into()]), 0);
+        let no_target = exact_activity_effect_schema(
+            &BTreeSet::new(),
+            &BTreeSet::from(["village".into()]),
+            0,
+            false,
+        );
         assert!(no_target.pointer("/anyOf/1").is_none());
         assert_eq!(
             no_target.pointer("/anyOf/0/properties/activity/enum"),
@@ -4755,11 +4776,34 @@ mod tests {
             &BTreeSet::from(["refugee-convoy".into()]),
             &BTreeSet::from(["village".into()]),
             0,
+            false,
         );
         assert_eq!(
             exact_target.pointer("/anyOf/1/properties/activity/enum"),
             Some(&serde_json::json!(["coordinate", "recruit", "trade"]))
         );
+    }
+
+    #[test]
+    fn cohesive_gestalt_activity_can_coordinate_its_own_unnamed_members() {
+        let schema = exact_activity_effect_schema(
+            &BTreeSet::new(),
+            &BTreeSet::from(["village".into()]),
+            0,
+            true,
+        );
+        let validator = jsonschema::validator_for(&schema).unwrap();
+
+        assert!(validator.is_valid(&serde_json::json!({
+            "activity":"coordinate",
+            "target_subject_ids":[],
+            "location_ids":["village"]
+        })));
+        assert!(!validator.is_valid(&serde_json::json!({
+            "activity":"coordinate",
+            "target_subject_ids":["unadmitted-external-population"],
+            "location_ids":["village"]
+        })));
     }
 
     #[test]
