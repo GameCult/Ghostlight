@@ -7143,6 +7143,9 @@ mod tests {
         let download = &result["transientProjection"]["surface"]["root"]["children"][1];
         assert_eq!(download["kind"], "resource.download");
         let uri = download["props"]["uri"].as_str().unwrap();
+        let internal_uri = uri
+            .strip_prefix("/ghostlight")
+            .expect("public resource URI must stay below the Ghostlight mount");
         let token = uri.rsplit('/').next().unwrap();
         let app_session_bytes = std::fs::read(dir.path().join("app-sessions.cc")).unwrap();
         assert!(
@@ -7155,7 +7158,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri(uri)
+                    .uri(internal_uri)
                     .header(
                         header::COOKIE,
                         format!("ghostlight_session={intruder_cookie}"),
@@ -7171,7 +7174,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri(uri)
+                    .uri(internal_uri)
                     .header(header::COOKIE, format!("ghostlight_session={owner_cookie}"))
                     .body(Body::empty())
                     .unwrap(),
@@ -7199,7 +7202,7 @@ mod tests {
         let replay = app
             .oneshot(
                 Request::builder()
-                    .uri(uri)
+                    .uri(internal_uri)
                     .header(header::COOKIE, format!("ghostlight_session={owner_cookie}"))
                     .body(Body::empty())
                     .unwrap(),
