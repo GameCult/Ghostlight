@@ -393,42 +393,63 @@ impl PersonaProjectionEngine {
         let mut schema = prompt_schema.clone();
         constrain_interpreter_schema(&mut schema, &slice)?;
         let permission_guidance = actor_interpreter_guidance(&slice);
-        let interpreted = run_validated_stage(
-            self.model.as_ref(),
-            &ModelStageRequest {
-                stage: "interpreter".into(),
-                model: self.interpreter_model.clone(),
-                snapshot_binding: slice.snapshot_binding.clone(),
-                lived_stream: build_interpreter_prompt(&InterpreterPrompt {
-                    identity: &slice.actor_id,
-                    typed_context: &typed_context,
-                    lived_stream: &lived.text,
-                    persona_output: &persona.narrative,
-                    output_schema: &serde_json::to_string(&prompt_schema)?,
-                    domain_guidance: &permission_guidance,
-                }),
-                output_schema: Some(schema),
-                source_receipt_ids: slice.source_receipt_ids.clone(),
-                temperature: Some(0.0),
-                max_output_tokens: Some(768),
-            },
-        )
-        .await?;
+        let mut request = ModelStageRequest {
+            stage: "interpreter".into(),
+            model: self.interpreter_model.clone(),
+            snapshot_binding: slice.snapshot_binding.clone(),
+            lived_stream: build_interpreter_prompt(&InterpreterPrompt {
+                identity: &slice.actor_id,
+                typed_context: &typed_context,
+                lived_stream: &lived.text,
+                persona_output: &persona.narrative,
+                output_schema: &serde_json::to_string(&prompt_schema)?,
+                domain_guidance: &permission_guidance,
+            }),
+            output_schema: Some(schema),
+            source_receipt_ids: slice.source_receipt_ids.clone(),
+            temperature: Some(0.0),
+            max_output_tokens: Some(768),
+        };
+        let mut interpreter_receipts = Vec::new();
+        let proposals = loop {
+            let mut interpreted = run_validated_stage(self.model.as_ref(), &request).await?;
+            let structured = interpreted
+                .structured
+                .clone()
+                .ok_or_else(|| anyhow!("interpreter produced no typed proposal"))?;
+            let proposals: PersonaProposalBundle = serde_json::from_value(structured.clone())?;
+            match validate_actor_proposals(&slice, &proposals) {
+                Ok(()) => {
+                    interpreter_receipts.push(interpreted.receipt);
+                    break proposals;
+                }
+                Err(error) if interpreter_receipts.is_empty() => {
+                    interpreted.receipt.validation_result = "semantic_invalid".into();
+                    interpreted.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                    interpreter_receipts.push(interpreted.receipt);
+                    self.permit
+                        .require(&slice.actor_id, &slice.snapshot_binding, "interpreter")
+                        .await?;
+                    append_actor_correction(&mut request, &error, &structured);
+                }
+                Err(error) => {
+                    return Err(anyhow!(
+                        "actor interpreter failed semantic validation after one correction: {error}"
+                    ));
+                }
+            }
+        };
         self.permit
             .require(&slice.actor_id, &slice.snapshot_binding, "terminal")
             .await?;
-        let proposals: PersonaProposalBundle = serde_json::from_value(
-            interpreted
-                .structured
-                .clone()
-                .ok_or_else(|| anyhow!("interpreter produced no typed proposal"))?,
-        )?;
-        validate_actor_proposals(&slice, &proposals)?;
+        let mut stage_receipts = vec![projected.receipt, persona.receipt];
+        stage_receipts.extend(interpreter_receipts);
         Ok(PersonaTerminalBundle {
             lived_stream: lived,
             persona_output: persona.narrative,
             proposals,
-            stage_receipts: vec![projected.receipt, persona.receipt, interpreted.receipt],
+            stage_receipts,
         })
     }
 }
@@ -537,6 +558,17 @@ fn validate_actor_proposals(
         }
     }
     Ok(())
+}
+
+fn append_actor_correction(
+    request: &mut ModelStageRequest,
+    error: &anyhow::Error,
+    rejected: &serde_json::Value,
+) {
+    request.lived_stream.push_str(&format!(
+        "\n\nCORRECTION TASK—THE PREVIOUS INTERPRETATION WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_INTERPRETATION:\n{}\nReturn one corrected complete interpretation against the same snapshot, lived stream, Persona output, and exact permissions. Preserve supported speech and private changes. Do not invent speech to justify a delta. If the Persona did not explicitly adopt or present a public self-identifier in its own speech, identity_adoption must be null.",
+        serde_json::to_string(rejected).unwrap_or_else(|_| "null".into())
+    ));
 }
 
 fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
@@ -2767,6 +2799,19 @@ fn constrain_interpreter_schema(
         "deliberate_silence".into(),
         serde_json::json!({"type":"boolean"}),
     );
+    root.entry("allOf")
+        .or_insert_with(|| serde_json::json!([]))
+        .as_array_mut()
+        .ok_or_else(|| anyhow!("Persona proposal schema allOf is not an array"))?
+        .push(serde_json::json!({
+            "anyOf":[
+                {"required":["speech"],"properties":{"speech":{"type":"string","minLength":1,"maxLength":1000}}},
+                {"required":["speech","private_delta"],"properties":{
+                    "speech":{"type":"null"},
+                    "private_delta":{"required":["identity_adoption"],"properties":{"identity_adoption":{"type":"null"}}}
+                }}
+            ]
+        }));
     if matches!(
         slice.interaction_role,
         ActorInteractionRole::DirectResponseExpected
@@ -4201,6 +4246,132 @@ mod tests {
         );
         proposals.speech = Some("My name is Taren.".into());
         validate_actor_proposals(&slice, &proposals).unwrap();
+    }
+
+    #[test]
+    fn actor_interpreter_schema_forbids_silent_identity_adoption() {
+        let slice = PermittedActorSlice {
+            actor_id: "npc".into(),
+            location_id: "room".into(),
+            snapshot_binding: "campaign:1".into(),
+            interaction_role: ActorInteractionRole::PresentObserver,
+            identity_experience: vec!["You are an unnamed patient.".into()],
+            memories: vec![],
+            perceived_events: vec!["A regulator is inspected.".into()],
+            perceived_actors: BTreeMap::from([("player".into(), "Player".into())]),
+            relationships: vec![],
+            goals: vec![],
+            knowledge: vec![],
+            capabilities: vec![],
+            pressures: vec![],
+            affordances: vec![],
+            source_receipt_ids: vec![],
+        };
+        let mut schema = serde_json::to_value(schema_for!(PersonaProposalBundle)).unwrap();
+        constrain_interpreter_schema(&mut schema, &slice).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let silent_adoption = serde_json::to_value(PersonaProposalBundle {
+            private_delta: crate::domain::ActorStateDelta {
+                identity_adoption: Some("Taren".into()),
+                ..Default::default()
+            },
+            speech: None,
+            deliberate_silence: false,
+            reaction_priority: 0,
+            world_actions: vec![],
+        })
+        .unwrap();
+        assert!(!validator.is_valid(&silent_adoption));
+    }
+
+    struct CorrectingActorModel {
+        interpreter_calls: AtomicUsize,
+        saw_rejected_interpretation: AtomicBool,
+    }
+
+    #[async_trait]
+    impl ModelPort for CorrectingActorModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "projector" => Ok("The player asks you to identify yourself.".into()),
+                "persona" => Ok("My name is Taren.".into()),
+                "interpreter" => {
+                    let correction = self.interpreter_calls.fetch_add(1, Ordering::SeqCst) > 0;
+                    if correction {
+                        self.saw_rejected_interpretation.store(
+                            request
+                                .lived_stream
+                                .contains("PREVIOUS_REJECTED_INTERPRETATION")
+                                && request.lived_stream.contains("Rook")
+                                && request.lived_stream.contains("exact spoken handle"),
+                            Ordering::SeqCst,
+                        );
+                    }
+                    Ok(serde_json::to_string(&PersonaProposalBundle {
+                        private_delta: crate::domain::ActorStateDelta {
+                            identity_adoption: Some(
+                                if correction { "Taren" } else { "Rook" }.into(),
+                            ),
+                            ..Default::default()
+                        },
+                        speech: Some("My name is Taren.".into()),
+                        deliberate_silence: false,
+                        reaction_priority: 10,
+                        world_actions: vec![],
+                    })?)
+                }
+                stage => Err(anyhow!("unexpected fixture stage {stage}")),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "correcting-actor-fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn actor_semantic_retry_preserves_same_snapshot_and_receipts() {
+        let model = Arc::new(CorrectingActorModel {
+            interpreter_calls: AtomicUsize::new(0),
+            saw_rejected_interpretation: AtomicBool::new(false),
+        });
+        let engine = PersonaProjectionEngine {
+            model: model.clone(),
+            permit: Arc::new(AllowAllPermit),
+            projector_model: "flash".into(),
+            persona_model: "pro".into(),
+            interpreter_model: "flash".into(),
+        };
+        let output = engine
+            .execute(PermittedActorSlice {
+                actor_id: "npc".into(),
+                location_id: "room".into(),
+                snapshot_binding: "campaign:1:revision:4".into(),
+                interaction_role: ActorInteractionRole::DirectResponseExpected,
+                identity_experience: vec!["You are an unnamed patient.".into()],
+                memories: vec![],
+                perceived_events: vec!["The player asks your name.".into()],
+                perceived_actors: BTreeMap::from([("player".into(), "Player".into())]),
+                relationships: vec![],
+                goals: vec![],
+                knowledge: vec![],
+                capabilities: vec![],
+                pressures: vec![],
+                affordances: vec![],
+                source_receipt_ids: vec![],
+            })
+            .await
+            .unwrap();
+        assert!(model.saw_rejected_interpretation.load(Ordering::SeqCst));
+        assert_eq!(output.stage_receipts.len(), 4);
+        assert_eq!(
+            output.stage_receipts[2].validation_result,
+            "semantic_invalid"
+        );
+        assert_eq!(
+            output.proposals.private_delta.identity_adoption.as_deref(),
+            Some("Taren")
+        );
     }
 
     #[test]
