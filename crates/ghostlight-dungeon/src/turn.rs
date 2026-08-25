@@ -217,6 +217,7 @@ pub async fn appraise_present(
         let event = event_summary.to_owned();
         let receipts = campaign.branch_origin.evidence_receipt_ids.clone();
         let perceived_actors = perceived_actors.clone();
+        let reserved_public_identities = reserved_public_identities(campaign, &actor);
         let semaphore = semaphore.clone();
         let interaction_role = if response_expected_actor_ids.contains(&actor.id) {
             ActorInteractionRole::DirectResponseExpected
@@ -234,6 +235,7 @@ pub async fn appraise_present(
                 snapshot_binding: snapshot,
                 interaction_role,
                 identity_experience: vec![format!("You are {}.", actor.name)],
+                reserved_public_identities,
                 memories: actor.memories,
                 perceived_events: vec![event],
                 perceived_actors,
@@ -278,6 +280,34 @@ pub async fn appraise_present(
     })
 }
 
+fn reserved_public_identities(
+    campaign: &Campaign,
+    actor: &crate::domain::ActorState,
+) -> BTreeSet<String> {
+    let own_identity = actor.name.trim().to_lowercase();
+    let mut identities = campaign
+        .actors
+        .values()
+        .filter(|other| other.id != actor.id && other.location_id == actor.location_id)
+        .map(|other| other.name.clone())
+        .collect::<BTreeSet<_>>();
+    if let Some(member) = campaign
+        .gestalt_members
+        .values()
+        .find(|member| member.materialized_actor_id.as_deref() == Some(actor.id.as_str()))
+    {
+        identities.extend(
+            campaign
+                .gestalt_members
+                .values()
+                .filter(|peer| peer.id != member.id && peer.gestalt_id == member.gestalt_id)
+                .map(|peer| peer.name.clone()),
+        );
+    }
+    identities.retain(|identity| identity.trim().to_lowercase() != own_identity);
+    identities
+}
+
 fn canonical_reaction_turn<'a>(
     campaign: &'a Campaign,
     event_summary: &str,
@@ -302,7 +332,7 @@ fn canonical_reaction_turn<'a>(
 mod tests {
     use super::*;
     use crate::{
-        domain::{ActorState, NarrativeTurn},
+        domain::{ActorState, GestaltMemberDelta, NarrativeTurn},
         model::ModelStageRequest,
         persona::{AllowAllPermit, PersonaProjectionEngine},
     };
@@ -398,6 +428,57 @@ mod tests {
             .unwrap()
             .simulation_eligible = false;
         campaign
+    }
+
+    #[test]
+    fn materialized_actor_receives_dormant_peer_identities_as_social_context() {
+        let mut campaign = crate::resolution::tests::campaign(0, 8);
+        let location = campaign.actors[&campaign.player_actor_id]
+            .location_id
+            .clone();
+        campaign.actors.insert(
+            "member:oxygen-patient".into(),
+            actor("member:oxygen-patient", "Oxygen Patient", &location),
+        );
+        let member =
+            |id: &str, name: &str, materialized_actor_id: Option<&str>| GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: id.into(),
+                gestalt_id: "refugees".into(),
+                version: 0,
+                name: name.into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+                last_location_id: Some(location.clone()),
+                materialized_actor_id: materialized_actor_id.map(str::to_owned),
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 0,
+            };
+        campaign.gestalt_members.insert(
+            "oxygen-patient".into(),
+            member(
+                "oxygen-patient",
+                "Oxygen Patient",
+                Some("member:oxygen-patient"),
+            ),
+        );
+        campaign
+            .gestalt_members
+            .insert("taren".into(), member("taren", "Taren", None));
+
+        let reserved =
+            reserved_public_identities(&campaign, &campaign.actors["member:oxygen-patient"]);
+
+        assert!(reserved.contains("Taren"));
+        assert!(!reserved.contains("Oxygen Patient"));
     }
 
     #[tokio::test]

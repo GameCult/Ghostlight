@@ -1339,6 +1339,7 @@ fn execute(
                             "reaction identity adoption must copy an exact spoken handle".into(),
                         ));
                     }
+                    validate_reaction_identity_adoption(&campaign, &reaction.actor_id, identity)?;
                 }
                 if let Some(speech) = &reaction.speech {
                     validate_bounded_text("reaction speech", speech, 1_000)?;
@@ -1789,6 +1790,44 @@ fn validate_world_proposal(
     {
         return Err(KernelError::Invalid(
             "world action proposal cites unearned state".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_reaction_identity_adoption(
+    campaign: &Campaign,
+    actor_id: &str,
+    identity: &str,
+) -> Result<(), KernelError> {
+    let actor = campaign
+        .actors
+        .get(actor_id)
+        .ok_or_else(|| KernelError::Invalid("reaction actor is unknown".into()))?;
+    let identity = identity.trim().to_lowercase();
+    if actor.name.trim().to_lowercase() == identity {
+        return Ok(());
+    }
+    let local_collision = campaign.actors.values().any(|peer| {
+        peer.id != actor_id
+            && peer.location_id == actor.location_id
+            && peer.name.trim().to_lowercase() == identity
+    });
+    let population_collision = campaign
+        .gestalt_members
+        .values()
+        .find(|member| member.materialized_actor_id.as_deref() == Some(actor_id))
+        .is_some_and(|member| {
+            campaign.gestalt_members.values().any(|peer| {
+                peer.id != member.id
+                    && peer.gestalt_id == member.gestalt_id
+                    && peer.name.trim().to_lowercase() == identity
+            })
+        });
+    if local_collision || population_collision {
+        return Err(KernelError::Invalid(
+            "reaction identity adoption conflicts with an established local or population identity"
+                .into(),
         ));
     }
     Ok(())
@@ -6159,6 +6198,22 @@ mod tests {
                 memories: vec![],
             },
         );
+        seed.actors.insert(
+            "taren".into(),
+            ActorState {
+                id: "taren".into(),
+                name: "Taren".into(),
+                location_id: "room".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
         kernel
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
@@ -6205,6 +6260,25 @@ mod tests {
             .await;
         assert!(
             matches!(identity_result, Err(KernelError::Invalid(message)) if message.contains("exact spoken handle"))
+        );
+        let conflicting_identity_result = kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "player says: Tell me which seal I repaired.".into(),
+                reactions: vec![ActorReaction {
+                    actor_id: "anna".into(),
+                    speech: Some("My name is Taren.".into()),
+                    deliberate_silence: false,
+                    private_delta: ActorStateDelta {
+                        identity_adoption: Some("Taren".into()),
+                        ..Default::default()
+                    },
+                    action_proposals: vec![],
+                }],
+            })
+            .await;
+        assert!(
+            matches!(conflicting_identity_result, Err(KernelError::Invalid(message)) if message.contains("established local or population identity"))
         );
         let persisted = store
             .load::<Campaign>("campaign.v1", &seed.id.to_string())

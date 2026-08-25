@@ -292,6 +292,9 @@ revisioned commands before the participant appraisal wave. Automatic plans
 cannot write aggregate gestalt learning. A malformed, conflicting, stale, or
 partially invalid plan changes nothing. The compiler may seed likely members,
 but it is not required to predict every future person at campaign creation.
+Identity uniqueness is scoped to the active local population rather than the
+whole universe: a new member cannot reuse the normalized public identifier of
+an existing local actor or a durable member of a locally active Gestalt.
 
 First-relevance identity admission is bound to the exact immediately committed
 player-speech turn. Existing dormant members may be recast after any relevant
@@ -782,6 +785,15 @@ pass against the same snapshot, lived stream, Persona output, and permissions.
 Both Interpreter receipts survive, with the rejected one marked
 `semantic_invalid`; a second failure aborts the complete reaction wave without
 private-state mutation.
+
+For a materialized Gestalt member, the Projector slice also carries the public
+self-identifiers already owned by other people in the same active population,
+including dormant member deltas. The lived stream presents these as social
+knowledge, not raw state. The Interpreter rejects a newly adopted handle that
+collides with that bounded roster, and `WorldKernel` independently rederives
+the same local/population conflict before admitting the identity mutation.
+Existing names are grandfathered: this gate prevents a new identity claim and
+does not silently rename or merge durable people.
 
 The primary player event commits before optional presence casting, reaction
 appraisal and initiative. A failure in those later stages is stored

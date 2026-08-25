@@ -266,10 +266,31 @@ fn validate_plan(
         ));
     }
     let mut members = BTreeSet::new();
-    let addressed_public_identities = automatic_individuation_addressed_actor_ids(campaign)
-        .iter()
-        .filter_map(|actor_id| campaign.actors.get(actor_id))
+    let active_local_gestalt_ids = campaign
+        .gestalts
+        .values()
+        .filter(|gestalt| {
+            crate::resolution::validate_active_gestalt_presence_location(
+                campaign,
+                &gestalt.id,
+                player_location,
+            )
+            .is_ok()
+        })
+        .map(|gestalt| gestalt.id.as_str())
+        .collect::<BTreeSet<_>>();
+    let established_public_identities = campaign
+        .actors
+        .values()
+        .filter(|actor| actor.location_id == player_location)
         .map(|actor| normalized_public_identity(&actor.name))
+        .chain(
+            campaign
+                .gestalt_members
+                .values()
+                .filter(|member| active_local_gestalt_ids.contains(member.gestalt_id.as_str()))
+                .map(|member| normalized_public_identity(&member.name)),
+        )
         .collect::<BTreeSet<_>>();
     for individuation in &plan.individuations {
         let member = &individuation.member;
@@ -296,9 +317,9 @@ fn validate_plan(
                 "presence individuation does not match its snapshot"
             ));
         }
-        if addressed_public_identities.contains(&normalized_public_identity(&member.name)) {
+        if established_public_identities.contains(&normalized_public_identity(&member.name)) {
             return Err(anyhow!(
-                "presence individuation duplicates an already-addressed actor"
+                "presence individuation duplicates an established local or population identity"
             ));
         }
     }
@@ -539,7 +560,7 @@ mod tests {
     }
 
     #[test]
-    fn individuation_cannot_duplicate_an_existing_public_identity() {
+    fn individuation_cannot_duplicate_an_established_population_identity() {
         let mut campaign = crate::resolution::tests::campaign(0, 8);
         campaign.revision = 7;
         campaign.gestalts.insert(
@@ -602,7 +623,7 @@ mod tests {
             at: chrono::Utc::now(),
             speaker: campaign.player_actor_id.clone(),
             text: "Taren, tell me whether the regulator is holding.".into(),
-            persona_response_actor_ids: BTreeSet::from(["member:oxygen_patient".into()]),
+            persona_response_actor_ids: BTreeSet::new(),
         });
         crate::resolution::ensure_agency_profiles(&mut campaign);
         let plan = GestaltPresencePlan {
@@ -644,7 +665,7 @@ mod tests {
             validate_plan(&campaign, &plan, "center", &event)
                 .unwrap_err()
                 .to_string()
-                .contains("already-addressed actor")
+                .contains("established local or population identity")
         );
     }
 

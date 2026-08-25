@@ -26,6 +26,11 @@ pub struct PermittedActorSlice {
     pub snapshot_binding: String,
     pub interaction_role: ActorInteractionRole,
     pub identity_experience: Vec<String>,
+    /// Established identifiers owned by other people in the actor's immediate
+    /// scene or source population. This is social context, not a namespace
+    /// registry: the kernel uses it only to prevent a newly adopted handle
+    /// from silently impersonating an already-durable person.
+    pub reserved_public_identities: BTreeSet<String>,
     pub memories: Vec<String>,
     pub perceived_events: Vec<String>,
     pub perceived_actors: std::collections::BTreeMap<String, String>,
@@ -511,8 +516,22 @@ fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> S
             "You are present and perceive the current event, but you were not directly asked to respond. You may react from your own goals and pressures; you need not seize conversational focus."
         }
     };
+    let established_peer_identities = if slice.reserved_public_identities.is_empty() {
+        "no other established public self-identifiers are active in your immediate social context"
+            .to_owned()
+    } else {
+        format!(
+            "these public self-identifiers already belong to other durable people in your immediate social context: {}",
+            slice
+                .reserved_public_identities
+                .iter()
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
     format!(
-        "{projection}\n\nYour active self-identity: {identity}. {interaction} Your reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
+        "{projection}\n\nYour active self-identity: {identity}. In your social world, {established_peer_identities}. {interaction} Your reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
     )
 }
 
@@ -556,6 +575,15 @@ fn validate_actor_proposals(
                 "Persona identity adoption must copy an exact spoken handle"
             ));
         }
+        if slice
+            .reserved_public_identities
+            .iter()
+            .any(|reserved| reserved.trim().to_lowercase() == identity.to_lowercase())
+        {
+            return Err(anyhow!(
+                "Persona identity adoption conflicts with an established peer identity"
+            ));
+        }
     }
     Ok(())
 }
@@ -566,7 +594,7 @@ fn append_actor_correction(
     rejected: &serde_json::Value,
 ) {
     request.lived_stream.push_str(&format!(
-        "\n\nCORRECTION TASK—THE PREVIOUS INTERPRETATION WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_INTERPRETATION:\n{}\nReturn one corrected complete interpretation against the same snapshot, lived stream, Persona output, and exact permissions. Preserve supported speech and private changes. Do not invent speech to justify a delta. If the Persona did not explicitly adopt or present a public self-identifier in its own speech, identity_adoption must be null.",
+        "\n\nCORRECTION TASK—THE PREVIOUS INTERPRETATION WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_INTERPRETATION:\n{}\nReturn one corrected complete interpretation against the same snapshot, lived stream, Persona output, and exact permissions. Preserve supported speech and private changes. Do not invent speech to justify a delta. If the Persona did not explicitly adopt or present a public self-identifier in its own speech, identity_adoption must be null. If the Persona explicitly claimed an established peer identity, do not hide the conflict by nulling identity_adoption; preserve the extracted claim so the unchanged Persona turn remains rejected.",
         serde_json::to_string(rejected).unwrap_or_else(|_| "null".into())
     ));
 }
@@ -4182,6 +4210,7 @@ mod tests {
             snapshot_binding: "campaign:1".into(),
             interaction_role: ActorInteractionRole::PresentObserver,
             identity_experience: vec!["A tired navigator".into()],
+            reserved_public_identities: BTreeSet::new(),
             memories: vec!["Proposed the eastern trail evacuation at dusk.".into()],
             perceived_events: vec![],
             perceived_actors: std::collections::BTreeMap::from([(
@@ -4211,12 +4240,13 @@ mod tests {
 
     #[test]
     fn persona_identity_adoption_must_be_spoken_exactly() {
-        let slice = PermittedActorSlice {
+        let mut slice = PermittedActorSlice {
             actor_id: "npc".into(),
             location_id: "room".into(),
             snapshot_binding: "campaign:1".into(),
             interaction_role: ActorInteractionRole::DirectResponseExpected,
             identity_experience: vec!["You are an unnamed patient.".into()],
+            reserved_public_identities: BTreeSet::new(),
             memories: vec![],
             perceived_events: vec!["The player asks your name.".into()],
             perceived_actors: BTreeMap::from([("player".into(), "Player".into())]),
@@ -4246,6 +4276,13 @@ mod tests {
         );
         proposals.speech = Some("My name is Taren.".into());
         validate_actor_proposals(&slice, &proposals).unwrap();
+        slice.reserved_public_identities.insert(" tArEn ".into());
+        assert!(
+            validate_actor_proposals(&slice, &proposals)
+                .unwrap_err()
+                .to_string()
+                .contains("established peer identity")
+        );
     }
 
     #[test]
@@ -4256,6 +4293,7 @@ mod tests {
             snapshot_binding: "campaign:1".into(),
             interaction_role: ActorInteractionRole::PresentObserver,
             identity_experience: vec!["You are an unnamed patient.".into()],
+            reserved_public_identities: BTreeSet::new(),
             memories: vec![],
             perceived_events: vec!["A regulator is inspected.".into()],
             perceived_actors: BTreeMap::from([("player".into(), "Player".into())]),
@@ -4349,6 +4387,7 @@ mod tests {
                 snapshot_binding: "campaign:1:revision:4".into(),
                 interaction_role: ActorInteractionRole::DirectResponseExpected,
                 identity_experience: vec!["You are an unnamed patient.".into()],
+                reserved_public_identities: BTreeSet::new(),
                 memories: vec![],
                 perceived_events: vec!["The player asks your name.".into()],
                 perceived_actors: BTreeMap::from([("player".into(), "Player".into())]),
