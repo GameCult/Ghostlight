@@ -2842,12 +2842,14 @@ fn exact_activity_effect_schema(
             }
         })
     };
-    serde_json::json!({
-        "anyOf":[
-            alternative(&["prepare","investigate","obstruct","communicate"], 0),
-            alternative(&["coordinate","recruit","trade"], 1)
-        ]
-    })
+    let mut alternatives = vec![alternative(
+        &["prepare", "investigate", "obstruct", "communicate"],
+        0,
+    )];
+    if !target_ids.is_empty() {
+        alternatives.push(alternative(&["coordinate", "recruit", "trade"], 1));
+    }
+    serde_json::json!({"anyOf":alternatives})
 }
 
 fn exact_string_array_schema(
@@ -4709,6 +4711,32 @@ mod tests {
         assert_eq!(
             schema.pointer("/properties/actions/items/anyOf/0/properties/priority/maximum"),
             Some(&serde_json::json!(100))
+        );
+    }
+
+    #[test]
+    fn activity_schema_omits_relation_dependent_choices_without_an_exact_target() {
+        let no_target =
+            exact_activity_effect_schema(&BTreeSet::new(), &BTreeSet::from(["village".into()]), 0);
+        assert!(no_target.pointer("/anyOf/1").is_none());
+        assert_eq!(
+            no_target.pointer("/anyOf/0/properties/activity/enum"),
+            Some(&serde_json::json!([
+                "prepare",
+                "investigate",
+                "obstruct",
+                "communicate"
+            ]))
+        );
+
+        let exact_target = exact_activity_effect_schema(
+            &BTreeSet::from(["refugee-convoy".into()]),
+            &BTreeSet::from(["village".into()]),
+            0,
+        );
+        assert_eq!(
+            exact_target.pointer("/anyOf/1/properties/activity/enum"),
+            Some(&serde_json::json!(["coordinate", "recruit", "trade"]))
         );
     }
 
