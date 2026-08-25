@@ -19,7 +19,7 @@ use ghostlight_dungeon::{
         ActionIntent, Campaign, GestaltFissionPreview, RegionExpansionPreview,
         RejectedProposalReceipt, WorldCommand,
     },
-    gestalt::GestaltPresencePlanner,
+    gestalt::{GestaltPresencePlanner, required_addressed_promotions},
     idunn_health::{GHOSTLIGHT_IDUNN_HEALTH_CONTRACT, IdunnHealthPublisher},
     kernel::{CommandResult, KernelError},
     mesh::{
@@ -4745,12 +4745,56 @@ async fn command(
                         });
                         let mut reaction_campaign = campaign.clone();
                         let mut presence_result = None;
+                        match required_addressed_promotions(&reaction_campaign) {
+                            Ok(plan) if !plan.promotions.is_empty() => {
+                                match runtime
+                                    .kernel
+                                    .command(WorldCommand::ReconcileGestaltPresence {
+                                        expected_revision: reaction_campaign.revision,
+                                        reason: summary.clone(),
+                                        plan,
+                                    })
+                                    .await
+                                {
+                                    Ok(committed @ CommandResult::Committed { .. }) => {
+                                        if let CommandResult::Committed { campaign, .. } =
+                                            &committed
+                                        {
+                                            reaction_campaign = campaign.clone();
+                                        }
+                                        presence_result = Some(committed);
+                                    }
+                                    Ok(_) => unreachable!(),
+                                    Err(error) => {
+                                        return committed_after_failure(
+                                            &state,
+                                            &runtime,
+                                            &result,
+                                            &format!("{command_kind}.addressed_gestalt_presence"),
+                                            error.to_string(),
+                                        )
+                                        .await;
+                                    }
+                                }
+                            }
+                            Ok(_) => {}
+                            Err(error) => {
+                                return committed_after_failure(
+                                    &state,
+                                    &runtime,
+                                    &result,
+                                    &format!("{command_kind}.addressed_gestalt_presence"),
+                                    error.to_string(),
+                                )
+                                .await;
+                            }
+                        }
                         if !campaign.gestalts.is_empty() {
                             let planner = GestaltPresencePlanner {
                                 model: model.clone(),
                                 model_name: MODEL_FAST.into(),
                             };
-                            match planner.plan(campaign, &summary).await {
+                            match planner.plan(&reaction_campaign, &summary).await {
                                 Ok((plan, receipts)) => {
                                     for receipt in receipts {
                                         let _ = runtime.store.insert(
@@ -4765,7 +4809,7 @@ async fn command(
                                         || !plan.demotions.is_empty()
                                     {
                                         match runtime.kernel.command(WorldCommand::ReconcileGestaltPresence {
-                                            expected_revision: campaign.revision,
+                                            expected_revision: reaction_campaign.revision,
                                             reason: summary.clone(),
                                             plan,
                                         }).await {
@@ -4777,27 +4821,31 @@ async fn command(
                                             }
                                             Ok(_) => unreachable!(),
                                             Err(error) => {
-                                                return committed_after_failure(
-                                                    &state,
+                                                tracing::warn!(
+                                                    stage = %format!("{command_kind}.gestalt_presence"),
+                                                    %error,
+                                                    "optional post-commit presence proposal rejected; continuing present-actor appraisal"
+                                                );
+                                                record_rejected_proposal(
                                                     &runtime,
-                                                    &result,
                                                     &format!("{command_kind}.gestalt_presence"),
                                                     error.to_string(),
-                                                )
-                                                .await;
+                                                );
                                             }
                                         }
                                     }
                                 }
                                 Err(error) => {
-                                    return committed_after_failure(
-                                        &state,
+                                    tracing::warn!(
+                                        stage = %format!("{command_kind}.gestalt_presence_planner"),
+                                        %error,
+                                        "optional post-commit presence planning failed; continuing present-actor appraisal"
+                                    );
+                                    record_rejected_proposal(
                                         &runtime,
-                                        &result,
                                         &format!("{command_kind}.gestalt_presence_planner"),
                                         error.to_string(),
-                                    )
-                                    .await;
+                                    );
                                 }
                             }
                         }

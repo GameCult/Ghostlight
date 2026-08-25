@@ -33,7 +33,7 @@ pub async fn resolve_speech_addresses(
         .actors
         .get(speaker_actor_id)
         .ok_or_else(|| anyhow!("speech actor is unknown"))?;
-    let candidates = campaign
+    let mut candidates = campaign
         .actors
         .values()
         .filter(|actor| {
@@ -44,8 +44,31 @@ pub async fn resolve_speech_addresses(
                     .get(&actor.id)
                     .is_none_or(|profile| profile.simulation_eligible)
         })
-        .map(|actor| (actor.id.clone(), actor.name.clone()))
+        .map(|actor| {
+            (
+                actor.id.clone(),
+                serde_json::json!({
+                    "public_name": actor.name,
+                    "presence": "materialized_actor",
+                }),
+            )
+        })
         .collect::<std::collections::BTreeMap<_, _>>();
+    candidates.extend(campaign.gestalt_members.values().filter_map(|member| {
+        if member.materialized_actor_id.is_some()
+            || !crate::resolution::dormant_member_location(campaign, &member.id)
+                .is_ok_and(|location| location == speaker.location_id)
+        {
+            return None;
+        }
+        Some((
+            format!("member:{}", member.id),
+            serde_json::json!({
+                "public_name": member.name,
+                "presence": "nearby_folded_person",
+            }),
+        ))
+    }));
     if candidates.is_empty() {
         return Ok((
             SpeechAddressPlan {
@@ -88,7 +111,7 @@ pub async fn resolve_speech_addresses(
         "items":{"type":"string","enum":allowed_ids},
     });
     let prompt = format!(
-        "You are Ghostlight's private scene-address resolver. Decide only which supplied present, model-controlled actors this exact speech directly asks to answer now. A person who is merely mentioned, discussed, visible, or able to overhear is not a response target. A room-wide statement need not demand an answer from everyone. Preserve ordinary conversational focus from previous_focus when pronouns or an unqualified follow-up clearly continue it. Select only exact supplied actor IDs. Empty is valid when the speaker asks nobody present to answer. Return exactly one JSON object matching the schema.\nSCHEMA:\n{}\nPRESENT ACTORS:\n{}\nPREVIOUS FOCUS:\n{}\nRECENT PUBLIC TURNS:\n{}\nSPEAKER ACTOR ID:\n{}\nEXACT SPEECH:\n{}",
+        "You are Ghostlight's private scene-address resolver. Decide only which supplied present Persona subjects this exact speech directly asks to answer now. A nearby_folded_person is a persistent known individual currently represented through their population; selecting their exact member ID lets Ghostlight materialize that same person before appraisal. A person who is merely mentioned, discussed, visible, or able to overhear is not a response target. A room-wide statement need not demand an answer from everyone. Preserve ordinary conversational focus from previous_focus when pronouns or an unqualified follow-up clearly continue it. Select only exact supplied IDs. Empty is valid when the speaker asks nobody present to answer. Return exactly one JSON object matching the schema.\nSCHEMA:\n{}\nPRESENT PERSONA SUBJECTS:\n{}\nPREVIOUS FOCUS:\n{}\nRECENT PUBLIC TURNS:\n{}\nSPEAKER ACTOR ID:\n{}\nEXACT SPEECH:\n{}",
         serde_json::to_string(&schema)?,
         serde_json::to_string(&candidates)?,
         serde_json::to_string(&previous_focus)?,
@@ -332,7 +355,7 @@ fn canonical_reaction_turn<'a>(
 mod tests {
     use super::*;
     use crate::{
-        domain::{ActorState, GestaltMemberDelta, NarrativeTurn},
+        domain::{ActorState, GestaltMemberDelta, GestaltPersonaState, NarrativeTurn},
         model::ModelStageRequest,
         persona::{AllowAllPermit, PersonaProjectionEngine},
     };
@@ -340,6 +363,7 @@ mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
     struct AddressAwareModel;
+    struct DormantAddressModel;
 
     #[async_trait]
     impl ModelPort for AddressAwareModel {
@@ -381,6 +405,23 @@ mod tests {
                 }
                 stage => return Err(anyhow!("unexpected stage {stage}")),
             })
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for DormantAddressModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            assert_eq!(request.stage, "speech_address_resolver");
+            assert!(request.lived_stream.contains("nearby_folded_person"));
+            assert!(request.lived_stream.contains("member:water-cart-taren"));
+            Ok(serde_json::json!({
+                "persona_response_actor_ids":["member:water-cart-taren"]
+            })
+            .to_string())
         }
 
         fn provider(&self) -> &'static str {
@@ -498,6 +539,69 @@ mod tests {
             BTreeSet::from(["refugee-one".into(), "refugee-two".into()])
         );
         assert_eq!(receipts.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn address_resolver_can_select_the_exact_nearby_folded_person() {
+        let mut campaign = crate::resolution::tests::campaign(0, 8);
+        let location = campaign.actors[&campaign.player_actor_id]
+            .location_id
+            .clone();
+        campaign.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 3,
+                home_location_id: location.clone(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        campaign.gestalt_members.insert(
+            "water-cart-taren".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "water-cart-taren".into(),
+                gestalt_id: "refugees".into(),
+                version: 7,
+                name: "Taren".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::from(["water handcart".into()]),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+                last_location_id: Some(location),
+                materialized_actor_id: None,
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 0,
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+
+        let (plan, _) = resolve_speech_addresses(
+            Arc::new(DormantAddressModel),
+            "flash",
+            &campaign,
+            &campaign.player_actor_id,
+            "Taren with the water handcart, is the coupling holding?",
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            plan.persona_response_actor_ids,
+            BTreeSet::from(["member:water-cart-taren".into()])
+        );
     }
 
     #[tokio::test]

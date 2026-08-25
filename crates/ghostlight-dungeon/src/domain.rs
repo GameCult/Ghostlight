@@ -880,9 +880,11 @@ pub struct NarrativeTurn {
     pub at: DateTime<Utc>,
     pub speaker: String,
     pub text: String,
-    /// Exact model-controlled actors whom this committed speech asks to
-    /// respond. Other present actors still perceive and appraise the turn, but
-    /// they are not response-bound. Human-controlled actors never appear here.
+    /// Exact model-controlled Persona subject IDs whom this committed speech
+    /// asks to respond. A nearby folded member keeps their stable future actor
+    /// ID here while the kernel materializes that same person for appraisal.
+    /// Other present actors still perceive and appraise the turn, but they are
+    /// not response-bound. Human-controlled actors never appear here.
     #[serde(default)]
     pub persona_response_actor_ids: BTreeSet<String>,
 }

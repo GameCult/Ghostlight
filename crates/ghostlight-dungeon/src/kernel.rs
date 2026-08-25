@@ -377,16 +377,21 @@ fn execute(
                 .get(&actor_id)
                 .ok_or_else(|| KernelError::Invalid("unknown actor".into()))?;
             for response_actor_id in &persona_response_actor_ids {
-                let response_actor = campaign.actors.get(response_actor_id).ok_or_else(|| {
-                    KernelError::Invalid("speech response actor is unknown".into())
-                })?;
-                if response_actor_id == &actor_id
-                    || response_actor.location_id != speaker.location_id
-                    || campaign
-                        .agency_profiles
-                        .get(response_actor_id)
-                        .is_some_and(|profile| !profile.simulation_eligible)
-                {
+                let eligible_present =
+                    campaign.actors.get(response_actor_id).is_some_and(|actor| {
+                        actor.location_id == speaker.location_id
+                            && campaign
+                                .agency_profiles
+                                .get(response_actor_id)
+                                .is_none_or(|profile| profile.simulation_eligible)
+                    });
+                let eligible_folded =
+                    crate::resolution::dormant_member_id_for_subject(&campaign, response_actor_id)
+                        .and_then(|member_id| {
+                            crate::resolution::dormant_member_location(&campaign, member_id).ok()
+                        })
+                        .is_some_and(|location| location == speaker.location_id);
+                if response_actor_id == &actor_id || !(eligible_present || eligible_folded) {
                     return Err(KernelError::Invalid(
                         "speech response actor is not an eligible present Persona".into(),
                     ));
@@ -5268,6 +5273,109 @@ mod tests {
             .1;
         assert_eq!(stored, baseline);
         assert!(store.keys("world_commit_receipt.v1").unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn speech_can_bind_a_nearby_folded_person_then_materialize_that_exact_member() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store);
+        let mut seed = campaign();
+        seed.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 4,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        seed.gestalt_members.insert(
+            "water-cart-taren".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "water-cart-taren".into(),
+                gestalt_id: "refugees".into(),
+                version: 7,
+                name: "Taren".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::from(["water handcart".into()]),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec!["Ash repaired the coupling".into()],
+                last_location_id: Some("room".into()),
+                materialized_actor_id: None,
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 0,
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut seed);
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let spoken = kernel
+            .command(WorldCommand::Speak {
+                expected_revision: 0,
+                actor_id: "player".into(),
+                text: "Taren with the water handcart, is the coupling holding?".into(),
+                intended_effect: None,
+                persona_response_actor_ids: BTreeSet::from(["member:water-cart-taren".into()]),
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = spoken else {
+            panic!("speech did not commit")
+        };
+        assert!(!campaign.actors.contains_key("member:water-cart-taren"));
+        let plan = crate::gestalt::required_addressed_promotions(&campaign).unwrap();
+        assert_eq!(plan.promotions.len(), 1);
+        assert_eq!(plan.promotions[0].expected_gestalt_version, 4);
+        assert_eq!(plan.promotions[0].expected_member_version, 7);
+
+        let reconciled = kernel
+            .command(WorldCommand::ReconcileGestaltPresence {
+                expected_revision: 1,
+                reason: "player says: Taren with the water handcart, is the coupling holding?"
+                    .into(),
+                plan,
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = reconciled else {
+            panic!("addressed member was not materialized")
+        };
+        assert!(campaign.actors.contains_key("member:water-cart-taren"));
+        assert_eq!(
+            campaign.gestalt_members["water-cart-taren"]
+                .materialized_actor_id
+                .as_deref(),
+            Some("member:water-cart-taren")
+        );
+        assert!(
+            campaign
+                .transcript
+                .last()
+                .unwrap()
+                .persona_response_actor_ids
+                == BTreeSet::from(["member:water-cart-taren".into()])
+        );
     }
 
     #[tokio::test]

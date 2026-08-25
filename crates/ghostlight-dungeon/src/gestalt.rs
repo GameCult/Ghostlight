@@ -1,5 +1,5 @@
 use crate::{
-    domain::{Campaign, GestaltPresencePlan},
+    domain::{Campaign, GestaltPresencePlan, GestaltPromotion},
     model::{ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage},
 };
 use anyhow::{Result, anyhow};
@@ -118,7 +118,7 @@ impl GestaltPresencePlanner {
             "The immediately committed event does not admit a new canonical person. The individuations array must be empty. Cast only supplied existing members."
         };
         let base_prompt = format!(
-            "Cast reversible Persona population presence for the next scene after this event. The purpose is to make causal continuity visible without crowding the scene or inventing coincidence. Every materialized_members entry is an already-individualized canonical person, including their stable public identity and current actor state. Never individuate another instance, substitute, or namesake for a supplied materialized person; addressed_existing_actor_ids already satisfy the exact direct addresses resolved before this stage. Promote an existing dormant member when their exact durable history makes them individually relevant. When a nearby dormant member has a reciprocal player relationship and an unresolved callback signal such as an obligation, memory, or goal, promote the single strongest earned callback unless the event makes their presence implausible or dramatically harmful. An ordinary shared-location event is enough opportunity for an earned callback; do not require the player to ask for that person. Prefer an existing person over anonymous individuation whenever their exact delta supports the scene. Return no promotion when there is no earned callback or the current event conflicts with it. {individuation_instruction} Demote a materialized member when they are no longer scene-relevant. Never place a promoted or individuated member outside the player location. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
+            "Cast reversible Persona population presence for the next scene after this event. The purpose is to make causal continuity visible without crowding the scene or inventing coincidence. Every materialized_members entry is an already-individualized canonical person, including their stable public identity and current actor state. Never individuate another instance, substitute, or namesake for a supplied materialized person; addressed_existing_actor_ids already satisfy the exact direct addresses resolved before this stage. Promote an existing dormant member when their exact durable history makes them individually relevant. When a nearby dormant member has a reciprocal player relationship and an unresolved callback signal such as an obligation, memory, or goal, promote the single strongest earned callback unless the event makes their presence implausible or dramatically harmful. An ordinary shared-location event is enough opportunity for an earned callback; do not require the player to ask for that person. Prefer an existing person over anonymous individuation whenever their exact delta supports the scene. Return no promotion when there is no earned callback or the current event conflicts with it. {individuation_instruction} Demote a materialized member when they are no longer scene-relevant. Select exact supplied member, actor, and gestalt IDs. Ghostlight binds versions and occupancy from the canonical snapshot after selection; those metadata fields are not your decision. Aggregate deltas must remain empty; population learning requires separate review. Emit the exact JSON schema.\nSCHEMA:\n{}\nCANDIDATES:\n{}\nEVENT:\n{}",
             serde_json::to_string_pretty(&schema)?,
             candidates,
             event_summary
@@ -146,7 +146,8 @@ impl GestaltPresencePlanner {
                 .clone()
                 .ok_or_else(|| anyhow!("presence planner produced no plan"))
                 .and_then(|value| serde_json::from_value(value).map_err(Into::into))
-                .and_then(|plan| {
+                .and_then(|mut plan| {
+                    bind_presence_authority(campaign, &mut plan, player_location)?;
                     validate_plan(campaign, &plan, player_location, event_summary)?;
                     Ok(plan)
                 });
@@ -166,7 +167,7 @@ impl GestaltPresencePlanner {
                         .unwrap_or_else(|| "unavailable".into());
                     receipts.push(output.receipt);
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS PRESENCE PLAN: {error}\nPREVIOUS PLAN:\n{rejected}\nReturn one corrected complete plan against the same snapshot. Promote only exact nearby_dormant_members, demote only exact materialized_members, and copy every gestalt, member, actor, location, and version from the supplied candidates."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS PRESENCE PLAN: {error}\nPREVIOUS PLAN:\n{rejected}\nReturn one corrected complete plan against the same snapshot. Promote only exact nearby_dormant_members and demote only exact materialized_members. Ghostlight binds canonical versions and occupancy after your semantic selection."
                     );
                 }
                 Err(error) => {
@@ -177,6 +178,83 @@ impl GestaltPresencePlanner {
             }
         }
     }
+}
+
+/// Bind revision, ownership, and occupancy fields from canonical state after
+/// the model has selected semantic presence changes. Those fields are kernel
+/// authority, not facts a Persona stage is expected to copy correctly.
+fn bind_presence_authority(
+    campaign: &Campaign,
+    plan: &mut GestaltPresencePlan,
+    player_location: &str,
+) -> Result<()> {
+    for promotion in &mut plan.promotions {
+        let member = campaign
+            .gestalt_members
+            .get(&promotion.member_id)
+            .ok_or_else(|| anyhow!("presence plan invented a member"))?;
+        let gestalt = campaign
+            .gestalts
+            .get(&member.gestalt_id)
+            .ok_or_else(|| anyhow!("presence member belongs to an unknown gestalt"))?;
+        promotion.gestalt_id = member.gestalt_id.clone();
+        promotion.expected_gestalt_version = gestalt.version;
+        promotion.expected_member_version = member.version;
+        promotion.location_id =
+            crate::resolution::dormant_member_location(campaign, &promotion.member_id)?;
+    }
+    for individuation in &mut plan.individuations {
+        let gestalt = campaign
+            .gestalts
+            .get(&individuation.gestalt_id)
+            .ok_or_else(|| anyhow!("presence plan invented a gestalt"))?;
+        individuation.expected_gestalt_version = gestalt.version;
+        individuation.location_id = player_location.to_owned();
+        individuation.member.schema = "ghostlight.gestalt_member_delta.v1".into();
+        individuation.member.gestalt_id = individuation.gestalt_id.clone();
+        individuation.member.version = 0;
+        individuation.member.last_location_id = Some(player_location.to_owned());
+        individuation.member.materialized_actor_id = None;
+        individuation.member.last_relevant_revision = 0;
+        individuation.member.relevance_lease_until_revision = 0;
+    }
+    Ok(())
+}
+
+/// A player addressing a known nearby folded person is itself sufficient
+/// foreground relevance. Materializing that exact person is deterministic;
+/// the optional presence model does not get a veto.
+pub fn required_addressed_promotions(campaign: &Campaign) -> Result<GestaltPresencePlan> {
+    let Some(turn) = campaign.transcript.last().filter(|turn| {
+        turn.revision == campaign.revision && turn.speaker == campaign.player_actor_id
+    }) else {
+        return Ok(GestaltPresencePlan::default());
+    };
+    let mut promotions = Vec::new();
+    for subject_id in &turn.persona_response_actor_ids {
+        if campaign.actors.contains_key(subject_id) {
+            continue;
+        }
+        let member_id = crate::resolution::dormant_member_id_for_subject(campaign, subject_id)
+            .ok_or_else(|| anyhow!("addressed Persona subject is neither present nor folded"))?;
+        let member = &campaign.gestalt_members[member_id];
+        let gestalt = campaign
+            .gestalts
+            .get(&member.gestalt_id)
+            .ok_or_else(|| anyhow!("addressed member belongs to an unknown gestalt"))?;
+        promotions.push(GestaltPromotion {
+            gestalt_id: member.gestalt_id.clone(),
+            expected_gestalt_version: gestalt.version,
+            member_id: member.id.clone(),
+            expected_member_version: member.version,
+            location_id: crate::resolution::dormant_member_location(campaign, member_id)?,
+        });
+    }
+    Ok(GestaltPresencePlan {
+        individuations: Vec::new(),
+        promotions,
+        demotions: Vec::new(),
+    })
 }
 
 fn constrain_presence_schema(
@@ -410,7 +488,7 @@ mod tests {
         collections::{BTreeMap, BTreeSet},
         sync::{
             Mutex,
-            atomic::{AtomicBool, AtomicUsize, Ordering},
+            atomic::{AtomicUsize, Ordering},
         },
     };
 
@@ -420,7 +498,6 @@ mod tests {
 
     struct CorrectingPresenceModel {
         calls: AtomicUsize,
-        saw_semantic_correction: AtomicBool,
     }
 
     #[async_trait]
@@ -442,32 +519,17 @@ mod tests {
 
     #[async_trait]
     impl ModelPort for CorrectingPresenceModel {
-        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
-            let call = self.calls.fetch_add(1, Ordering::SeqCst);
-            if call == 0 {
-                return Ok(serde_json::json!({
-                    "individuations":[],
-                    "promotions":[{
-                        "gestalt_id":"nearby-leaf",
-                        "expected_gestalt_version":0,
-                        "member_id":"mira",
-                        "expected_member_version":99,
-                        "location_id":"center"
-                    }],
-                    "demotions":[]
-                })
-                .to_string());
-            }
-            self.saw_semantic_correction.store(
-                request
-                    .lived_stream
-                    .contains("LOCAL VALIDATOR REJECTED THE PREVIOUS PRESENCE PLAN")
-                    && request.lived_stream.contains("expected_member_version"),
-                Ordering::SeqCst,
-            );
+        async fn run(&self, _request: &ModelStageRequest) -> Result<String> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
             Ok(serde_json::json!({
                 "individuations":[],
-                "promotions":[],
+                "promotions":[{
+                    "gestalt_id":"nearby-leaf",
+                    "expected_gestalt_version":98,
+                    "member_id":"mira",
+                    "expected_member_version":99,
+                    "location_id":"center"
+                }],
                 "demotions":[]
             })
             .to_string())
@@ -670,7 +732,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn presence_planner_corrects_one_semantic_failure_against_the_same_snapshot() {
+    async fn presence_planner_binds_authority_fields_from_the_snapshot() {
         let mut campaign = crate::resolution::tests::campaign(0, 8);
         campaign.gestalts.insert(
             "nearby-leaf".into(),
@@ -714,7 +776,6 @@ mod tests {
         crate::resolution::ensure_agency_profiles(&mut campaign);
         let model = Arc::new(CorrectingPresenceModel {
             calls: AtomicUsize::new(0),
-            saw_semantic_correction: AtomicBool::new(false),
         });
 
         let (plan, receipts) = GestaltPresencePlanner {
@@ -725,13 +786,18 @@ mod tests {
         .await
         .unwrap();
 
-        assert!(plan.promotions.is_empty());
-        assert_eq!(model.calls.load(Ordering::SeqCst), 2);
-        assert!(model.saw_semantic_correction.load(Ordering::SeqCst));
-        assert_eq!(receipts.len(), 2);
-        assert_eq!(receipts[0].validation_result, "semantic_invalid");
-        assert_eq!(receipts[0].snapshot_binding, receipts[1].snapshot_binding);
-        assert!(receipts[1].local_validation_error.is_none());
+        assert_eq!(model.calls.load(Ordering::SeqCst), 1);
+        assert_eq!(receipts.len(), 1);
+        assert_eq!(
+            plan.promotions,
+            vec![GestaltPromotion {
+                gestalt_id: "nearby-leaf".into(),
+                expected_gestalt_version: 0,
+                member_id: "mira".into(),
+                expected_member_version: 0,
+                location_id: "center".into(),
+            }]
+        );
     }
 
     #[tokio::test]
