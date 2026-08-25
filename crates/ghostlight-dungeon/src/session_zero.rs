@@ -1088,6 +1088,9 @@ pub enum SessionZeroCommand {
         expected_revision: u64,
         message: String,
     },
+    CompilationEvidenceUnavailable {
+        expected_revision: u64,
+    },
     Approve {
         actor_account_hash: String,
         expected_revision: u64,
@@ -3874,6 +3877,35 @@ fn execute(
                 ),
             )?;
         }
+        SessionZeroCommand::CompilationEvidenceUnavailable { expected_revision } => {
+            require_revision(&state, expected_revision)?;
+            state.status = SessionZeroStatus::Drafting;
+            let decision_id = "decision:vault-retrieval-required".to_owned();
+            state.decisions.insert(
+                decision_id.clone(),
+                SessionZeroDecision {
+                    schema: "ghostlight.session_zero_decision.v1".into(),
+                    id: decision_id,
+                    owner_member_id: None,
+                    prompt: "The entitled lore Vault is currently unreachable. Should this exact draft remain unchanged until grounded compilation can be retried?".into(),
+                    proposed_resolution: "Keep the negotiated draft unchanged and retry compilation only after Vault retrieval is available. Do not substitute nearby stories, branch inventions, or remembered setting vibes for evidence.".into(),
+                    proposed_extraordinary_permission: None,
+                    proposed_contract_patch: None,
+                    proposed_character_patch: None,
+                    evidence_receipt_ids: vec![],
+                    pending_counter: None,
+                    material: true,
+                    resolved: false,
+                },
+            );
+            append_message(
+                &mut state,
+                "shared:table".into(),
+                None,
+                SessionZeroSpeakerKind::Dm,
+                "The lore Vault is currently unreachable, so I cannot distinguish missing canon from missing retrieval. No preview, branch assumption, or campaign state was published. I have kept the exact draft and queued an explicit decision to retry only after grounded evidence is available.".into(),
+            )?;
+        }
         SessionZeroCommand::Approve {
             actor_account_hash,
             expected_revision,
@@ -4783,6 +4815,81 @@ mod tests {
             .unwrap();
         assert!(compiling.state.preview_model_receipts.is_empty());
         assert_eq!(compiling.state.model_receipts.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn unavailable_vault_becomes_one_resolvable_material_gap() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let mut initial = compilable_state();
+        initial.roster_locked = true;
+        initial.status = SessionZeroStatus::Compiling;
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, initial.id);
+
+        let failed = kernel
+            .command(SessionZeroCommand::CompilationEvidenceUnavailable {
+                expected_revision: initial.revision,
+            })
+            .await
+            .unwrap();
+        let decision = failed
+            .state
+            .decisions
+            .get("decision:vault-retrieval-required")
+            .unwrap();
+        assert_eq!(failed.state.status, SessionZeroStatus::Drafting);
+        assert!(failed.state.preview.is_none());
+        assert!(decision.material);
+        assert!(!decision.resolved);
+        assert!(decision.proposed_contract_patch.is_none());
+        assert!(decision.proposed_character_patch.is_none());
+        assert!(decision.proposed_extraordinary_permission.is_none());
+        let public_messages = failed
+            .state
+            .messages
+            .values()
+            .map(|message| message.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            public_messages.contains("cannot distinguish missing canon from missing retrieval")
+        );
+        assert!(!public_messages.contains("Ollama"));
+
+        let acknowledged = kernel
+            .command(SessionZeroCommand::ResolveDecision {
+                actor_account_hash: "account:host".into(),
+                expected_revision: failed.state.revision,
+                decision_id: decision.id.clone(),
+                resolution: SessionZeroDecisionResolution::Accept,
+                counter: None,
+            })
+            .await
+            .unwrap();
+        let compiling = kernel
+            .command(SessionZeroCommand::BeginCompilation {
+                actor_account_hash: "account:host".into(),
+                expected_revision: acknowledged.state.revision,
+            })
+            .await
+            .unwrap();
+        let failed_again = kernel
+            .command(SessionZeroCommand::CompilationEvidenceUnavailable {
+                expected_revision: compiling.state.revision,
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            failed_again
+                .state
+                .decisions
+                .keys()
+                .filter(|id| id.as_str() == "decision:vault-retrieval-required")
+                .count(),
+            1
+        );
+        assert!(!failed_again.state.decisions["decision:vault-retrieval-required"].resolved);
     }
 
     #[test]

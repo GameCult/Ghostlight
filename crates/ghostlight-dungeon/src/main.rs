@@ -3033,14 +3033,22 @@ async fn compile_session_zero(
                 }
             }
             Err(error) => {
-                let message = error.to_string();
-                if let Err(commit_error) = kernel
-                    .command(SessionZeroCommand::CompilationFailed {
-                        expected_revision,
-                        message,
-                    })
-                    .await
-                {
+                tracing::warn!(%error, "Session Zero compilation failed before preview publication");
+                let result = if ghostlight_dungeon::vault::is_vault_unavailable(&error) {
+                    kernel
+                        .command(SessionZeroCommand::CompilationEvidenceUnavailable {
+                            expected_revision,
+                        })
+                        .await
+                } else {
+                    kernel
+                        .command(SessionZeroCommand::CompilationFailed {
+                            expected_revision,
+                            message: error.to_string(),
+                        })
+                        .await
+                };
+                if let Err(commit_error) = result {
                     tracing::info!(%commit_error, "stale Session Zero compiler failure discarded");
                 } else {
                     schedule_mesh_refresh(&mesh_state);

@@ -5,8 +5,31 @@ use chrono::Utc;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use thiserror::Error;
 
 const VOIDBOT_SEARCH_RESULT_LIMIT: u8 = 12;
+
+#[derive(Debug, Error)]
+#[error("{provider} Vault retrieval is unavailable: {detail}")]
+pub struct VaultUnavailable {
+    provider: String,
+    detail: String,
+}
+
+impl VaultUnavailable {
+    fn new(provider: impl Into<String>, detail: impl Into<String>) -> Self {
+        Self {
+            provider: provider.into(),
+            detail: detail.into(),
+        }
+    }
+}
+
+pub fn is_vault_unavailable(error: &anyhow::Error) -> bool {
+    error
+        .chain()
+        .any(|cause| cause.downcast_ref::<VaultUnavailable>().is_some())
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct VaultQuery {
@@ -78,24 +101,47 @@ impl VoidBotMcpVault {
         name: &str,
         arguments: serde_json::Value,
     ) -> Result<serde_json::Value> {
-        let text = self.client.post(&self.endpoint)
+        let response = self.client.post(&self.endpoint)
             .header("accept", "application/json, text/event-stream")
             .json(&serde_json::json!({"jsonrpc":"2.0","id":"ghostlight-vault","method":"tools/call","params":{"name":name,"arguments":arguments}}))
-            .send().await?.error_for_status()?.text().await?;
+            .send()
+            .await
+            .map_err(|error| VaultUnavailable::new(self.provider_id(), error.to_string()))?
+            .error_for_status()
+            .map_err(|error| VaultUnavailable::new(self.provider_id(), error.to_string()))?;
+        let text = response
+            .text()
+            .await
+            .map_err(|error| VaultUnavailable::new(self.provider_id(), error.to_string()))?;
         let payload = text
             .lines()
             .find_map(|line| line.strip_prefix("data: "))
-            .ok_or_else(|| anyhow!("VoidBot MCP returned no event payload"))?;
-        let value: serde_json::Value = serde_json::from_str(payload)?;
+            .ok_or_else(|| {
+                VaultUnavailable::new(self.provider_id(), "MCP returned no event payload")
+            })?;
+        let value: serde_json::Value = serde_json::from_str(payload).map_err(|error| {
+            VaultUnavailable::new(
+                self.provider_id(),
+                format!("MCP returned an invalid event payload: {error}"),
+            )
+        })?;
         if let Some(error) = value.pointer("/error/message").and_then(|v| v.as_str()) {
-            return Err(anyhow!("VoidBot MCP JSON-RPC error: {error}"));
+            return Err(VaultUnavailable::new(
+                self.provider_id(),
+                format!("MCP JSON-RPC error: {error}"),
+            )
+            .into());
         }
         if value.pointer("/result/isError").and_then(|v| v.as_bool()) == Some(true) {
             let detail = value
                 .pointer("/result/content/0/text")
                 .and_then(|v| v.as_str())
                 .unwrap_or("tool returned an unspecified error");
-            return Err(anyhow!("VoidBot MCP tool error: {detail}"));
+            return Err(VaultUnavailable::new(
+                self.provider_id(),
+                format!("MCP tool error: {detail}"),
+            )
+            .into());
         }
         Ok(value)
     }
@@ -104,7 +150,21 @@ impl VoidBotMcpVault {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::Context;
     use axum::{Router, response::IntoResponse, routing::post};
+
+    #[test]
+    fn vault_unavailability_survives_anyhow_context() {
+        let unavailable = anyhow::Error::new(VaultUnavailable::new(
+            "voidbot.aetheria",
+            "embedding service is offline",
+        ))
+        .context("world compilation retrieval failed");
+        assert!(is_vault_unavailable(&unavailable));
+        assert!(!is_vault_unavailable(&anyhow!(
+            "world candidate violated topology"
+        )));
+    }
 
     #[tokio::test]
     async fn voidbot_search_results_become_exact_evidence_witnesses() {
