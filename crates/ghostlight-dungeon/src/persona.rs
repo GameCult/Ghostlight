@@ -4446,8 +4446,9 @@ mod tests {
         assert!(
             request
                 .lived_stream
-                .contains("preparation, inspection, request, or deliberation")
+                .contains("preparation, investigation, request, or deliberation")
         );
+        assert!(request.lived_stream.contains("is investigate, not prepare"));
         assert!(request.lived_stream.contains("record attributed inaction"));
     }
 
