@@ -44,7 +44,7 @@ use ghostlight_dungeon::{
         campaign_interface_version, player_surface_for_actor, rebase_campaign_surface_revision,
     },
     turn::{SnapshotPermit, appraise_present, resolve_speech_addresses},
-    vault::VoidBotMcpVault,
+    vault::{VoidBotMcpVault, bundled_vault_manifests, canonical_vault_id},
 };
 use serde::Deserialize;
 use serde::Serialize;
@@ -87,6 +87,16 @@ struct AppState {
     live_turn_finished: Arc<Notify>,
     live_commit_gate: Arc<RwLock<()>>,
     mesh: MeshPublisher,
+}
+
+fn compiler_for_vault(
+    compiler: &Option<Arc<WorldCompiler>>,
+    vault_id: &str,
+) -> anyhow::Result<Arc<WorldCompiler>> {
+    let compiler = compiler
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("world compiler is unavailable"))?;
+    Ok(Arc::new(compiler.for_vault(vault_id)?))
 }
 
 struct LiveTurnGuard {
@@ -2165,10 +2175,17 @@ async fn begin_session_zero(
         Some(value) => value,
         None => return StatusCode::UNAUTHORIZED.into_response(),
     };
+    let Some(vault_id) = canonical_vault_id(&request.vault_provider) else {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Select one of the advertised lore Vaults.",
+        )
+            .into_response();
+    };
     let allowance = state.entitlements.persona_cell_allowance(&account_hash);
     match SessionZeroState::new_with_allowance(
         request.name,
-        request.vault_provider,
+        vault_id.into(),
         account_hash.clone(),
         request.display_name,
         allowance,
@@ -2179,7 +2196,10 @@ async fn begin_session_zero(
                 Ok(runtime) => match state.session_zeros.snapshot(id).await {
                     Ok(snapshot) => match session_zero_surface(&snapshot, &account_hash) {
                         Ok(surface) => {
-                            if let Some(compiler) = state.compiler.clone() {
+                            if let Ok(compiler) = compiler_for_vault(
+                                &state.compiler,
+                                &snapshot.contract.vault_provider,
+                            ) {
                                 let mesh_state = state.clone();
                                 tokio::spawn(async move {
                                     if let Err(error) = run_live_model_work(
@@ -2984,7 +3004,8 @@ async fn resolve_session_zero_decision(
             }
             if accepted
                 && let Some(opening) = accepted_opening_suggestion(&result.state, &decision_id)
-                && let Some(compiler) = state.compiler.clone()
+                && let Ok(compiler) =
+                    compiler_for_vault(&state.compiler, &result.state.contract.vault_provider)
             {
                 let role_runtime = runtime.clone();
                 let role_state = state.clone();
@@ -3170,12 +3191,11 @@ async fn compile_session_zero(
             Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
         };
     }
-    let Some(compiler) = state.compiler.clone() else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "world compiler is unavailable",
-        )
-            .into_response();
+    let compiler = match compiler_for_vault(&state.compiler, &brief.contract.vault_provider) {
+        Ok(compiler) => compiler,
+        Err(error) => {
+            return (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response();
+        }
     };
     let kernel = runtime.kernel.clone();
     let mesh_state = state.clone();
@@ -3748,12 +3768,23 @@ async fn session_zero_entry_surface(
     invite: Option<&str>,
 ) -> anyhow::Result<serde_json::Value> {
     let campaign_choices = campaign_choice_components_for_account(state, account_hash).await?;
+    let vault_options = bundled_vault_manifests()
+        .into_iter()
+        .map(|manifest| {
+            serde_json::json!({
+                "id":format!("entry.vault.option.{}", manifest.id),
+                "kind":"control.option",
+                "props":{"value":manifest.id,"label":manifest.title},
+                "children":[]
+            })
+        })
+        .collect::<Vec<_>>();
     let mut children = vec![
         serde_json::json!({"id":"entry.intro","kind":"card","props":{"title":"Begin Session Zero"},"children":[
             {"id":"entry.intro.text","kind":"text","props":{"value":"Build the campaign with the DM before the world becomes canonical. Tone, boundaries, characters, evidence gaps, and opening pressure remain negotiable until everyone approves."},"children":[]}
         ]}),
         serde_json::json!({"id":"entry.name","kind":"control.input.text","props":{"label":"Draft name","placeholder":"The campaign you are about to regret caring about"},"stateBindings":[eve_local_draft("name","string")],"children":[]}),
-        serde_json::json!({"id":"entry.vault","kind":"control.input.text","props":{"label":"Lore Vault","value":"Aetheria","placeholder":"Aetheria"},"stateBindings":[eve_local_draft("vault_provider","string")],"children":[]}),
+        serde_json::json!({"id":"entry.vault","kind":"control.select","props":{"label":"Lore Vault","value":"aetheria"},"stateBindings":[eve_local_draft("vault_provider","choice")],"children":vault_options}),
         serde_json::json!({"id":"entry.display-name","kind":"control.input.text","props":{"label":"Your display name"},"stateBindings":[eve_local_draft("display_name","string")],"children":[]}),
         eve_button(
             "entry.begin",
@@ -3978,12 +4009,15 @@ async fn compile_destination(
         Ok(value) => value,
         Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
     };
-    let Some(compiler) = &state.compiler else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Model provider credential is unavailable",
-        )
-            .into_response();
+    let vault_id = match campaign_vault_id(&runtime.store, campaign.id) {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::CONFLICT, error.to_string()).into_response(),
+    };
+    let compiler = match compiler_for_vault(&state.compiler, &vault_id) {
+        Ok(value) => value,
+        Err(error) => {
+            return (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response();
+        }
     };
     match compiler
         .compile_destination(&campaign, &request.origin_location_id, &request.destination)
@@ -4079,12 +4113,15 @@ async fn compile_fission(
         Ok(value) => value,
         Err(error) => return (StatusCode::NOT_FOUND, error.to_string()).into_response(),
     };
-    let Some(compiler) = &state.compiler else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Model provider credential is unavailable",
-        )
-            .into_response();
+    let vault_id = match campaign_vault_id(&runtime.store, campaign.id) {
+        Ok(value) => value,
+        Err(error) => return (StatusCode::CONFLICT, error.to_string()).into_response(),
+    };
+    let compiler = match compiler_for_vault(&state.compiler, &vault_id) {
+        Ok(value) => value,
+        Err(error) => {
+            return (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response();
+        }
     };
     match compiler.compile_fission(&campaign, request).await {
         Ok((preview, evidence_receipts, model_receipts)) => {
@@ -6093,6 +6130,18 @@ fn campaign_model_policy(
         boundaries = active.aggregate_boundaries;
     }
     (Some(publication.contract), boundaries)
+}
+
+fn campaign_vault_id(store: &CampaignStore, campaign_id: uuid::Uuid) -> anyhow::Result<String> {
+    let (_, contract) = store
+        .load::<ghostlight_dungeon::session_zero::CampaignContract>(
+            "campaign_contract.v1",
+            &campaign_id.to_string(),
+        )?
+        .ok_or_else(|| anyhow::anyhow!("campaign contract is missing"))?;
+    canonical_vault_id(&contract.vault_provider)
+        .map(str::to_owned)
+        .ok_or_else(|| anyhow::anyhow!("campaign refers to unavailable lore Vault"))
 }
 
 async fn migrate_legacy_campaign_memberships(

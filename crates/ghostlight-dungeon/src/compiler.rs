@@ -10,7 +10,7 @@ use crate::{
         run_validated_stage_with_timeout,
     },
     session_zero::{ApprovedCampaignBrief, MAX_SESSION_ZERO_MEMBERS, actor_from_character},
-    vault::{VaultProvider, VaultQuery},
+    vault::{DEFAULT_VAULT_ID, VaultProvider, VaultQuery, canonical_vault_id},
 };
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
@@ -569,6 +569,7 @@ pub struct WorldCompiler {
     model: Arc<dyn ModelPort>,
     retrieval_model: String,
     compiler_model: String,
+    vault_id: String,
 }
 
 impl WorldCompiler {
@@ -583,7 +584,20 @@ impl WorldCompiler {
             model,
             retrieval_model: retrieval_model.into(),
             compiler_model: compiler_model.into(),
+            vault_id: DEFAULT_VAULT_ID.into(),
         }
+    }
+
+    pub fn for_vault(&self, vault_id: &str) -> Result<Self> {
+        let vault_id = canonical_vault_id(vault_id)
+            .ok_or_else(|| anyhow!("unknown or unavailable lore Vault {vault_id:?}"))?;
+        Ok(Self {
+            vault: self.vault.clone(),
+            model: self.model.clone(),
+            retrieval_model: self.retrieval_model.clone(),
+            compiler_model: self.compiler_model.clone(),
+            vault_id: vault_id.into(),
+        })
     }
 
     pub async fn suggest_openings(&self, request: OpeningRequest) -> Result<SuggestedOpenings> {
@@ -595,7 +609,7 @@ impl WorldCompiler {
             validate_user_text("opening constraint", constraint, 240)?;
         }
         let (queries, retrieval_receipt) = self.plan_opening_queries(&request).await?;
-        let receipts = self.retrieve_all(&queries, "all", 8).await?;
+        let receipts = self.retrieve_all_player_visible(&queries, "all", 8).await?;
         let evidence = opening_evidence_text(&queries, &receipts);
         let base_prompt = format!(
             "Generate exactly three source-grounded openings, taking one from each labeled historical-frame evidence group when that group contains adequate support. The three literal `era` values must name specific, genuinely different historical periods and be pairwise distinct after trimming and case-folding. An umbrella label such as `Post-Elysium` is insufficient when used twice: qualify each with its distinct source-supported event, phase, or date. The three `place` values and three `pressure` values must independently be pairwise distinct. Do not return aliases for the same period or place merely to satisfy spelling-level diversity. Do not fill material evidence gaps with invention. Before returning, verify the nine axis values yourself. REQUEST:\n{}\nEVIDENCE GROUPS:\n{}",
@@ -663,7 +677,9 @@ impl WorldCompiler {
                 2,
             )
             .await?;
-        let receipts = self.retrieve_all(&queries, &opening.era, 8).await?;
+        let receipts = self
+            .retrieve_all_player_visible(&queries, &opening.era, 8)
+            .await?;
         let base_prompt = format!(
             "Generate exactly three materially distinct player roles grounded in this opening and evidence. Names and premises must each be pairwise distinct after trimming and case-folding. The roles must differ in social position, capabilities, and obligations rather than being cosmetic aliases. OPENING:\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(opening)?,
@@ -787,7 +803,7 @@ impl WorldCompiler {
             .transpose()?
             .unwrap_or_default();
         let base_prompt = format!(
-            "{shared_prefix}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. Use evidence as canon constraints, not as an exhaustive game map. When the Vault omits game-scale geometry, routes, local people, procedures, or daily texture, invent the smallest coherent playable elaboration, mark facts branch_local or provisional_local, and disclose consequential choices in branch_assumptions. An unevidenced route needed to connect the bounded region is branch-local geometry, not an evidence gap. Use a material gap only when no compatible elaboration can preserve the requested premise without choosing between contradictory canon baselines or exceeding an approved capability; never borrow a nearby story to fill it. Do not eagerly materialize remote settlements or people outside the bounded playable region. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Every fact discovery location must exist, clocks need positive thresholds, and the player id must be unique. Actor relationship records must use subject_id values copied from exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. Use evidence as canon constraints, not as an exhaustive game map. A source marked with a `.gm_canon` authority lane may constrain hidden canonical state, but it must not be quoted or paraphrased into opening narration or granted as player or NPC knowledge merely because this compiler received it. When the Vault omits game-scale geometry, routes, local people, procedures, or daily texture, invent the smallest coherent playable elaboration, mark facts branch_local or provisional_local, and disclose consequential choices in branch_assumptions. An unevidenced route needed to connect the bounded region is branch-local geometry, not an evidence gap. Use a material gap only when no compatible elaboration can preserve the requested premise without choosing between contradictory canon baselines or exceeding an approved capability; never borrow a nearby story to fill it. Do not eagerly materialize remote settlements or people outside the bounded playable region. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Every fact discovery location must exist, clocks need positive thresholds, and the player id must be unique. Actor relationship records must use subject_id values copied from exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -1525,13 +1541,38 @@ impl WorldCompiler {
         temporal_scope: &str,
         limit: u8,
     ) -> Result<Vec<VaultEvidenceReceipt>> {
+        self.retrieve_all_with_visibility(queries, temporal_scope, limit, false)
+            .await
+    }
+
+    async fn retrieve_all_player_visible(
+        &self,
+        queries: &[String],
+        temporal_scope: &str,
+        limit: u8,
+    ) -> Result<Vec<VaultEvidenceReceipt>> {
+        self.retrieve_all_with_visibility(queries, temporal_scope, limit, true)
+            .await
+    }
+
+    async fn retrieve_all_with_visibility(
+        &self,
+        queries: &[String],
+        temporal_scope: &str,
+        limit: u8,
+        player_visible_only: bool,
+    ) -> Result<Vec<VaultEvidenceReceipt>> {
         let mut receipts = Vec::new();
         for query in queries {
+            let mut authority_lanes = vec![self.vault_id.clone()];
+            if player_visible_only {
+                authority_lanes.push("visibility.player".into());
+            }
             receipts.push(
                 self.vault
                     .search(&VaultQuery {
                         query: query.clone(),
-                        authority_lanes: vec!["Aetheria".into(), "AetheriaLore".into()],
+                        authority_lanes,
                         temporal_scope: temporal_scope.into(),
                         limit,
                     })
@@ -2316,7 +2357,11 @@ fn global_agency_queries(start: &CustomStart) -> Vec<String> {
 fn authority_allows_direct_seed(authority_lane: &str) -> bool {
     matches!(
         authority_lane,
-        "aetheria.canon_worldbuilding" | "aetheria.vault_document" | "AetheriaLore"
+        "aetheria.canon_worldbuilding"
+            | "aetheria.vault_document"
+            | "AetheriaLore"
+            | "kalsa.public"
+            | "kalsa.gm_canon"
     )
 }
 
@@ -2330,7 +2375,11 @@ fn canonical_worldbuilding_receipts(
             filtered.witnesses.retain(|witness| {
                 matches!(
                     witness.authority_lane.as_str(),
-                    "aetheria.canon_worldbuilding" | "aetheria.vault_document" | "AetheriaLore"
+                    "aetheria.canon_worldbuilding"
+                        | "aetheria.vault_document"
+                        | "AetheriaLore"
+                        | "kalsa.public"
+                        | "kalsa.gm_canon"
                 )
             });
             (!filtered.witnesses.is_empty()).then_some(filtered)
@@ -2977,9 +3026,10 @@ fn evidence_text(receipts: &[VaultEvidenceReceipt]) -> String {
         })
         .map(|(receipt_id, witness)| {
             format!(
-                "[receipt_id={} | source={} | locator={} | content_hash={}] {}",
+                "[receipt_id={} | source={} | authority_lane={} | locator={} | content_hash={}] {}",
                 receipt_id,
                 witness.source_id,
+                witness.authority_lane,
                 witness.exact_locator,
                 witness.content_hash,
                 witness.excerpt
@@ -3033,10 +3083,11 @@ fn direct_seed_evidence_text(
                 return None;
             }
             Some(format!(
-                "[usage_lane=direct_seed | rationale={} | receipt_id={} | source={} | locator={} | content_hash={}] {}",
+                "[usage_lane=direct_seed | rationale={} | receipt_id={} | source={} | authority_lane={} | locator={} | content_hash={}] {}",
                 use_plan.rationale,
                 receipt_id,
                 witness.source_id,
+                witness.authority_lane,
                 witness.exact_locator,
                 witness.content_hash,
                 witness.excerpt

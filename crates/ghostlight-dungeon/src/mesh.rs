@@ -7,6 +7,7 @@ use crate::{
     model::{ModelRuntimeStatus, ModelStageReceipt},
     session_zero::{CampaignMembership, SessionZeroState},
     surface::{operator_surface, player_surface, player_surface_for_actor},
+    vault::VaultSourceManifest,
 };
 use anyhow::Result;
 use chrono::Utc;
@@ -565,7 +566,8 @@ fn remote_options(target: SocketAddr, runtime_id: &str) -> CultMeshRudpDocumentP
 fn schema_catalog() -> Value {
     json!({
         "ghostlight.campaign.v1": schemars::schema_for!(Campaign),
-        "ghostlight.session_zero.v1": schemars::schema_for!(SessionZeroState)
+        "ghostlight.session_zero.v1": schemars::schema_for!(SessionZeroState),
+        "ghostlight.vault_source_manifest.v1": schemars::schema_for!(VaultSourceManifest)
     })
 }
 
