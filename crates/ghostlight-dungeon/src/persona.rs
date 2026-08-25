@@ -2059,7 +2059,9 @@ fn bind_cell_appraisal(
             }
             for effect in candidate_effects.member_activities {
                 effects.push(crate::domain::StrategicCellEffect::MemberActivity {
-                    member_id: member_id.expect("member effect resolved an exact member"),
+                    member_id: member_id
+                        .clone()
+                        .expect("member effect resolved an exact member"),
                     activity: effect.activity,
                     target_subject_ids: effect.target_subject_ids,
                     location_ids: effect.location_ids,
