@@ -515,6 +515,8 @@ fn actor_interpreter_guidance(slice: &PermittedActorSlice) -> String {
 fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> String {
     let identity = if slice.identity_experience.is_empty() {
         "no more specific self-identity than your exact actor identity".to_owned()
+    } else if error.to_string().contains("duplicate strategic actions") {
+        "The named subject may own exactly one strategic choice in this horizon. Merge all faithful chosen means into one action and use its orthogonal effect slots together; remove any separate alternative, deliberation, or unreachable choice rather than emitting a second action."
     } else {
         slice.identity_experience.join("; ")
     };
@@ -2126,11 +2128,15 @@ fn validate_cell_appraisal(
                 .map(|member| member.subject_id.as_str()),
         )
         .collect::<BTreeSet<_>>();
-    let action_subject_ids = appraisal
-        .actions
-        .iter()
-        .map(|action| action.subject_id.as_str())
-        .collect::<BTreeSet<_>>();
+    let mut action_subject_ids = BTreeSet::new();
+    for action in &appraisal.actions {
+        if !action_subject_ids.insert(action.subject_id.as_str()) {
+            return Err(anyhow!(
+                "subject {} has duplicate strategic actions; combine every chosen movement and activity means into one composed action",
+                action.subject_id
+            ));
+        }
+    }
     let mut inaction_subject_ids = BTreeSet::new();
     for inaction in &appraisal.inactions {
         if inaction.reason.trim().is_empty() {
@@ -3531,6 +3537,15 @@ mod tests {
                 .to_string()
                 .contains("subject faction-06 appears in both actions and inactions")
         );
+
+        appraisal.inactions.clear();
+        appraisal.actions.push(appraisal.actions[0].clone());
+        assert!(
+            validate_cell_appraisal(&slice, &appraisal)
+                .unwrap_err()
+                .to_string()
+                .contains("subject faction-06 has duplicate strategic actions")
+        );
     }
 
     #[test]
@@ -3541,6 +3556,12 @@ mod tests {
         assert!(guidance.contains("Remove its inaction entry"));
         assert!(guidance.contains("Waiting for that attempt's result"));
         assert!(!guidance.contains("rejected action is forbidden"));
+
+        let duplicate_action_guidance = cell_correction_guidance(&anyhow!(
+            "subject refugees-east has duplicate strategic actions; combine every chosen movement and activity means into one composed action"
+        ));
+        assert!(duplicate_action_guidance.contains("exactly one strategic choice"));
+        assert!(duplicate_action_guidance.contains("orthogonal effect slots together"));
     }
 
     #[test]
