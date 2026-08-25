@@ -1739,26 +1739,19 @@ fn exclude_rejected_cell_effects(
                 )
             })?;
         let compact_effects = cell_effect_candidate_values(&action.effects);
-        let mut strict_effects = candidate
+        let effect_properties = candidate
             .get("properties")
             .and_then(serde_json::Value::as_object)
             .and_then(|properties| properties.get("effects"))
             .and_then(|effects| effects.get("properties"))
             .and_then(serde_json::Value::as_object)
-            .map(|properties| {
-                properties
-                    .keys()
-                    .cloned()
-                    .map(|lane| (lane, serde_json::Value::Null))
-                    .collect::<serde_json::Map<_, _>>()
-            })
             .ok_or_else(|| anyhow!("cell correction action has no exact effect slots"))?;
-        strict_effects.extend(
+        let strict_effects = strict_cell_effect_candidate_values(
+            effect_properties,
             compact_effects
                 .as_object()
-                .expect("cell effect candidate values are an object")
-                .clone(),
-        );
+                .expect("cell effect candidate values are an object"),
+        )?;
         candidate
             .entry("allOf")
             .or_insert_with(|| serde_json::json!([]))
@@ -1782,6 +1775,50 @@ fn exclude_rejected_cell_effects(
             }));
     }
     Ok(())
+}
+
+fn strict_cell_effect_candidate_values(
+    effect_properties: &serde_json::Map<String, serde_json::Value>,
+    compact_effects: &serde_json::Map<String, serde_json::Value>,
+) -> Result<serde_json::Map<String, serde_json::Value>> {
+    let mut strict = serde_json::Map::new();
+    for (lane, lane_schema) in effect_properties {
+        if lane.ends_with("_activities") {
+            let activity_properties = lane_schema
+                .get("properties")
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| anyhow!("cell correction activity lane has no exact keys"))?;
+            strict.insert(
+                lane.clone(),
+                serde_json::Value::Object(
+                    activity_properties
+                        .keys()
+                        .cloned()
+                        .map(|activity| (activity, serde_json::Value::Null))
+                        .collect(),
+                ),
+            );
+        } else {
+            strict.insert(lane.clone(), serde_json::Value::Null);
+        }
+    }
+    for (lane, value) in compact_effects {
+        if lane.ends_with("_activities") {
+            strict
+                .get_mut(lane)
+                .and_then(serde_json::Value::as_object_mut)
+                .ok_or_else(|| anyhow!("cell correction activity lane is unavailable"))?
+                .extend(
+                    value
+                        .as_object()
+                        .ok_or_else(|| anyhow!("cell correction activity value is malformed"))?
+                        .clone(),
+                );
+        } else {
+            strict.insert(lane.clone(), value.clone());
+        }
+    }
+    Ok(strict)
 }
 
 fn cell_effect_candidate_values(
@@ -4047,6 +4084,73 @@ mod tests {
                 "location_ids":["forum"]
             }}
         }))));
+    }
+
+    #[test]
+    fn semantic_retry_schema_forbids_the_exact_strict_keyed_activity_set() {
+        let mut slice = fixture_cell_slice();
+        let actor = &mut slice.constituents[0];
+        actor.subject_kind = AgencySubjectKind::Actor;
+        actor.current_posture = None;
+        let actor_id = actor.subject_id.clone();
+        let active = BTreeSet::from([actor_id.clone()]);
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
+        let rejected = crate::domain::CellActionProposal {
+            subject_id: actor_id.clone(),
+            intent: "record and announce the inspection".into(),
+            intended_effect: "prepare the record and communicate the notice".into(),
+            priority: 80,
+            state_references: vec!["institution:faction-06".into()],
+            public_channels: vec![],
+            effects: vec![
+                StrategicCellEffect::ActorActivity {
+                    actor_id: actor_id.clone(),
+                    activity: StrategicActivityKind::Prepare,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["forum".into()],
+                },
+                StrategicCellEffect::ActorActivity {
+                    actor_id,
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["forum".into()],
+                },
+            ],
+        };
+        exclude_rejected_cell_effects(&mut schema, &[rejected], &[0]).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let action = |activities| {
+            serde_json::json!({
+                "actions":[{
+                    "subject_id":"faction-06",
+                    "intent":"record and announce the inspection",
+                    "intended_effect":"prepare the record and communicate the notice",
+                    "priority":80,
+                    "state_references":["institution:faction-06"],
+                    "public_channels":[],
+                    "effects":{"actor_activities":activities},
+                }],
+                "inactions":[],
+            })
+        };
+        let exact_strict_set = serde_json::json!({
+            "prepare":{"target_subject_ids":[],"location_ids":["forum"]},
+            "coordinate":null,
+            "investigate":null,
+            "recruit":null,
+            "obstruct":null,
+            "trade":null,
+            "communicate":{"target_subject_ids":[],"location_ids":["forum"]}
+        });
+        assert!(!validator.is_valid(&action(exact_strict_set.clone())));
+
+        let mut faithful_superset = exact_strict_set.as_object().unwrap().clone();
+        faithful_superset.insert(
+            "investigate".into(),
+            serde_json::json!({"target_subject_ids":[],"location_ids":["forum"]}),
+        );
+        assert!(validator.is_valid(&action(faithful_superset)));
     }
 
     #[test]
