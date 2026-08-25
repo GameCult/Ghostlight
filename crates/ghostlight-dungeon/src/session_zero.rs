@@ -1894,14 +1894,19 @@ fn session_zero_interpreter_schema(
         remove_schema_property(decision_schema, name)?;
     }
     if channel_kind == &SessionZeroChannelKind::SharedTable {
-        require_single_object_decision_lane(decision_schema, "proposed_contract_patch")?;
+        require_single_decision_lane(
+            decision_schema,
+            "proposed_contract_patch",
+            inline_provider_schema_for::<CampaignContractPatch>()?,
+        )?;
     }
     Ok(schema)
 }
 
-fn require_single_object_decision_lane(
+fn require_single_decision_lane(
     decision_schema: &mut serde_json::Value,
     property_name: &str,
+    property_schema: serde_json::Value,
 ) -> Result<()> {
     let decision = decision_schema
         .as_object_mut()
@@ -1911,23 +1916,7 @@ fn require_single_object_decision_lane(
         .and_then(serde_json::Value::as_object_mut)
         .and_then(|properties| properties.get_mut(property_name))
         .ok_or_else(|| anyhow!("Session Zero decision schema omitted {property_name}"))?;
-    if let Some(non_null) = property
-        .get("anyOf")
-        .and_then(serde_json::Value::as_array)
-        .and_then(|alternatives| {
-            alternatives.iter().find(|candidate| {
-                candidate.get("type").and_then(serde_json::Value::as_str) != Some("null")
-            })
-        })
-        .cloned()
-    {
-        *property = non_null;
-    }
-    if property.get("type").and_then(serde_json::Value::as_str) != Some("object") {
-        return Err(anyhow!(
-            "Session Zero decision lane {property_name} is not an object"
-        ));
-    }
+    *property = property_schema;
     let required = decision
         .entry("required")
         .or_insert_with(|| serde_json::json!([]))
