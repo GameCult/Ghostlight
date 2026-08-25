@@ -373,14 +373,15 @@ movement authority. CodexConnector change
 `80de3acc18e058f649c3b25ce617f8869f038670`, also gives streamed responses the
 full body deadline instead of accidentally capping them at the header timeout.
 
-The first repaired-topology retry reached remote-agency doctrine verification.
-One Cognitum summary still overclaimed its exact source after correction, and
-the old path aborted the entire seed. That contradicted catalog authority:
-remote candidates are optional bounded strategic coverage, not local-world
-admission owners. A well-formed final semantic rejection now omits only that
-institution, emits an explicit evidence gap, and retains the exact rationale
-privately. Malformed or incomplete verifier output still aborts without
-mutation.
+The retained preview exposed an over-constrained remote-doctrine cut: it treated
+the Vault as an exhaustive specification and omitted Pan-Solar Consortium when
+its playable policy could not be textually entailed. The compiler now treats
+exact institution evidence as canon anchors and synthesizes compatible
+campaign-local doctrine around them. The verifier rejects contradiction,
+identity conflation, story borrowing, and unanchored setting-breaking power;
+mere source silence is not a rejection. Every anchored institution survives,
+its generated doctrine appears as an approval-visible branch assumption, and a
+second contradictory result aborts the whole compile without mutation.
 
 `F:\Projects\Kalsa` is a purpose-built fantasy Vault candidate with player-safe
 `Public` lore and GM-only `Spoilers`. It is not indexed or selectable yet. The

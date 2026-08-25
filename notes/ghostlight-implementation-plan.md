@@ -84,12 +84,15 @@ separate stages; Projectors receive situation state while Interpreters receive
 exact permissions; deterministic cell bindings are attached by the runtime.
 Remote agency compilation is a separate non-causal Flash pipeline: extraction
 proposes exact institution-specific claims, local code binds them to witnesses,
-and only grounded candidates receive synthesized strategic doctrine. A separate
-semantic verifier must accept each doctrine against those claims before it can
-become a coarse goal. Structurally malformed verification still aborts after
-one correction. A well-formed semantic rejection receives one synthesis retry;
-if the same institution remains unsupported, only that candidate becomes an
-explicit coverage gap while the rest of the grounded catalog proceeds.
+and only grounded candidates receive synthesized strategic doctrine. Exact
+claims constrain canon; they do not have to exhaustively specify playable
+policy. A separate semantic verifier accepts compatible branch elaboration and
+rejects contradiction, canon erasure, identity conflation, story borrowing,
+current branch events, or unanchored setting-breaking power. Structurally
+malformed verification still aborts after one correction. A semantic rejection
+receives one synthesis retry; a second rejection aborts the compile without
+omitting the anchored institution. Compatible doctrine becomes a coarse goal
+and an approval-visible branch assumption.
 Deterministic remote profiles keep unknown facets unknown. The Pro
 agency stage no longer spends output tokens restating remote profiles.
 

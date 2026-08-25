@@ -35,7 +35,8 @@ The Rust runtime contains a Session Zero-owned world-compiler seam:
 - a separate Flash-model lane uses two stable broad retrieval queries to
   extract witnessed remote institutions in parallel with local evidence
   classification. A Pro synthesis stage turns exact supporting claims into a
-  concise strategic doctrine; local verification rejects unsupported doctrine;
+  concise branch-local strategic doctrine; local verification rejects canon
+  contradiction while allowing compatible operational elaboration;
 - remote institutions begin with deterministic six-axis profiles: their own
   authority boundary and explicit unknown geography, ideology, economic role,
   body, and information scope. Fine resources, channels, relations, and current
@@ -596,10 +597,14 @@ fictional causality.
 
 The remote catalog is not a back door into the local seed. Extraction proposes
 named institutions plus exact supporting claims. Synthesis writes one concise
-strategic doctrine from those claims, and a separate verifier must accept it.
-Unsupported or oversized entries become approval-preview gaps rather than
-institutions. This lets the campaign represent distant powers without importing
-another story's current cast, incident, or arbitrary excerpt as behavior.
+branch-local strategic doctrine constrained by those claims, and a separate
+verifier must accept its compatibility with canon. Missing policy detail is not
+a gap: the campaign needs operational state even when the Vault is silent.
+Contradiction receives one correction and then aborts without mutation; it does
+not erase an anchored institution. Generated doctrines are approval-visible
+branch assumptions. Oversized catalog entries remain on-demand coverage gaps.
+This lets the campaign represent distant powers without importing another
+story's current cast, incident, or arbitrary excerpt as behavior.
 
 The coarse profile is intentionally sparse. Asking the Pro agency compiler to
 repeat six semantic axes for every remote power exhausted output tokens while

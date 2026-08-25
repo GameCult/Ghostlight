@@ -420,7 +420,7 @@ struct StrategicDoctrineCatalog {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct StrategicDoctrineVerdict {
     name: String,
-    supported: bool,
+    compatible_with_canon: bool,
     rationale: String,
 }
 
@@ -787,7 +787,7 @@ impl WorldCompiler {
             .transpose()?
             .unwrap_or_default();
         let base_prompt = format!(
-            "{shared_prefix}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Every fact discovery location must exist, clocks need positive thresholds, and the player id must be unique. Actor relationship records must use subject_id values copied from exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. Use evidence as canon constraints, not as an exhaustive game map. When the Vault omits game-scale geometry, routes, local people, procedures, or daily texture, invent the smallest coherent playable elaboration, mark facts branch_local or provisional_local, and disclose consequential choices in branch_assumptions. An unevidenced route needed to connect the bounded region is branch-local geometry, not an evidence gap. Use a material gap only when no compatible elaboration can preserve the requested premise without choosing between contradictory canon baselines or exceeding an approved capability; never borrow a nearby story to fill it. Do not eagerly materialize remote settlements or people outside the bounded playable region. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Every fact discovery location must exist, clocks need positive thresholds, and the player id must be unique. Actor relationship records must use subject_id values copied from exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -859,7 +859,7 @@ impl WorldCompiler {
             &campaign_with_private_actors,
             required_relationship_actors,
         )?;
-        let (remote_institution_evidence, global_agency_gaps) =
+        let (remote_institution_evidence, global_agency_gaps, global_agency_assumptions) =
             merge_global_agency_catalog(&mut seed, global_catalog)?;
         let remote_institution_ids = remote_institution_evidence
             .keys()
@@ -939,7 +939,11 @@ impl WorldCompiler {
                 evidence_receipts: all_receipts,
                 evidence_coverage,
                 gaps: seed.gaps.into_iter().chain(global_agency_gaps).collect(),
-                branch_assumptions: seed.branch_assumptions,
+                branch_assumptions: seed
+                    .branch_assumptions
+                    .into_iter()
+                    .chain(global_agency_assumptions)
+                    .collect(),
                 requires_approval: true,
             },
             model_receipts,
@@ -1797,7 +1801,7 @@ impl WorldCompiler {
         let receipts = canonical_worldbuilding_receipts(receipts);
         let schema = serde_json::to_value(schema_for!(ExtractedGlobalAgencyCatalog))?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nExtract evidence for the coarse remote strategic agency catalog at the requested historical horizon. This stage extracts; it does not write simulation doctrine. Include major powers and strategically distinct movements supported by the supplied witnesses. For each candidate, copy its exact displayed name and 1-3 short, contiguous supporting_claims verbatim from institution-specific source prose. Each claim must establish a durable interest, characteristic method, constraint, refusal, or pressure. Do not use mere index links, shared headings, category descriptions, movement lists, or story-specific incidents. Do not infer current posture, territory, capability inventory, or branch facts. Summarize evidence gaps by class. Return no narrative analysis.\nHORIZON:\n{}\nREQUESTED PLACE (relevance only; not local authority):\n{}\nEVIDENCE:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nExtract evidence for the coarse remote strategic agency catalog at the requested historical horizon. This stage extracts; it does not write simulation doctrine. Include major powers and strategically distinct movements supported by the supplied witnesses. For each candidate, copy its exact displayed name and 1-3 short, contiguous supporting_claims verbatim from institution-specific source prose. A claim may establish the institution's existence or identity, or an explicit role, interest, method, constraint, refusal, or pressure. Exact institution-specific evidence of existence is enough to admit a major power; missing operational detail will be compiled later as branch-local doctrine. Do not use mere index links, shared headings, category descriptions, movement lists, or story-specific incidents. Do not infer current posture, territory, capability inventory, or branch facts. Report a material evidence gap only when the witnesses cannot anchor the institution or historical horizon at all, not merely because they omit game-scale doctrine, routes, or daily operations. Return no narrative analysis.\nHORIZON:\n{}\nREQUESTED PLACE (relevance only; not local authority):\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(&schema)?,
             start.when,
             start.where_,
@@ -1881,7 +1885,7 @@ impl WorldCompiler {
         }).collect::<Vec<_>>();
         let synthesis_schema = serde_json::to_value(schema_for!(StrategicDoctrineCatalog))?;
         let synthesis_prompt = format!(
-            "Synthesize one concise strategic_doctrine for every supplied institution. Doctrine is durable simulation state, not flavor prose. State only interests, characteristic methods, constraints, or refusals that follow directly from the supplied exact claims. Every clause, qualifier, motive, contrast, negation, and purpose must be entailed by a claim. Omit a dimension when the claims do not establish it. Prefer a narrow faithful paraphrase over a complete-sounding interpretation. Do not quote mechanically, invent current posture, territory, resources, powers, branch events, generic ideological contrasts, or unstated reasons, and do not merge institutions. Return the same names exactly once and no others. Keep each doctrine under 600 characters.\nHORIZON:\n{}\nGROUNDED CLAIMS:\n{}",
+            "Synthesize one concise strategic_doctrine for every supplied institution. Doctrine is durable branch-local simulation state, not a claim that the Vault exhaustively specified policy. Preserve every canon anchor in the supplied exact claims, then fill missing operational detail with the smallest coherent interests, characteristic methods, constraints, or refusals needed for this institution to make meaningful strategic decisions at the requested horizon. Compatible elaboration is required and may vary between campaigns; absence from the claims is not itself a gap. Do not contradict or erase a supplied claim, merge institutions, borrow story-specific incidents, assert that an invented detail is sourced canon, or grant setting-breaking power without an anchor. Do not invent a current branch event or posture; those belong to later simulation state. Return the same names exactly once and no others. Keep each doctrine under 600 characters.\nHORIZON:\n{}\nCANON ANCHORS:\n{}",
             start.when,
             serde_json::to_string(&evidence)?
         );
@@ -1909,7 +1913,7 @@ impl WorldCompiler {
                 stage_receipts.push(synthesis_receipt);
                 if attempt == 0 {
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS DOCTRINE CATALOG: {error}\nReturn one corrected complete catalog against the same GROUNDED CLAIMS."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS DOCTRINE CATALOG: {error}\nReturn one corrected complete catalog against the same CANON ANCHORS."
                     );
                     continue;
                 }
@@ -1920,7 +1924,8 @@ impl WorldCompiler {
             stage_receipts.push(synthesis_receipt);
 
             let verification_prompt = format!(
-                "Verify every strategic doctrine strictly against its exact supporting claims. supported is true only when every clause, qualifier, motive, contrast, negation, purpose, interest, method, constraint, and refusal follows from those claims. Reject invented current posture, territory, resources, capabilities, branch events, ideological contrasts, and unstated reasons. Return one verdict for each name exactly once.\nCLAIMS:\n{}\nDOCTRINES:\n{}",
+                "Verify each strategic doctrine as canon-constrained branch elaboration. compatible_with_canon is true when the doctrine preserves every supplied canon anchor, does not contradict or erase one, does not merge institutions or borrow a story-specific incident, and remains a plausible bounded policy at the requested horizon. The doctrine is intentionally allowed to invent missing operational interests, methods, constraints, refusals, and reasons as branch-local state. Do not reject a clause merely because the anchors are silent about it, and do not pretend an elaboration was stated by the source. Reject actual contradiction, canon erasure, identity conflation, an invented current branch event, or unanchored setting-breaking power. Return one verdict for each name exactly once.\nHORIZON:\n{}\nCANON ANCHORS:\n{}\nBRANCH DOCTRINES:\n{}",
+                start.when,
                 serde_json::to_string(&evidence)?,
                 serde_json::to_string(&synthesized)?
             );
@@ -1935,33 +1940,33 @@ impl WorldCompiler {
                 .await?;
             let verification: StrategicDoctrineVerification = serde_json::from_value(value)?;
             match validate_doctrine_verification(&grounded.institutions, &verification) {
-                Ok(rejected) if rejected.is_empty() || attempt == 1 => {
-                    if rejected.is_empty() {
-                        stage_receipts.push(verification_receipt);
-                    } else {
-                        let error = doctrine_rejection_error(&rejected);
-                        verification_receipt.validation_result = "valid_with_grounding_gaps".into();
-                        verification_receipt.local_validation_error =
-                            Some(error.to_string().chars().take(1_000).collect());
-                        stage_receipts.push(verification_receipt);
-                    }
-                    let catalog = lower_verified_doctrine_catalog(grounded, synthesized, &rejected);
+                Ok(incompatible) if incompatible.is_empty() => {
+                    stage_receipts.push(verification_receipt);
+                    let catalog = lower_compatible_doctrine_catalog(grounded, synthesized);
                     return Ok((catalog, stage_receipts));
                 }
-                Ok(rejected) => {
-                    let error = doctrine_rejection_error(&rejected);
+                Ok(incompatible) if attempt == 0 => {
+                    let error = doctrine_incompatibility_error(&incompatible);
                     mark_semantic_invalid(&mut verification_receipt, &error);
                     stage_receipts.push(verification_receipt);
                     correction = format!(
-                        "\n\nTHE STRICT VERIFIER REJECTED THE PREVIOUS DOCTRINES: {error}\nRewrite the complete catalog against the same GROUNDED CLAIMS. Remove every unsupported clause, qualifier, motive, contrast, negation, purpose, or label identified by the verifier. Do not defend or reinterpret the rejected wording. Prefer the narrowest evidence-entailing paraphrase.\nPREVIOUS DOCTRINES:\n{}",
+                        "\n\nTHE COMPATIBILITY VERIFIER REJECTED THE PREVIOUS BRANCH DOCTRINES: {error}\nRewrite the complete catalog against the same CANON ANCHORS. Remove the contradiction, canon erasure, identity conflation, branch event, or unanchored setting-breaking power identified by the verifier while retaining useful compatible branch elaboration. Do not collapse back to quotation when a playable doctrine can be generated.\nPREVIOUS DOCTRINES:\n{}",
                         serde_json::to_string(&synthesized)?
                     );
+                }
+                Ok(incompatible) => {
+                    let error = doctrine_incompatibility_error(&incompatible);
+                    mark_semantic_invalid(&mut verification_receipt, &error);
+                    stage_receipts.push(verification_receipt);
+                    return Err(anyhow!(
+                        "strategic doctrine contradicted canon after one correction: {error}"
+                    ));
                 }
                 Err(error) if attempt == 0 => {
                     mark_semantic_invalid(&mut verification_receipt, &error);
                     stage_receipts.push(verification_receipt);
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS DOCTRINE VERIFICATION: {error}\nReturn one corrected verdict for every grounded institution exactly once against the same CLAIMS and DOCTRINES."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS DOCTRINE VERIFICATION: {error}\nReturn one corrected verdict for every grounded institution exactly once against the same CANON ANCHORS and BRANCH DOCTRINES."
                     );
                 }
                 Err(error) => {
@@ -2602,18 +2607,25 @@ fn validate_doctrine_verification(
             "strategic doctrine verification must cover every grounded institution exactly once"
         ));
     }
+    if verification.verdicts.iter().any(|verdict| {
+        verdict.rationale.trim().is_empty() || verdict.rationale.chars().count() > 500
+    }) {
+        return Err(anyhow!(
+            "strategic doctrine verification rationale must contain 1 to 500 characters"
+        ));
+    }
     Ok(verification
         .verdicts
         .iter()
-        .filter(|v| !v.supported)
+        .filter(|v| !v.compatible_with_canon)
         .cloned()
         .collect())
 }
 
-fn doctrine_rejection_error(rejected: &[StrategicDoctrineVerdict]) -> anyhow::Error {
+fn doctrine_incompatibility_error(incompatible: &[StrategicDoctrineVerdict]) -> anyhow::Error {
     anyhow!(
-        "strategic doctrine exceeded its evidence: {}",
-        rejected
+        "strategic doctrine contradicted its canon anchors: {}",
+        incompatible
             .iter()
             .map(|verdict| format!("{}: {}", verdict.name, verdict.rationale))
             .collect::<Vec<_>>()
@@ -2621,15 +2633,10 @@ fn doctrine_rejection_error(rejected: &[StrategicDoctrineVerdict]) -> anyhow::Er
     )
 }
 
-fn lower_verified_doctrine_catalog(
-    mut grounded: GroundedGlobalAgencyCatalog,
+fn lower_compatible_doctrine_catalog(
+    grounded: GroundedGlobalAgencyCatalog,
     synthesized: StrategicDoctrineCatalog,
-    rejected: &[StrategicDoctrineVerdict],
 ) -> CompiledGlobalAgencyCatalog {
-    let rejected_names = rejected
-        .iter()
-        .map(|verdict| verdict.name.as_str())
-        .collect::<BTreeSet<_>>();
     let doctrines = synthesized
         .institutions
         .into_iter()
@@ -2638,19 +2645,12 @@ fn lower_verified_doctrine_catalog(
     let institutions = grounded
         .institutions
         .into_iter()
-        .filter(|institution| !rejected_names.contains(institution.name.as_str()))
         .map(|institution| CompiledRemoteInstitution {
             strategic_doctrine: doctrines[&institution.name].clone(),
             name: institution.name,
             evidence_receipt_ids: institution.evidence_receipt_ids,
         })
         .collect();
-    grounded.gaps.extend(rejected.iter().map(|verdict| {
-        format!(
-            "{} was omitted from remote simulation because its strategic doctrine could not be strictly supported after one correction; exact rejection details remain in the private model-stage receipt.",
-            verdict.name
-        )
-    }));
     CompiledGlobalAgencyCatalog {
         institutions,
         gaps: grounded.gaps,
@@ -2660,7 +2660,7 @@ fn lower_verified_doctrine_catalog(
 fn merge_global_agency_catalog(
     seed: &mut CompiledSeed,
     catalog: CompiledGlobalAgencyCatalog,
-) -> Result<(BTreeMap<String, Vec<String>>, Vec<String>)> {
+) -> Result<(BTreeMap<String, Vec<String>>, Vec<String>, Vec<String>)> {
     let mut known_names = seed
         .institutions
         .iter()
@@ -2672,6 +2672,7 @@ fn merge_global_agency_catalog(
         .map(|institution| institution.id.clone())
         .collect::<BTreeSet<_>>();
     let mut remote_evidence = BTreeMap::new();
+    let mut branch_assumptions = Vec::new();
     for institution in catalog.institutions {
         if !known_names.insert(institution.name.to_lowercase()) {
             continue;
@@ -2681,6 +2682,10 @@ fn merge_global_agency_catalog(
         if !known_ids.insert(id.clone()) {
             return Err(anyhow!("global agency institution ID collision"));
         }
+        branch_assumptions.push(format!(
+            "Campaign-local operational doctrine for {}: {}",
+            institution.name, institution.strategic_doctrine
+        ));
         seed.institutions.push(InstitutionState {
             id: id.clone(),
             name: institution.name,
@@ -2695,7 +2700,7 @@ fn merge_global_agency_catalog(
         .into_iter()
         .map(|gap| format!("Global agency evidence gap: {gap}"))
         .collect();
-    Ok((remote_evidence, gaps))
+    Ok((remote_evidence, gaps, branch_assumptions))
 }
 
 fn apply_coarse_remote_agency_profiles(
@@ -4064,8 +4069,9 @@ mod tests {
 
     struct CorrectionAwareDoctrineModel {
         synthesis_calls: AtomicUsize,
-        saw_entailment_boundary: AtomicBool,
+        saw_branch_elaboration_boundary: AtomicBool,
         saw_verifier_correction: AtomicBool,
+        stay_incompatible: bool,
     }
 
     struct PrivateBoundaryCompilerModel {
@@ -4309,44 +4315,48 @@ mod tests {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
                 "global_agency_doctrine_synthesis" => {
-                    self.saw_entailment_boundary.store(
-                        request
-                            .lived_stream
-                            .contains("Every clause, qualifier, motive, contrast, negation, and purpose must be entailed"),
+                    self.saw_branch_elaboration_boundary.store(
+                        request.lived_stream.contains(
+                            "Compatible elaboration is required and may vary between campaigns",
+                        ),
                         Ordering::SeqCst,
                     );
                     let call = self.synthesis_calls.fetch_add(1, Ordering::SeqCst);
                     if call == 0 {
                         return Ok(serde_json::json!({"institutions":[{
                             "name":"Fixture Council",
-                            "strategic_doctrine":"Maintain the shared route as a civic duty rather than private profit."
+                            "strategic_doctrine":"Abandon the shared route and destroy every crossing."
                         }]}).to_string());
                     }
                     self.saw_verifier_correction.store(
-                        request
-                            .lived_stream
-                            .contains("THE STRICT VERIFIER REJECTED THE PREVIOUS DOCTRINES")
-                            && request.lived_stream.contains("rather than private profit")
+                        request.lived_stream.contains(
+                            "THE COMPATIBILITY VERIFIER REJECTED THE PREVIOUS BRANCH DOCTRINES",
+                        ) && request.lived_stream.contains("Abandon the shared route")
                             && request
                                 .lived_stream
-                                .contains("Remove every unsupported clause"),
+                                .contains("retaining useful compatible branch elaboration"),
                         Ordering::SeqCst,
                     );
+                    let doctrine = if self.stay_incompatible {
+                        "Abandon the shared route and destroy every crossing."
+                    } else {
+                        "Maintain the shared route through rotating repair crews, convoy permits, and temporary rationing during breakdowns."
+                    };
                     Ok(serde_json::json!({"institutions":[{
                         "name":"Fixture Council",
-                        "strategic_doctrine":"Maintain the shared route."
+                        "strategic_doctrine":doctrine
                     }]})
                     .to_string())
                 }
                 "global_agency_doctrine_verification" => {
-                    let rejected = request.lived_stream.contains("rather than private profit");
+                    let rejected = request.lived_stream.contains("Abandon the shared route");
                     Ok(serde_json::json!({"verdicts":[{
                         "name":"Fixture Council",
-                        "supported":!rejected,
+                        "compatible_with_canon":!rejected,
                         "rationale":if rejected {
-                            "The private-profit contrast is absent from the exact claim."
+                            "Abandoning the route contradicts the supplied maintenance anchor."
                         } else {
-                            "Every clause follows from the exact claim."
+                            "The route remains maintained; operational methods are compatible branch elaboration."
                         }
                     }]})
                     .to_string())
@@ -4453,8 +4463,8 @@ mod tests {
                 "global_agency_doctrine_verification" => serde_json::json!({
                     "verdicts":[{
                         "name":"Fixture Council",
-                        "supported":true,
-                        "rationale":"The doctrine restates the exact maintenance claim without adding posture or capability."
+                        "compatible_with_canon":true,
+                        "rationale":"The doctrine preserves the maintenance anchor."
                     }]
                 }).to_string(),
                 "world_openings" => serde_json::json!({"openings":[
@@ -5100,11 +5110,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn doctrine_stage_rewrites_unsupported_interpretation_once() {
+    async fn doctrine_stage_rewrites_canon_contradiction_but_keeps_branch_elaboration() {
         let model = Arc::new(CorrectionAwareDoctrineModel {
             synthesis_calls: AtomicUsize::new(0),
-            saw_entailment_boundary: AtomicBool::new(false),
+            saw_branch_elaboration_boundary: AtomicBool::new(false),
             saw_verifier_correction: AtomicBool::new(false),
+            stay_incompatible: false,
         });
         let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
         let start = CustomStart {
@@ -5131,7 +5142,7 @@ mod tests {
         assert_eq!(catalog.institutions.len(), 1);
         assert_eq!(
             catalog.institutions[0].strategic_doctrine,
-            "Maintain the shared route."
+            "Maintain the shared route through rotating repair crews, convoy permits, and temporary rationing during breakdowns."
         );
         assert_eq!(
             receipts
@@ -5147,8 +5158,44 @@ mod tests {
         );
         assert!(receipts[1].local_validation_error.is_some());
         assert!(receipts[3].local_validation_error.is_none());
-        assert!(model.saw_entailment_boundary.load(Ordering::SeqCst));
+        assert!(model.saw_branch_elaboration_boundary.load(Ordering::SeqCst));
         assert!(model.saw_verifier_correction.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn doctrine_stage_aborts_instead_of_omitting_an_incompatible_institution() {
+        let model = Arc::new(CorrectionAwareDoctrineModel {
+            synthesis_calls: AtomicUsize::new(0),
+            saw_branch_elaboration_boundary: AtomicBool::new(false),
+            saw_verifier_correction: AtomicBool::new(false),
+            stay_incompatible: true,
+        });
+        let compiler = WorldCompiler::new(vault(), model, "flash", "pro");
+        let start = CustomStart {
+            campaign_name: "Doctrine refusal".into(),
+            who: "worker".into(),
+            where_: "yard".into(),
+            when: "fixture".into(),
+            goal: "keep the route open".into(),
+        };
+        let grounded = GroundedGlobalAgencyCatalog {
+            institutions: vec![GroundedRemoteInstitution {
+                name: "Fixture Council".into(),
+                supporting_claims: vec!["The Fixture Council maintains the shared route.".into()],
+                evidence_receipt_ids: vec!["receipt:fixture".into()],
+            }],
+            gaps: vec![],
+        };
+
+        let error = compiler
+            .synthesize_global_agency_doctrine(&start, grounded)
+            .await
+            .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("contradicted canon after one correction")
+        );
     }
 
     #[tokio::test]
@@ -5554,7 +5601,7 @@ mod tests {
     }
 
     #[test]
-    fn strategic_doctrine_requires_exact_coverage_and_surfaces_semantic_rejections() {
+    fn strategic_doctrine_requires_exact_coverage_and_classifies_canon_compatibility() {
         let grounded = vec![GroundedRemoteInstitution {
             name: "Fixture Council".into(),
             supporting_claims: vec!["The Fixture Council maintains the route.".into()],
@@ -5567,20 +5614,33 @@ mod tests {
             }],
         };
         validate_doctrine_catalog(&grounded, &doctrine).unwrap();
-        let rejected = StrategicDoctrineVerification {
+        let incompatible = StrategicDoctrineVerification {
             verdicts: vec![StrategicDoctrineVerdict {
                 name: "Fixture Council".into(),
-                supported: false,
-                rationale: "The doctrine invented territorial control.".into(),
+                compatible_with_canon: false,
+                rationale: "Abandoning the route contradicts its maintenance anchor.".into(),
             }],
         };
-        let rejected = validate_doctrine_verification(&grounded, &rejected).unwrap();
-        assert_eq!(rejected.len(), 1);
-        assert_eq!(rejected[0].name, "Fixture Council");
+        let incompatible = validate_doctrine_verification(&grounded, &incompatible).unwrap();
+        assert_eq!(incompatible.len(), 1);
+        assert_eq!(incompatible[0].name, "Fixture Council");
+
+        let compatible = StrategicDoctrineVerification {
+            verdicts: vec![StrategicDoctrineVerdict {
+                name: "Fixture Council".into(),
+                compatible_with_canon: true,
+                rationale: "Convoy permits are compatible branch-local operating detail.".into(),
+            }],
+        };
+        assert!(
+            validate_doctrine_verification(&grounded, &compatible)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
-    fn rejected_remote_doctrine_becomes_a_gap_without_admitting_the_institution() {
+    fn compatible_remote_doctrines_retain_every_institution_and_surface_branch_assumptions() {
         let grounded = GroundedGlobalAgencyCatalog {
             institutions: vec![
                 GroundedRemoteInstitution {
@@ -5600,7 +5660,8 @@ mod tests {
             institutions: vec![
                 SynthesizedRemoteInstitution {
                     name: "Fixture Council".into(),
-                    strategic_doctrine: "Control all roads through military force.".into(),
+                    strategic_doctrine:
+                        "Maintain the route through repair crews and convoy permits.".into(),
                 },
                 SynthesizedRemoteInstitution {
                     name: "Witness Guild".into(),
@@ -5608,23 +5669,27 @@ mod tests {
                 },
             ],
         };
-        let rejected = vec![StrategicDoctrineVerdict {
-            name: "Fixture Council".into(),
-            supported: false,
-            rationale: "The claim does not establish military force.".into(),
-        }];
-
-        let compiled = lower_verified_doctrine_catalog(grounded, synthesized, &rejected);
-        assert_eq!(compiled.institutions.len(), 1);
-        assert_eq!(compiled.institutions[0].name, "Witness Guild");
+        let compiled = lower_compatible_doctrine_catalog(grounded, synthesized);
+        assert_eq!(compiled.institutions.len(), 2);
+        assert_eq!(compiled.institutions[0].name, "Fixture Council");
         assert_eq!(
             compiled.institutions[0].evidence_receipt_ids,
-            vec!["vault:guild"]
+            vec!["vault:council"]
         );
-        assert!(compiled.gaps.iter().any(|gap| {
-            gap.contains("Fixture Council was omitted")
-                && gap.contains("private model-stage receipt")
+        let mut seed = private_actor_test_seed();
+        let (evidence, gaps, assumptions) =
+            merge_global_agency_catalog(&mut seed, compiled).unwrap();
+        assert_eq!(evidence.len(), 2);
+        assert_eq!(
+            gaps,
+            vec!["Global agency evidence gap: The exact horizon remains uncertain."]
+        );
+        assert_eq!(assumptions.len(), 2);
+        assert!(assumptions.iter().any(|assumption| {
+            assumption.contains("Campaign-local operational doctrine for Fixture Council")
+                && assumption.contains("convoy permits")
         }));
+        assert_eq!(seed.institutions.len(), 2);
     }
 
     #[test]

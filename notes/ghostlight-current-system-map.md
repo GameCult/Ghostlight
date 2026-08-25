@@ -794,16 +794,18 @@ queries run alongside local retrieval, and a Flash extraction stage proposes a
 bounded pool of remote institution names with one to three exact supporting
 claims each. Local code binds every retained claim to an institution-specific
 witness. Only the grounded candidates, capped at 32, enter a separate Flash
-synthesis stage. It writes concise strategic doctrine from those claims; an
-independent verifier rejects unsupported doctrine.
-Unsupported entries become summarized approval gaps and private receipt detail;
-they do not become canonical institutions or canon-candidate records.
+synthesis stage. It preserves those canon anchors while generating the smallest
+useful campaign-local doctrine needed for strategic action. An independent
+verifier checks compatibility rather than textual entailment: source silence is
+allowed, while contradiction, canon erasure, identity conflation, story-specific
+borrowing, current branch events, and unanchored setting-breaking power are not.
 Verification must still cover every grounded institution exactly once; a
 malformed or incomplete verdict retries once and then aborts. After one faithful
-synthesis correction, an individually rejected doctrine removes only that
-remote institution, adds a player-reviewable coverage gap, and retains the
-semantic rationale in the private stage receipt. Admitted remote institutions
-receive deterministic coarse profiles with distinct
+synthesis correction, a still-incompatible doctrine aborts compilation rather
+than deleting an anchored power. Compatible doctrine becomes campaign state and
+an approval-visible branch assumption. Exact receipts anchor the institution and
+its canon constraints; they do not falsely certify the generated policy as
+Vault text. Admitted remote institutions receive deterministic coarse profiles with distinct
 authority and explicit unknown facets. The Pro agency stage profiles only local
 actors, populations, and institutions where semantic subdivision is useful.
 The model schema permits a bounded pool of 64 candidates so provider overage
@@ -815,7 +817,7 @@ world compile. A supporting claim is institution-specific only when its quotatio
 exactly that candidate or comes from the candidate's dedicated source document;
 shared index headings, category descriptions, cross-faction lists, and orphaned
 sentence fragments are rejected. Exact claims and receipts remain evidence;
-synthesized strategic doctrine alone becomes coarse simulation goals.
+synthesized strategic doctrine becomes branch-local coarse simulation goals.
 
 The Aetheria Vault adapter derives document authority from the exact source
 path before any model sees a witness. `Worldbuilding` is reusable canon;
