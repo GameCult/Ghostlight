@@ -5077,7 +5077,9 @@ async fn command(
                                 }
                             }
                         }
-                        if reaction_campaign.actors.len() > 1 {
+                        if reaction_campaign.actors.len() > 1
+                            || !reaction_campaign.gestalts.is_empty()
+                        {
                             let engine = PersonaProjectionEngine {
                                 model: model.clone(),
                                 permit: Arc::new(SnapshotPermit::new(
@@ -5105,6 +5107,7 @@ async fn command(
                                             expected_revision: reaction_campaign.revision,
                                             event_summary: summary,
                                             reactions: wave.reactions,
+                                            gestalt_reactions: wave.gestalt_reactions,
                                         })
                                         .await
                                     {

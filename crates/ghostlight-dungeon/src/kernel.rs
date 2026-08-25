@@ -391,7 +391,17 @@ fn execute(
                             crate::resolution::dormant_member_location(&campaign, member_id).ok()
                         })
                         .is_some_and(|location| location == speaker.location_id);
-                if response_actor_id == &actor_id || !(eligible_present || eligible_folded) {
+                let eligible_gestalt = campaign.gestalts.get(response_actor_id).is_some_and(|_| {
+                    crate::resolution::validate_active_gestalt_presence_location(
+                        &campaign,
+                        response_actor_id,
+                        &speaker.location_id,
+                    )
+                    .is_ok()
+                });
+                if response_actor_id == &actor_id
+                    || !(eligible_present || eligible_folded || eligible_gestalt)
+                {
                     return Err(KernelError::Invalid(
                         "speech response actor is not an eligible present Persona".into(),
                     ));
@@ -1305,6 +1315,7 @@ fn execute(
             expected_revision,
             event_summary,
             reactions,
+            gestalt_reactions,
         } => {
             require_revision(&campaign, expected_revision)?;
             let witnessed_turn = canonical_witnessed_turn(&campaign, &event_summary)?;
@@ -1353,29 +1364,58 @@ fn execute(
                     validate_world_proposal(actor, proposal)?;
                 }
             }
-            for response_actor_id in &response_expected_actor_ids {
-                let reaction = reactions
-                    .iter()
-                    .find(|reaction| &reaction.actor_id == response_actor_id)
-                    .ok_or_else(|| {
-                        KernelError::Invalid(
-                            "directly addressed Persona is absent from the reaction wave".into(),
-                        )
-                    })?;
-                if reaction
-                    .speech
-                    .as_deref()
-                    .is_none_or(|value| value.trim().is_empty())
-                    && !reaction.deliberate_silence
-                {
+            let mut seen_gestalts = BTreeSet::new();
+            for reaction in &gestalt_reactions {
+                if !seen_gestalts.insert(reaction.gestalt_id.clone()) {
                     return Err(KernelError::Invalid(
-                        "directly addressed Persona produced no observable response".into(),
+                        "Gestalt reacted twice in one wave".into(),
+                    ));
+                }
+                if seen.contains(&reaction.gestalt_id) {
+                    return Err(KernelError::Invalid(
+                        "reaction subject appeared as both actor and Gestalt".into(),
+                    ));
+                }
+                crate::resolution::validate_active_gestalt_presence_location(
+                    &campaign,
+                    &reaction.gestalt_id,
+                    &player_location,
+                )
+                .map_err(|_| KernelError::Invalid("reaction Gestalt is not present".into()))?;
+                if let Some(speech) = &reaction.speech {
+                    validate_bounded_text("Gestalt reaction speech", speech, 1_000)?;
+                }
+            }
+            for response_actor_id in &response_expected_actor_ids {
+                let actor_reaction = reactions
+                    .iter()
+                    .find(|reaction| &reaction.actor_id == response_actor_id);
+                let gestalt_reaction = gestalt_reactions
+                    .iter()
+                    .find(|reaction| &reaction.gestalt_id == response_actor_id);
+                let observable = actor_reaction.is_some_and(|reaction| {
+                    reaction
+                        .speech
+                        .as_deref()
+                        .is_some_and(|value| !value.trim().is_empty())
+                        || reaction.deliberate_silence
+                }) || gestalt_reaction.is_some_and(|reaction| {
+                    reaction
+                        .speech
+                        .as_deref()
+                        .is_some_and(|value| !value.trim().is_empty())
+                        || reaction.deliberate_silence
+                });
+                if !observable {
+                    return Err(KernelError::Invalid(
+                        "directly addressed Persona is absent or produced no observable response"
+                            .into(),
                     ));
                 }
             }
             let source_receipt_id = format!(
                 "reaction-input:{}",
-                crate::legacy_transition::digest_serializable(&reactions)
+                crate::legacy_transition::digest_serializable(&(&reactions, &gestalt_reactions))
                     .map_err(|error| KernelError::Invalid(error.to_string()))?
             );
             let transition = crate::legacy_transition::lower_reaction_wave(
@@ -1416,6 +1456,26 @@ fn execute(
                     .pending_world_proposals
                     .extend(reaction.action_proposals);
             }
+            for reaction in gestalt_reactions {
+                if let Some(speech) = reaction.speech {
+                    campaign.transcript.push(NarrativeTurn {
+                        revision: campaign.revision + 1,
+                        at: Utc::now(),
+                        speaker: reaction.gestalt_id.clone(),
+                        text: speech,
+                        persona_response_actor_ids: BTreeSet::new(),
+                    });
+                }
+                if reaction.deliberate_silence {
+                    campaign.transcript.push(NarrativeTurn {
+                        revision: campaign.revision + 1,
+                        at: Utc::now(),
+                        speaker: reaction.gestalt_id,
+                        text: "deliberately does not answer.".into(),
+                        persona_response_actor_ids: BTreeSet::new(),
+                    });
+                }
+            }
             refresh_materialized_member_relevance(&mut campaign, seen.iter().map(String::as_str));
             campaign.events.push(Event {
                 id: format!("reaction-wave:{}", campaign.revision + 1),
@@ -1424,7 +1484,7 @@ fn execute(
                 summary: event_summary,
                 actor_ids: seen.into_iter().collect(),
                 institution_ids: vec![],
-                gestalt_ids: vec![],
+                gestalt_ids: seen_gestalts.into_iter().collect(),
                 location_ids: vec![player_location],
                 public_channels: vec![],
             });
@@ -6161,6 +6221,7 @@ mod tests {
                 expected_revision: 0,
                 event_summary: "player says: Anna, answer me.".into(),
                 reactions: vec![silent],
+                gestalt_reactions: vec![],
             })
             .await
             .unwrap_err();
@@ -6186,6 +6247,7 @@ mod tests {
                     private_delta: ActorStateDelta::default(),
                     action_proposals: vec![],
                 }],
+                gestalt_reactions: vec![],
             })
             .await
             .unwrap();
@@ -6197,6 +6259,81 @@ mod tests {
             campaign.transcript.last().unwrap().text,
             "deliberately does not answer."
         );
+    }
+
+    #[tokio::test]
+    async fn directly_addressed_local_gestalt_reacts_as_its_exact_collective_subject() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.gestalts.insert(
+            "households".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "households".into(),
+                name: "Settlement households".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::from(["collective refusal".into()]),
+                shared_knowledge: BTreeSet::from(["the slate omits five names".into()]),
+                resources: BTreeSet::new(),
+                goals: vec!["keep every household traceable".into()],
+                pressures: vec!["the convoy slate is closing".into()],
+            },
+        );
+        seed.transcript.push(NarrativeTurn {
+            revision: 0,
+            at: seed.world_time,
+            speaker: "player".into(),
+            text: "Households, will you refuse the slate?".into(),
+            persona_response_actor_ids: BTreeSet::from(["households".into()]),
+        });
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let missing = kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "player says: Households, will you refuse the slate?".into(),
+                reactions: vec![],
+                gestalt_reactions: vec![],
+            })
+            .await
+            .unwrap_err();
+        assert!(missing.to_string().contains("no observable response"));
+
+        let committed = kernel
+            .command(WorldCommand::ResolveReactionWave {
+                expected_revision: 0,
+                event_summary: "player says: Households, will you refuse the slate?".into(),
+                reactions: vec![],
+                gestalt_reactions: vec![GestaltReaction {
+                    gestalt_id: "households".into(),
+                    speech: Some(
+                        "We will refuse a slate that leaves our names untraceable.".into(),
+                    ),
+                    deliberate_silence: false,
+                }],
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = committed else {
+            panic!()
+        };
+        assert_eq!(campaign.revision, 1);
+        assert_eq!(campaign.transcript.last().unwrap().speaker, "households");
+        assert_eq!(
+            campaign.events.last().unwrap().gestalt_ids,
+            vec!["households"]
+        );
+        assert_eq!(campaign.gestalts["households"], seed.gestalts["households"]);
     }
 
     #[tokio::test]
@@ -6262,6 +6399,7 @@ mod tests {
                     expected_revision: 0,
                     event_summary: "the player acts".into(),
                     reactions,
+                    gestalt_reactions: vec![],
                 })
                 .await
                 .is_err()
@@ -6345,6 +6483,7 @@ mod tests {
                     },
                     action_proposals: vec![],
                 }],
+                gestalt_reactions: vec![],
             })
             .await;
         assert!(
@@ -6364,6 +6503,7 @@ mod tests {
                     },
                     action_proposals: vec![],
                 }],
+                gestalt_reactions: vec![],
             })
             .await;
         assert!(
@@ -6383,6 +6523,7 @@ mod tests {
                     },
                     action_proposals: vec![],
                 }],
+                gestalt_reactions: vec![],
             })
             .await;
         assert!(
@@ -6446,6 +6587,7 @@ mod tests {
                     private_delta: ActorStateDelta::default(),
                     action_proposals: vec![],
                 }],
+                gestalt_reactions: vec![],
             })
             .await
             .unwrap();
@@ -6532,6 +6674,7 @@ mod tests {
                         action_proposals: vec![bert.clone()],
                     },
                 ],
+                gestalt_reactions: vec![],
             })
             .await
             .unwrap();
@@ -6681,6 +6824,7 @@ mod tests {
                     private_delta: ActorStateDelta::default(),
                     action_proposals: vec![proposal.clone()],
                 }],
+                gestalt_reactions: vec![],
             })
             .await
             .unwrap();
@@ -6731,6 +6875,7 @@ mod tests {
                     private_delta: ActorStateDelta::default(),
                     action_proposals: vec![],
                 }],
+                gestalt_reactions: vec![],
             })
             .await
             .unwrap();

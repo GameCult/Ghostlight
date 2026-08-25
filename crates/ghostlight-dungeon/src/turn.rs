@@ -1,9 +1,10 @@
 use crate::{
-    domain::{ActorReaction, Campaign},
+    domain::{ActorReaction, Campaign, GestaltReaction},
     model::{ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage},
     persistence::CampaignStore,
     persona::{
         ActorInteractionRole, ExecutionPermit, PermittedActorSlice, PersonaProjectionEngine,
+        PersonaSubjectKind,
     },
 };
 use anyhow::{Result, anyhow};
@@ -14,13 +15,13 @@ use std::{collections::BTreeSet, sync::Arc};
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct SpeechAddressPlan {
-    /// Exact present, model-controlled actors from whom the utterance requests
-    /// an answer. Mentioned people and passive hearers are not included.
+    /// Exact present, model-controlled Persona subjects from whom the utterance
+    /// requests an answer. Mentioned subjects and passive hearers are omitted.
     pub persona_response_actor_ids: BTreeSet<String>,
 }
 
 /// Resolve conversational address from player language against the exact
-/// present-actor catalog. The output is proposal-only until WorldKernel
+/// present-subject catalog. The output is proposal-only until WorldKernel
 /// validates co-presence and commits it with the speech turn.
 pub async fn resolve_speech_addresses(
     model: Arc<dyn ModelPort>,
@@ -69,6 +70,21 @@ pub async fn resolve_speech_addresses(
             }),
         ))
     }));
+    candidates.extend(campaign.gestalts.values().filter_map(|gestalt| {
+        crate::resolution::validate_active_gestalt_presence_location(
+            campaign,
+            &gestalt.id,
+            &speaker.location_id,
+        )
+        .ok()?;
+        Some((
+            gestalt.id.clone(),
+            serde_json::json!({
+                "public_name": gestalt.name,
+                "presence": "cohesive_population",
+            }),
+        ))
+    }));
     if candidates.is_empty() {
         return Ok((
             SpeechAddressPlan {
@@ -111,7 +127,7 @@ pub async fn resolve_speech_addresses(
         "items":{"type":"string","enum":allowed_ids},
     });
     let prompt = format!(
-        "You are Ghostlight's private scene-address resolver. Decide only which supplied present Persona subjects this exact speech directly asks to answer now. A nearby_folded_person is a persistent known individual currently represented through their population; selecting their exact member ID lets Ghostlight materialize that same person before appraisal. A person who is merely mentioned, discussed, visible, or able to overhear is not a response target. A room-wide statement need not demand an answer from everyone. Preserve ordinary conversational focus from previous_focus when pronouns or an unqualified follow-up clearly continue it. Select only exact supplied IDs. Empty is valid when the speaker asks nobody present to answer. Return exactly one JSON object matching the schema.\nSCHEMA:\n{}\nPRESENT PERSONA SUBJECTS:\n{}\nPREVIOUS FOCUS:\n{}\nRECENT PUBLIC TURNS:\n{}\nSPEAKER ACTOR ID:\n{}\nEXACT SPEECH:\n{}",
+        "You are Ghostlight's private scene-address resolver. Decide only which supplied present Persona subjects this exact speech directly asks to answer now. A nearby_folded_person is a persistent known individual currently represented through their population; selecting their exact member ID lets Ghostlight materialize that same person before appraisal. A cohesive_population is a genuine collective subject and may be directly asked for a plural response. A subject who is merely mentioned, discussed, visible, or able to overhear is not a response target. A room-wide statement need not demand an answer from everyone. Preserve ordinary conversational focus from previous_focus when pronouns or an unqualified follow-up clearly continue it. Select only exact supplied IDs. Empty is valid when the speaker asks nobody present to answer. Return exactly one JSON object matching the schema.\nSCHEMA:\n{}\nPRESENT PERSONA SUBJECTS:\n{}\nPREVIOUS FOCUS:\n{}\nRECENT PUBLIC TURNS:\n{}\nSPEAKER ACTOR ID:\n{}\nEXACT SPEECH:\n{}",
         serde_json::to_string(&schema)?,
         serde_json::to_string(&candidates)?,
         serde_json::to_string(&previous_focus)?,
@@ -197,7 +213,13 @@ impl ExecutionPermit for SnapshotPermit {
 
 pub struct ReactionWaveOutput {
     pub reactions: Vec<ActorReaction>,
+    pub gestalt_reactions: Vec<GestaltReaction>,
     pub receipts: Vec<ModelStageReceipt>,
+}
+
+enum PresentReactionTerminal {
+    Actor(String, crate::persona::PersonaTerminalBundle),
+    Gestalt(String, crate::persona::PersonaTerminalBundle),
 }
 
 pub async fn appraise_present(
@@ -224,12 +246,30 @@ pub async fn appraise_present(
         })
         .cloned()
         .collect();
-    let perceived_actors = campaign
+    let mut perceived_actors = campaign
         .actors
         .values()
         .filter(|actor| actor.location_id == player.location_id)
         .map(|actor| (actor.id.clone(), actor.name.clone()))
         .collect::<std::collections::BTreeMap<_, _>>();
+    let local_gestalts = campaign
+        .gestalts
+        .values()
+        .filter(|gestalt| {
+            crate::resolution::validate_active_gestalt_presence_location(
+                campaign,
+                &gestalt.id,
+                &player.location_id,
+            )
+            .is_ok()
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    perceived_actors.extend(
+        local_gestalts
+            .iter()
+            .map(|gestalt| (gestalt.id.clone(), gestalt.name.clone())),
+    );
     let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(usize::from(
         campaign.resolution_policy.provider_parallelism.max(1),
     )));
@@ -255,6 +295,7 @@ pub async fn appraise_present(
             let slice = PermittedActorSlice {
                 actor_id: actor.id.clone(),
                 location_id: actor.location_id.clone(),
+                subject_kind: PersonaSubjectKind::IndividualActor,
                 snapshot_binding: snapshot,
                 interaction_role,
                 identity_experience: vec![format!("You are {}.", actor.name)],
@@ -279,26 +320,82 @@ pub async fn appraise_present(
                 source_receipt_ids: receipts,
             };
             let terminal = engine.execute(slice).await?;
-            Ok::<_, anyhow::Error>((actor.id, terminal))
+            Ok::<_, anyhow::Error>(PresentReactionTerminal::Actor(actor.id, terminal))
+        });
+    }
+    for gestalt in local_gestalts {
+        let engine = engine.clone();
+        let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
+        let event = event_summary.to_owned();
+        let receipts = campaign.branch_origin.evidence_receipt_ids.clone();
+        let perceived_actors = perceived_actors.clone();
+        let semaphore = semaphore.clone();
+        let interaction_role = if response_expected_actor_ids.contains(&gestalt.id) {
+            ActorInteractionRole::DirectResponseExpected
+        } else {
+            ActorInteractionRole::PresentObserver
+        };
+        jobs.spawn(async move {
+            let _provider_slot = semaphore
+                .acquire_owned()
+                .await
+                .map_err(|_| anyhow!("provider concurrency gate closed"))?;
+            let slice = PermittedActorSlice {
+                actor_id: gestalt.id.clone(),
+                location_id: gestalt.home_location_id.clone(),
+                subject_kind: PersonaSubjectKind::CohesiveGestalt,
+                snapshot_binding: snapshot,
+                interaction_role,
+                identity_experience: vec![format!(
+                    "You are {}, a cohesive population represented through genuinely shared state.",
+                    gestalt.name
+                )],
+                reserved_public_identities: perceived_actors.values().cloned().collect(),
+                memories: vec![],
+                perceived_events: vec![event],
+                perceived_actors,
+                relationships: vec![],
+                goals: gestalt.goals,
+                knowledge: gestalt.shared_knowledge.into_iter().collect(),
+                capabilities: gestalt.shared_capabilities.into_iter().collect(),
+                pressures: gestalt.pressures,
+                affordances: gestalt.resources.into_iter().collect(),
+                source_receipt_ids: receipts,
+            };
+            let terminal = engine.execute(slice).await?;
+            Ok::<_, anyhow::Error>(PresentReactionTerminal::Gestalt(gestalt.id, terminal))
         });
     }
     let mut reactions = Vec::new();
+    let mut gestalt_reactions = Vec::new();
     let mut receipts = Vec::new();
     while let Some(result) = jobs.join_next().await {
-        let (actor_id, terminal) =
-            result.map_err(|e| anyhow!("Persona appraisal task failed: {e}"))??;
-        receipts.extend(terminal.stage_receipts);
-        reactions.push(ActorReaction {
-            actor_id,
-            speech: terminal.proposals.speech,
-            deliberate_silence: terminal.proposals.deliberate_silence,
-            private_delta: terminal.proposals.private_delta,
-            action_proposals: terminal.proposals.world_actions,
-        });
+        match result.map_err(|e| anyhow!("Persona appraisal task failed: {e}"))?? {
+            PresentReactionTerminal::Actor(actor_id, terminal) => {
+                receipts.extend(terminal.stage_receipts);
+                reactions.push(ActorReaction {
+                    actor_id,
+                    speech: terminal.proposals.speech,
+                    deliberate_silence: terminal.proposals.deliberate_silence,
+                    private_delta: terminal.proposals.private_delta,
+                    action_proposals: terminal.proposals.world_actions,
+                });
+            }
+            PresentReactionTerminal::Gestalt(gestalt_id, terminal) => {
+                receipts.extend(terminal.stage_receipts);
+                gestalt_reactions.push(GestaltReaction {
+                    gestalt_id,
+                    speech: terminal.proposals.speech,
+                    deliberate_silence: terminal.proposals.deliberate_silence,
+                });
+            }
+        }
     }
     reactions.sort_by(|a, b| a.actor_id.cmp(&b.actor_id));
+    gestalt_reactions.sort_by(|a, b| a.gestalt_id.cmp(&b.gestalt_id));
     Ok(ReactionWaveOutput {
         reactions,
+        gestalt_reactions,
         receipts,
     })
 }
@@ -364,6 +461,7 @@ mod tests {
 
     struct AddressAwareModel;
     struct DormantAddressModel;
+    struct CollectiveAddressModel;
 
     #[async_trait]
     impl ModelPort for AddressAwareModel {
@@ -422,6 +520,46 @@ mod tests {
                 "persona_response_actor_ids":["member:water-cart-taren"]
             })
             .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for CollectiveAddressModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            Ok(match request.stage.as_str() {
+                "speech_address_resolver" => {
+                    assert!(request.lived_stream.contains("cohesive_population"));
+                    assert!(request.lived_stream.contains("Settlement households"));
+                    serde_json::json!({
+                        "persona_response_actor_ids":["settlement-households"]
+                    })
+                    .to_string()
+                }
+                "projector" => {
+                    "The households hear a direct request for their shared answer.".into()
+                }
+                "persona" => "We will not accept a slate that makes our names disappear.".into(),
+                "interpreter" => serde_json::json!({
+                    "private_delta":{
+                        "memories_add":[],
+                        "identity_adoption":null,
+                        "conditions_add":[],
+                        "conditions_remove":[],
+                        "goals_add":[],
+                        "relationship_updates":{},
+                    },
+                    "speech":"We will not accept a slate that makes our names disappear.",
+                    "deliberate_silence":false,
+                    "reaction_priority":5,
+                    "world_actions":[],
+                })
+                .to_string(),
+                stage => return Err(anyhow!("unexpected stage {stage}")),
+            })
         }
 
         fn provider(&self) -> &'static str {
@@ -644,6 +782,76 @@ mod tests {
                 .unwrap()
                 .speech
                 .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn local_cohesive_gestalt_is_addressable_and_appraises_in_the_foreground_wave() {
+        let mut campaign = crate::resolution::tests::campaign(0, 8);
+        let location = campaign.actors[&campaign.player_actor_id]
+            .location_id
+            .clone();
+        campaign.gestalts.insert(
+            "settlement-households".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "settlement-households".into(),
+                name: "Settlement households".into(),
+                version: 0,
+                home_location_id: location,
+                shared_capabilities: BTreeSet::from(["collective refusal".into()]),
+                shared_knowledge: BTreeSet::from(["five names lack a traceable path".into()]),
+                resources: BTreeSet::new(),
+                goals: vec!["keep every household legible".into()],
+                pressures: vec!["the slate is closing".into()],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        campaign
+            .agency_profiles
+            .get_mut(&campaign.player_actor_id)
+            .unwrap()
+            .simulation_eligible = false;
+        let speech = "Settlement households, will you refuse this slate?";
+        let (plan, _) = resolve_speech_addresses(
+            Arc::new(CollectiveAddressModel),
+            "flash",
+            &campaign,
+            &campaign.player_actor_id,
+            speech,
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            plan.persona_response_actor_ids,
+            BTreeSet::from(["settlement-households".into()])
+        );
+        campaign.transcript.push(NarrativeTurn {
+            revision: campaign.revision,
+            at: Utc::now(),
+            speaker: campaign.player_actor_id.clone(),
+            text: speech.into(),
+            persona_response_actor_ids: plan.persona_response_actor_ids,
+        });
+        let summary = format!("{} says: {speech}", campaign.player_actor_id);
+        let wave = appraise_present(
+            PersonaProjectionEngine {
+                model: Arc::new(CollectiveAddressModel),
+                permit: Arc::new(AllowAllPermit),
+                projector_model: "flash".into(),
+                persona_model: "pro".into(),
+                interpreter_model: "flash".into(),
+            },
+            &campaign,
+            &summary,
+        )
+        .await
+        .unwrap();
+        assert!(wave.reactions.is_empty());
+        assert_eq!(wave.gestalt_reactions.len(), 1);
+        assert_eq!(
+            wave.gestalt_reactions[0].speech.as_deref(),
+            Some("We will not accept a slate that makes our names disappear.")
         );
     }
 }

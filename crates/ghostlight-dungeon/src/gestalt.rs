@@ -232,7 +232,7 @@ pub fn required_addressed_promotions(campaign: &Campaign) -> Result<GestaltPrese
     };
     let mut promotions = Vec::new();
     for subject_id in &turn.persona_response_actor_ids {
-        if campaign.actors.contains_key(subject_id) {
+        if campaign.actors.contains_key(subject_id) || campaign.gestalts.contains_key(subject_id) {
             continue;
         }
         let member_id = crate::resolution::dormant_member_id_for_subject(campaign, subject_id)

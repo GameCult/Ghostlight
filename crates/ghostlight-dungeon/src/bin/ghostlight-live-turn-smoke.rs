@@ -77,6 +77,7 @@ async fn main() -> anyhow::Result<()> {
             expected_revision: 0,
             event_summary: event_summary.clone(),
             reactions: wave.reactions.clone(),
+            gestalt_reactions: wave.gestalt_reactions.clone(),
         })
         .await?;
     let total_seconds = started.elapsed().as_secs_f64();

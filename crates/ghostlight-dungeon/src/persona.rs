@@ -19,10 +19,18 @@ pub enum ActorInteractionRole {
     PresentObserver,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PersonaSubjectKind {
+    IndividualActor,
+    CohesiveGestalt,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct PermittedActorSlice {
     pub actor_id: String,
     pub location_id: String,
+    pub subject_kind: PersonaSubjectKind,
     pub snapshot_binding: String,
     pub interaction_role: ActorInteractionRole,
     pub identity_experience: Vec<String>,
@@ -470,8 +478,16 @@ fn actor_interpreter_guidance(slice: &PermittedActorSlice) -> String {
             "This actor is present but was not directly asked to respond. Speech or observable action remains optional and must follow only from this actor's projected choice."
         }
     };
+    let ownership_guidance = match slice.subject_kind {
+        PersonaSubjectKind::IndividualActor => {
+            "Record only private changes supported by the lived stream and typed context. identity_adoption is null unless the Persona explicitly adopts or presents one public self-identifier in its own speech; when set, copy the exact spoken handle and nothing else. World actions are attempts, not completed effects."
+        }
+        PersonaSubjectKind::CohesiveGestalt => {
+            "This is a cohesive population appraisal. Extract only collective speech or deliberate silence. Every actor-private delta must remain empty, identity_adoption must be null, and world_actions must be empty; strategic population action uses the cell-resolution path, not foreground dialogue."
+        }
+    };
     format!(
-        "{response_guidance} Record only private changes supported by the lived stream and typed context. identity_adoption is null unless the Persona explicitly adopts or presents one public self-identifier in its own speech; when set, copy the exact spoken handle and nothing else. World actions are attempts, not completed effects. Speech is extracted separately and is already complete. Do not emit a world action merely to make another actor answer, choose, consent, believe, disclose, feel, or obey; the other actor retains agency and any requested response remains unresolved. actor_id must be {:?}. Exact allowed state references are {:?}. Relationship update keys may only be {:?}.",
+        "{response_guidance} {ownership_guidance} Speech is extracted separately and is already complete. Do not emit a world action merely to make another actor answer, choose, consent, believe, disclose, feel, or obey; the other actor retains agency and any requested response remains unresolved. actor_id must be {:?}. Exact allowed state references are {:?}. Relationship update keys may only be {:?}.",
         slice.actor_id,
         allowed_actor_references(slice),
         slice.perceived_actors.keys().collect::<Vec<_>>()
@@ -532,8 +548,16 @@ fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> S
                 .join(", ")
         )
     };
+    let subject_grounding = match slice.subject_kind {
+        PersonaSubjectKind::IndividualActor => {
+            "You are one situated person. Speak and choose only for yourself."
+        }
+        PersonaSubjectKind::CohesiveGestalt => {
+            "You are a cohesive population Persona. You may speak plurally only from genuinely shared state. Do not invent unanimity about exceptions, speak for named individuals, or claim authority outside the supplied collective."
+        }
+    };
     format!(
-        "{projection}\n\nYour active self-identity: {identity}. In your social world, {established_peer_identities}. {interaction} Your reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
+        "{projection}\n\n{subject_grounding} Your active self-identity: {identity}. In your social world, {established_peer_identities}. {interaction} Your reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
     )
 }
 
@@ -541,6 +565,14 @@ fn validate_actor_proposals(
     slice: &PermittedActorSlice,
     proposals: &PersonaProposalBundle,
 ) -> Result<()> {
+    if matches!(slice.subject_kind, PersonaSubjectKind::CohesiveGestalt)
+        && (proposals.private_delta != crate::domain::ActorStateDelta::default()
+            || !proposals.world_actions.is_empty())
+    {
+        return Err(anyhow!(
+            "cohesive foreground Gestalt appraisal may emit only speech or deliberate silence"
+        ));
+    }
     if matches!(
         slice.interaction_role,
         ActorInteractionRole::DirectResponseExpected
@@ -2816,6 +2848,27 @@ fn constrain_interpreter_schema(
         .ok_or_else(|| anyhow!("Persona proposal schema has no identity adoption"))?;
     *identity_adoption =
         serde_json::json!({"type":["string","null"],"minLength":1,"maxLength":160});
+    if matches!(slice.subject_kind, PersonaSubjectKind::CohesiveGestalt) {
+        for field in [
+            "memories_add",
+            "conditions_add",
+            "conditions_remove",
+            "goals_add",
+        ] {
+            let value = schema
+                .pointer_mut(&format!("/$defs/ActorStateDelta/properties/{field}"))
+                .ok_or_else(|| anyhow!("Persona proposal schema has no {field}"))?;
+            *value = serde_json::json!({"type":"array","maxItems":0,"items":{"type":"string"}});
+        }
+        *schema
+            .pointer_mut("/$defs/ActorStateDelta/properties/relationship_updates")
+            .ok_or_else(|| anyhow!("Persona proposal schema has no relationship updates"))? =
+            serde_json::json!({"type":"object","maxProperties":0,"additionalProperties":false});
+        *schema
+            .pointer_mut("/$defs/ActorStateDelta/properties/identity_adoption")
+            .ok_or_else(|| anyhow!("Persona proposal schema has no identity adoption"))? =
+            serde_json::json!({"type":"null"});
+    }
     let root = schema
         .as_object_mut()
         .ok_or_else(|| anyhow!("Persona proposal schema is not an object"))?;
@@ -2831,6 +2884,12 @@ fn constrain_interpreter_schema(
         "deliberate_silence".into(),
         serde_json::json!({"type":"boolean"}),
     );
+    if matches!(slice.subject_kind, PersonaSubjectKind::CohesiveGestalt) {
+        properties.insert(
+            "world_actions".into(),
+            serde_json::json!({"type":"array","maxItems":0,"items":{"$ref":"#/$defs/WorldActionProposal"}}),
+        );
+    }
     root.entry("allOf")
         .or_insert_with(|| serde_json::json!([]))
         .as_array_mut()
@@ -4215,6 +4274,7 @@ mod tests {
         let slice = PermittedActorSlice {
             actor_id: "npc".into(),
             location_id: "room".into(),
+            subject_kind: PersonaSubjectKind::IndividualActor,
             snapshot_binding: "campaign:1".into(),
             interaction_role: ActorInteractionRole::PresentObserver,
             identity_experience: vec!["A tired navigator".into()],
@@ -4251,6 +4311,7 @@ mod tests {
         let mut slice = PermittedActorSlice {
             actor_id: "npc".into(),
             location_id: "room".into(),
+            subject_kind: PersonaSubjectKind::IndividualActor,
             snapshot_binding: "campaign:1".into(),
             interaction_role: ActorInteractionRole::DirectResponseExpected,
             identity_experience: vec!["You are an unnamed patient.".into()],
@@ -4298,6 +4359,7 @@ mod tests {
         let slice = PermittedActorSlice {
             actor_id: "npc".into(),
             location_id: "room".into(),
+            subject_kind: PersonaSubjectKind::IndividualActor,
             snapshot_binding: "campaign:1".into(),
             interaction_role: ActorInteractionRole::PresentObserver,
             identity_experience: vec!["You are an unnamed patient.".into()],
@@ -4392,6 +4454,7 @@ mod tests {
             .execute(PermittedActorSlice {
                 actor_id: "npc".into(),
                 location_id: "room".into(),
+                subject_kind: PersonaSubjectKind::IndividualActor,
                 snapshot_binding: "campaign:1:revision:4".into(),
                 interaction_role: ActorInteractionRole::DirectResponseExpected,
                 identity_experience: vec!["You are an unnamed patient.".into()],

@@ -684,6 +684,18 @@ pub struct ActorReaction {
     pub action_proposals: Vec<WorldActionProposal>,
 }
 
+/// A foreground appraisal owned by one cohesive population subject. Unlike an
+/// arena cell, a Gestalt has genuine collective authority and may speak in the
+/// plural. Its foreground reaction cannot mutate actor-private state or smuggle
+/// an unassessed strategic action through dialogue.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct GestaltReaction {
+    pub gestalt_id: String,
+    pub speech: Option<String>,
+    #[serde(default)]
+    pub deliberate_silence: bool,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct InstitutionState {
     pub id: String,
@@ -881,10 +893,10 @@ pub struct NarrativeTurn {
     pub speaker: String,
     pub text: String,
     /// Exact model-controlled Persona subject IDs whom this committed speech
-    /// asks to respond. A nearby folded member keeps their stable future actor
-    /// ID here while the kernel materializes that same person for appraisal.
-    /// Other present actors still perceive and appraise the turn, but they are
-    /// not response-bound. Human-controlled actors never appear here.
+    /// asks to respond. The legacy field name includes actors, folded named
+    /// members, and cohesive Gestalts. Other present subjects still perceive
+    /// and appraise the turn but are not response-bound. Human-controlled
+    /// actors never appear here.
     #[serde(default)]
     pub persona_response_actor_ids: BTreeSet<String>,
 }
@@ -1047,6 +1059,8 @@ pub enum WorldCommand {
         expected_revision: u64,
         event_summary: String,
         reactions: Vec<ActorReaction>,
+        #[serde(default)]
+        gestalt_reactions: Vec<GestaltReaction>,
     },
     ResolveNpcAction {
         expected_revision: u64,
