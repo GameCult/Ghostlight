@@ -1580,69 +1580,101 @@ impl WorldCompiler {
         }).collect::<Vec<_>>();
         let synthesis_schema = serde_json::to_value(schema_for!(StrategicDoctrineCatalog))?;
         let synthesis_prompt = format!(
-            "Synthesize one concise strategic_doctrine for every supplied institution. Doctrine is durable simulation state: state its interests, characteristic methods, and meaningful constraints or refusals when supported. Use only the supplied exact claims. Do not quote mechanically, invent current posture, territory, resources, powers, or branch events, and do not merge institutions. Return the same names exactly once and no others. Keep each doctrine under 600 characters.\nHORIZON:\n{}\nGROUNDED CLAIMS:\n{}",
+            "Synthesize one concise strategic_doctrine for every supplied institution. Doctrine is durable simulation state, not flavor prose. State only interests, characteristic methods, constraints, or refusals that follow directly from the supplied exact claims. Every clause, qualifier, motive, contrast, negation, and purpose must be entailed by a claim. Omit a dimension when the claims do not establish it. Prefer a narrow faithful paraphrase over a complete-sounding interpretation. Do not quote mechanically, invent current posture, territory, resources, powers, branch events, generic ideological contrasts, or unstated reasons, and do not merge institutions. Return the same names exactly once and no others. Keep each doctrine under 600 characters.\nHORIZON:\n{}\nGROUNDED CLAIMS:\n{}",
             start.when,
             serde_json::to_string(&evidence)?
         );
-        let (value, synthesis_receipt) = self
-            .structured(
-                "global_agency_doctrine_synthesis",
-                &format!("global-agency-doctrine:{}", start.when),
-                &synthesis_prompt,
-                synthesis_schema,
-                grounded
-                    .institutions
-                    .iter()
-                    .flat_map(|i| i.evidence_receipt_ids.clone())
-                    .collect(),
-            )
-            .await?;
-        let synthesized: StrategicDoctrineCatalog = serde_json::from_value(value)?;
-        validate_doctrine_catalog(&grounded.institutions, &synthesized)?;
-
         let verification_schema = serde_json::to_value(schema_for!(StrategicDoctrineVerification))?;
-        let verification_prompt = format!(
-            "Verify every strategic doctrine strictly against its exact supporting claims. supported is true only when every asserted interest, method, constraint, and refusal follows from those claims; reject invented current posture, territory, resources, capabilities, or branch events. Return one verdict for each name exactly once.\nCLAIMS:\n{}\nDOCTRINES:\n{}",
-            serde_json::to_string(&evidence)?,
-            serde_json::to_string(&synthesized)?
-        );
-        let (value, verification_receipt) = self
-            .structured(
-                "global_agency_doctrine_verification",
-                &format!("global-agency-doctrine-verification:{}", start.when),
-                &verification_prompt,
-                verification_schema,
-                grounded
-                    .institutions
-                    .iter()
-                    .flat_map(|i| i.evidence_receipt_ids.clone())
-                    .collect(),
-            )
-            .await?;
-        let verification: StrategicDoctrineVerification = serde_json::from_value(value)?;
-        validate_doctrine_verification(&grounded.institutions, &verification)?;
+        let source_receipt_ids = grounded
+            .institutions
+            .iter()
+            .flat_map(|i| i.evidence_receipt_ids.clone())
+            .collect::<Vec<_>>();
+        let mut stage_receipts = Vec::new();
+        let mut correction = String::new();
+        for attempt in 0..=1 {
+            let (value, mut synthesis_receipt) = self
+                .structured(
+                    "global_agency_doctrine_synthesis",
+                    &format!("global-agency-doctrine:{}", start.when),
+                    &format!("{synthesis_prompt}{correction}"),
+                    synthesis_schema.clone(),
+                    source_receipt_ids.clone(),
+                )
+                .await?;
+            let synthesized: StrategicDoctrineCatalog = serde_json::from_value(value)?;
+            if let Err(error) = validate_doctrine_catalog(&grounded.institutions, &synthesized) {
+                mark_semantic_invalid(&mut synthesis_receipt, &error);
+                stage_receipts.push(synthesis_receipt);
+                if attempt == 0 {
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS DOCTRINE CATALOG: {error}\nReturn one corrected complete catalog against the same GROUNDED CLAIMS."
+                    );
+                    continue;
+                }
+                return Err(anyhow!(
+                    "strategic doctrine synthesis failed local validation after one correction: {error}"
+                ));
+            }
+            stage_receipts.push(synthesis_receipt);
 
-        let doctrines = synthesized
-            .institutions
-            .into_iter()
-            .map(|i| (i.name.clone(), i.strategic_doctrine))
-            .collect::<BTreeMap<_, _>>();
-        let institutions = grounded
-            .institutions
-            .into_iter()
-            .map(|institution| CompiledRemoteInstitution {
-                strategic_doctrine: doctrines[&institution.name].clone(),
-                name: institution.name,
-                evidence_receipt_ids: institution.evidence_receipt_ids,
-            })
-            .collect();
-        Ok((
-            CompiledGlobalAgencyCatalog {
-                institutions,
-                gaps: grounded.gaps,
-            },
-            vec![synthesis_receipt, verification_receipt],
-        ))
+            let verification_prompt = format!(
+                "Verify every strategic doctrine strictly against its exact supporting claims. supported is true only when every clause, qualifier, motive, contrast, negation, purpose, interest, method, constraint, and refusal follows from those claims. Reject invented current posture, territory, resources, capabilities, branch events, ideological contrasts, and unstated reasons. Return one verdict for each name exactly once.\nCLAIMS:\n{}\nDOCTRINES:\n{}",
+                serde_json::to_string(&evidence)?,
+                serde_json::to_string(&synthesized)?
+            );
+            let (value, mut verification_receipt) = self
+                .structured(
+                    "global_agency_doctrine_verification",
+                    &format!("global-agency-doctrine-verification:{}", start.when),
+                    &verification_prompt,
+                    verification_schema.clone(),
+                    source_receipt_ids.clone(),
+                )
+                .await?;
+            let verification: StrategicDoctrineVerification = serde_json::from_value(value)?;
+            match validate_doctrine_verification(&grounded.institutions, &verification) {
+                Ok(()) => {
+                    stage_receipts.push(verification_receipt);
+                    let doctrines = synthesized
+                        .institutions
+                        .into_iter()
+                        .map(|i| (i.name.clone(), i.strategic_doctrine))
+                        .collect::<BTreeMap<_, _>>();
+                    let institutions = grounded
+                        .institutions
+                        .into_iter()
+                        .map(|institution| CompiledRemoteInstitution {
+                            strategic_doctrine: doctrines[&institution.name].clone(),
+                            name: institution.name,
+                            evidence_receipt_ids: institution.evidence_receipt_ids,
+                        })
+                        .collect();
+                    return Ok((
+                        CompiledGlobalAgencyCatalog {
+                            institutions,
+                            gaps: grounded.gaps,
+                        },
+                        stage_receipts,
+                    ));
+                }
+                Err(error) if attempt == 0 => {
+                    mark_semantic_invalid(&mut verification_receipt, &error);
+                    stage_receipts.push(verification_receipt);
+                    correction = format!(
+                        "\n\nTHE STRICT VERIFIER REJECTED THE PREVIOUS DOCTRINES: {error}\nRewrite the complete catalog against the same GROUNDED CLAIMS. Remove every unsupported clause, qualifier, motive, contrast, negation, purpose, or label identified by the verifier. Do not defend or reinterpret the rejected wording. Prefer the narrowest evidence-entailing paraphrase.\nPREVIOUS DOCTRINES:\n{}",
+                        serde_json::to_string(&synthesized)?
+                    );
+                }
+                Err(error) => {
+                    mark_semantic_invalid(&mut verification_receipt, &error);
+                    return Err(anyhow!(
+                        "strategic doctrine exceeded its evidence after one correction: {error}"
+                    ));
+                }
+            }
+        }
+        unreachable!()
     }
 
     async fn structured(
@@ -3516,6 +3548,12 @@ mod tests {
         saw_exact_correction: AtomicBool,
     }
 
+    struct CorrectionAwareDoctrineModel {
+        synthesis_calls: AtomicUsize,
+        saw_entailment_boundary: AtomicBool,
+        saw_verifier_correction: AtomicBool,
+    }
+
     struct PrivateBoundaryCompilerModel {
         shared_stage_was_private_free: AtomicBool,
         shared_stage_received_operational_playability: AtomicBool,
@@ -3749,6 +3787,62 @@ mod tests {
 
         fn provider(&self) -> &'static str {
             "correction-aware-role-fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for CorrectionAwareDoctrineModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "global_agency_doctrine_synthesis" => {
+                    self.saw_entailment_boundary.store(
+                        request
+                            .lived_stream
+                            .contains("Every clause, qualifier, motive, contrast, negation, and purpose must be entailed"),
+                        Ordering::SeqCst,
+                    );
+                    let call = self.synthesis_calls.fetch_add(1, Ordering::SeqCst);
+                    if call == 0 {
+                        return Ok(serde_json::json!({"institutions":[{
+                            "name":"Fixture Council",
+                            "strategic_doctrine":"Maintain the shared route as a civic duty rather than private profit."
+                        }]}).to_string());
+                    }
+                    self.saw_verifier_correction.store(
+                        request
+                            .lived_stream
+                            .contains("THE STRICT VERIFIER REJECTED THE PREVIOUS DOCTRINES")
+                            && request.lived_stream.contains("rather than private profit")
+                            && request
+                                .lived_stream
+                                .contains("Remove every unsupported clause"),
+                        Ordering::SeqCst,
+                    );
+                    Ok(serde_json::json!({"institutions":[{
+                        "name":"Fixture Council",
+                        "strategic_doctrine":"Maintain the shared route."
+                    }]})
+                    .to_string())
+                }
+                "global_agency_doctrine_verification" => {
+                    let rejected = request.lived_stream.contains("rather than private profit");
+                    Ok(serde_json::json!({"verdicts":[{
+                        "name":"Fixture Council",
+                        "supported":!rejected,
+                        "rationale":if rejected {
+                            "The private-profit contrast is absent from the exact claim."
+                        } else {
+                            "Every clause follows from the exact claim."
+                        }
+                    }]})
+                    .to_string())
+                }
+                _ => Err(anyhow!("unexpected doctrine correction stage")),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "correction-aware-doctrine-fixture"
         }
     }
 
@@ -4483,6 +4577,58 @@ mod tests {
         assert!(output.model_receipts[0].local_validation_error.is_some());
         assert!(output.model_receipts[1].local_validation_error.is_none());
         assert!(model.saw_exact_correction.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn doctrine_stage_rewrites_unsupported_interpretation_once() {
+        let model = Arc::new(CorrectionAwareDoctrineModel {
+            synthesis_calls: AtomicUsize::new(0),
+            saw_entailment_boundary: AtomicBool::new(false),
+            saw_verifier_correction: AtomicBool::new(false),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let start = CustomStart {
+            campaign_name: "Doctrine correction".into(),
+            who: "worker".into(),
+            where_: "yard".into(),
+            when: "fixture".into(),
+            goal: "keep the route open".into(),
+        };
+        let grounded = GroundedGlobalAgencyCatalog {
+            institutions: vec![GroundedRemoteInstitution {
+                name: "Fixture Council".into(),
+                supporting_claims: vec!["The Fixture Council maintains the shared route.".into()],
+                evidence_receipt_ids: vec!["receipt:fixture".into()],
+            }],
+            gaps: vec![],
+        };
+
+        let (catalog, receipts) = compiler
+            .synthesize_global_agency_doctrine(&start, grounded)
+            .await
+            .unwrap();
+
+        assert_eq!(catalog.institutions.len(), 1);
+        assert_eq!(
+            catalog.institutions[0].strategic_doctrine,
+            "Maintain the shared route."
+        );
+        assert_eq!(
+            receipts
+                .iter()
+                .map(|receipt| receipt.stage.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "global_agency_doctrine_synthesis",
+                "global_agency_doctrine_verification",
+                "global_agency_doctrine_synthesis",
+                "global_agency_doctrine_verification"
+            ]
+        );
+        assert!(receipts[1].local_validation_error.is_some());
+        assert!(receipts[3].local_validation_error.is_none());
+        assert!(model.saw_entailment_boundary.load(Ordering::SeqCst));
+        assert!(model.saw_verifier_correction.load(Ordering::SeqCst));
     }
 
     #[tokio::test]
