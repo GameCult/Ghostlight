@@ -173,6 +173,24 @@ struct CellAppraisalProposal {
     inactions: Vec<crate::domain::CellInaction>,
 }
 
+#[derive(Debug)]
+struct MissingExplicitCellDecision {
+    cell_id: String,
+    stage_receipts: Vec<crate::model::ModelStageReceipt>,
+}
+
+impl std::fmt::Display for MissingExplicitCellDecision {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "cell {} Persona supplied no explicit attributed action or inaction",
+            self.cell_id
+        )
+    }
+}
+
+impl std::error::Error for MissingExplicitCellDecision {}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct CellActionCandidate {
@@ -1103,6 +1121,28 @@ pub struct CellProjectionEngine {
 
 impl CellProjectionEngine {
     pub async fn execute(&self, slice: PermittedCellSlice) -> Result<CellTerminalBundle> {
+        match self.execute_once(slice.clone(), false).await {
+            Ok(bundle) => Ok(bundle),
+            Err(error) => {
+                let Some(omission) = error.downcast_ref::<MissingExplicitCellDecision>() else {
+                    return Err(error);
+                };
+                let mut prior_receipts = omission.stage_receipts.clone();
+                let mut bundle = self.execute_once(slice, true).await.context(
+                    "cell Persona supplied no explicit decision after one same-snapshot retry",
+                )?;
+                prior_receipts.append(&mut bundle.stage_receipts);
+                bundle.stage_receipts = prior_receipts;
+                Ok(bundle)
+            }
+        }
+    }
+
+    async fn execute_once(
+        &self,
+        slice: PermittedCellSlice,
+        require_explicit_decision: bool,
+    ) -> Result<CellTerminalBundle> {
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_projector")
             .await?;
@@ -1200,6 +1240,14 @@ impl CellProjectionEngine {
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_persona")
             .await?;
+        let persona_domain_guidance = if require_explicit_decision {
+            format!(
+                "{} Your previous response supplied no explicit strategic decision. Respond naturally again from this same lived moment, but make every voiced constituent end with either one concrete present-tense attempt or an explicit choice to hold or wait. Do not invent new perceptions, permissions, contacts, resources, or completed consequences.",
+                cell_persona_mode_guidance(&slice.mode)
+            )
+        } else {
+            cell_persona_mode_guidance(&slice.mode).to_owned()
+        };
         let persona = run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
@@ -1209,7 +1257,7 @@ impl CellProjectionEngine {
                 lived_stream: build_persona_prompt(&PersonaPrompt {
                     identity: &slice.cell_id,
                     lived_stream: &lived.text,
-                    domain_guidance: cell_persona_mode_guidance(&slice.mode),
+                    domain_guidance: &persona_domain_guidance,
                     word_budget: (160 + 30 * slice.constituents.len()).min(320),
                 }),
                 output_schema: None,
@@ -1276,6 +1324,12 @@ impl CellProjectionEngine {
                 .ok_or_else(|| anyhow!("cell interpreter produced no typed proposal"))
                 .and_then(|value| serde_json::from_value(value).map_err(Into::into));
             match proposal.and_then(|proposal: CellAppraisalProposal| {
+                if proposal.actions.is_empty() && proposal.inactions.is_empty() {
+                    return Err(anyhow::Error::new(MissingExplicitCellDecision {
+                        cell_id: slice.cell_id.clone(),
+                        stage_receipts: Vec::new(),
+                    }));
+                }
                 let appraisal = bind_cell_appraisal(&slice, proposal)?;
                 validate_cell_appraisal(&slice, &appraisal)?;
                 validate_active_decision_owners(&active_subject_ids, &appraisal)?;
@@ -1405,6 +1459,20 @@ impl CellProjectionEngine {
                         appraisal,
                         stage_receipts,
                     });
+                }
+                Err(error)
+                    if error
+                        .downcast_ref::<MissingExplicitCellDecision>()
+                        .is_some() =>
+                {
+                    interpreted.receipt.validation_result = "semantic_invalid".into();
+                    interpreted.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                    stage_receipts.push(interpreted.receipt);
+                    return Err(anyhow::Error::new(MissingExplicitCellDecision {
+                        cell_id: slice.cell_id.clone(),
+                        stage_receipts,
+                    }));
                 }
                 Err(error) if attempt == 0 => {
                     let rejected_appraisal = interpreted
@@ -3171,6 +3239,97 @@ mod tests {
             max_actions: 1,
             source_receipt_ids: vec![],
         }
+    }
+
+    struct MissingDecisionRetryModel {
+        persona_calls: AtomicUsize,
+        interpreter_calls: AtomicUsize,
+        saw_retry_guidance: AtomicBool,
+    }
+
+    #[async_trait]
+    impl ModelPort for MissingDecisionRetryModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "cell_projector" => Ok(serde_json::json!({
+                    "segments":[{
+                        "subject_id":"faction-06",
+                        "narrative":"The deadline is visible, but the institution has not yet chosen a new course."
+                    }]
+                })
+                .to_string()),
+                "cell_persona" => {
+                    let call = self.persona_calls.fetch_add(1, Ordering::SeqCst);
+                    if call == 0 {
+                        return Ok("Faction Six weighs the deadline and its existing posture.".into());
+                    }
+                    self.saw_retry_guidance.store(
+                        request
+                            .lived_stream
+                            .contains("previous response supplied no explicit strategic decision"),
+                        Ordering::SeqCst,
+                    );
+                    Ok("Faction Six explicitly chooses to hold its existing posture for this horizon.".into())
+                }
+                "cell_interpreter" => {
+                    let call = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
+                    if call == 0 {
+                        return Ok(serde_json::json!({
+                            "actions":[],
+                            "inactions":[]
+                        })
+                        .to_string());
+                    }
+                    Ok(serde_json::json!({
+                        "actions":[],
+                        "inactions":[{
+                            "subject_id":"faction-06",
+                            "reason":"Faction Six explicitly holds its existing posture for this horizon."
+                        }]
+                    })
+                    .to_string())
+                }
+                stage => Err(anyhow!("unexpected fixture stage {stage}")),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "missing-decision-retry-fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn missing_persona_decision_retries_the_lived_turn_not_the_interpreter_invention() {
+        let model = Arc::new(MissingDecisionRetryModel {
+            persona_calls: AtomicUsize::new(0),
+            interpreter_calls: AtomicUsize::new(0),
+            saw_retry_guidance: AtomicBool::new(false),
+        });
+        let engine = CellProjectionEngine {
+            model: model.clone(),
+            permit: Arc::new(AllowAllPermit),
+            projector_model: "flash".into(),
+            persona_model: "flash".into(),
+            interpreter_model: "flash".into(),
+            campaign_contract: None,
+            aggregate_boundaries: vec![],
+        };
+
+        let output = engine.execute(fixture_cell_slice()).await.unwrap();
+
+        assert_eq!(model.persona_calls.load(Ordering::SeqCst), 2);
+        assert_eq!(model.interpreter_calls.load(Ordering::SeqCst), 2);
+        assert!(model.saw_retry_guidance.load(Ordering::SeqCst));
+        assert!(output.appraisal.actions.is_empty());
+        assert_eq!(output.appraisal.inactions.len(), 1);
+        assert_eq!(output.appraisal.inactions[0].subject_id, "faction-06");
+        assert_eq!(output.stage_receipts.len(), 6);
+        assert!(
+            output
+                .stage_receipts
+                .iter()
+                .any(|receipt| receipt.validation_result == "semantic_invalid")
+        );
     }
 
     #[tokio::test]
