@@ -515,7 +515,7 @@ impl WorldCompiler {
             .transpose()?
             .unwrap_or_default();
         let base_prompt = format!(
-            "{shared_prefix}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -3395,6 +3395,7 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
 }
 
 fn validate_opening_playability(campaign: &Campaign) -> Result<()> {
+    validate_opening_topology(campaign)?;
     let player_location = &campaign.actors[&campaign.player_actor_id].location_id;
     if campaign.facts.values().any(|fact| {
         fact.scope != FactScope::CanonBaseline
@@ -3406,6 +3407,68 @@ fn validate_opening_playability(campaign: &Campaign) -> Result<()> {
             "the opening location must contain at least one branch_local or provisional_local discoverable fact; player location={player_location}"
         ))
     }
+}
+
+fn validate_opening_topology(campaign: &Campaign) -> Result<()> {
+    if campaign.locations.len() <= 1 {
+        return Ok(());
+    }
+    let player_location = campaign.actors[&campaign.player_actor_id]
+        .location_id
+        .as_str();
+    let reachable = |start: &str, reverse: bool| {
+        let mut visited = BTreeSet::new();
+        let mut pending = vec![start.to_owned()];
+        while let Some(current) = pending.pop() {
+            if !visited.insert(current.clone()) {
+                continue;
+            }
+            if reverse {
+                for (origin_id, location) in &campaign.locations {
+                    if location
+                        .routes
+                        .values()
+                        .any(|route| route.destination_id == current)
+                    {
+                        pending.push(origin_id.clone());
+                    }
+                }
+            } else if let Some(location) = campaign.locations.get(&current) {
+                pending.extend(
+                    location
+                        .routes
+                        .values()
+                        .map(|route| route.destination_id.clone()),
+                );
+            }
+        }
+        visited
+    };
+    let outward = reachable(player_location, false);
+    let unreachable = campaign
+        .locations
+        .keys()
+        .filter(|id| !outward.contains(*id))
+        .cloned()
+        .collect::<Vec<_>>();
+    if !unreachable.is_empty() {
+        return Err(anyhow!(
+            "opening topology has locations unreachable from player location {player_location}: {unreachable:?}; containment does not create implicit movement"
+        ));
+    }
+    let returning = reachable(player_location, true);
+    let trapping = campaign
+        .locations
+        .keys()
+        .filter(|id| !returning.contains(*id))
+        .cloned()
+        .collect::<Vec<_>>();
+    if !trapping.is_empty() {
+        return Err(anyhow!(
+            "opening topology has locations with no route chain back to player location {player_location}: {trapping:?}"
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -5137,6 +5200,57 @@ mod tests {
         );
         assert_eq!(merged.len(), 1);
         assert_eq!(merged[0].lane, EvidenceUseLane::DirectSeed);
+    }
+
+    #[test]
+    fn opening_topology_requires_explicit_outbound_and_return_routes() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let player_location = campaign.actors[&campaign.player_actor_id]
+            .location_id
+            .clone();
+        campaign.locations.insert(
+            "annex".into(),
+            Location {
+                id: "annex".into(),
+                name: "Annex".into(),
+                container_id: Some(player_location.clone()),
+                routes: BTreeMap::new(),
+                persistent_features: vec!["A visible annex".into()],
+            },
+        );
+
+        let disconnected = validate_opening_topology(&campaign).unwrap_err();
+        assert!(disconnected.to_string().contains("unreachable"));
+        assert!(
+            disconnected
+                .to_string()
+                .contains("containment does not create implicit movement")
+        );
+
+        campaign.locations[&player_location].routes.insert(
+            "route:annex".into(),
+            crate::domain::Route {
+                destination_id: "annex".into(),
+                distance: "near".into(),
+                travel_minutes: 5,
+            },
+        );
+        assert!(
+            validate_opening_topology(&campaign)
+                .unwrap_err()
+                .to_string()
+                .contains("no route chain back")
+        );
+
+        campaign.locations["annex"].routes.insert(
+            "route:return".into(),
+            crate::domain::Route {
+                destination_id: player_location,
+                distance: "near".into(),
+                travel_minutes: 5,
+            },
+        );
+        validate_opening_topology(&campaign).unwrap();
     }
 
     #[tokio::test]
