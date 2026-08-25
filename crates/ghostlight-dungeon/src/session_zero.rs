@@ -429,6 +429,12 @@ pub struct CharacterDraftPatch {
     pub equipment_add: Vec<String>,
     #[serde(default)]
     pub equipment_remove: Vec<String>,
+    #[serde(
+        default,
+        serialize_with = "serialize_relationship_patch_entries",
+        deserialize_with = "deserialize_relationship_patch_entries"
+    )]
+    #[schemars(with = "Vec<RelationshipPatchEntry>")]
     pub relationships: BTreeMap<String, String>,
     #[serde(default)]
     pub relationship_removals: Vec<String>,
@@ -441,6 +447,62 @@ pub struct CharacterDraftPatch {
     pub goals_add: Vec<String>,
     #[serde(default)]
     pub goals_remove: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct RelationshipPatchEntry {
+    pub subject: String,
+    pub relationship: String,
+}
+
+fn serialize_relationship_patch_entries<S>(
+    relationships: &BTreeMap<String, String>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    relationships
+        .iter()
+        .map(|(subject, relationship)| RelationshipPatchEntry {
+            subject: subject.clone(),
+            relationship: relationship.clone(),
+        })
+        .collect::<Vec<_>>()
+        .serialize(serializer)
+}
+
+fn deserialize_relationship_patch_entries<'de, D>(
+    deserializer: D,
+) -> std::result::Result<BTreeMap<String, String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum RelationshipPatchWire {
+        Entries(Vec<RelationshipPatchEntry>),
+        LegacyMap(BTreeMap<String, String>),
+    }
+
+    match RelationshipPatchWire::deserialize(deserializer)? {
+        RelationshipPatchWire::LegacyMap(relationships) => Ok(relationships),
+        RelationshipPatchWire::Entries(entries) => {
+            let mut relationships = BTreeMap::new();
+            for entry in entries {
+                if relationships
+                    .insert(entry.subject.clone(), entry.relationship)
+                    .is_some()
+                {
+                    return Err(serde::de::Error::custom(format!(
+                        "duplicate relationship patch subject {:?}",
+                        entry.subject
+                    )));
+                }
+            }
+            Ok(relationships)
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
@@ -4522,6 +4584,7 @@ fn validate_bounded(label: &str, value: &str, min: usize, max: usize) -> Result<
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model_connector::project_strict_responses_schema;
     use async_trait::async_trait;
     use tempfile::tempdir;
 
@@ -5644,6 +5707,10 @@ mod tests {
 
         assert_eq!(patch.name.as_deref(), Some("Ash"));
         assert_eq!(patch.capabilities_add, ["manifest reconciliation"]);
+        assert_eq!(
+            patch.relationships.get("Reed").map(String::as_str),
+            Some("Ash owes Reed their life.")
+        );
         assert!(patch.private_history_remove.is_empty());
         assert!(patch.secrets_remove.is_empty());
         assert!(patch.capabilities_remove.is_empty());
@@ -5653,6 +5720,71 @@ mod tests {
         assert!(patch.obligations_remove.is_empty());
         assert!(patch.vulnerabilities_remove.is_empty());
         assert!(patch.goals_remove.is_empty());
+    }
+
+    #[test]
+    fn character_relationship_patch_uses_strict_entry_array_and_reads_legacy_maps() {
+        let patch = CharacterDraftPatch {
+            relationships: BTreeMap::from([(
+                "Sera Dain".into(),
+                "Eda's former co-scribe and once-close friend.".into(),
+            )]),
+            ..Default::default()
+        };
+
+        let encoded = serde_json::to_value(&patch).unwrap();
+        assert_eq!(
+            encoded["relationships"],
+            serde_json::json!([{
+                "subject": "Sera Dain",
+                "relationship": "Eda's former co-scribe and once-close friend."
+            }])
+        );
+        let decoded: CharacterDraftPatch = serde_json::from_value(encoded).unwrap();
+        assert_eq!(decoded.relationships, patch.relationships);
+
+        let mut schema = inline_provider_schema_for::<CharacterDraftPatch>().unwrap();
+        project_strict_responses_schema(&mut schema).unwrap();
+        assert_eq!(schema["properties"]["relationships"]["type"], "array");
+        assert_eq!(
+            schema["properties"]["relationships"]["items"]["additionalProperties"],
+            false
+        );
+        assert_eq!(
+            schema["properties"]["relationships"]["items"]["required"],
+            serde_json::json!(["relationship", "subject"])
+        );
+    }
+
+    #[test]
+    fn character_relationship_patch_rejects_duplicate_subject_entries() {
+        let duplicate = serde_json::json!({
+            "name": null,
+            "public_premise": null,
+            "private_history_add": [],
+            "private_history_remove": [],
+            "secrets_add": [],
+            "secrets_remove": [],
+            "capabilities_add": [],
+            "capabilities_remove": [],
+            "knowledge_add": [],
+            "knowledge_remove": [],
+            "equipment_add": [],
+            "equipment_remove": [],
+            "relationships": [
+                {"subject":"Sera Dain","relationship":"friend"},
+                {"subject":"Sera Dain","relationship":"clerk"}
+            ],
+            "relationship_removals": [],
+            "obligations_add": [],
+            "obligations_remove": [],
+            "vulnerabilities_add": [],
+            "vulnerabilities_remove": [],
+            "goals_add": [],
+            "goals_remove": []
+        });
+
+        assert!(serde_json::from_value::<CharacterDraftPatch>(duplicate).is_err());
     }
 
     #[test]
