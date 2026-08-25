@@ -762,10 +762,11 @@ addressee must speak or select typed deliberate silence. The kernel lowers
 silence to a deterministic visible refusal, so no free-text gesture lane can
 claim an unassessed world effect.
 
-`ghostlight-campaign-inspect` is a read-only typed-store witness. It reports the
-latest strategic cover, attributed appraisals and inactions, activity outcomes,
-events, news, subject continuity, and model receipt/token metadata without
-dumping provider reasoning or raw private narrative streams.
+`ghostlight-campaign-inspect` is a read-only typed-store witness retained in the
+immutable hosted release. Campaign-store ACLs keep it operator-only. It reports
+the latest strategic cover, attributed appraisals and inactions, activity
+outcomes, events, news, subject continuity, and model receipt/token metadata
+without dumping provider reasoning or raw private narrative streams.
 
 `ghostlight-mesh-inspect` provides the same read-only operator projection from
 a copied derived `mesh.cc` snapshot. It never opens or copies the live campaign
