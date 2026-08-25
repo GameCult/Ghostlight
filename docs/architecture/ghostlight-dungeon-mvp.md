@@ -705,48 +705,53 @@ return catch-up makes an assessment stale, the typed `assessed` response owns
 the transient projection: it presents the replacement assessment and binds its
 Roll control to that assessment's current campaign revision.
 
-Informational attempts may reveal an existing `WorldFact`; they may not author
-one. `WorldFact` owns branch truth and the location boundaries at which a fact
-can be discovered. `ActorState.knowledge` owns only which exact statements that
-actor has learned. The compiler or an approval-gated region expansion must
-therefore establish a clue before a roll can expose it.
+Informational attempts have two distinct lanes. They may acquire or communicate
+an existing `WorldFact`, or they may admit one new bounded observation produced
+by direct local perception, measurement, inspection, or testing. `WorldFact`
+owns branch truth and discovery locations. `ActorState.knowledge` owns which
+exact statements that actor has learned. An observation is branch-local rather
+than Vault canon and becomes truth only through the confirmed outcome's atomic
+kernel commit.
 
 The assessor receives only facts already known by the acting actor or marked
 discoverable at that actor's current location. Every proposed knowledge
 addition must exactly match one of those statements. A fact known by the acting
 actor may be communicated to another present actor; a location-bound fact may
-be discovered only by the acting actor. Player attempts and NPC initiative use
-the same validator. The model schema enumerates each present recipient
-separately and gives that recipient only the exact new facts legal for that
-recipient; a generic actor-keyed string map is not an inference affordance. The
-kernel repeats the semantic check, atomically updates actor knowledge, and never
-creates a fact from model prose.
+be discovered only by the acting actor. The separate observation lane is
+structurally bound to that actor, at most two concise statements, and must copy
+the finding exposed in the visible outcome stake. Local and semantic validation
+require the declared means to support that exact current observation and reject
+remote events, hidden motives, unsupported identities, diagnoses beyond the
+effect ceiling, existing facts, and overlap with the acquisition lane. Player
+attempts and NPC initiative use the same validator. On a permitted outcome the
+kernel content-addresses the proposition, admits it as branch-local at the
+current location, and acquires it for the actor in the same mutation batch.
 
 This ownership makes the negative invariant structural: an invented protocol
-number, hidden culprit, remote event, or clue cannot become true because an
-assessor wrote it into a successful stake. Unsupported information causes one
-same-snapshot correction and then aborts without mutation. A vague promise such
-as “identify any faults” is not a valid informational outcome, and an unstated
-hidden finding cannot appear after the roll. Player-readable stakes still carry
-the exact declarative statement; fact IDs, keys, and slugs remain private typed
-references.
+number, hidden culprit, remote event, or lore claim cannot become true because
+an assessor wrote it into a successful stake. Unsupported information causes
+one same-snapshot correction and then aborts without mutation. A vague promise
+such as “identify any faults” is not a valid informational outcome, and an
+unstated hidden finding cannot appear after the roll. Player-readable stakes
+carry the exact declarative statement; fact IDs, keys, and slugs remain private
+typed references.
 
 Authority map:
 
 - Owner: `WorldFact` owns truth and discovery locations; `ActorState` owns
   learned access.
 - Inputs: approved compiler or region-expansion facts, current occupancy,
-  actor knowledge, and the attempted effect.
-- Output: an assessment whose information deltas are a subset of existing
-  accessible facts.
+  actor knowledge, exact means, intended effect, and outcome ceiling.
+- Output: an assessment whose information deltas are exact accessible facts or
+  bounded actor-local observations exposed verbatim in its stakes.
 - Derived state: the visible stake and story are projections of that exact
   assessment and committed revision.
-- Forbidden writers: Personas, Interpreters, assessors, and
-  `apply_world_effect` cannot create facts.
+- Forbidden writers: Personas, Interpreters, assessors, and projections may
+  propose observation text but cannot admit propositions or actor knowledge.
 - Shared path: player `Attempt` and `ResolveNpcAction` call the same fact-access
-  validator and atomic commit primitive.
-- Cut line: the former promotion of arbitrary knowledge prose into a new
-  branch-local `WorldFact` is deleted.
+  and observation validator and the same atomic commit primitive.
+- Cut line: arbitrary knowledge prose remains forbidden; only the explicit
+  bounded-observation lane may create a branch-local proposition.
 
 ### Actor and world action loop
 
@@ -769,6 +774,14 @@ actor still appraises the event. A direct addressee must emit speech or choose
 typed deliberate silence. The latter lowers to deterministic visible refusal;
 it is not a free-text effect lane. The complete reaction wave still validates
 and commits atomically.
+
+Actor Interpreter JSON is schema-bound so silent output cannot carry an
+identity adoption. Cross-field semantic failures—such as an adopted handle not
+appearing exactly in the actor's own speech—receive one corrected Interpreter
+pass against the same snapshot, lived stream, Persona output, and permissions.
+Both Interpreter receipts survive, with the rejected one marked
+`semantic_invalid`; a second failure aborts the complete reaction wave without
+private-state mutation.
 
 The primary player event commits before optional presence casting, reaction
 appraisal and initiative. A failure in those later stages is stored
