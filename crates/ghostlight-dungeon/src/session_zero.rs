@@ -2505,6 +2505,18 @@ struct PrivateRelationshipSubjectProjection {
     location_id: Option<String>,
     location_name: Option<String>,
     relationship: String,
+    counterpart_actor_state: Option<PrivateRelationshipActorStateProjection>,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct PrivateRelationshipActorStateProjection {
+    capabilities: BTreeSet<String>,
+    knowledge: BTreeSet<String>,
+    equipment: BTreeSet<String>,
+    conditions: BTreeSet<String>,
+    obligations: BTreeSet<String>,
+    relationships: BTreeMap<String, String>,
+    goals: Vec<String>,
 }
 
 fn private_relationship_subjects(
@@ -2520,20 +2532,30 @@ fn private_relationship_subjects(
         .relationships
         .iter()
         .map(|(target_id, description)| {
-            let (subject_kind, name, location_id) =
+            let (subject_kind, name, location_id, counterpart_actor_state) =
                 if let Some(target) = campaign.actors.get(target_id) {
                     (
                         "actor",
                         target.name.as_str(),
                         Some(target.location_id.as_str()),
+                        Some(PrivateRelationshipActorStateProjection {
+                            capabilities: target.capabilities.clone(),
+                            knowledge: target.knowledge.clone(),
+                            equipment: target.equipment.clone(),
+                            conditions: target.conditions.clone(),
+                            obligations: target.obligations.clone(),
+                            relationships: target.relationships.clone(),
+                            goals: target.goals.clone(),
+                        }),
                     )
                 } else if let Some(target) = campaign.institutions.get(target_id) {
-                    ("institution", target.name.as_str(), None)
+                    ("institution", target.name.as_str(), None, None)
                 } else if let Some(target) = campaign.gestalts.get(target_id) {
                     (
                         "gestalt",
                         target.name.as_str(),
                         Some(target.home_location_id.as_str()),
+                        None,
                     )
                 } else if let Some(member_id) = target_id.strip_prefix("member:") {
                     if let Some(target) = campaign.gestalt_members.get(member_id) {
@@ -2543,12 +2565,12 @@ fn private_relationship_subjects(
                                 .get(&target.gestalt_id)
                                 .map(|gestalt| gestalt.home_location_id.as_str())
                         });
-                        ("gestalt_member", target.name.as_str(), location_id)
+                        ("gestalt_member", target.name.as_str(), location_id, None)
                     } else {
-                        ("unknown", target_id.as_str(), None)
+                        ("unknown", target_id.as_str(), None, None)
                     }
                 } else {
-                    ("unknown", target_id.as_str(), None)
+                    ("unknown", target_id.as_str(), None, None)
                 };
             let location_name = location_id
                 .and_then(|id| campaign.locations.get(id))
@@ -2560,9 +2582,19 @@ fn private_relationship_subjects(
                 location_id: location_id.map(str::to_owned),
                 location_name: location_name.map(str::to_owned),
                 relationship: description.clone(),
+                counterpart_actor_state,
             }
         })
         .collect()
+}
+
+fn display_values<'a>(values: impl IntoIterator<Item = &'a String>) -> String {
+    let joined = values.into_iter().cloned().collect::<Vec<_>>().join(", ");
+    if joined.is_empty() {
+        "none".into()
+    } else {
+        joined
+    }
 }
 
 fn display_world_preview(
@@ -3133,9 +3165,38 @@ pub fn session_zero_surface(
                         .or(subject.location_id.as_deref())
                         .map(|value| format!(" · located at {value}"))
                         .unwrap_or_default();
+                    let actor_state = subject
+                        .counterpart_actor_state
+                        .as_ref()
+                        .map(|state| format!(
+                            "\nCounterpart-owned state:\nCapabilities: {}\nKnowledge: {}\nEquipment: {}\nConditions: {}\nObligations: {}\nRelationships: {}\nGoals: {}",
+                            display_values(&state.capabilities),
+                            display_values(&state.knowledge),
+                            display_values(&state.equipment),
+                            display_values(&state.conditions),
+                            display_values(&state.obligations),
+                            if state.relationships.is_empty() {
+                                "none".into()
+                            } else {
+                                state
+                                    .relationships
+                                    .iter()
+                                    .map(|(subject_id, description)| {
+                                        format!("{subject_id}: {description}")
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(", ")
+                            },
+                            display_values(&state.goals),
+                        ))
+                        .unwrap_or_default();
                     format!(
-                        "{} · {}{}\n{}",
-                        subject.name, subject.subject_kind, location, subject.relationship
+                        "{} · {}{}\n{}{}",
+                        subject.name,
+                        subject.subject_kind,
+                        location,
+                        subject.relationship,
+                        actor_state,
                     )
                 })
                 .collect::<Vec<_>>()
@@ -6359,6 +6420,16 @@ mod tests {
         let mut quartermaster = campaign.actors["player"].clone();
         quartermaster.id = "relationship-anchor:quartermaster".into();
         quartermaster.name = "convoy quartermaster".into();
+        quartermaster
+            .capabilities
+            .insert("convoy manifest custody".into());
+        quartermaster
+            .knowledge
+            .insert("the convoy departure window".into());
+        quartermaster.relationships.insert(
+            "faction-0000".into(),
+            "serves as the faction's convoy quartermaster".into(),
+        );
         campaign
             .actors
             .insert(quartermaster.id.clone(), quartermaster);
@@ -6396,6 +6467,17 @@ mod tests {
         assert_eq!(subjects[0].location_id.as_deref(), Some("center"));
         assert_eq!(subjects[0].location_name.as_deref(), Some("Center"));
         assert_eq!(subjects[0].relationship, "owes them a life-debt");
+        let counterpart = subjects[0].counterpart_actor_state.as_ref().unwrap();
+        assert!(counterpart.capabilities.contains("convoy manifest custody"));
+        assert!(
+            counterpart
+                .knowledge
+                .contains("the convoy departure window")
+        );
+        assert_eq!(
+            counterpart.relationships.get("faction-0000"),
+            Some(&"serves as the faction's convoy quartermaster".into())
+        );
         assert!(private_relationship_subjects(&preview, "not-the-player").is_empty());
 
         let mut draft = state();
@@ -6419,6 +6501,10 @@ mod tests {
         assert!(surface.contains("Institutions"));
         assert!(surface.contains("convoy quartermaster"));
         assert!(surface.contains("owes them a life-debt"));
+        assert!(surface.contains("Counterpart-owned state"));
+        assert!(surface.contains("convoy manifest custody"));
+        assert!(surface.contains("the convoy departure window"));
+        assert!(surface.contains("serves as the faction's convoy quartermaster"));
         assert!(!surface.contains("OPERATOR-ONLY-RESERVE"));
         assert!(!surface.contains("PRIVATE-INSTITUTION-GOAL"));
     }
