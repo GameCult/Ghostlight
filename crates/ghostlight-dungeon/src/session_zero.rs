@@ -430,7 +430,6 @@ pub struct CharacterDraftPatch {
     #[serde(default)]
     pub equipment_remove: Vec<String>,
     #[serde(
-        default,
         serialize_with = "serialize_relationship_patch_entries",
         deserialize_with = "deserialize_relationship_patch_entries"
     )]
