@@ -3838,9 +3838,12 @@ mod tests {
             fission["properties"]["child_partition_values"]["type"],
             "array"
         );
-        assert_eq!(
-            fission["properties"]["member_child_assignments"]["type"],
-            "array"
+        assert!(
+            fission["properties"]["member_child_assignments"]["anyOf"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|variant| variant["type"] == "array")
         );
         assert_eq!(
             fission["properties"]["resource_child_assignments"]["type"],
