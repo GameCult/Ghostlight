@@ -71,13 +71,22 @@ pub struct VaultManifest {
 pub struct Location {
     pub id: String,
     pub name: String,
+    #[schemars(
+        description = "Geometric containment only. This does not create an implicit movement edge."
+    )]
     pub container_id: Option<String>,
+    #[schemars(
+        description = "Explicit directed movement edges keyed by stable route ID. Containment never substitutes for a route; a playable opening must provide route chains from the player location to every supplied location and back."
+    )]
     pub routes: BTreeMap<String, Route>,
     pub persistent_features: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct Route {
+    #[schemars(
+        description = "Exact ID of another supplied location reached by this directed route."
+    )]
     pub destination_id: String,
     pub distance: String,
     #[schemars(range(min = 1))]

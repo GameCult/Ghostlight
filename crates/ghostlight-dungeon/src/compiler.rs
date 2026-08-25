@@ -556,7 +556,7 @@ impl WorldCompiler {
                     let previous_structure =
                         serde_json::to_string(&compiled_seed_structure(&seed))?;
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nPREVIOUS_CANDIDATE_STRUCTURE:\n{previous_structure}\nReturn a corrected complete candidate against the same START and EVIDENCE. Preserve valid detail, but make every reference use an ID declared by the corrected candidate."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nPREVIOUS_CANDIDATE_STRUCTURE:\n{previous_structure}\nReturn a corrected complete candidate against the same START and EVIDENCE. Preserve valid detail, but make every reference use an ID declared by the corrected candidate. ROUTE REPAIR REQUIREMENT: routes are directed movement authority and container_id is geometry only. The corrected candidate must contain an explicit bidirectional spanning route tree rooted at the player's location: every supplied location must have a directed route chain from the player and a directed route chain back. A physically navigable contained location should normally connect to its container in both directions; otherwise connect it through the nearest legitimate occupancy node. Each route map key is a stable route ID and each route value names an exact supplied destination_id, a distance, and positive travel_minutes. Before returning, internally trace player-to-location and location-to-player paths for every location. Do not emit the trace separately."
                     );
                 }
                 Err(error) => {
@@ -3934,7 +3934,13 @@ mod tests {
                     && request
                         .lived_stream
                         .contains("\"destination_id\":\"missing\"")
-                    && request.lived_stream.contains("\"id\":\"yard\""),
+                    && request.lived_stream.contains("\"id\":\"yard\"")
+                    && request
+                        .lived_stream
+                        .contains("explicit bidirectional spanning route tree")
+                    && request
+                        .lived_stream
+                        .contains("container_id is geometry only"),
                 Ordering::SeqCst,
             );
             Ok(output)
