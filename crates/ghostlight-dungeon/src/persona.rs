@@ -3496,7 +3496,7 @@ mod tests {
 
     #[test]
     fn empty_cell_appraisal_requires_exact_attributed_inaction() {
-        let slice = fixture_cell_slice();
+        let mut slice = fixture_cell_slice();
         let mut appraisal = bind_cell_appraisal(
             &slice,
             CellAppraisalProposal {
@@ -3539,6 +3539,7 @@ mod tests {
         );
 
         appraisal.inactions.clear();
+        slice.max_actions = 2;
         appraisal.actions.push(appraisal.actions[0].clone());
         assert!(
             validate_cell_appraisal(&slice, &appraisal)
