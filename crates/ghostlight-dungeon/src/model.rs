@@ -87,6 +87,22 @@ impl ModelStageReceipt {
             &self.receipt_hash
         }
     }
+
+    pub fn same_receipted_content(&self, other: &Self) -> bool {
+        self.storage_key() == other.storage_key()
+            && self.schema == other.schema
+            && self.provider == other.provider
+            && self.model == other.model
+            && self.stage == other.stage
+            && self.snapshot_binding == other.snapshot_binding
+            && self.request_hash == other.request_hash
+            && self.output_hash == other.output_hash
+            && self.source_receipt_ids == other.source_receipt_ids
+            && self.validation_result == other.validation_result
+            && self.local_validation_error == other.local_validation_error
+            && self.input_chars == other.input_chars
+            && self.output_chars == other.output_chars
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -381,6 +397,50 @@ fn nearest_rejected_object<'a>(
 mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    fn receipt_fixture() -> ModelStageReceipt {
+        ModelStageReceipt {
+            schema: "ghostlight.persona_stage_receipt.v1".into(),
+            receipt_hash: "sha256:receipt".into(),
+            provider: "fixture".into(),
+            model: "fixture-model".into(),
+            stage: "fixture-stage".into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            request_hash: "sha256:request".into(),
+            output_hash: "sha256:output".into(),
+            source_receipt_ids: vec!["receipt:source".into()],
+            latency_ms: 17,
+            validation_result: "valid".into(),
+            local_validation_error: None,
+            input_chars: 120,
+            output_chars: 42,
+            provider_attempts: vec![ModelProviderAttemptReceipt {
+                latency_ms: 17,
+                ..Default::default()
+            }],
+        }
+    }
+
+    #[test]
+    fn content_addressed_receipts_ignore_only_observational_attempt_telemetry() {
+        let original = receipt_fixture();
+        let mut repeated = original.clone();
+        repeated.latency_ms = 91;
+        repeated.provider_attempts = vec![ModelProviderAttemptReceipt {
+            provider_request_id: Some("retry-request".into()),
+            latency_ms: 91,
+            ..Default::default()
+        }];
+        assert!(original.same_receipted_content(&repeated));
+
+        let mut changed_output = repeated.clone();
+        changed_output.output_hash = "sha256:different".into();
+        assert!(!original.same_receipted_content(&changed_output));
+
+        let mut changed_semantics = repeated;
+        changed_semantics.validation_result = "semantic_invalid".into();
+        assert!(!original.same_receipted_content(&changed_semantics));
+    }
 
     struct InvalidThenValid {
         calls: AtomicUsize,

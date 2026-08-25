@@ -141,7 +141,7 @@ async fn main() -> anyhow::Result<()> {
         calls: calls.clone(),
     });
     let started = Instant::now();
-    let resolved = resolve_activity_outcomes(model.as_ref(), &campaign, &[proposal.clone()]).await;
+    let resolved = resolve_activity_outcomes(model.clone(), &campaign, &[proposal.clone()]).await;
     let private_calls = calls.lock().expect("outcome trace lock").clone();
     std::fs::write(
         result_root.join("private-model-calls.json"),

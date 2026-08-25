@@ -199,7 +199,7 @@ pub async fn propose_resolution_wave_with_policy(
             .await?;
     }
     let (activity_outcomes, outcome_stages) = resolve_activity_outcomes(
-        outcome_model.as_ref(),
+        outcome_model.clone(),
         campaign,
         &selection.activity_proposals,
     )

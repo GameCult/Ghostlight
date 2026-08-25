@@ -10,7 +10,11 @@ use anyhow::{Result, anyhow};
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
+use tokio::{sync::Semaphore, task::JoinSet};
 
 const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. Fields are conditionally required, not optional suggestions: no_material_change requires reason; resource_created and resource_consumed require owner_subject_id and resource; resource_transferred requires owner_subject_id, other_subject_id, and resource; gestalt_pressure requires owner_subject_id plus both pressure arrays; agency_relation_shift requires relation_id and strength_delta; member_memory requires member_id and memory; member_obligation requires member_id and obligation; member_relationship requires member_id, other_subject_id, and relationship_description; knowledge_learned requires owner_subject_id and fact_id. Every scalar field not named for the chosen effect_kind is omitted or null; irrelevant pressure arrays are omitted or empty. A non-neutral irrelevant field is invalid. pressure_additions and pressure_resolutions are arrays of plain strings, never objects. no_material_change uses an empty supporting_state_references array; every material effect cites the smallest causally decisive set of one to eight values copied literally and only from that action's allowed_state_references. A source_subject_id, target_subject_id, target_state subject_id, member_state_owner_id, owner_subject_id, other_subject_id, member_id, relation_id, or fact_id is not a supporting state reference unless that exact string also appears in allowed_state_references. For member_relationship, other_subject_id already identifies the target; do not repeat it as provenance. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable source-owned result, the resource field names that resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
 const OUTCOME_VERIFIER_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named verdicts—never verifications, outcomes, results, or resolutions. verdicts is an array with one item per supplied action_digest. Every item has exactly action_digest, result, and repair_guidance. Example: {"verdicts":[{"action_digest":"sha256:<copy exact supplied digest>","result":"match","repair_guidance":null}]}"#;
@@ -130,13 +134,62 @@ struct OutcomeVerifierVerdict {
 }
 
 pub async fn resolve_activity_outcomes(
-    model: &dyn ModelPort,
+    model: Arc<dyn ModelPort>,
     campaign: &Campaign,
     proposals: &[CellActionProposal],
 ) -> Result<(Vec<StrategicActivityOutcome>, Vec<ModelStageOutput>)> {
     if proposals.is_empty() {
         return Ok((Vec::new(), Vec::new()));
     }
+    let parallelism = usize::from(campaign.resolution_policy.provider_parallelism.max(1));
+    let permits = Arc::new(Semaphore::new(parallelism));
+    let campaign = Arc::new(campaign.clone());
+    let mut tasks = JoinSet::new();
+    for (index, proposal) in proposals.iter().cloned().enumerate() {
+        let model = model.clone();
+        let campaign = campaign.clone();
+        let permits = permits.clone();
+        tasks.spawn(async move {
+            let _permit = permits
+                .acquire_owned()
+                .await
+                .map_err(|_| anyhow!("strategic outcome concurrency gate closed"))?;
+            let resolved = resolve_activity_outcome(model.as_ref(), &campaign, &proposal).await?;
+            Ok::<_, anyhow::Error>((index, resolved))
+        });
+    }
+    let mut ordered = BTreeMap::new();
+    while let Some(task) = tasks.join_next().await {
+        let (index, resolved) =
+            task.map_err(|error| anyhow!("strategic outcome worker failed: {error}"))??;
+        if ordered.insert(index, resolved).is_some() {
+            return Err(anyhow!(
+                "strategic outcome worker returned a duplicate slot"
+            ));
+        }
+    }
+    if ordered.len() != proposals.len() {
+        return Err(anyhow!(
+            "strategic outcome workers returned {} slots for {} selected actions",
+            ordered.len(),
+            proposals.len()
+        ));
+    }
+    let mut outcomes = Vec::with_capacity(proposals.len());
+    let mut stages = Vec::new();
+    for (_, (mut action_outcomes, mut action_stages)) in ordered {
+        outcomes.append(&mut action_outcomes);
+        stages.append(&mut action_stages);
+    }
+    Ok((outcomes, stages))
+}
+
+async fn resolve_activity_outcome(
+    model: &dyn ModelPort,
+    campaign: &Campaign,
+    proposal: &CellActionProposal,
+) -> Result<(Vec<StrategicActivityOutcome>, Vec<ModelStageOutput>)> {
+    let proposals = std::slice::from_ref(proposal);
     let context = build_context(campaign, proposals)?;
     let digests = proposals
         .iter()
@@ -2074,6 +2127,48 @@ mod tests {
         requests: Mutex<Vec<ModelStageRequest>>,
     }
 
+    struct IsolatingOutcomeModel {
+        requests: Mutex<Vec<ModelStageRequest>>,
+    }
+
+    #[async_trait::async_trait]
+    impl ModelPort for IsolatingOutcomeModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            assert_eq!(request.stage, "strategic_outcome_resolver");
+            self.requests.lock().unwrap().push(request.clone());
+            let (_, payload) = request
+                .lived_stream
+                .rsplit_once("OUTCOME_CONTEXT:\n")
+                .ok_or_else(|| anyhow!("fixture request omitted outcome context"))?;
+            let context: serde_json::Value = serde_json::from_str(payload)?;
+            let actions = context["actions"]
+                .as_array()
+                .ok_or_else(|| anyhow!("fixture context omitted actions"))?;
+            if actions.len() != 1 {
+                return Err(anyhow!(
+                    "unrelated strategic actions shared one resolver context"
+                ));
+            }
+            let digest = actions[0]["action_digest"]
+                .as_str()
+                .ok_or_else(|| anyhow!("fixture action omitted digest"))?;
+            Ok(serde_json::json!({
+                "outcomes":[{
+                    "action_digest":digest,
+                    "band":"mixed",
+                    "effect_kind":"no_material_change",
+                    "supporting_state_references":[],
+                    "reason":"This exact attempt establishes no durable change."
+                }]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "isolating-outcome-model"
+        }
+    }
+
     #[async_trait::async_trait]
     impl ModelPort for RepeatingPressureModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
@@ -2651,12 +2746,12 @@ mod tests {
             location_ids: vec!["dock".into()],
         }];
         let digest = cell_action_digest(&action).unwrap();
-        let model = RepeatingPressureModel {
+        let model = Arc::new(RepeatingPressureModel {
             action_digest: digest,
             requests: Mutex::new(Vec::new()),
-        };
+        });
 
-        let (outcomes, stages) = resolve_activity_outcomes(&model, &value, &[action])
+        let (outcomes, stages) = resolve_activity_outcomes(model.clone(), &value, &[action])
             .await
             .unwrap();
 
@@ -2787,16 +2882,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resolver_batches_selected_attempts_under_one_digest_bound_stage() {
+    async fn resolver_keeps_each_selected_attempt_in_one_digest_bound_stage() {
         let value = campaign();
         let action = proposal();
         let digest = cell_action_digest(&action).unwrap();
-        let model = OutcomeFixtureModel {
+        let model = Arc::new(OutcomeFixtureModel {
             action_digest: digest.clone(),
             requests: Mutex::new(Vec::new()),
-        };
+        });
 
-        let (outcomes, stages) = resolve_activity_outcomes(&model, &value, &[action])
+        let (outcomes, stages) = resolve_activity_outcomes(model.clone(), &value, &[action])
             .await
             .unwrap();
 
@@ -2850,6 +2945,36 @@ mod tests {
                 &[digest]
             )
         );
+    }
+
+    #[tokio::test]
+    async fn resolver_never_shares_authority_context_between_selected_attempts() {
+        let value = campaign();
+        let first = proposal();
+        let mut second = proposal();
+        second.intent = "inspect the eastern causeway supports".into();
+        second.intended_effect = "establish whether the eastern supports remain sound".into();
+        let expected = vec![
+            cell_action_digest(&first).unwrap(),
+            cell_action_digest(&second).unwrap(),
+        ];
+        let model = Arc::new(IsolatingOutcomeModel {
+            requests: Mutex::new(Vec::new()),
+        });
+
+        let (outcomes, stages) = resolve_activity_outcomes(model.clone(), &value, &[first, second])
+            .await
+            .unwrap();
+
+        assert_eq!(
+            outcomes
+                .iter()
+                .map(|outcome| outcome.action_digest.clone())
+                .collect::<Vec<_>>(),
+            expected
+        );
+        assert_eq!(stages.len(), 2);
+        assert_eq!(model.requests.lock().unwrap().len(), 2);
     }
 
     #[test]
@@ -3028,12 +3153,12 @@ mod tests {
         let value = campaign();
         let action = proposal();
         let digest = cell_action_digest(&action).unwrap();
-        let model = CorrectingOutcomeModel {
+        let model = Arc::new(CorrectingOutcomeModel {
             action_digest: digest,
             resolver_calls: Mutex::new(0),
-        };
+        });
 
-        let (outcomes, stages) = resolve_activity_outcomes(&model, &value, &[action])
+        let (outcomes, stages) = resolve_activity_outcomes(model.clone(), &value, &[action])
             .await
             .unwrap();
 

@@ -5902,7 +5902,7 @@ async fn advance_one_strategic_tick(
                     "persona_stage_receipt.v1",
                     stage.receipt.storage_key(),
                 )? {
-                Some((_, existing)) if existing == stage.receipt => {}
+                Some((_, existing)) if existing.same_receipted_content(&stage.receipt) => {}
                 Some(_) => anyhow::bail!("strategic model receipt hash collision"),
                 None => {
                     runtime.store.insert(

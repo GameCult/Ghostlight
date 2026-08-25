@@ -1065,7 +1065,8 @@ impl WorldCompiler {
             "PRIVATE RELATIONSHIP ACTOR COMPILATION\nThis is a private branch-local stage. Synthesize exactly one ordinary actor candidate for every approved_private_subject in the supplied order. Copy each name exactly. Choose one exact location id from the supplied topology. The approved relationship descriptions are private, player-approved context: use them only to preserve facts explicitly owned by the counterpart, such as that person's role, affiliation, capabilities, knowledge, goals, obligations, or stated feelings. Do not infer that the counterpart knows the player's secrets or private history, and do not convert player-only interpretation into counterpart knowledge. When ownership is ambiguous, omit the fact and let the private approval preview expose the gap. Candidate relationships may name only exact actor, institution, or population IDs supplied in the public world context and should preserve an explicit affiliation or obligation; never invent a player ID or relationship-anchor ID. Return actor candidates only: no canonical IDs, narration, facts, evidence gaps, branch assumptions, agency profiles, or changes to the public world.\nCONTEXT:\n{}",
             serde_json::to_string(&private_context)?
         );
-        let schema = serde_json::to_value(schema_for!(PrivateRelationshipActorSet))?;
+        let mut schema = serde_json::to_value(schema_for!(PrivateRelationshipActorSet))?;
+        constrain_private_relationship_actor_schema(&mut schema, anchors, seed)?;
         let sources = receipt_ids(evidence_receipts);
         let mut receipts = Vec::new();
         let mut correction = String::new();
@@ -2433,6 +2434,59 @@ fn materialize_private_relationship_actors(
         });
     }
     Ok(actors)
+}
+
+fn constrain_private_relationship_actor_schema(
+    schema: &mut serde_json::Value,
+    anchors: &[RequiredRelationshipActor],
+    seed: &CompiledSeed,
+) -> Result<()> {
+    let actors = schema
+        .pointer_mut("/properties/actors")
+        .ok_or_else(|| anyhow!("private relationship actor schema has no actors property"))?;
+    actors["minItems"] = serde_json::json!(anchors.len());
+    actors["maxItems"] = serde_json::json!(anchors.len());
+
+    let candidate = schema
+        .pointer_mut("/$defs/PrivateRelationshipActorCandidate")
+        .ok_or_else(|| anyhow!("private relationship actor schema has no candidate definition"))?;
+    candidate["properties"]["name"] = serde_json::json!({
+        "type":"string",
+        "enum":anchors.iter().map(|anchor| anchor.name.clone()).collect::<Vec<_>>()
+    });
+    candidate["properties"]["location_id"] = serde_json::json!({
+        "type":"string",
+        "enum":seed.locations.iter().map(|location| location.id.clone()).collect::<Vec<_>>()
+    });
+
+    let allowed_relationship_subject_ids = seed
+        .actors
+        .iter()
+        .map(|actor| actor.id.clone())
+        .chain(
+            seed.institutions
+                .iter()
+                .map(|institution| institution.id.clone()),
+        )
+        .chain(seed.gestalts.iter().map(|gestalt| gestalt.id.clone()))
+        .collect::<Vec<_>>();
+    if allowed_relationship_subject_ids.is_empty() {
+        candidate["properties"]["relationships"] = serde_json::json!({
+            "type":"array",
+            "maxItems":0
+        });
+    } else {
+        let relationship = schema
+            .pointer_mut("/$defs/CompiledRelationship")
+            .ok_or_else(|| {
+                anyhow!("private relationship actor schema has no relationship definition")
+            })?;
+        relationship["properties"]["subject_id"] = serde_json::json!({
+            "type":"string",
+            "enum":allowed_relationship_subject_ids
+        });
+    }
+    Ok(())
 }
 
 fn validate_required_relationship_actors(
@@ -5192,6 +5246,59 @@ mod tests {
             goals: vec!["get the convoy supplied".into()],
             memories: vec![],
         }
+    }
+
+    #[test]
+    fn private_actor_schema_projects_exact_current_binding_authority() {
+        let seed = private_actor_test_seed();
+        let anchors = vec![RequiredRelationshipActor {
+            id: "relationship-anchor:quartermaster".into(),
+            name: "convoy quartermaster".into(),
+            approved_relationship_descriptions: vec!["trusted convoy contact".into()],
+        }];
+        let mut schema = serde_json::to_value(schema_for!(PrivateRelationshipActorSet)).unwrap();
+        constrain_private_relationship_actor_schema(&mut schema, &anchors, &seed).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let candidate = |name: &str, location_id: &str, relationships: serde_json::Value| {
+            serde_json::json!({
+                "actors":[{
+                    "name":name,
+                    "location_id":location_id,
+                    "capabilities":[],
+                    "knowledge":[],
+                    "equipment":[],
+                    "conditions":[],
+                    "obligations":[],
+                    "relationships":relationships,
+                    "goals":[],
+                    "memories":[]
+                }]
+            })
+        };
+
+        assert!(validator.is_valid(&candidate(
+            "convoy quartermaster",
+            "convoy-staging",
+            serde_json::json!([])
+        )));
+        assert!(!validator.is_valid(&candidate(
+            "renamed quartermaster",
+            "convoy-staging",
+            serde_json::json!([])
+        )));
+        assert!(!validator.is_valid(&candidate(
+            "convoy quartermaster",
+            "invented-location",
+            serde_json::json!([])
+        )));
+        assert!(!validator.is_valid(&candidate(
+            "convoy quartermaster",
+            "convoy-staging",
+            serde_json::json!([{
+                "subject_id":"invented-office",
+                "description":"invented affiliation"
+            }])
+        )));
     }
 
     #[test]
