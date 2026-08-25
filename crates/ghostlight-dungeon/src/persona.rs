@@ -515,8 +515,6 @@ fn actor_interpreter_guidance(slice: &PermittedActorSlice) -> String {
 fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> String {
     let identity = if slice.identity_experience.is_empty() {
         "no more specific self-identity than your exact actor identity".to_owned()
-    } else if error.to_string().contains("duplicate strategic actions") {
-        "The named subject may own exactly one strategic choice in this horizon. Merge all faithful chosen means into one action and use its orthogonal effect slots together; remove any separate alternative, deliberation, or unreachable choice rather than emitting a second action."
     } else {
         slice.identity_experience.join("; ")
     };
@@ -1844,6 +1842,8 @@ fn cell_correction_guidance(error: &anyhow::Error) -> &'static str {
         .contains("appears in both actions and inactions")
     {
         "The named subject already has a concrete chosen attempt in actions. Remove its inaction entry. Waiting for that attempt's result or declining some other option is not inaction. Do not change a faithful permitted action merely to preserve the duplicate inaction."
+    } else if error.to_string().contains("duplicate strategic actions") {
+        "The named subject may own exactly one strategic choice in this horizon. Merge all faithful chosen means into one action and use its orthogonal effect slots together; remove any separate alternative, deliberation, or unreachable choice rather than emitting a second action."
     } else {
         "A rejected action is forbidden unchanged: remove it or replace it with a different, faithful, permitted typed consequence. Do not repeat its subject, intended_effect, and typed effect together."
     }
