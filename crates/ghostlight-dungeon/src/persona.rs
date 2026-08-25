@@ -1583,6 +1583,10 @@ async fn run_cell_effect_verifier_wave(
     for (action_index, action) in actions.iter().enumerate() {
         let exact_subject_permission = cell_action_verifier_permission(slice, &action.subject_id)?;
         let verifier_context = serde_json::json!({
+            "effect_order_contract":{
+                "activity_effects":"unordered_atomic_set",
+                "cross_lane_order":"movement_or_migration_before_activity_at_destination"
+            },
             "local_attempt_contract":"A targetless local communicate at the source's exact current location faithfully records speech, an offer, a permission request, or a notice directed to an unnamed ordinary role. A targetless local obstruct there faithfully records attempted interference with unnamed infrastructure, terrain, traffic, or another local feature. Both record only the source's attempt—never a listener, reply, damage, disruption, acceptance, or outcome—and must not be rejected merely because target_subject_ids is empty.",
             "spatial_effect_contract":"A prepare, investigate, or other activity may include incidental walking, approaching, queuing, carrying, or repositioning around an unnamed local feature while the source remains inside the effect's supplied canonical location. The activity records the attempt and need not serialize every footstep. Reject omitted movement only when the Persona clearly commits the subject to a different supplied canonical location or population destination; local texture does not create topology or establish arrival.",
             "exact_subject_permission":exact_subject_permission,
@@ -1605,7 +1609,7 @@ async fn run_cell_effect_verifier_wave(
                 std::slice::from_ref(action),
             )?,
             lived_stream: format!(
-                "{CELL_EFFECT_VERIFIER_INSTRUCTIONS}\n\nCONTEXT:\n{}",
+                "{CELL_EFFECT_VERIFIER_INSTRUCTIONS}\n\nEFFECT ORDER CONTRACT: Ordering exists only across lanes: movement or migration precedes an activity performed at its destination. Distinct effects inside the activity lane are one unordered atomic set. Their serialized array order is not chronology and cannot support an effect_reversal verdict.\n\nCONTEXT:\n{}",
                 serde_json::to_string(&verifier_context)?
             ),
             output_schema: Some(verifier_schema.clone()),
@@ -4238,6 +4242,12 @@ mod tests {
                 )
                 .unwrap()
             );
+        }
+        for prompt in prompts.lock().unwrap().iter() {
+            assert!(prompt.contains(
+                "Distinct effects inside the activity lane are one unordered atomic set"
+            ));
+            assert!(prompt.contains("\"activity_effects\":\"unordered_atomic_set\""));
         }
         let prompts = prompts.lock().unwrap();
         assert_eq!(prompts.len(), 2);
