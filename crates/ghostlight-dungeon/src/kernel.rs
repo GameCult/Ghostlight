@@ -975,7 +975,7 @@ fn execute(
                     .as_ref()
                     .map(crate::outcome::plan_activity_digests)
                     .unwrap_or_default();
-                let outcome_stage_count = usize::from(!outcome_digests.is_empty());
+                let outcome_stage_count = outcome_digests.len();
                 if unique_hashes.len() != wave.model_receipt_hashes.len()
                     || wave.model_receipt_hashes.len()
                         < wave
@@ -1056,13 +1056,7 @@ fn execute(
                         }
                     }
                 }
-                if !outcome_digests.is_empty() {
-                    let binding = crate::outcome::activity_outcome_binding(
-                        campaign.id,
-                        campaign.revision,
-                        campaign.resolution_policy.resolution_epoch,
-                        &outcome_digests,
-                    );
+                for binding in expected_activity_outcome_bindings(&campaign, &outcome_digests) {
                     if !stage_bindings.contains(&("strategic_outcome_resolver".into(), binding)) {
                         return Err(KernelError::Invalid(
                             "resolution wave lacks an activity-bound strategic outcome receipt"
@@ -1652,6 +1646,23 @@ fn execute(
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
     }
+}
+
+fn expected_activity_outcome_bindings(
+    campaign: &Campaign,
+    action_digests: &[String],
+) -> Vec<String> {
+    action_digests
+        .iter()
+        .map(|digest| {
+            crate::outcome::activity_outcome_binding(
+                campaign.id,
+                campaign.revision,
+                campaign.resolution_policy.resolution_epoch,
+                std::slice::from_ref(digest),
+            )
+        })
+        .collect()
 }
 
 fn validate_intent_text(intent: &ActionIntent) -> Result<(), KernelError> {
@@ -7622,8 +7633,44 @@ mod tests {
         assert_eq!(stored.world_time, seed.world_time);
     }
 
+    #[test]
+    fn activity_outcome_receipts_bind_each_selected_action_independently() {
+        let value = hierarchical_refugee_campaign();
+        let first = format!("sha256:{}", "1".repeat(64));
+        let second = format!("sha256:{}", "2".repeat(64));
+        let bindings = expected_activity_outcome_bindings(&value, &[first.clone(), second.clone()]);
+
+        assert_eq!(bindings.len(), 2);
+        assert_eq!(
+            bindings[0],
+            crate::outcome::activity_outcome_binding(
+                value.id,
+                value.revision,
+                value.resolution_policy.resolution_epoch,
+                std::slice::from_ref(&first),
+            )
+        );
+        assert_eq!(
+            bindings[1],
+            crate::outcome::activity_outcome_binding(
+                value.id,
+                value.revision,
+                value.resolution_policy.resolution_epoch,
+                std::slice::from_ref(&second),
+            )
+        );
+        assert!(
+            !bindings.contains(&crate::outcome::activity_outcome_binding(
+                value.id,
+                value.revision,
+                value.resolution_policy.resolution_epoch,
+                &[first, second],
+            ))
+        );
+    }
+
     #[tokio::test]
-    async fn activity_outcome_receipt_must_bind_the_exact_selected_digest_set() {
+    async fn activity_outcome_receipt_must_bind_the_exact_selected_action() {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let kernel = WorldKernel::start(store.clone());
