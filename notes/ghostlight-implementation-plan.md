@@ -45,6 +45,11 @@ SessionZeroKernel retains the exact negotiated draft, returns to `drafting`,
 records one stable resolved material blocker, and publishes no preview, branch
 assumption, world digest, or campaign. After retrieval recovers, a retry uses
 the same compilation path; the browser and model cannot supply substitute lore.
+Strict model output schemas now use explicit record arrays for generated routes,
+relationships, agency facets, expansion edges, fission assignments, and demand
+weights, then lower them locally into canonical maps. This closes a provider-
+dialect fault that had silently converted every open dynamic map into an empty
+closed object while the prompt asked for non-empty topology or agency state.
 
 The current interface cut makes that Eve publication the browser's actual
 product boundary. `ghostlight.play` is one stable actor-filtered surface across
@@ -80,10 +85,20 @@ exact permissions; deterministic cell bindings are attached by the runtime.
 Remote agency compilation is a separate non-causal Flash pipeline: extraction
 proposes exact institution-specific claims, local code binds them to witnesses,
 and only grounded candidates receive synthesized strategic doctrine. A separate
-semantic verifier must accept every doctrine against those claims before it can
-become a coarse goal. Rejected candidates become coverage gaps, and deterministic
-remote profiles keep unknown facets unknown. The Pro
+semantic verifier must accept each doctrine against those claims before it can
+become a coarse goal. Structurally malformed verification still aborts after
+one correction. A well-formed semantic rejection receives one synthesis retry;
+if the same institution remains unsupported, only that candidate becomes an
+explicit coverage gap while the rest of the grounded catalog proceeds.
+Deterministic remote profiles keep unknown facets unknown. The Pro
 agency stage no longer spends output tokens restating remote profiles.
+
+Kalsa is the next fantasy compilation target. Its Obsidian-compatible repository
+already separates player-safe `Public` lore from GM-only `Spoilers`, but it is
+not a live Ghostlight entitlement or VoidBot index yet. The next Vault cut must
+make Vault selection, import/sync provenance, authority lanes, spoiler policy,
+and exact receipt filtering one typed provider path. Do not bolt Kalsa onto the
+read-only Aetheria recovery index or create a second Ghostlight semantic index.
 
 Current Idunn, Odin, Heimdall, and Epiphany release identity is operational
 truth owned by `gamecult-ops`; rehydrate there before touching the host.
@@ -205,9 +220,13 @@ leak. It used 90,030 tokens at a 76.3% prompt-cache-hit ratio; the retained
 invalid receipts expose one repeated institution posture and one repeated
 pressure without letting either mutate the world.
 
-The next engineering gate is growing the agency corpus beyond its 36 candidate
-cases without cosmetic reskins and removing the remaining legacy model effect
-schemas. Then resume the 20-plus-power live Aetheria skeleton across budgets
+The grounded Mars/Zhestokost compile now retains an approval preview with four
+strongly connected locations and no First Exodus borrowing. The next gate is an
+explicit host decision on its material branch assumptions; after publication,
+inspect the canonical agency profiles and first cover directly. Then grow the
+agency corpus beyond its 36 candidate
+cases without cosmetic reskins and remove the remaining legacy model effect
+schemas. Resume the 20-plus-power live Aetheria skeleton across budgets
 `1`, `4`, `8`, and `32`, including nested refugee dispersal and later
 rematerialization. The large-document RUDP workstream is closed by the green
 five-runtime unit/interop/impairment run, Ghostlight's locked Linux build, and

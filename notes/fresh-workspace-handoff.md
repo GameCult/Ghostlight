@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-08-24
+Updated: 2026-08-25
 
 This is the compact re-entry packet. It records current authority, deployed
 truth, proof, and the next decision. Git history owns chronology; the system map
@@ -96,13 +96,13 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `44eec9d654ffbcea253b69ebfd2a0421d7614b66`
+  `bd4758894c1f81df13a048fa82ca4511fe6d4245`
 - Executable SHA-256:
-  `7aaf73d8947a9b2ec590a343a5098a6147b3aeeb1586fa51610951dd8ab6cbe4`
+  `0fb4e27c56a1d331d77335ce959ed5937040636da081e4c016602bc073a8c3de`
 - Native client SHA-256:
-  `7f1c7c75e955a11b188cf7132bdb0def49af095d6f1d28a23a4008656db62600`
+  `13ddda694161be9a81b914421b54a3405027f6c389f34080dee95f1acbf1b07d`
 - Artifact SHA-256:
-  `sha256-38eb2aa192980636a6397ce6e541068cfc525e0a96f40ba3277559960d346d89`
+  `sha256-84893208abc846ece10f1fb2c4748a0d1ce60b77e4951c30cffb544825193466`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -111,7 +111,9 @@ Do not start both writers.
 - Vault retrieval: local VoidBot at `127.0.0.1:17875/mcp`
 - Stored state at the last witness: nine campaigns and three Session Zero drafts
 - Model connector release:
-  `f9cfa355051ef91d0e7f095b2df2a69fe79f8a7c`; provider `codex-connector`,
+  `80de3acc18e058f649c3b25ce617f8869f038670`; binary SHA-256
+  `e8a909121e6bba56dfa4ebd4dec54b05ff8f463972118233556fb5db19858225`;
+  provider `codex-connector`,
   physical fast/capable model `gpt-5.4`. This is the independent
   `codex-connector.service`; Epiphany is only another consumer.
 - Access witness: anonymous Eve gate 200; canonical `heimdall.auth.begin`
@@ -168,12 +170,12 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `44eec9d…`; 306 locked Linux tests and the
+- Idunn admitted exact release `bd47588…`; 312 locked Linux tests and the
   immutable release build completed before atomic activation. Typed health,
   manifest, embedded source, executable and native-client hashes, provider
   readiness, nine campaigns, three Session Zero drafts, and zero daemon
   restarts agree. `codex-connector.service` remained independently healthy at
-  `f9cfa355…` throughout both the rejected test build and successful deploy.
+  `80de3ac…` throughout the successful deploy.
 - Repeated native authentication exposed a client-side custody bug: a second
   begin replaced the only pending handle after Discord had completed it. The
   live client now refuses a second begin, clears terminal owned attempts, and
@@ -341,16 +343,60 @@ invent the missing findings.
 Acceptance witnesses live under `F:\GameCult\GhostlightDungeon\acceptance`.
 Operational release and rollback truth remains in `gamecult-ops`.
 
+### 2026-08-25 retrieval and compiler pressure
+
+Nightwing is reachable again at `192.168.178.21` and WireGuard
+`10.77.0.3`; Ollama serves `qwen3-embedding:0.6b` to Yggdrasil. The real
+VoidBot MCP path at `127.0.0.1:17875/mcp` returned source witnesses including
+the richer Corvid sung-name canon. The stale steering claim that Nightwing and
+Vault retrieval are absent is retired.
+
+Session Zero `e7f2f947-25fa-4e1b-82e3-4a3e07dc4497` remains unpublished at
+revision 55 with its Mars/Zhestokost contract and private poem-length Corvid
+identity intact. The retained approval preview digest is
+`sha256:01f07d0f5bc453151743dab77821d64a28d0505e82bd905aa335d45525e51d83`.
+It has four strongly connected locations, three local actors, one dock-shift
+Gestalt, two clocks, grounded local institutions, and explicit branch-local
+gaps. Exact preview search found no First Exodus, Blackbox Aviary, Kesh, or
+Maela Voss borrowing. No campaign state has been published.
+
+The root cause was at the strict model boundary: open `BTreeMap` schemas were
+closed into objects that legally permitted no keys. Prompts asked for routes,
+relationships, facets, and assignments while the provider contract required
+them to be empty. Model-facing compiler records now carry explicit route IDs,
+relationship subject IDs, fixed agency axes, fission assignments, expansion
+edges, and demand weights; local validation lowers them into unchanged
+canonical maps. The topology validator still requires every supplied location
+to be reachable from the player and back; containment remains geometry, never
+movement authority. CodexConnector change
+`b6b5102cb96e919bc30664ecad9b4701d8207e35`, inherited by live release
+`80de3acc18e058f649c3b25ce617f8869f038670`, also gives streamed responses the
+full body deadline instead of accidentally capping them at the header timeout.
+
+The first repaired-topology retry reached remote-agency doctrine verification.
+One Cognitum summary still overclaimed its exact source after correction, and
+the old path aborted the entire seed. That contradicted catalog authority:
+remote candidates are optional bounded strategic coverage, not local-world
+admission owners. A well-formed final semantic rejection now omits only that
+institution, emits an explicit evidence gap, and retains the exact rationale
+privately. Malformed or incomplete verifier output still aborts without
+mutation.
+
+`F:\Projects\Kalsa` is a purpose-built fantasy Vault candidate with player-safe
+`Public` lore and GM-only `Spoilers`. It is not indexed or selectable yet. The
+next Vault implementation must preserve those lanes through a typed manifest,
+Git/Obsidian sync, retrieval, exact evidence receipts, and player projection;
+do not mix Kalsa into the read-only Aetheria recovery index.
+
 ## Next action
 
-1. Restore Nightwing's WireGuard/Ollama availability at `10.77.0.3:11434`.
-   The last Yggdrasil witness showed no Nightwing handshake for roughly five
-   hours; Starfire still handshook, but neither Starfire nor Raven exposed an
-   alternate Ollama or SSH endpoint.
-2. Retry Session Zero `e7f2f947-25fa-4e1b-82e3-4a3e07dc4497` from revision
-   36. The exact negotiated Mars/Zhestokost draft is intact. A healthy Vault
-   must yield a grounded preview or explicit lore gaps without First Exodus
-   cast, geography, or incidents.
+1. Have the host review the exact revision-55 Mars preview and its material
+   branch assumptions. Do not approve or publish digest
+   `sha256:01f07d0f5bc453151743dab77821d64a28d0505e82bd905aa335d45525e51d83`
+   without that human decision.
+2. After publication, audit the compiled agency skeleton and first resolution
+   demand to prove all six axes survive the strict provider schema and every
+   active subject has exactly one cell.
 3. Resume away-time strategic activity and character-accessible news pressure
    through the authenticated native CultMesh client. Prove no player puppeting
    and no inaccessible remote-information leakage.
@@ -360,11 +406,13 @@ Operational release and rollback truth remains in `gamecult-ops`.
 5. Expand and review the agency corpus from its current 36 candidate cases
    toward 300 behaviorally distinct cases, and remove remaining legacy model
    effect schemas.
-6. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
+6. Implement selectable Vault manifests and use Kalsa as the first fantasy
+   import canary with separate Public and Spoilers evidence lanes.
+7. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
-7. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
+8. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
    unanimous-approval, unanimous-time/travel, stale-command, and restart smoke.
-8. Continue human pressure on multiresolution Gestalt agency: meaningful
+9. Continue human pressure on multiresolution Gestalt agency: meaningful
    background surprises, exact attributed rival activity inside arenas,
    information boundaries, nested fission/folding, migration, and return
    encounters.

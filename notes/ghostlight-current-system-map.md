@@ -797,8 +797,13 @@ witness. Only the grounded candidates, capped at 32, enter a separate Flash
 synthesis stage. It writes concise strategic doctrine from those claims; an
 independent verifier rejects unsupported doctrine.
 Unsupported entries become summarized approval gaps and private receipt detail;
-they do not become canonical institutions or canon-candidate records. Admitted
-remote institutions receive deterministic coarse profiles with distinct
+they do not become canonical institutions or canon-candidate records.
+Verification must still cover every grounded institution exactly once; a
+malformed or incomplete verdict retries once and then aborts. After one faithful
+synthesis correction, an individually rejected doctrine removes only that
+remote institution, adds a player-reviewable coverage gap, and retains the
+semantic rationale in the private stage receipt. Admitted remote institutions
+receive deterministic coarse profiles with distinct
 authority and explicit unknown facets. The Pro agency stage profiles only local
 actors, populations, and institutions where semantic subdivision is useful.
 The model schema permits a bounded pool of 64 candidates so provider overage
@@ -824,6 +829,26 @@ so a malformed or stale classifier output cannot smuggle a story cast into the
 world seed. The live AetheriaLore retrieval archive is correspondingly bounded
 to `Aetheria/Worldbuilding/`; durable facts discovered through fiction must be
 promoted into Worldbuilding before they become reusable campaign canon.
+
+Strict provider schemas do not carry canonical dynamic maps directly. Compiler
+routes and relationships cross the model boundary as explicit ID-bearing
+records, then local validation rejects empty or duplicate IDs and lowers them
+once into canonical maps. The same cut applies to fixed six-axis agency facets,
+destination-expansion routes, population-fission assignments, and strategic
+resolution-demand weights. This preserves semantic keys under providers whose
+strict object dialect forbids open-ended `additionalProperties`; an empty closed
+object is never accepted as a substitute for route, relationship, assignment,
+or facet authority. Canonical campaign and resolution documents retain their
+map-shaped storage contracts.
+
+`F:\Projects\Kalsa` is the next bundled fantasy Vault candidate. Its `Public`
+tree is player-safe world knowledge and its `Spoilers` tree is GM-only canon;
+workshop material is non-canonical. Kalsa is not yet indexed by the live
+read-only VoidBot recovery body and Ghostlight still routes compilation through
+the Aetheria adapter. Admitting it requires a selectable Vault manifest plus
+source-lane filtering at retrieval and receipt projection. It must not be
+copied into the recovery index as an untyped corpus or allowed to leak spoiler
+evidence into player-facing surfaces.
 
 Session Zero compilation, expansion, and fission follow the same projection
 rule. Review projections expose topology, pressures, source-use coverage, gaps,
