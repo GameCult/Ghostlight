@@ -96,13 +96,13 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `bd4758894c1f81df13a048fa82ca4511fe6d4245`
+  `e89db8bcadcd6e32af8b0349a99f45777c031536`
 - Executable SHA-256:
-  `0fb4e27c56a1d331d77335ce959ed5937040636da081e4c016602bc073a8c3de`
+  `eb79caa884ac324a5ac784fd872f785debe6c44cacea361539f0d8307a2bc29f`
 - Native client SHA-256:
-  `13ddda694161be9a81b914421b54a3405027f6c389f34080dee95f1acbf1b07d`
+  `8be63daa65683e01561963d18a3303b998913b1c4b98b53fea31c9b4c663288b`
 - Artifact SHA-256:
-  `sha256-84893208abc846ece10f1fb2c4748a0d1ce60b77e4951c30cffb544825193466`
+  `sha256-9f526356193458aad58ad92121cccaba337dd9838ebbf766490bdccfc15eba8d`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
@@ -170,7 +170,7 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `bd47588…`; 312 locked Linux tests and the
+- Idunn admitted exact release `e89db8b…`; 313 locked Linux tests and the
   immutable release build completed before atomic activation. Typed health,
   manifest, embedded source, executable and native-client hashes, provider
   readiness, nine campaigns, three Session Zero drafts, and zero daemon
@@ -352,13 +352,21 @@ the richer Corvid sung-name canon. The stale steering claim that Nightwing and
 Vault retrieval are absent is retired.
 
 Session Zero `e7f2f947-25fa-4e1b-82e3-4a3e07dc4497` remains unpublished at
-revision 55 with its Mars/Zhestokost contract and private poem-length Corvid
-identity intact. The retained approval preview digest is
-`sha256:01f07d0f5bc453151743dab77821d64a28d0505e82bd905aa335d45525e51d83`.
-It has four strongly connected locations, three local actors, one dock-shift
-Gestalt, two clocks, grounded local institutions, and explicit branch-local
-gaps. Exact preview search found no First Exodus, Blackbox Aviary, Kesh, or
-Maela Voss borrowing. No campaign state has been published.
+revision 60 with its Mars/Zhestokost contract and private poem-length Corvid
+identity intact. The obsolete revision-55 preview was discarded through the
+typed `SessionZeroKernel` command path before recompilation. The replacement
+approval preview digest is
+`sha256:6c79562d9a1399a3c9f63940c1c1968caa3a0d3644fe453aac6ab18babceb41c`.
+It has four locations joined by an explicit complete directed route graph,
+three fresh local actors, one terminal-yard Gestalt, three clocks, three local
+institutions, and nine remote institutions including Pan-Solar Consortium.
+Local terminal geometry and institutional texture are explicit branch
+assumptions. Every admitted remote power has a concise approval-visible
+campaign-local doctrine. Exact preview search found no First Exodus, Blackbox
+Aviary, Kesh, or Maela Voss borrowing. The first live compile attempt timed out
+at the `world_compile` stage after 120 seconds with 26,796 input characters;
+the same-snapshot retry succeeded without partial publication. No player has
+approved the new digest and no campaign state has been published.
 
 The root cause was at the strict model boundary: open `BTreeMap` schemas were
 closed into objects that legally permitted no keys. Prompts asked for routes,
@@ -391,9 +399,9 @@ do not mix Kalsa into the read-only Aetheria recovery index.
 
 ## Next action
 
-1. Have the host review the exact revision-55 Mars preview and its material
+1. Have the host review the exact revision-60 Mars preview and its material
    branch assumptions. Do not approve or publish digest
-   `sha256:01f07d0f5bc453151743dab77821d64a28d0505e82bd905aa335d45525e51d83`
+   `sha256:6c79562d9a1399a3c9f63940c1c1968caa3a0d3644fe453aac6ab18babceb41c`
    without that human decision.
 2. After publication, audit the compiled agency skeleton and first resolution
    demand to prove all six axes survive the strict provider schema and every
