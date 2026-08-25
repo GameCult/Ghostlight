@@ -1,9 +1,9 @@
 use crate::{
     domain::{
-        ActorState, AgencyAxis, AgencyRelation, AgencyRelationKind, AgencySubjectKind,
-        BranchOrigin, Campaign, EvidenceCoverage, EvidenceUseLane, FactScope, GestaltMemberDelta,
-        GestaltPersonaState, InstitutionState, Location, Route, VaultEvidenceReceipt, WorldClock,
-        WorldCompilePreview, WorldFact,
+        ActorState, AgencyAxis, AgencyProfile, AgencyRelation, AgencyRelationKind,
+        AgencySubjectKind, BranchOrigin, Campaign, EvidenceCoverage, EvidenceUseLane, FactScope,
+        GestaltMemberDelta, GestaltPersonaState, InstitutionState, Location, Route,
+        VaultEvidenceReceipt, WorldClock, WorldCompilePreview, WorldFact,
     },
     model::{
         ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage,
