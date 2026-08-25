@@ -2,7 +2,7 @@ use crate::{
     domain::{
         ActorState, AgencyAxis, AgencyRelation, AgencyRelationKind, AgencySubjectKind,
         BranchOrigin, Campaign, EvidenceCoverage, EvidenceUseLane, FactScope, GestaltMemberDelta,
-        GestaltPersonaState, InstitutionState, Location, VaultEvidenceReceipt, WorldClock,
+        GestaltPersonaState, InstitutionState, Location, Route, VaultEvidenceReceipt, WorldClock,
         WorldCompilePreview, WorldFact,
     },
     model::{
@@ -132,25 +132,218 @@ struct EvidenceUsePlan {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledRelationship {
+    subject_id: String,
+    description: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledActorState {
+    id: String,
+    name: String,
+    location_id: String,
+    capabilities: BTreeSet<String>,
+    knowledge: BTreeSet<String>,
+    equipment: BTreeSet<String>,
+    conditions: BTreeSet<String>,
+    obligations: BTreeSet<String>,
+    relationships: Vec<CompiledRelationship>,
+    goals: Vec<String>,
+    #[serde(default)]
+    memories: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledRoute {
+    route_id: String,
+    destination_id: String,
+    distance: String,
+    #[schemars(range(min = 1))]
+    travel_minutes: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledLocation {
+    id: String,
+    name: String,
+    #[schemars(
+        description = "Geometric containment only. This does not create an implicit movement edge."
+    )]
+    container_id: Option<String>,
+    #[schemars(
+        description = "Explicit directed movement edges. A playable opening must provide route chains from the player location to every supplied location and back."
+    )]
+    routes: Vec<CompiledRoute>,
+    persistent_features: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledGestaltMemberDelta {
+    schema: String,
+    id: String,
+    gestalt_id: String,
+    version: u64,
+    name: String,
+    capability_additions: BTreeSet<String>,
+    capability_removals: BTreeSet<String>,
+    knowledge_additions: BTreeSet<String>,
+    knowledge_removals: BTreeSet<String>,
+    equipment: BTreeSet<String>,
+    conditions: BTreeSet<String>,
+    obligations: BTreeSet<String>,
+    relationships: Vec<CompiledRelationship>,
+    goals: Vec<String>,
+    memories: Vec<String>,
+    last_location_id: Option<String>,
+    materialized_actor_id: Option<String>,
+    #[serde(default)]
+    last_relevant_revision: u64,
+    #[serde(default)]
+    relevance_lease_until_revision: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CompiledSeed {
     title: String,
     canon_cutoff: String,
     world_time: DateTime<Utc>,
     #[schemars(range(min = 1))]
     tick_hours: u32,
-    player: ActorState,
-    locations: Vec<Location>,
-    actors: Vec<ActorState>,
+    player: CompiledActorState,
+    locations: Vec<CompiledLocation>,
+    actors: Vec<CompiledActorState>,
     #[serde(default)]
     gestalts: Vec<GestaltPersonaState>,
     #[serde(default)]
-    gestalt_members: Vec<GestaltMemberDelta>,
+    gestalt_members: Vec<CompiledGestaltMemberDelta>,
     institutions: Vec<InstitutionState>,
     clocks: Vec<WorldClock>,
     facts: Vec<WorldFact>,
     gaps: Vec<String>,
     branch_assumptions: Vec<String>,
     opening_narration: String,
+}
+
+impl From<ActorState> for CompiledActorState {
+    fn from(actor: ActorState) -> Self {
+        Self {
+            id: actor.id,
+            name: actor.name,
+            location_id: actor.location_id,
+            capabilities: actor.capabilities,
+            knowledge: actor.knowledge,
+            equipment: actor.equipment,
+            conditions: actor.conditions,
+            obligations: actor.obligations,
+            relationships: actor
+                .relationships
+                .into_iter()
+                .map(|(subject_id, description)| CompiledRelationship {
+                    subject_id,
+                    description,
+                })
+                .collect(),
+            goals: actor.goals,
+            memories: actor.memories,
+        }
+    }
+}
+
+impl CompiledActorState {
+    fn into_actor(self) -> Result<ActorState> {
+        Ok(ActorState {
+            id: self.id,
+            name: self.name,
+            location_id: self.location_id,
+            capabilities: self.capabilities,
+            knowledge: self.knowledge,
+            equipment: self.equipment,
+            conditions: self.conditions,
+            obligations: self.obligations,
+            relationships: compiled_relationship_map(self.relationships)?,
+            goals: self.goals,
+            memories: self.memories,
+        })
+    }
+}
+
+impl CompiledLocation {
+    fn into_location(self) -> Result<Location> {
+        let mut routes = BTreeMap::new();
+        for route in self.routes {
+            if route.route_id.trim().is_empty()
+                || routes
+                    .insert(
+                        route.route_id.clone(),
+                        Route {
+                            destination_id: route.destination_id,
+                            distance: route.distance,
+                            travel_minutes: route.travel_minutes,
+                        },
+                    )
+                    .is_some()
+            {
+                return Err(anyhow!(
+                    "compiled location {} has an empty or duplicate route ID {:?}",
+                    self.id,
+                    route.route_id
+                ));
+            }
+        }
+        Ok(Location {
+            id: self.id,
+            name: self.name,
+            container_id: self.container_id,
+            routes,
+            persistent_features: self.persistent_features,
+        })
+    }
+}
+
+impl CompiledGestaltMemberDelta {
+    fn into_member(self) -> Result<GestaltMemberDelta> {
+        Ok(GestaltMemberDelta {
+            schema: self.schema,
+            id: self.id,
+            gestalt_id: self.gestalt_id,
+            version: self.version,
+            name: self.name,
+            capability_additions: self.capability_additions,
+            capability_removals: self.capability_removals,
+            knowledge_additions: self.knowledge_additions,
+            knowledge_removals: self.knowledge_removals,
+            equipment: self.equipment,
+            conditions: self.conditions,
+            obligations: self.obligations,
+            relationships: compiled_relationship_map(self.relationships)?,
+            goals: self.goals,
+            memories: self.memories,
+            last_location_id: self.last_location_id,
+            materialized_actor_id: self.materialized_actor_id,
+            last_relevant_revision: self.last_relevant_revision,
+            relevance_lease_until_revision: self.relevance_lease_until_revision,
+        })
+    }
+}
+
+fn compiled_relationship_map(
+    relationships: Vec<CompiledRelationship>,
+) -> Result<BTreeMap<String, String>> {
+    let mut mapped = BTreeMap::new();
+    for relationship in relationships {
+        if relationship.subject_id.trim().is_empty()
+            || relationship.description.trim().is_empty()
+            || mapped
+                .insert(relationship.subject_id.clone(), relationship.description)
+                .is_some()
+        {
+            return Err(anyhow!(
+                "compiled relationships require unique non-empty subject IDs and descriptions; rejected subject {:?}",
+                relationship.subject_id
+            ));
+        }
+    }
+    Ok(mapped)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -515,7 +708,7 @@ impl WorldCompiler {
             .transpose()?
             .unwrap_or_default();
         let base_prompt = format!(
-            "{shared_prefix}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route destination and fact discovery location must exist, travel time must be positive, clocks need positive thresholds, and the player id must be unique. Actor relationship map keys must copy exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. When direct evidence cannot ground a requested local detail, keep the local cast sparse, mark reversible texture provisional_local, and list the material gap instead of borrowing a nearby story. Do not eagerly invent remote settlements, routes, or people. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Every fact discovery location must exist, clocks need positive thresholds, and the player id must be unique. Actor relationship records must use subject_id values copied from exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -556,7 +749,7 @@ impl WorldCompiler {
                     let previous_structure =
                         serde_json::to_string(&compiled_seed_structure(&seed))?;
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nPREVIOUS_CANDIDATE_STRUCTURE:\n{previous_structure}\nReturn a corrected complete candidate against the same START and EVIDENCE. Preserve valid detail, but make every reference use an ID declared by the corrected candidate. ROUTE REPAIR REQUIREMENT: routes are directed movement authority and container_id is geometry only. The corrected candidate must contain an explicit bidirectional spanning route tree rooted at the player's location: every supplied location must have a directed route chain from the player and a directed route chain back. A physically navigable contained location should normally connect to its container in both directions; otherwise connect it through the nearest legitimate occupancy node. Each route map key is a stable route ID and each route value names an exact supplied destination_id, a distance, and positive travel_minutes. Before returning, internally trace player-to-location and location-to-player paths for every location. Do not emit the trace separately."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nPREVIOUS_CANDIDATE_STRUCTURE:\n{previous_structure}\nReturn a corrected complete candidate against the same START and EVIDENCE. Preserve valid detail, but make every reference use an ID declared by the corrected candidate. ROUTE REPAIR REQUIREMENT: routes are directed movement authority and container_id is geometry only. The corrected candidate must contain an explicit bidirectional spanning route tree rooted at the player's location: every supplied location must have a directed route chain from the player and a directed route chain back. A physically navigable contained location should normally connect to its container in both directions; otherwise connect it through the nearest legitimate occupancy node. Each route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Before returning, internally trace player-to-location and location-to-player paths for every location. Do not emit the trace separately."
                     );
                 }
                 Err(error) => {
@@ -574,7 +767,11 @@ impl WorldCompiler {
                 &receipts,
             )
             .await?;
-        seed.actors.extend(private_relationship_actors);
+        seed.actors.extend(
+            private_relationship_actors
+                .into_iter()
+                .map(CompiledActorState::from),
+        );
         compiler_receipts.extend(private_actor_receipts);
         let campaign_with_private_actors = seed_to_campaign(seed.clone(), &receipts)?;
         validate_campaign_seed(&campaign_with_private_actors)?;
@@ -2876,10 +3073,36 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
     let id = Uuid::new_v4();
     let player_id = seed.player.id.clone();
     let now = Utc::now();
-    let mut actors: BTreeMap<_, _> = seed.actors.into_iter().map(|x| (x.id.clone(), x)).collect();
-    if actors.insert(player_id.clone(), seed.player).is_some() {
+    let mut actors: BTreeMap<_, _> = seed
+        .actors
+        .into_iter()
+        .map(|actor| {
+            let actor = actor.into_actor()?;
+            Ok((actor.id.clone(), actor))
+        })
+        .collect::<Result<_>>()?;
+    if actors
+        .insert(player_id.clone(), seed.player.into_actor()?)
+        .is_some()
+    {
         return Err(anyhow!("player id duplicates an NPC"));
     }
+    let locations = seed
+        .locations
+        .into_iter()
+        .map(|location| {
+            let location = location.into_location()?;
+            Ok((location.id.clone(), location))
+        })
+        .collect::<Result<_>>()?;
+    let gestalt_members = seed
+        .gestalt_members
+        .into_iter()
+        .map(|member| {
+            let member = member.into_member()?;
+            Ok((member.id.clone(), member))
+        })
+        .collect::<Result<_>>()?;
     let evidence_receipt_ids = receipt_ids(receipts);
     let valid_evidence_receipt_ids = evidence_receipt_ids
         .iter()
@@ -2922,11 +3145,7 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
         world_time: seed.world_time,
         tick_hours: seed.tick_hours,
         player_actor_id: player_id,
-        locations: seed
-            .locations
-            .into_iter()
-            .map(|x| (x.id.clone(), x))
-            .collect(),
+        locations,
         actors,
         institutions: seed
             .institutions
@@ -2968,11 +3187,7 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
             .into_iter()
             .map(|x| (x.id.clone(), x))
             .collect(),
-        gestalt_members: seed
-            .gestalt_members
-            .into_iter()
-            .map(|x| (x.id.clone(), x))
-            .collect(),
+        gestalt_members,
         pending_world_proposals: vec![],
         agency_profiles: BTreeMap::new(),
         agency_relations: BTreeMap::new(),
@@ -3476,6 +3691,66 @@ mod tests {
     use super::*;
 
     #[test]
+    fn world_compiler_responses_schema_preserves_routes_and_relationships() {
+        let mut schema = serde_json::to_value(schema_for!(CompiledSeed)).unwrap();
+        crate::model_connector::project_strict_responses_schema(&mut schema).unwrap();
+
+        assert_eq!(
+            schema["$defs"]["CompiledLocation"]["properties"]["routes"]["type"],
+            "array"
+        );
+        assert_eq!(
+            schema["$defs"]["CompiledActorState"]["properties"]["relationships"]["type"],
+            "array"
+        );
+        assert_eq!(
+            schema["$defs"]["CompiledGestaltMemberDelta"]["properties"]["relationships"]["type"],
+            "array"
+        );
+        let serialized = serde_json::to_string(&schema).unwrap();
+        assert!(serialized.contains("\"route_id\""));
+        assert!(serialized.contains("\"subject_id\""));
+    }
+
+    #[test]
+    fn compiler_boundary_rejects_duplicate_route_and_relationship_ids() {
+        let location = CompiledLocation {
+            id: "yard".into(),
+            name: "Yard".into(),
+            container_id: None,
+            routes: vec![
+                CompiledRoute {
+                    route_id: "gate".into(),
+                    destination_id: "yard".into(),
+                    distance: "near".into(),
+                    travel_minutes: 1,
+                },
+                CompiledRoute {
+                    route_id: "gate".into(),
+                    destination_id: "yard".into(),
+                    distance: "near".into(),
+                    travel_minutes: 1,
+                },
+            ],
+            persistent_features: vec![],
+        };
+        assert!(location.into_location().is_err());
+        assert!(
+            compiled_relationship_map(vec![
+                CompiledRelationship {
+                    subject_id: "workers".into(),
+                    description: "trusts".into(),
+                },
+                CompiledRelationship {
+                    subject_id: "workers".into(),
+                    description: "owes".into(),
+                },
+            ])
+            .is_err()
+        );
+    }
+
+    #[test]
     fn party_identity_bound_covers_long_approved_names_without_truncation() {
         let name = "N".repeat(144);
         let premise = "P".repeat(308);
@@ -3662,7 +3937,7 @@ mod tests {
                     "equipment":[],
                     "conditions":[],
                     "obligations":[],
-                    "relationships":{},
+                    "relationships":[],
                     "goals":[],
                     "memories":[]
                 }]);
@@ -3923,7 +4198,7 @@ mod tests {
             let call = self.world_calls.fetch_add(1, Ordering::SeqCst);
             if call == 0 {
                 let mut candidate: serde_json::Value = serde_json::from_str(&output)?;
-                candidate["locations"][0]["routes"]["out"]["destination_id"] =
+                candidate["locations"][0]["routes"][0]["destination_id"] =
                     serde_json::Value::String("missing".into());
                 return Ok(candidate.to_string());
             }
@@ -4020,11 +4295,11 @@ mod tests {
                     let destination = if self.invalid_route { "missing" } else { "yard" };
                     serde_json::json!({
                         "title":"Grounded test", "canon_cutoff":"fixture", "world_time":"2026-01-01T00:00:00Z", "tick_hours":6,
-                        "player":{"id":"player","name":"Tester","location_id":"yard","capabilities":[],"knowledge":[],"equipment":[],"conditions":[],"obligations":[],"relationships":{},"goals":["learn"]},
-                        "locations":[{"id":"yard","name":"Yard","container_id":null,"routes":{"out":{"destination_id":destination,"distance":"near","travel_minutes":5}},"persistent_features":["same yard"]}],
+                        "player":{"id":"player","name":"Tester","location_id":"yard","capabilities":[],"knowledge":[],"equipment":[],"conditions":[],"obligations":[],"relationships":[],"goals":["learn"]},
+                        "locations":[{"id":"yard","name":"Yard","container_id":null,"routes":[{"route_id":"out","destination_id":destination,"distance":"near","travel_minutes":5}],"persistent_features":["same yard"]}],
                         "actors":[],
                         "gestalts":[{"schema":"ghostlight.gestalt_persona_state.v1","id":"yard-workers","name":"Yard workers","version":0,"home_location_id":"yard","shared_capabilities":["maintain machinery"],"shared_knowledge":["yard routines"],"resources":["tool shed"],"goals":["finish the shift"],"pressures":["the gate is failing"]}],
-                        "gestalt_members":[{"schema":"ghostlight.gestalt_member_delta.v1","id":"john","gestalt_id":"yard-workers","version":0,"name":"John the smith","capability_additions":["forge hinges"],"capability_removals":[],"knowledge_additions":[],"knowledge_removals":[],"equipment":["hammer"],"conditions":[],"obligations":[],"relationships":{},"goals":[],"memories":[],"last_location_id":"yard","materialized_actor_id":null}],
+                        "gestalt_members":[{"schema":"ghostlight.gestalt_member_delta.v1","id":"john","gestalt_id":"yard-workers","version":0,"name":"John the smith","capability_additions":["forge hinges"],"capability_removals":[],"knowledge_additions":[],"knowledge_removals":[],"equipment":["hammer"],"conditions":[],"obligations":[],"relationships":[],"goals":[],"memories":[],"last_location_id":"yard","materialized_actor_id":null}],
                         "institutions":[],"clocks":[{"id":"shift","label":"Shift ends","progress":0,"threshold":4,"consequence":"night"}],
                         "facts":[
                             {"id":"f","statement":"A witnessed fact","scope":"canon_baseline","evidence_receipt_ids":["fixture"]},
@@ -4379,7 +4654,7 @@ mod tests {
             goals: vec![],
             pressures: vec![],
         });
-        seed.gestalt_members.push(GestaltMemberDelta {
+        seed.gestalt_members.push(CompiledGestaltMemberDelta {
             schema: "ghostlight.gestalt_member_delta.v1".into(),
             id: "member-corvid-sable".into(),
             gestalt_id: "corvid-collective".into(),
@@ -4392,7 +4667,7 @@ mod tests {
             equipment: BTreeSet::new(),
             conditions: BTreeSet::new(),
             obligations: BTreeSet::new(),
-            relationships: BTreeMap::new(),
+            relationships: vec![],
             goals: vec![],
             memories: vec![],
             last_location_id: Some("convoy-staging".into()),
@@ -4430,12 +4705,12 @@ mod tests {
             canon_cutoff: "fixture".into(),
             world_time: Utc::now(),
             tick_hours: 6,
-            player: private_actor_test_actor("player", "Sable"),
-            locations: vec![Location {
+            player: private_actor_test_actor("player", "Sable").into(),
+            locations: vec![CompiledLocation {
                 id: "convoy-staging".into(),
                 name: "Convoy Staging".into(),
                 container_id: None,
-                routes: BTreeMap::new(),
+                routes: vec![],
                 persistent_features: vec!["temporary shelters".into()],
             }],
             actors: vec![],
