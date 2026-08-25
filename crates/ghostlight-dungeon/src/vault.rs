@@ -150,7 +150,6 @@ impl VoidBotMcpVault {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anyhow::Context;
     use axum::{Router, response::IntoResponse, routing::post};
 
     #[test]

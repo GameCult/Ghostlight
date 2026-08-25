@@ -3887,7 +3887,7 @@ fn execute(
                     schema: "ghostlight.session_zero_decision.v1".into(),
                     id: decision_id,
                     owner_member_id: None,
-                    prompt: "The entitled lore Vault is currently unreachable. Should this exact draft remain unchanged until grounded compilation can be retried?".into(),
+                    prompt: "What must happen before this exact draft can receive a grounded world preview?".into(),
                     proposed_resolution: "Keep the negotiated draft unchanged and retry compilation only after Vault retrieval is available. Do not substitute nearby stories, branch inventions, or remembered setting vibes for evidence.".into(),
                     proposed_extraordinary_permission: None,
                     proposed_contract_patch: None,
@@ -3895,7 +3895,7 @@ fn execute(
                     evidence_receipt_ids: vec![],
                     pending_counter: None,
                     material: true,
-                    resolved: false,
+                    resolved: true,
                 },
             );
             append_message(
@@ -4818,7 +4818,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn unavailable_vault_becomes_one_resolvable_material_gap() {
+    async fn unavailable_vault_becomes_one_stable_material_blocker() {
         let dir = tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
         let mut initial = compilable_state();
@@ -4841,7 +4841,7 @@ mod tests {
         assert_eq!(failed.state.status, SessionZeroStatus::Drafting);
         assert!(failed.state.preview.is_none());
         assert!(decision.material);
-        assert!(!decision.resolved);
+        assert!(decision.resolved);
         assert!(decision.proposed_contract_patch.is_none());
         assert!(decision.proposed_character_patch.is_none());
         assert!(decision.proposed_extraordinary_permission.is_none());
@@ -4857,20 +4857,10 @@ mod tests {
         );
         assert!(!public_messages.contains("Ollama"));
 
-        let acknowledged = kernel
-            .command(SessionZeroCommand::ResolveDecision {
-                actor_account_hash: "account:host".into(),
-                expected_revision: failed.state.revision,
-                decision_id: decision.id.clone(),
-                resolution: SessionZeroDecisionResolution::Accept,
-                counter: None,
-            })
-            .await
-            .unwrap();
         let compiling = kernel
             .command(SessionZeroCommand::BeginCompilation {
                 actor_account_hash: "account:host".into(),
-                expected_revision: acknowledged.state.revision,
+                expected_revision: failed.state.revision,
             })
             .await
             .unwrap();
@@ -4889,7 +4879,7 @@ mod tests {
                 .count(),
             1
         );
-        assert!(!failed_again.state.decisions["decision:vault-retrieval-required"].resolved);
+        assert!(failed_again.state.decisions["decision:vault-retrieval-required"].resolved);
     }
 
     #[test]
