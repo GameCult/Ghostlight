@@ -551,7 +551,40 @@ struct CompiledExpansionSeed {
     origin_routes: Vec<CompiledRoute>,
     locations: Vec<CompiledLocation>,
     facts: Vec<WorldFact>,
+    #[serde(default)]
+    #[schemars(length(max = 8))]
+    populations: Vec<CompiledDestinationPopulation>,
+    #[serde(default)]
+    #[schemars(length(max = 32))]
+    migration_relations: Vec<CompiledDestinationMigrationRelation>,
     gaps: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledDestinationPopulation {
+    id: String,
+    name: String,
+    home_location_id: String,
+    shared_capabilities: BTreeSet<String>,
+    /// Exact IDs from this expansion's `facts`. The compiler resolves them to
+    /// statements after validation so a population cannot acquire unsupported
+    /// free-text knowledge during admission.
+    shared_fact_ids: BTreeSet<String>,
+    resources: BTreeSet<String>,
+    goals: Vec<String>,
+    pressures: Vec<String>,
+    collective_authority_id: Option<String>,
+    facets: CompiledAgencyFacets,
+    information_channels: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledDestinationMigrationRelation {
+    id: String,
+    from_gestalt_id: String,
+    to_gestalt_id: String,
+    #[schemars(range(min = 1, max = 100))]
+    strength: u8,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -1493,14 +1526,54 @@ impl WorldCompiler {
             .retrieve_all(&queries, &campaign.branch_origin.canon_cutoff, 10)
             .await?;
         let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
+        let source_population_ids = campaign
+            .gestalts
+            .values()
+            .filter(|gestalt| {
+                gestalt.home_location_id == origin_location_id
+                    && campaign
+                        .agency_profiles
+                        .get(&gestalt.id)
+                        .is_some_and(|profile| profile.active_leaf)
+            })
+            .map(|gestalt| gestalt.id.clone())
+            .collect::<BTreeSet<_>>();
+        let origin_population_context = campaign
+            .gestalts
+            .values()
+            .filter(|gestalt| source_population_ids.contains(&gestalt.id))
+            .map(|gestalt| {
+                serde_json::json!({
+                    "id":gestalt.id,
+                    "name":gestalt.name,
+                    "home_location_id":gestalt.home_location_id,
+                    "goals":gestalt.goals,
+                    "pressures":gestalt.pressures,
+                    "named_members":campaign.gestalt_members.values()
+                        .filter(|member| member.gestalt_id == gestalt.id
+                            && member.materialized_actor_id.is_none()
+                            && member.last_location_id.as_deref().unwrap_or(&gestalt.home_location_id) == origin_location_id)
+                        .map(|member| serde_json::json!({
+                            "id":member.id,
+                            "name":member.name,
+                            "goals":member.goals,
+                            "obligations":member.obligations,
+                            "memories":member.memories,
+                        }))
+                        .collect::<Vec<_>>(),
+                })
+            })
+            .collect::<Vec<_>>();
         let base_prompt = format!(
-            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes records owned by origin id {} into the new region, and give every such destination a reciprocal route record back to the origin with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes records owned by origin id {} into the new region, and give every such destination a reciprocal route record back to the origin with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them.\n\nA playable inhabited destination also needs one to eight non-overlapping destination population leaves. Synthesize reversible branch-local names, capabilities, resources, goals, pressures, six-axis agency facets, and concrete information channels even when canon does not specify settlement-scale detail; record the unsupported canon detail in gaps rather than withholding the playable population. Each population home_location_id must be one new location. shared_fact_ids may contain only exact fact IDs returned in this same candidate, never free-text knowledge. collective_authority_id may be null or the exact ID of one new population and denotes real shared authority.\n\nA migration relation is a directed available path for a later voluntary strategic choice; it does not move anyone, establish that admission occurred, or erase destination-community agency. It may originate only from one exact co-located active population ID supplied below and may target only one new population ID. Emit a relation only when the request and supplied source population/member goals support that migration possibility. Never invent a source population or named member. The approval preview must make all branch-local assumptions and unresolved admission or capacity questions explicit.\n\nCAMPAIGN LOCATIONS:\n{}\nCO-LOCATED SOURCE POPULATIONS AND NAMED MEMBER DELTAS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
             origin_location_id,
             serde_json::to_string(&campaign.locations)?,
+            serde_json::to_string(&origin_population_context)?,
             destination_request,
             evidence_text(&receipts)
         );
-        let schema = serde_json::to_value(schema_for!(CompiledExpansionSeed))?;
+        let mut schema = serde_json::to_value(schema_for!(CompiledExpansionSeed))?;
+        constrain_destination_expansion_schema(&mut schema, &source_population_ids)?;
         let sources = receipt_ids(&receipts);
         let mut compiler_receipts = Vec::new();
         let mut correction = String::new();
@@ -1516,6 +1589,72 @@ impl WorldCompiler {
                 .await?;
             compiler_receipts.push(output.1);
             let seed: CompiledExpansionSeed = serde_json::from_value(output.0)?;
+            let fact_statements = seed
+                .facts
+                .iter()
+                .map(|fact| (fact.id.as_str(), fact.statement.as_str()))
+                .collect::<BTreeMap<_, _>>();
+            let populations = seed
+                .populations
+                .iter()
+                .map(|population| {
+                    let shared_knowledge = population
+                        .shared_fact_ids
+                        .iter()
+                        .map(|fact_id| {
+                            fact_statements.get(fact_id.as_str()).map(|value| (*value).to_owned())
+                                .ok_or_else(|| anyhow!("destination population {} references unknown shared fact {fact_id}", population.id))
+                        })
+                        .collect::<Result<BTreeSet<_>>>()?;
+                    Ok(GestaltPersonaState {
+                        schema: "ghostlight.gestalt_persona_state.v1".into(),
+                        id: population.id.clone(),
+                        name: population.name.clone(),
+                        version: 0,
+                        home_location_id: population.home_location_id.clone(),
+                        shared_capabilities: population.shared_capabilities.clone(),
+                        shared_knowledge,
+                        resources: population.resources.clone(),
+                        goals: population.goals.clone(),
+                        pressures: population.pressures.clone(),
+                    })
+                })
+                .collect::<Result<Vec<_>>>()?;
+            let population_profiles = seed
+                .populations
+                .iter()
+                .map(|population| AgencyProfile {
+                    schema: "ghostlight.agency_profile.v1".into(),
+                    id: format!("agency:{}", population.id),
+                    subject_id: population.id.clone(),
+                    subject_kind: AgencySubjectKind::Gestalt,
+                    profile_version: 0,
+                    collective_authority_id: population.collective_authority_id.clone(),
+                    parent_subject_id: None,
+                    active_leaf: true,
+                    simulation_eligible: true,
+                    facets: population.facets.clone().into_map(),
+                    location_ids: BTreeSet::from([population.home_location_id.clone()]),
+                    information_channels: population.information_channels.clone(),
+                    detail_debt: 0,
+                    last_detail_tick: campaign.strategic_tick_count,
+                    evidence_receipt_ids: sources.clone(),
+                })
+                .collect::<Vec<_>>();
+            let migration_relations = seed
+                .migration_relations
+                .iter()
+                .map(|relation| AgencyRelation {
+                    schema: "ghostlight.agency_relation.v1".into(),
+                    id: relation.id.clone(),
+                    from_subject_id: relation.from_gestalt_id.clone(),
+                    to_subject_id: relation.to_gestalt_id.clone(),
+                    kind: AgencyRelationKind::Migration,
+                    strength: relation.strength,
+                    active: true,
+                    evidence_receipt_ids: sources.clone(),
+                })
+                .collect::<Vec<_>>();
             let expansion = crate::domain::RegionExpansion {
                 origin_location_id: origin_location_id.into(),
                 origin_routes: compiled_route_map(seed.origin_routes.clone(), origin_location_id)?,
@@ -1526,6 +1665,9 @@ impl WorldCompiler {
                     .map(CompiledLocation::into_location)
                     .collect::<Result<Vec<_>>>()?,
                 facts: seed.facts.clone(),
+                populations,
+                population_profiles,
+                migration_relations,
             };
             match validate_region_expansion(campaign, &expansion) {
                 Ok(()) => break (seed, expansion),
@@ -2489,6 +2631,27 @@ fn constrain_private_relationship_actor_schema(
     Ok(())
 }
 
+fn constrain_destination_expansion_schema(
+    schema: &mut serde_json::Value,
+    source_population_ids: &BTreeSet<String>,
+) -> Result<()> {
+    if source_population_ids.is_empty() {
+        let relations = schema
+            .pointer_mut("/properties/migration_relations")
+            .ok_or_else(|| anyhow!("destination schema has no migration_relations property"))?;
+        relations["maxItems"] = serde_json::json!(0);
+        return Ok(());
+    }
+    let relation = schema
+        .pointer_mut("/$defs/CompiledDestinationMigrationRelation")
+        .ok_or_else(|| anyhow!("destination schema has no migration relation definition"))?;
+    relation["properties"]["from_gestalt_id"] = serde_json::json!({
+        "type":"string",
+        "enum":source_population_ids.iter().cloned().collect::<Vec<_>>()
+    });
+    Ok(())
+}
+
 fn validate_required_relationship_actors(
     campaign: &Campaign,
     anchors: &[RequiredRelationshipActor],
@@ -3214,6 +3377,182 @@ pub fn validate_region_expansion(
                 "destination expansion fact {} has an unknown discovery location",
                 fact.id
             ));
+        }
+    }
+    let population_ids = expansion
+        .populations
+        .iter()
+        .map(|population| population.id.as_str())
+        .collect::<BTreeSet<_>>();
+    if expansion.populations.len() > 8
+        || population_ids.len() != expansion.populations.len()
+        || population_ids.iter().any(|id| {
+            id.trim().is_empty()
+                || campaign.gestalts.contains_key(*id)
+                || campaign.actors.contains_key(*id)
+                || campaign.institutions.contains_key(*id)
+        })
+    {
+        return Err(anyhow!(
+            "destination populations need at most eight unique new canonical subject IDs"
+        ));
+    }
+    let profile_ids = expansion
+        .population_profiles
+        .iter()
+        .map(|profile| profile.subject_id.as_str())
+        .collect::<BTreeSet<_>>();
+    if profile_ids != population_ids
+        || expansion.population_profiles.len() != expansion.populations.len()
+    {
+        return Err(anyhow!(
+            "destination population profiles must cover every new population exactly once"
+        ));
+    }
+    let axes = BTreeSet::from([
+        AgencyAxis::Geography,
+        AgencyAxis::Ideology,
+        AgencyAxis::Authority,
+        AgencyAxis::EconomyRole,
+        AgencyAxis::SpeciesBody,
+        AgencyAxis::Information,
+    ]);
+    for population in &expansion.populations {
+        if population.schema != "ghostlight.gestalt_persona_state.v1"
+            || population.version != 0
+            || population.name.trim().is_empty()
+            || !new_ids.contains(population.home_location_id.as_str())
+            || population.goals.is_empty()
+            || population
+                .shared_capabilities
+                .iter()
+                .chain(population.shared_knowledge.iter())
+                .chain(population.resources.iter())
+                .chain(population.goals.iter())
+                .chain(population.pressures.iter())
+                .any(|value| value.trim().is_empty())
+            || population
+                .shared_knowledge
+                .iter()
+                .any(|statement| !fact_statements.contains(statement))
+        {
+            return Err(anyhow!(
+                "destination population {} has malformed or unsupported canonical state",
+                population.id
+            ));
+        }
+        let profile = expansion
+            .population_profiles
+            .iter()
+            .find(|profile| profile.subject_id == population.id)
+            .expect("profile coverage was checked above");
+        let profile_axes = profile.facets.keys().cloned().collect::<BTreeSet<_>>();
+        if profile.schema != "ghostlight.agency_profile.v1"
+            || profile.id != format!("agency:{}", population.id)
+            || profile.subject_kind != AgencySubjectKind::Gestalt
+            || profile.profile_version != 0
+            || profile.parent_subject_id.is_some()
+            || !profile.active_leaf
+            || !profile.simulation_eligible
+            || profile.location_ids != BTreeSet::from([population.home_location_id.clone()])
+            || profile_axes != axes
+            || profile
+                .collective_authority_id
+                .as_ref()
+                .is_some_and(|authority| !population_ids.contains(authority.as_str()))
+            || profile
+                .information_channels
+                .iter()
+                .any(|channel| !crate::resolution::information_channel_is_concrete(channel))
+            || profile
+                .information_channels
+                .intersection(&population.shared_knowledge)
+                .next()
+                .is_some()
+        {
+            return Err(anyhow!(
+                "destination population {} has a malformed agency profile",
+                population.id
+            ));
+        }
+    }
+    let mut relation_ids = BTreeSet::new();
+    for relation in &expansion.migration_relations {
+        let source_is_exact_origin_leaf = campaign
+            .gestalts
+            .get(&relation.from_subject_id)
+            .is_some_and(|source| source.home_location_id == expansion.origin_location_id)
+            && campaign
+                .agency_profiles
+                .get(&relation.from_subject_id)
+                .is_some_and(|profile| {
+                    profile.subject_kind == AgencySubjectKind::Gestalt
+                        && profile.active_leaf
+                        && profile.simulation_eligible
+                });
+        if expansion.migration_relations.len() > 32
+            || relation.schema != "ghostlight.agency_relation.v1"
+            || relation.id.trim().is_empty()
+            || !relation_ids.insert(relation.id.as_str())
+            || campaign.agency_relations.contains_key(&relation.id)
+            || relation.kind != AgencyRelationKind::Migration
+            || !relation.active
+            || relation.strength == 0
+            || relation.strength > 100
+            || relation.from_subject_id == relation.to_subject_id
+            || !source_is_exact_origin_leaf
+            || !population_ids.contains(relation.to_subject_id.as_str())
+        {
+            return Err(anyhow!(
+                "destination migration relation {} is not an exact origin-leaf to new-population edge",
+                relation.id
+            ));
+        }
+    }
+    if !expansion.migration_relations.is_empty() {
+        let mut candidate = campaign.clone();
+        for location in &expansion.locations {
+            candidate
+                .locations
+                .insert(location.id.clone(), location.clone());
+        }
+        candidate
+            .locations
+            .get_mut(&expansion.origin_location_id)
+            .expect("origin was checked above")
+            .routes
+            .extend(expansion.origin_routes.clone());
+        for population in &expansion.populations {
+            candidate
+                .gestalts
+                .insert(population.id.clone(), population.clone());
+        }
+        for profile in &expansion.population_profiles {
+            candidate
+                .agency_profiles
+                .insert(profile.subject_id.clone(), profile.clone());
+        }
+        for relation in &expansion.migration_relations {
+            candidate
+                .agency_relations
+                .insert(relation.id.clone(), relation.clone());
+            let destination = candidate
+                .gestalts
+                .get(&relation.to_subject_id)
+                .expect("migration target was checked above");
+            if crate::resolution::route_travel_minutes_within(
+                &candidate,
+                &expansion.origin_location_id,
+                &destination.home_location_id,
+                campaign.tick_hours.saturating_mul(60),
+            )
+            .is_none()
+            {
+                return Err(anyhow!(
+                    "destination migration relation {} exceeds the strategic travel horizon",
+                    relation.id
+                ));
+            }
         }
     }
     Ok(())
@@ -6355,6 +6694,9 @@ mod tests {
                 persistent_features: vec!["sealed gate".into()],
             }],
             facts: vec![],
+            populations: vec![],
+            population_profiles: vec![],
+            migration_relations: vec![],
         }
     }
 
@@ -6390,6 +6732,134 @@ mod tests {
             .insert("road".into(), returning);
 
         validate_region_expansion(&campaign, &expansion).unwrap();
+    }
+
+    #[test]
+    fn inhabited_expansion_admits_only_reachable_population_migration_edges() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        campaign.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "center".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec!["find voluntary settlement".into()],
+                pressures: vec![],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        let mut expansion = valid_region_expansion();
+        expansion.locations[0].id = "pass".into();
+        expansion.locations[0].name = "Ridge Pass".into();
+        expansion.locations[0].routes = BTreeMap::from([
+            (
+                "back".into(),
+                Route {
+                    destination_id: "center".into(),
+                    distance: "near".into(),
+                    travel_minutes: 10,
+                },
+            ),
+            (
+                "onward".into(),
+                Route {
+                    destination_id: "village".into(),
+                    distance: "near".into(),
+                    travel_minutes: 10,
+                },
+            ),
+        ]);
+        expansion
+            .origin_routes
+            .values_mut()
+            .next()
+            .unwrap()
+            .destination_id = "pass".into();
+        expansion.locations.push(Location {
+            id: "village".into(),
+            name: "Ridge Village".into(),
+            container_id: None,
+            routes: BTreeMap::from([(
+                "return".into(),
+                Route {
+                    destination_id: "pass".into(),
+                    distance: "near".into(),
+                    travel_minutes: 10,
+                },
+            )]),
+            persistent_features: vec!["assembly hall".into()],
+        });
+        let statement = "The ridge assembly governs voluntary admission.".to_owned();
+        expansion.facts.push(WorldFact {
+            id: "ridge-admission".into(),
+            statement: statement.clone(),
+            scope: FactScope::ProvisionalLocal,
+            evidence_receipt_ids: vec![],
+            discoverable_at_location_ids: BTreeSet::from(["village".into()]),
+        });
+        expansion.populations.push(GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: "ridge-households".into(),
+            name: "Ridge Households".into(),
+            version: 0,
+            home_location_id: "village".into(),
+            shared_capabilities: BTreeSet::from(["communal agriculture".into()]),
+            shared_knowledge: BTreeSet::from([statement]),
+            resources: BTreeSet::from(["shared kitchen".into()]),
+            goals: vec!["admit newcomers without surrendering local consent".into()],
+            pressures: vec!["winter capacity is finite".into()],
+        });
+        expansion.population_profiles.push(AgencyProfile {
+            schema: "ghostlight.agency_profile.v1".into(),
+            id: "agency:ridge-households".into(),
+            subject_id: "ridge-households".into(),
+            subject_kind: AgencySubjectKind::Gestalt,
+            profile_version: 0,
+            collective_authority_id: Some("ridge-households".into()),
+            parent_subject_id: None,
+            active_leaf: true,
+            simulation_eligible: true,
+            facets: BTreeMap::from([
+                (AgencyAxis::Geography, BTreeSet::from(["ridge".into()])),
+                (AgencyAxis::Ideology, BTreeSet::from(["consent".into()])),
+                (AgencyAxis::Authority, BTreeSet::from(["assembly".into()])),
+                (
+                    AgencyAxis::EconomyRole,
+                    BTreeSet::from(["agriculture".into()]),
+                ),
+                (AgencyAxis::SpeciesBody, BTreeSet::from(["mixed".into()])),
+                (AgencyAxis::Information, BTreeSet::from(["local".into()])),
+            ]),
+            location_ids: BTreeSet::from(["village".into()]),
+            information_channels: BTreeSet::from(["village assembly bulletin".into()]),
+            detail_debt: 0,
+            last_detail_tick: 0,
+            evidence_receipt_ids: vec![],
+        });
+        expansion.migration_relations.push(AgencyRelation {
+            schema: "ghostlight.agency_relation.v1".into(),
+            id: "migration:refugees:ridge".into(),
+            from_subject_id: "refugees".into(),
+            to_subject_id: "ridge-households".into(),
+            kind: AgencyRelationKind::Migration,
+            strength: 50,
+            active: true,
+            evidence_receipt_ids: vec![],
+        });
+
+        validate_region_expansion(&campaign, &expansion).unwrap();
+        expansion.locations[0].routes.remove("onward");
+        assert!(
+            validate_region_expansion(&campaign, &expansion)
+                .unwrap_err()
+                .to_string()
+                .contains("strategic travel horizon")
+        );
     }
 
     #[test]

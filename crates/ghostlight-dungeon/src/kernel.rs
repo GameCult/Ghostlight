@@ -1137,6 +1137,16 @@ fn execute(
                 fact.evidence_receipt_ids
                     .iter()
                     .any(|id| !supplied_evidence.contains(id.as_str()))
+            }) || expansion.population_profiles.iter().any(|profile| {
+                profile
+                    .evidence_receipt_ids
+                    .iter()
+                    .any(|id| !supplied_evidence.contains(id.as_str()))
+            }) || expansion.migration_relations.iter().any(|relation| {
+                relation
+                    .evidence_receipt_ids
+                    .iter()
+                    .any(|id| !supplied_evidence.contains(id.as_str()))
             }) || canon_candidates.iter().any(|candidate| {
                 candidate
                     .evidence_receipt_ids
@@ -5918,6 +5928,9 @@ mod tests {
                         evidence_receipt_ids: vec![evidence.id.clone()],
                         discoverable_at_location_ids: BTreeSet::from(["annex".into()]),
                     }],
+                    populations: vec![],
+                    population_profiles: vec![],
+                    migration_relations: vec![],
                 },
                 evidence_receipts: vec![evidence],
                 canon_candidates: vec![candidate],
@@ -5964,6 +5977,188 @@ mod tests {
         assert!(manifest.source_ids.contains("lore/roads.md"));
         assert!(manifest.authority_lanes.contains("canon"));
         assert!(manifest.temporal_scopes.contains("fixture-era"));
+    }
+
+    #[tokio::test]
+    async fn inhabited_region_admission_preserves_people_and_invalidates_only_derived_cover() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec!["seek voluntary settlement".into()],
+                pressures: vec![],
+            },
+        );
+        seed.gestalt_members.insert(
+            "taren".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "taren".into(),
+                gestalt_id: "refugees".into(),
+                version: 3,
+                name: "Taren".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec!["reach the ridge villages".into()],
+                memories: vec!["Ash repaired my regulator".into()],
+                last_location_id: Some("room".into()),
+                materialized_actor_id: None,
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 0,
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut seed);
+        let original_member = seed.gestalt_members["taren"].clone();
+        let original_epoch = seed.resolution_policy.resolution_epoch;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let evidence = VaultEvidenceReceipt {
+            schema: "ghostlight.vault_evidence_receipt.v1".into(),
+            id: "vault:ridge".into(),
+            provider: "fixture".into(),
+            query_hash: "sha256:q".into(),
+            witnesses: vec![],
+            retrieved_at: Utc::now(),
+        };
+        let statement = "The ridge assembly governs voluntary admission.".to_owned();
+        let population = GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: "ridge-households".into(),
+            name: "Ridge Households".into(),
+            version: 0,
+            home_location_id: "ridge".into(),
+            shared_capabilities: BTreeSet::from(["communal agriculture".into()]),
+            shared_knowledge: BTreeSet::from([statement.clone()]),
+            resources: BTreeSet::from(["shared kitchen".into()]),
+            goals: vec!["decide admissions collectively".into()],
+            pressures: vec!["winter capacity is finite".into()],
+        };
+        let profile = AgencyProfile {
+            schema: "ghostlight.agency_profile.v1".into(),
+            id: "agency:ridge-households".into(),
+            subject_id: population.id.clone(),
+            subject_kind: AgencySubjectKind::Gestalt,
+            profile_version: 0,
+            collective_authority_id: Some(population.id.clone()),
+            parent_subject_id: None,
+            active_leaf: true,
+            simulation_eligible: true,
+            facets: BTreeMap::from([
+                (AgencyAxis::Geography, BTreeSet::from(["ridge".into()])),
+                (AgencyAxis::Ideology, BTreeSet::from(["consent".into()])),
+                (AgencyAxis::Authority, BTreeSet::from(["assembly".into()])),
+                (
+                    AgencyAxis::EconomyRole,
+                    BTreeSet::from(["agriculture".into()]),
+                ),
+                (AgencyAxis::SpeciesBody, BTreeSet::from(["mixed".into()])),
+                (AgencyAxis::Information, BTreeSet::from(["local".into()])),
+            ]),
+            location_ids: BTreeSet::from(["ridge".into()]),
+            information_channels: BTreeSet::from(["village assembly bulletin".into()]),
+            detail_debt: 0,
+            last_detail_tick: 0,
+            evidence_receipt_ids: vec![evidence.id.clone()],
+        };
+        let relation = AgencyRelation {
+            schema: "ghostlight.agency_relation.v1".into(),
+            id: "migration:refugees:ridge".into(),
+            from_subject_id: "refugees".into(),
+            to_subject_id: population.id.clone(),
+            kind: AgencyRelationKind::Migration,
+            strength: 50,
+            active: true,
+            evidence_receipt_ids: vec![evidence.id.clone()],
+        };
+        let result = kernel
+            .command(WorldCommand::ExpandRegion {
+                expected_revision: 0,
+                expansion: RegionExpansion {
+                    origin_location_id: "room".into(),
+                    origin_routes: BTreeMap::from([(
+                        "to-ridge".into(),
+                        Route {
+                            destination_id: "ridge".into(),
+                            distance: "2 km".into(),
+                            travel_minutes: 20,
+                        },
+                    )]),
+                    locations: vec![Location {
+                        id: "ridge".into(),
+                        name: "Ridge Village".into(),
+                        container_id: None,
+                        routes: BTreeMap::from([(
+                            "to-room".into(),
+                            Route {
+                                destination_id: "room".into(),
+                                distance: "2 km".into(),
+                                travel_minutes: 20,
+                            },
+                        )]),
+                        persistent_features: vec!["assembly hall".into()],
+                    }],
+                    facts: vec![WorldFact {
+                        id: "ridge-admission".into(),
+                        statement,
+                        scope: FactScope::ProvisionalLocal,
+                        evidence_receipt_ids: vec![evidence.id.clone()],
+                        discoverable_at_location_ids: BTreeSet::from(["ridge".into()]),
+                    }],
+                    populations: vec![population],
+                    population_profiles: vec![profile],
+                    migration_relations: vec![relation],
+                },
+                evidence_receipts: vec![evidence],
+                canon_candidates: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!("expected commit")
+        };
+        assert_eq!(campaign.gestalt_members["taren"], original_member);
+        assert_eq!(campaign.gestalts["refugees"].home_location_id, "room");
+        assert_eq!(
+            campaign.gestalts["ridge-households"].home_location_id,
+            "ridge"
+        );
+        assert_eq!(
+            campaign.agency_relations["migration:refugees:ridge"].kind,
+            AgencyRelationKind::Migration
+        );
+        assert_eq!(
+            campaign.resolution_policy.resolution_epoch,
+            original_epoch + 1
+        );
+        assert!(campaign.resolution_cover.is_none());
+        assert_eq!(
+            crate::resolution::gestalt_migration_destinations(&campaign, "refugees", "room")["ridge-households"],
+            "ridge"
+        );
     }
 
     #[tokio::test]

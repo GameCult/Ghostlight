@@ -1084,6 +1084,21 @@ pub struct RegionExpansion {
     pub origin_routes: BTreeMap<String, Route>,
     pub locations: Vec<Location>,
     pub facts: Vec<WorldFact>,
+    /// Optional population leaves that make an inhabited destination part of
+    /// the agency graph. Destination compilation admits these subjects; it
+    /// never moves an existing population or named member into them.
+    #[serde(default)]
+    pub populations: Vec<GestaltPersonaState>,
+    /// Exact agency inputs for `populations`. Keeping these in the approved
+    /// expansion makes the resolution cover reproducible without making the
+    /// cover itself canonical.
+    #[serde(default)]
+    pub population_profiles: Vec<AgencyProfile>,
+    /// Directed population routes admitted with the destination. A migration
+    /// remains a later strategic choice validated against one of these exact
+    /// relations and the physical topology.
+    #[serde(default)]
+    pub migration_relations: Vec<AgencyRelation>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]

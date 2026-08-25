@@ -1,7 +1,7 @@
 use crate::domain::*;
 use anyhow::{Result, anyhow};
 use sha2::{Digest, Sha256};
-use std::cmp::Ordering;
+use std::cmp::{Ordering, Reverse};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, VecDeque};
 
 pub const MIN_ACTIVE_CELL_BUDGET: u8 = 1;
@@ -2323,15 +2323,13 @@ pub fn validate_gestalt_migration(
             "gestalt migration lacks an explicit source-to-destination relation"
         ));
     }
-    let reachable = campaign
-        .locations
-        .get(&source.home_location_id)
-        .is_some_and(|location| {
-            location.routes.values().any(|route| {
-                route.destination_id == destination_location_id
-                    && route.travel_minutes <= campaign.tick_hours.saturating_mul(60)
-            })
-        });
+    let reachable = route_travel_minutes_within(
+        campaign,
+        &source.home_location_id,
+        destination_location_id,
+        campaign.tick_hours.saturating_mul(60),
+    )
+    .is_some();
     if !reachable {
         return Err(anyhow!(
             "gestalt migration destination is not reachable within the strategic horizon"
@@ -2406,13 +2404,13 @@ pub fn validate_member_migration(
         .last_location_id
         .as_deref()
         .unwrap_or(&source.home_location_id);
-    let reachable = origin == destination_location_id
-        || campaign.locations.get(origin).is_some_and(|location| {
-            location.routes.values().any(|route| {
-                route.destination_id == destination_location_id
-                    && route.travel_minutes <= campaign.tick_hours.saturating_mul(60)
-            })
-        });
+    let reachable = route_travel_minutes_within(
+        campaign,
+        origin,
+        destination_location_id,
+        campaign.tick_hours.saturating_mul(60),
+    )
+    .is_some();
     if !reachable {
         return Err(anyhow!("member migration exceeds the strategic horizon"));
     }
@@ -2438,19 +2436,66 @@ pub fn gestalt_migration_destinations(
             if !profile.active_leaf || !profile.simulation_eligible {
                 return None;
             }
-            let reachable = origin_location_id == destination.home_location_id
-                || campaign
-                    .locations
-                    .get(origin_location_id)
-                    .is_some_and(|location| {
-                        location.routes.values().any(|route| {
-                            route.destination_id == destination.home_location_id
-                                && route.travel_minutes <= campaign.tick_hours.saturating_mul(60)
-                        })
-                    });
+            let reachable = route_travel_minutes_within(
+                campaign,
+                origin_location_id,
+                &destination.home_location_id,
+                campaign.tick_hours.saturating_mul(60),
+            )
+            .is_some();
             reachable.then(|| (destination.id.clone(), destination.home_location_id.clone()))
         })
         .collect()
+}
+
+/// Directed shortest-path travel time bounded by the simulation horizon.
+/// Containment is intentionally absent: only explicit topology edges carry
+/// movement authority.
+pub(crate) fn route_travel_minutes_within(
+    campaign: &Campaign,
+    origin_location_id: &str,
+    destination_location_id: &str,
+    maximum_minutes: u32,
+) -> Option<u32> {
+    if origin_location_id == destination_location_id {
+        return campaign
+            .locations
+            .contains_key(origin_location_id)
+            .then_some(0);
+    }
+    if !campaign.locations.contains_key(origin_location_id)
+        || !campaign.locations.contains_key(destination_location_id)
+    {
+        return None;
+    }
+    let mut best = BTreeMap::from([(origin_location_id.to_owned(), 0_u32)]);
+    let mut frontier = BinaryHeap::from([(Reverse(0_u32), origin_location_id.to_owned())]);
+    while let Some((Reverse(elapsed), location_id)) = frontier.pop() {
+        if elapsed > maximum_minutes || best.get(&location_id).is_some_and(|known| elapsed > *known)
+        {
+            continue;
+        }
+        if location_id == destination_location_id {
+            return Some(elapsed);
+        }
+        let location = campaign.locations.get(&location_id)?;
+        for route in location.routes.values() {
+            let Some(next) = elapsed.checked_add(route.travel_minutes) else {
+                continue;
+            };
+            if next > maximum_minutes || !campaign.locations.contains_key(&route.destination_id) {
+                continue;
+            }
+            if best
+                .get(&route.destination_id)
+                .is_none_or(|known| next < *known)
+            {
+                best.insert(route.destination_id.clone(), next);
+                frontier.push((Reverse(next), route.destination_id.clone()));
+            }
+        }
+    }
+    None
 }
 
 pub fn member_state_references(campaign: &Campaign, member_id: &str) -> Result<BTreeSet<String>> {

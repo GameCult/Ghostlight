@@ -8,9 +8,9 @@
 
 use crate::{
     domain::{
-        ActorReaction, Campaign, FactScope, GestaltFissionPreview, GestaltLineage,
-        GestaltPersonaState, OutcomeBand, StrategicActivityOutcome, StrategicOutcomeEffect,
-        StrategicTickPlan, WorldEffectDelta, WorldFact,
+        ActorReaction, AgencyProfile, AgencyRelation, Campaign, FactScope, GestaltFissionPreview,
+        GestaltLineage, GestaltPersonaState, OutcomeBand, StrategicActivityOutcome,
+        StrategicOutcomeEffect, StrategicTickPlan, WorldEffectDelta, WorldFact,
     },
     transition::*,
 };
@@ -301,6 +301,88 @@ pub fn lower_region_expansion(
             admission_receipt_id: source_receipt_id.clone(),
         });
     }
+    for population in &expansion.populations {
+        let subject = population_subject(&population.id);
+        mutations.push(WorldMutation::AdmitEntity {
+            subject: subject.clone(),
+            initial_components: BTreeSet::from([
+                WorldComponentKind::Identity,
+                WorldComponentKind::Occupancy,
+                WorldComponentKind::Capability,
+                WorldComponentKind::Knowledge,
+                WorldComponentKind::Commitment,
+                WorldComponentKind::Pressure,
+            ]),
+            initial_place: Some(place_subject(&population.home_location_id)),
+            initial_profile: None,
+            admission_receipt_id: source_receipt_id.clone(),
+        });
+        mutations.push(WorldMutation::ChangeIdentity {
+            subject: subject.clone(),
+            operation: IdentityMutationOperation::Adopt,
+            handle_id: format!("identity:canonical:{}", population.id),
+            handle_value: Some(population.name.clone()),
+            audience: Vec::new(),
+        });
+        for capability in &population.shared_capabilities {
+            mutations.push(WorldMutation::ChangeCapability {
+                subject: subject.clone(),
+                operation: CapabilityMutationOperation::Grant,
+                capability_id: capability.clone(),
+                description: Some(capability.clone()),
+            });
+        }
+        for statement in &population.shared_knowledge {
+            let fact = expansion
+                .facts
+                .iter()
+                .chain(campaign.facts.values())
+                .find(|fact| fact.statement == *statement)
+                .ok_or_else(|| {
+                    anyhow!("destination population knowledge lacks an admitted fact")
+                })?;
+            mutations.push(WorldMutation::ChangeKnowledge {
+                operation: KnowledgeMutationOperation::Acquire,
+                proposition: proposition_subject(&fact.id),
+                knower: Some(subject.clone()),
+                speaker: None,
+                recipients: Vec::new(),
+                channel: None,
+            });
+        }
+        for (index, goal) in population.goals.iter().enumerate() {
+            mutations.push(WorldMutation::ChangeCommitment {
+                subject: subject.clone(),
+                operation: CommitmentMutationOperation::Create,
+                kind: CommitmentKind::Goal,
+                commitment_id: format!("goal:compiler:{index}:{}", short_digest(goal)),
+                counterparty: None,
+                description: Some(goal.clone()),
+            });
+        }
+        for pressure in &population.pressures {
+            mutations.push(WorldMutation::ChangePressure {
+                pressure: gestalt_pressure_subject(&population.id, pressure),
+                owner: subject.clone(),
+                operation: PressureMutationOperation::Create,
+                amount: Some(4),
+                label: Some(pressure.clone()),
+            });
+        }
+        for resource in &population.resources {
+            mutations.push(WorldMutation::MutateResource {
+                resource: resource_subject(campaign, &subject, resource),
+                operation: ResourceMutationOperation::Create,
+                custodian: Some(subject.clone()),
+                related_resources: Vec::new(),
+                resource_kind: Some("population_resource".into()),
+                resource_label: Some(resource.clone()),
+                recipe_id: None,
+                quantity: Some(1),
+                integrity: Some(100),
+            });
+        }
+    }
     let origin = place_subject(&expansion.origin_location_id);
     for (route_id, route) in &expansion.origin_routes {
         mutations.push(WorldMutation::ChangeTopology {
@@ -324,6 +406,16 @@ pub fn lower_region_expansion(
             });
         }
     }
+    for relation in &expansion.migration_relations {
+        mutations.push(WorldMutation::ChangeRelationship {
+            source: population_subject(&relation.from_subject_id),
+            target: population_subject(&relation.to_subject_id),
+            operation: RelationshipMutationOperation::Create,
+            relationship_id: relation.id.clone(),
+            description: Some("migration".into()),
+            strength_delta: Some(i64::from(relation.strength)),
+        });
+    }
     lower_exact_mutations(
         campaign,
         mutations,
@@ -331,7 +423,7 @@ pub fn lower_region_expansion(
         None,
         MutationOutcomeBinding::Deterministic,
         None,
-        "Admit only the approved place profiles and proposition contents, then add the exact approved route edges without rewriting existing geography.",
+        "Admit only the approved place profiles, proposition contents, population leaves, agency inputs, and directed migration relations, then add the exact approved route edges without rewriting existing geography or moving any existing subject.",
         &source_receipt_id,
         Some(digest_serializable(&(
             "compile_destination",
@@ -444,6 +536,62 @@ fn project_accepted_region_expansion(
                     .collect(),
             },
         );
+    }
+    for requested in &expansion.populations {
+        let subject = population_subject(&requested.id);
+        let place = next
+            .occupancy
+            .get(&subject)
+            .filter(|place| place.kind == SubjectKind::Place)
+            .ok_or_else(|| anyhow!("accepted destination population lost occupancy"))?;
+        let identity = next
+            .identities
+            .get(&format!("identity:canonical:{}", requested.id))
+            .filter(|identity| identity.subject == subject && identity.active)
+            .ok_or_else(|| anyhow!("accepted destination population lost identity"))?;
+        let mut population = requested.clone();
+        population.name = identity.value.clone();
+        population.home_location_id = place.id.clone();
+        campaign.gestalts.insert(population.id.clone(), population);
+    }
+    for requested in &expansion.population_profiles {
+        let mut profile: AgencyProfile = requested.clone();
+        profile.location_ids = BTreeSet::from([campaign
+            .gestalts
+            .get(&profile.subject_id)
+            .ok_or_else(|| anyhow!("accepted destination profile lost population"))?
+            .home_location_id
+            .clone()]);
+        campaign
+            .agency_profiles
+            .insert(profile.subject_id.clone(), profile);
+    }
+    for requested in &expansion.migration_relations {
+        let value = next
+            .relationships
+            .get(&requested.id)
+            .filter(|value| {
+                value.source == population_subject(&requested.from_subject_id)
+                    && value.target == population_subject(&requested.to_subject_id)
+            })
+            .ok_or_else(|| anyhow!("accepted destination migration relation vanished"))?;
+        let mut relation: AgencyRelation = requested.clone();
+        relation.strength = u8::try_from(
+            value
+                .strength
+                .ok_or_else(|| anyhow!("accepted destination relation lost strength"))?,
+        )
+        .map_err(|_| anyhow!("accepted destination relation exceeds aggregate storage"))?;
+        campaign
+            .agency_relations
+            .insert(relation.id.clone(), relation);
+    }
+    if !expansion.populations.is_empty() {
+        campaign.resolution_cover = None;
+        campaign.resolution_policy.resolution_epoch = campaign
+            .resolution_policy
+            .resolution_epoch
+            .saturating_add(1);
     }
     Ok(())
 }
