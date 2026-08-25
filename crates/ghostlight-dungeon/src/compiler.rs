@@ -222,9 +222,41 @@ struct CompiledSeed {
     institutions: Vec<InstitutionState>,
     clocks: Vec<WorldClock>,
     facts: Vec<WorldFact>,
-    gaps: Vec<String>,
+    #[schemars(
+        description = "Only premise-blocking gaps. Ordinary missing game-scale geometry, routes, people, procedures, daily texture, intentionally unresolved population detail, and safely omitted remote candidates are branch-local elaboration or coverage limits, never material gaps."
+    )]
+    gaps: Vec<CompiledMaterialGap>,
     branch_assumptions: Vec<String>,
     opening_narration: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+enum CompiledMaterialGapKind {
+    ContradictoryCanonBaselines,
+    UnanchoredRequestedBaseline,
+    ApprovedCapabilityConflict,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+struct CompiledMaterialGap {
+    kind: CompiledMaterialGapKind,
+    #[schemars(
+        description = "Concise description of why no compatible branch-local elaboration can preserve the approved premise."
+    )]
+    summary: String,
+    #[schemars(
+        description = "Exact approved request or Session Zero premise clause that cannot be preserved."
+    )]
+    premise_clause: String,
+    #[schemars(
+        description = "The mutually exclusive canon baseline, premise change, or capability bargain the table must choose."
+    )]
+    blocked_choice: String,
+    #[schemars(
+        description = "Exact supplied Vault receipt IDs supporting the contradiction, when the gap is grounded in conflicting canon."
+    )]
+    evidence_receipt_ids: Vec<String>,
 }
 
 impl From<ActorState> for CompiledActorState {
@@ -823,7 +855,7 @@ impl WorldCompiler {
             .transpose()?
             .unwrap_or_default();
         let base_prompt = format!(
-            "{shared_prefix}{approved_contract_context}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. Use evidence as canon constraints, not as an exhaustive game map. A source marked with a `.gm_canon` authority lane may constrain hidden canonical state, but it must not be quoted or paraphrased into opening narration or granted as player or NPC knowledge merely because this compiler received it. When the Vault omits game-scale geometry, routes, local people, procedures, or daily texture, invent the smallest coherent playable elaboration, mark facts branch_local or provisional_local, and disclose consequential choices in branch_assumptions. An unevidenced route needed to connect the bounded region is branch-local geometry, not an evidence gap. Use a material gap only when no compatible elaboration can preserve the requested premise without choosing between contradictory canon baselines or exceeding an approved capability; never borrow a nearby story to fill it. Do not eagerly materialize remote settlements or people outside the bounded playable region. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Every fact discovery location must exist, clocks need positive thresholds, and the player id must be unique. Actor relationship records must use subject_id values copied from exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}{approved_contract_context}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. Use evidence as canon constraints, not as an exhaustive game map. A source marked with a `.gm_canon` authority lane may constrain hidden canonical state, but it must not be quoted or paraphrased into opening narration or granted as player or NPC knowledge merely because this compiler received it. When the Vault omits game-scale geometry, routes, local people, procedures, or daily texture, invent the smallest coherent playable elaboration, mark facts branch_local or provisional_local, and disclose consequential choices in branch_assumptions. An unevidenced route needed to connect the bounded region is branch-local geometry, not an evidence gap. Intentionally unresolved identities or population detail remain unresolved branch assumptions, not material gaps. Safely omitted remote candidates are global coverage limits, not material gaps. The `gaps` array is legal only when no compatible elaboration can preserve an exact approved premise clause without choosing between contradictory canon baselines, inventing an unanchored baseline explicitly required by the premise, or exceeding an approved capability. Every gap must name that exact premise clause and the exact choice requiring table approval. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the premise. Never borrow a nearby story to fill a gap. Do not eagerly materialize remote settlements or people outside the bounded playable region. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Every fact discovery location must exist, clocks need positive thresholds, and the player id must be unique. Actor relationship records must use subject_id values copied from exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -841,17 +873,20 @@ impl WorldCompiler {
                 .await?;
             compiler_receipts.push(output.1);
             let seed: CompiledSeed = serde_json::from_value(output.0)?;
-            let validation = validate_shared_seed_excludes_locally_owned_subjects(
-                &seed,
-                required_relationship_actors,
-                player_names,
-            )
-            .and_then(|()| seed_to_campaign(seed.clone(), &receipts))
-            .and_then(|campaign| {
-                validate_campaign_seed(&campaign)?;
-                validate_opening_playability(&campaign)?;
-                Ok(campaign)
-            });
+            let validation = validate_compiled_material_gaps(&seed.gaps, &receipts)
+                .and_then(|()| {
+                    validate_shared_seed_excludes_locally_owned_subjects(
+                        &seed,
+                        required_relationship_actors,
+                        player_names,
+                    )
+                })
+                .and_then(|()| seed_to_campaign(seed.clone(), &receipts))
+                .and_then(|campaign| {
+                    validate_campaign_seed(&campaign)?;
+                    validate_opening_playability(&campaign)?;
+                    Ok(campaign)
+                });
             match validation {
                 Ok(_) => break seed,
                 Err(error) if compiler_receipts.len() == 1 => {
@@ -895,7 +930,7 @@ impl WorldCompiler {
             &campaign_with_private_actors,
             required_relationship_actors,
         )?;
-        let (remote_institution_evidence, global_agency_gaps, global_agency_assumptions) =
+        let (remote_institution_evidence, global_agency_assumptions) =
             merge_global_agency_catalog(&mut seed, global_catalog)?;
         let remote_institution_ids = remote_institution_evidence
             .keys()
@@ -974,7 +1009,7 @@ impl WorldCompiler {
                 campaign,
                 evidence_receipts: all_receipts,
                 evidence_coverage,
-                gaps: seed.gaps.into_iter().chain(global_agency_gaps).collect(),
+                gaps: seed.gaps.iter().map(material_gap_text).collect(),
                 branch_assumptions: seed
                     .branch_assumptions
                     .into_iter()
@@ -2106,6 +2141,70 @@ fn validate_user_text(label: &str, value: &str, max_chars: usize) -> Result<()> 
     Ok(())
 }
 
+fn validate_compiled_material_gaps(
+    gaps: &[CompiledMaterialGap],
+    receipts: &[VaultEvidenceReceipt],
+) -> Result<()> {
+    let known_receipt_ids = receipt_ids(receipts).into_iter().collect::<BTreeSet<_>>();
+    let mut seen = BTreeSet::new();
+    for gap in gaps {
+        for (label, value) in [
+            ("summary", gap.summary.as_str()),
+            ("premise_clause", gap.premise_clause.as_str()),
+            ("blocked_choice", gap.blocked_choice.as_str()),
+        ] {
+            validate_user_text(&format!("compiled material gap {label}"), value, 2_000)?;
+        }
+        if !seen.insert((
+            gap.kind.clone(),
+            gap.summary.trim().to_lowercase(),
+            gap.premise_clause.trim().to_lowercase(),
+        )) {
+            return Err(anyhow!("compiled material gaps must be unique"));
+        }
+        let supplied_receipts = gap
+            .evidence_receipt_ids
+            .iter()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        if supplied_receipts.len() != gap.evidence_receipt_ids.len()
+            || !supplied_receipts.is_subset(&known_receipt_ids)
+        {
+            return Err(anyhow!(
+                "compiled material gap cites duplicate or unknown evidence receipt IDs"
+            ));
+        }
+        match gap.kind {
+            CompiledMaterialGapKind::ContradictoryCanonBaselines
+                if supplied_receipts.is_empty() =>
+            {
+                return Err(anyhow!(
+                    "a contradictory canon-baselines gap must cite supplied evidence"
+                ));
+            }
+            CompiledMaterialGapKind::UnanchoredRequestedBaseline
+            | CompiledMaterialGapKind::ApprovedCapabilityConflict
+                if !supplied_receipts.is_empty() =>
+            {
+                return Err(anyhow!(
+                    "only contradictory canon-baselines gaps may cite Vault evidence receipts"
+                ));
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+fn material_gap_text(gap: &CompiledMaterialGap) -> String {
+    format!(
+        "{} Affected approved premise: {} Approval must decide: {}",
+        gap.summary.trim(),
+        gap.premise_clause.trim(),
+        gap.blocked_choice.trim()
+    )
+}
+
 fn approved_relationship_plan(brief: &ApprovedCampaignBrief) -> Result<ApprovedRelationshipPlan> {
     let mut character_names = BTreeMap::<String, Vec<String>>::new();
     for character in &brief.characters {
@@ -2767,7 +2866,7 @@ fn lower_compatible_doctrine_catalog(
 fn merge_global_agency_catalog(
     seed: &mut CompiledSeed,
     catalog: CompiledGlobalAgencyCatalog,
-) -> Result<(BTreeMap<String, Vec<String>>, Vec<String>, Vec<String>)> {
+) -> Result<(BTreeMap<String, Vec<String>>, Vec<String>)> {
     let mut known_names = seed
         .institutions
         .iter()
@@ -2802,12 +2901,13 @@ fn merge_global_agency_catalog(
         });
         remote_evidence.insert(id, institution.evidence_receipt_ids);
     }
-    let gaps = catalog
-        .gaps
-        .into_iter()
-        .map(|gap| format!("Global agency evidence gap: {gap}"))
-        .collect();
-    Ok((remote_evidence, gaps, branch_assumptions))
+    branch_assumptions.extend(
+        catalog
+            .gaps
+            .into_iter()
+            .map(|gap| format!("Global agency coverage limit: {gap}")),
+    );
+    Ok((remote_evidence, branch_assumptions))
 }
 
 fn apply_coarse_remote_agency_profiles(
@@ -3394,14 +3494,15 @@ fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Re
         .iter()
         .enumerate()
         .map(|(index, gap)| {
+            let gap_text = material_gap_text(gap);
             let candidate = crate::domain::CanonCandidate {
                 schema: "ghostlight.canon_candidate.v1".into(),
                 id: format!("canon-candidate:{}:{}", id, index + 1),
                 originating_campaign_id: id,
-                gap: gap.clone(),
-                evidence_receipt_ids: evidence_receipt_ids.clone(),
+                gap: gap_text.clone(),
+                evidence_receipt_ids: gap.evidence_receipt_ids.clone(),
                 conflicts: vec![],
-                proposed_wording: format!("Clarify the documented answer to: {gap}"),
+                proposed_wording: format!("Clarify the documented answer to: {gap_text}"),
                 affected_vault_sources: affected_sources.clone(),
                 status: "review".into(),
             };
@@ -4637,7 +4738,13 @@ mod tests {
                             {"id":"f","statement":"A witnessed fact","scope":"canon_baseline","evidence_receipt_ids":["fixture"]},
                             {"id":"local","statement":"The outer gate indicator is dark.","scope":"branch_local","evidence_receipt_ids":[],"discoverable_at_location_ids":["yard"]}
                         ],
-                        "gaps":["Who owns the outer gate?"],"branch_assumptions":[],"opening_narration":"The yard persists."
+                        "gaps":[{
+                            "kind":"unanchored_requested_baseline",
+                            "summary":"The approved premise requires a canon owner for the outer gate, but no compatible baseline is anchored.",
+                            "premise_clause":"The outer gate must be owned by a canon institution.",
+                            "blocked_choice":"Choose which institution canonically owns the outer gate or remove that canon-specific requirement.",
+                            "evidence_receipt_ids":[]
+                        }],"branch_assumptions":[],"opening_narration":"The yard persists."
                     }).to_string()
                 }
                 "agency_compile" => serde_json::json!({
@@ -5887,19 +5994,45 @@ mod tests {
             vec!["vault:council"]
         );
         let mut seed = private_actor_test_seed();
-        let (evidence, gaps, assumptions) =
-            merge_global_agency_catalog(&mut seed, compiled).unwrap();
+        let (evidence, assumptions) = merge_global_agency_catalog(&mut seed, compiled).unwrap();
         assert_eq!(evidence.len(), 2);
-        assert_eq!(
-            gaps,
-            vec!["Global agency evidence gap: The exact horizon remains uncertain."]
-        );
-        assert_eq!(assumptions.len(), 2);
+        assert_eq!(assumptions.len(), 3);
         assert!(assumptions.iter().any(|assumption| {
             assumption.contains("Campaign-local operational doctrine for Fixture Council")
                 && assumption.contains("convoy permits")
         }));
+        assert!(assumptions.iter().any(|assumption| {
+            assumption == "Global agency coverage limit: The exact horizon remains uncertain."
+        }));
         assert_eq!(seed.institutions.len(), 2);
+    }
+
+    #[test]
+    fn material_gap_contract_requires_an_exact_blocked_premise_and_evidence_ownership() {
+        let mut gap = CompiledMaterialGap {
+            kind: CompiledMaterialGapKind::UnanchoredRequestedBaseline,
+            summary: "The requested canon office has no anchored identity.".into(),
+            premise_clause: "The opening must use the canonical Winter Office.".into(),
+            blocked_choice: "Name the intended canon office or admit a branch-local office.".into(),
+            evidence_receipt_ids: vec![],
+        };
+        validate_compiled_material_gaps(&[gap.clone()], &[]).unwrap();
+
+        gap.kind = CompiledMaterialGapKind::ContradictoryCanonBaselines;
+        assert!(
+            validate_compiled_material_gaps(&[gap.clone()], &[])
+                .unwrap_err()
+                .to_string()
+                .contains("must cite supplied evidence")
+        );
+
+        gap.evidence_receipt_ids = vec!["unknown-receipt".into()];
+        assert!(
+            validate_compiled_material_gaps(&[gap], &[])
+                .unwrap_err()
+                .to_string()
+                .contains("unknown evidence receipt")
+        );
     }
 
     #[test]
