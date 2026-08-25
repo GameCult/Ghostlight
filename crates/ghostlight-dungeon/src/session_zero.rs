@@ -489,14 +489,16 @@ where
         RelationshipPatchWire::Entries(entries) => {
             let mut relationships = BTreeMap::new();
             for entry in entries {
-                if relationships
-                    .insert(entry.subject.clone(), entry.relationship)
-                    .is_some()
-                {
-                    return Err(serde::de::Error::custom(format!(
-                        "duplicate relationship patch subject {:?}",
-                        entry.subject
-                    )));
+                match relationships.entry(entry.subject) {
+                    std::collections::btree_map::Entry::Vacant(slot) => {
+                        slot.insert(entry.relationship);
+                    }
+                    std::collections::btree_map::Entry::Occupied(mut slot) => {
+                        if slot.get() != &entry.relationship {
+                            slot.get_mut().push_str("; ");
+                            slot.get_mut().push_str(&entry.relationship);
+                        }
+                    }
                 }
             }
             Ok(relationships)
@@ -1498,7 +1500,7 @@ impl SessionZeroDirector {
                     model: self.projector_model.clone(),
                     snapshot_binding: binding.clone(),
                     lived_stream: format!(
-                        "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, and authorship. Never invent state. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\nReturn one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}",
+                        "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, authorship, and the supplied compiler_authority policy. Never invent state. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\n- Compiler-owned reversible branch-local synthesis is not a player bargain; material evidence gaps still require review.\nReturn one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}",
                         serde_json::to_string(&projector_schema)?,
                         serde_json::to_string(&permitted)?
                     ),
@@ -1891,7 +1893,54 @@ fn session_zero_interpreter_schema(
     for name in decision_removals {
         remove_schema_property(decision_schema, name)?;
     }
+    if channel_kind == &SessionZeroChannelKind::SharedTable {
+        require_single_object_decision_lane(decision_schema, "proposed_contract_patch")?;
+    }
     Ok(schema)
+}
+
+fn require_single_object_decision_lane(
+    decision_schema: &mut serde_json::Value,
+    property_name: &str,
+) -> Result<()> {
+    let decision = decision_schema
+        .as_object_mut()
+        .ok_or_else(|| anyhow!("Session Zero decision schema is not an object"))?;
+    let property = decision
+        .get_mut("properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .and_then(|properties| properties.get_mut(property_name))
+        .ok_or_else(|| anyhow!("Session Zero decision schema omitted {property_name}"))?;
+    if let Some(non_null) = property
+        .get("anyOf")
+        .and_then(serde_json::Value::as_array)
+        .and_then(|alternatives| {
+            alternatives.iter().find(|candidate| {
+                candidate.get("type").and_then(serde_json::Value::as_str) != Some("null")
+            })
+        })
+        .cloned()
+    {
+        *property = non_null;
+    }
+    if property.get("type").and_then(serde_json::Value::as_str) != Some("object") {
+        return Err(anyhow!(
+            "Session Zero decision lane {property_name} is not an object"
+        ));
+    }
+    let required = decision
+        .entry("required")
+        .or_insert_with(|| serde_json::json!([]))
+        .as_array_mut()
+        .ok_or_else(|| anyhow!("Session Zero decision required list is not an array"))?;
+    if !required
+        .iter()
+        .any(|value| value.as_str() == Some(property_name))
+    {
+        required.push(serde_json::Value::String(property_name.into()));
+    }
+    decision.remove("anyOf");
+    Ok(())
 }
 
 fn session_zero_decision_schema_mut(
@@ -2141,6 +2190,11 @@ fn permitted_dm_context(
         },
         "recent_messages": recent_messages,
         "evidence_coverage": state.preview_evidence_coverage,
+        "compiler_authority": {
+            "reversible_local_texture": "Ghostlight may synthesize missing local routes, geometry, ordinary office procedure, and other reversible playability detail as explicit branch-local fact without a separate bargain.",
+            "material_gaps": "Missing setting mechanics, major institutional authority, extraordinary abilities, or other material canon require an explicit evidence-gap review before compilation can be approved.",
+            "canon_boundary": "Branch-local synthesis never edits the selected Vault or silently becomes setting canon."
+        },
     });
     if channel.kind == SessionZeroChannelKind::PrivateDm {
         let member_id = member_id.ok_or_else(|| anyhow!("private member is missing"))?;
@@ -5379,6 +5433,12 @@ mod tests {
         assert!(shared_decision.contains_key("proposed_contract_patch"));
         assert!(!shared_decision.contains_key("proposed_character_patch"));
         assert!(!shared_decision.contains_key("proposed_extraordinary_permission"));
+        assert_eq!(shared_decision["proposed_contract_patch"]["type"], "object");
+        assert!(
+            shared
+                .pointer("/properties/decisions/items/anyOf")
+                .is_none()
+        );
         assert!(shared.get("$defs").is_none());
 
         let private = session_zero_interpreter_schema(&SessionZeroChannelKind::PrivateDm).unwrap();
@@ -5817,7 +5877,7 @@ mod tests {
     }
 
     #[test]
-    fn character_relationship_patch_rejects_duplicate_subject_entries() {
+    fn character_relationship_patch_composes_duplicate_subject_clauses_for_review() {
         let duplicate = serde_json::json!({
             "name": null,
             "public_premise": null,
@@ -5844,7 +5904,11 @@ mod tests {
             "goals_remove": []
         });
 
-        assert!(serde_json::from_value::<CharacterDraftPatch>(duplicate).is_err());
+        let patch = serde_json::from_value::<CharacterDraftPatch>(duplicate).unwrap();
+        assert_eq!(
+            patch.relationships.get("Sera Dain").map(String::as_str),
+            Some("friend; clerk")
+        );
     }
 
     #[test]
@@ -5870,6 +5934,12 @@ mod tests {
         .unwrap();
 
         let context = permitted_dm_context(&draft, &private_channel, Some(&host_id), None).unwrap();
+        assert!(
+            context["compiler_authority"]["reversible_local_texture"]
+                .as_str()
+                .unwrap()
+                .contains("branch-local")
+        );
         let shared = serde_json::to_string(&context["recent_shared_messages"]).unwrap();
         assert!(shared.contains("Hellas inside Zhestokost space"));
         assert!(!shared.contains("forged transit credential"));

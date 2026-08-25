@@ -635,7 +635,10 @@ impl WorldCompiler {
                 )
                 .await?;
             model_receipts.push(stage);
-            let parsed: OpeningSet = serde_json::from_value(value.clone())?;
+            let mut parsed: OpeningSet = serde_json::from_value(value.clone())?;
+            for opening in &mut parsed.openings {
+                deduplicate_ids(&mut opening.evidence_receipt_ids);
+            }
             let validation = if parsed.openings.len() != 3 {
                 Err(anyhow!("world compiler must return exactly three openings"))
             } else {
@@ -704,7 +707,10 @@ impl WorldCompiler {
                 )
                 .await?;
             model_receipts.push(stage);
-            let parsed: RoleSet = serde_json::from_value(value.clone())?;
+            let mut parsed: RoleSet = serde_json::from_value(value.clone())?;
+            for role in &mut parsed.roles {
+                deduplicate_ids(&mut role.evidence_receipt_ids);
+            }
             let validation = if parsed.roles.len() != 3 {
                 Err(anyhow!("world compiler must return exactly three roles"))
             } else {
@@ -3171,8 +3177,14 @@ fn receipt_ids_for_coverage(
 }
 
 fn receipt_ids(receipts: &[VaultEvidenceReceipt]) -> Vec<String> {
-    receipts.iter().map(|r| r.id.clone()).collect()
+    let mut ids = receipts
+        .iter()
+        .map(|receipt| receipt.id.clone())
+        .collect::<Vec<_>>();
+    deduplicate_ids(&mut ids);
+    ids
 }
+
 fn ensure_distinct_openings(items: &[OpeningSuggestion]) -> Result<()> {
     ensure_distinct_fields(
         "openings",
@@ -3255,12 +3267,26 @@ fn validate_suggestion_evidence(
 ) -> Result<()> {
     let unique = supplied.iter().collect::<BTreeSet<_>>();
     let allowed = allowed.iter().collect::<BTreeSet<_>>();
-    if supplied.len() > 8 || unique.len() != supplied.len() || !unique.is_subset(&allowed) {
+    if supplied.len() > 8 {
         return Err(anyhow!(
-            "{label} evidence may contain at most 8 unique supplied receipt ids"
+            "{label} evidence may contain at most 8 receipt ids"
+        ));
+    }
+    if unique.len() != supplied.len() {
+        return Err(anyhow!("{label} evidence repeats a receipt id"));
+    }
+    let unknown = unique.difference(&allowed).copied().collect::<Vec<_>>();
+    if !unknown.is_empty() {
+        return Err(anyhow!(
+            "{label} evidence names receipt ids absent from the supplied Vault evidence: {unknown:?}"
         ));
     }
     Ok(())
+}
+
+fn deduplicate_ids(ids: &mut Vec<String>) {
+    let mut seen = BTreeSet::new();
+    ids.retain(|id| seen.insert(id.clone()));
 }
 
 fn ensure_distinct_fields<const N: usize>(
@@ -5264,6 +5290,33 @@ mod tests {
         assert!(output.model_receipts[0].local_validation_error.is_some());
         assert!(output.model_receipts[1].local_validation_error.is_none());
         assert!(model.saw_exact_correction.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn suggestion_evidence_uses_set_semantics_and_rejects_unknown_receipts_precisely() {
+        let mut ids = vec![
+            "receipt:one".into(),
+            "receipt:one".into(),
+            "receipt:two".into(),
+        ];
+        deduplicate_ids(&mut ids);
+        assert_eq!(ids, ["receipt:one", "receipt:two"]);
+        validate_suggestion_evidence(
+            "opening",
+            &ids,
+            &["receipt:one".into(), "receipt:two".into()],
+        )
+        .unwrap();
+
+        let error = validate_suggestion_evidence(
+            "opening",
+            &["receipt:invented".into()],
+            &["receipt:one".into()],
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(error.contains("absent from the supplied Vault evidence"));
+        assert!(error.contains("receipt:invented"));
     }
 
     #[tokio::test]
