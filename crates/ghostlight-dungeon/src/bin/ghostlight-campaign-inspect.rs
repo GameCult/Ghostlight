@@ -110,7 +110,7 @@ fn main() -> Result<()> {
     let recent_revision_bindings = (campaign.revision.saturating_sub(3)..=campaign.revision)
         .map(|revision| format!("campaign:{}:revision:{revision}", campaign.id))
         .collect::<Vec<_>>();
-    let recent_model_receipts = store
+    let mut recent_model_receipts = store
         .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")?
         .into_iter()
         .filter(|receipt| {
@@ -119,6 +119,7 @@ fn main() -> Result<()> {
                 .any(|binding| receipt.snapshot_binding.contains(binding))
         })
         .collect::<Vec<_>>();
+    recent_model_receipts.sort_by(|left, right| left.storage_key().cmp(right.storage_key()));
     let assessment_mutation_scopes =
         store.load_all::<serde_json::Value>("assessment_mutation_scope_cache.v1")?;
     let mut roll_receipts = store.load_all::<RollReceipt>("roll_receipt.v1")?;
