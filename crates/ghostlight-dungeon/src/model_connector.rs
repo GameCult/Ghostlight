@@ -586,8 +586,8 @@ mod tests {
             endpoint,
             "connector-test-key".to_string(),
             "ghostlight-dungeon-yggdrasil",
-            "gpt-5.4",
-            "gpt-5.4",
+            "gpt-5.6-luna",
+            "gpt-5.6-luna",
         )?;
         let output = port
             .run_observed(&ModelStageRequest {
@@ -607,7 +607,7 @@ mod tests {
             })
             .await?;
         let invocation = server.join().expect("server thread")?;
-        assert_eq!(invocation.request.model, "gpt-5.4");
+        assert_eq!(invocation.request.model, "gpt-5.6-luna");
         assert_eq!(invocation.request.max_output_tokens, Some(512));
         assert_eq!(
             invocation.request.output_format_name.as_deref(),

@@ -1124,6 +1124,11 @@ pub struct WorldEffectDelta {
     /// Values are declarative statements, never fact IDs, labels, or keys.
     #[serde(default)]
     pub actor_knowledge_additions: BTreeMap<String, BTreeSet<String>>,
+    /// New branch-local propositions established by the acting actor's exact
+    /// means in this outcome. These are observations, measurements, or test
+    /// results—not pre-existing facts selected from the campaign catalog.
+    #[serde(default)]
+    pub actor_observations: BTreeMap<String, BTreeSet<String>>,
     pub actor_relationship_updates: BTreeMap<String, BTreeMap<String, String>>,
     pub actor_moves: BTreeMap<String, String>,
     pub clock_advances: BTreeMap<String, u8>,

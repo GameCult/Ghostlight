@@ -18,14 +18,14 @@ use std::{
 };
 
 const ASSESSMENT_PROPOSAL_CACHE_KIND: &str = "assessment_proposal_cache.v1";
-const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v5";
+const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v6";
 const ASSESSMENT_SCOPE_CACHE_KIND: &str = "assessment_mutation_scope_cache.v1";
-const ASSESSMENT_SCOPE_CACHE_SCHEMA: &str = "ghostlight.private.assessment_mutation_scope_cache.v4";
-const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v9";
+const ASSESSMENT_SCOPE_CACHE_SCHEMA: &str = "ghostlight.private.assessment_mutation_scope_cache.v5";
+const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v10";
 
-const ASSESSMENT_SCOPE_INSTRUCTIONS: &str = "You own the compact admission and mutation-scope preflight for one fiction-first attempt. Decide 'deny' only when no d20 outcome can realize the exact intended effect from the supplied authority: the attempt lacks required capability, custody, access, spatial reach, extraordinary permission, or demands guaranteed control over another subject's independent future choices. A bounded attempt to influence a present subject's voluntary response is not guaranteed control: when the means can plausibly reach that subject, assess it and represent a successful voluntary promise, agreement, plan, goal, or obligation through actor_commitments. Difficulty, opposition, danger, or a costly but bounded effect are not reasons to deny; use 'assess' and let the full assessor set the DC and ceiling. For 'assess', select the smallest causally plausible typed mutation vocabulary. Availability is never relevance. Put every selected lane in lanes. Also put in required_success_lanes every lane whose non-empty mutation is necessary for strong and ordinary success to realize the intended effect; direct costs or incidental consequences are allowed lanes but are not required success lanes. actor_conditions changes bodily or situational conditions. actor_commitments adds or retires an exact present actor's goal or obligation; it records that actor's voluntary commitment and never grants custody of them or guarantees behavior beyond it. actor_knowledge_additions means an exact existing fact is investigated, perceived, or deliberately communicated; do not select it for ordinary speech, promises, persuasion, trust, or scene texture. actor_relationship_updates changes durable trust, regard, leverage, or another exact relationship. actor_moves relocates the acting character along an admitted route. clock_advances and clock_reductions change an existing pressure. institution_postures changes an institution's durable policy or stance. For 'deny', both lane sets must be empty and denial must state the exact missing permission, the maximum effect declaration alone can have, one concise refusal stake, and one to four actionable bargains that could admit a narrower future assessment. For 'assess', denial must be null. Never infer a new lane, target, fact, route, clock, institution, possession, or permission. Return only the typed JSON.";
+const ASSESSMENT_SCOPE_INSTRUCTIONS: &str = "You own the compact admission and mutation-scope preflight for one fiction-first attempt. Decide 'deny' only when no d20 outcome can realize the exact intended effect from the supplied authority: the attempt lacks required capability, custody, access, spatial reach, extraordinary permission, or demands guaranteed control over another subject's independent future choices. A bounded attempt to influence a present subject's voluntary response is not guaranteed control: when the means can plausibly reach that subject, assess it and represent a successful voluntary promise, agreement, plan, goal, or obligation through actor_commitments. Difficulty, opposition, danger, or a costly but bounded effect are not reasons to deny; use 'assess' and let the full assessor set the DC and ceiling. For 'assess', select the smallest causally plausible typed mutation vocabulary. Availability is never relevance. Put every selected lane in lanes. Also put in required_success_lanes every lane whose non-empty mutation is necessary for strong and ordinary success to realize the intended effect; direct costs or incidental consequences are allowed lanes but are not required success lanes. actor_conditions changes bodily or situational conditions. actor_commitments adds or retires an exact present actor's goal or obligation; it records that actor's voluntary commitment and never grants custody of them or guarantees behavior beyond it. actor_knowledge_additions acquires or communicates an exact existing fact. actor_observations admits a new branch-local finding only when the acting actor's exact means directly perceives, measures, inspects, or tests something within current spatial reach; it cannot invent a remote event, hidden motive, unsupported identity, or conclusion beyond the intended effect and effect ceiling. Do not select either information lane for ordinary speech, promises, persuasion, trust, or scene texture. actor_relationship_updates changes durable trust, regard, leverage, or another exact relationship. actor_moves relocates the acting character along an admitted route. clock_advances and clock_reductions change an existing pressure. institution_postures changes an institution's durable policy or stance. For 'deny', both lane sets must be empty and denial must state the exact missing permission, the maximum effect declaration alone can have, one concise refusal stake, and one to four actionable bargains that could admit a narrower future assessment. For 'assess', denial must be null. Never infer a new lane, target, route, clock, institution, possession, or permission. New propositions are permitted only through actor_observations. Return only the typed JSON.";
 
-const ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between the fiction-first action assessor and the world kernel. Structural authority, reach, knowledge access, and mutation shape were already checked. Judge the complete four-band typed effect bundle against the player's exact means and intended effect. Every non-empty mutation must be a direct realization of the intended effect or a concrete, previewed consequence of the attempted means in that exact outcome band. A fact being true, nearby, discoverable, or useful does not make communicating or acquiring it a consequence of an unrelated action. A plausible general reaction does not justify changing a commitment, relationship, condition, clock, posture, movement, or knowledge record that the attempted means and stakes do not cause. A target actor's new commitment must be a plausible voluntary response to the attempted influence, never disguised custody or guaranteed obedience. Failure and mixed effects may impose direct costs or complications, but not arbitrary available state changes. The effect ceiling and visible stakes must describe the same bounded consequences as the typed effects. Do not reassess admissibility, DC, or modifiers, and do not choose replacement effects. Return one JSON object. If every typed mutation is causally faithful, use result 'match' with null mismatch_kind and null repair_guidance. Otherwise use result 'mismatch', one mismatch_kind, and one concrete repair sentence of at most 240 characters naming what must be removed or aligned. Shape: {\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}.";
+const ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between the fiction-first action assessor and the world kernel. Structural authority, reach, knowledge access, and mutation shape were already checked. Judge the complete four-band typed effect bundle against the player's exact means and intended effect. Every non-empty mutation must be a direct realization of the intended effect or a concrete, previewed consequence of the attempted means in that exact outcome band. Acquiring or communicating an existing fact requires a causally related information action. Admitting a new actor_observations finding requires exact local means that directly perceive, measure, inspect, or test it, and the statement must remain within the intended effect and effect ceiling. A plausible general reaction does not justify changing a commitment, relationship, condition, clock, posture, movement, or knowledge record that the attempted means and stakes do not cause. A target actor's new commitment must be a plausible voluntary response to the attempted influence, never disguised custody or guaranteed obedience. Failure and mixed effects may impose direct costs or complications, but not arbitrary available state changes. The effect ceiling and visible stakes must describe the same bounded consequences as the typed effects. Do not reassess admissibility, DC, or modifiers, and do not choose replacement effects. Return one JSON object. If every typed mutation is causally faithful, use result 'match' with null mismatch_kind and null repair_guidance. Otherwise use result 'mismatch', one mismatch_kind, and one concrete repair sentence of at most 240 characters naming what must be removed or aligned. Shape: {\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}.";
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct AssessmentProposal {
@@ -86,6 +86,13 @@ struct ActorKnowledgeMutation {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
+struct ActorObservationMutation {
+    actor_id: String,
+    statement: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 struct ActorRelationshipMutation {
     actor_id: String,
     target_id: String,
@@ -135,6 +142,7 @@ enum AssessmentMutationLane {
     ActorConditions,
     ActorCommitments,
     ActorKnowledgeAdditions,
+    ActorObservations,
     ActorRelationshipUpdates,
     ActorMoves,
     ClockAdvances,
@@ -372,7 +380,7 @@ impl ActionAssessor {
         constrain_effect_schema_to_scope(&mut schema, &mutation_scope.lanes)?;
         require_success_scope(&mut schema, &mutation_scope.required_success_lanes)?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. The private scope projection has already removed mutation lanes that are not causally plausible for this exact attempt. The remaining lanes are an upper bound, not a request to use all of them. When admissible, every required_success_lane in MUTATION SCOPE must contain at least one mutation entry in both strong_effect and success_effect; a success stake may not claim an intended canonical change that its typed effect omits. Every non-empty mutation must be directly caused by the exact attempted means or realize the exact intended effect in that outcome band. A fact, relationship, clock, posture, or route being true, nearby, discoverable, or useful does not make changing it a consequence of an unrelated attempt. Do not append scene context as an observed finding unless the attempted means actually communicates it or the intended effect actually investigates or discloses it. Each supplied mutation lane is a bounded array of exact entries. Use an empty array when that lane does not change in an outcome; never add a duplicate or contradictory entry. Supplied entries may only name IDs copied exactly from PRESENT ACTORS and the enumerated schema, add or retire their exact goals or obligations, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. An actor_commitments entry records a present actor voluntarily adopting or retiring a bounded goal or obligation as an outcome; it does not make that actor a puppet, transfer authority, or guarantee unrelated future conduct. Strong and ordinary success share one visible stake, so give them identical commitment changes; the runtime binds each exact commitment into that stake. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both arrays for one outcome. Informational outcomes may reveal only an exact statement copied from AVAILABLE INFORMATION FACTS; they never create a new fact. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. Each actor_knowledge_additions entry contains the player-readable statement, never a fact ID, key, slug, or label. Strong and ordinary success share one visible stake, so give them identical knowledge additions. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports the intended discovery or disclosure, leave the knowledge array empty and make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nMUTATION SCOPE:\n{}\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. The private scope projection has already removed mutation lanes that are not causally plausible for this exact attempt. The remaining lanes are an upper bound, not a request to use all of them. When admissible, every required_success_lane in MUTATION SCOPE must contain at least one mutation entry in both strong_effect and success_effect; a success stake may not claim an intended canonical change that its typed effect omits. Every non-empty mutation must be directly caused by the exact attempted means or realize the exact intended effect in that outcome band. A fact, relationship, clock, posture, or route being true, nearby, discoverable, or useful does not make changing it a consequence of an unrelated attempt. Do not append scene context as an observed finding unless the attempted means actually communicates it or the intended effect actually investigates or discloses it. Each supplied mutation lane is a bounded array of exact entries. Use an empty array when that lane does not change in an outcome; never add a duplicate or contradictory entry. Supplied entries may only name IDs copied exactly from PRESENT ACTORS and the enumerated schema, add or retire their exact goals or obligations, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. An actor_commitments entry records a present actor voluntarily adopting or retiring a bounded goal or obligation as an outcome; it does not make that actor a puppet, transfer authority, or guarantee unrelated future conduct. Strong and ordinary success share one visible stake, so give them identical commitment changes; the runtime binds each exact commitment into that stake. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both arrays for one outcome. Existing informational outcomes may copy an exact statement from AVAILABLE INFORMATION FACTS through actor_knowledge_additions. A direct observation, measurement, inspection, or test may instead state one new bounded result through actor_observations. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. Each actor_knowledge_additions or actor_observations entry contains the player-readable statement, never a fact ID, key, slug, or label. actor_observations may target only the acting actor and must state only what the exact attempted means could establish at the current location; never use it for remote events, hidden motives, unsupported identities, or conclusions beyond the effect ceiling. Strong and ordinary success share one visible stake, so give them identical knowledge additions and observations. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports an intended disclosure, leave actor_knowledge_additions empty. If an intended local investigation can directly establish a bounded result, use actor_observations; otherwise make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nMUTATION SCOPE:\n{}\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(&mutation_scope)?,
             serde_json::to_string(&campaign_contract)?,
@@ -783,6 +791,7 @@ fn decode_effect_entries(value: &serde_json::Value) -> Result<WorldEffectDelta> 
         "actor_conditions",
         "actor_commitments",
         "actor_knowledge_additions",
+        "actor_observations",
         "actor_relationship_updates",
         "actor_moves",
         "clock_advances",
@@ -868,6 +877,21 @@ fn decode_effect_entries(value: &serde_json::Value) -> Result<WorldEffectDelta> 
         {
             return Err(anyhow!(
                 "duplicate knowledge mutation {:?} for {}",
+                entry.statement,
+                entry.actor_id
+            ));
+        }
+    }
+    for entry in decode_mutation_entries::<ActorObservationMutation>(fields, "actor_observations")?
+    {
+        if !effect
+            .actor_observations
+            .entry(entry.actor_id.clone())
+            .or_default()
+            .insert(entry.statement.clone())
+        {
+            return Err(anyhow!(
+                "duplicate observation mutation {:?} for {}",
                 entry.statement,
                 entry.actor_id
             ));
@@ -1100,6 +1124,7 @@ fn assessment_effect_reference_context(
         actor_ids.extend(effect.actor_conditions.keys().cloned());
         actor_ids.extend(effect.actor_commitments.keys().cloned());
         actor_ids.extend(effect.actor_knowledge_additions.keys().cloned());
+        actor_ids.extend(effect.actor_observations.keys().cloned());
         actor_ids.extend(effect.actor_relationship_updates.keys().cloned());
         actor_ids.extend(effect.actor_moves.keys().cloned());
         for target_id in effect
@@ -1456,6 +1481,19 @@ fn constrain_effect_schema(
         acting_actor,
         &present_actor_ids,
     )?;
+    constrain_map_keys(
+        effect_properties
+            .get_mut("actor_observations")
+            .ok_or_else(|| anyhow!("assessment effect schema omitted actor_observations"))?,
+        &BTreeSet::from([acting_actor.id.clone()]),
+    )?;
+    effect_properties["actor_observations"]["additionalProperties"] = serde_json::json!({
+        "type":"array",
+        "items":{"type":"string","minLength":1,"maxLength":500},
+        "uniqueItems":true,
+        "minItems":1,
+        "maxItems":2
+    });
     let relationship_targets = effect_properties
         .get_mut("actor_relationship_updates")
         .and_then(|value| value.get_mut("additionalProperties"))
@@ -1666,6 +1704,25 @@ fn project_effect_schema_to_mutation_entries(
                     "additionalProperties":false
                 }),
                 bounded_entry_count(actor_ids.len().saturating_mul(target_ids.len())),
+            ),
+        );
+    }
+
+    if let Some(map) = properties.get("actor_observations").cloned() {
+        let actor_ids = constrained_map_keys(&map, "actor_observations")?;
+        properties.insert(
+            "actor_observations".into(),
+            mutation_entry_array(
+                serde_json::json!({
+                    "type":"object",
+                    "properties":{
+                        "actor_id":typed_string_enum(&actor_ids),
+                        "statement":{"type":"string","minLength":1,"maxLength":500}
+                    },
+                    "required":["actor_id","statement"],
+                    "additionalProperties":false
+                }),
+                2,
             ),
         );
     }
@@ -1892,6 +1949,7 @@ fn available_mutation_lanes(
     let mut lanes = BTreeSet::from([
         AssessmentMutationLane::ActorConditions,
         AssessmentMutationLane::ActorCommitments,
+        AssessmentMutationLane::ActorObservations,
         AssessmentMutationLane::ActorRelationshipUpdates,
     ]);
     let has_knowledge_target = campaign.actors.values().any(|target| {
@@ -2015,6 +2073,10 @@ fn constrain_effect_schema_to_scope(
         (
             AssessmentMutationLane::ActorKnowledgeAdditions,
             "actor_knowledge_additions",
+        ),
+        (
+            AssessmentMutationLane::ActorObservations,
+            "actor_observations",
         ),
         (
             AssessmentMutationLane::ActorRelationshipUpdates,
@@ -2185,6 +2247,7 @@ fn mutation_lane_field(lane: AssessmentMutationLane) -> &'static str {
         AssessmentMutationLane::ActorConditions => "actor_conditions",
         AssessmentMutationLane::ActorCommitments => "actor_commitments",
         AssessmentMutationLane::ActorKnowledgeAdditions => "actor_knowledge_additions",
+        AssessmentMutationLane::ActorObservations => "actor_observations",
         AssessmentMutationLane::ActorRelationshipUpdates => "actor_relationship_updates",
         AssessmentMutationLane::ActorMoves => "actor_moves",
         AssessmentMutationLane::ClockAdvances => "clock_advances",
@@ -2211,6 +2274,10 @@ fn effect_uses_lane(effect: &WorldEffectDelta, lane: AssessmentMutationLane) -> 
             .actor_knowledge_additions
             .values()
             .any(|additions| !additions.is_empty()),
+        AssessmentMutationLane::ActorObservations => effect
+            .actor_observations
+            .values()
+            .any(|observations| !observations.is_empty()),
         AssessmentMutationLane::ActorRelationshipUpdates => effect
             .actor_relationship_updates
             .values()
@@ -2321,6 +2388,11 @@ fn bind_visible_effects(proposal: &mut AssessmentProposal) -> Result<()> {
             "strong and ordinary success must expose identical knowledge because they share one visible stake"
         ));
     }
+    if proposal.strong_effect.actor_observations != proposal.success_effect.actor_observations {
+        return Err(anyhow!(
+            "strong and ordinary success must expose identical observations because they share one visible stake"
+        ));
+    }
     if proposal.strong_effect.actor_commitments != proposal.success_effect.actor_commitments {
         return Err(anyhow!(
             "strong and ordinary success must expose identical commitments because they share one visible stake"
@@ -2361,6 +2433,7 @@ fn append_visible_findings(stake: &mut String, effect: &WorldEffectDelta) {
     for finding in effect
         .actor_knowledge_additions
         .values()
+        .chain(effect.actor_observations.values())
         .flat_map(|findings| findings.iter())
     {
         if !stake.contains(finding) {
@@ -2503,6 +2576,7 @@ pub(crate) fn validate_effect(
         .keys()
         .chain(effect.actor_commitments.keys())
         .chain(effect.actor_knowledge_additions.keys())
+        .chain(effect.actor_observations.keys())
         .chain(effect.actor_relationship_updates.keys());
     for id in affected {
         let target = campaign
@@ -2599,6 +2673,31 @@ pub(crate) fn validate_effect(
         {
             return Err(anyhow!(
                 "outcome knowledge must copy an existing accessible WorldFact statement: a location-discoverable fact may go only to the acting actor, while another present actor may receive only a fact already known by the acting actor; every finding must be new to its recipient and visible verbatim in its stake"
+            ));
+        }
+    }
+    for (actor_id, observations) in &effect.actor_observations {
+        if actor_id != &acting_actor.id
+            || observations.is_empty()
+            || observations.len() > 2
+            || observations.iter().any(|observation| {
+                observation.trim().is_empty()
+                    || observation.chars().count() > 500
+                    || looks_like_identifier(observation)
+                    || !stake.contains(observation)
+                    || acting_actor.knowledge.contains(observation)
+                    || campaign
+                        .facts
+                        .values()
+                        .any(|fact| fact.statement == observation.as_str())
+                    || effect
+                        .actor_knowledge_additions
+                        .values()
+                        .any(|additions| additions.contains(observation))
+            })
+        {
+            return Err(anyhow!(
+                "outcome observations must contain one or two new player-readable branch-local findings for only the acting actor, visible verbatim in the stake and distinct from existing propositions"
             ));
         }
     }
@@ -2878,6 +2977,21 @@ mod tests {
                 .collect();
             fields.insert(
                 "actor_knowledge_additions".into(),
+                serde_json::Value::Array(entries),
+            );
+        }
+        if allowed_fields.contains("actor_observations") {
+            let entries = effect
+                .actor_observations
+                .iter()
+                .flat_map(|(actor_id, statements)| {
+                    statements.iter().map(move |statement| {
+                        serde_json::json!({"actor_id":actor_id,"statement":statement})
+                    })
+                })
+                .collect();
+            fields.insert(
+                "actor_observations".into(),
                 serde_json::Value::Array(entries),
             );
         }
@@ -3558,6 +3672,20 @@ mod tests {
             .filter_map(serde_json::Value::as_str)
             .collect::<BTreeSet<_>>();
         assert_eq!(actor_targets, BTreeSet::from(["clinic-director", "player"]));
+        assert_eq!(
+            effect["actor_observations"]["items"]["properties"]["actor_id"]["enum"],
+            serde_json::json!(["player"])
+        );
+        let observation_validator =
+            jsonschema::validator_for(&effect["actor_observations"]).unwrap();
+        assert!(observation_validator.is_valid(&serde_json::json!([{
+            "actor_id":"player",
+            "statement":"The left coupling carries the highest current thermal stress."
+        }])));
+        assert!(!observation_validator.is_valid(&serde_json::json!([{
+            "actor_id":"clinic-director",
+            "statement":"The left coupling carries the highest current thermal stress."
+        }])));
         let commitments = &effect["actor_commitments"];
         let commitment_validator = jsonschema::validator_for(commitments).unwrap();
         assert!(commitment_validator.is_valid(&serde_json::json!([{
@@ -3644,6 +3772,7 @@ mod tests {
 
         assert!(properties.contains_key("actor_conditions"));
         assert!(properties.contains_key("actor_commitments"));
+        assert!(properties.contains_key("actor_observations"));
         assert!(properties.contains_key("actor_relationship_updates"));
         for unavailable in [
             "actor_knowledge_additions",
@@ -3779,6 +3908,40 @@ mod tests {
             "actor_id":"player",
             "statement":"The clinic director already knows the convoy is delayed."
         }])));
+    }
+
+    #[test]
+    fn bounded_observation_must_be_new_actor_local_and_visible() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        let acting = campaign.actors["player"].clone();
+        let statement = "The regulator's left coupling carries the highest current thermal stress.";
+        let stake = format!("Observed finding: {statement}");
+        let effect = decode_effect_entries(&serde_json::json!({
+            "actor_observations":[{
+                "actor_id":acting.id,
+                "statement":statement
+            }]
+        }))
+        .unwrap();
+
+        validate_effect(&campaign, &acting, &effect, &stake).unwrap();
+
+        campaign.facts.insert(
+            "already-known".into(),
+            crate::domain::WorldFact {
+                id: "already-known".into(),
+                statement: statement.into(),
+                scope: crate::domain::FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from([acting.location_id.clone()]),
+            },
+        );
+        assert!(
+            validate_effect(&campaign, &acting, &effect, &stake)
+                .unwrap_err()
+                .to_string()
+                .contains("branch-local findings")
+        );
     }
 
     #[test]

@@ -297,7 +297,7 @@ async fn main() -> anyhow::Result<()> {
         match provider_name.as_str() {
             "deepseek" => ("deepseek-v4-flash", "deepseek-v4-pro", "deepseek.dpapi"),
             "openrouter" => ("stealth/ox-alpha", "stealth/ox-alpha", "openrouter.key"),
-            "codex-connector" => ("gpt-5.4", "gpt-5.4", "codex-connector.key"),
+            "codex-connector" => ("gpt-5.6-luna", "gpt-5.6-luna", "codex-connector.key"),
             unsupported => anyhow::bail!("unsupported model provider {unsupported}"),
         };
     let fast_model =
@@ -4684,6 +4684,7 @@ async fn command(
                                 .keys()
                                 .chain(effect.actor_commitments.keys())
                                 .chain(effect.actor_knowledge_additions.keys())
+                                .chain(effect.actor_observations.keys())
                                 .chain(effect.actor_relationship_updates.keys())
                                 .any(|target| {
                                     target != &intent.actor_id && controlled.contains(target)

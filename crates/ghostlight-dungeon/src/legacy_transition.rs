@@ -8,9 +8,9 @@
 
 use crate::{
     domain::{
-        ActorReaction, Campaign, GestaltFissionPreview, GestaltLineage, GestaltPersonaState,
-        OutcomeBand, StrategicActivityOutcome, StrategicOutcomeEffect, StrategicTickPlan,
-        WorldEffectDelta,
+        ActorReaction, Campaign, FactScope, GestaltFissionPreview, GestaltLineage,
+        GestaltPersonaState, OutcomeBand, StrategicActivityOutcome, StrategicOutcomeEffect,
+        StrategicTickPlan, WorldEffectDelta, WorldFact,
     },
     transition::*,
 };
@@ -40,7 +40,7 @@ pub fn lower_foreground_effect(
     if !campaign.actors.contains_key(acting_actor_id) {
         return Err(anyhow!("transition actor is unknown"));
     }
-    let mutations = foreground_mutations(campaign, effect)?;
+    let mutations = foreground_mutations(campaign, effect, source_receipt_id)?;
     lower_exact_mutations(
         campaign,
         mutations,
@@ -1145,6 +1145,7 @@ pub fn digest_serializable<T: serde::Serialize + ?Sized>(value: &T) -> Result<St
 fn foreground_mutations(
     campaign: &Campaign,
     effect: &WorldEffectDelta,
+    source_receipt_id: &str,
 ) -> Result<Vec<WorldMutation>> {
     let mut mutations = Vec::new();
     for (actor_id, delta) in &effect.actor_conditions {
@@ -1257,6 +1258,53 @@ fn foreground_mutations(
             mutations.push(WorldMutation::ChangeKnowledge {
                 operation: KnowledgeMutationOperation::Acquire,
                 proposition: proposition_subject(&fact.id),
+                knower: Some(actor_subject(actor_id)),
+                speaker: None,
+                recipients: Vec::new(),
+                channel: None,
+            });
+        }
+    }
+    for (actor_id, observations) in &effect.actor_observations {
+        let actor = campaign
+            .actors
+            .get(actor_id)
+            .ok_or_else(|| anyhow!("outcome observation actor vanished"))?;
+        for statement in observations {
+            if campaign
+                .facts
+                .values()
+                .any(|fact| fact.statement == statement.as_str())
+                || actor.knowledge.contains(statement)
+            {
+                return Err(anyhow!("outcome observation is not a new proposition"));
+            }
+            let proposition_id = format!(
+                "fact:branch-observation:{:x}",
+                Sha256::digest(statement.as_bytes())
+            );
+            if campaign.facts.contains_key(&proposition_id) {
+                return Err(anyhow!("outcome observation proposition id collided"));
+            }
+            let proposition = proposition_subject(&proposition_id);
+            mutations.push(WorldMutation::AdmitEntity {
+                subject: proposition.clone(),
+                initial_components: BTreeSet::from([
+                    WorldComponentKind::Knowledge,
+                    WorldComponentKind::PropositionContent,
+                ]),
+                initial_place: None,
+                initial_profile: Some(AdmittedEntityProfile::Proposition {
+                    statement: statement.clone(),
+                    scope: FactScope::BranchLocal,
+                    evidence_receipt_ids: BTreeSet::new(),
+                    discoverable_at_places: BTreeSet::from([place_subject(&actor.location_id)]),
+                }),
+                admission_receipt_id: source_receipt_id.into(),
+            });
+            mutations.push(WorldMutation::ChangeKnowledge {
+                operation: KnowledgeMutationOperation::Acquire,
+                proposition,
                 knower: Some(actor_subject(actor_id)),
                 speaker: None,
                 recipients: Vec::new(),
@@ -2004,6 +2052,39 @@ fn project_mutated_components(
                 } else {
                     actor.conditions.remove(condition_id);
                 }
+            }
+            WorldMutation::AdmitEntity {
+                subject,
+                initial_profile: Some(AdmittedEntityProfile::Proposition { .. }),
+                ..
+            } if subject.kind == SubjectKind::Proposition => {
+                let proposition = next
+                    .propositions
+                    .get(subject)
+                    .ok_or_else(|| anyhow!("accepted proposition admission vanished"))?;
+                if campaign.facts.contains_key(&subject.id) {
+                    return Err(anyhow!(
+                        "accepted proposition replaced an existing world fact"
+                    ));
+                }
+                campaign.facts.insert(
+                    subject.id.clone(),
+                    WorldFact {
+                        id: subject.id.clone(),
+                        statement: proposition.statement.clone(),
+                        scope: proposition.scope.clone(),
+                        evidence_receipt_ids: proposition
+                            .evidence_receipt_ids
+                            .iter()
+                            .cloned()
+                            .collect(),
+                        discoverable_at_location_ids: proposition
+                            .discoverable_at_places
+                            .iter()
+                            .map(|place| place.id.clone())
+                            .collect(),
+                    },
+                );
             }
             WorldMutation::ChangeKnowledge {
                 proposition,
@@ -2957,6 +3038,7 @@ mod tests {
                 "player".into(),
                 BTreeSet::from(["The west stair bypasses the checkpoint.".into()]),
             )]),
+            actor_observations: BTreeMap::new(),
             actor_relationship_updates: BTreeMap::from([(
                 "player".into(),
                 BTreeMap::from([("witness".into(), "owes a candid answer".into())]),
@@ -3033,6 +3115,52 @@ mod tests {
                 .obligations
                 .contains("permit a supervised inventory inspection")
         );
+    }
+
+    #[test]
+    fn foreground_observation_admits_one_branch_proposition_then_acquires_it() {
+        let mut campaign = campaign();
+        let statement = "The regulator's left coupling carries the highest current thermal stress.";
+        let effect = WorldEffectDelta {
+            actor_observations: BTreeMap::from([(
+                "player".into(),
+                BTreeSet::from([statement.into()]),
+            )]),
+            ..WorldEffectDelta::default()
+        };
+        let transition = lower_foreground_effect(
+            &campaign,
+            "player",
+            &effect,
+            OutcomeBand::Success,
+            MutationProcedure::ForegroundAttempt,
+            statement,
+            "assessment:bounded-observation",
+            Some("sha256:means".into()),
+            Some("sha256:intended-effect".into()),
+            Utc::now() + Duration::minutes(5),
+        )
+        .unwrap();
+
+        assert_eq!(transition.batch.mutations.len(), 2);
+        let proposition_id = match &transition.batch.mutations[0].mutation {
+            WorldMutation::AdmitEntity { subject, .. } => subject.id.clone(),
+            mutation => panic!("expected proposition admission, got {mutation:?}"),
+        };
+        assert!(matches!(
+            transition.batch.mutations[1].mutation,
+            WorldMutation::ChangeKnowledge { .. }
+        ));
+
+        apply_lowered_transition(&mut campaign, &transition, Utc::now()).unwrap();
+        let fact = &campaign.facts[&proposition_id];
+        assert_eq!(fact.statement, statement);
+        assert_eq!(fact.scope, FactScope::BranchLocal);
+        assert_eq!(
+            fact.discoverable_at_location_ids,
+            BTreeSet::from(["room".into()])
+        );
+        assert!(campaign.actors["player"].knowledge.contains(statement));
     }
 
     #[test]

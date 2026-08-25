@@ -306,10 +306,18 @@ subgroup.
 Foreground assessment uses the same authority-shaped contract principle. Its
 model schema contains only mutation lanes available in the current snapshot:
 no route means no movement lane, no accessible undisclosed proposition means
-no knowledge lane, and absent clocks or institutions remove their lanes. Empty
-or unused maps may be omitted and deserialize to no mutation. The closed
-dynamic schema rejects an unavailable lane even when the model tries to emit it
-as `null`; provider formatting cannot manufacture authority.
+no existing-fact acquisition lane, and absent clocks or institutions remove
+their lanes. A separate observation lane is always structurally available to
+the acting actor but is semantically admitted only when the exact local means
+can directly perceive, measure, inspect, or test the proposed result. It lowers
+to one branch-local proposition admission followed by exact knowledge
+acquisition in the same batch. The effect ceiling, semantic verifier, current
+location, acting actor, assessment receipt, and means digest bind that finding;
+the lane cannot author remote events, hidden motives, unsupported identities,
+or omniscient conclusions. Empty or unused maps may be omitted and deserialize
+to no mutation. The closed dynamic schema rejects an unavailable lane even when
+the model tries to emit it as `null`; provider formatting cannot manufacture
+authority.
 
 ## Means, intended effect, and committed mutation
 
