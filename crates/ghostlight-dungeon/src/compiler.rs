@@ -1935,31 +1935,21 @@ impl WorldCompiler {
                 .await?;
             let verification: StrategicDoctrineVerification = serde_json::from_value(value)?;
             match validate_doctrine_verification(&grounded.institutions, &verification) {
-                Ok(()) => {
-                    stage_receipts.push(verification_receipt);
-                    let doctrines = synthesized
-                        .institutions
-                        .into_iter()
-                        .map(|i| (i.name.clone(), i.strategic_doctrine))
-                        .collect::<BTreeMap<_, _>>();
-                    let institutions = grounded
-                        .institutions
-                        .into_iter()
-                        .map(|institution| CompiledRemoteInstitution {
-                            strategic_doctrine: doctrines[&institution.name].clone(),
-                            name: institution.name,
-                            evidence_receipt_ids: institution.evidence_receipt_ids,
-                        })
-                        .collect();
-                    return Ok((
-                        CompiledGlobalAgencyCatalog {
-                            institutions,
-                            gaps: grounded.gaps,
-                        },
-                        stage_receipts,
-                    ));
+                Ok(rejected) if rejected.is_empty() || attempt == 1 => {
+                    if rejected.is_empty() {
+                        stage_receipts.push(verification_receipt);
+                    } else {
+                        let error = doctrine_rejection_error(&rejected);
+                        verification_receipt.validation_result = "valid_with_grounding_gaps".into();
+                        verification_receipt.local_validation_error =
+                            Some(error.to_string().chars().take(1_000).collect());
+                        stage_receipts.push(verification_receipt);
+                    }
+                    let catalog = lower_verified_doctrine_catalog(grounded, synthesized, &rejected);
+                    return Ok((catalog, stage_receipts));
                 }
-                Err(error) if attempt == 0 => {
+                Ok(rejected) => {
+                    let error = doctrine_rejection_error(&rejected);
                     mark_semantic_invalid(&mut verification_receipt, &error);
                     stage_receipts.push(verification_receipt);
                     correction = format!(
@@ -1967,10 +1957,17 @@ impl WorldCompiler {
                         serde_json::to_string(&synthesized)?
                     );
                 }
+                Err(error) if attempt == 0 => {
+                    mark_semantic_invalid(&mut verification_receipt, &error);
+                    stage_receipts.push(verification_receipt);
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS DOCTRINE VERIFICATION: {error}\nReturn one corrected verdict for every grounded institution exactly once against the same CLAIMS and DOCTRINES."
+                    );
+                }
                 Err(error) => {
                     mark_semantic_invalid(&mut verification_receipt, &error);
                     return Err(anyhow!(
-                        "strategic doctrine exceeded its evidence after one correction: {error}"
+                        "strategic doctrine verification failed local validation after one correction: {error}"
                     ));
                 }
             }
@@ -2590,7 +2587,7 @@ fn validate_doctrine_catalog(
 fn validate_doctrine_verification(
     grounded: &[GroundedRemoteInstitution],
     verification: &StrategicDoctrineVerification,
-) -> Result<()> {
+) -> Result<Vec<StrategicDoctrineVerdict>> {
     let expected = grounded
         .iter()
         .map(|i| i.name.as_str())
@@ -2605,19 +2602,59 @@ fn validate_doctrine_verification(
             "strategic doctrine verification must cover every grounded institution exactly once"
         ));
     }
-    let rejected = verification
+    Ok(verification
         .verdicts
         .iter()
         .filter(|v| !v.supported)
-        .map(|v| format!("{}: {}", v.name, v.rationale))
-        .collect::<Vec<_>>();
-    if !rejected.is_empty() {
-        return Err(anyhow!(
-            "strategic doctrine exceeded its evidence: {}",
-            rejected.join("; ")
-        ));
+        .cloned()
+        .collect())
+}
+
+fn doctrine_rejection_error(rejected: &[StrategicDoctrineVerdict]) -> anyhow::Error {
+    anyhow!(
+        "strategic doctrine exceeded its evidence: {}",
+        rejected
+            .iter()
+            .map(|verdict| format!("{}: {}", verdict.name, verdict.rationale))
+            .collect::<Vec<_>>()
+            .join("; ")
+    )
+}
+
+fn lower_verified_doctrine_catalog(
+    mut grounded: GroundedGlobalAgencyCatalog,
+    synthesized: StrategicDoctrineCatalog,
+    rejected: &[StrategicDoctrineVerdict],
+) -> CompiledGlobalAgencyCatalog {
+    let rejected_names = rejected
+        .iter()
+        .map(|verdict| verdict.name.as_str())
+        .collect::<BTreeSet<_>>();
+    let doctrines = synthesized
+        .institutions
+        .into_iter()
+        .map(|institution| (institution.name, institution.strategic_doctrine))
+        .collect::<BTreeMap<_, _>>();
+    let institutions = grounded
+        .institutions
+        .into_iter()
+        .filter(|institution| !rejected_names.contains(institution.name.as_str()))
+        .map(|institution| CompiledRemoteInstitution {
+            strategic_doctrine: doctrines[&institution.name].clone(),
+            name: institution.name,
+            evidence_receipt_ids: institution.evidence_receipt_ids,
+        })
+        .collect();
+    grounded.gaps.extend(rejected.iter().map(|verdict| {
+        format!(
+            "{} was omitted from remote simulation because its strategic doctrine could not be strictly supported after one correction; exact rejection details remain in the private model-stage receipt.",
+            verdict.name
+        )
+    }));
+    CompiledGlobalAgencyCatalog {
+        institutions,
+        gaps: grounded.gaps,
     }
-    Ok(())
 }
 
 fn merge_global_agency_catalog(
@@ -5517,7 +5554,7 @@ mod tests {
     }
 
     #[test]
-    fn strategic_doctrine_requires_exact_coverage_and_semantic_acceptance() {
+    fn strategic_doctrine_requires_exact_coverage_and_surfaces_semantic_rejections() {
         let grounded = vec![GroundedRemoteInstitution {
             name: "Fixture Council".into(),
             supporting_claims: vec!["The Fixture Council maintains the route.".into()],
@@ -5537,12 +5574,57 @@ mod tests {
                 rationale: "The doctrine invented territorial control.".into(),
             }],
         };
-        assert!(
-            validate_doctrine_verification(&grounded, &rejected)
-                .unwrap_err()
-                .to_string()
-                .contains("exceeded its evidence")
+        let rejected = validate_doctrine_verification(&grounded, &rejected).unwrap();
+        assert_eq!(rejected.len(), 1);
+        assert_eq!(rejected[0].name, "Fixture Council");
+    }
+
+    #[test]
+    fn rejected_remote_doctrine_becomes_a_gap_without_admitting_the_institution() {
+        let grounded = GroundedGlobalAgencyCatalog {
+            institutions: vec![
+                GroundedRemoteInstitution {
+                    name: "Fixture Council".into(),
+                    supporting_claims: vec!["The Fixture Council maintains the route.".into()],
+                    evidence_receipt_ids: vec!["vault:council".into()],
+                },
+                GroundedRemoteInstitution {
+                    name: "Witness Guild".into(),
+                    supporting_claims: vec!["The Witness Guild records public crossings.".into()],
+                    evidence_receipt_ids: vec!["vault:guild".into()],
+                },
+            ],
+            gaps: vec!["The exact horizon remains uncertain.".into()],
+        };
+        let synthesized = StrategicDoctrineCatalog {
+            institutions: vec![
+                SynthesizedRemoteInstitution {
+                    name: "Fixture Council".into(),
+                    strategic_doctrine: "Control all roads through military force.".into(),
+                },
+                SynthesizedRemoteInstitution {
+                    name: "Witness Guild".into(),
+                    strategic_doctrine: "Record public crossings.".into(),
+                },
+            ],
+        };
+        let rejected = vec![StrategicDoctrineVerdict {
+            name: "Fixture Council".into(),
+            supported: false,
+            rationale: "The claim does not establish military force.".into(),
+        }];
+
+        let compiled = lower_verified_doctrine_catalog(grounded, synthesized, &rejected);
+        assert_eq!(compiled.institutions.len(), 1);
+        assert_eq!(compiled.institutions[0].name, "Witness Guild");
+        assert_eq!(
+            compiled.institutions[0].evidence_receipt_ids,
+            vec!["vault:guild"]
         );
+        assert!(compiled.gaps.iter().any(|gap| {
+            gap.contains("Fixture Council was omitted")
+                && gap.contains("private model-stage receipt")
+        }));
     }
 
     #[test]
