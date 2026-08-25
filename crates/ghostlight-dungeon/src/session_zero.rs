@@ -1695,7 +1695,7 @@ async fn run_focused_counter_interpreter(
             model: model_id.into(),
             snapshot_binding: binding.into(),
             lived_stream: format!(
-                "Translate the player's exact counterproposal into one replacement containing exactly these typed lanes: {lane_name}. Preserve every previous typed field the counter does not change; apply every requested removal or replacement exactly; add nothing. Ghostlight owns decision identity, permission identity, actor binding, owner, materiality, evidence bindings, and speech, so they are absent from your output. Emit only the replacement payload described by this schema. The Persona response is social context only and cannot override the exact factual basis. Return one complete JSON object matching the schema.\n\nOUTPUT JSON SCHEMA:\n{}\n\nEXACT FACTUAL BASIS:\n{}\n\nPERSONA RESPONSE:\n{}",
+                "Translate the player's exact counterproposal into one replacement containing exactly these typed lanes: {lane_name}. Preserve every previous typed field the counter does not change; apply every requested removal or replacement exactly; add nothing. When the counter changes one fact that the authoritative owner state currently asserts through several fields, replace or remove every exact stale assertion of that fact while leaving unrelated state untouched. Ghostlight owns decision identity, permission identity, actor binding, owner, materiality, evidence bindings, and speech, so they are absent from your output. Emit only the replacement payload described by this schema. The Persona response is social context only and cannot override the exact factual basis. Return one complete JSON object matching the schema.\n\nOUTPUT JSON SCHEMA:\n{}\n\nEXACT FACTUAL BASIS:\n{}\n\nPERSONA RESPONSE:\n{}",
                 serde_json::to_string(&schema)?,
                 exact_lived_stream,
                 serde_json::to_string(persona_response)?,
@@ -2046,7 +2046,37 @@ fn project_focused_counter_lived_stream(
         .decisions
         .get(decision_id)
         .ok_or_else(|| anyhow!("countered decision is missing"))?;
+    let current_owner_state = if let Some(member_id) = member_id {
+        format!(
+            "Current private character draft:\n{}",
+            display_character_ledger(
+                state
+                    .character_drafts
+                    .get(member_id)
+                    .ok_or_else(|| anyhow!("private character draft is missing"))?
+            )
+        )
+    } else {
+        format!(
+            "Current campaign contract:\nPremise: {}\nCanon horizon: {}\nStarting location: {}\nStarting time: {}\nStarting pressure: {}\nDesired goal: {}\nTone: {}\nThemes: {}\nPacing: {}\nConsequence style: {}\nNarrative focus: {}\nParty bonds: {}\nInternal tension: {}\nDM style: {}",
+            state.contract.premise,
+            state.contract.canon_horizon,
+            state.contract.starting_where,
+            state.contract.starting_when,
+            state.contract.starting_pressure,
+            state.contract.desired_goal,
+            display_list(&state.contract.tone),
+            display_list(&state.contract.themes),
+            state.contract.pacing,
+            state.contract.consequence_style,
+            state.contract.narrative_focus,
+            display_list(&state.contract.party_bonds),
+            state.contract.internal_tension,
+            state.contract.dm_style,
+        )
+    };
     let mut previous = display_decision_payload(decision);
+    let previous_uses_owner_state = previous.trim().is_empty();
     if previous.trim().is_empty() {
         previous = if let Some(member_id) = member_id {
             format!(
@@ -2078,6 +2108,11 @@ fn project_focused_counter_lived_stream(
             )
         };
     }
+    let current_owner_section = if previous_uses_owner_state {
+        String::new()
+    } else {
+        format!("\n\nAuthoritative owner state before this replacement:\n{current_owner_state}")
+    };
     let counter = decision
         .pending_counter
         .as_deref()
@@ -2093,7 +2128,7 @@ fn project_focused_counter_lived_stream(
             .join("; ")
     };
     Ok(format!(
-        "A player has rejected one material typed proposal in their Session Zero channel. Nothing is accepted yet. Resolve only this replacement and invite the player to review the fresh typed decision.\n\nPrevious typed proposal, rendered exactly:\n{previous}\n\nPlayer's exact counterproposal:\n{counter}\n\nCampaign content boundaries:\n{boundaries}"
+        "A player has rejected one material typed proposal in their Session Zero channel. Nothing is accepted yet. Resolve only this replacement and invite the player to review the fresh typed decision.\n\nPrevious typed proposal, rendered exactly:\n{previous}{current_owner_section}\n\nPlayer's exact counterproposal:\n{counter}\n\nCampaign content boundaries:\n{boundaries}"
     ))
 }
 
@@ -6025,6 +6060,14 @@ mod tests {
                 None,
             ),
         );
+        let character = draft.character_drafts.get_mut(&host_id).unwrap();
+        character
+            .knowledge
+            .push("Oren serves the superseded pass office".into());
+        character.relationships.insert(
+            "Oren".into(),
+            "Oren now serves the mountain settlement customs office".into(),
+        );
         let private_channel = format!("private:{host_id}");
 
         let projected =
@@ -6060,6 +6103,9 @@ mod tests {
         assert!(lived.contains("Borrowed memories do not fully leave"));
         assert!(lived.contains("Player's exact counterproposal"));
         assert!(lived.contains("Ordinary contamination fades with rest"));
+        assert!(lived.contains("Authoritative owner state before this replacement"));
+        assert!(lived.contains("Oren serves the superseded pass office"));
+        assert!(lived.contains("Oren now serves the mountain settlement customs office"));
         assert!(!lived.contains("UNRELATED-DECISION-MARKER"));
         assert!(!lived.contains("ghostlight.session_zero_decision"));
         assert!(!lived.contains(&target_id));
