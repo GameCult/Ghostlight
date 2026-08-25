@@ -3425,12 +3425,13 @@ async fn surface(
         .await
     {
         Ok(Some(id)) => {
-            return match state
-                .session_zeros
-                .snapshot(id)
-                .await
-                .and_then(|snapshot| session_zero_surface(&snapshot, &session))
-            {
+            let projected = match state.session_zeros.snapshot(id).await {
+                Ok(snapshot) => {
+                    session_zero_surface_with_campaign_choices(&state, &snapshot, &session).await
+                }
+                Err(error) => Err(error),
+            };
+            return match projected {
                 Ok(surface) => Json(surface).into_response(),
                 Err(error) => {
                     (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
@@ -3446,17 +3447,21 @@ async fn surface(
         Ok(Some(value)) => value,
         Ok(None) => {
             return match state.session_zeros.session_for_account(&session).await {
-                Ok(Some(id)) => match state
-                    .session_zeros
-                    .snapshot(id)
-                    .await
-                    .and_then(|snapshot| session_zero_surface(&snapshot, &session))
-                {
-                    Ok(surface) => Json(surface).into_response(),
-                    Err(error) => {
-                        (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                Ok(Some(id)) => {
+                    let projected = match state.session_zeros.snapshot(id).await {
+                        Ok(snapshot) => {
+                            session_zero_surface_with_campaign_choices(&state, &snapshot, &session)
+                                .await
+                        }
+                        Err(error) => Err(error),
+                    };
+                    match projected {
+                        Ok(surface) => Json(surface).into_response(),
+                        Err(error) => {
+                            (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+                        }
                     }
-                },
+                }
                 Ok(None) => match session_zero_entry_surface(&state, &session, invite).await {
                     Ok(surface) => Json(surface).into_response(),
                     Err(error) => {
@@ -3579,17 +3584,7 @@ async fn session_zero_entry_surface(
     account_hash: &str,
     invite: Option<&str>,
 ) -> anyhow::Result<serde_json::Value> {
-    let mut campaign_choices = Vec::new();
-    for id in state.registry.list().await {
-        let runtime = state.registry.runtime(id).await?;
-        let campaign = load_campaign(&runtime.store)?;
-        if campaign_member_for_account(&runtime.store, &campaign, account_hash).is_ok() {
-            campaign_choices.push(serde_json::json!({
-                "id":format!("campaign-choice:{id}"),"kind":"control.button",
-                "props":{"label":format!("Continue {}",campaign.name),"command":"campaign.select","action":{"command":"campaign.select","campaign_id":id}},"children":[]
-            }));
-        }
-    }
+    let campaign_choices = campaign_choice_components_for_account(state, account_hash).await?;
     let mut children = vec![
         serde_json::json!({"id":"entry.intro","kind":"card","props":{"title":"Begin Session Zero"},"children":[
             {"id":"entry.intro.text","kind":"text","props":{"value":"Build the campaign with the DM before the world becomes canonical. Tone, boundaries, characters, evidence gaps, and opening pressure remain negotiable until everyone approves."},"children":[]}
@@ -3636,6 +3631,87 @@ async fn session_zero_entry_surface(
             eve_command_descriptor("app.auth.logout","ghostlight.app_logout.v1", &[], "ghostlight.app_session.v1")
         ]
     }))
+}
+
+async fn session_zero_surface_with_campaign_choices(
+    state: &AppState,
+    session_zero: &SessionZeroState,
+    account_hash: &str,
+) -> anyhow::Result<serde_json::Value> {
+    let mut surface = session_zero_surface(session_zero, account_hash)?;
+    let choices = campaign_choice_components_for_account(state, account_hash).await?;
+    append_campaign_choices(&mut surface, choices)?;
+    Ok(surface)
+}
+
+async fn campaign_choice_components_for_account(
+    state: &AppState,
+    account_hash: &str,
+) -> anyhow::Result<Vec<serde_json::Value>> {
+    let mut campaigns = Vec::new();
+    for id in state.registry.list().await {
+        let runtime = state.registry.runtime(id).await?;
+        let campaign = load_campaign(&runtime.store)?;
+        if campaign_member_for_account(&runtime.store, &campaign, account_hash).is_ok() {
+            campaigns.push((id, campaign.name));
+        }
+    }
+    campaigns.sort_by(|left, right| left.1.cmp(&right.1).then(left.0.cmp(&right.0)));
+    Ok(campaign_choice_components(campaigns))
+}
+
+fn campaign_choice_components(
+    campaigns: impl IntoIterator<Item = (uuid::Uuid, String)>,
+) -> Vec<serde_json::Value> {
+    campaigns
+        .into_iter()
+        .map(|(id, name)| {
+            serde_json::json!({
+                "id":format!("campaign-choice:{id}"),
+                "kind":"control.button",
+                "props":{
+                    "label":format!("Continue {name}"),
+                    "command":"campaign.select",
+                    "action":{"command":"campaign.select","campaign_id":id}
+                },
+                "children":[]
+            })
+        })
+        .collect()
+}
+
+fn append_campaign_choices(
+    surface: &mut serde_json::Value,
+    campaign_choices: Vec<serde_json::Value>,
+) -> anyhow::Result<()> {
+    if campaign_choices.is_empty() {
+        return Ok(());
+    }
+    surface
+        .pointer_mut("/surface/root/children")
+        .and_then(serde_json::Value::as_array_mut)
+        .ok_or_else(|| anyhow::anyhow!("Session Zero surface has no root children"))?
+        .push(serde_json::json!({
+            "id":"session-zero.campaigns",
+            "kind":"card",
+            "props":{"title":"Your existing campaigns"},
+            "children":campaign_choices
+        }));
+    let commands = surface
+        .get_mut("commands")
+        .and_then(serde_json::Value::as_array_mut)
+        .ok_or_else(|| anyhow::anyhow!("Session Zero surface has no command catalog"))?;
+    if !commands.iter().any(|command| {
+        command.get("command").and_then(serde_json::Value::as_str) == Some("campaign.select")
+    }) {
+        commands.push(eve_command_descriptor(
+            "campaign.select",
+            "ghostlight.campaign_select.v1",
+            &[],
+            "campaign_membership.v1",
+        ));
+    }
+    Ok(())
 }
 
 fn eve_local_draft(name: &str, value_kind: &str) -> serde_json::Value {
@@ -5278,10 +5354,19 @@ async fn refresh_mesh(state: &AppState) -> anyhow::Result<serde_json::Value> {
     for id in state.session_zeros.list().await {
         let session_zero = state.session_zeros.snapshot(id).await?;
         for member in session_zero.members.values().filter(|member| member.active) {
+            let choices = campaign_choice_components(snapshots.iter().filter_map(|snapshot| {
+                snapshot
+                    .membership
+                    .as_ref()?
+                    .member_for_account(&member.account_hash)?;
+                Some((snapshot.campaign.id, snapshot.campaign.name.clone()))
+            }));
+            let mut surface = session_zero_surface(&session_zero, &member.account_hash)?;
+            append_campaign_choices(&mut surface, choices)?;
             session_zero_snapshots.push(SessionZeroMeshSnapshot {
                 session_zero_id: id,
                 member_id: member.id.clone(),
-                surface: session_zero_surface(&session_zero, &member.account_hash)?,
+                surface,
             });
         }
     }
@@ -6006,6 +6091,19 @@ mod tests {
     use tower::ServiceExt;
 
     #[test]
+    fn empty_campaign_choice_projection_does_not_change_session_zero_surface() {
+        let mut surface = serde_json::json!({
+            "surface":{"root":{"children":[]}},
+            "commands":[]
+        });
+        let before = surface.clone();
+
+        append_campaign_choices(&mut surface, vec![]).unwrap();
+
+        assert_eq!(surface, before);
+    }
+
+    #[test]
     fn strategic_failure_projection_never_contains_private_model_diagnostics() {
         let private = anyhow::anyhow!(
             "the hidden convoy chooses a route at dawn; verifier returned private output"
@@ -6695,6 +6793,22 @@ mod tests {
                 },
             )
             .unwrap();
+        let session_zero = SessionZeroState::new(
+            "Still negotiating".into(),
+            "fixture".into(),
+            account_hash.clone(),
+            "Owner".into(),
+        )
+        .unwrap();
+        let projected =
+            session_zero_surface_with_campaign_choices(&state, &session_zero, &account_hash)
+                .await
+                .unwrap();
+        let encoded = serde_json::to_string(&projected).unwrap();
+        assert!(encoded.contains("Your existing campaigns"));
+        assert!(encoded.contains("Continue Membership-bound"));
+        assert!(encoded.contains(&campaign.id.to_string()));
+        assert!(encoded.contains("campaign.select"));
         select_campaign(&state, &account_hash, campaign.id)
             .await
             .unwrap();
