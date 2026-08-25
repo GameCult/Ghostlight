@@ -15,6 +15,27 @@ pub struct AppSessionState {
     pub account_preferences: BTreeMap<String, AccountPreferences>,
     #[serde(default)]
     pub command_receipts: BTreeMap<String, EveCommandCacheEntry>,
+    #[serde(default)]
+    pub campaign_export_grants: BTreeMap<String, CampaignExportGrant>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct CampaignExportGrant {
+    pub schema: String,
+    pub token_hash: String,
+    pub account_subject_hash: String,
+    pub campaign_id: uuid::Uuid,
+    pub export_path: std::path::PathBuf,
+    pub filename: String,
+    pub created_at: DateTime<Utc>,
+    pub expires_at: DateTime<Utc>,
+    pub consumed_at: Option<DateTime<Utc>>,
+}
+
+pub struct CampaignExportResource {
+    pub campaign_id: uuid::Uuid,
+    pub export_path: std::path::PathBuf,
+    pub filename: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -106,6 +127,7 @@ impl AppSessionOwner {
                     sessions: BTreeMap::new(),
                     account_preferences: BTreeMap::new(),
                     command_receipts: BTreeMap::new(),
+                    campaign_export_grants: BTreeMap::new(),
                 };
                 let row = store.insert(
                     "app_session_store.v1",
@@ -390,6 +412,84 @@ impl AppSessionOwner {
         self.commit(next)
     }
 
+    pub fn issue_campaign_export_grant(
+        &mut self,
+        account_subject_hash: &str,
+        campaign_id: uuid::Uuid,
+        export_path: std::path::PathBuf,
+        filename: String,
+        now: DateTime<Utc>,
+        lifetime: chrono::Duration,
+    ) -> anyhow::Result<String> {
+        if lifetime <= chrono::Duration::zero() {
+            bail!("campaign export grant lifetime must be positive");
+        }
+        if filename.is_empty()
+            || filename.contains('/')
+            || filename.contains('\\')
+            || filename.chars().any(char::is_control)
+        {
+            bail!("campaign export filename is invalid");
+        }
+        let mut token_bytes = [0_u8; 32];
+        rand::rng().fill_bytes(&mut token_bytes);
+        let raw_token = URL_SAFE_NO_PAD.encode(token_bytes);
+        let token_hash = secret_hash(&format!("campaign-export:{raw_token}"));
+        let mut next = self.state.clone();
+        next.campaign_export_grants.retain(|_, grant| {
+            grant.expires_at > now
+                || grant
+                    .consumed_at
+                    .is_some_and(|at| at > now - chrono::Duration::days(1))
+        });
+        next.campaign_export_grants.insert(
+            token_hash.clone(),
+            CampaignExportGrant {
+                schema: "ghostlight.campaign_export_grant.v1".into(),
+                token_hash,
+                account_subject_hash: account_subject_hash.into(),
+                campaign_id,
+                export_path,
+                filename,
+                created_at: now,
+                expires_at: now + lifetime,
+                consumed_at: None,
+            },
+        );
+        self.commit(next)?;
+        Ok(raw_token)
+    }
+
+    pub fn consume_campaign_export_grant(
+        &mut self,
+        raw_token: &str,
+        account_subject_hash: &str,
+        now: DateTime<Utc>,
+    ) -> anyhow::Result<Option<CampaignExportResource>> {
+        let token_hash = secret_hash(&format!("campaign-export:{raw_token}"));
+        let Some(grant) = self.state.campaign_export_grants.get(&token_hash) else {
+            return Ok(None);
+        };
+        if grant.account_subject_hash != account_subject_hash
+            || grant.expires_at <= now
+            || grant.consumed_at.is_some()
+        {
+            return Ok(None);
+        }
+        let resource = CampaignExportResource {
+            campaign_id: grant.campaign_id,
+            export_path: grant.export_path.clone(),
+            filename: grant.filename.clone(),
+        };
+        let mut next = self.state.clone();
+        next.campaign_export_grants
+            .get_mut(&token_hash)
+            .context("campaign export grant vanished during consumption")?
+            .consumed_at = Some(now);
+        self.commit(next)?;
+        Ok(Some(resource))
+    }
+
     fn commit(&mut self, next: AppSessionState) -> anyhow::Result<()> {
         let next_row = self
             .store
@@ -542,6 +642,77 @@ mod tests {
 
         assert_eq!(owner.selected_campaign(account), None);
         assert!(owner.state.account_preferences.contains_key(account));
+    }
+
+    #[test]
+    fn campaign_export_grant_is_hashed_account_bound_expiring_and_single_use() {
+        let directory = tempdir().unwrap();
+        let key = directory.path().join("session.key");
+        std::fs::write(&key, [7_u8; 32]).unwrap();
+        let store = directory.path().join("app-sessions.cc");
+        let mut owner = AppSessionOwner::open(&store, &key).unwrap();
+        let campaign_id = uuid::Uuid::new_v4();
+        let export_path = directory.path().join("campaign.cc");
+        let now = Utc::now();
+        let token = owner
+            .issue_campaign_export_grant(
+                "sha256:owner",
+                campaign_id,
+                export_path.clone(),
+                "campaign.cc".into(),
+                now,
+                chrono::Duration::minutes(15),
+            )
+            .unwrap();
+
+        assert!(
+            owner
+                .consume_campaign_export_grant(&token, "sha256:intruder", now)
+                .unwrap()
+                .is_none()
+        );
+        let resource = owner
+            .consume_campaign_export_grant(&token, "sha256:owner", now)
+            .unwrap()
+            .unwrap();
+        assert_eq!(resource.campaign_id, campaign_id);
+        assert_eq!(resource.export_path, export_path);
+        assert!(
+            owner
+                .consume_campaign_export_grant(&token, "sha256:owner", now)
+                .unwrap()
+                .is_none()
+        );
+        drop(owner);
+        let bytes = std::fs::read(store).unwrap();
+        assert!(
+            !bytes
+                .windows(token.len())
+                .any(|window| window == token.as_bytes())
+        );
+
+        let mut reopened =
+            AppSessionOwner::open(directory.path().join("app-sessions-expired.cc"), &key).unwrap();
+        let expired = reopened
+            .issue_campaign_export_grant(
+                "sha256:owner",
+                campaign_id,
+                directory.path().join("expired.cc"),
+                "expired.cc".into(),
+                now,
+                chrono::Duration::seconds(1),
+            )
+            .unwrap();
+        assert!(
+            reopened
+                .consume_campaign_export_grant(
+                    &expired,
+                    "sha256:owner",
+                    now + chrono::Duration::seconds(2),
+                )
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]

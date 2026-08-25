@@ -1,6 +1,7 @@
 use anyhow::Context;
 use axum::{
     Json, Router,
+    body::Body,
     extract::{Path, Query, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{
@@ -69,6 +70,7 @@ use native_cultmesh::NativeAuthCompletionReceipt;
 #[derive(Clone)]
 struct AppState {
     registry: CampaignRegistry,
+    exports_root: PathBuf,
     session_zeros: SessionZeroRegistry,
     session_zero_director: Option<Arc<SessionZeroDirector>>,
     entitlements: Arc<dyn EntitlementPort>,
@@ -404,6 +406,7 @@ async fn main() -> anyhow::Result<()> {
     });
     let state = AppState {
         registry,
+        exports_root: runtime_root.join("exports"),
         session_zeros,
         session_zero_director,
         entitlements: Arc::new(FixtureEntitlementPort),
@@ -473,6 +476,7 @@ fn app_router(state: AppState, web_root: PathBuf) -> Router {
         .route("/api/eve/provider", get(eve_provider))
         .route("/api/eve/surfaces/{surface_id}", get(eve_surface))
         .route("/api/eve/commands", post(eve_command))
+        .route("/api/eve/resources/{token}", get(eve_resource))
         .route("/api/eve/events", get(revision_events))
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
         .with_state(state)
@@ -786,15 +790,29 @@ async fn persist_reserved_eve_result(
                 .into_response();
         }
     };
+    let persisted_result = persistable_eve_result(operation_id, &result);
     if let Err(error) = state.auth.lock().await.record_command_result(
         account_hash,
         idempotency_key,
         operation_id,
-        &result,
+        &persisted_result,
     ) {
         tracing::error!(%error, %operation_id, "Eve command committed but its reserved result could not be finalized; duplicate execution remains blocked");
     }
     (status, Json(result)).into_response()
+}
+
+fn persistable_eve_result(operation_id: &str, result: &serde_json::Value) -> serde_json::Value {
+    let mut persisted = result.clone();
+    if matches!(
+        operation_id,
+        "session_zero.invites.create" | "campaign.export"
+    ) {
+        if let Some(value) = persisted.as_object_mut() {
+            value.remove("transientProjection");
+        }
+    }
+    persisted
 }
 
 async fn current_eve_surface_version(state: &AppState, account_hash: &str) -> anyhow::Result<u64> {
@@ -1076,6 +1094,7 @@ fn eve_operation_schema(operation: &str) -> Option<&'static str> {
         "session_zero.decision.resolve" => "ghostlight.session_zero_decision_resolve.v1",
         "campaign.entry" => "ghostlight.campaign_entry.v1",
         "campaign.select" => "ghostlight.campaign_select.v1",
+        "campaign.export" => "ghostlight.campaign_export_request.v1",
         "campaign.contract_review.begin" => "ghostlight.contract_review_begin.v1",
         "world.speak" => "ghostlight.world_speak.v1",
         "world.assess" => "ghostlight.player_action_assess.v1",
@@ -1470,6 +1489,69 @@ async fn dispatch_eve_product_command(
                 }
             }
         }
+        "campaign.export" => {
+            let runtime = match session_runtime(state, account_hash).await {
+                Ok(Some(value)) => value,
+                Ok(None) => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!("No campaign is selected."),
+                    );
+                }
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            };
+            let campaign = match load_campaign(&runtime.store) {
+                Ok(value) => value,
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            };
+            if let Err(error) = campaign_member_for_account(&runtime.store, &campaign, account_hash)
+            {
+                return invalid_eve_payload(&invocation, error);
+            }
+            let path = match state
+                .registry
+                .export(campaign.id, &state.exports_root)
+                .await
+            {
+                Ok(value) => value,
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            };
+            let filename = match path
+                .file_name()
+                .and_then(|value| value.to_str())
+                .map(str::to_owned)
+            {
+                Some(value) => value,
+                None => {
+                    return invalid_eve_payload(
+                        &invocation,
+                        anyhow::anyhow!("Campaign export did not produce a portable filename."),
+                    );
+                }
+            };
+            let size_bytes = std::fs::metadata(&path)
+                .map(|value| value.len())
+                .unwrap_or(0);
+            let token = match state.auth.lock().await.issue_campaign_export_grant(
+                account_hash,
+                campaign.id,
+                path,
+                filename.clone(),
+                Utc::now(),
+                chrono::Duration::minutes(15),
+            ) {
+                Ok(value) => value,
+                Err(error) => return invalid_eve_payload(&invocation, error),
+            };
+            Json(serde_json::json!({
+                "message":"Campaign snapshot is ready. The download grant expires in 15 minutes and can be used once.",
+                "download_url":format!("/ghostlight/api/eve/resources/{token}"),
+                "filename":filename,
+                "size_bytes":size_bytes,
+                "campaign_revision":campaign.revision,
+            }))
+            .into_response()
+        }
         "world.speak" | "world.assess" | "world.attempt" | "world.wait" => {
             let (campaign, actor_id) = match current_player_context(state, account_hash).await {
                 Ok(value) => value,
@@ -1796,6 +1878,29 @@ fn transient_result_projection(
         let text = (!links.is_empty())
             .then(|| format!("Single-use invitations:\n{}", links.join("\n")))?;
         children.push(serde_json::json!({"id":"ghostlight.command-result.text","kind":"text","props":{"value":text},"children":[]}));
+    } else if operation == "campaign.export" {
+        let uri = value.get("download_url")?.as_str()?;
+        let filename = value.get("filename")?.as_str()?;
+        let size = value
+            .get("size_bytes")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(0);
+        let revision = value
+            .get("campaign_revision")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(0);
+        children.push(serde_json::json!({
+            "id":"ghostlight.campaign-export.summary",
+            "kind":"text",
+            "props":{"value":format!("Campaign revision {revision} · {size} bytes · CultCache .cc")},
+            "children":[]
+        }));
+        children.push(serde_json::json!({
+            "id":"ghostlight.campaign-export.download",
+            "kind":"resource.download",
+            "props":{"label":"Download campaign export","uri":uri,"filename":filename},
+            "children":[]
+        }));
     } else if operation == "world.assess"
         || value.get("kind").and_then(serde_json::Value::as_str) == Some("assessed")
     {
@@ -1991,6 +2096,64 @@ async fn health(State(state): State<AppState>) -> Response {
         Ok(value) => Json(value).into_response(),
         Err(error) => (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response(),
     }
+}
+
+async fn eve_resource(
+    Path(token): Path<String>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    let Some(account_hash) = authenticated_session(&headers, &state).await else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let grant = match state.auth.lock().await.consume_campaign_export_grant(
+        &token,
+        &account_hash,
+        Utc::now(),
+    ) {
+        Ok(Some(value)) => value,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(error) => {
+            tracing::warn!(%error, "campaign export grant consumption failed");
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+    let exports_root = match std::fs::canonicalize(&state.exports_root) {
+        Ok(value) => value,
+        Err(error) => {
+            tracing::warn!(%error, "campaign export root is unavailable");
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+    let export_path = match std::fs::canonicalize(&grant.export_path) {
+        Ok(value) if value.starts_with(&exports_root) => value,
+        Ok(_) => {
+            tracing::error!(campaign_id=%grant.campaign_id, "campaign export grant escaped its owned root");
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+        Err(error) => {
+            tracing::warn!(%error, campaign_id=%grant.campaign_id, "campaign export file is unavailable");
+            return StatusCode::NOT_FOUND.into_response();
+        }
+    };
+    let bytes = match tokio::fs::read(export_path).await {
+        Ok(value) => value,
+        Err(error) => {
+            tracing::warn!(%error, campaign_id=%grant.campaign_id, "campaign export read failed");
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "application/vnd.gamecult.cultcache")
+        .header(header::CONTENT_LENGTH, bytes.len().to_string())
+        .header(
+            header::CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{}\"", grant.filename),
+        )
+        .header("cache-control", "private, no-store")
+        .body(Body::from(bytes))
+        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
 }
 
 async fn begin_session_zero(
@@ -6266,6 +6429,7 @@ mod tests {
         let auth = AppSessionOwner::open(root.join("app-sessions.cc"), &wrapping_key).unwrap();
         AppState {
             registry,
+            exports_root: root.join("exports"),
             session_zeros: SessionZeroRegistry::new(root.join("session-zero")).unwrap(),
             session_zero_director: None,
             entitlements: Arc::new(FixtureEntitlementPort),
@@ -6441,6 +6605,21 @@ mod tests {
 
         assert_ne!(first, second);
         assert!(first.starts_with("refresh:heimdall-session:"));
+    }
+
+    #[test]
+    fn persisted_idempotency_results_do_not_store_one_time_capability_urls() {
+        let result = serde_json::json!({
+            "schema":"gamecult.eve.command_result.v1",
+            "receipt":{"state":"accepted"},
+            "transientProjection":{"surface":{"root":{"children":[{"props":{"uri":"/secret/token"}}]}}}
+        });
+        for operation in ["session_zero.invites.create", "campaign.export"] {
+            let persisted = persistable_eve_result(operation, &result);
+            assert!(persisted.get("transientProjection").is_none());
+            assert_eq!(persisted["receipt"]["state"], "accepted");
+        }
+        assert_eq!(persistable_eve_result("world.assess", &result), result);
     }
 
     #[test]
@@ -6727,7 +6906,6 @@ mod tests {
             .create(campaign.clone(), vec![], vec![])
             .await
             .unwrap();
-
         process_due_ticks(
             &state,
             &runtime,
@@ -6878,6 +7056,157 @@ mod tests {
                 .await
                 .is_err()
         );
+    }
+
+    #[tokio::test]
+    async fn campaign_export_is_an_exact_membership_bound_single_use_snapshot() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = empty_app_state(dir.path());
+        let (owner_cookie, account_hash) = fixture_session(&state, "export-owner").await;
+        let (intruder_cookie, _) = fixture_session(&state, "export-intruder").await;
+        let campaign = seed("Export witness");
+        let runtime = state
+            .registry
+            .create(campaign.clone(), vec![], vec![])
+            .await
+            .unwrap();
+        let expected_export = load_campaign(&runtime.store).unwrap();
+        runtime
+            .store
+            .insert(
+                "campaign_membership.v1",
+                "ghostlight.campaign_membership.v1",
+                &campaign.id.to_string(),
+                &ghostlight_dungeon::session_zero::CampaignMembership {
+                    schema: "ghostlight.campaign_membership.v1".into(),
+                    campaign_id: campaign.id,
+                    governance_epoch: 0,
+                    host_member_id: "member:owner".into(),
+                    members: BTreeMap::from([(
+                        "member:owner".into(),
+                        ghostlight_dungeon::session_zero::CampaignMember {
+                            member_id: "member:owner".into(),
+                            account_hash: account_hash.clone(),
+                            display_name: "Owner".into(),
+                            actor_id: "player".into(),
+                            is_host: true,
+                            active: true,
+                            cell_allowance: 8,
+                        },
+                    )]),
+                    extraordinary_permissions: BTreeMap::new(),
+                },
+            )
+            .unwrap();
+        select_campaign(&state, &account_hash, campaign.id)
+            .await
+            .unwrap();
+        let app = app_router(state.clone(), dir.path().join("web"));
+        let invocation = serde_json::json!({
+            "schema":"gamecult.eve.command_invocation.v1",
+            "providerId":EVE_PROVIDER_ID,
+            "surfaceId":EVE_SURFACE_ID,
+            "operation":{
+                "operationId":"campaign.export",
+                "schemaId":"ghostlight.campaign_export_request.v1",
+                "idempotencyKey":"export-command-1",
+                "routeHint":{
+                    "sourceVersion":campaign_interface_version(&expected_export),
+                    "transport":"https-json"
+                }
+            },
+            "payload":{},
+            "issuedAt":Utc::now().to_rfc3339(),
+            "clientId":"export-test",
+            "commandBoundary":EVE_COMMAND_BOUNDARY,
+            "receiptSchema":EVE_RESULT_SCHEMA
+        });
+        let command_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/eve/commands")
+                    .header("content-type", "application/json")
+                    .header(header::COOKIE, format!("ghostlight_session={owner_cookie}"))
+                    .body(Body::from(serde_json::to_vec(&invocation).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(command_response.status(), StatusCode::OK);
+        let command_bytes = axum::body::to_bytes(command_response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let result: serde_json::Value = serde_json::from_slice(&command_bytes).unwrap();
+        assert_eq!(result["receipt"]["state"], "accepted");
+        let download = &result["transientProjection"]["surface"]["root"]["children"][1];
+        assert_eq!(download["kind"], "resource.download");
+        let uri = download["props"]["uri"].as_str().unwrap();
+        let token = uri.rsplit('/').next().unwrap();
+        let app_session_bytes = std::fs::read(dir.path().join("app-sessions.cc")).unwrap();
+        assert!(
+            !app_session_bytes
+                .windows(token.len())
+                .any(|window| window == token.as_bytes())
+        );
+
+        let intruder = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .header(
+                        header::COOKIE,
+                        format!("ghostlight_session={intruder_cookie}"),
+                    )
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(intruder.status(), StatusCode::NOT_FOUND);
+
+        let download_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .header(header::COOKIE, format!("ghostlight_session={owner_cookie}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(download_response.status(), StatusCode::OK);
+        assert_eq!(
+            download_response.headers()[header::CONTENT_TYPE],
+            "application/vnd.gamecult.cultcache"
+        );
+        let exported = axum::body::to_bytes(download_response.into_body(), 32 * 1024 * 1024)
+            .await
+            .unwrap();
+        let downloaded_path = dir.path().join("downloaded.cc");
+        std::fs::write(&downloaded_path, &exported).unwrap();
+        let exported_store = CampaignStore::open(downloaded_path).unwrap();
+        let exported_campaign = exported_store
+            .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(exported_campaign, expected_export);
+
+        let replay = app
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .header(header::COOKIE, format!("ghostlight_session={owner_cookie}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(replay.status(), StatusCode::NOT_FOUND);
     }
 
     #[test]

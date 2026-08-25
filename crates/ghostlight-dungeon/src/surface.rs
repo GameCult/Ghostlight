@@ -266,6 +266,13 @@ pub fn player_surface_for_actor(campaign: &Campaign, viewer_actor_id: &str) -> V
         json!({}),
         &["destination"],
     ));
+    children.push(command_control(
+        "dungeon.campaign.export",
+        "Export campaign (.cc)",
+        "campaign.export",
+        json!({}),
+        &[],
+    ));
     json!({
       "type":"surface-state", "schema":"gamecult.eve.surface.v1", "providerId":"gamecult.ghostlight.dungeon",
       "providerKind":"narrative.simulation", "title":campaign.name, "version":interface_version,
@@ -296,6 +303,7 @@ pub fn player_surface_for_actor(campaign: &Campaign, viewer_actor_id: &str) -> V
         eve_command("world.destination.compile","ghostlight.destination_compile.v1", &["destination"], "WorldCompiler"),
         eve_command("world.destination.approve","ghostlight.destination_approval.v1", &[], "WorldKernel"),
         eve_command("campaign.entry","ghostlight.campaign_entry.v1", &[], "ghostlight.account_preferences.v1"),
+        eve_command("campaign.export","ghostlight.campaign_export_request.v1", &[], "CampaignRegistry"),
         eve_command("campaign.contract_review.begin","ghostlight.contract_review_begin.v1", &[], "SessionZeroKernel"),
         eve_command("app.auth.logout","ghostlight.app_logout.v1", &[], "ghostlight.app_session.v1")
       ]
