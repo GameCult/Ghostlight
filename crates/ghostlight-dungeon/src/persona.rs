@@ -2950,25 +2950,42 @@ fn exact_activity_effects_schema(
     let relational_scope =
         exact_activity_scope_schema(target_ids, location_ids, minimum_locations, 1);
     let mut properties: serde_json::Map<String, serde_json::Value> = serde_json::Map::from_iter([
-        ("prepare".into(), local_scope.clone()),
-        ("investigate".into(), local_scope.clone()),
-        ("obstruct".into(), local_scope.clone()),
-        ("communicate".into(), local_scope.clone()),
+        (
+            "prepare".into(),
+            nullable_effect_schema(local_scope.clone()),
+        ),
+        (
+            "investigate".into(),
+            nullable_effect_schema(local_scope.clone()),
+        ),
+        (
+            "obstruct".into(),
+            nullable_effect_schema(local_scope.clone()),
+        ),
+        (
+            "communicate".into(),
+            nullable_effect_schema(local_scope.clone()),
+        ),
     ]);
     if allow_internal_coordination {
-        properties.insert("coordinate".into(), local_scope);
+        properties.insert("coordinate".into(), nullable_effect_schema(local_scope));
     } else if !target_ids.is_empty() {
-        properties.insert("coordinate".into(), relational_scope.clone());
+        properties.insert(
+            "coordinate".into(),
+            nullable_effect_schema(relational_scope.clone()),
+        );
     }
     if !target_ids.is_empty() {
-        properties.insert("recruit".into(), relational_scope.clone());
-        properties.insert("trade".into(), relational_scope);
+        properties.insert(
+            "recruit".into(),
+            nullable_effect_schema(relational_scope.clone()),
+        );
+        properties.insert("trade".into(), nullable_effect_schema(relational_scope));
     }
     serde_json::json!({
         "type":"object",
         "additionalProperties":false,
         "minProperties":1,
-        "maxProperties":3,
         "properties":properties
     })
 }
@@ -3812,6 +3829,24 @@ mod tests {
             allowed_constituent_effect_types(&slice.constituents[0]),
             vec!["actor_activities"]
         );
+        let strict_shaped_action = action(serde_json::json!({
+            "actor_activities":{
+                "prepare":{
+                    "target_subject_ids":[],
+                    "location_ids":["forum"]
+                },
+                "coordinate":null,
+                "investigate":null,
+                "recruit":null,
+                "obstruct":null,
+                "trade":null,
+                "communicate":null
+            }
+        }));
+        assert!(
+            validator.is_valid(&strict_shaped_action),
+            "the canonical return-path schema must accept the strict provider projection"
+        );
         let mut strict_schema = schema;
         crate::model_connector::project_strict_responses_schema(&mut strict_schema).unwrap();
         let strict_effect_properties = strict_schema
@@ -3825,20 +3860,7 @@ mod tests {
         assert!(
             jsonschema::validator_for(&strict_schema)
                 .unwrap()
-                .is_valid(&action(serde_json::json!({
-                    "actor_activities":{
-                        "prepare":{
-                            "target_subject_ids":[],
-                            "location_ids":["forum"]
-                        },
-                        "coordinate":null,
-                        "investigate":null,
-                        "recruit":null,
-                        "obstruct":null,
-                        "trade":null,
-                        "communicate":null
-                    }
-                })))
+                .is_valid(&strict_shaped_action)
         );
     }
 
