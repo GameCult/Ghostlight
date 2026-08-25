@@ -1855,6 +1855,11 @@ fn cell_correction_guidance(error: &anyhow::Error) -> &'static str {
         "The named subject already has a concrete chosen attempt in actions. Remove its inaction entry. Waiting for that attempt's result or declining some other option is not inaction. Do not change a faithful permitted action merely to preserve the duplicate inaction."
     } else if error.to_string().contains("duplicate strategic actions") {
         "The named subject may own exactly one strategic choice in this horizon. Merge all faithful chosen means into one action and use its orthogonal effect slots together; remove any separate alternative, deliberation, or unreachable choice rather than emitting a second action."
+    } else if error
+        .to_string()
+        .contains("each scalar lane and each distinct activity kind at most once")
+    {
+        "The action repeats one activity kind. Keep that kind once and union its exact target_subject_ids and location_ids into the one activity item, preserving the other distinct means in causal order."
     } else {
         "A rejected action is forbidden unchanged: remove it or replace it with a different, faithful, permitted typed consequence. Do not repeat its subject, intended_effect, and typed effect together."
     }
@@ -2897,11 +2902,34 @@ fn exact_activity_effects_schema(
     minimum_locations: usize,
     allow_internal_coordination: bool,
 ) -> serde_json::Value {
+    let one_per_kind = [
+        "prepare",
+        "coordinate",
+        "investigate",
+        "recruit",
+        "obstruct",
+        "trade",
+        "communicate",
+    ]
+    .into_iter()
+    .map(|activity| {
+        serde_json::json!({
+            "contains":{
+                "type":"object",
+                "required":["activity"],
+                "properties":{"activity":{"const":activity}}
+            },
+            "minContains":0,
+            "maxContains":1
+        })
+    })
+    .collect::<Vec<_>>();
     serde_json::json!({
         "type":"array",
         "minItems":1,
         "maxItems":3,
         "uniqueItems":true,
+        "allOf":one_per_kind,
         "items":exact_activity_effect_schema(
             target_ids,
             location_ids,
@@ -3697,6 +3725,20 @@ mod tests {
                 {
                     "activity":"prepare",
                     "target_subject_ids":[],
+                    "location_ids":["forum"]
+                }
+            ]
+        }))));
+        assert!(!validator.is_valid(&action(serde_json::json!({
+            "actor_activities":[
+                {
+                    "activity":"investigate",
+                    "target_subject_ids":[],
+                    "location_ids":["forum"]
+                },
+                {
+                    "activity":"investigate",
+                    "target_subject_ids":["inst_zhestokost"],
                     "location_ids":["forum"]
                 }
             ]
