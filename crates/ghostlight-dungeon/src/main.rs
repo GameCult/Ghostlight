@@ -1094,6 +1094,7 @@ fn eve_operation_schema(operation: &str) -> Option<&'static str> {
         "session_zero.boundary.set" => "ghostlight.session_zero_boundary_set.v1",
         "session_zero.boundary.remove" => "ghostlight.session_zero_boundary_remove.v1",
         "session_zero.leave"
+        | "session_zero.archive"
         | "session_zero.roster.lock"
         | "session_zero.compile"
         | "session_zero.compilation_gaps.review"
@@ -1344,6 +1345,18 @@ async fn dispatch_eve_product_command(
         "session_zero.leave" => match decode_payload::<SessionZeroRevisionRequest>(&payload) {
             Ok(request) => {
                 leave_session_zero(
+                    Path(session_id.unwrap()),
+                    headers.clone(),
+                    State(state.clone()),
+                    Json(request),
+                )
+                .await
+            }
+            Err(error) => return invalid_eve_payload(&invocation, error),
+        },
+        "session_zero.archive" => match decode_payload::<SessionZeroRevisionRequest>(&payload) {
+            Ok(request) => {
+                archive_session_zero(
                     Path(session_id.unwrap()),
                     headers.clone(),
                     State(state.clone()),
@@ -2882,6 +2895,21 @@ async fn leave_session_zero(
 ) -> Response {
     session_zero_simple_command(&headers, &state, session_id, |account_hash| {
         SessionZeroCommand::Leave {
+            actor_account_hash: account_hash,
+            expected_revision: request.expected_revision,
+        }
+    })
+    .await
+}
+
+async fn archive_session_zero(
+    Path(session_id): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(request): Json<SessionZeroRevisionRequest>,
+) -> Response {
+    session_zero_simple_command(&headers, &state, session_id, |account_hash| {
+        SessionZeroCommand::Archive {
             actor_account_hash: account_hash,
             expected_revision: request.expected_revision,
         }

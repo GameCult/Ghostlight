@@ -2936,6 +2936,15 @@ pub fn session_zero_surface(
             &[],
         ));
     }
+    if member.is_host {
+        children.push(command_control(
+            "session-zero.archive",
+            "Archive Session Zero",
+            "session_zero.archive",
+            serde_json::json!({"expected_revision":state.revision}),
+            &[],
+        ));
+    }
     if let Some(preview) = state.preview.as_ref() {
         children.push(serde_json::json!({
             "id":"session-zero.world-preview",
@@ -3164,6 +3173,7 @@ pub fn session_zero_surface(
             eve_command("session_zero.decision.resolve", "ghostlight.session_zero_decision_resolve.v1", &[]),
             eve_command("session_zero.invites.create", "ghostlight.session_zero_invites_create.v1", &["count"]),
             eve_command("session_zero.leave", "ghostlight.session_zero_revision_command.v1", &[]),
+            eve_command("session_zero.archive", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("session_zero.member.remove", "ghostlight.session_zero_member_remove.v1", &[]),
             eve_command("session_zero.roster.lock", "ghostlight.session_zero_revision_command.v1", &[]),
             eve_command("session_zero.compile", "ghostlight.session_zero_revision_command.v1", &[]),
@@ -4747,6 +4757,39 @@ mod tests {
         character.goals = vec!["Get the convoy through".into()];
         character.obligations = vec!["A life-debt to the quartermaster".into()];
         draft
+    }
+
+    #[tokio::test]
+    async fn host_can_archive_a_locked_unpublished_session_zero() {
+        let dir = tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("session-zero.cc")).unwrap();
+        let mut initial = state();
+        initial.roster_locked = true;
+        let initial_revision = initial.revision;
+        SessionZeroKernel::initialize(&store, &initial).unwrap();
+        let kernel = SessionZeroKernel::start(store, initial.id);
+
+        let archived = kernel
+            .command(SessionZeroCommand::Archive {
+                actor_account_hash: "account:host".into(),
+                expected_revision: initial_revision,
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(archived.state.status, SessionZeroStatus::Archived);
+        assert_eq!(archived.state.revision, initial_revision + 1);
+    }
+
+    #[test]
+    fn host_surface_exposes_the_revision_bound_archive_command() {
+        let draft = state();
+        let surface = session_zero_surface(&draft, "account:host").unwrap();
+        let encoded = serde_json::to_string(&surface).unwrap();
+
+        assert!(encoded.contains("session_zero.archive"));
+        assert!(encoded.contains("Archive Session Zero"));
+        assert!(encoded.contains("expected_revision"));
     }
 
     fn model_receipt(stage: &str, receipt_hash: &str, latency_ms: u64) -> ModelStageReceipt {
