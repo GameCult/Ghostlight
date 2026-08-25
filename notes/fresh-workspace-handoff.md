@@ -96,23 +96,24 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `4057e11dc2f44266ea8c4a0ca2947f0dd941d191`
+  `44eec9d654ffbcea253b69ebfd2a0421d7614b66`
 - Executable SHA-256:
-  `ba65b1b573a614e6132c99368d79da202eba564142a3ecb5c74645aa81ac2b05`
+  `7aaf73d8947a9b2ec590a343a5098a6147b3aeeb1586fa51610951dd8ab6cbe4`
 - Native client SHA-256:
-  `e153eb61f84aca22ac7b9494c669f4e3de17e30bfdafcbe23da3dcbd1237a2a4`
+  `7f1c7c75e955a11b188cf7132bdb0def49af095d6f1d28a23a4008656db62600`
 - Artifact SHA-256:
-  `sha256-7f87f14585eb48176fdcccd0cc2c7e4879b3a45c5d93dd418163a7cba2ebf98d`
+  `sha256-38eb2aa192980636a6397ce6e541068cfc525e0a96f40ba3277559960d346d89`
 - Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
 - Native player boundary: loopback RUDP `127.0.0.1:4102`
 - Public route: `https://yggdrasil.gamecult.org/ghostlight/`
 - Vault retrieval: local VoidBot at `127.0.0.1:17875/mcp`
-- Stored state at the last witness: nine campaigns and two Session Zero drafts
+- Stored state at the last witness: nine campaigns and three Session Zero drafts
 - Model connector release:
-  `7d384a6277c74fb35b8e51297ffbccda59746ce9`; provider `epiphany-codex`,
-  physical fast/capable model `gpt-5.4`
+  `f9cfa355051ef91d0e7f095b2df2a69fe79f8a7c`; provider `codex-connector`,
+  physical fast/capable model `gpt-5.4`. This is the independent
+  `codex-connector.service`; Epiphany is only another consumer.
 - Access witness: anonymous Eve gate 200; canonical `heimdall.auth.begin`
   accepted through Odin-discovered Heimdall; no actor or campaign state in the
   anonymous surface. A retained Heimdall grant completed fresh authentication,
@@ -167,15 +168,12 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `447f402…`; its locked Linux package test and
-  immutable build completed before atomic activation. Idunn's Linux journal
-  reports 265 library tests before the remaining package targets in its
-  truncated success receipt; the complete package test and release build
-  succeeded. Typed health, manifest, embedded source, executable hash, provider
-  readiness, nine campaigns, two Session Zero drafts, and zero daemon restarts
-  agree. Odin's raw typed snapshot independently exposes the redacted native
-  boundary. A forged native app session was denied, and a before/after digest
-  over every campaign store remained identical.
+- Idunn admitted exact release `44eec9d…`; 306 locked Linux tests and the
+  immutable release build completed before atomic activation. Typed health,
+  manifest, embedded source, executable and native-client hashes, provider
+  readiness, nine campaigns, three Session Zero drafts, and zero daemon
+  restarts agree. `codex-connector.service` remained independently healthy at
+  `f9cfa355…` throughout both the rejected test build and successful deploy.
 - Repeated native authentication exposed a client-side custody bug: a second
   begin replaced the only pending handle after Discord had completed it. The
   live client now refuses a second begin, clears terminal owned attempts, and
@@ -240,6 +238,15 @@ messages.
 - Adversarial Session Zero play proved that counters retire stale typed
   proposals before a replacement, generated openings and roles are optional,
   and transcript-only blank drafts cannot enter world compilation.
+- Fresh native Session Zero
+  `e7f2f947-25fa-4e1b-82e3-4a3e07dc4497` reached revision 36 with the exact
+  negotiated Mars/Zhestokost contract and private Corvid character intact.
+  Provider schema repair `0b3bd6a`, composite counter repair `f786e30`, and
+  eight-player identity bound `4435bcb` each closed a live failure without
+  publishing world state. Release `44eec9d` then converted the absent
+  Nightwing/VoidBot retrieval path into one stable typed material blocker: no
+  preview, world digest, branch assumption, or campaign was published, and the
+  player surface did not expose the backend address or Ollama advice.
 - One authenticated Session Zero canary survived exact-build restarts, retrieved
   grounded Aetheria evidence, preserved typed state across malformed model
   output, and completed a Mars/Zhestokost follow-up without borrowing the First
@@ -336,13 +343,17 @@ Operational release and rollback truth remains in `gamecult-ops`.
 
 ## Next action
 
-1. Continue adversarial play through the authenticated native CultMesh client;
-   its Heimdall grant and Ghostlight app session are persisted in CultCache.
-2. Pressure away-time strategic activity and character-accessible news in the
-   current revision-87 canary. Prove that the
-   player is not puppeted and inaccessible remote facts remain private.
-3. Compile an obscure Vault-grounded start or receive an explicit material-gap
-   preview without borrowing fixture cast, geography, or plot.
+1. Restore Nightwing's WireGuard/Ollama availability at `10.77.0.3:11434`.
+   The last Yggdrasil witness showed no Nightwing handshake for roughly five
+   hours; Starfire still handshook, but neither Starfire nor Raven exposed an
+   alternate Ollama or SSH endpoint.
+2. Retry Session Zero `e7f2f947-25fa-4e1b-82e3-4a3e07dc4497` from revision
+   36. The exact negotiated Mars/Zhestokost draft is intact. A healthy Vault
+   must yield a grounded preview or explicit lore gaps without First Exodus
+   cast, geography, or incidents.
+3. Resume away-time strategic activity and character-accessible news pressure
+   through the authenticated native CultMesh client. Prove no player puppeting
+   and no inaccessible remote-information leakage.
 4. Then fork or compile a denser 20-plus-power
    Aetheria skeleton and pressure budgets 1, 4, 8, and 32 with real provider
    output, including nested refugee dispersal and later rematerialization.

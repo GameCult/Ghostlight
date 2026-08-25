@@ -40,6 +40,11 @@ outside the lossy Projector summary, retain only six prior channel turns and
 four shared continuity turns, and give the Interpreter only its channel's typed
 authority lane. This keeps exact player intent available while reducing the
 prompt space in which already-settled questions can become salient again.
+Vault transport unavailability is a typed provider cause, not a lore answer.
+SessionZeroKernel retains the exact negotiated draft, returns to `drafting`,
+records one stable resolved material blocker, and publishes no preview, branch
+assumption, world digest, or campaign. After retrieval recovers, a retry uses
+the same compilation path; the browser and model cannot supply substitute lore.
 
 The current interface cut makes that Eve publication the browser's actual
 product boundary. `ghostlight.play` is one stable actor-filtered surface across

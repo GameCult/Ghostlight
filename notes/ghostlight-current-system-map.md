@@ -213,9 +213,19 @@ credential custody, caller admission, bounded provider transport, replay, and
 transport receipts. Ghostlight owns provider-request derivation, stage
 projection, schemas, retry between passes, semantic validation, model-stage
 receipts, and every kernel admission. Epiphany is a separate consumer and owns
-neither side. The currently installed Yggdrasil connector remains the legacy
-Epiphany-built release `7d384a6277c74fb35b8e51297ffbccda59746ce9` until
-Idunn admits and selects the independent CodexConnector release.
+neither side. Yggdrasil runs CodexConnector as the independent
+`codex-connector.service` release
+`f9cfa355051ef91d0e7f095b2df2a69fe79f8a7c`. Ghostlight has only a soft
+systemd ordering edge to that daemon and cannot build, configure, restart,
+select, or roll it back.
+
+Vault availability is typed at the provider boundary. When the configured
+Vault cannot return evidence, SessionZeroKernel returns the exact draft to
+`drafting`, records one stable resolved material blocker, and publishes no
+preview, branch assumption, world digest, or campaign. Operational causes stay
+in the private daemon journal. A later retry uses the unchanged approved brief
+through the same compiler path; neither the model nor client can inject a
+replacement evidence source.
 
 Canonical actor cell slices include that actor's exact goals, obligations,
 relationships, and bounded memories. Named Gestalt-member exceptions receive
