@@ -26,9 +26,32 @@ use std::sync::Arc;
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 struct DemandProjection {
-    axis_weights: BTreeMap<AgencyAxis, f32>,
+    axis_weights: DemandAxisWeights,
     focal_subject_ids: BTreeSet<String>,
     rationale: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+struct DemandAxisWeights {
+    geography: f32,
+    ideology: f32,
+    authority: f32,
+    economy_role: f32,
+    species_body: f32,
+    information: f32,
+}
+
+impl DemandAxisWeights {
+    fn into_map(self) -> BTreeMap<AgencyAxis, f32> {
+        BTreeMap::from([
+            (AgencyAxis::Geography, self.geography),
+            (AgencyAxis::Ideology, self.ideology),
+            (AgencyAxis::Authority, self.authority),
+            (AgencyAxis::EconomyRole, self.economy_role),
+            (AgencyAxis::SpeciesBody, self.species_body),
+            (AgencyAxis::Information, self.information),
+        ])
+    }
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -297,7 +320,7 @@ async fn project_resolution_demand(
                 campaign_id: campaign.id,
                 world_revision: campaign.revision,
                 resolution_epoch: campaign.resolution_policy.resolution_epoch,
-                axis_weights: projection.axis_weights,
+                axis_weights: projection.axis_weights.into_map(),
                 focal_subject_ids: projection.focal_subject_ids,
                 horizon_minutes: campaign.tick_hours.saturating_mul(60),
                 rationale: projection.rationale,
@@ -947,6 +970,26 @@ mod tests {
         active: AtomicUsize,
         maximum: AtomicUsize,
         malformed_cell: bool,
+    }
+
+    #[test]
+    fn demand_schema_preserves_all_six_weights_for_strict_providers() {
+        let mut schema = serde_json::to_value(schema_for!(DemandProjection)).unwrap();
+        crate::model_connector::project_strict_responses_schema(&mut schema).unwrap();
+        let properties = schema["$defs"]["DemandAxisWeights"]["properties"]
+            .as_object()
+            .unwrap();
+        assert_eq!(
+            properties.keys().cloned().collect::<BTreeSet<_>>(),
+            BTreeSet::from([
+                "authority".into(),
+                "economy_role".into(),
+                "geography".into(),
+                "ideology".into(),
+                "information".into(),
+                "species_body".into(),
+            ])
+        );
     }
 
     #[test]

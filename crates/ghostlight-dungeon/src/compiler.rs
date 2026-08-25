@@ -269,27 +269,7 @@ impl CompiledActorState {
 
 impl CompiledLocation {
     fn into_location(self) -> Result<Location> {
-        let mut routes = BTreeMap::new();
-        for route in self.routes {
-            if route.route_id.trim().is_empty()
-                || routes
-                    .insert(
-                        route.route_id.clone(),
-                        Route {
-                            destination_id: route.destination_id,
-                            distance: route.distance,
-                            travel_minutes: route.travel_minutes,
-                        },
-                    )
-                    .is_some()
-            {
-                return Err(anyhow!(
-                    "compiled location {} has an empty or duplicate route ID {:?}",
-                    self.id,
-                    route.route_id
-                ));
-            }
-        }
+        let routes = compiled_route_map(self.routes, &self.id)?;
         Ok(Location {
             id: self.id,
             name: self.name,
@@ -298,6 +278,33 @@ impl CompiledLocation {
             persistent_features: self.persistent_features,
         })
     }
+}
+
+fn compiled_route_map(
+    compiled_routes: Vec<CompiledRoute>,
+    origin_id: &str,
+) -> Result<BTreeMap<String, Route>> {
+    let mut routes = BTreeMap::new();
+    for route in compiled_routes {
+        if route.route_id.trim().is_empty()
+            || routes
+                .insert(
+                    route.route_id.clone(),
+                    Route {
+                        destination_id: route.destination_id,
+                        distance: route.distance,
+                        travel_minutes: route.travel_minutes,
+                    },
+                )
+                .is_some()
+        {
+            return Err(anyhow!(
+                "compiled location {origin_id} has an empty or duplicate route ID {:?}",
+                route.route_id
+            ));
+        }
+    }
+    Ok(routes)
 }
 
 impl CompiledGestaltMemberDelta {
@@ -452,9 +459,45 @@ struct CompiledAgencyProfile {
     subject_id: String,
     subject_kind: AgencySubjectKind,
     collective_authority_id: Option<String>,
-    facets: BTreeMap<AgencyAxis, BTreeSet<String>>,
+    facets: CompiledAgencyFacets,
     location_ids: BTreeSet<String>,
     information_channels: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledAgencyFacets {
+    geography: BTreeSet<String>,
+    ideology: BTreeSet<String>,
+    authority: BTreeSet<String>,
+    economy_role: BTreeSet<String>,
+    species_body: BTreeSet<String>,
+    information: BTreeSet<String>,
+}
+
+impl CompiledAgencyFacets {
+    fn into_map(self) -> BTreeMap<AgencyAxis, BTreeSet<String>> {
+        BTreeMap::from([
+            (AgencyAxis::Geography, self.geography),
+            (AgencyAxis::Ideology, self.ideology),
+            (AgencyAxis::Authority, self.authority),
+            (AgencyAxis::EconomyRole, self.economy_role),
+            (AgencyAxis::SpeciesBody, self.species_body),
+            (AgencyAxis::Information, self.information),
+        ])
+    }
+}
+
+impl From<BTreeMap<AgencyAxis, BTreeSet<String>>> for CompiledAgencyFacets {
+    fn from(mut facets: BTreeMap<AgencyAxis, BTreeSet<String>>) -> Self {
+        Self {
+            geography: facets.remove(&AgencyAxis::Geography).unwrap_or_default(),
+            ideology: facets.remove(&AgencyAxis::Ideology).unwrap_or_default(),
+            authority: facets.remove(&AgencyAxis::Authority).unwrap_or_default(),
+            economy_role: facets.remove(&AgencyAxis::EconomyRole).unwrap_or_default(),
+            species_body: facets.remove(&AgencyAxis::SpeciesBody).unwrap_or_default(),
+            information: facets.remove(&AgencyAxis::Information).unwrap_or_default(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -469,8 +512,8 @@ struct CompiledAgencyRelation {
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CompiledExpansionSeed {
-    origin_routes: BTreeMap<String, crate::domain::Route>,
-    locations: Vec<Location>,
+    origin_routes: Vec<CompiledRoute>,
+    locations: Vec<CompiledLocation>,
     facts: Vec<WorldFact>,
     gaps: Vec<String>,
 }
@@ -478,11 +521,47 @@ struct CompiledExpansionSeed {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CompiledFissionSeed {
     children: Vec<GestaltPersonaState>,
-    child_partition_values: BTreeMap<String, String>,
+    child_partition_values: Vec<CompiledChildPartitionValue>,
     #[serde(default)]
-    member_child_assignments: BTreeMap<String, String>,
-    resource_child_assignments: BTreeMap<String, String>,
+    member_child_assignments: Vec<CompiledMemberChildAssignment>,
+    resource_child_assignments: Vec<CompiledResourceChildAssignment>,
     gaps: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledChildPartitionValue {
+    child_id: String,
+    value: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledMemberChildAssignment {
+    member_id: String,
+    child_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledResourceChildAssignment {
+    resource_id: String,
+    child_id: String,
+}
+
+fn compiled_assignment_map(
+    label: &str,
+    assignments: impl IntoIterator<Item = (String, String)>,
+) -> Result<BTreeMap<String, String>> {
+    let mut mapped = BTreeMap::new();
+    for (subject_id, child_id) in assignments {
+        if subject_id.trim().is_empty()
+            || child_id.trim().is_empty()
+            || mapped.insert(subject_id.clone(), child_id).is_some()
+        {
+            return Err(anyhow!(
+                "compiled {label} require unique non-empty subject IDs and child IDs; rejected subject {subject_id:?}"
+            ));
+        }
+    }
+    Ok(mapped)
 }
 
 pub struct WorldCompiler {
@@ -1173,7 +1252,7 @@ impl WorldCompiler {
             .retrieve_all(&queries, &campaign.branch_origin.canon_cutoff, 12)
             .await?;
         let base_prompt = format!(
-            "Refine one canonical leaf gestalt along exactly the requested facet. Produce one child per requested value plus one mandatory child whose value is exactly 'other/unknown'. Every child starts at version 0 and uses an existing campaign location. Each child must copy the parent's shared capabilities, shared knowledge, goals, and pressures exactly; the partition facet belongs to the agency profile and does not silently rewrite the population baseline. Exact scarce resources are not inheritable traits: assign every parent resource to exactly one child in resource_child_assignments, and make each child's resources set equal exactly the resources assigned to that child. Do not create, duplicate, omit, or rename a resource. Do not erase or rewrite member deltas. Assign a member only when evidence or durable existing delta supports the cut; unassigned members will remain in other/unknown. List every material lore gap. This is an approval preview, not a commit. SUBJECT:\n{}\nEVIDENCE:\n{}",
+            "Refine one canonical leaf gestalt along exactly the requested facet. Produce one child per requested value plus one mandatory child whose value is exactly 'other/unknown'. Every child starts at version 0 and uses an existing campaign location. Each child must copy the parent's shared capabilities, shared knowledge, goals, and pressures exactly; the partition facet belongs to the agency profile and does not silently rewrite the population baseline. Emit one child_partition_values record per child with child_id and value. Exact scarce resources are not inheritable traits: assign every parent resource to exactly one child through a resource_id/child_id record in resource_child_assignments, and make each child's resources set equal exactly the resources assigned to that child. Do not create, duplicate, omit, or rename a resource. Do not erase or rewrite member deltas. Assign a member only when evidence or durable existing delta supports the cut, using a member_id/child_id record; unassigned members will remain in other/unknown. List every material lore gap. This is an approval preview, not a commit. SUBJECT:\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(&subject)?,
             evidence_text(&receipts),
         );
@@ -1195,8 +1274,28 @@ impl WorldCompiler {
                 .await?;
             stages.push(stage);
             let compiled: CompiledFissionSeed = serde_json::from_value(value)?;
-            let residual_child_id = compiled
-                .child_partition_values
+            let child_partition_values = compiled_assignment_map(
+                "child partition values",
+                compiled
+                    .child_partition_values
+                    .iter()
+                    .map(|entry| (entry.child_id.clone(), entry.value.clone())),
+            )?;
+            let member_child_assignments = compiled_assignment_map(
+                "member child assignments",
+                compiled
+                    .member_child_assignments
+                    .iter()
+                    .map(|entry| (entry.member_id.clone(), entry.child_id.clone())),
+            )?;
+            let resource_child_assignments = compiled_assignment_map(
+                "resource child assignments",
+                compiled
+                    .resource_child_assignments
+                    .iter()
+                    .map(|entry| (entry.resource_id.clone(), entry.child_id.clone())),
+            )?;
+            let residual_child_id = child_partition_values
                 .iter()
                 .find(|(_, value)| value.trim().eq_ignore_ascii_case("other/unknown"))
                 .map(|(id, _)| id.clone());
@@ -1243,10 +1342,10 @@ impl WorldCompiler {
                 parent_gestalt_id: parent.id.clone(),
                 partition_axis: request.partition_axis.clone(),
                 children: compiled.children,
-                child_partition_values: compiled.child_partition_values,
+                child_partition_values,
                 residual_child_id: residual_child_id.unwrap_or_default(),
-                member_child_assignments: compiled.member_child_assignments,
-                resource_child_assignments: compiled.resource_child_assignments,
+                member_child_assignments,
+                resource_child_assignments,
                 evidence_receipt_ids,
                 gaps,
                 canon_candidates,
@@ -1318,7 +1417,7 @@ impl WorldCompiler {
             .await?;
         let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
         let base_prompt = format!(
-            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes owned by origin id {} into the new region, and give every such destination a reciprocal route back to the origin with the same positive travel time. Route IDs are stable keys local to their exact origin location; the same local key may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes records owned by origin id {} into the new region, and give every such destination a reciprocal route record back to the origin with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them. CAMPAIGN LOCATIONS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
             origin_location_id,
             serde_json::to_string(&campaign.locations)?,
             destination_request,
@@ -1342,8 +1441,13 @@ impl WorldCompiler {
             let seed: CompiledExpansionSeed = serde_json::from_value(output.0)?;
             let expansion = crate::domain::RegionExpansion {
                 origin_location_id: origin_location_id.into(),
-                origin_routes: seed.origin_routes.clone(),
-                locations: seed.locations.clone(),
+                origin_routes: compiled_route_map(seed.origin_routes.clone(), origin_location_id)?,
+                locations: seed
+                    .locations
+                    .clone()
+                    .into_iter()
+                    .map(CompiledLocation::into_location)
+                    .collect::<Result<Vec<_>>>()?,
                 facts: seed.facts.clone(),
             };
             match validate_region_expansion(campaign, &expansion) {
@@ -3359,7 +3463,8 @@ fn apply_compiled_agency_skeleton(
             .agency_profiles
             .get_mut(&input.subject_id)
             .ok_or_else(|| anyhow!("agency profile references an unknown subject"))?;
-        let input_axes: BTreeSet<_> = input.facets.keys().cloned().collect();
+        let input_facets = input.facets.into_map();
+        let input_axes: BTreeSet<_> = input_facets.keys().cloned().collect();
         let unknown_locations = input
             .location_ids
             .iter()
@@ -3418,7 +3523,7 @@ fn apply_compiled_agency_skeleton(
             ));
         }
         profile.collective_authority_id = input.collective_authority_id;
-        profile.facets = input.facets;
+        profile.facets = input_facets;
         profile.location_ids = input.location_ids;
         profile.information_channels = input.information_channels;
         profile.evidence_receipt_ids = campaign.branch_origin.evidence_receipt_ids.clone();
@@ -3691,7 +3796,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn world_compiler_responses_schema_preserves_routes_and_relationships() {
+    fn compiler_responses_schemas_preserve_dynamic_semantics_as_records() {
         let mut schema = serde_json::to_value(schema_for!(CompiledSeed)).unwrap();
         crate::model_connector::project_strict_responses_schema(&mut schema).unwrap();
 
@@ -3710,6 +3815,37 @@ mod tests {
         let serialized = serde_json::to_string(&schema).unwrap();
         assert!(serialized.contains("\"route_id\""));
         assert!(serialized.contains("\"subject_id\""));
+
+        let mut agency = serde_json::to_value(schema_for!(CompiledAgencySkeleton)).unwrap();
+        crate::model_connector::project_strict_responses_schema(&mut agency).unwrap();
+        assert_eq!(
+            agency["$defs"]["CompiledAgencyFacets"]["properties"]["geography"]["type"],
+            "array"
+        );
+        assert_eq!(
+            agency["$defs"]["CompiledAgencyFacets"]["properties"]["information"]["type"],
+            "array"
+        );
+
+        let mut expansion = serde_json::to_value(schema_for!(CompiledExpansionSeed)).unwrap();
+        crate::model_connector::project_strict_responses_schema(&mut expansion).unwrap();
+        assert_eq!(expansion["properties"]["origin_routes"]["type"], "array");
+        assert_eq!(expansion["properties"]["locations"]["type"], "array");
+
+        let mut fission = serde_json::to_value(schema_for!(CompiledFissionSeed)).unwrap();
+        crate::model_connector::project_strict_responses_schema(&mut fission).unwrap();
+        assert_eq!(
+            fission["properties"]["child_partition_values"]["type"],
+            "array"
+        );
+        assert_eq!(
+            fission["properties"]["member_child_assignments"]["type"],
+            "array"
+        );
+        assert_eq!(
+            fission["properties"]["resource_child_assignments"]["type"],
+            "array"
+        );
     }
 
     #[test]
@@ -3797,7 +3933,7 @@ mod tests {
                 subject_id: "player".into(),
                 subject_kind: AgencySubjectKind::Actor,
                 collective_authority_id: None,
-                facets: facets.clone(),
+                facets: facets.clone().into(),
                 location_ids: BTreeSet::from(["center".into()]),
                 information_channels: BTreeSet::from(["convoy vulnerabilities".into()]),
             }],
@@ -3814,7 +3950,7 @@ mod tests {
                 subject_id: "player".into(),
                 subject_kind: AgencySubjectKind::Actor,
                 collective_authority_id: None,
-                facets,
+                facets: facets.into(),
                 location_ids: BTreeSet::from(["center".into()]),
                 information_channels: BTreeSet::from(["unknown".into()]),
             }],
