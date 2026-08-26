@@ -1,25 +1,20 @@
-#[cfg(not(windows))]
-fn main() -> anyhow::Result<()> {
-    anyhow::bail!("the live strategic smoke uses Starfire's DPAPI credential")
-}
-
-#[cfg(windows)]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use chrono::Utc;
     use ghostlight_dungeon::{
         domain::{TickSource, WorldCommand},
         kernel::{CommandResult, WorldKernel},
-        model::{DeepSeekPort, ModelPort},
+        model_runtime::ModelRuntimeSelection,
         persistence::CampaignStore,
         scheduler::propose_resolution_wave,
         turn::SnapshotPermit,
     };
     use std::{path::PathBuf, sync::Arc, time::Instant};
 
-    let secret = std::env::var_os("GHOSTLIGHT_DEEPSEEK_BLOB")
+    let runtime_root = std::env::var_os("GHOSTLIGHT_DUNGEON_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"F:\GameCult\GhostlightDungeon\secrets\deepseek.dpapi"));
+        .unwrap_or_else(default_runtime_root);
+    let model_selection = ModelRuntimeSelection::from_environment(&runtime_root)?;
     let scenario_id = std::env::var("GHOSTLIGHT_LIVE_FIRE_SCENARIO")
         .unwrap_or_else(|_| "strategic-default".into());
     let pressure = std::env::var("GHOSTLIGHT_STRATEGIC_PRESSURE").unwrap_or_else(|_| {
@@ -53,7 +48,13 @@ async fn main() -> anyhow::Result<()> {
         .clone();
     let store = CampaignStore::open(root.join("campaign.cc"))?;
     store.create_unadmitted_fixture_campaign(&campaign, &[], &[])?;
-    let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_runtime_secret(secret)?);
+    let model = model_selection.open()?.ok_or_else(|| {
+        anyhow::anyhow!(
+            "{} credential is unavailable at {}",
+            model_selection.provider,
+            model_selection.credential_path.display()
+        )
+    })?;
     let started = Instant::now();
     let output = propose_resolution_wave(
         model,
@@ -135,6 +136,7 @@ async fn main() -> anyhow::Result<()> {
         "pressure":pressure,
         "campaign_id":campaign.id,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
+        "model_runtime":model_selection.status("configured"),
         "model_receipt_hash":output.aggregate_receipt_hash,
         "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
         "plan":plan,
@@ -154,7 +156,17 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(windows)]
+fn default_runtime_root() -> std::path::PathBuf {
+    #[cfg(windows)]
+    {
+        std::path::PathBuf::from(r"F:\GameCult\GhostlightDungeon")
+    }
+    #[cfg(not(windows))]
+    {
+        std::path::PathBuf::from("/var/lib/gamecult/ghostlight-dungeon")
+    }
+}
+
 fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
     use chrono::{Duration, Utc};
     use ghostlight_dungeon::domain::*;

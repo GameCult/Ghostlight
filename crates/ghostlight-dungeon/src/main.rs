@@ -28,10 +28,8 @@ use ghostlight_dungeon::{
         CampaignMeshSnapshot, MeshPublisher, MeshRuntimeIdentity, PROVIDER_ID as EVE_PROVIDER_ID,
         SURFACE_ID as EVE_SURFACE_ID, SessionZeroMeshSnapshot,
     },
-    model::{
-        DeepSeekPort, MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelRuntimeStatus, OpenRouterPort,
-    },
-    model_connector::CodexConnectorModelPort,
+    model::{MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelRuntimeStatus},
+    model_runtime::ModelRuntimeSelection,
     persistence::CampaignStore,
     persona::PersonaProjectionEngine,
     registry::{CampaignRegistry, CampaignRuntime},
@@ -302,79 +300,29 @@ async fn main() -> anyhow::Result<()> {
     for (account_hash, campaign_id) in &legacy_auth_state.session_campaigns {
         app_sessions.migrate_preference(account_hash, *campaign_id)?;
     }
-    let provider_name = std::env::var("GHOSTLIGHT_MODEL_PROVIDER")
-        .unwrap_or_else(|_| "deepseek".into())
-        .to_ascii_lowercase();
-    let (default_fast_model, default_capable_model, default_secret_name) =
-        match provider_name.as_str() {
-            "deepseek" => ("deepseek-v4-flash", "deepseek-v4-pro", "deepseek.dpapi"),
-            "openrouter" => ("stealth/ox-alpha", "stealth/ox-alpha", "openrouter.key"),
-            "codex-connector" => ("gpt-5.6-luna", "gpt-5.6-luna", "codex-connector.key"),
-            unsupported => anyhow::bail!("unsupported model provider {unsupported}"),
+    let model_selection = ModelRuntimeSelection::from_environment(&runtime_root)?;
+    let (model_status, compiler, assessor, shared_model) =
+        if let Some(provider) = model_selection.open()? {
+            let vault_endpoint = std::env::var("GHOSTLIGHT_VAULT_MCP_URL")
+                .unwrap_or_else(|_| "http://127.0.0.1:17875/mcp".into());
+            (
+                model_selection.status("configured"),
+                Some(Arc::new(WorldCompiler::new(
+                    Arc::new(VoidBotMcpVault::new(vault_endpoint)),
+                    provider.clone(),
+                    MODEL_FAST,
+                    MODEL_CAPABLE,
+                ))),
+                Some(Arc::new(ActionAssessor::with_models(
+                    provider.clone(),
+                    MODEL_FAST,
+                    MODEL_CAPABLE,
+                ))),
+                Some(provider),
+            )
+        } else {
+            (model_selection.status("missing-secret"), None, None, None)
         };
-    let fast_model =
-        std::env::var("GHOSTLIGHT_MODEL_FAST").unwrap_or_else(|_| default_fast_model.into());
-    let capable_model =
-        std::env::var("GHOSTLIGHT_MODEL_CAPABLE").unwrap_or_else(|_| default_capable_model.into());
-    let connector_max_concurrent_requests =
-        std::env::var("GHOSTLIGHT_CODEX_CONNECTOR_MAX_CONCURRENT_REQUESTS")
-            .unwrap_or_else(|_| "8".to_string())
-            .parse::<usize>()
-            .context("GHOSTLIGHT_CODEX_CONNECTOR_MAX_CONCURRENT_REQUESTS must be an integer")?;
-    let secret_path = std::env::var_os("GHOSTLIGHT_MODEL_CREDENTIAL")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| runtime_root.join("secrets").join(default_secret_name));
-    let configured_status = |readiness: String| ModelRuntimeStatus {
-        provider: provider_name.clone(),
-        fast_model: fast_model.clone(),
-        capable_model: capable_model.clone(),
-        readiness,
-    };
-    let (model_status, compiler, assessor, shared_model) = if secret_path.is_file() {
-        let provider: Arc<dyn ModelPort> = match provider_name.as_str() {
-            "deepseek" => Arc::new(DeepSeekPort::from_runtime_secret_with_models(
-                &secret_path,
-                fast_model.clone(),
-                capable_model.clone(),
-            )?),
-            "openrouter" => Arc::new(OpenRouterPort::from_runtime_secret(
-                &secret_path,
-                fast_model.clone(),
-                capable_model.clone(),
-            )?),
-            "codex-connector" => Arc::new(CodexConnectorModelPort::from_runtime_secret(
-                std::env::var("GHOSTLIGHT_MODEL_CONNECTOR")
-                    .unwrap_or_else(|_| "127.0.0.1:4103".to_string())
-                    .parse()?,
-                &secret_path,
-                std::env::var("GHOSTLIGHT_RUNTIME_ID")
-                    .unwrap_or_else(|_| "ghostlight-dungeon-yggdrasil".to_string()),
-                fast_model.clone(),
-                capable_model.clone(),
-                connector_max_concurrent_requests,
-            )?),
-            _ => unreachable!("provider name was validated above"),
-        };
-        let vault_endpoint = std::env::var("GHOSTLIGHT_VAULT_MCP_URL")
-            .unwrap_or_else(|_| "http://127.0.0.1:17875/mcp".into());
-        (
-            configured_status("configured".into()),
-            Some(Arc::new(WorldCompiler::new(
-                Arc::new(VoidBotMcpVault::new(vault_endpoint)),
-                provider.clone(),
-                MODEL_FAST,
-                MODEL_CAPABLE,
-            ))),
-            Some(Arc::new(ActionAssessor::with_models(
-                provider.clone(),
-                MODEL_FAST,
-                MODEL_CAPABLE,
-            ))),
-            Some(provider),
-        )
-    } else {
-        (configured_status("missing-secret".into()), None, None, None)
-    };
     let mesh_target = std::env::var("GHOSTLIGHT_ODIN_RUDP")
         .ok()
         .map(|value| value.parse())
