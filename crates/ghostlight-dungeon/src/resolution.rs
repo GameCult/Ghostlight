@@ -3559,10 +3559,15 @@ pub(crate) mod tests {
                 memories: vec!["surveyed the bypass".into()],
             },
         );
-        value.actors["player"].relationships.insert(
-            "member:member:cal_rusk".into(),
-            "heard his careful report".into(),
-        );
+        value
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .relationships
+            .insert(
+                "member:member:cal_rusk".into(),
+                "heard his careful report".into(),
+            );
         value.pending_world_proposals.push(WorldActionProposal {
             actor_id: "member:member:cal_rusk".into(),
             intent: "check the route".into(),
