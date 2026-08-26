@@ -16,7 +16,7 @@ use std::{
 };
 use tokio::{sync::Semaphore, task::JoinSet};
 
-const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. Fields are conditionally required, not optional suggestions: no_material_change requires reason; resource_created and resource_consumed require owner_subject_id and resource; resource_transferred requires owner_subject_id, other_subject_id, and resource; gestalt_pressure requires owner_subject_id plus both pressure arrays; agency_relation_shift requires relation_id and strength_delta; member_memory requires member_id and memory; member_obligation requires member_id and obligation; member_relationship requires member_id, other_subject_id, and relationship_description; knowledge_learned requires owner_subject_id and fact_id; knowledge_communicated requires owner_subject_id, recipient_subject_ids, and fact_id. Every scalar field not named for the chosen effect_kind is omitted or null; irrelevant arrays are omitted, null, or empty and normalize to empty before semantic binding. A non-neutral irrelevant field is invalid. For gestalt_pressure, pressure_additions and pressure_resolutions must be arrays of plain strings, never null or objects. For knowledge_communicated, recipient_subject_ids is an array of exact supplied recipients, never null. no_material_change uses an empty supporting_state_references array; every material effect cites the smallest causally decisive set of one to eight values copied literally and only from that action's allowed_state_references. A source_subject_id, target_subject_id, target_state subject_id, member_state_owner_id, owner_subject_id, other_subject_id, member_id, relation_id, fact_id, or recipient_subject_id is not a supporting state reference unless that exact string also appears in allowed_state_references. For member_relationship and knowledge_communicated, the target field already identifies the target; do not repeat it as provenance. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable source-owned result, the resource field names that resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
+const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. Fields are conditionally required, not optional suggestions: no_material_change requires reason; resource_created and resource_consumed require owner_subject_id and resource; resource_transferred requires owner_subject_id, other_subject_id, and resource; gestalt_pressure requires owner_subject_id plus both pressure arrays; agency_relation_shift requires relation_id and strength_delta; member_memory requires member_id and memory; member_obligation requires member_id and obligation; member_relationship requires member_id, other_subject_id, and relationship_description; knowledge_learned requires owner_subject_id and fact_id; knowledge_communicated requires owner_subject_id, recipient_subject_ids, and fact_id. Every scalar field not named for the chosen effect_kind is omitted or null; irrelevant arrays are omitted, null, or empty and normalize to empty before semantic binding. A non-neutral irrelevant field is invalid. For gestalt_pressure, pressure_additions and pressure_resolutions must be arrays of plain strings, never null or objects. For knowledge_communicated, recipient_subject_ids is an array of exact supplied recipients, never null. no_material_change uses an empty supporting_state_references array; every material effect cites the smallest causally decisive set of one to eight values copied literally and only from that action's allowed_state_references. A source_subject_id, target_subject_id, target_state subject_id, member_state_owner_id, owner_subject_id, other_subject_id, member_id, relation_id, fact_id, or recipient_subject_id is not a supporting state reference unless that exact string also appears in allowed_state_references. For member_relationship and knowledge_communicated, the target field already identifies the target; do not repeat it as provenance. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable result, owner_subject_id copies one exact resource_creation_owner_ids value: use the source for portable stock or equipment it retains, and use an exact activity location for a durable installed, placed, or repaired feature there. The resource field names the resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
 const OUTCOME_VERIFIER_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named verdicts—never verifications, outcomes, results, or resolutions. verdicts is an array with one item per supplied action_digest. Every item has exactly action_digest, result, and repair_guidance. Example: {"verdicts":[{"action_digest":"sha256:<copy exact supplied digest>","result":"match","repair_guidance":null}]}"#;
 
 #[derive(Clone, Debug, Serialize)]
@@ -41,6 +41,7 @@ struct ActionOutcomeContext {
     active_relations: Vec<serde_json::Value>,
     pressure_owners: Vec<PressureOwnerContext>,
     resource_owner_id: String,
+    resource_creation_owner_ids: Vec<String>,
     resource_recipient_ids: Vec<String>,
     discoverable_facts: Vec<serde_json::Value>,
     communicable_facts: Vec<CommunicableFactContext>,
@@ -228,7 +229,7 @@ async fn resolve_activity_outcome(
         .into_iter()
         .collect();
     let static_contract = format!(
-        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. For each action, effect_kind must come from that action's admissible_effect_kinds; this is the runtime's exact projection of locally valid consequence handles. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. Prefer the most specific causally supported durable effect when the attempt and its band establish one. A mixed result should preserve bounded progress, cost, or a new unresolved pressure when a supplied handle supports it; do not collapse concrete partial work into no change merely because it is incomplete. Use no_material_change when none of the other supplied handles honestly represents a durable result; success or mixed success does not itself authorize inventing a response, fact, relationship, or resource. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource for the source only and requires a capability reference. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one recipient: copy one exact resource_recipient_ids value into the output field other_subject_id; it cannot take from a target. Every resource effect's owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure copies one exact pressure_owners.owner_subject_id value adjacent to that owner's current_pressures into owner_subject_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. knowledge_communicated copies one communicable_facts fact_id and a nonempty subset of its exact recipient_subject_ids; owner_subject_id is the source speaker. Every material effect needs at least one supporting_state_reference copied literally and only from that action's allowed_state_references. IDs shown in source_state, target_state, target_subject_ids, or effect-specific owner and target fields are not provenance handles unless repeated in allowed_state_references. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
+        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. For each action, effect_kind must come from that action's admissible_effect_kinds; this is the runtime's exact projection of locally valid consequence handles. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. Prefer the most specific causally supported durable effect when the attempt and its band establish one. A mixed result should preserve bounded progress, cost, or a new unresolved pressure when a supplied handle supports it; do not collapse concrete partial work into no change merely because it is incomplete. Use no_material_change when none of the other supplied handles honestly represents a durable result; success or mixed success does not itself authorize inventing a response, fact, relationship, or resource. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource and requires a capability reference. Its owner_subject_id must copy one exact resource_creation_owner_ids value: choose the source for portable stock or equipment it retains, or an exact activity location for a durable installed, placed, or repaired feature there. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one recipient: copy one exact resource_recipient_ids value into the output field other_subject_id; it cannot take from a target. For resource_consumed and resource_transferred, owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure copies one exact pressure_owners.owner_subject_id value adjacent to that owner's current_pressures into owner_subject_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. knowledge_communicated copies one communicable_facts fact_id and a nonempty subset of its exact recipient_subject_ids; owner_subject_id is the source speaker. Every material effect needs at least one supporting_state_reference copied literally and only from that action's allowed_state_references. IDs shown in source_state, target_state, target_subject_ids, or effect-specific owner and target fields are not provenance handles unless repeated in allowed_state_references. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
     );
     let mut request = ModelStageRequest {
         stage: "strategic_outcome_resolver".into(),
@@ -354,7 +355,7 @@ async fn verify_outcomes(
             )
         ),
         lived_stream: format!(
-            "You are Ghostlight's independent semantic verifier for material strategic outcomes. The local validator has already proved IDs, custody, scope, and bounds. Judge only whether each proposed durable mutation is causally entailed by that exact subject's attempt and supplied state. Return one verdict per action_digest in supplied order. Resource creation requires concrete making, repair, or preparation that establishes the named durable result. A resource_consumed must be an exact resource the attempt actually uses, spends, gives up, damages, or transforms; reject unrelated inventory charges. A resource_transferred requires the attempt to give that exact resource to that exact recipient. A pressure addition or resolution must follow from the attempted activity rather than merely naming a current pressure. A relation shift requires an interaction capable of changing that relationship, not merely a message, proximity, or unrelated work. Member memory, obligation, and relationship effects require an event in the attempt that could create that exact personal delta. Knowledge learned requires an investigation, observation, or communication that can actually teach the source that exact fact; the fact merely appearing in supplied state or references is not enough. Knowledge communicated requires the attempt to convey that exact source-known fact to those exact recipients; addressing them without stating the fact is insufficient. result is match or mismatch. match requires null repair_guidance; mismatch requires one concrete correction sentence of at most 240 characters. Return JSON only.\n\nOUTPUT CONTRACT:\n{OUTCOME_VERIFIER_OUTPUT_CONTRACT}\n\nACTION_CONTEXT:\n{}\n\nPROPOSED_OUTCOMES:\n{}",
+            "You are Ghostlight's independent semantic verifier for material strategic outcomes. The local validator has already proved IDs, custody, scope, and bounds. Judge only whether each proposed durable mutation is causally entailed by that exact subject's attempt and supplied state. Return one verdict per action_digest in supplied order. Resource creation requires concrete making, repair, or preparation that establishes the named durable result. Its custodian must match the result: portable stock or equipment stays with the source, while an installed, placed, or repaired feature belongs to the exact activity location where it was established. A resource_consumed must be an exact resource the attempt actually uses, spends, gives up, damages, or transforms; reject unrelated inventory charges. A resource_transferred requires the attempt to give that exact resource to that exact recipient. A pressure addition or resolution must follow from the attempted activity rather than merely naming a current pressure. A relation shift requires an interaction capable of changing that relationship, not merely a message, proximity, or unrelated work. Member memory, obligation, and relationship effects require an event in the attempt that could create that exact personal delta. Knowledge learned requires an investigation, observation, or communication that can actually teach the source that exact fact; the fact merely appearing in supplied state or references is not enough. Knowledge communicated requires the attempt to convey that exact source-known fact to those exact recipients; addressing them without stating the fact is insufficient. result is match or mismatch. match requires null repair_guidance; mismatch requires one concrete correction sentence of at most 240 characters. Return JSON only.\n\nOUTPUT CONTRACT:\n{OUTCOME_VERIFIER_OUTPUT_CONTRACT}\n\nACTION_CONTEXT:\n{}\n\nPROPOSED_OUTCOMES:\n{}",
             serde_json::to_string(context)?,
             serde_json::to_string(outcomes)?,
         ),
@@ -802,9 +803,19 @@ fn resolved_outcome_summary(
         StrategicOutcomeEffect::NoMaterialChange { .. } => {
             format!("{source_name}'s attempt produces no durable state change.")
         }
-        StrategicOutcomeEffect::ResourceCreated { resource, .. } => {
+        StrategicOutcomeEffect::ResourceCreated {
+            owner_subject_id,
+            resource,
+        } if owner_subject_id == source_subject_id => {
             format!("{source_name} creates and retains {resource}.")
         }
+        StrategicOutcomeEffect::ResourceCreated {
+            owner_subject_id,
+            resource,
+        } => format!(
+            "At {}, {source_name} establishes {resource}.",
+            subject_name(campaign, owner_subject_id)?
+        ),
         StrategicOutcomeEffect::ResourceConsumed { resource, .. } => {
             format!("{source_name} expends {resource}.")
         }
@@ -959,9 +970,9 @@ fn validate_effect(
             owner_subject_id,
             resource,
         } => {
-            if owner_subject_id != source {
+            if owner_subject_id != source && !locations.contains(owner_subject_id) {
                 return Err(anyhow!(
-                    "outcome {} resource_created owner_subject_id must copy exact resource_owner_id {source}",
+                    "outcome {} resource_created owner_subject_id must be the source or one exact activity location",
                     outcome.action_digest
                 ));
             }
@@ -977,16 +988,16 @@ fn validate_effect(
                     outcome.action_digest
                 ));
             }
-            let existing_resources = subject_resources(campaign, source)?;
+            let existing_resources = subject_resources(campaign, owner_subject_id)?;
             if contains_normalized(&existing_resources, resource) {
                 return Err(anyhow!(
-                    "outcome {} resource_created repeats an existing source resource",
+                    "outcome {} resource_created repeats an existing custodian resource",
                     outcome.action_digest
                 ));
             }
-            if existing_resources.len() >= 64 || !can_hold_resources(campaign, source) {
+            if existing_resources.len() >= 64 || !can_hold_resources(campaign, owner_subject_id) {
                 return Err(anyhow!(
-                    "outcome {} resource_created exceeds source resource capacity",
+                    "outcome {} resource_created exceeds custodian resource capacity",
                     outcome.action_digest
                 ));
             }
@@ -1000,7 +1011,7 @@ fn validate_effect(
                     outcome.action_digest
                 ));
             }
-            if !exclusive_effects.insert(format!("resource:{source}:{resource}")) {
+            if !exclusive_effects.insert(format!("resource:{owner_subject_id}:{resource}")) {
                 return Err(anyhow!(
                     "outcome {} duplicates a resource creation in this wave",
                     outcome.action_digest
@@ -1306,6 +1317,12 @@ fn action_context(
         })
         .collect();
     let communicable_facts = communicable_facts(campaign, proposal)?;
+    let resource_creation_owner_ids = std::iter::once(proposal.subject_id.clone())
+        .chain(locations.iter().cloned())
+        .filter(|owner| can_hold_resources(campaign, owner))
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
     Ok(ActionOutcomeContext {
         action_digest: cell_action_digest(proposal)?,
         source_subject_id: proposal.subject_id.clone(),
@@ -1330,6 +1347,7 @@ fn action_context(
             })
             .collect(),
         resource_owner_id: proposal.subject_id.clone(),
+        resource_creation_owner_ids,
         resource_recipient_ids,
         discoverable_facts,
         communicable_facts,
@@ -1659,6 +1677,9 @@ pub fn subject_resources(campaign: &Campaign, subject_id: &str) -> Result<BTreeS
     if let Some(institution) = campaign.institutions.get(subject_id) {
         return Ok(institution.resources.iter().cloned().collect());
     }
+    if let Some(location) = campaign.locations.get(subject_id) {
+        return Ok(location.persistent_features.iter().cloned().collect());
+    }
     Err(anyhow!("resource owner is unknown"))
 }
 
@@ -1669,6 +1690,7 @@ pub fn can_hold_resources(campaign: &Campaign, subject_id: &str) -> bool {
         || campaign.gestalts.contains_key(subject_id)
         || campaign.institutions.contains_key(subject_id)
         || campaign.actors.contains_key(subject_id)
+        || campaign.locations.contains_key(subject_id)
 }
 
 fn is_human_controlled_actor(campaign: &Campaign, subject_id: &str) -> bool {
@@ -1768,6 +1790,12 @@ fn subject_name(campaign: &Campaign, subject_id: &str) -> Result<String> {
                         .map(|value| value.name.clone())
                 },
             )
+        })
+        .or_else(|| {
+            campaign
+                .locations
+                .get(subject_id)
+                .map(|value| value.name.clone())
         })
         .ok_or_else(|| anyhow!("outcome source vanished"))
 }
@@ -1984,19 +2012,16 @@ fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Val
         .filter_map(serde_json::Value::as_str)
         .map(str::to_owned)
         .collect::<Vec<_>>();
-    let resource_kinds = [
-        OutcomeEffectKind::ResourceCreated,
+    let admitted_existing_resource_kinds = [
         OutcomeEffectKind::ResourceConsumed,
         OutcomeEffectKind::ResourceTransferred,
-    ];
-    let admitted_resource_kinds = resource_kinds
-        .iter()
-        .filter(|kind| admits(kind))
-        .cloned()
-        .collect::<Vec<_>>();
-    if !admitted_resource_kinds.is_empty() {
+    ]
+    .into_iter()
+    .filter(|kind| admits(kind))
+    .collect::<Vec<_>>();
+    if !admitted_existing_resource_kinds.is_empty() {
         constraints.push(effect_scope_condition(
-            &admitted_resource_kinds,
+            &admitted_existing_resource_kinds,
             serde_json::json!({
                 "properties":{"owner_subject_id":{"const":action.resource_owner_id}}
             }),
@@ -2006,17 +2031,13 @@ fn outcome_action_scope_schema(action: &ActionOutcomeContext) -> serde_json::Val
         constraints.push(effect_scope_condition(
             &[OutcomeEffectKind::ResourceCreated],
             serde_json::json!({
-                "properties":{"resource":{"type":"string","minLength":1,"maxLength":160}}
+                "properties":{
+                    "owner_subject_id":exact_string_value_schema(&action.resource_creation_owner_ids),
+                    "resource":{"type":"string","minLength":1,"maxLength":160}
+                }
             }),
         ));
     }
-    let admitted_existing_resource_kinds = [
-        OutcomeEffectKind::ResourceConsumed,
-        OutcomeEffectKind::ResourceTransferred,
-    ]
-    .into_iter()
-    .filter(|kind| admits(kind))
-    .collect::<Vec<_>>();
     if !admitted_existing_resource_kinds.is_empty() {
         constraints.push(effect_scope_condition(
             &admitted_existing_resource_kinds,
@@ -3358,9 +3379,41 @@ mod tests {
         assert!(
             error
                 .to_string()
-                .contains("owner_subject_id must copy exact resource_owner_id dockers")
+                .contains("owner_subject_id must be the source or one exact activity location")
         );
         assert!(error.to_string().contains("exact admissible_effect_kinds"));
+    }
+
+    #[test]
+    fn resource_creation_can_belong_to_the_exact_activity_place() {
+        let value = campaign();
+        let mut action = proposal();
+        action.intent = "brace a permanent public warning at the damaged quay".into();
+        action.intended_effect = "leave a durable warning where travelers will see it".into();
+        action.effects = vec![StrategicCellEffect::GestaltActivity {
+            gestalt_id: "dockers".into(),
+            activity: StrategicActivityKind::Prepare,
+            target_subject_ids: vec![],
+            location_ids: vec!["dock".into()],
+        }];
+        let outcome = StrategicActivityOutcome {
+            schema: "ghostlight.strategic_activity_outcome.v1".into(),
+            action_digest: cell_action_digest(&action).unwrap(),
+            source_subject_id: "dockers".into(),
+            band: StrategicOutcomeBand::Success,
+            summary: "ignored model summary".into(),
+            supporting_state_references: vec!["capability:repair nets".into()],
+            effect: StrategicOutcomeEffect::ResourceCreated {
+                owner_subject_id: "dock".into(),
+                resource: "reinforced public hazard marker".into(),
+            },
+        };
+
+        validate_activity_outcomes(&value, &[action], std::slice::from_ref(&outcome)).unwrap();
+        assert_eq!(
+            resolved_outcome_summary(&value, "dockers", &outcome.effect).unwrap(),
+            "At Dock, Dockers establishes reinforced public hazard marker."
+        );
     }
 
     #[tokio::test]
@@ -3501,6 +3554,27 @@ mod tests {
                 .admissible_effect_kinds
                 .contains(&OutcomeEffectKind::KnowledgeLearned)
         );
+        assert_eq!(context.resource_owner_id, "dockers");
+        assert_eq!(context.resource_creation_owner_ids, ["dock", "dockers"]);
+
+        let mut schema = serde_json::to_value(schema_for!(OutcomeProposalBundle)).unwrap();
+        constrain_outcome_schema(&mut schema, std::slice::from_ref(&context)).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let proposed = |owner: &str| {
+            serde_json::json!({
+                "outcomes":[{
+                    "action_digest":context.action_digest,
+                    "band":"success",
+                    "effect_kind":"resource_created",
+                    "supporting_state_references":["capability:repair nets"],
+                    "owner_subject_id":owner,
+                    "resource":"reinforced public hazard marker"
+                }]
+            })
+        };
+        assert!(validator.is_valid(&proposed("dock")));
+        assert!(validator.is_valid(&proposed("dockers")));
+        assert!(!validator.is_valid(&proposed("somewhere-else")));
     }
 
     #[test]

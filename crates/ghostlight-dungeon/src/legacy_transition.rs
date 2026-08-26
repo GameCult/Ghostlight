@@ -2733,6 +2733,9 @@ fn project_all_resources(campaign: &mut Campaign, next: &ComponentWorldState) ->
     for gestalt in campaign.gestalts.values_mut() {
         gestalt.resources.clear();
     }
+    for location in campaign.locations.values_mut() {
+        location.persistent_features.clear();
+    }
     for (resource, value) in &next.resources {
         let owner = next
             .custody
@@ -2773,12 +2776,22 @@ fn project_all_resources(campaign: &mut Campaign, next: &ComponentWorldState) ->
                     .resources
                     .insert(value.label.clone());
             }
+            SubjectKind::Place => campaign
+                .locations
+                .get_mut(&owner.id)
+                .ok_or_else(|| anyhow!("accepted resource location vanished"))?
+                .persistent_features
+                .push(value.label.clone()),
             _ => return Err(anyhow!("aggregate resource custodian is unsupported")),
         }
     }
     for institution in campaign.institutions.values_mut() {
         institution.resources.sort();
         institution.resources.dedup();
+    }
+    for location in campaign.locations.values_mut() {
+        location.persistent_features.sort();
+        location.persistent_features.dedup();
     }
     Ok(())
 }
@@ -2902,6 +2915,11 @@ fn legacy_resources(campaign: &Campaign) -> BTreeSet<(SubjectRef, String)> {
         let owner = actor_subject(&crate::domain::gestalt_member_subject_id(&member.id));
         for resource in &member.equipment {
             resources.insert((owner.clone(), resource.clone()));
+        }
+    }
+    for location in campaign.locations.values() {
+        for resource in &location.persistent_features {
+            resources.insert((place_subject(&location.id), resource.clone()));
         }
     }
     resources
@@ -3449,6 +3467,57 @@ mod tests {
                 .equipment
                 .contains("communication device")
         );
+    }
+
+    #[test]
+    fn strategic_creation_at_a_place_persists_as_a_place_feature() {
+        let mut campaign = campaign();
+        campaign.locations["room"]
+            .persistent_features
+            .push("fixed wall lamp".into());
+        let plan = StrategicTickPlan {
+            activity_outcomes: vec![StrategicActivityOutcome {
+                schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                action_digest: format!("sha256:{}", "b".repeat(64)),
+                source_subject_id: "witness".into(),
+                band: StrategicOutcomeBand::Success,
+                summary: "At Room, Witness establishes a public warning marker.".into(),
+                supporting_state_references: vec!["capability:field repairs".into()],
+                effect: StrategicOutcomeEffect::ResourceCreated {
+                    owner_subject_id: "room".into(),
+                    resource: "public warning marker".into(),
+                },
+            }],
+            ..StrategicTickPlan::default()
+        };
+
+        let transition = lower_strategic_wave(
+            &campaign,
+            &plan,
+            "strategic:place-resource",
+            Utc::now() + Duration::minutes(5),
+        )
+        .unwrap()
+        .unwrap();
+        apply_lowered_transition(&mut campaign, &transition, Utc::now()).unwrap();
+
+        assert_eq!(
+            campaign.locations["room"].persistent_features,
+            ["fixed wall lamp", "public warning marker"]
+        );
+        assert!(
+            !campaign.actors["witness"]
+                .equipment
+                .contains("public warning marker")
+        );
+        let snapshot = component_snapshot(&campaign).unwrap();
+        let marker = snapshot
+            .resources
+            .iter()
+            .find(|(_, resource)| resource.label == "public warning marker")
+            .map(|(subject, _)| subject)
+            .unwrap();
+        assert_eq!(snapshot.custody.get(marker), Some(&place_subject("room")));
     }
 
     #[test]
