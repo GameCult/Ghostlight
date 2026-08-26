@@ -281,6 +281,7 @@ pub async fn appraise_present(
         let receipts = campaign.branch_origin.evidence_receipt_ids.clone();
         let perceived_actors = perceived_actors.clone();
         let reserved_public_identities = reserved_public_identities(campaign, &actor);
+        let recent_self_authored_turns = recent_self_authored_turns(campaign, &actor.id);
         let semaphore = semaphore.clone();
         let interaction_role = if response_expected_actor_ids.contains(&actor.id) {
             ActorInteractionRole::DirectResponseExpected
@@ -301,6 +302,7 @@ pub async fn appraise_present(
                 identity_experience: vec![format!("You are {}.", actor.name)],
                 reserved_public_identities,
                 memories: actor.memories,
+                recent_self_authored_turns,
                 perceived_events: vec![event],
                 perceived_actors,
                 relationships: actor
@@ -329,6 +331,7 @@ pub async fn appraise_present(
         let event = event_summary.to_owned();
         let receipts = campaign.branch_origin.evidence_receipt_ids.clone();
         let perceived_actors = perceived_actors.clone();
+        let recent_self_authored_turns = recent_self_authored_turns(campaign, &gestalt.id);
         let semaphore = semaphore.clone();
         let interaction_role = if response_expected_actor_ids.contains(&gestalt.id) {
             ActorInteractionRole::DirectResponseExpected
@@ -352,6 +355,7 @@ pub async fn appraise_present(
                 )],
                 reserved_public_identities: perceived_actors.values().cloned().collect(),
                 memories: vec![],
+                recent_self_authored_turns,
                 perceived_events: vec![event],
                 perceived_actors,
                 relationships: vec![],
@@ -398,6 +402,26 @@ pub async fn appraise_present(
         gestalt_reactions,
         receipts,
     })
+}
+
+fn recent_self_authored_turns(campaign: &Campaign, subject_id: &str) -> Vec<String> {
+    const LIMIT: usize = 8;
+    let mut turns = campaign
+        .transcript
+        .iter()
+        .rev()
+        .filter(|turn| turn.speaker == subject_id)
+        .take(LIMIT)
+        .map(|turn| {
+            format!(
+                "At world revision {}, your committed public response was exactly: {}",
+                turn.revision,
+                turn.text.trim()
+            )
+        })
+        .collect::<Vec<_>>();
+    turns.reverse();
+    turns
 }
 
 fn reserved_public_identities(
@@ -607,6 +631,44 @@ mod tests {
             .unwrap()
             .simulation_eligible = false;
         campaign
+    }
+
+    #[test]
+    fn stable_subject_history_survives_folding_and_remains_bounded() {
+        let mut campaign = addressed_campaign();
+        for revision in 1..=10 {
+            campaign.transcript.push(NarrativeTurn {
+                revision,
+                at: Utc::now(),
+                speaker: "refugee-one".into(),
+                text: format!("response {revision}"),
+                persona_response_actor_ids: BTreeSet::new(),
+            });
+        }
+        campaign.transcript.push(NarrativeTurn {
+            revision: 11,
+            at: Utc::now(),
+            speaker: "refugee-two".into(),
+            text: "another person's answer".into(),
+            persona_response_actor_ids: BTreeSet::new(),
+        });
+
+        let before_folding = recent_self_authored_turns(&campaign, "refugee-one");
+        assert_eq!(before_folding.len(), 8);
+        assert!(before_folding[0].contains("world revision 3"));
+        assert!(before_folding[0].ends_with("response 3"));
+        assert!(before_folding[7].ends_with("response 10"));
+        assert!(
+            before_folding
+                .iter()
+                .all(|turn| !turn.contains("another person's answer"))
+        );
+
+        campaign.actors.remove("refugee-one");
+        assert_eq!(
+            recent_self_authored_turns(&campaign, "refugee-one"),
+            before_folding
+        );
     }
 
     #[test]

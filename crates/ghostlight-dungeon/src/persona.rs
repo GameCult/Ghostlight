@@ -40,6 +40,9 @@ pub struct PermittedActorSlice {
     /// from silently impersonating an already-durable person.
     pub reserved_public_identities: BTreeSet<String>,
     pub memories: Vec<String>,
+    /// Exact recent public responses already committed for this stable subject.
+    /// These are event-history witnesses, not private memory or new world fact.
+    pub recent_self_authored_turns: Vec<String>,
     pub perceived_events: Vec<String>,
     pub perceived_actors: std::collections::BTreeMap<String, String>,
     pub relationships: Vec<String>,
@@ -588,6 +591,11 @@ fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> S
     } else {
         slice.memories[recent_memory_start..].join("; ")
     };
+    let prior_public_response = if slice.recent_self_authored_turns.is_empty() {
+        "no earlier public response by this exact subject is active in this moment".to_owned()
+    } else {
+        slice.recent_self_authored_turns.join("; ")
+    };
     let interaction = match slice.interaction_role {
         ActorInteractionRole::DirectResponseExpected => {
             "You are an exact direct addressee of the current speech. A response is expected from you now. You retain the agency to answer, refuse, or remain silent, but refusal or silence must be made observable rather than disappearing from the scene."
@@ -619,7 +627,7 @@ fn ground_actor_lived_stream(slice: &PermittedActorSlice, projection: &str) -> S
         }
     };
     format!(
-        "{projection}\n\n{subject_grounding} Your active self-identity: {identity}. In your social world, {established_peer_identities}. {interaction} Your reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
+        "{projection}\n\n{subject_grounding} Your active self-identity: {identity}. In your social world, {established_peer_identities}. {interaction} Your reliable footing in this moment is narrow. What you know as external fact: {reliable_knowledge}. What you remember experiencing or being told: {remembered_experience}. These are your attributed recollections, not omniscient proof. Your exact recent public response history: {prior_public_response}. This response history records what you previously made observable; it does not prove that the content of those statements was true. What is happening now: {visible_now}. People you can presently perceive: {people_now}. Everything else in your impressions is feeling, inference, uncertainty, or possibility—not a remembered or witnessed fact."
     )
 }
 
@@ -4681,6 +4689,9 @@ mod tests {
             identity_experience: vec!["A tired navigator".into()],
             reserved_public_identities: BTreeSet::new(),
             memories: vec!["Proposed the eastern trail evacuation at dusk.".into()],
+            recent_self_authored_turns: vec![
+                "At world revision 3, your committed public response was exactly: Use the eastern trail.".into(),
+            ],
             perceived_events: vec![],
             perceived_actors: std::collections::BTreeMap::from([(
                 "player".into(),
@@ -4701,6 +4712,8 @@ mod tests {
         assert!(grounded.contains("Your active self-identity: A tired navigator"));
         assert!(grounded.contains("What you remember experiencing or being told"));
         assert!(grounded.contains("Proposed the eastern trail evacuation at dusk."));
+        assert!(grounded.contains("Use the eastern trail."));
+        assert!(grounded.contains("does not prove that the content"));
         assert!(grounded.contains("not omniscient proof"));
         let result = engine.execute(slice).await.unwrap();
         assert_eq!(result.stage_receipts.len(), 3);
@@ -4718,6 +4731,7 @@ mod tests {
             identity_experience: vec!["You are an unnamed patient.".into()],
             reserved_public_identities: BTreeSet::new(),
             memories: vec![],
+            recent_self_authored_turns: vec![],
             perceived_events: vec!["The player asks your name.".into()],
             perceived_actors: BTreeMap::from([("player".into(), "Player".into())]),
             relationships: vec![],
@@ -4766,6 +4780,7 @@ mod tests {
             identity_experience: vec!["You are an unnamed patient.".into()],
             reserved_public_identities: BTreeSet::new(),
             memories: vec![],
+            recent_self_authored_turns: vec![],
             perceived_events: vec!["A regulator is inspected.".into()],
             perceived_actors: BTreeMap::from([("player".into(), "Player".into())]),
             relationships: vec![],
@@ -4861,6 +4876,7 @@ mod tests {
                 identity_experience: vec!["You are an unnamed patient.".into()],
                 reserved_public_identities: BTreeSet::new(),
                 memories: vec![],
+                recent_self_authored_turns: vec![],
                 perceived_events: vec!["The player asks your name.".into()],
                 perceived_actors: BTreeMap::from([("player".into(), "Player".into())]),
                 relationships: vec![],
