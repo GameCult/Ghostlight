@@ -4414,9 +4414,12 @@ mod tests {
         }
         for prompt in prompts.lock().unwrap().iter() {
             assert!(prompt.contains(
-                "Distinct effects inside the activity lane are one unordered atomic set"
+                "Snapshot-location activity precedes relocation; exact-destination activity follows arrival"
             ));
-            assert!(prompt.contains("\"activity_effects\":\"unordered_atomic_set\""));
+            assert!(prompt.contains(
+                "\"cross_location_order\":\"snapshot_location_activity_then_relocation_then_destination_activity\""
+            ));
+            assert!(prompt.contains("\"field_order\":\"not_chronology\""));
         }
         let prompts = prompts.lock().unwrap();
         assert_eq!(prompts.len(), 2);
