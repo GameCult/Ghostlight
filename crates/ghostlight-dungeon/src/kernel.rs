@@ -2217,6 +2217,15 @@ fn apply_strategic_tick_plan(
     crate::outcome::validate_plan_activity_outcomes(campaign, &plan)
         .map_err(|error| KernelError::Invalid(error.to_string()))?;
     let canonical_composition = !plan.selected_actions.is_empty();
+    let activity_means = plan
+        .selected_actions
+        .iter()
+        .map(|action| {
+            crate::resolution::cell_action_digest(action)
+                .map(|digest| (digest, action.intended_effect.clone()))
+                .map_err(|error| KernelError::Invalid(error.to_string()))
+        })
+        .collect::<Result<BTreeMap<_, _>, _>>()?;
     let prospective_actor_locations = plan
         .actor_moves
         .iter()
@@ -2518,7 +2527,14 @@ fn apply_strategic_tick_plan(
             ),
             at,
             kind: "gestalt_activity".into(),
-            summary: strategic_activity_summary(&gestalt.name, &action.activity, &target_names),
+            summary: strategic_activity_summary(
+                &gestalt.name,
+                &action.activity,
+                &target_names,
+                activity_means
+                    .get(&action.action_digest)
+                    .map(String::as_str),
+            ),
             actor_ids,
             institution_ids,
             gestalt_ids,
@@ -2674,7 +2690,14 @@ fn apply_strategic_tick_plan(
             ),
             at,
             kind: "actor_activity".into(),
-            summary: strategic_activity_summary(&actor.name, &action.activity, &target_names),
+            summary: strategic_activity_summary(
+                &actor.name,
+                &action.activity,
+                &target_names,
+                activity_means
+                    .get(&action.action_digest)
+                    .map(String::as_str),
+            ),
             actor_ids,
             institution_ids,
             gestalt_ids,
@@ -2784,7 +2807,14 @@ fn apply_strategic_tick_plan(
             ),
             at,
             kind: "gestalt_member_activity".into(),
-            summary: strategic_activity_summary(&member.name, &action.activity, &target_names),
+            summary: strategic_activity_summary(
+                &member.name,
+                &action.activity,
+                &target_names,
+                activity_means
+                    .get(&action.action_digest)
+                    .map(String::as_str),
+            ),
             actor_ids,
             institution_ids,
             gestalt_ids,
@@ -2858,6 +2888,12 @@ fn apply_strategic_tick_plan(
             .ok_or_else(|| {
                 KernelError::Invalid("strategic outcome lost its activity context".into())
             })?;
+        if matches!(
+            &outcome.effect,
+            crate::domain::StrategicOutcomeEffect::NoMaterialChange { .. }
+        ) {
+            continue;
+        }
         let mut subject_ids = BTreeSet::from([source_subject_id.clone()]);
         collect_outcome_subject_ids(&outcome.effect, &mut subject_ids);
         let mut actor_ids = Vec::new();
@@ -2973,7 +3009,20 @@ fn strategic_activity_summary(
     source_name: &str,
     activity: &StrategicActivityKind,
     target_names: &[String],
+    admitted_means: Option<&str>,
 ) -> String {
+    if let Some(means) = admitted_means
+        .map(str::trim)
+        .filter(|means| !means.is_empty())
+    {
+        let means = means.trim_end_matches(['.', '!', '?']);
+        let mut characters = means.chars();
+        let lowered = characters
+            .next()
+            .map(|first| first.to_lowercase().chain(characters).collect::<String>())
+            .unwrap_or_default();
+        return format!("{source_name} attempts to {lowered}.");
+    }
     let targets = target_names.join(", ");
     match (activity, target_names.is_empty()) {
         (StrategicActivityKind::Prepare, true) => {

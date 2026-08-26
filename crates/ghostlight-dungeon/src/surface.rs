@@ -136,7 +136,11 @@ pub fn player_surface_for_actor(campaign: &Campaign, viewer_actor_id: &str) -> V
         .filter(|event| {
             event.kind != "reaction_wave"
                 && event.kind != "group_travel"
-                && !event.actor_ids.iter().any(|actor_id| actor_id == viewer_actor_id)
+                && (autonomous_strategic_event(event)
+                    || !event
+                        .actor_ids
+                        .iter()
+                        .any(|actor_id| actor_id == viewer_actor_id))
         })
         .filter(|event| {
             player_profile.is_some_and(|profile| {
@@ -308,6 +312,21 @@ pub fn player_surface_for_actor(campaign: &Campaign, viewer_actor_id: &str) -> V
         eve_command("app.auth.logout","ghostlight.app_logout.v1", &[], "ghostlight.app_session.v1")
       ]
     })
+}
+
+fn autonomous_strategic_event(event: &crate::domain::Event) -> bool {
+    matches!(
+        event.kind.as_str(),
+        "institution_action"
+            | "gestalt_action"
+            | "gestalt_migration"
+            | "gestalt_activity"
+            | "actor_movement"
+            | "actor_activity"
+            | "gestalt_member_activity"
+            | "gestalt_member_migration"
+            | "strategic_activity_outcome"
+    )
 }
 
 fn local_draft(name: &str, value_kind: &str) -> Value {
@@ -694,7 +713,7 @@ mod tests {
             crate::domain::Event {
                 id: "event:own-activity".into(),
                 at: Utc::now(),
-                kind: "actor_activity".into(),
+                kind: "player_action".into(),
                 summary: "PLAYER_PRIVATE_ACTIVITY_SUMMARY".into(),
                 actor_ids: vec!["player".into()],
                 institution_ids: vec![],
@@ -735,6 +754,17 @@ mod tests {
                 location_ids: vec!["center".into()],
                 public_channels: vec![],
             },
+            crate::domain::Event {
+                id: "event:targeted".into(),
+                at: Utc::now(),
+                kind: "actor_activity".into(),
+                summary: "The local watch warns the player directly.".into(),
+                actor_ids: vec!["faction-0000".into(), "player".into()],
+                institution_ids: vec![],
+                gestalt_ids: vec![],
+                location_ids: vec!["center".into()],
+                public_channels: vec![],
+            },
         ]);
 
         let encoded = serde_json::to_string(&player_surface(&campaign)).unwrap();
@@ -743,6 +773,7 @@ mod tests {
         assert!(!encoded.contains("PLAYER_SPEECH_DUPLICATE"));
         assert!(!encoded.contains("PLAYER_TRAVEL_DUPLICATE"));
         assert!(encoded.contains("The local watch reinforces the gate."));
+        assert!(encoded.contains("The local watch warns the player directly."));
     }
 
     #[test]

@@ -881,19 +881,23 @@ fn resolved_outcome_summary(
             to_subject_ids,
             fact_id,
             ..
-        } => format!(
-            "{source_name} communicates {} to {}.",
-            campaign
+        } => {
+            let statement = campaign
                 .facts
                 .get(fact_id)
                 .ok_or_else(|| anyhow!("knowledge outcome fact vanished"))?
-                .statement,
-            to_subject_ids
-                .iter()
-                .map(|subject_id| subject_name(campaign, subject_id))
-                .collect::<Result<Vec<_>>>()?
-                .join(", ")
-        ),
+                .statement
+                .trim()
+                .trim_end_matches(['.', '!', '?']);
+            format!(
+                "{source_name} shares this with {}: {statement}.",
+                to_subject_ids
+                    .iter()
+                    .map(|subject_id| subject_name(campaign, subject_id))
+                    .collect::<Result<Vec<_>>>()?
+                    .join(", ")
+            )
+        }
     };
     let summary = summary.chars().take(240).collect::<String>();
     if !bounded_text(&summary, 240) {
@@ -2990,7 +2994,7 @@ mod tests {
             action_digest: cell_action_digest(&action).unwrap(),
             source_subject_id: "dockers".into(),
             band: StrategicOutcomeBand::Success,
-            summary: "Dockers communicates the route fact to Reed.".into(),
+            summary: "Dockers shares this with Reed: the western causeway remains open.".into(),
             supporting_state_references: vec!["fact:fact:safe-route".into()],
             effect: StrategicOutcomeEffect::KnowledgeCommunicated {
                 from_subject_id: "dockers".into(),

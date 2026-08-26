@@ -487,7 +487,12 @@ fn resolution_demand_context(campaign: &Campaign) -> (Vec<String>, serde_json::V
 }
 
 fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCellSlice> {
-    let mut member_exceptions = member_exceptions(campaign, cell)?;
+    let member_candidates = member_exceptions(campaign, cell)?;
+    let decision_owner_ids = select_cell_decision_owners(campaign, cell, &member_candidates)?;
+    let mut member_exceptions = member_candidates
+        .into_iter()
+        .filter(|member| decision_owner_ids.contains(&member.subject_id))
+        .collect::<Vec<_>>();
     let selected_member_ids = member_exceptions
         .iter()
         .map(|member| member.subject_id.clone())
@@ -540,9 +545,74 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
             .map(project_world_clock_pressure)
             .collect(),
         detail_focus_subject_id: cell.detail_focus_subject_id.clone(),
+        decision_owner_ids,
         max_actions: cell_action_limit(cell),
         source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
     })
+}
+
+fn select_cell_decision_owners(
+    campaign: &Campaign,
+    cell: &SimulationCell,
+    member_candidates: &[CellMemberSlice],
+) -> Result<BTreeSet<String>> {
+    let quota = cell_action_limit(cell);
+    if quota == 0 || cell.subject_ids.is_empty() {
+        return Err(anyhow!("simulation cell has no bounded decision capacity"));
+    }
+    if let Some(focus) = cell.detail_focus_subject_id.as_deref()
+        && !cell.subject_ids.contains(focus)
+    {
+        return Err(anyhow!("simulation cell detail focus is outside the cell"));
+    }
+
+    let canonical = cell.subject_ids.iter().cloned().collect::<Vec<_>>();
+    let mut selected = BTreeSet::new();
+    if let Some(focus) = cell.detail_focus_subject_id.as_ref() {
+        selected.insert(focus.clone());
+    }
+    let available = canonical
+        .iter()
+        .filter(|subject_id| !selected.contains(*subject_id))
+        .cloned()
+        .collect::<Vec<_>>();
+    let remaining = quota.saturating_sub(selected.len()).min(available.len());
+    if remaining == available.len() {
+        selected.extend(available);
+    } else if remaining > 0 {
+        let start =
+            (campaign.strategic_tick_count as usize).saturating_mul(remaining) % available.len();
+        for offset in 0..remaining {
+            selected.insert(available[(start + offset) % available.len()].clone());
+        }
+    }
+
+    let mut owners = BTreeSet::new();
+    for subject_id in selected {
+        if cell.detail_focus_subject_id.as_deref() == Some(subject_id.as_str())
+            || !campaign.gestalts.contains_key(&subject_id)
+        {
+            owners.insert(subject_id);
+            continue;
+        }
+        let mut alternatives = std::iter::once(subject_id.clone())
+            .chain(
+                member_candidates
+                    .iter()
+                    .filter(|member| member.source_gestalt_id == subject_id)
+                    .map(|member| member.subject_id.clone()),
+            )
+            .collect::<Vec<_>>();
+        alternatives.dedup();
+        let index = campaign.strategic_tick_count as usize % alternatives.len();
+        owners.insert(alternatives.swap_remove(index));
+    }
+    if owners.is_empty() || owners.len() > quota {
+        return Err(anyhow!(
+            "resolution produced an invalid exact decision-owner set"
+        ));
+    }
+    Ok(owners)
 }
 
 fn project_world_clock_pressure(clock: &crate::domain::WorldClock) -> String {
@@ -648,9 +718,6 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
             );
             let activity_targets =
                 crate::resolution::member_activity_targets(campaign, &member.id).ok()?;
-            if destinations.is_empty() && activity_targets.is_empty() {
-                return None;
-            }
             let player_relationship = member.relationships.contains_key(player_id) as u8;
             let personal_pressure = (!member.conditions.is_empty()
                 || !member.obligations.is_empty()
@@ -676,7 +743,6 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
     });
     candidates
         .into_iter()
-        .take(cell_action_limit(cell).min(4))
         .map(
             |(_, _, _, member_id, origin, destinations, activity_target_ids)| {
                 let member = &campaign.gestalt_members[&member_id];
@@ -1065,21 +1131,27 @@ mod tests {
                 })
                 .to_string()),
                 "cell_projector" => {
-                    let subject_id = request
+                    let subject_ids = request
                         .output_schema
                         .as_ref()
                         .and_then(|schema| {
-                            schema.pointer(
-                                "/$defs/CellPerspectiveSegment/properties/subject_id/enum/0",
-                            )
+                            schema
+                                .pointer("/$defs/CellPerspectiveSegment/properties/subject_id/enum")
                         })
-                        .and_then(serde_json::Value::as_str)
-                        .ok_or_else(|| anyhow!("fixture projector lacks a bound subject"))?;
+                        .and_then(serde_json::Value::as_array)
+                        .map(|values| {
+                            values
+                                .iter()
+                                .filter_map(serde_json::Value::as_str)
+                                .collect::<Vec<_>>()
+                        })
+                        .filter(|values| !values.is_empty())
+                        .ok_or_else(|| anyhow!("fixture projector lacks bound subjects"))?;
                     Ok(serde_json::json!({
-                        "segments":[{
+                        "segments":subject_ids.into_iter().map(|subject_id| serde_json::json!({
                             "subject_id":subject_id,
-                            "narrative":"The horizon tightens around our own unresolved choice."
-                        }]
+                            "narrative":"The horizon tightens around this subject's own unresolved choice."
+                        })).collect::<Vec<_>>()
                     })
                     .to_string())
                 }
@@ -1327,7 +1399,7 @@ mod tests {
     }
 
     #[test]
-    fn cell_slice_projects_only_actionable_salient_member_exceptions() {
+    fn cell_slice_rotates_exact_member_decision_owners_without_hiding_the_cell() {
         use crate::domain::*;
         let mut campaign = crate::resolution::tests::campaign(0, 1);
         let gestalt = |id: &str, name: &str| GestaltPersonaState {
@@ -1384,6 +1456,7 @@ mod tests {
                 .gestalt_members
                 .insert(member_id.into(), member(member_id, false));
         }
+        campaign.strategic_tick_count = 1;
         crate::resolution::ensure_agency_profiles(&mut campaign);
         campaign.agency_relations.insert(
             "migration".into(),
@@ -1404,8 +1477,11 @@ mod tests {
         )
         .unwrap();
         let slice = cell_slice(&campaign, &cover.cells[0]).unwrap();
-        assert_eq!(slice.member_exceptions.len(), 2);
+        assert_eq!(slice.member_exceptions.len(), 1);
         assert_eq!(slice.member_exceptions[0].member_id, "mira");
+        assert!(slice.decision_owner_ids.contains("member:mira"));
+        assert!(slice.decision_owner_ids.contains("neighbors"));
+        assert!(!slice.decision_owner_ids.contains("refugees"));
         assert_eq!(
             slice.member_exceptions[0]
                 .migration_destinations
@@ -1475,6 +1551,12 @@ mod tests {
                 .unwrap()
                 .contains("private dock code")
         );
+
+        let mut focused_cell = cover.cells[0].clone();
+        focused_cell.detail_focus_subject_id = Some("refugees".into());
+        let focused = cell_slice(&campaign, &focused_cell).unwrap();
+        assert!(focused.decision_owner_ids.contains("refugees"));
+        assert!(!focused.decision_owner_ids.contains("member:mira"));
 
         campaign.agency_relations.clear();
         let local_only_cover = crate::resolution::plan_cover(

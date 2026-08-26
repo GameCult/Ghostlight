@@ -154,6 +154,10 @@ pub struct PermittedCellSlice {
     pub perceived_events: Vec<CellPerceivedEventSlice>,
     pub world_clock_pressure: Vec<String>,
     pub detail_focus_subject_id: Option<String>,
+    /// Exact subjects that own this cell's bounded decision slots for the
+    /// current strategic wave. Resolution chooses these before inference;
+    /// Projector output may describe them but may not decide who participates.
+    pub decision_owner_ids: BTreeSet<String>,
     pub max_actions: usize,
     pub source_receipt_ids: Vec<String>,
 }
@@ -908,25 +912,21 @@ fn constrain_cell_projection_schema(
         .and_then(serde_json::Value::as_object_mut)
         .ok_or_else(|| anyhow!("cell projection schema has no segment array"))?;
     let required_count = required_projection_subject_ids(slice).len();
-    segments.insert("minItems".into(), required_count.max(1).into());
-    segments.insert(
-        "maxItems".into(),
-        slice.max_actions.max(required_count).max(1).into(),
-    );
+    if required_count == 0 || required_count > slice.max_actions {
+        return Err(anyhow!(
+            "resolution selected an invalid number of cell decision owners"
+        ));
+    }
+    segments.insert("minItems".into(), required_count.into());
+    segments.insert("maxItems".into(), required_count.into());
     let segment = schema
         .pointer_mut("/$defs/CellPerspectiveSegment/properties")
         .and_then(serde_json::Value::as_object_mut)
         .ok_or_else(|| anyhow!("cell projection schema has no segment properties"))?;
     let mut subject_ids = slice
-        .constituents
+        .decision_owner_ids
         .iter()
-        .map(|subject| subject.subject_id.as_str())
-        .chain(
-            slice
-                .member_exceptions
-                .iter()
-                .map(|member| member.subject_id.as_str()),
-        )
+        .map(String::as_str)
         .collect::<Vec<_>>();
     if let Some(focus) = slice.detail_focus_subject_id.as_deref()
         && let Some(index) = subject_ids
@@ -1123,27 +1123,7 @@ fn agency_footing(
 }
 
 fn required_projection_subject_ids(slice: &PermittedCellSlice) -> BTreeSet<String> {
-    slice
-        .detail_focus_subject_id
-        .iter()
-        .filter(|focus| {
-            slice
-                .constituents
-                .iter()
-                .any(|subject| &subject.subject_id == *focus)
-                || slice
-                    .member_exceptions
-                    .iter()
-                    .any(|member| &member.subject_id == *focus)
-        })
-        .cloned()
-        .chain(
-            slice
-                .member_exceptions
-                .iter()
-                .map(|member| member.subject_id.clone()),
-        )
-        .collect()
+    slice.decision_owner_ids.clone()
 }
 
 fn allowed_constituent_effect_types(subject: &CellConstituentSlice) -> Vec<&'static str> {
@@ -3342,6 +3322,7 @@ mod tests {
             }],
             world_clock_pressure: vec!["vote 5/6".into()],
             detail_focus_subject_id: Some("faction-06".into()),
+            decision_owner_ids: BTreeSet::from(["faction-06".into()]),
             max_actions: 1,
             source_receipt_ids: vec![],
         }
