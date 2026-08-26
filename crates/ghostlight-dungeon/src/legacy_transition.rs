@@ -3472,7 +3472,10 @@ mod tests {
     #[test]
     fn strategic_creation_at_a_place_persists_as_a_place_feature() {
         let mut campaign = campaign();
-        campaign.locations["room"]
+        campaign
+            .locations
+            .get_mut("room")
+            .unwrap()
             .persistent_features
             .push("fixed wall lamp".into());
         let plan = StrategicTickPlan {
