@@ -3073,14 +3073,15 @@ mod tests {
                         "inactions":[]
                     });
                     assert!(
-                        !jsonschema::validator_for(
+                        jsonschema::validator_for(
                             request
                                 .output_schema
                                 .as_ref()
                                 .expect("correction retains its schema")
                         )
                         .unwrap()
-                        .is_valid(&repeated)
+                        .is_valid(&repeated),
+                        "the correction schema must keep describing the same semantic action space; the verifier owns semantic rejection"
                     );
                     self.saw_rejected_appraisal.store(
                         request.lived_stream.contains("PREVIOUS_REJECTED_APPRAISAL")
