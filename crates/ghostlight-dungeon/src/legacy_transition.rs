@@ -1960,8 +1960,8 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
                 },
             );
         }
-        for statement in &member.knowledge_additions {
-            let proposition = ensure_proposition(&mut state, campaign, statement, version);
+        for statement in crate::resolution::effective_member_knowledge(campaign, &member.id)? {
+            let proposition = ensure_proposition(&mut state, campaign, &statement, version);
             state.knowledge.insert(
                 KnowledgeKey {
                     knower: subject.clone(),
@@ -3145,6 +3145,71 @@ mod tests {
             resolution_cover: None,
             strategic_tick_count: 0,
         }
+    }
+
+    #[test]
+    fn component_snapshot_projects_effective_member_knowledge() {
+        let mut campaign = campaign();
+        let statement = campaign.facts["fact:route"].statement.clone();
+        campaign.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::from([statement.clone()]),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        campaign.gestalt_members.insert(
+            "messenger".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "messenger".into(),
+                gestalt_id: "refugees".into(),
+                version: 0,
+                name: "Messenger".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                obligations: BTreeSet::new(),
+                memories: vec![],
+                last_location_id: Some("room".into()),
+                materialized_actor_id: None,
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 0,
+            },
+        );
+
+        let snapshot = component_snapshot(&campaign).unwrap();
+        let key = KnowledgeKey {
+            knower: actor_subject("member:messenger"),
+            proposition: proposition_subject("fact:route"),
+        };
+        assert_eq!(snapshot.knowledge[&key].status, "known");
+
+        campaign
+            .gestalt_members
+            .get_mut("messenger")
+            .unwrap()
+            .knowledge_removals
+            .insert(statement);
+        assert!(
+            !component_snapshot(&campaign)
+                .unwrap()
+                .knowledge
+                .contains_key(&key)
+        );
     }
 
     #[test]
