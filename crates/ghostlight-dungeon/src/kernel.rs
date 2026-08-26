@@ -2857,7 +2857,7 @@ fn apply_strategic_tick_plan(
             .ok_or_else(|| {
                 KernelError::Invalid("strategic outcome lost its activity context".into())
             })?;
-        let mut subject_ids = BTreeSet::from([source_subject_id]);
+        let mut subject_ids = BTreeSet::from([source_subject_id.clone()]);
         collect_outcome_subject_ids(&outcome.effect, &mut subject_ids);
         let mut actor_ids = Vec::new();
         let mut institution_ids = Vec::new();
