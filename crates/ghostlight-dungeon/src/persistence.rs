@@ -831,41 +831,73 @@ impl CampaignStore {
             &expected.key,
             &manifest,
         )?);
-        for item in evidence {
-            rows.push(envelope(
-                "vault_evidence_receipt.v1",
-                "ghostlight.vault_evidence_receipt.v1",
-                &item.id,
-                item,
-            )?);
-        }
-        for item in candidates {
-            rows.push(envelope(
-                "canon_candidate.v1",
-                "ghostlight.canon_candidate.v1",
-                &item.id,
-                item,
-            )?);
-        }
-        for item in model_receipts {
-            rows.push(envelope(
-                "persona_stage_receipt.v1",
-                "ghostlight.persona_stage_receipt.v1",
-                item.storage_key(),
-                item,
-            )?);
-        }
-        if let Some(mutation) = mutation {
-            append_mutation_proof(&mut rows, receipt, mutation)?;
-        }
         let mut expected_rows = vec![expected.clone()];
         if let Some((row, _)) = existing_manifest {
             expected_rows.push(row);
+        }
+        for item in evidence {
+            self.append_idempotent_companion(
+                &mut expected_rows,
+                &mut rows,
+                envelope(
+                    "vault_evidence_receipt.v1",
+                    "ghostlight.vault_evidence_receipt.v1",
+                    &item.id,
+                    item,
+                )?,
+            )?;
+        }
+        for item in candidates {
+            self.append_idempotent_companion(
+                &mut expected_rows,
+                &mut rows,
+                envelope(
+                    "canon_candidate.v1",
+                    "ghostlight.canon_candidate.v1",
+                    &item.id,
+                    item,
+                )?,
+            )?;
+        }
+        for item in model_receipts {
+            self.append_idempotent_companion(
+                &mut expected_rows,
+                &mut rows,
+                envelope(
+                    "persona_stage_receipt.v1",
+                    "ghostlight.persona_stage_receipt.v1",
+                    item.storage_key(),
+                    item,
+                )?,
+            )?;
+        }
+        if let Some(mutation) = mutation {
+            append_mutation_proof(&mut rows, receipt, mutation)?;
         }
         if !self.inner.compare_and_swap_batch(&expected_rows, rows)? {
             return Err(anyhow!("stale CultCache snapshot"));
         }
         Ok(next_row)
+    }
+
+    fn append_idempotent_companion(
+        &self,
+        expected: &mut Vec<CultCacheEnvelope>,
+        replacements: &mut Vec<CultCacheEnvelope>,
+        row: CultCacheEnvelope,
+    ) -> Result<()> {
+        if let Some(existing) = self.load_envelope(&row.r#type, &row.key)? {
+            if existing != row {
+                return Err(anyhow!(
+                    "immutable world-commit companion conflict: {}/{}",
+                    row.r#type,
+                    row.key
+                ));
+            }
+            expected.push(existing);
+        }
+        replacements.push(row);
+        Ok(())
     }
 
     pub fn append_strategic_tick(

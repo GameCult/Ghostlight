@@ -1,4 +1,4 @@
-use crate::domain::{FactScope, OutcomeBand, StrategicOutcomeBand};
+use crate::domain::{CivicSystemManifest, FactScope, OutcomeBand, StrategicOutcomeBand};
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use schemars::{JsonSchema, schema_for};
@@ -53,6 +53,7 @@ pub enum WorldComponentKind {
     PlaceProfile,
     PropositionContent,
     Topology,
+    CivicSystem,
     Lifecycle,
     WorldTime,
 }
@@ -183,6 +184,7 @@ pub enum WorldMutationOperation {
     TopologyOpen,
     TopologyClose,
     TopologyRetire,
+    CivicSystemSet,
     AdmitEntity,
     RetireEntity,
     AdvanceWorldTime,
@@ -574,6 +576,10 @@ pub enum WorldMutation {
         distance: Option<String>,
         travel_minutes: Option<i64>,
     },
+    SetCivicSystem {
+        jurisdiction: SubjectRef,
+        system: CivicSystemManifest,
+    },
     AdmitEntity {
         subject: SubjectRef,
         initial_components: BTreeSet<WorldComponentKind>,
@@ -838,6 +844,8 @@ pub struct ComponentWorldState {
     #[serde(default)]
     pub propositions: BTreeMap<SubjectRef, PropositionComponentState>,
     pub topology: BTreeMap<String, TopologyComponentState>,
+    #[serde(default)]
+    pub civic_systems: BTreeMap<SubjectRef, CivicSystemManifest>,
 }
 
 fn default_route_distance() -> String {
@@ -1310,6 +1318,10 @@ fn apply_component_mutation(
             distance.as_deref(),
             *travel_minutes,
         )?,
+        SetCivicSystem {
+            jurisdiction,
+            system,
+        } => apply_civic_system(state, jurisdiction, system)?,
         AdmitEntity {
             subject,
             initial_components,
@@ -1384,6 +1396,80 @@ fn apply_component_mutation(
             state.world_time += chrono::Duration::minutes(*minutes);
         }
     }
+    Ok(())
+}
+
+fn apply_civic_system(
+    state: &mut ComponentWorldState,
+    jurisdiction: &SubjectRef,
+    system: &CivicSystemManifest,
+) -> Result<()> {
+    active_subject(state, jurisdiction)?;
+    require_kind(jurisdiction, SubjectKind::Place)?;
+    if system.schema != "ghostlight.civic_system_manifest.v1"
+        || system.jurisdiction_location_id != jurisdiction.id
+        || system.semantic_verification_receipt_id.trim().is_empty()
+    {
+        return Err(anyhow!(
+            "civic system is not bound to its exact jurisdiction and verifier"
+        ));
+    }
+    let expected_version = state
+        .civic_systems
+        .get(jurisdiction)
+        .map(|current| current.version.saturating_add(1))
+        .unwrap_or(0);
+    if system.version != expected_version {
+        return Err(anyhow!(
+            "civic system version is stale: expected {expected_version}, got {}",
+            system.version
+        ));
+    }
+    for id in &system.governing_institution_ids {
+        let subject = SubjectRef {
+            kind: SubjectKind::Institution,
+            id: id.clone(),
+        };
+        active_subject(state, &subject)?;
+    }
+    for id in &system.resident_population_ids {
+        let resident = SubjectRef {
+            kind: SubjectKind::Population,
+            id: id.clone(),
+        };
+        active_subject(state, &resident)?;
+        for fact_id in system
+            .public_authority_fact_ids
+            .iter()
+            .chain(system.public_selection_fact_ids.iter())
+            .chain(system.public_resource_fact_ids.iter())
+            .chain(system.public_redress_fact_ids.iter())
+        {
+            let proposition = SubjectRef {
+                kind: SubjectKind::Proposition,
+                id: fact_id.clone(),
+            };
+            active_subject(state, &proposition)?;
+            if !state.knowledge.contains_key(&KnowledgeKey {
+                knower: resident.clone(),
+                proposition,
+            }) {
+                return Err(anyhow!(
+                    "resident population lacks a civic proposition bound by the manifest"
+                ));
+            }
+        }
+    }
+    for id in &system.political_relation_ids {
+        if !state.relationships.contains_key(id) {
+            return Err(anyhow!(
+                "civic system references a missing political relation"
+            ));
+        }
+    }
+    state
+        .civic_systems
+        .insert(jurisdiction.clone(), system.clone());
     Ok(())
 }
 
@@ -2545,6 +2631,7 @@ fn retire_entity(state: &mut ComponentWorldState, subject: &SubjectRef) -> Resul
     record.version = version;
     state.place_profiles.remove(subject);
     state.propositions.remove(subject);
+    state.civic_systems.remove(subject);
     Ok(())
 }
 
@@ -2747,6 +2834,85 @@ pub fn validate_component_world(state: &ComponentWorldState) -> Result<()> {
             return Err(anyhow!("topology edge is malformed"));
         }
     }
+    for (jurisdiction, system) in &state.civic_systems {
+        active_subject(state, jurisdiction)?;
+        require_kind(jurisdiction, SubjectKind::Place)?;
+        if system.schema != "ghostlight.civic_system_manifest.v1"
+            || system.jurisdiction_location_id != jurisdiction.id
+            || system.semantic_verification_receipt_id.trim().is_empty()
+        {
+            return Err(anyhow!("canonical civic system is malformed"));
+        }
+        for id in &system.governing_institution_ids {
+            active_subject(
+                state,
+                &SubjectRef {
+                    kind: SubjectKind::Institution,
+                    id: id.clone(),
+                },
+            )?;
+        }
+        for id in &system.resident_population_ids {
+            active_subject(
+                state,
+                &SubjectRef {
+                    kind: SubjectKind::Population,
+                    id: id.clone(),
+                },
+            )?;
+        }
+        for id in system
+            .public_authority_fact_ids
+            .iter()
+            .chain(system.public_selection_fact_ids.iter())
+            .chain(system.public_resource_fact_ids.iter())
+            .chain(system.public_redress_fact_ids.iter())
+        {
+            active_subject(
+                state,
+                &SubjectRef {
+                    kind: SubjectKind::Proposition,
+                    id: id.clone(),
+                },
+            )?;
+        }
+        for resident_id in &system.resident_population_ids {
+            for proposition_id in system
+                .public_authority_fact_ids
+                .iter()
+                .chain(system.public_selection_fact_ids.iter())
+                .chain(system.public_resource_fact_ids.iter())
+                .chain(system.public_redress_fact_ids.iter())
+            {
+                let key = KnowledgeKey {
+                    knower: SubjectRef {
+                        kind: SubjectKind::Population,
+                        id: resident_id.clone(),
+                    },
+                    proposition: SubjectRef {
+                        kind: SubjectKind::Proposition,
+                        id: proposition_id.clone(),
+                    },
+                };
+                if !state
+                    .knowledge
+                    .get(&key)
+                    .is_some_and(|knowledge| knowledge.status == "known")
+                {
+                    return Err(anyhow!(
+                        "canonical civic resident lost a public proposition"
+                    ));
+                }
+            }
+        }
+        if system
+            .political_relation_ids
+            .iter()
+            .any(|id| !state.relationships.contains_key(id))
+        {
+            return Err(anyhow!("canonical civic system lost a political relation"));
+        }
+    }
     Ok(())
 }
 
@@ -2851,6 +3017,9 @@ fn mutation_component_refs(
             Component::Topology,
             Some(edge_id.clone()),
         )],
+        SetCivicSystem { jurisdiction, .. } => {
+            vec![(jurisdiction.clone(), Component::CivicSystem, None)]
+        }
         AdmitEntity {
             subject,
             initial_place,
@@ -3209,6 +3378,7 @@ fn subject_schema_fields(
             (TopologyOrigin, "from_place", Required),
             (TopologyDestination, "to_place", Required),
         ],
+        CivicSystemSet => vec![(Subject, "jurisdiction", Required)],
         AdmitEntity => vec![
             (Entity, "subject", Required),
             (InitialPlace, "initial_place", Optional),
@@ -3288,7 +3458,8 @@ fn string_schema_fields(
         RetireEntity => vec![(RetirementReason, "reason", Required)],
         TransferCustody | KnowledgeAcquire | KnowledgeCommunicate | KnowledgeConceal
         | KnowledgeCorrect | KnowledgeInvalidate | PopulationJoin | PopulationLeave
-        | PopulationTransfer | PopulationSplit | PopulationMerge | AdvanceWorldTime => vec![],
+        | PopulationTransfer | PopulationSplit | PopulationMerge | CivicSystemSet
+        | AdvanceWorldTime => vec![],
     }
 }
 
@@ -3332,8 +3503,8 @@ fn integer_schema_fields(
         | KnowledgeCommunicate | KnowledgeConceal | KnowledgeCorrect | KnowledgeInvalidate
         | MemoryRecord | MemoryRevise | MemoryRetire | PostureChange | PopulationJoin
         | PopulationLeave | PopulationTransfer | PopulationSplit | PopulationMerge
-        | IdentityAdopt | IdentityDisclose | IdentityRestrict | IdentityRetire | AdmitEntity
-        | RetireEntity => vec![],
+        | IdentityAdopt | IdentityDisclose | IdentityRestrict | IdentityRetire | CivicSystemSet
+        | AdmitEntity | RetireEntity => vec![],
     }
 }
 
@@ -3392,6 +3563,7 @@ fn mutation_schema_tags(operation: WorldMutationOperation) -> (&'static str, Opt
         TopologyOpen => ("change_topology", Some("open")),
         TopologyClose => ("change_topology", Some("close")),
         TopologyRetire => ("change_topology", Some("retire")),
+        CivicSystemSet => ("set_civic_system", None),
         AdmitEntity => ("admit_entity", None),
         RetireEntity => ("retire_entity", None),
         AdvanceWorldTime => ("advance_world_time", None),
@@ -3560,6 +3732,7 @@ impl WorldMutation {
                 TopologyMutationOperation::Close => WorldMutationOperation::TopologyClose,
                 TopologyMutationOperation::Retire => WorldMutationOperation::TopologyRetire,
             },
+            SetCivicSystem { .. } => WorldMutationOperation::CivicSystemSet,
             AdmitEntity { .. } => WorldMutationOperation::AdmitEntity,
             RetireEntity { .. } => WorldMutationOperation::RetireEntity,
             AdvanceWorldTime { .. } => WorldMutationOperation::AdvanceWorldTime,
@@ -3698,6 +3871,7 @@ impl WorldMutation {
                 add(MutationSubjectRole::TopologyOrigin, from_place);
                 add(MutationSubjectRole::TopologyDestination, to_place);
             }
+            SetCivicSystem { jurisdiction, .. } => add(MutationSubjectRole::Subject, jurisdiction),
             AdmitEntity {
                 subject,
                 initial_place,
@@ -3831,6 +4005,7 @@ impl WorldMutation {
             | ChangeKnowledge { .. }
             | ChangePopulationMembership { .. }
             | ChangePopulationLineage { .. }
+            | SetCivicSystem { .. }
             | AdvanceWorldTime { .. } => {}
         }
         values
@@ -3885,6 +4060,7 @@ impl WorldMutation {
             | ChangePopulationMembership { .. }
             | ChangePopulationLineage { .. }
             | ChangeIdentity { .. }
+            | SetCivicSystem { .. }
             | AdmitEntity { .. }
             | RetireEntity { .. } => {}
         }
@@ -4103,6 +4279,28 @@ impl WorldMutation {
                         "topology open, close, or retire cannot rewrite distance"
                     ));
                 }
+            }
+            SetCivicSystem {
+                jurisdiction,
+                system,
+            } => {
+                require_kind(jurisdiction, SubjectKind::Place)?;
+                if system.schema != "ghostlight.civic_system_manifest.v1"
+                    || system.jurisdiction_location_id != jurisdiction.id
+                    || system.governing_institution_ids.is_empty()
+                    || system.resident_population_ids.is_empty()
+                    || system.public_authority_fact_ids.is_empty()
+                    || system.public_selection_fact_ids.is_empty()
+                    || system.public_resource_fact_ids.is_empty()
+                    || system.public_redress_fact_ids.is_empty()
+                    || system.political_relation_ids.is_empty()
+                {
+                    return Err(anyhow!("civic system mutation is incomplete"));
+                }
+                nonempty(
+                    "civic semantic verifier receipt",
+                    &system.semantic_verification_receipt_id,
+                )?;
             }
             AdmitEntity {
                 subject,
@@ -4690,7 +4888,67 @@ mod tests {
                     version: 4,
                 },
             )]),
+            civic_systems: BTreeMap::new(),
         }
+    }
+
+    #[test]
+    fn public_civic_knowledge_is_a_continuing_component_invariant() {
+        let mut state = component_world();
+        let jurisdiction = subject(SubjectKind::Place, "place:camp");
+        let institution = subject(SubjectKind::Institution, "institution:clinic");
+        let resident = subject(SubjectKind::Population, "population:refugees");
+        let proposition = subject(SubjectKind::Proposition, "proposition:east-trail");
+        state.relationships.insert(
+            "relation:clinic-refugees".into(),
+            RelationshipComponentState {
+                source: institution,
+                target: resident.clone(),
+                description: "administers the camp under public challenge".into(),
+                strength: Some(55),
+                version: state.revision,
+            },
+        );
+        let resident_knowledge = KnowledgeKey {
+            knower: resident,
+            proposition: proposition.clone(),
+        };
+        state.knowledge.insert(
+            resident_knowledge.clone(),
+            KnowledgeComponentState {
+                status: "known".into(),
+                source: None,
+                channel: None,
+                concealed_from: BTreeSet::new(),
+                version: state.revision,
+            },
+        );
+        state.civic_systems.insert(
+            jurisdiction,
+            CivicSystemManifest {
+                schema: "ghostlight.civic_system_manifest.v1".into(),
+                version: 0,
+                jurisdiction_location_id: "place:camp".into(),
+                governing_institution_ids: BTreeSet::from(["institution:clinic".into()]),
+                resident_population_ids: BTreeSet::from(["population:refugees".into()]),
+                public_authority_fact_ids: BTreeSet::from(["proposition:east-trail".into()]),
+                public_selection_fact_ids: BTreeSet::from(["proposition:east-trail".into()]),
+                public_resource_fact_ids: BTreeSet::from(["proposition:east-trail".into()]),
+                public_redress_fact_ids: BTreeSet::from(["proposition:east-trail".into()]),
+                political_relation_ids: BTreeSet::from(["relation:clinic-refugees".into()]),
+                semantic_verification_receipt_id: "receipt:civic".into(),
+            },
+        );
+        validate_component_world(&state).unwrap();
+
+        state.knowledge.remove(&resident_knowledge);
+        let error = validate_component_world(&state).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("civic resident lost a public proposition"),
+            "{error}"
+        );
     }
 
     fn permit(

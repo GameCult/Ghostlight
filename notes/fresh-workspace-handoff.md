@@ -187,11 +187,17 @@ messages.
   Component-only mutation ingress rejects aggregate campaign rows. Initial
   publication is separately bounded to a fresh empty store plus atomic
   discoverability rename; it cannot mutate a published campaign.
-- Region expansion admits typed place and proposition profiles, validates
-  evidence and containment, and requires an exact reciprocal route between the
-  stable origin and every newly compiled destination. Aggregate locations,
-  routes, and facts are rebuilt from accepted component state; the direct
-  insertion loops have been deleted.
+- Destination compilation resolves identity before generation. A genuinely new
+  place uses bounded region expansion; an exact reachable canonical place uses
+  in-place locality elaboration and cannot be re-emitted, renamed, or replaced.
+  Both paths admit typed places, propositions, populations, institutions,
+  political relations, topology, and the civic manifest through the same
+  mutation reducer. Compiler-validated agency profiles remain a companion
+  projection outside that reducer and are a named component-migration frontier.
+  Inhabited proposals bind current authority, selection or succession,
+  public resources, and redress facts to every resident population through a
+  civic manifest, then pass an independent semantic civic verifier before
+  approval. Aggregate state is rebuilt from accepted components.
 - Named Gestalt members now change foreground resolution without gaining a
   second effect vocabulary. Promotion/folding advances world revision and
   `resolution_epoch`, clears the prior cover, preserves the exact individual
@@ -427,7 +433,12 @@ The generic world-consumer boundary is implemented. Session Zero and external
 producers share one admitted `WorldSeed` transaction; externally authoritative
 institutions or Gestalts enter through revisioned WorldKernel snapshots; and strategic
 actions aimed at them persist typed proposals for consumer acknowledgement over
-the existing loopback CultNet RUDP operation server.
+the existing loopback CultNet RUDP operation server. Consumers can request an
+  authority-gated `ghostlight.world.newspaper.compose` projection. It renders
+  committed `NewsIssue` rows only when every cited committed `Event` exposes the
+  same public channel. Headline, channel, and reliability remain news-owned;
+  body, dateline, event IDs, and source revision remain event-grounded
+  provenance.
 
 The scale and emergence gate is implemented and locally proven.
 Delvehold is a consumer of Ghostlight's generic authored-world API, not a
@@ -441,14 +452,29 @@ atomic commit authority. The active budget ceiling is 240, independent of the
 32-call provider gate. A fixture proves 1,000 subjects across 200 cells and all
 200 membrane pipelines under a seven-call gate.
 
-1. Have the game-side adapter lower its authored hierarchy into the published
+Sparse inhabited destinations now compile a versioned civic apparatus in place.
+The first pass establishes institutions, resident populations, political edges,
+and public authority, succession, resource, and redress facts. A later pass is
+given that exact persisted apparatus and must deepen it without duplicating its
+government or population. The independent civic verdict is rebound to the exact
+candidate and checked again by `WorldKernel`; structurally plausible politics
+without that receipt cannot mutate the world. A two-wave fixture proves an
+action-bound named person can emerge publicly, retain identity, enter the next
+resolution cover, and act from her own authority. The generated newspaper
+contains her public appointment but does not expose her later private movement.
+
+1. Restore provider credit and rerun the provider-backed fantasy strategic
+   smoke. The 2026-08-26 run reached the first real cell pipeline and stopped at
+   DeepSeek with HTTP 402 before committing any event or newspaper; retain no
+   fabricated substitute for that missing live witness.
+2. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-2. Prove one consumer-owned effect crosses that public API, changes two foreign
+3. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-3. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+4. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-4. Keep `gamecult-ops` synchronized with every executable deployment and model
+5. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,

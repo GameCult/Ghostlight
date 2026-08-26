@@ -2687,6 +2687,7 @@ mod tests {
                     discoverable_at_location_ids: BTreeSet::from(["dock".into()]),
                 },
             )]),
+            civic_systems: BTreeMap::new(),
             transcript: vec![],
             last_player_activity: Utc::now(),
             pending_ticks: 0,

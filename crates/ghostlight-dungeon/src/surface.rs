@@ -617,7 +617,7 @@ mod tests {
             channel: "public bulletin".into(),
             headline: "The public ferry is delayed.".into(),
             event_ids: vec!["event:public".into()],
-            reliability: "direct institutional channel".into(),
+            reliability: "committed public channel".into(),
         });
         campaign
             .agency_profiles
@@ -658,7 +658,7 @@ mod tests {
             channel: "sealed command wire".into(),
             headline: "SECRET_COMMAND_MOVEMENT".into(),
             event_ids: vec!["event:sealed".into()],
-            reliability: "direct institutional channel".into(),
+            reliability: "committed public channel".into(),
         });
         campaign
             .actors

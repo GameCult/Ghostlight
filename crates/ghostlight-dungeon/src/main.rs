@@ -17,7 +17,7 @@ use ghostlight_dungeon::{
     assessor::ActionAssessor,
     compiler::{GestaltFissionRequest, OpeningRequest, OpeningSuggestion, WorldCompiler},
     domain::{
-        ActionIntent, Campaign, GestaltFissionPreview, RegionExpansionPreview,
+        ActionIntent, Campaign, DestinationCompilationPreview, GestaltFissionPreview,
         RejectedProposalReceipt, WorldCommand,
     },
     gestalt::{GestaltPresencePlanner, required_addressed_promotions},
@@ -80,7 +80,7 @@ struct AppState {
     compiler: Option<Arc<WorldCompiler>>,
     assessor: Option<Arc<ActionAssessor>>,
     model: Option<Arc<dyn ModelPort>>,
-    expansion_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<RegionExpansionPreview>>>>,
+    expansion_previews: Arc<Mutex<BTreeMap<String, OwnedPreview<DestinationCompilationPreview>>>>,
     fission_previews: Arc<Mutex<BTreeMap<String, OwnedFissionPreview>>>,
     live_turns: Arc<AtomicUsize>,
     live_turn_started: Arc<Notify>,
@@ -4071,7 +4071,7 @@ async fn compile_destination(
             );
             Json(serde_json::json!({
                 "preview_id":id,
-                "preview":region_expansion_preview_projection(&preview),
+                "preview":destination_compilation_preview_projection(&preview),
             }))
             .into_response()
         }
@@ -4108,17 +4108,25 @@ async fn approve_destination(
             return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
         }
     };
-    match runtime
-        .kernel
-        .command(WorldCommand::ExpandRegion {
+    let command = match preview {
+        DestinationCompilationPreview::RegionExpansion(preview) => WorldCommand::ExpandRegion {
             expected_revision: preview.expected_revision,
             expansion: preview.expansion,
             evidence_receipts: preview.evidence_receipts,
             canon_candidates: preview.canon_candidates,
             model_stage_receipts: model_receipts,
-        })
-        .await
-    {
+        },
+        DestinationCompilationPreview::LocalityElaboration(preview) => {
+            WorldCommand::ElaborateLocality {
+                expected_revision: preview.expected_revision,
+                elaboration: preview.elaboration,
+                evidence_receipts: preview.evidence_receipts,
+                canon_candidates: preview.canon_candidates,
+                model_stage_receipts: model_receipts,
+            }
+        }
+    };
+    match runtime.kernel.command(command).await {
         Ok(value) => Json(player_command_projection(&value)).into_response(),
         Err(error) => (StatusCode::CONFLICT, error.to_string()).into_response(),
     }
@@ -5379,19 +5387,49 @@ fn world_compile_preview_projection(preview: &WorldCompilePreview) -> serde_json
     })
 }
 
-fn region_expansion_preview_projection(preview: &RegionExpansionPreview) -> serde_json::Value {
-    serde_json::json!({
-        "origin_location_id":preview.expansion.origin_location_id,
-        "origin_routes":preview.expansion.origin_routes,
-        "locations":preview.expansion.locations,
-        "facts":preview.expansion.facts,
-        "populations":preview.expansion.populations,
-        "population_profiles":preview.expansion.population_profiles,
-        "migration_relations":preview.expansion.migration_relations,
-        "branch_assumptions":preview.branch_assumptions,
-        "gaps":preview.gaps,
-        "requires_approval":preview.requires_approval,
-    })
+fn destination_compilation_preview_projection(
+    preview: &DestinationCompilationPreview,
+) -> serde_json::Value {
+    match preview {
+        DestinationCompilationPreview::RegionExpansion(preview) => serde_json::json!({
+            "kind":"region_expansion",
+            "target_location_id":null,
+            "origin_location_id":preview.expansion.origin_location_id,
+            "origin_routes":preview.expansion.origin_routes,
+            "locations":preview.expansion.locations,
+            "facts":preview.expansion.facts,
+            "populations":preview.expansion.populations,
+            "population_profiles":preview.expansion.population_profiles,
+            "institutions":preview.expansion.institutions,
+            "institution_profiles":preview.expansion.institution_profiles,
+            "local_relations":preview.expansion.local_relations,
+            "migration_relations":preview.expansion.migration_relations,
+            "civic_system":preview.expansion.civic_system,
+            "branch_assumptions":preview.branch_assumptions,
+            "gaps":preview.gaps,
+            "requires_approval":preview.requires_approval,
+        }),
+        DestinationCompilationPreview::LocalityElaboration(preview) => {
+            serde_json::json!({
+                "kind":"locality_elaboration",
+                "target_location_id":preview.elaboration.target_location_id,
+                "origin_location_id":preview.elaboration.expansion.origin_location_id,
+                "origin_routes":preview.elaboration.expansion.origin_routes,
+                "locations":preview.elaboration.expansion.locations,
+                "facts":preview.elaboration.expansion.facts,
+                "populations":preview.elaboration.expansion.populations,
+                "population_profiles":preview.elaboration.expansion.population_profiles,
+                "institutions":preview.elaboration.expansion.institutions,
+                "institution_profiles":preview.elaboration.expansion.institution_profiles,
+                "local_relations":preview.elaboration.expansion.local_relations,
+                "migration_relations":preview.elaboration.expansion.migration_relations,
+                "civic_system":preview.elaboration.expansion.civic_system,
+                "branch_assumptions":preview.branch_assumptions,
+                "gaps":preview.gaps,
+                "requires_approval":preview.requires_approval,
+            })
+        }
+    }
 }
 
 fn gestalt_fission_preview_projection(preview: &GestaltFissionPreview) -> serde_json::Value {
@@ -5489,6 +5527,7 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::ApproveResolutionBudget { .. }
         | WorldCommand::AdvanceStrategicTick { .. }
         | WorldCommand::ExpandRegion { .. }
+        | WorldCommand::ElaborateLocality { .. }
         | WorldCommand::MaterializeGestaltMember { .. }
         | WorldCommand::DematerializeGestaltMember { .. }
         | WorldCommand::IndividuateGestaltMember { .. }
@@ -6503,6 +6542,7 @@ mod tests {
             institutions: BTreeMap::new(),
             clocks: BTreeMap::new(),
             facts: BTreeMap::new(),
+            civic_systems: BTreeMap::new(),
             transcript: vec![],
             last_player_activity: chrono::Utc::now(),
             pending_ticks: 0,
@@ -7248,11 +7288,13 @@ mod tests {
             .strip_prefix("/ghostlight")
             .expect("public resource URI must stay below the Ghostlight mount");
         let token = uri.rsplit('/').next().unwrap();
-        let app_session_bytes = std::fs::read(dir.path().join("app-sessions.cc")).unwrap();
         assert!(
-            !app_session_bytes
-                .windows(token.len())
-                .any(|window| window == token.as_bytes())
+            !state
+                .auth
+                .lock()
+                .await
+                .persisted_bytes_contain(token)
+                .unwrap()
         );
 
         let intruder = app
@@ -7454,7 +7496,8 @@ mod tests {
             validate_player_http_command(&WorldCommand::SetResolutionBudget {
                 expected_revision: 0,
                 expected_resolution_epoch: 0,
-                active_cell_budget: 129,
+                active_cell_budget: ghostlight_dungeon::resolution::MAX_ACTIVE_CELL_BUDGET
+                    .saturating_add(1),
             })
             .is_err()
         );

@@ -195,6 +195,7 @@ fn four_actor_campaign() -> ghostlight_dungeon::domain::Campaign {
         institutions: BTreeMap::new(),
         clocks: BTreeMap::new(),
         facts: BTreeMap::new(),
+        civic_systems: BTreeMap::new(),
         transcript: vec![],
         last_player_activity: now,
         pending_ticks: 0,

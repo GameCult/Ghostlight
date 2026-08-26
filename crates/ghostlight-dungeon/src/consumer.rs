@@ -17,6 +17,7 @@ pub const APPLY_EXTERNAL_SNAPSHOT_OPERATION: &str = "ghostlight.world.external.s
 pub const LIST_EXTERNAL_PROPOSALS_OPERATION: &str = "ghostlight.world.external.proposals.list";
 pub const ACKNOWLEDGE_EXTERNAL_PROPOSAL_OPERATION: &str =
     "ghostlight.world.external.proposal.acknowledge";
+pub const COMPOSE_NEWSPAPER_OPERATION: &str = "ghostlight.world.newspaper.compose";
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -65,6 +66,7 @@ impl WorldSeed {
             || !campaign.transcript.is_empty()
             || !campaign.events.is_empty()
             || !campaign.news.is_empty()
+            || !campaign.civic_systems.is_empty()
             || !campaign.pending_world_proposals.is_empty()
             || campaign.pending_ticks != 0
             || campaign.away_ticks_processed != 0
@@ -73,7 +75,7 @@ impl WorldSeed {
             || campaign.strategic_tick_count != 0
         {
             return Err(anyhow!(
-                "world seed cannot contain already-authoritative runtime state"
+                "world seed cannot contain already-authoritative runtime or civic state"
             ));
         }
         Ok(Self {
@@ -114,6 +116,7 @@ impl WorldSeed {
             institutions: self.institutions,
             clocks: self.clocks,
             facts: self.facts,
+            civic_systems: BTreeMap::new(),
             transcript: Vec::new(),
             last_player_activity: self.world_time,
             pending_ticks: 0,
@@ -307,6 +310,18 @@ pub struct ExternalProposalReceipt {
     pub status: ExternalProposalStatus,
     pub result_summary: String,
     pub acknowledged_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct WorldNewspaperRequest {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub authority_id: String,
+    pub owner_id: String,
+    pub authority_key: String,
+    pub title: String,
+    #[schemars(range(min = 1, max = 64))]
+    pub max_articles: u16,
 }
 
 pub fn authority_key_digest(value: &str) -> String {

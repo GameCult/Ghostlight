@@ -114,6 +114,17 @@ pub struct AppSessionOwner {
 }
 
 impl AppSessionOwner {
+    #[cfg(test)]
+    pub fn persisted_bytes_contain(&self, needle: &str) -> anyhow::Result<bool> {
+        let directory = tempfile::tempdir()?;
+        let snapshot = directory.path().join("app-session-inspection.cc");
+        self.store.snapshot_to(&snapshot)?;
+        let bytes = std::fs::read(snapshot)?;
+        Ok(bytes
+            .windows(needle.len())
+            .any(|window| window == needle.as_bytes()))
+    }
+
     pub fn open(
         store_path: impl AsRef<Path>,
         wrapping_key_path: impl AsRef<Path>,

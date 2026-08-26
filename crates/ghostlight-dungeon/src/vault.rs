@@ -735,12 +735,16 @@ fn receipt(
 ) -> VaultEvidenceReceipt {
     let query_bytes = rmp_serde::to_vec_named(query).expect("query serializes");
     let query_hash = format!("sha256:{:x}", Sha256::digest(query_bytes));
+    let retrieved_at = Utc::now();
+    let receipt_bytes =
+        rmp_serde::to_vec_named(&(provider, &query_hash, &witnesses, &retrieved_at))
+            .expect("vault receipt identity serializes");
     VaultEvidenceReceipt {
         schema: "ghostlight.vault_evidence_receipt.v1".into(),
-        id: format!("vault:{query_hash}"),
+        id: format!("vault:sha256:{:x}", Sha256::digest(receipt_bytes)),
         provider: provider.into(),
         query_hash,
         witnesses,
-        retrieved_at: Utc::now(),
+        retrieved_at,
     }
 }

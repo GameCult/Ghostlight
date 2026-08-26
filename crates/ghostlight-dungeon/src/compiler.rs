@@ -1,9 +1,11 @@
 use crate::{
     domain::{
         ActorState, AgencyAxis, AgencyProfile, AgencyRelation, AgencyRelationKind,
-        AgencySubjectKind, BranchOrigin, Campaign, EvidenceCoverage, EvidenceUseLane, FactScope,
-        GestaltMemberDelta, GestaltPersonaState, InstitutionState, Location, Route,
-        VaultEvidenceReceipt, WorldClock, WorldCompilePreview, WorldFact,
+        AgencySubjectKind, BranchOrigin, Campaign, CivicSystemManifest,
+        DestinationCompilationPreview, EvidenceCoverage, EvidenceUseLane, FactScope,
+        GestaltMemberDelta, GestaltPersonaState, InstitutionState, LocalityElaboration,
+        LocalityElaborationPreview, Location, Route, VaultEvidenceReceipt, WorldClock,
+        WorldCompilePreview, WorldFact,
     },
     model::{
         ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage,
@@ -573,6 +575,14 @@ struct CompiledExpansionSeed {
     #[schemars(length(max = 8))]
     populations: Vec<CompiledDestinationPopulation>,
     #[serde(default)]
+    #[schemars(length(max = 12))]
+    institutions: Vec<CompiledDestinationInstitution>,
+    #[serde(default)]
+    #[schemars(length(max = 48))]
+    local_relations: Vec<CompiledAgencyRelation>,
+    #[serde(default)]
+    civic_system: Option<CivicSystemManifest>,
+    #[serde(default)]
     #[schemars(length(max = 32))]
     migration_relations: Vec<CompiledDestinationMigrationRelation>,
     #[serde(default)]
@@ -604,6 +614,29 @@ struct CompiledDestinationPopulation {
     collective_authority_id: Option<String>,
     facets: CompiledAgencyFacets,
     information_channels: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledDestinationInstitution {
+    id: String,
+    name: String,
+    resources: Vec<String>,
+    goals: Vec<String>,
+    posture: String,
+    location_ids: BTreeSet<String>,
+    facets: CompiledAgencyFacets,
+    information_channels: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CivicSystemVerification {
+    authority_legible: bool,
+    selection_or_succession_legible: bool,
+    public_resources_legible: bool,
+    redress_legible: bool,
+    institutional_relations_coherent: bool,
+    resident_answer_grounded: bool,
+    rationale: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -1639,10 +1672,7 @@ impl WorldCompiler {
         campaign: &Campaign,
         origin_location_id: &str,
         destination_request: &str,
-    ) -> Result<(
-        crate::domain::RegionExpansionPreview,
-        Vec<ModelStageReceipt>,
-    )> {
+    ) -> Result<(DestinationCompilationPreview, Vec<ModelStageReceipt>)> {
         validate_user_text("destination request", destination_request, 500)?;
         let origin = campaign
             .locations
@@ -1652,13 +1682,13 @@ impl WorldCompiler {
         let (existing_destination_id, identity_receipts) = self
             .resolve_destination_identity(campaign, destination_request, &snapshot)
             .await?;
-        if let Some(existing_destination_id) = existing_destination_id {
+        if let Some(existing_destination_id) = existing_destination_id.as_deref() {
             let destination = campaign
                 .locations
-                .get(&existing_destination_id)
+                .get(existing_destination_id)
                 .expect("destination identity resolver was locally validated");
-            let Some((path, travel_minutes)) =
-                shortest_location_path(campaign, origin_location_id, &existing_destination_id)
+            let Some((_path, _travel_minutes)) =
+                shortest_location_path(campaign, origin_location_id, existing_destination_id)
             else {
                 return Err(anyhow!(
                     "{} already exists in canonical campaign topology, but no committed route currently reaches it from {}. No substitute location or route preview was created; request a genuinely new intermediary place or resolve the missing topology explicitly.",
@@ -1666,26 +1696,22 @@ impl WorldCompiler {
                     origin.name,
                 ));
             };
-            let path = path
-                .iter()
-                .filter_map(|location_id| campaign.locations.get(location_id))
-                .map(|location| location.name.as_str())
-                .collect::<Vec<_>>()
-                .join(" → ");
-            return Err(anyhow!(
-                "{} already exists in canonical campaign topology and is reachable from {} via {} ({} minutes). Use the projected travel controls; no new destination preview was created.",
-                destination.name,
-                origin.name,
-                path,
-                travel_minutes,
-            ));
         }
+        let expansion_origin_location_id = existing_destination_id
+            .as_deref()
+            .unwrap_or(origin_location_id);
+        let expansion_origin = campaign
+            .locations
+            .get(expansion_origin_location_id)
+            .expect("expansion origin is either the validated origin or destination");
         let (queries, retrieval_receipt) = self
             .plan_queries(
                 "destination_retrieval_plan",
                 &format!("campaign:{}:revision:{}", campaign.id, campaign.revision),
                 &serde_json::to_string(&serde_json::json!({
                     "origin": origin,
+                    "elaboration_anchor": expansion_origin,
+                    "existing_destination_id": existing_destination_id,
                     "destination": destination_request,
                     "canon_cutoff": campaign.branch_origin.canon_cutoff,
                 }))?,
@@ -1699,7 +1725,7 @@ impl WorldCompiler {
             .gestalts
             .values()
             .filter(|gestalt| {
-                gestalt.home_location_id == origin_location_id
+                gestalt.home_location_id == expansion_origin_location_id
                     && campaign
                         .agency_profiles
                         .get(&gestalt.id)
@@ -1721,7 +1747,7 @@ impl WorldCompiler {
                     "named_members":campaign.gestalt_members.values()
                         .filter(|member| member.gestalt_id == gestalt.id
                             && member.materialized_actor_id.is_none()
-                            && member.last_location_id.as_deref().unwrap_or(&gestalt.home_location_id) == origin_location_id)
+                            && member.last_location_id.as_deref().unwrap_or(&gestalt.home_location_id) == expansion_origin_location_id)
                         .map(|member| serde_json::json!({
                             "id":member.id,
                             "name":member.name,
@@ -1733,10 +1759,36 @@ impl WorldCompiler {
                 })
             })
             .collect::<Vec<_>>();
+        let current_civic_context = campaign
+            .civic_systems
+            .get(expansion_origin_location_id)
+            .map(|system| {
+                serde_json::json!({
+                    "manifest":system,
+                    "institutions":system.governing_institution_ids.iter().filter_map(|id|campaign.institutions.get(id)).collect::<Vec<_>>(),
+                    "institution_profiles":system.governing_institution_ids.iter().filter_map(|id|campaign.agency_profiles.get(id)).collect::<Vec<_>>(),
+                    "residents":system.resident_population_ids.iter().filter_map(|id|campaign.gestalts.get(id)).collect::<Vec<_>>(),
+                    "resident_profiles":system.resident_population_ids.iter().filter_map(|id|campaign.agency_profiles.get(id)).collect::<Vec<_>>(),
+                    "public_facts":system.public_authority_fact_ids.iter()
+                        .chain(system.public_selection_fact_ids.iter())
+                        .chain(system.public_resource_fact_ids.iter())
+                        .chain(system.public_redress_fact_ids.iter())
+                        .filter_map(|id|campaign.facts.get(id)).collect::<Vec<_>>(),
+                    "political_relations":system.political_relation_ids.iter().filter_map(|id|campaign.agency_relations.get(id)).collect::<Vec<_>>(),
+                })
+            });
+        let scope_instruction = if let Some(target_id) = existing_destination_id.as_deref() {
+            format!(
+                "The primary destination already exists as exact canonical location {target_id}. Elaborate it in place. Never emit that location again, rename it, replace it, or alter its existing routes or container. Every new location must be a bounded child whose containment chain reaches {target_id}; origin_routes are new local routes owned by {target_id}."
+            )
+        } else {
+            "The primary destination is genuinely new. Admit it and its bounded child detail from the supplied origin without rewriting any existing place.".into()
+        };
         let base_prompt = format!(
-            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes records owned by origin id {} into the new region, and give every such destination a reciprocal route record back to the origin with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them.\n\nUse evidence as canon constraints, not as an exhaustive game map. Missing game-scale routes, geometry, people, ordinary procedures, supplies, local responsibilities, capacity choices, and operating doctrine require the smallest coherent playable elaboration. Mark the resulting facts branch_local or provisional_local and disclose consequential inventions in branch_assumptions. Variation between campaigns is permitted; if a detail must not vary, it belongs in the Vault. Never put a compatible elaboration in gaps merely because the Vault is silent.\n\nA playable inhabited destination also needs one to eight non-overlapping destination population leaves. Synthesize reversible branch-local names, capabilities, resources, goals, pressures, six-axis agency facets, and concrete information channels even when canon does not specify settlement-scale detail. Each population home_location_id must be one new location. shared_fact_ids may contain only exact fact IDs returned in this same candidate, never free-text knowledge. collective_authority_id may be null or the exact ID of one new population and denotes real shared authority.\n\nThe gaps array is legal only when no compatible elaboration can preserve an exact clause of REQUEST without choosing between contradictory canon baselines, inventing an unanchored canon baseline explicitly required by the request, or exceeding an approved capability. Every gap must name that exact premise clause and the exact table choice blocking compilation. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the request.\n\nA migration relation is a directed available path for a later voluntary strategic choice; it does not move anyone, establish that admission occurred, or erase destination-community agency. It may originate only from one exact co-located active population ID supplied below and may target only one new population ID. Emit a relation only when the request and supplied source population/member goals support that migration possibility. Never invent a source population or named member. The approval preview must make all branch-local assumptions explicit without misclassifying them as canon gaps.\n\nCAMPAIGN LOCATIONS:\n{}\nCO-LOCATED SOURCE POPULATIONS AND NAMED MEMBER DELTAS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
-            origin_location_id,
+            "Compile only the requested bounded destination region. {scope_instruction} Every new location id must be new. Return explicit origin_routes records owned by expansion anchor id {} into the new region or child locality, and give every such destination a reciprocal route record back to the anchor with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them.\n\nUse evidence as canon constraints, not as an exhaustive game map. Missing game-scale routes, geometry, people, ordinary procedures, supplies, local responsibilities, capacity choices, and operating doctrine require the smallest coherent playable elaboration. Mark the resulting facts branch_local or provisional_local and disclose consequential inventions in branch_assumptions. Variation between campaigns is permitted; if a detail must not vary, it belongs in the Vault. Never put a compatible elaboration in gaps merely because the Vault is silent.\n\nWhen CURRENT CIVIC APPARATUS is null, a playable inhabited destination needs one to eight non-overlapping population leaves and two to twelve distinct institutions. When it is present, preserve it and add only genuinely new detail needed by the request; population and institution arrays may be empty. New local relations may join new subjects to exact subjects in the current apparatus. Never duplicate a resident body, office, fact, or relation under a fresh name. Each new population home_location_id must be one new location. Each new institution location_ids set may name the jurisdiction or its new children. shared_fact_ids may contain exact fact IDs from the current apparatus or this candidate, never free-text knowledge. collective_authority_id may be null or the exact ID of one new population and denotes real shared authority.\n\nReturn one complete civic_system manifest for every inhabited candidate. On an existing apparatus it is the next version and must retain every existing governing institution, resident population, public fact, and political relation while adding any new IDs. It must identify the exact jurisdiction, its governing institutions and resident populations, at least one committed public fact in each of four domains—current authority, selection or succession, public resources or revenue, and redress or appeal—and the political relations that make implementation, hierarchy, or contestation legible. Every named resident population must share those public civic facts. If REQUEST presupposes a mayor, election, throne, council, or other office that this locality does not use, commit facts that let a resident correct the premise; never manufacture the requested institution merely to agree with the question. The question selects the missing domain, not its answer.\n\nThe gaps array is legal only when no compatible elaboration can preserve an exact clause of REQUEST without choosing between contradictory canon baselines, inventing an unanchored canon baseline explicitly required by the request, or exceeding an approved capability. Every gap must name that exact premise clause and the exact table choice blocking compilation. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the request.\n\nA migration relation is a directed available path for a later voluntary strategic choice; it does not move anyone, establish that admission occurred, or erase destination-community agency. It may originate only from one exact co-located active population ID supplied below and may target only one new population ID. Emit a relation only when the request and supplied source population/member goals support that migration possibility. Never invent a source population or named member. The approval preview must make all branch-local assumptions explicit without misclassifying them as canon gaps.\n\nCAMPAIGN LOCATIONS:\n{}\nCURRENT CIVIC APPARATUS:\n{}\nCO-LOCATED SOURCE POPULATIONS AND NAMED MEMBER DELTAS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            expansion_origin_location_id,
             serde_json::to_string(&campaign.locations)?,
+            serde_json::to_string(&current_civic_context)?,
             serde_json::to_string(&origin_population_context)?,
             destination_request,
             evidence_text(&receipts)
@@ -1746,7 +1798,7 @@ impl WorldCompiler {
         let sources = receipt_ids(&receipts);
         let mut compiler_receipts = Vec::new();
         let mut correction = String::new();
-        let (seed, expansion) = loop {
+        let (seed, mut expansion) = loop {
             let output = self
                 .structured(
                     "destination_compile",
@@ -1777,9 +1829,10 @@ impl WorldCompiler {
                     "destination compiler failed local validation after one correction: {error}"
                 ));
             }
-            let fact_statements = seed
+            let fact_statements = campaign
                 .facts
-                .iter()
+                .values()
+                .chain(seed.facts.iter())
                 .map(|fact| (fact.id.as_str(), fact.statement.as_str()))
                 .collect::<BTreeMap<_, _>>();
             let populations = seed
@@ -1829,6 +1882,52 @@ impl WorldCompiler {
                     evidence_receipt_ids: sources.clone(),
                 })
                 .collect::<Vec<_>>();
+            let institutions = seed
+                .institutions
+                .iter()
+                .map(|institution| InstitutionState {
+                    id: institution.id.clone(),
+                    name: institution.name.clone(),
+                    resources: institution.resources.clone(),
+                    goals: institution.goals.clone(),
+                    posture: institution.posture.clone(),
+                })
+                .collect::<Vec<_>>();
+            let institution_profiles = seed
+                .institutions
+                .iter()
+                .map(|institution| AgencyProfile {
+                    schema: "ghostlight.agency_profile.v1".into(),
+                    id: format!("agency:{}", institution.id),
+                    subject_id: institution.id.clone(),
+                    subject_kind: AgencySubjectKind::Institution,
+                    profile_version: 0,
+                    collective_authority_id: None,
+                    parent_subject_id: None,
+                    active_leaf: true,
+                    simulation_eligible: true,
+                    facets: institution.facets.clone().into_map(),
+                    location_ids: institution.location_ids.clone(),
+                    information_channels: institution.information_channels.clone(),
+                    detail_debt: 0,
+                    last_detail_tick: campaign.strategic_tick_count,
+                    evidence_receipt_ids: sources.clone(),
+                })
+                .collect::<Vec<_>>();
+            let local_relations = seed
+                .local_relations
+                .iter()
+                .map(|relation| AgencyRelation {
+                    schema: "ghostlight.agency_relation.v1".into(),
+                    id: relation.id.clone(),
+                    from_subject_id: relation.from_subject_id.clone(),
+                    to_subject_id: relation.to_subject_id.clone(),
+                    kind: relation.kind.clone(),
+                    strength: relation.strength,
+                    active: true,
+                    evidence_receipt_ids: sources.clone(),
+                })
+                .collect::<Vec<_>>();
             let migration_relations = seed
                 .migration_relations
                 .iter()
@@ -1843,9 +1942,21 @@ impl WorldCompiler {
                     evidence_receipt_ids: sources.clone(),
                 })
                 .collect::<Vec<_>>();
+            let mut civic_system = seed.civic_system.clone();
+            if let Some(system) = &mut civic_system {
+                system.version = campaign
+                    .civic_systems
+                    .get(&system.jurisdiction_location_id)
+                    .map(|current| current.version.saturating_add(1))
+                    .unwrap_or(0);
+                system.semantic_verification_receipt_id.clear();
+            }
             let expansion = crate::domain::RegionExpansion {
-                origin_location_id: origin_location_id.into(),
-                origin_routes: compiled_route_map(seed.origin_routes.clone(), origin_location_id)?,
+                origin_location_id: expansion_origin_location_id.into(),
+                origin_routes: compiled_route_map(
+                    seed.origin_routes.clone(),
+                    expansion_origin_location_id,
+                )?,
                 locations: seed
                     .locations
                     .clone()
@@ -1856,8 +1967,28 @@ impl WorldCompiler {
                 populations,
                 population_profiles,
                 migration_relations,
+                institutions,
+                institution_profiles,
+                local_relations,
+                civic_system,
             };
-            match validate_region_expansion(campaign, &expansion) {
+            let validation =
+                if !expansion.populations.is_empty() && expansion.civic_system.is_none() {
+                    Err(anyhow!(
+                        "compiled inhabited destination omitted its civic system manifest"
+                    ))
+                } else if let Some(target_location_id) = existing_destination_id.as_deref() {
+                    validate_locality_elaboration(
+                        campaign,
+                        &LocalityElaboration {
+                            target_location_id: target_location_id.into(),
+                            expansion: expansion.clone(),
+                        },
+                    )
+                } else {
+                    validate_new_destination_expansion(campaign, &expansion)
+                };
+            match validation {
                 Ok(()) => break (seed, expansion),
                 Err(error) if compiler_receipts.len() == 1 => {
                     mark_semantic_invalid(
@@ -1877,6 +2008,60 @@ impl WorldCompiler {
                 }
             }
         };
+        if let Some(civic_system) = &expansion.civic_system {
+            let verification_prompt = format!(
+                "Independently verify the admitted civic apparatus. Judge meaning, not JSON shape. The public facts must actually explain current authority, selection or succession, public resources or revenue, and redress or appeal. The institutions and political relations must form a coherent local apparatus, and every resident population's exact shared_fact_ids must ground an ordinary answer about local government. A question may select a civic domain but must not have forced its presupposed office, election, or answer into the candidate. Do not rewrite or complete the candidate; return verdicts only.\n\nREQUEST:\n{}\nEVIDENCE:\n{}\nCANDIDATE:\n{}",
+                destination_request,
+                evidence_text(&receipts),
+                serde_json::to_string(&serde_json::json!({
+                    "previous_civic_apparatus":&current_civic_context,
+                    "civic_system":civic_system,
+                    "new_facts":&seed.facts,
+                    "new_institutions":&seed.institutions,
+                    "new_local_relations":&seed.local_relations,
+                    "new_resident_populations":seed.populations.iter().map(|population| serde_json::json!({
+                        "id":population.id,
+                        "shared_fact_ids":population.shared_fact_ids,
+                    })).collect::<Vec<_>>(),
+                }))?,
+            );
+            let (value, mut verification_receipt) = self
+                .structured(
+                    "destination_civic_verification",
+                    &snapshot,
+                    &verification_prompt,
+                    serde_json::to_value(schema_for!(CivicSystemVerification))?,
+                    sources.clone(),
+                )
+                .await?;
+            let verdict = serde_json::from_value::<CivicSystemVerification>(value)?;
+            let rationale_chars = verdict.rationale.trim().chars().count();
+            if rationale_chars == 0
+                || rationale_chars > 1_000
+                || !verdict.authority_legible
+                || !verdict.selection_or_succession_legible
+                || !verdict.public_resources_legible
+                || !verdict.redress_legible
+                || !verdict.institutional_relations_coherent
+                || !verdict.resident_answer_grounded
+            {
+                let error = anyhow!(
+                    "destination civic verifier rejected the candidate: {}",
+                    verdict.rationale.trim()
+                );
+                mark_semantic_invalid(&mut verification_receipt, &error);
+                return Err(error);
+            }
+            let candidate_digest = civic_candidate_digest(&expansion)?;
+            verification_receipt
+                .rebind_snapshot(civic_verifier_binding(campaign, &candidate_digest));
+            expansion
+                .civic_system
+                .as_mut()
+                .expect("verified civic system remains present")
+                .semantic_verification_receipt_id = verification_receipt.storage_key().to_owned();
+            compiler_receipts.push(verification_receipt);
+        }
         let evidence_ids = receipt_ids(&receipts);
         let affected_sources: Vec<String> = receipts
             .iter()
@@ -1905,8 +2090,23 @@ impl WorldCompiler {
                 status: "review".into(),
             })
             .collect();
-        Ok((
-            crate::domain::RegionExpansionPreview {
+        let preview = if let Some(target_location_id) = existing_destination_id {
+            DestinationCompilationPreview::LocalityElaboration(LocalityElaborationPreview {
+                schema: "ghostlight.locality_elaboration_preview.v1".into(),
+                campaign_id: campaign.id,
+                expected_revision: campaign.revision,
+                elaboration: LocalityElaboration {
+                    target_location_id,
+                    expansion,
+                },
+                evidence_receipts: receipts,
+                branch_assumptions: seed.branch_assumptions,
+                gaps: gap_texts,
+                canon_candidates: candidates,
+                requires_approval: true,
+            })
+        } else {
+            DestinationCompilationPreview::RegionExpansion(crate::domain::RegionExpansionPreview {
                 schema: "ghostlight.region_expansion_preview.v1".into(),
                 campaign_id: campaign.id,
                 expected_revision: campaign.revision,
@@ -1916,7 +2116,10 @@ impl WorldCompiler {
                 gaps: gap_texts,
                 canon_candidates: candidates,
                 requires_approval: true,
-            },
+            })
+        };
+        Ok((
+            preview,
             identity_receipts
                 .into_iter()
                 .chain(std::iter::once(retrieval_receipt))
@@ -3507,6 +3710,24 @@ fn mark_semantic_invalid(receipt: &mut ModelStageReceipt, error: &impl std::fmt:
     receipt.local_validation_error = Some(error.to_string().chars().take(1_000).collect());
 }
 
+pub(crate) fn civic_candidate_digest(expansion: &crate::domain::RegionExpansion) -> Result<String> {
+    let mut candidate = expansion.clone();
+    if let Some(system) = &mut candidate.civic_system {
+        system.semantic_verification_receipt_id.clear();
+    }
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(&candidate)?)
+    ))
+}
+
+pub(crate) fn civic_verifier_binding(campaign: &Campaign, candidate_digest: &str) -> String {
+    format!(
+        "campaign:{}:revision:{}:destination_civic:{}",
+        campaign.id, campaign.revision, candidate_digest
+    )
+}
+
 pub fn validate_region_expansion(
     campaign: &Campaign,
     expansion: &crate::domain::RegionExpansion,
@@ -3765,7 +3986,277 @@ pub fn validate_region_expansion(
             ));
         }
     }
-    let mut relation_ids = BTreeSet::new();
+    let institution_ids = expansion
+        .institutions
+        .iter()
+        .map(|institution| institution.id.as_str())
+        .collect::<BTreeSet<_>>();
+    if expansion.institutions.len() > 12
+        || institution_ids.len() != expansion.institutions.len()
+        || institution_ids.iter().any(|id| {
+            id.trim().is_empty()
+                || population_ids.contains(id)
+                || campaign.gestalts.contains_key(*id)
+                || campaign.actors.contains_key(*id)
+                || campaign.institutions.contains_key(*id)
+        })
+    {
+        return Err(anyhow!(
+            "destination institutions need at most twelve unique new canonical subject IDs"
+        ));
+    }
+    let institution_profile_ids = expansion
+        .institution_profiles
+        .iter()
+        .map(|profile| profile.subject_id.as_str())
+        .collect::<BTreeSet<_>>();
+    if institution_profile_ids != institution_ids
+        || expansion.institution_profiles.len() != expansion.institutions.len()
+    {
+        return Err(anyhow!(
+            "destination institution profiles must cover every new institution exactly once"
+        ));
+    }
+    for institution in &expansion.institutions {
+        if institution.name.trim().is_empty()
+            || institution.posture.trim().is_empty()
+            || institution.goals.is_empty()
+            || institution
+                .resources
+                .iter()
+                .chain(institution.goals.iter())
+                .any(|value| value.trim().is_empty())
+        {
+            return Err(anyhow!(
+                "destination institution {} has malformed canonical state",
+                institution.id
+            ));
+        }
+        let profile = expansion
+            .institution_profiles
+            .iter()
+            .find(|profile| profile.subject_id == institution.id)
+            .expect("institution profile coverage was checked above");
+        let profile_axes = profile.facets.keys().cloned().collect::<BTreeSet<_>>();
+        if profile.schema != "ghostlight.agency_profile.v1"
+            || profile.id != format!("agency:{}", institution.id)
+            || profile.subject_kind != AgencySubjectKind::Institution
+            || profile.profile_version != 0
+            || profile.collective_authority_id.is_some()
+            || profile.parent_subject_id.is_some()
+            || !profile.active_leaf
+            || !profile.simulation_eligible
+            || profile.location_ids.is_empty()
+            || profile.location_ids.iter().any(|id| !known(id))
+            || profile_axes != axes
+            || profile
+                .information_channels
+                .iter()
+                .any(|channel| !crate::resolution::information_channel_is_concrete(channel))
+        {
+            return Err(anyhow!(
+                "destination institution {} has a malformed agency profile",
+                institution.id
+            ));
+        }
+    }
+    let existing_civic = expansion
+        .civic_system
+        .as_ref()
+        .and_then(|system| campaign.civic_systems.get(&system.jurisdiction_location_id));
+    let existing_civic_subject_ids = existing_civic
+        .into_iter()
+        .flat_map(|system| {
+            system
+                .governing_institution_ids
+                .iter()
+                .chain(system.resident_population_ids.iter())
+        })
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    let local_subject_ids = population_ids
+        .iter()
+        .copied()
+        .chain(institution_ids.iter().copied())
+        .chain(existing_civic_subject_ids.iter().copied())
+        .collect::<BTreeSet<_>>();
+    let mut local_relation_ids = BTreeSet::new();
+    for relation in &expansion.local_relations {
+        if expansion.local_relations.len() > 48
+            || relation.schema != "ghostlight.agency_relation.v1"
+            || relation.id.trim().is_empty()
+            || !local_relation_ids.insert(relation.id.as_str())
+            || campaign.agency_relations.contains_key(&relation.id)
+            || relation.kind == AgencyRelationKind::Migration
+            || !relation.active
+            || relation.strength == 0
+            || relation.strength > 100
+            || relation.from_subject_id == relation.to_subject_id
+            || !local_subject_ids.contains(relation.from_subject_id.as_str())
+            || !local_subject_ids.contains(relation.to_subject_id.as_str())
+        {
+            return Err(anyhow!(
+                "destination local relation {} is not an exact new local-subject edge",
+                relation.id
+            ));
+        }
+    }
+    if let Some(civic) = expansion.civic_system.as_ref() {
+        let civic_fact_ids = civic
+            .public_authority_fact_ids
+            .iter()
+            .chain(civic.public_selection_fact_ids.iter())
+            .chain(civic.public_resource_fact_ids.iter())
+            .chain(civic.public_redress_fact_ids.iter())
+            .collect::<BTreeSet<_>>();
+        let previous = campaign.civic_systems.get(&civic.jurisdiction_location_id);
+        let expected_version = previous
+            .map(|system| system.version.saturating_add(1))
+            .unwrap_or(0);
+        let previous_institution_ids = previous
+            .into_iter()
+            .flat_map(|system| system.governing_institution_ids.iter())
+            .collect::<BTreeSet<_>>();
+        let previous_resident_ids = previous
+            .into_iter()
+            .flat_map(|system| system.resident_population_ids.iter())
+            .collect::<BTreeSet<_>>();
+        let previous_relation_ids = previous
+            .into_iter()
+            .flat_map(|system| system.political_relation_ids.iter())
+            .collect::<BTreeSet<_>>();
+        let allowed_institution_ids = institution_ids
+            .iter()
+            .map(|id| (*id).to_owned())
+            .chain(previous_institution_ids.iter().map(|id| (*id).clone()))
+            .collect::<BTreeSet<_>>();
+        let expected_resident_ids = population_ids
+            .iter()
+            .map(|id| (*id).to_owned())
+            .chain(previous_resident_ids.iter().map(|id| (*id).clone()))
+            .collect::<BTreeSet<_>>();
+        let allowed_relation_ids = local_relation_ids
+            .iter()
+            .map(|id| (*id).to_owned())
+            .chain(previous_relation_ids.iter().map(|id| (*id).clone()))
+            .collect::<BTreeSet<_>>();
+        let allowed_fact_ids = new_fact_ids
+            .iter()
+            .cloned()
+            .chain(previous.into_iter().flat_map(|system| {
+                system
+                    .public_authority_fact_ids
+                    .iter()
+                    .chain(system.public_selection_fact_ids.iter())
+                    .chain(system.public_resource_fact_ids.iter())
+                    .chain(system.public_redress_fact_ids.iter())
+                    .cloned()
+            }))
+            .collect::<BTreeSet<_>>();
+        if civic.schema != "ghostlight.civic_system_manifest.v1"
+            || civic.version != expected_version
+            || !known(&civic.jurisdiction_location_id)
+            || allowed_institution_ids.len() < 2
+            || expected_resident_ids.is_empty()
+            || civic.governing_institution_ids.is_empty()
+            || civic
+                .governing_institution_ids
+                .iter()
+                .any(|id| !allowed_institution_ids.contains(id))
+            || previous_institution_ids
+                .iter()
+                .any(|id| !civic.governing_institution_ids.contains(*id))
+            || civic.resident_population_ids != expected_resident_ids
+            || civic.public_authority_fact_ids.is_empty()
+            || civic.public_selection_fact_ids.is_empty()
+            || civic.public_resource_fact_ids.is_empty()
+            || civic.public_redress_fact_ids.is_empty()
+            || civic_fact_ids
+                .iter()
+                .any(|id| !allowed_fact_ids.contains(*id))
+            || civic.political_relation_ids.is_empty()
+            || civic
+                .political_relation_ids
+                .iter()
+                .any(|id| !allowed_relation_ids.contains(id))
+            || previous_relation_ids
+                .iter()
+                .any(|id| !civic.political_relation_ids.contains(*id))
+            || previous.is_some_and(|previous| {
+                !previous
+                    .public_authority_fact_ids
+                    .is_subset(&civic.public_authority_fact_ids)
+                    || !previous
+                        .public_selection_fact_ids
+                        .is_subset(&civic.public_selection_fact_ids)
+                    || !previous
+                        .public_resource_fact_ids
+                        .is_subset(&civic.public_resource_fact_ids)
+                    || !previous
+                        .public_redress_fact_ids
+                        .is_subset(&civic.public_redress_fact_ids)
+            })
+        {
+            return Err(anyhow!(
+                "inhabited destination civic manifest does not close authority, selection, resources, redress, populations, and political relations"
+            ));
+        }
+        let public_statements = civic_fact_ids
+            .iter()
+            .map(|fact_id| {
+                expansion
+                    .facts
+                    .iter()
+                    .find(|fact| fact.id.as_str() == fact_id.as_str())
+                    .or_else(|| campaign.facts.get(*fact_id))
+                    .map(|fact| fact.statement.as_str())
+                    .ok_or_else(|| anyhow!("civic manifest references a missing public fact"))
+            })
+            .collect::<Result<BTreeSet<_>>>()?;
+        if expansion.populations.iter().any(|population| {
+            public_statements
+                .iter()
+                .any(|statement| !population.shared_knowledge.contains(*statement))
+        }) {
+            return Err(anyhow!(
+                "every resident population must know the committed public civic facts"
+            ));
+        }
+        if expansion.facts.iter().any(|fact| {
+            civic_fact_ids.contains(&fact.id)
+                && fact.scope == FactScope::CanonBaseline
+                && fact.evidence_receipt_ids.is_empty()
+        }) {
+            return Err(anyhow!(
+                "an invented public civic fact cannot claim canon-baseline scope without evidence"
+            ));
+        }
+        if !civic.political_relation_ids.iter().any(|id| {
+            expansion
+                .local_relations
+                .iter()
+                .find(|relation| relation.id == *id)
+                .or_else(|| campaign.agency_relations.get(id))
+                .is_some_and(|relation| {
+                    matches!(
+                        relation.kind,
+                        AgencyRelationKind::Command
+                            | AgencyRelationKind::Rivalry
+                            | AgencyRelationKind::Coercion
+                    ) && (civic
+                        .governing_institution_ids
+                        .contains(&relation.from_subject_id)
+                        || civic
+                            .governing_institution_ids
+                            .contains(&relation.to_subject_id))
+                })
+        }) {
+            return Err(anyhow!(
+                "civic system needs a command, rivalry, or coercion edge that makes political authority or contestation legible"
+            ));
+        }
+    }
+    let mut relation_ids = local_relation_ids;
     for relation in &expansion.migration_relations {
         let source_is_exact_origin_leaf = campaign
             .gestalts
@@ -3845,6 +4336,159 @@ pub fn validate_region_expansion(
         }
     }
     Ok(())
+}
+
+pub fn validate_new_destination_expansion(
+    campaign: &Campaign,
+    expansion: &crate::domain::RegionExpansion,
+) -> Result<()> {
+    validate_region_expansion(campaign, expansion)?;
+    if let Some(civic) = &expansion.civic_system {
+        if !expansion
+            .locations
+            .iter()
+            .any(|location| location.id == civic.jurisdiction_location_id)
+        {
+            return Err(anyhow!(
+                "new destination civic jurisdiction must be one newly admitted location"
+            ));
+        }
+        validate_civic_locality_scope(campaign, expansion, &civic.jurisdiction_location_id)?;
+    }
+    Ok(())
+}
+
+pub fn validate_locality_elaboration(
+    campaign: &Campaign,
+    elaboration: &LocalityElaboration,
+) -> Result<()> {
+    validate_region_expansion(campaign, &elaboration.expansion)?;
+    if !campaign
+        .locations
+        .contains_key(&elaboration.target_location_id)
+        || elaboration.expansion.origin_location_id != elaboration.target_location_id
+    {
+        return Err(anyhow!(
+            "locality elaboration must preserve one exact canonical target as its expansion anchor"
+        ));
+    }
+    if elaboration.expansion.locations.iter().any(|location| {
+        !expansion_location_is_within(
+            campaign,
+            &elaboration.expansion,
+            &location.id,
+            &elaboration.target_location_id,
+        )
+    }) {
+        return Err(anyhow!(
+            "locality elaboration may admit only child places beneath its exact target"
+        ));
+    }
+    let civic = elaboration
+        .expansion
+        .civic_system
+        .as_ref()
+        .ok_or_else(|| anyhow!("locality elaboration requires a civic system manifest"))?;
+    if civic.jurisdiction_location_id != elaboration.target_location_id {
+        return Err(anyhow!(
+            "locality civic jurisdiction must remain the exact canonical target"
+        ));
+    }
+    validate_civic_locality_scope(
+        campaign,
+        &elaboration.expansion,
+        &elaboration.target_location_id,
+    )?;
+    Ok(())
+}
+
+fn validate_civic_locality_scope(
+    campaign: &Campaign,
+    expansion: &crate::domain::RegionExpansion,
+    jurisdiction_location_id: &str,
+) -> Result<()> {
+    if expansion.populations.iter().any(|population| {
+        !expansion_location_is_within(
+            campaign,
+            expansion,
+            &population.home_location_id,
+            jurisdiction_location_id,
+        )
+    }) || expansion.institution_profiles.iter().any(|profile| {
+        profile.location_ids.iter().any(|location_id| {
+            !expansion_location_is_within(
+                campaign,
+                expansion,
+                location_id,
+                jurisdiction_location_id,
+            )
+        })
+    }) {
+        return Err(anyhow!(
+            "civic populations and institutions must be located within their exact jurisdiction"
+        ));
+    }
+    let civic = expansion
+        .civic_system
+        .as_ref()
+        .expect("civic scope validation follows civic manifest validation");
+    let public_fact_ids = civic
+        .public_authority_fact_ids
+        .iter()
+        .chain(civic.public_selection_fact_ids.iter())
+        .chain(civic.public_resource_fact_ids.iter())
+        .chain(civic.public_redress_fact_ids.iter())
+        .collect::<BTreeSet<_>>();
+    if expansion.facts.iter().any(|fact| {
+        public_fact_ids.contains(&fact.id)
+            && (fact.discoverable_at_location_ids.is_empty()
+                || fact.discoverable_at_location_ids.iter().any(|location_id| {
+                    !expansion_location_is_within(
+                        campaign,
+                        expansion,
+                        location_id,
+                        jurisdiction_location_id,
+                    )
+                }))
+    }) {
+        return Err(anyhow!(
+            "public civic facts must be discoverable only within their exact jurisdiction"
+        ));
+    }
+    Ok(())
+}
+
+fn expansion_location_is_within(
+    campaign: &Campaign,
+    expansion: &crate::domain::RegionExpansion,
+    location_id: &str,
+    ancestor_id: &str,
+) -> bool {
+    let new_locations = expansion
+        .locations
+        .iter()
+        .map(|location| (location.id.as_str(), location))
+        .collect::<BTreeMap<_, _>>();
+    let mut cursor = Some(location_id);
+    let mut seen = BTreeSet::new();
+    while let Some(id) = cursor {
+        if id == ancestor_id {
+            return true;
+        }
+        if !seen.insert(id) {
+            return false;
+        }
+        cursor = new_locations
+            .get(id)
+            .and_then(|location| location.container_id.as_deref())
+            .or_else(|| {
+                campaign
+                    .locations
+                    .get(id)
+                    .and_then(|location| location.container_id.as_deref())
+            });
+    }
+    false
 }
 
 fn evidence_text(receipts: &[VaultEvidenceReceipt]) -> String {
@@ -4233,6 +4877,7 @@ fn seed_to_campaign(mut seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -
                 (x.id.clone(), x)
             })
             .collect(),
+        civic_systems: BTreeMap::new(),
         transcript: vec![crate::domain::NarrativeTurn {
             revision: 0,
             at: now,
@@ -4524,6 +5169,14 @@ fn apply_compiled_agency_skeleton(
 }
 
 pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
+    validate_campaign(c, true)
+}
+
+pub(crate) fn validate_campaign_runtime(c: &Campaign) -> Result<()> {
+    validate_campaign(c, false)
+}
+
+fn validate_campaign(c: &Campaign, require_dematerialized_members: bool) -> Result<()> {
     if c.tick_hours == 0 {
         return Err(anyhow!("strategic tick duration must be positive"));
     }
@@ -4618,7 +5271,7 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
                 member.gestalt_id
             ));
         }
-        if member.materialized_actor_id.is_some() {
+        if require_dematerialized_members && member.materialized_actor_id.is_some() {
             return Err(anyhow!(
                 "compiled gestalt member {} must begin dematerialized",
                 member.id
@@ -4681,6 +5334,65 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
     for clock in c.clocks.values() {
         if clock.threshold == 0 || clock.progress > clock.threshold {
             return Err(anyhow!("clock {} is invalid", clock.id));
+        }
+    }
+    validate_campaign_civic_systems(c)?;
+    Ok(())
+}
+
+fn validate_campaign_civic_systems(campaign: &Campaign) -> Result<()> {
+    for (jurisdiction_id, system) in &campaign.civic_systems {
+        let public_fact_ids = system
+            .public_authority_fact_ids
+            .iter()
+            .chain(system.public_selection_fact_ids.iter())
+            .chain(system.public_resource_fact_ids.iter())
+            .chain(system.public_redress_fact_ids.iter())
+            .collect::<BTreeSet<_>>();
+        if system.schema != "ghostlight.civic_system_manifest.v1"
+            || system.jurisdiction_location_id != *jurisdiction_id
+            || !campaign.locations.contains_key(jurisdiction_id)
+            || system.semantic_verification_receipt_id.trim().is_empty()
+            || system.governing_institution_ids.len() < 2
+            || system
+                .governing_institution_ids
+                .iter()
+                .any(|id| !campaign.institutions.contains_key(id))
+            || system.resident_population_ids.is_empty()
+            || system
+                .resident_population_ids
+                .iter()
+                .any(|id| !campaign.gestalts.contains_key(id))
+            || system.public_authority_fact_ids.is_empty()
+            || system.public_selection_fact_ids.is_empty()
+            || system.public_resource_fact_ids.is_empty()
+            || system.public_redress_fact_ids.is_empty()
+            || public_fact_ids
+                .iter()
+                .any(|id| !campaign.facts.contains_key(*id))
+            || system.political_relation_ids.is_empty()
+            || system.political_relation_ids.iter().any(|id| {
+                !campaign
+                    .agency_relations
+                    .get(id)
+                    .is_some_and(|edge| edge.active)
+            })
+        {
+            return Err(anyhow!(
+                "campaign civic system for {jurisdiction_id} has broken canonical references"
+            ));
+        }
+        for resident_id in &system.resident_population_ids {
+            let resident = &campaign.gestalts[resident_id];
+            if public_fact_ids.iter().any(|fact_id| {
+                !resident
+                    .shared_knowledge
+                    .contains(&campaign.facts[*fact_id].statement)
+            }) {
+                return Err(anyhow!(
+                    "campaign civic resident {resident_id} lost a public civic fact"
+                ));
+            }
         }
     }
     Ok(())
@@ -4983,6 +5695,7 @@ mod tests {
 
     struct DestinationElaborationModel {
         saw_branch_assumption_boundary: AtomicBool,
+        reject_civic_verification: bool,
     }
 
     struct OversizedQueryModel;
@@ -5437,19 +6150,42 @@ mod tests {
                             }],
                             "persistent_features":["braced roof","witnessed stores ledger"]
                         }],
-                        "facts":[{
-                            "id":"fact:refuge_operating_leaf",
-                            "statement":"The refuge uses a witnessed operating leaf for repair and admission duty.",
-                            "scope":"branch_local",
-                            "evidence_receipt_ids":[],
-                            "discoverable_at_location_ids":["refuge"]
-                        }],
+                        "facts":[
+                            {
+                                "id":"fact:refuge_authority",
+                                "statement":"The refuge duty council currently authorizes admissions and storm closure.",
+                                "scope":"branch_local",
+                                "evidence_receipt_ids":[],
+                                "discoverable_at_location_ids":["refuge"]
+                            },
+                            {
+                                "id":"fact:refuge_selection",
+                                "statement":"Wardens select two duty councillors by witnessed lot after each storm season.",
+                                "scope":"branch_local",
+                                "evidence_receipt_ids":[],
+                                "discoverable_at_location_ids":["refuge"]
+                            },
+                            {
+                                "id":"fact:refuge_resources",
+                                "statement":"The stores office receives repair boards through disclosed convoy levies.",
+                                "scope":"branch_local",
+                                "evidence_receipt_ids":[],
+                                "discoverable_at_location_ids":["refuge"]
+                            },
+                            {
+                                "id":"fact:refuge_redress",
+                                "statement":"A warden may appeal a duty ruling before the next witnessed stores count.",
+                                "scope":"branch_local",
+                                "evidence_receipt_ids":[],
+                                "discoverable_at_location_ids":["refuge"]
+                            }
+                        ],
                         "populations":[{
                             "id":"refuge-wardens",
                             "name":"Refuge wardens",
                             "home_location_id":"refuge",
                             "shared_capabilities":["brace ordinary storm damage"],
-                            "shared_fact_ids":["fact:refuge_operating_leaf"],
+                            "shared_fact_ids":["fact:refuge_authority","fact:refuge_selection","fact:refuge_resources","fact:refuge_redress"],
                             "resources":["repair boards"],
                             "goals":["keep the refuge usable"],
                             "pressures":["capacity is finite"],
@@ -5464,11 +6200,82 @@ mod tests {
                             },
                             "information_channels":["witnessed operating leaf"]
                         }],
+                        "institutions":[
+                            {
+                                "id":"refuge-duty-council",
+                                "name":"Refuge Duty Council",
+                                "resources":["closure seal"],
+                                "goals":["keep admissions within storm capacity"],
+                                "posture":"admit by witnessed capacity ruling",
+                                "location_ids":["refuge"],
+                                "facets":{
+                                    "geography":["storm refuge"],
+                                    "ideology":["witnessed duty"],
+                                    "authority":["admission rulings"],
+                                    "economy_role":["capacity allocation"],
+                                    "species_body":["mixed households"],
+                                    "information":["public duty leaf"]
+                                },
+                                "information_channels":["public duty leaf"]
+                            },
+                            {
+                                "id":"refuge-stores-office",
+                                "name":"Refuge Stores Office",
+                                "resources":["stores ledger"],
+                                "goals":["preserve disclosed emergency stores"],
+                                "posture":"publish every levy and count",
+                                "location_ids":["refuge"],
+                                "facets":{
+                                    "geography":["storm refuge"],
+                                    "ideology":["disclosed accounting"],
+                                    "authority":["stores custody"],
+                                    "economy_role":["repair supply"],
+                                    "species_body":["mixed households"],
+                                    "information":["witnessed stores count"]
+                                },
+                                "information_channels":["witnessed stores count"]
+                            }
+                        ],
+                        "local_relations":[{
+                            "id":"relation:refuge-council-stores",
+                            "from_subject_id":"refuge-duty-council",
+                            "to_subject_id":"refuge-stores-office",
+                            "kind":"command",
+                            "strength":60
+                        }],
+                        "civic_system":{
+                            "schema":"ghostlight.civic_system_manifest.v1",
+                            "jurisdiction_location_id":"refuge",
+                            "governing_institution_ids":["refuge-duty-council"],
+                            "resident_population_ids":["refuge-wardens"],
+                            "public_authority_fact_ids":["fact:refuge_authority"],
+                            "public_selection_fact_ids":["fact:refuge_selection"],
+                            "public_resource_fact_ids":["fact:refuge_resources"],
+                            "public_redress_fact_ids":["fact:refuge_redress"],
+                            "political_relation_ids":["relation:refuge-council-stores"]
+                        },
                         "migration_relations":[],
                         "branch_assumptions":[
                             "The storm-path geometry and witnessed repair procedure are compatible campaign-local elaboration."
                         ],
                         "gaps":[]
+                    })
+                    .to_string())
+                }
+                "destination_civic_verification" => {
+                    let accepted = !self.reject_civic_verification;
+                    Ok(serde_json::json!({
+                        "authority_legible":accepted,
+                        "selection_or_succession_legible":accepted,
+                        "public_resources_legible":accepted,
+                        "redress_legible":accepted,
+                        "institutional_relations_coherent":accepted,
+                        "resident_answer_grounded":accepted,
+                        "rationale":if accepted {
+                            "The refuge facts and institutions form a legible civic apparatus grounded in every resident population."
+                        } else {
+                            "The candidate's labels do not form a meaningful civic apparatus."
+                        }
                     })
                     .to_string())
                 }
@@ -5483,26 +6290,256 @@ mod tests {
 
     struct ExistingDestinationModel {
         calls: AtomicUsize,
+        saw_current_civic_context: AtomicBool,
     }
 
     #[async_trait]
     impl ModelPort for ExistingDestinationModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             self.calls.fetch_add(1, Ordering::SeqCst);
-            if request.stage != "destination_identity_resolution" {
-                return Err(anyhow!(
-                    "existing destination resolution must stop before stage {}",
+            match request.stage.as_str() {
+                "destination_identity_resolution" => {
+                    assert!(request.lived_stream.contains("Harrow Station"));
+                    assert!(request.lived_stream.contains("loc:harrow_station"));
+                    Ok(serde_json::json!({
+                        "decision":"existing",
+                        "existing_location_id":"loc:harrow_station",
+                        "rationale":"The request's primary destination is the supplied Harrow Station."
+                    })
+                    .to_string())
+                }
+                "destination_retrieval_plan" => Ok(serde_json::json!({
+                    "queries":["Harrow Station civic institutions","Harrow Station public offices"]
+                })
+                .to_string()),
+                "destination_compile" => {
+                    assert!(
+                        request
+                            .lived_stream
+                            .contains("Elaborate it in place. Never emit that location again")
+                    );
+                    assert!(
+                        request
+                            .lived_stream
+                            .contains("The question selects the missing domain, not its answer")
+                    );
+                    if !request
+                        .lived_stream
+                        .contains("CURRENT CIVIC APPARATUS:\nnull")
+                    {
+                        self.saw_current_civic_context.store(true, Ordering::SeqCst);
+                        return Ok(serde_json::json!({
+                            "origin_routes":[{
+                                "route_id":"route:station_to_audit_chamber",
+                                "destination_id":"loc:harrow_audit_chamber",
+                                "distance":"behind the petitions bench",
+                                "travel_minutes":4
+                            }],
+                            "locations":[{
+                                "id":"loc:harrow_audit_chamber",
+                                "name":"Harrow Audit Chamber",
+                                "container_id":"loc:harrow_station",
+                                "routes":[{
+                                    "route_id":"route:audit_chamber_to_station",
+                                    "destination_id":"loc:harrow_station",
+                                    "distance":"back through the petitions bench",
+                                    "travel_minutes":4
+                                }],
+                                "persistent_features":["sealed berth-dues duplicate ledger"]
+                            }],
+                            "facts":[{
+                                "id":"fact:harrow_hidden_levy",
+                                "statement":"The audit chamber found that Mayor Selka Vey diverted one season of published berth dues into an unvoted emergency courier fund.",
+                                "scope":"branch_local",
+                                "evidence_receipt_ids":[],
+                                "discoverable_at_location_ids":["loc:harrow_station","loc:harrow_audit_chamber"]
+                            }],
+                            "populations":[],
+                            "institutions":[{
+                                "id":"harrow-audit-chamber",
+                                "name":"Harrow Audit Chamber",
+                                "resources":["duplicate berth-dues ledger"],
+                                "goals":["force a public vote on the diverted dues"],
+                                "posture":"prepare contempt findings against the mayoral office",
+                                "location_ids":["loc:harrow_audit_chamber"],
+                                "facets":{
+                                    "geography":["Harrow civic quarter"],
+                                    "ideology":["adversarial public accounting"],
+                                    "authority":["compulsory civic audit"],
+                                    "economy_role":["treasury inspection"],
+                                    "species_body":["mixed civil service"],
+                                    "information":["open audit findings"]
+                                },
+                                "information_channels":["open audit findings"]
+                            }],
+                            "local_relations":[{
+                                "id":"relation:harrow-audit-mayor",
+                                "from_subject_id":"harrow-audit-chamber",
+                                "to_subject_id":"harrow-mayoral-office",
+                                "kind":"rivalry",
+                                "strength":81
+                            }],
+                            "civic_system":{
+                                "schema":"ghostlight.civic_system_manifest.v1",
+                                "jurisdiction_location_id":"loc:harrow_station",
+                                "governing_institution_ids":["harrow-mayoral-office","harrow-ward-assembly","harrow-audit-chamber"],
+                                "resident_population_ids":["harrow-residents"],
+                                "public_authority_fact_ids":["fact:harrow_authority"],
+                                "public_selection_fact_ids":["fact:harrow_selection"],
+                                "public_resource_fact_ids":["fact:harrow_resources","fact:harrow_hidden_levy"],
+                                "public_redress_fact_ids":["fact:harrow_redress"],
+                                "political_relation_ids":["relation:harrow-mayor-assembly","relation:harrow-audit-mayor"]
+                            },
+                            "migration_relations":[],
+                            "branch_assumptions":["The audit chamber and diverted-dues finding are a second bounded campaign-local elaboration of Harrow's persisted civic apparatus."],
+                            "gaps":[]
+                        })
+                        .to_string());
+                    }
+                    Ok(serde_json::json!({
+                        "origin_routes":[{
+                            "route_id":"route:station_to_civic_quarter",
+                            "destination_id":"loc:harrow_civic_quarter",
+                            "distance":"through the public arcade",
+                            "travel_minutes":6
+                        }],
+                        "locations":[{
+                            "id":"loc:harrow_civic_quarter",
+                            "name":"Harrow Civic Quarter",
+                            "container_id":"loc:harrow_station",
+                            "routes":[{
+                                "route_id":"route:civic_quarter_to_station",
+                                "destination_id":"loc:harrow_station",
+                                "distance":"back through the public arcade",
+                                "travel_minutes":6
+                            }],
+                            "persistent_features":["ward notice boards","sealed ballot archive"]
+                        }],
+                        "facts":[
+                            {
+                                "id":"fact:harrow_authority",
+                                "statement":"Mayor Selka Vey currently holds Harrow Station's civic seal while the ward assembly controls appropriations.",
+                                "scope":"branch_local",
+                                "evidence_receipt_ids":[],
+                                "discoverable_at_location_ids":["loc:harrow_station","loc:harrow_civic_quarter"]
+                            },
+                            {
+                                "id":"fact:harrow_selection",
+                                "statement":"Harrow residents elected Selka Vey over Oren Vale at the last five-year mayoral ballot.",
+                                "scope":"branch_local",
+                                "evidence_receipt_ids":[],
+                                "discoverable_at_location_ids":["loc:harrow_station","loc:harrow_civic_quarter"]
+                            },
+                            {
+                                "id":"fact:harrow_resources",
+                                "statement":"The civic treasury is funded by berth dues published before each ward appropriation session.",
+                                "scope":"branch_local",
+                                "evidence_receipt_ids":[],
+                                "discoverable_at_location_ids":["loc:harrow_station","loc:harrow_civic_quarter"]
+                            },
+                            {
+                                "id":"fact:harrow_redress",
+                                "statement":"Residents may contest a mayoral order before the ward assembly's open petitions bench.",
+                                "scope":"branch_local",
+                                "evidence_receipt_ids":[],
+                                "discoverable_at_location_ids":["loc:harrow_station","loc:harrow_civic_quarter"]
+                            }
+                        ],
+                        "populations":[{
+                            "id":"harrow-residents",
+                            "name":"Harrow residents",
+                            "home_location_id":"loc:harrow_civic_quarter",
+                            "shared_capabilities":["participate in ward ballots"],
+                            "shared_fact_ids":["fact:harrow_authority","fact:harrow_selection","fact:harrow_resources","fact:harrow_redress"],
+                            "resources":["ward meeting rooms"],
+                            "goals":["keep berth dues answerable to residents"],
+                            "pressures":["the mayor and assembly dispute emergency appropriations"],
+                            "collective_authority_id":"harrow-residents",
+                            "facets":{
+                                "geography":["Harrow Station"],
+                                "ideology":["ward representation"],
+                                "authority":["resident franchise"],
+                                "economy_role":["station households and berth workers"],
+                                "species_body":["mixed residents"],
+                                "information":["ward notice boards"]
+                            },
+                            "information_channels":["ward notice boards"]
+                        }],
+                        "institutions":[
+                            {
+                                "id":"harrow-mayoral-office",
+                                "name":"Harrow Mayoral Office",
+                                "resources":["civic seal","emergency clerks"],
+                                "goals":["retain emergency spending discretion"],
+                                "posture":"press the ward assembly for immediate appropriation",
+                                "location_ids":["loc:harrow_station"],
+                                "facets":{
+                                    "geography":["Harrow Station"],
+                                    "ideology":["executive dispatch"],
+                                    "authority":["mayoral orders"],
+                                    "economy_role":["emergency administration"],
+                                    "species_body":["mixed civil service"],
+                                    "information":["sealed civic notices"]
+                                },
+                                "information_channels":["sealed civic notices"]
+                            },
+                            {
+                                "id":"harrow-ward-assembly",
+                                "name":"Harrow Ward Assembly",
+                                "resources":["appropriations ledger","petitions bench"],
+                                "goals":["bind emergency spending to public accounts"],
+                                "posture":"withhold appropriation pending an open audit",
+                                "location_ids":["loc:harrow_civic_quarter"],
+                                "facets":{
+                                    "geography":["Harrow wards"],
+                                    "ideology":["public accounting"],
+                                    "authority":["appropriations and petitions"],
+                                    "economy_role":["budget oversight"],
+                                    "species_body":["mixed ward delegates"],
+                                    "information":["open session record"]
+                                },
+                                "information_channels":["open session record"]
+                            }
+                        ],
+                        "local_relations":[{
+                            "id":"relation:harrow-mayor-assembly",
+                            "from_subject_id":"harrow-mayoral-office",
+                            "to_subject_id":"harrow-ward-assembly",
+                            "kind":"rivalry",
+                            "strength":72
+                        }],
+                        "civic_system":{
+                            "schema":"ghostlight.civic_system_manifest.v1",
+                            "jurisdiction_location_id":"loc:harrow_station",
+                            "governing_institution_ids":["harrow-mayoral-office","harrow-ward-assembly"],
+                            "resident_population_ids":["harrow-residents"],
+                            "public_authority_fact_ids":["fact:harrow_authority"],
+                            "public_selection_fact_ids":["fact:harrow_selection"],
+                            "public_resource_fact_ids":["fact:harrow_resources"],
+                            "public_redress_fact_ids":["fact:harrow_redress"],
+                            "political_relation_ids":["relation:harrow-mayor-assembly"]
+                        },
+                        "migration_relations":[],
+                        "branch_assumptions":["Harrow's mayoral ballot, ward appropriations split, officeholders, and current dispute are bounded campaign-local elaboration."],
+                        "gaps":[]
+                    })
+                    .to_string())
+                }
+                "destination_civic_verification" => Ok(serde_json::json!({
+                    "authority_legible":true,
+                    "selection_or_succession_legible":true,
+                    "public_resources_legible":true,
+                    "redress_legible":true,
+                    "institutional_relations_coherent":true,
+                    "resident_answer_grounded":true,
+                    "rationale":"Harrow's exact public facts explain its divided authority, ballot, revenue, and appeal path to every resident population."
+                })
+                .to_string()),
+                _ => Err(anyhow!(
+                    "unexpected existing destination stage {}",
                     request.stage
-                ));
+                )),
             }
-            assert!(request.lived_stream.contains("Harrow Station"));
-            assert!(request.lived_stream.contains("loc:harrow_station"));
-            Ok(serde_json::json!({
-                "decision":"existing",
-                "existing_location_id":"loc:harrow_station",
-                "rationale":"The request's primary destination is the supplied Harrow Station."
-            })
-            .to_string())
         }
 
         fn provider(&self) -> &'static str {
@@ -6550,6 +7587,7 @@ mod tests {
     {
         let model = Arc::new(DestinationElaborationModel {
             saw_branch_assumption_boundary: AtomicBool::new(false),
+            reject_civic_verification: false,
         });
         let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
         let mut seed = private_actor_test_seed();
@@ -6565,6 +7603,9 @@ mod tests {
             )
             .await
             .unwrap();
+        let DestinationCompilationPreview::RegionExpansion(preview) = preview else {
+            panic!("new destination must produce a region expansion preview")
+        };
 
         assert!(model.saw_branch_assumption_boundary.load(Ordering::SeqCst));
         assert!(preview.requires_approval);
@@ -6583,17 +7624,41 @@ mod tests {
             vec![
                 "destination_identity_resolution",
                 "destination_retrieval_plan",
-                "destination_compile"
+                "destination_compile",
+                "destination_civic_verification"
             ]
         );
     }
 
     #[tokio::test]
-    async fn destination_compiler_refuses_to_duplicate_a_reachable_canonical_place() {
-        let model = Arc::new(ExistingDestinationModel {
-            calls: AtomicUsize::new(0),
+    async fn destination_compiler_rejects_semantically_empty_civic_machinery() {
+        let model = Arc::new(DestinationElaborationModel {
+            saw_branch_assumption_boundary: AtomicBool::new(false),
+            reject_civic_verification: true,
         });
-        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let compiler = WorldCompiler::new(vault(), model, "flash", "pro");
+        let mut seed = private_actor_test_seed();
+        seed.player.location_id = "convoy-staging".into();
+        seed.opening_narration = "The convoy waits in the rain.".into();
+        let campaign = seed_to_campaign(seed, &[]).unwrap();
+
+        let error = compiler
+            .compile_destination(
+                &campaign,
+                "convoy-staging",
+                "a playable storm refuge with ordinary repair and admission procedure",
+            )
+            .await
+            .unwrap_err();
+
+        assert!(
+            error
+                .to_string()
+                .contains("destination civic verifier rejected the candidate")
+        );
+    }
+
+    fn harrow_campaign() -> Campaign {
         let mut seed = private_actor_test_seed();
         seed.player.location_id = "convoy-staging".into();
         seed.locations[0].routes.push(CompiledRoute {
@@ -6634,22 +7699,206 @@ mod tests {
             }],
             persistent_features: vec!["abandoned road office".into()],
         });
-        let campaign = seed_to_campaign(seed, &[]).unwrap();
+        seed_to_campaign(seed, &[]).unwrap()
+    }
 
-        let error = compiler
+    #[tokio::test]
+    async fn destination_compiler_elaborates_a_reachable_canonical_city_in_place() {
+        let model = Arc::new(ExistingDestinationModel {
+            calls: AtomicUsize::new(0),
+            saw_current_civic_context: AtomicBool::new(false),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let campaign = harrow_campaign();
+
+        let (preview, receipts) = compiler
             .compile_destination(
                 &campaign,
                 "convoy-staging",
-                "Harrow Station via the lower Veyr Run; compile its playable approach",
+                "Visit Harrow Station and ask a local who they voted for Mayor.",
             )
             .await
-            .unwrap_err()
-            .to_string();
+            .unwrap();
+        let DestinationCompilationPreview::LocalityElaboration(preview) = preview else {
+            panic!("existing destination must produce a locality elaboration preview")
+        };
+        let expansion = &preview.elaboration.expansion;
+        assert_eq!(preview.elaboration.target_location_id, "loc:harrow_station");
+        assert_eq!(expansion.origin_location_id, "loc:harrow_station");
+        assert!(
+            expansion
+                .locations
+                .iter()
+                .all(|location| location.id != "loc:harrow_station")
+        );
+        assert_eq!(expansion.institutions.len(), 2);
+        assert_eq!(expansion.civic_system.as_ref().unwrap().version, 0);
+        assert!(
+            !expansion
+                .civic_system
+                .as_ref()
+                .unwrap()
+                .semantic_verification_receipt_id
+                .is_empty()
+        );
+        assert_eq!(
+            expansion.local_relations[0].kind,
+            AgencyRelationKind::Rivalry
+        );
+        let selection = &expansion
+            .facts
+            .iter()
+            .find(|fact| fact.id == "fact:harrow_selection")
+            .unwrap()
+            .statement;
+        assert!(selection.contains("Selka Vey"));
+        assert!(selection.contains("Oren Vale"));
+        assert!(
+            expansion.populations[0]
+                .shared_knowledge
+                .contains(selection)
+        );
+        assert_eq!(
+            receipts
+                .iter()
+                .map(|receipt| receipt.stage.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "destination_identity_resolution",
+                "destination_retrieval_plan",
+                "destination_compile",
+                "destination_civic_verification"
+            ]
+        );
+        assert_eq!(model.calls.load(Ordering::SeqCst), 4);
+    }
 
-        assert!(error.contains("already exists in canonical campaign topology"));
-        assert!(error.contains("Convoy Staging → Lower Veyr Run → Harrow Station (110 minutes)"));
-        assert!(error.contains("no new destination preview was created"));
-        assert_eq!(model.calls.load(Ordering::SeqCst), 1);
+    #[tokio::test]
+    async fn locality_elaboration_reuses_and_deepens_its_persisted_civic_apparatus() {
+        let model = Arc::new(ExistingDestinationModel {
+            calls: AtomicUsize::new(0),
+            saw_current_civic_context: AtomicBool::new(false),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let initial = harrow_campaign();
+        let (first, first_receipts) = compiler
+            .compile_destination(
+                &initial,
+                "convoy-staging",
+                "Visit Harrow Station and ask a local who they voted for Mayor.",
+            )
+            .await
+            .unwrap();
+        let DestinationCompilationPreview::LocalityElaboration(first) = first else {
+            panic!("first pass must elaborate Harrow in place")
+        };
+        let first_evidence_queries = first
+            .evidence_receipts
+            .iter()
+            .map(|receipt| receipt.query_hash.clone())
+            .collect::<BTreeSet<_>>();
+        let dir = tempfile::tempdir().unwrap();
+        let store =
+            crate::persistence::CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = crate::kernel::WorldKernel::start(store);
+        kernel
+            .command(crate::domain::WorldCommand::CreateCampaign {
+                campaign: initial,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let first_commit = kernel
+            .command(crate::domain::WorldCommand::ElaborateLocality {
+                expected_revision: first.expected_revision,
+                elaboration: first.elaboration,
+                evidence_receipts: first.evidence_receipts,
+                canon_candidates: first.canon_candidates,
+                model_stage_receipts: first_receipts,
+            })
+            .await
+            .unwrap();
+        let crate::kernel::CommandResult::Committed {
+            campaign: first_campaign,
+            ..
+        } = first_commit
+        else {
+            panic!("first civic pass must commit")
+        };
+
+        let (second, second_receipts) = compiler
+            .compile_destination(
+                &first_campaign,
+                "convoy-staging",
+                "Investigate the fight over Harrow's berth dues and who is hiding the ledger.",
+            )
+            .await
+            .unwrap();
+        let DestinationCompilationPreview::LocalityElaboration(second) = second else {
+            panic!("second pass must deepen Harrow in place")
+        };
+        assert!(
+            second
+                .evidence_receipts
+                .iter()
+                .any(|receipt| first_evidence_queries.contains(&receipt.query_hash))
+        );
+        assert_eq!(second.elaboration.expansion.populations.len(), 0);
+        assert_eq!(second.elaboration.expansion.institutions.len(), 1);
+        let manifest = second.elaboration.expansion.civic_system.as_ref().unwrap();
+        assert_eq!(manifest.version, 1);
+        assert!(
+            manifest
+                .governing_institution_ids
+                .contains("harrow-mayoral-office")
+        );
+        assert!(
+            manifest
+                .governing_institution_ids
+                .contains("harrow-audit-chamber")
+        );
+        assert!(
+            manifest
+                .public_resource_fact_ids
+                .contains("fact:harrow_resources")
+        );
+        assert!(
+            manifest
+                .public_resource_fact_ids
+                .contains("fact:harrow_hidden_levy")
+        );
+
+        let second_commit = kernel
+            .command(crate::domain::WorldCommand::ElaborateLocality {
+                expected_revision: second.expected_revision,
+                elaboration: second.elaboration,
+                evidence_receipts: second.evidence_receipts,
+                canon_candidates: second.canon_candidates,
+                model_stage_receipts: second_receipts,
+            })
+            .await
+            .unwrap();
+        let crate::kernel::CommandResult::Committed {
+            campaign: second_campaign,
+            ..
+        } = second_commit
+        else {
+            panic!("second civic pass must commit")
+        };
+        assert_eq!(
+            second_campaign.civic_systems["loc:harrow_station"].version,
+            1
+        );
+        assert_eq!(second_campaign.institutions.len(), 3);
+        assert!(
+            second_campaign.gestalts["harrow-residents"]
+                .shared_knowledge
+                .iter()
+                .any(|fact| fact.contains("unvoted emergency courier fund"))
+        );
+        assert!(model.saw_current_civic_context.load(Ordering::SeqCst));
+        assert_eq!(model.calls.load(Ordering::SeqCst), 8);
     }
 
     #[tokio::test]
@@ -7279,6 +8528,10 @@ mod tests {
             populations: vec![],
             population_profiles: vec![],
             migration_relations: vec![],
+            institutions: vec![],
+            institution_profiles: vec![],
+            local_relations: vec![],
+            civic_system: None,
         }
     }
 

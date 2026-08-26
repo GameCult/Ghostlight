@@ -900,15 +900,40 @@ provenance, retrieval, exact receipts, and player projection preserve those
 lanes without copying Kalsa into the read-only Aetheria recovery index or
 creating a Ghostlight-owned semantic index.
 
-Bounded region expansion treats Vault evidence as canon constraints rather than
-an exhaustive game map. The compiler must synthesize the smallest compatible
-branch-local routes, geometry, people, supplies, procedures, capacity,
-responsibility, and doctrine needed for play. Those choices remain visible as
-`branch_assumptions`; they may vary between campaigns unless the Vault pins
-them. A `gap` is reserved for contradictory canon baselines, an explicitly
-requested exact canon baseline that cannot be anchored, or conflict with an
-approved capability. Ordinary source silence is not a gap. Preview approval
-remains the only path from this proposal into canonical world state.
+Destination compilation treats Vault evidence as canon constraints rather than
+an exhaustive game map. Identity resolution sends a genuinely new place to
+bounded region expansion and an exact reachable canonical place to locality
+elaboration. Locality elaboration preserves the existing place identity while
+adding only contained places and locally scoped subjects, public facts, and
+relations. A player's question can select the missing domain but cannot dictate
+the office, procedure, or answer. Inhabited proposals must expose current
+authority, selection or succession, public resources, and redress through a
+typed civic manifest whose exact fact references are shared by each resident
+population. A separate model stage verifies their semantic legibility; it may
+reject but cannot rewrite or commit the proposal. The kernel rebinds that
+verdict to the exact candidate before mutation admission. Accepted civic
+systems persist as versioned component state, so a later pass receives the
+current institutions, populations, facts, and relations and must extend that
+apparatus instead of inventing a parallel government.
+
+Both destination paths synthesize the smallest compatible branch-local routes,
+geometry, people, supplies, procedures, capacity, responsibility, and doctrine
+needed for play. Those choices remain visible as `branch_assumptions`; they may
+vary between campaigns unless the Vault pins them. A `gap` is reserved for
+contradictory canon baselines, an explicitly requested exact canon baseline that
+cannot be anchored, or conflict with an approved capability. Ordinary source
+silence is not a gap. Preview approval remains the only path from this proposal
+into canonical world state.
+
+Autonomous strategic waves run the same admitted agency state through parallel
+cell membranes under a provider concurrency gate. Action-bound individuation
+may create one consequential named person through the existing Gestalt member
+commit primitive; that person enters later covers as the same canonical actor.
+Public action channels produce committed `NewsIssue` records. The world-
+consumer boundary can compose those records into a typed newspaper issue whose
+articles retain exact event IDs, channels, reliability, and source revision.
+Newspaper prose is derived from committed event summaries and cannot introduce
+an event the kernel did not commit.
 
 Session Zero compilation, expansion, and fission follow the same projection
 rule. Review projections expose topology, pressures, source-use coverage, gaps,
@@ -1120,15 +1145,27 @@ wrote campaign state has been removed. Its surviving projector updates only
 agency profiles, facets, cover invalidation, and `resolution_epoch` after the
 canonical mutation batch succeeds.
 
-Bounded region expansion now composes typed place admission, typed proposition
-admission, and exact topology changes against one authority snapshot. Every
-new destination carries an explicit outbound route from the stable origin and
-a reciprocal return route with the same positive travel time. Place profiles,
-proposition content, evidence references, discovery locations, containment,
-route identity, distance, and topology are validated on the component overlay;
-the aggregate `Location`, `Route`, and `WorldFact` rows are reconstructed only
-from accepted component state. The previous direct location/fact insertion
-loops are gone. A route map key is local to its exact origin. The component
+Region expansion and in-place locality elaboration compose typed place,
+proposition, population, and institution admission plus exact topology and
+political-relation changes against one authority snapshot. Locality elaboration
+anchors every added place beneath one existing canonical jurisdiction and
+forbids the compiler from duplicating that target. Civic manifests cross-bind
+governing institutions, resident populations, public civic facts, and local
+political relations before lowering. `CivicSystemSet` is the versioned component
+owner; aggregate `Campaign.civic_systems` is reconstructed from its accepted
+state. The mutation reducer owns those canonical component changes; the
+compiler-validated agency-profile map is still a companion projection and must
+not be described as component-owned until its migration is complete. Approval
+commits the complete addition atomically or leaves the coarse place untouched. Repeated
+Vault retrievals have distinct retrieval receipt identities, while an exact
+immutable receipt replay is admitted idempotently under the same CultCache CAS.
+
+Every new destination carries an explicit outbound route from the stable origin
+and a reciprocal return route with the same positive travel time. Place
+profiles, proposition content, evidence references, discovery locations,
+containment, route identity, distance, and topology are validated on the
+component overlay; aggregate rows are reconstructed only from accepted
+component state. A route map key is local to its exact origin. The component
 overlay derives its edge identity from `(origin_location_id, local_route_id)`;
 the player surface uses the route's exact destination field, and accepted
 region expansion restores the original local key. Reusing `road`, `harbor`, or

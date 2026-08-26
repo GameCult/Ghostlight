@@ -1,7 +1,8 @@
 # Ghostlight World Transition Algebra
 
 Status: adopted architecture; foreground, reaction, strategic, time, travel,
-approval-gated fission, and bounded region expansion use the mutation reducer.
+approval-gated fission, bounded region expansion, and in-place locality
+elaboration use the mutation reducer.
 Initial compiler publication is classified as a one-time creation transaction,
 and named-person materialisation is classified as a resolution transaction.
 Aggregate-storage removal remains migration work.
@@ -101,10 +102,13 @@ The migration is not complete while any of these can decide canonical state:
 - model output, browser payloads, story rendering, news generation, retrieval, or a
   derived simulation cell.
 
-Bounded region expansion now lowers to the same batch primitive through typed
-place and proposition admission plus exact topology changes. It may possess a
-broader administrative authority envelope, but not another state-writing
-mechanism. Approval-gated population fission likewise lowers to entity
+Bounded region expansion and in-place locality elaboration lower to the same
+batch primitive through typed place, proposition, population, and institution
+admission plus exact topology and political-relation changes. Locality
+elaboration owns only additions beneath one exact canonical place; it cannot
+replace that place or bypass approval. Either path may possess a broader
+administrative authority envelope, but not another state-writing mechanism.
+Approval-gated population fission likewise lowers to entity
 admission, lineage, custody, and membership mutations; the fission projector
 owns only the derived resolution profiles and cover epoch. Initial compiler
 publication is not a transition over an existing world; its separate creation
@@ -125,8 +129,8 @@ All of these lower to `WorldMutationBatch` before state changes:
 - population migration and approval-gated fission;
 - contract amendments that are permitted to change forward-looking world
   state;
-- compiler-admitted entities added after publication and later bounded region
-  expansion.
+- compiler-admitted entities added after publication, bounded region expansion,
+  and in-place locality elaboration.
 
 ### Cut line
 
@@ -275,6 +279,7 @@ component family and names the invariants that family can enforce. There is no
 | `ChangePopulationLineage` | Records an admitted split, merge, or remainder relation. | Fission preview and approval exist; leaves remain non-overlapping and complete. |
 | `ChangeIdentity` | Adopts, discloses, restricts, or retires an exact identity handle. | Self-authority or explicit custody exists; disclosure is separate from renaming. |
 | `ChangeTopology` | Adds, alters, opens, closes, or retires a containment or route edge. | Evidence/branch admission, endpoint existence, reciprocal rules, and geometry invariants hold. |
+| `CivicSystemSet` | Publishes the complete versioned civic apparatus for one jurisdiction. | The jurisdiction, institutions, resident populations, public civic propositions, political relations, version, and exact semantic-verifier receipt all exist in the accepted component overlay. |
 | `AdmitEntity` | Creates an explicitly permitted non-resource subject and initial components. | Admission class, evidence or branch-local authority, collision freedom, and required components hold. |
 | `RetireEntity` | Retires an exact subject without erasing history. | No dangling custody, occupancy, membership, topology, or active obligation remains. |
 | `AdvanceWorldTime` | Advances campaign time by an exact duration. | Monotonicity, governance, no-puppeting, tick budget, and scheduled obligations hold. |

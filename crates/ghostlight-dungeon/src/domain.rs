@@ -19,6 +19,8 @@ pub struct Campaign {
     pub institutions: BTreeMap<String, InstitutionState>,
     pub clocks: BTreeMap<String, WorldClock>,
     pub facts: BTreeMap<String, WorldFact>,
+    #[serde(default)]
+    pub civic_systems: BTreeMap<String, CivicSystemManifest>,
     pub transcript: Vec<NarrativeTurn>,
     pub last_player_activity: DateTime<Utc>,
     pub pending_ticks: u8,
@@ -1089,6 +1091,14 @@ pub enum WorldCommand {
         #[serde(default)]
         model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
     },
+    ElaborateLocality {
+        expected_revision: u64,
+        elaboration: LocalityElaboration,
+        evidence_receipts: Vec<VaultEvidenceReceipt>,
+        canon_candidates: Vec<CanonCandidate>,
+        #[serde(default)]
+        model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
+    },
     MaterializeGestaltMember {
         expected_revision: u64,
         gestalt_id: String,
@@ -1154,6 +1164,53 @@ pub struct RegionExpansion {
     /// relations and the physical topology.
     #[serde(default)]
     pub migration_relations: Vec<AgencyRelation>,
+    /// Institutions admitted with the region or locality. Institutions remain
+    /// distinct strategic subjects; population leaves may know public civic
+    /// facts without inheriting an institution's goals, resources, or voice.
+    #[serde(default)]
+    pub institutions: Vec<InstitutionState>,
+    /// Exact agency inputs for `institutions`.
+    #[serde(default)]
+    pub institution_profiles: Vec<AgencyProfile>,
+    /// Political and administrative relations among newly admitted local
+    /// institutions and populations. Migration remains in its separate lane.
+    #[serde(default)]
+    pub local_relations: Vec<AgencyRelation>,
+    /// Structural receipt proving that an inhabited locality exposes enough
+    /// committed public state for ordinary civic questions. The facts may say
+    /// that no mayor or election exists; a player's presupposition never gets
+    /// to choose the answer.
+    #[serde(default)]
+    pub civic_system: Option<CivicSystemManifest>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct CivicSystemManifest {
+    pub schema: String,
+    #[serde(default)]
+    pub version: u64,
+    pub jurisdiction_location_id: String,
+    pub governing_institution_ids: BTreeSet<String>,
+    pub resident_population_ids: BTreeSet<String>,
+    pub public_authority_fact_ids: BTreeSet<String>,
+    pub public_selection_fact_ids: BTreeSet<String>,
+    pub public_resource_fact_ids: BTreeSet<String>,
+    pub public_redress_fact_ids: BTreeSet<String>,
+    pub political_relation_ids: BTreeSet<String>,
+    /// Exact locally rebound verifier receipt that covers this complete civic
+    /// candidate. The compiler supplies it after inference; models never own
+    /// this binding.
+    #[serde(default)]
+    pub semantic_verification_receipt_id: String,
+}
+
+/// Admission of bounded child detail beneath one exact canonical coarse place.
+/// The target identity is immutable; the nested expansion contains only new
+/// subjects, facts, child places, and edges admitted beneath it.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct LocalityElaboration {
+    pub target_location_id: String,
+    pub expansion: RegionExpansion,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -1172,6 +1229,27 @@ pub struct RegionExpansionPreview {
     pub gaps: Vec<String>,
     pub canon_candidates: Vec<CanonCandidate>,
     pub requires_approval: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct LocalityElaborationPreview {
+    pub schema: String,
+    pub campaign_id: Uuid,
+    pub expected_revision: u64,
+    pub elaboration: LocalityElaboration,
+    pub evidence_receipts: Vec<VaultEvidenceReceipt>,
+    #[serde(default)]
+    pub branch_assumptions: Vec<String>,
+    pub gaps: Vec<String>,
+    pub canon_candidates: Vec<CanonCandidate>,
+    pub requires_approval: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(tag = "kind", content = "preview", rename_all = "snake_case")]
+pub enum DestinationCompilationPreview {
+    RegionExpansion(RegionExpansionPreview),
+    LocalityElaboration(LocalityElaborationPreview),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]

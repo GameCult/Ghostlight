@@ -383,6 +383,54 @@ pub fn lower_region_expansion(
             });
         }
     }
+    for institution in &expansion.institutions {
+        let subject = institution_subject(&institution.id);
+        mutations.push(WorldMutation::AdmitEntity {
+            subject: subject.clone(),
+            initial_components: BTreeSet::from([
+                WorldComponentKind::Identity,
+                WorldComponentKind::Posture,
+                WorldComponentKind::Commitment,
+            ]),
+            initial_place: None,
+            initial_profile: None,
+            admission_receipt_id: source_receipt_id.clone(),
+        });
+        mutations.push(WorldMutation::ChangeIdentity {
+            subject: subject.clone(),
+            operation: IdentityMutationOperation::Adopt,
+            handle_id: format!("identity:canonical:{}", institution.id),
+            handle_value: Some(institution.name.clone()),
+            audience: Vec::new(),
+        });
+        mutations.push(WorldMutation::ChangePosture {
+            subject: subject.clone(),
+            posture: institution.posture.clone(),
+        });
+        for (index, goal) in institution.goals.iter().enumerate() {
+            mutations.push(WorldMutation::ChangeCommitment {
+                subject: subject.clone(),
+                operation: CommitmentMutationOperation::Create,
+                kind: CommitmentKind::Goal,
+                commitment_id: format!("goal:compiler:{index}:{}", short_digest(goal)),
+                counterparty: None,
+                description: Some(goal.clone()),
+            });
+        }
+        for resource in &institution.resources {
+            mutations.push(WorldMutation::MutateResource {
+                resource: resource_subject(campaign, &subject, resource),
+                operation: ResourceMutationOperation::Create,
+                custodian: Some(subject.clone()),
+                related_resources: Vec::new(),
+                resource_kind: Some("institution_resource".into()),
+                resource_label: Some(resource.clone()),
+                recipe_id: None,
+                quantity: Some(1),
+                integrity: Some(100),
+            });
+        }
+    }
     let origin = place_subject(&expansion.origin_location_id);
     for (route_id, route) in &expansion.origin_routes {
         mutations.push(WorldMutation::ChangeTopology {
@@ -416,6 +464,59 @@ pub fn lower_region_expansion(
             strength_delta: Some(i64::from(relation.strength)),
         });
     }
+    for relation in &expansion.local_relations {
+        mutations.push(WorldMutation::ChangeRelationship {
+            source: expansion_agency_subject(campaign, expansion, &relation.from_subject_id)?,
+            target: expansion_agency_subject(campaign, expansion, &relation.to_subject_id)?,
+            operation: RelationshipMutationOperation::Create,
+            relationship_id: relation.id.clone(),
+            description: Some(agency_relation_kind_label(&relation.kind).into()),
+            strength_delta: Some(i64::from(relation.strength)),
+        });
+    }
+    if let Some(system) = &expansion.civic_system {
+        let new_population_ids = expansion
+            .populations
+            .iter()
+            .map(|population| population.id.as_str())
+            .collect::<BTreeSet<_>>();
+        for resident_id in &system.resident_population_ids {
+            if new_population_ids.contains(resident_id.as_str()) {
+                continue;
+            }
+            let resident = campaign.gestalts.get(resident_id).ok_or_else(|| {
+                anyhow!("civic manifest references an unknown existing resident population")
+            })?;
+            for fact_id in system
+                .public_authority_fact_ids
+                .iter()
+                .chain(system.public_selection_fact_ids.iter())
+                .chain(system.public_resource_fact_ids.iter())
+                .chain(system.public_redress_fact_ids.iter())
+            {
+                let fact = expansion
+                    .facts
+                    .iter()
+                    .find(|fact| fact.id == *fact_id)
+                    .or_else(|| campaign.facts.get(fact_id))
+                    .ok_or_else(|| anyhow!("civic manifest references an unknown fact"))?;
+                if !resident.shared_knowledge.contains(&fact.statement) {
+                    mutations.push(WorldMutation::ChangeKnowledge {
+                        operation: KnowledgeMutationOperation::Acquire,
+                        proposition: proposition_subject(fact_id),
+                        knower: Some(population_subject(resident_id)),
+                        speaker: None,
+                        recipients: Vec::new(),
+                        channel: None,
+                    });
+                }
+            }
+        }
+        mutations.push(WorldMutation::SetCivicSystem {
+            jurisdiction: place_subject(&system.jurisdiction_location_id),
+            system: system.clone(),
+        });
+    }
     lower_exact_mutations(
         campaign,
         mutations,
@@ -423,7 +524,7 @@ pub fn lower_region_expansion(
         None,
         MutationOutcomeBinding::Deterministic,
         None,
-        "Admit only the approved place profiles, proposition contents, population leaves, agency inputs, and directed migration relations, then add the exact approved route edges without rewriting existing geography or moving any existing subject.",
+        "Admit only the approved place profiles, proposition contents, population leaves, institutions, agency inputs, and exact local or migration relations, then add the exact approved route edges without rewriting existing geography or moving any existing subject.",
         &source_receipt_id,
         Some(digest_serializable(&(
             "compile_destination",
@@ -566,6 +667,90 @@ fn project_accepted_region_expansion(
             .agency_profiles
             .insert(profile.subject_id.clone(), profile);
     }
+    for requested in &expansion.institutions {
+        let subject = institution_subject(&requested.id);
+        let identity = next
+            .identities
+            .get(&format!("identity:canonical:{}", requested.id))
+            .filter(|identity| identity.subject == subject && identity.active)
+            .ok_or_else(|| anyhow!("accepted destination institution lost identity"))?;
+        let posture = next
+            .postures
+            .get(&subject)
+            .ok_or_else(|| anyhow!("accepted destination institution lost posture"))?;
+        let mut institution = requested.clone();
+        institution.name = identity.value.clone();
+        institution.posture = posture.clone();
+        campaign
+            .institutions
+            .insert(institution.id.clone(), institution);
+    }
+    for requested in &expansion.institution_profiles {
+        campaign
+            .agency_profiles
+            .insert(requested.subject_id.clone(), requested.clone());
+    }
+    for requested in &expansion.local_relations {
+        let source = expansion_agency_subject(campaign, expansion, &requested.from_subject_id)?;
+        let target = expansion_agency_subject(campaign, expansion, &requested.to_subject_id)?;
+        let value = next
+            .relationships
+            .get(&requested.id)
+            .filter(|value| value.source == source && value.target == target)
+            .ok_or_else(|| anyhow!("accepted destination local relation vanished"))?;
+        let mut relation: AgencyRelation = requested.clone();
+        relation.strength = u8::try_from(
+            value
+                .strength
+                .ok_or_else(|| anyhow!("accepted destination relation lost strength"))?,
+        )
+        .map_err(|_| anyhow!("accepted destination relation exceeds aggregate storage"))?;
+        campaign
+            .agency_relations
+            .insert(relation.id.clone(), relation);
+    }
+    if let Some(requested) = &expansion.civic_system {
+        let jurisdiction = place_subject(&requested.jurisdiction_location_id);
+        let accepted = next
+            .civic_systems
+            .get(&jurisdiction)
+            .filter(|system| *system == requested)
+            .ok_or_else(|| anyhow!("accepted destination civic system vanished"))?;
+        campaign
+            .civic_systems
+            .insert(accepted.jurisdiction_location_id.clone(), accepted.clone());
+        for resident_id in &accepted.resident_population_ids {
+            let resident = campaign
+                .gestalts
+                .get_mut(resident_id)
+                .ok_or_else(|| anyhow!("accepted civic resident population vanished"))?;
+            for fact_id in accepted
+                .public_authority_fact_ids
+                .iter()
+                .chain(accepted.public_selection_fact_ids.iter())
+                .chain(accepted.public_resource_fact_ids.iter())
+                .chain(accepted.public_redress_fact_ids.iter())
+            {
+                let proposition = proposition_subject(fact_id);
+                if !next
+                    .knowledge
+                    .contains_key(&crate::transition::KnowledgeKey {
+                        knower: population_subject(resident_id),
+                        proposition: proposition.clone(),
+                    })
+                {
+                    return Err(anyhow!("accepted civic resident lost public knowledge"));
+                }
+                resident.shared_knowledge.insert(
+                    next.propositions
+                        .get(&proposition)
+                        .ok_or_else(|| anyhow!("accepted civic fact lost proposition content"))?
+                        .statement
+                        .clone(),
+                );
+            }
+        }
+    }
     for requested in &expansion.migration_relations {
         let value = next
             .relationships
@@ -586,7 +771,7 @@ fn project_accepted_region_expansion(
             .agency_relations
             .insert(relation.id.clone(), relation);
     }
-    if !expansion.populations.is_empty() {
+    if !expansion.populations.is_empty() || !expansion.institutions.is_empty() {
         campaign.resolution_cover = None;
         campaign.resolution_policy.resolution_epoch = campaign
             .resolution_policy
@@ -1618,6 +1803,16 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
         place_profiles: BTreeMap::new(),
         propositions: BTreeMap::new(),
         topology: BTreeMap::new(),
+        civic_systems: campaign
+            .civic_systems
+            .values()
+            .map(|system| {
+                (
+                    place_subject(&system.jurisdiction_location_id),
+                    system.clone(),
+                )
+            })
+            .collect(),
     };
     admit(
         &mut state,
@@ -2840,6 +3035,53 @@ fn resolve_subject(campaign: &Campaign, id: &str) -> Option<SubjectRef> {
     }
 }
 
+fn expansion_agency_subject(
+    campaign: &Campaign,
+    expansion: &crate::domain::RegionExpansion,
+    id: &str,
+) -> Result<SubjectRef> {
+    if expansion
+        .institutions
+        .iter()
+        .any(|institution| institution.id == id)
+    {
+        Ok(institution_subject(id))
+    } else if expansion
+        .populations
+        .iter()
+        .any(|population| population.id == id)
+    {
+        Ok(population_subject(id))
+    } else if let Some(subject) = resolve_subject(campaign, id)
+        && matches!(
+            subject.kind,
+            SubjectKind::Institution | SubjectKind::Population
+        )
+    {
+        Ok(subject)
+    } else {
+        Err(anyhow!(
+            "local relation references a subject outside the expansion"
+        ))
+    }
+}
+
+fn agency_relation_kind_label(kind: &crate::domain::AgencyRelationKind) -> &'static str {
+    use crate::domain::AgencyRelationKind::*;
+    match kind {
+        Containment => "containment",
+        Command => "command",
+        Membership => "membership",
+        Alliance => "alliance",
+        Rivalry => "rivalry",
+        Trade => "trade",
+        Migration => "migration",
+        Communication => "communication",
+        Coercion => "coercion",
+        SharedLocation => "shared_location",
+    }
+}
+
 fn ensure_member<'a>(
     campaign: &'a Campaign,
     member_id: &str,
@@ -3127,6 +3369,7 @@ mod tests {
                     discoverable_at_location_ids: BTreeSet::from(["room".into()]),
                 },
             )]),
+            civic_systems: BTreeMap::new(),
             transcript: vec![],
             last_player_activity: Utc::now(),
             pending_ticks: 0,

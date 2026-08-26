@@ -160,14 +160,25 @@ separate from this response-delivery boundary.
 World transition authority is now a closed semantic mutation algebra rather
 than four empirical effect universes. Foreground attempts, NPC initiative,
 reaction appraisal, strategic actor/institution/Gestalt outcomes, waits,
-unanimous group travel, approval-gated population fission, and bounded region
-expansion lower through one revision-bound batch reducer and persist its
+unanimous group travel, approval-gated population fission, bounded region
+expansion, and in-place locality elaboration lower through one revision-bound
+batch reducer and persist its
 authority, batch, and receipt with the aggregate campaign projection. Fission
 inherits non-scarce population baseline through typed lineage while
 partitioning every exact resource and named member once; the resolution organ
-only changes profiles and cover epoch. Region expansion admits exact place and
-proposition profiles and a reciprocal origin/destination topology before
-reconstructing compatibility rows. Initial compiler publication is now
+only changes profiles and cover epoch. Destination identity resolution sends a
+new place to region expansion and an exact reachable canonical place to
+locality elaboration. Inhabited proposals admit populations, institutions,
+political relations, and resident-shared civic facts for authority, selection
+or succession, resources, and redress; deterministic cross-reference checks and
+an independent semantic verifier run before approval and is rebound and checked
+again at kernel admission. Accepted civic manifests are versioned component
+state. Later destination passes receive that exact apparatus and may only retain
+and deepen it; they cannot publish a duplicate resident body or government.
+Public strategic events lower to `NewsIssue` records, and the generic CultNet
+world-consumer boundary projects those committed records as an authority-gated
+typed newspaper with exact event provenance.
+Initial compiler publication is
 explicitly bounded as an empty-store creation transaction owned by the
 CampaignRegistry, not a runtime mutation. Named-person presence is a resolution
 transaction: it preserves the member delta, invalidates the prior cover and

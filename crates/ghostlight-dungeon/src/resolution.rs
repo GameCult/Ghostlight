@@ -3419,6 +3419,7 @@ pub(crate) mod tests {
             institutions,
             clocks: BTreeMap::new(),
             facts: BTreeMap::new(),
+            civic_systems: BTreeMap::new(),
             transcript: vec![],
             last_player_activity: Utc::now(),
             pending_ticks: 0,

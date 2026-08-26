@@ -2,9 +2,9 @@ use crate::{
     consumer::{
         ExternalProposalAcknowledgement, ExternalProposalList, ExternalProposalListRequest,
         ExternalProposalReceipt, ExternalProposalStatus, ExternalSubjectAuthority,
-        ExternalWorldProposal, WorldSeed, WorldSeedAdmission, WorldSeedAdmissionReceipt,
-        WorldSeedAdmissionRequest, WorldSeedProducerKind, validate_authority_key,
-        validate_seed_admission,
+        ExternalWorldProposal, WorldNewspaperRequest, WorldSeed, WorldSeedAdmission,
+        WorldSeedAdmissionReceipt, WorldSeedAdmissionRequest, WorldSeedProducerKind,
+        validate_authority_key, validate_seed_admission,
     },
     domain::{Campaign, CampaignLifecycleReceipt, VaultEvidenceReceipt},
     kernel::WorldKernel,
@@ -376,6 +376,42 @@ impl CampaignRegistry {
         })
     }
 
+    pub async fn compose_world_newspaper(
+        &self,
+        request: WorldNewspaperRequest,
+    ) -> Result<crate::newspaper::WorldNewspaperIssue> {
+        if request.schema != "ghostlight.world_newspaper_request.v1"
+            || request.max_articles == 0
+            || request.max_articles > 64
+        {
+            return Err(anyhow!("world newspaper request is invalid"));
+        }
+        let runtime = self.runtime(request.campaign_id).await?;
+        let (_, authority) = runtime
+            .store
+            .load::<ExternalSubjectAuthority>(
+                "external_subject_authority.v1",
+                &request.authority_id,
+            )?
+            .ok_or_else(|| anyhow!("external subject authority is unknown"))?;
+        if authority.campaign_id != request.campaign_id || authority.owner_id != request.owner_id {
+            return Err(anyhow!(
+                "world newspaper request does not match its authority"
+            ));
+        }
+        validate_authority_key(&authority, &request.authority_key)?;
+        let campaign = runtime
+            .store
+            .load::<Campaign>("campaign.v1", &request.campaign_id.to_string())?
+            .ok_or_else(|| anyhow!("campaign is missing"))?
+            .1;
+        crate::newspaper::compose_world_newspaper(
+            &campaign,
+            request.title,
+            usize::from(request.max_articles),
+        )
+    }
+
     pub async fn acknowledge_external_proposal(
         &self,
         acknowledgement: ExternalProposalAcknowledgement,
@@ -674,6 +710,7 @@ mod tests {
             institutions: BTreeMap::new(),
             clocks: BTreeMap::new(),
             facts: BTreeMap::new(),
+            civic_systems: BTreeMap::new(),
             transcript: vec![],
             last_player_activity: Utc::now(),
             pending_ticks: 0,
@@ -1145,6 +1182,16 @@ mod tests {
                 posture: "watchful".into(),
             },
         );
+        campaign.institutions.insert(
+            "inner-court".into(),
+            crate::domain::InstitutionState {
+                id: "inner-court".into(),
+                name: "The Inner Court".into(),
+                resources: vec!["sealed minutes".into()],
+                goals: vec!["control the grain audit".into()],
+                posture: "denying that the missing grain has political significance".into(),
+            },
+        );
         campaign.gestalts.insert(
             "external-population".into(),
             crate::domain::GestaltPersonaState {
@@ -1218,6 +1265,29 @@ mod tests {
         );
         let (_, repeated) = registry.admit_world_seed(request).await.unwrap();
         assert_eq!(repeated.seed_digest, receipt.seed_digest);
+        let newspaper_request = crate::consumer::WorldNewspaperRequest {
+            schema: "ghostlight.world_newspaper_request.v1".into(),
+            campaign_id: campaign.id,
+            authority_id: "authority:external-hold".into(),
+            owner_id: "fixture-consumer".into(),
+            authority_key: authority_key.into(),
+            title: "The Consumer Gazette".into(),
+            max_articles: 12,
+        };
+        let mut denied_newspaper = newspaper_request.clone();
+        denied_newspaper.authority_key = "wrong-key".into();
+        assert!(
+            registry
+                .compose_world_newspaper(denied_newspaper)
+                .await
+                .is_err()
+        );
+        let newspaper = registry
+            .compose_world_newspaper(newspaper_request.clone())
+            .await
+            .unwrap();
+        assert_eq!(newspaper.source_world_revision, 0);
+        assert!(newspaper.articles.is_empty());
 
         let mut snapshot = crate::consumer::ExternalSubjectSnapshot {
             schema: "ghostlight.external_subject_snapshot.v1".into(),
@@ -1318,6 +1388,51 @@ mod tests {
                 .revision,
             1
         );
+        let mut invalid_gestalt_snapshot = crate::consumer::ExternalSubjectSnapshot {
+            schema: "ghostlight.external_subject_snapshot.v1".into(),
+            campaign_id: campaign.id,
+            expected_world_revision: 1,
+            authority_id: "authority:external-population".into(),
+            owner_id: "fixture-consumer".into(),
+            authority_key: authority_key.into(),
+            source_revision: 1,
+            idempotency_key: "population-invalid-home".into(),
+            payload_digest: String::new(),
+            projection: crate::consumer::ExternalSubjectProjection::Gestalt(
+                crate::domain::GestaltPersonaState {
+                    schema: "ghostlight.gestalt_persona_state.v1".into(),
+                    id: "external-population".into(),
+                    name: "External Population".into(),
+                    version: 2,
+                    home_location_id: "invented-place".into(),
+                    shared_capabilities: BTreeSet::from(["farming".into()]),
+                    shared_knowledge: BTreeSet::from(["old road".into()]),
+                    resources: BTreeSet::new(),
+                    goals: vec!["endure".into()],
+                    pressures: Vec::new(),
+                },
+            ),
+        };
+        invalid_gestalt_snapshot.payload_digest =
+            crate::consumer::snapshot_payload_digest(&invalid_gestalt_snapshot).unwrap();
+        let error = registry
+            .apply_external_subject_snapshot(invalid_gestalt_snapshot)
+            .await
+            .unwrap_err();
+        assert!(
+            error.to_string().contains("unknown home location"),
+            "{error}"
+        );
+        assert_eq!(
+            runtime
+                .store
+                .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .revision,
+            1
+        );
         let mut gestalt_snapshot = crate::consumer::ExternalSubjectSnapshot {
             schema: "ghostlight.external_subject_snapshot.v1".into(),
             campaign_id: campaign.id,
@@ -1362,6 +1477,42 @@ mod tests {
             updated.agency_profiles["external-population"].facets
                 [&crate::domain::AgencyAxis::EconomyRole]
                 .contains("milling")
+        );
+        runtime
+            .kernel
+            .command(crate::domain::WorldCommand::AdvanceStrategicTick {
+                expected_revision: 2,
+                source: crate::domain::TickSource::Scheduler,
+                plan: Some(crate::domain::StrategicTickPlan {
+                    institution_actions: vec![crate::domain::StrategicInstitutionAction {
+                        institution_id: "inner-court".into(),
+                        posture:
+                            "accusing three granary auditors of being one witch in a long coat"
+                                .into(),
+                        location_ids: vec!["room".into()],
+                        public_channels: vec!["court broadsheet".into()],
+                    }],
+                    ..Default::default()
+                }),
+                model_receipt_hash: Some(format!("sha256:{}", "a".repeat(64))),
+                resolution_wave: None,
+            })
+            .await
+            .unwrap();
+        let newspaper = registry
+            .compose_world_newspaper(newspaper_request)
+            .await
+            .unwrap();
+        assert_eq!(newspaper.source_world_revision, 3);
+        assert_eq!(newspaper.articles.len(), 1);
+        assert_eq!(
+            newspaper.articles[0].event_ids,
+            ["strategic:3:institution:inner-court"]
+        );
+        assert!(
+            newspaper.articles[0]
+                .body
+                .contains("one witch in a long coat")
         );
         let proposal = ExternalWorldProposal {
             schema: "ghostlight.external_world_proposal.v1".into(),

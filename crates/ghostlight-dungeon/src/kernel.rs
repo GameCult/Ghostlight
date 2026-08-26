@@ -324,6 +324,8 @@ fn execute(
                     }
                 }
             }
+            crate::compiler::validate_campaign_runtime(&campaign)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
             let previous_world_revision = campaign.revision;
             campaign.revision = campaign.revision.saturating_add(1);
             let now = Utc::now();
@@ -1275,6 +1277,21 @@ fn execute(
                     apply_individuation(&mut campaign, &proposal.individuation)?;
                 }
             }
+            let individuation_public_channels = resolved_plan
+                .as_ref()
+                .or(plan.as_ref())
+                .map(|plan| {
+                    plan.selected_actions
+                        .iter()
+                        .map(|action| {
+                            crate::resolution::cell_action_digest(action)
+                                .map(|digest| (digest, action.public_channels.clone()))
+                                .map_err(|error| KernelError::Invalid(error.to_string()))
+                        })
+                        .collect::<Result<BTreeMap<_, _>, _>>()
+                })
+                .transpose()?
+                .unwrap_or_default();
             let applied_tick = match resolved_plan.or(plan) {
                 Some(plan) => apply_strategic_tick_plan(&mut campaign, plan)?,
                 None => {
@@ -1305,7 +1322,10 @@ fn execute(
                         institution_ids: vec![],
                         gestalt_ids: vec![proposal.individuation.gestalt_id.clone()],
                         location_ids: vec![proposal.individuation.location_id.clone()],
-                        public_channels: vec![],
+                        public_channels: individuation_public_channels
+                            .get(&proposal.action_digest)
+                            .cloned()
+                            .unwrap_or_default(),
                     });
                 }
             }
@@ -1322,7 +1342,7 @@ fn execute(
                         channel: channel.clone(),
                         headline: event.summary.clone(),
                         event_ids: vec![event.id.clone()],
-                        reliability: "direct institutional channel".into(),
+                        reliability: "committed public channel".into(),
                     });
                 }
             }
@@ -1356,36 +1376,10 @@ fn execute(
             model_stage_receipts,
         } => {
             require_revision(&campaign, expected_revision)?;
-            let supplied_evidence = evidence_receipts
-                .iter()
-                .map(|receipt| receipt.id.as_str())
-                .collect::<BTreeSet<_>>();
-            if expansion.facts.iter().any(|fact| {
-                fact.evidence_receipt_ids
-                    .iter()
-                    .any(|id| !supplied_evidence.contains(id.as_str()))
-            }) || expansion.population_profiles.iter().any(|profile| {
-                profile
-                    .evidence_receipt_ids
-                    .iter()
-                    .any(|id| !supplied_evidence.contains(id.as_str()))
-            }) || expansion.migration_relations.iter().any(|relation| {
-                relation
-                    .evidence_receipt_ids
-                    .iter()
-                    .any(|id| !supplied_evidence.contains(id.as_str()))
-            }) || canon_candidates.iter().any(|candidate| {
-                candidate
-                    .evidence_receipt_ids
-                    .iter()
-                    .any(|id| !supplied_evidence.contains(id.as_str()))
-            }) {
-                return Err(KernelError::Invalid(
-                    "region expansion evidence receipts were not supplied".into(),
-                ));
-            }
-            crate::compiler::validate_region_expansion(&campaign, &expansion)
+            validate_region_admission_evidence(&expansion, &evidence_receipts, &canon_candidates)?;
+            crate::compiler::validate_new_destination_expansion(&campaign, &expansion)
                 .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            validate_civic_admission_receipt(&campaign, &expansion, &model_stage_receipts)?;
             let transition = crate::legacy_transition::lower_region_expansion(
                 &campaign,
                 &expansion,
@@ -1409,6 +1403,55 @@ fn execute(
                 row,
                 campaign,
                 "expand_region",
+                evidence_receipts,
+                canon_candidates,
+                model_stage_receipts,
+                Some((transition, mutation_receipt)),
+            )
+        }
+        WorldCommand::ElaborateLocality {
+            expected_revision,
+            elaboration,
+            evidence_receipts,
+            canon_candidates,
+            model_stage_receipts,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            validate_region_admission_evidence(
+                &elaboration.expansion,
+                &evidence_receipts,
+                &canon_candidates,
+            )?;
+            crate::compiler::validate_locality_elaboration(&campaign, &elaboration)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            validate_civic_admission_receipt(
+                &campaign,
+                &elaboration.expansion,
+                &model_stage_receipts,
+            )?;
+            let transition = crate::legacy_transition::lower_region_expansion(
+                &campaign,
+                &elaboration.expansion,
+                Utc::now() + Duration::minutes(5),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let mutation_receipt = crate::legacy_transition::apply_lowered_region_expansion(
+                &mut campaign,
+                &elaboration.expansion,
+                &transition,
+                Utc::now(),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            for candidate in &canon_candidates {
+                campaign
+                    .canon_candidates
+                    .insert(candidate.id.clone(), candidate.clone());
+            }
+            commit_with_records(
+                store,
+                row,
+                campaign,
+                "elaborate_locality",
                 evidence_receipts,
                 canon_candidates,
                 model_stage_receipts,
@@ -2326,6 +2369,88 @@ fn require_revision(c: &Campaign, expected: u64) -> Result<(), KernelError> {
             actual: c.revision,
         })
     }
+}
+
+fn validate_region_admission_evidence(
+    expansion: &RegionExpansion,
+    evidence_receipts: &[VaultEvidenceReceipt],
+    canon_candidates: &[CanonCandidate],
+) -> Result<(), KernelError> {
+    let supplied_evidence = evidence_receipts
+        .iter()
+        .map(|receipt| receipt.id.as_str())
+        .collect::<BTreeSet<_>>();
+    let missing_profile_evidence = expansion
+        .population_profiles
+        .iter()
+        .chain(expansion.institution_profiles.iter())
+        .any(|profile| {
+            profile
+                .evidence_receipt_ids
+                .iter()
+                .any(|id| !supplied_evidence.contains(id.as_str()))
+        });
+    let missing_relation_evidence = expansion
+        .migration_relations
+        .iter()
+        .chain(expansion.local_relations.iter())
+        .any(|relation| {
+            relation
+                .evidence_receipt_ids
+                .iter()
+                .any(|id| !supplied_evidence.contains(id.as_str()))
+        });
+    if expansion.facts.iter().any(|fact| {
+        fact.evidence_receipt_ids
+            .iter()
+            .any(|id| !supplied_evidence.contains(id.as_str()))
+    }) || missing_profile_evidence
+        || missing_relation_evidence
+        || canon_candidates.iter().any(|candidate| {
+            candidate
+                .evidence_receipt_ids
+                .iter()
+                .any(|id| !supplied_evidence.contains(id.as_str()))
+        })
+    {
+        return Err(KernelError::Invalid(
+            "region admission evidence receipts were not supplied".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_civic_admission_receipt(
+    campaign: &Campaign,
+    expansion: &RegionExpansion,
+    model_stage_receipts: &[crate::model::ModelStageReceipt],
+) -> Result<(), KernelError> {
+    let Some(system) = &expansion.civic_system else {
+        return Ok(());
+    };
+    let candidate_digest = crate::compiler::civic_candidate_digest(expansion)
+        .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    let expected_binding = crate::compiler::civic_verifier_binding(campaign, &candidate_digest);
+    let receipt = model_stage_receipts
+        .iter()
+        .find(|receipt| receipt.storage_key() == system.semantic_verification_receipt_id)
+        .ok_or_else(|| {
+            KernelError::Invalid("civic admission lacks its exact semantic verifier receipt".into())
+        })?;
+    let mut rebound = receipt.clone();
+    rebound.rebind_snapshot(receipt.snapshot_binding.clone());
+    if receipt.schema != "ghostlight.persona_stage_receipt.v1"
+        || receipt.stage != "destination_civic_verification"
+        || receipt.validation_result != "valid"
+        || receipt.local_validation_error.is_some()
+        || receipt.snapshot_binding != expected_binding
+        || rebound.storage_key() != receipt.storage_key()
+    {
+        return Err(KernelError::Invalid(
+            "civic admission semantic verifier receipt is invalid or candidate-mismatched".into(),
+        ));
+    }
+    Ok(())
 }
 
 fn is_human_controlled_actor(campaign: &Campaign, actor_id: &str) -> bool {
@@ -4106,7 +4231,7 @@ fn persist(e: anyhow::Error) -> KernelError {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use sha2::{Digest, Sha256};
     use std::collections::{BTreeMap, BTreeSet};
@@ -4174,7 +4299,7 @@ mod tests {
         assert_eq!(after, &expected);
     }
 
-    fn campaign() -> Campaign {
+    pub(crate) fn campaign() -> Campaign {
         let id = uuid::Uuid::new_v4();
         let actor = ActorState {
             id: "player".into(),
@@ -4215,6 +4340,7 @@ mod tests {
             institutions: BTreeMap::new(),
             clocks: BTreeMap::new(),
             facts: BTreeMap::new(),
+            civic_systems: BTreeMap::new(),
             transcript: vec![],
             last_player_activity: Utc::now(),
             pending_ticks: 0,
@@ -4233,6 +4359,237 @@ mod tests {
             resolution_cover: None,
             strategic_tick_count: 0,
         }
+    }
+
+    fn civic_locality_elaboration() -> LocalityElaboration {
+        let public_facts = [
+            (
+                "fact:room-authority",
+                "Mayor Selka Vey holds the civic seal while the ward assembly controls appropriations.",
+            ),
+            (
+                "fact:room-selection",
+                "Residents elected Selka Vey over Oren Vale at the last mayoral ballot.",
+            ),
+            (
+                "fact:room-resources",
+                "Published berth dues fund the civic treasury.",
+            ),
+            (
+                "fact:room-redress",
+                "Residents may appeal a mayoral order to the ward petitions bench.",
+            ),
+        ];
+        let facts = public_facts
+            .iter()
+            .map(|(id, statement)| WorldFact {
+                id: (*id).into(),
+                statement: (*statement).into(),
+                scope: FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from([
+                    "room".into(),
+                    "civic-quarter".into(),
+                ]),
+            })
+            .collect::<Vec<_>>();
+        let institution_profile = |id: &str, authority: &str| AgencyProfile {
+            schema: "ghostlight.agency_profile.v1".into(),
+            id: format!("agency:{id}"),
+            subject_id: id.into(),
+            subject_kind: AgencySubjectKind::Institution,
+            profile_version: 0,
+            collective_authority_id: None,
+            parent_subject_id: None,
+            active_leaf: true,
+            simulation_eligible: true,
+            facets: BTreeMap::from([
+                (AgencyAxis::Geography, BTreeSet::from(["room".into()])),
+                (
+                    AgencyAxis::Ideology,
+                    BTreeSet::from(["public mandate".into()]),
+                ),
+                (AgencyAxis::Authority, BTreeSet::from([authority.into()])),
+                (
+                    AgencyAxis::EconomyRole,
+                    BTreeSet::from(["civic administration".into()]),
+                ),
+                (
+                    AgencyAxis::SpeciesBody,
+                    BTreeSet::from(["mixed residents".into()]),
+                ),
+                (
+                    AgencyAxis::Information,
+                    BTreeSet::from(["ward notices".into()]),
+                ),
+            ]),
+            location_ids: BTreeSet::from(["civic-quarter".into()]),
+            information_channels: BTreeSet::from(["ward notice board".into()]),
+            detail_debt: 0,
+            last_detail_tick: 0,
+            evidence_receipt_ids: vec![],
+        };
+        LocalityElaboration {
+            target_location_id: "room".into(),
+            expansion: RegionExpansion {
+                origin_location_id: "room".into(),
+                origin_routes: BTreeMap::from([(
+                    "to-civic-quarter".into(),
+                    Route {
+                        destination_id: "civic-quarter".into(),
+                        distance: "through the public arcade".into(),
+                        travel_minutes: 5,
+                    },
+                )]),
+                locations: vec![Location {
+                    id: "civic-quarter".into(),
+                    name: "Civic Quarter".into(),
+                    container_id: Some("room".into()),
+                    routes: BTreeMap::from([(
+                        "to-room".into(),
+                        Route {
+                            destination_id: "room".into(),
+                            distance: "back through the public arcade".into(),
+                            travel_minutes: 5,
+                        },
+                    )]),
+                    persistent_features: vec!["sealed ballot archive".into()],
+                }],
+                facts,
+                populations: vec![GestaltPersonaState {
+                    schema: "ghostlight.gestalt_persona_state.v1".into(),
+                    id: "room-residents".into(),
+                    name: "Room residents".into(),
+                    version: 0,
+                    home_location_id: "civic-quarter".into(),
+                    shared_capabilities: BTreeSet::from(["participate in ward ballots".into()]),
+                    shared_knowledge: public_facts
+                        .iter()
+                        .map(|(_, statement)| (*statement).into())
+                        .collect(),
+                    resources: BTreeSet::from(["ward hall".into()]),
+                    goals: vec!["keep the treasury answerable".into()],
+                    pressures: vec!["the mayor and assembly dispute appropriations".into()],
+                }],
+                population_profiles: vec![AgencyProfile {
+                    schema: "ghostlight.agency_profile.v1".into(),
+                    id: "agency:room-residents".into(),
+                    subject_id: "room-residents".into(),
+                    subject_kind: AgencySubjectKind::Gestalt,
+                    profile_version: 0,
+                    collective_authority_id: Some("room-residents".into()),
+                    parent_subject_id: None,
+                    active_leaf: true,
+                    simulation_eligible: true,
+                    facets: BTreeMap::from([
+                        (AgencyAxis::Geography, BTreeSet::from(["room".into()])),
+                        (
+                            AgencyAxis::Ideology,
+                            BTreeSet::from(["ward representation".into()]),
+                        ),
+                        (
+                            AgencyAxis::Authority,
+                            BTreeSet::from(["resident franchise".into()]),
+                        ),
+                        (
+                            AgencyAxis::EconomyRole,
+                            BTreeSet::from(["berth work".into()]),
+                        ),
+                        (
+                            AgencyAxis::SpeciesBody,
+                            BTreeSet::from(["mixed residents".into()]),
+                        ),
+                        (
+                            AgencyAxis::Information,
+                            BTreeSet::from(["ward notices".into()]),
+                        ),
+                    ]),
+                    location_ids: BTreeSet::from(["civic-quarter".into()]),
+                    information_channels: BTreeSet::from(["ward notice board".into()]),
+                    detail_debt: 0,
+                    last_detail_tick: 0,
+                    evidence_receipt_ids: vec![],
+                }],
+                migration_relations: vec![],
+                institutions: vec![
+                    InstitutionState {
+                        id: "mayoral-office".into(),
+                        name: "Mayoral Office".into(),
+                        resources: vec!["civic seal".into()],
+                        goals: vec!["retain emergency spending discretion".into()],
+                        posture: "press for immediate appropriation".into(),
+                    },
+                    InstitutionState {
+                        id: "ward-assembly".into(),
+                        name: "Ward Assembly".into(),
+                        resources: vec!["appropriations ledger".into()],
+                        goals: vec!["bind spending to public accounts".into()],
+                        posture: "withhold funds pending audit".into(),
+                    },
+                ],
+                institution_profiles: vec![
+                    institution_profile("mayoral-office", "mayoral orders"),
+                    institution_profile("ward-assembly", "appropriations"),
+                ],
+                local_relations: vec![AgencyRelation {
+                    schema: "ghostlight.agency_relation.v1".into(),
+                    id: "relation:mayor-assembly".into(),
+                    from_subject_id: "mayoral-office".into(),
+                    to_subject_id: "ward-assembly".into(),
+                    kind: AgencyRelationKind::Rivalry,
+                    strength: 72,
+                    active: true,
+                    evidence_receipt_ids: vec![],
+                }],
+                civic_system: Some(CivicSystemManifest {
+                    schema: "ghostlight.civic_system_manifest.v1".into(),
+                    version: 0,
+                    jurisdiction_location_id: "room".into(),
+                    governing_institution_ids: BTreeSet::from([
+                        "mayoral-office".into(),
+                        "ward-assembly".into(),
+                    ]),
+                    resident_population_ids: BTreeSet::from(["room-residents".into()]),
+                    public_authority_fact_ids: BTreeSet::from(["fact:room-authority".into()]),
+                    public_selection_fact_ids: BTreeSet::from(["fact:room-selection".into()]),
+                    public_resource_fact_ids: BTreeSet::from(["fact:room-resources".into()]),
+                    public_redress_fact_ids: BTreeSet::from(["fact:room-redress".into()]),
+                    political_relation_ids: BTreeSet::from(["relation:mayor-assembly".into()]),
+                    semantic_verification_receipt_id: String::new(),
+                }),
+            },
+        }
+    }
+
+    fn civic_verifier_receipt(
+        campaign: &Campaign,
+        expansion: &mut RegionExpansion,
+    ) -> crate::model::ModelStageReceipt {
+        let digest = crate::compiler::civic_candidate_digest(expansion).unwrap();
+        let mut receipt = crate::model::ModelStageReceipt {
+            schema: "ghostlight.persona_stage_receipt.v1".into(),
+            receipt_hash: String::new(),
+            provider: "fixture".into(),
+            model: "fixture".into(),
+            stage: "destination_civic_verification".into(),
+            snapshot_binding: String::new(),
+            request_hash: test_action_digest("civic-verifier-request"),
+            output_hash: test_action_digest("civic-verifier-output"),
+            source_receipt_ids: vec![],
+            latency_ms: 1,
+            validation_result: "valid".into(),
+            local_validation_error: None,
+            input_chars: 1,
+            output_chars: 1,
+            provider_attempts: vec![],
+        };
+        receipt.rebind_snapshot(crate::compiler::civic_verifier_binding(campaign, &digest));
+        expansion
+            .civic_system
+            .as_mut()
+            .unwrap()
+            .semantic_verification_receipt_id = receipt.storage_key().to_owned();
+        receipt
     }
 
     #[tokio::test]
@@ -4562,6 +4919,7 @@ mod tests {
             place_profiles: BTreeMap::new(),
             propositions: BTreeMap::new(),
             topology: BTreeMap::new(),
+            civic_systems: BTreeMap::new(),
         };
         let initial_world_time = state.world_time;
         store.create_component_world_state(&state).unwrap();
@@ -6679,6 +7037,10 @@ mod tests {
                     populations: vec![],
                     population_profiles: vec![],
                     migration_relations: vec![],
+                    institutions: vec![],
+                    institution_profiles: vec![],
+                    local_relations: vec![],
+                    civic_system: None,
                 },
                 evidence_receipts: vec![evidence],
                 canon_candidates: vec![candidate],
@@ -6878,6 +7240,10 @@ mod tests {
                     populations: vec![population],
                     population_profiles: vec![profile],
                     migration_relations: vec![relation],
+                    institutions: vec![],
+                    institution_profiles: vec![],
+                    local_relations: vec![],
+                    civic_system: None,
                 },
                 evidence_receipts: vec![evidence],
                 canon_candidates: vec![],
@@ -6907,6 +7273,200 @@ mod tests {
             crate::resolution::gestalt_migration_destinations(&campaign, "refugees", "room")["ridge-households"],
             "ridge"
         );
+    }
+
+    #[tokio::test]
+    async fn locality_elaboration_preserves_the_city_and_grounds_a_named_residents_vote() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store);
+        let seed = campaign();
+        let original = seed.locations["room"].clone();
+        let mut elaboration = civic_locality_elaboration();
+        let verifier_receipt = civic_verifier_receipt(&seed, &mut elaboration.expansion);
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let committed = kernel
+            .command(WorldCommand::ElaborateLocality {
+                expected_revision: 0,
+                elaboration,
+                evidence_receipts: vec![],
+                canon_candidates: vec![],
+                model_stage_receipts: vec![verifier_receipt],
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed {
+            campaign: elaborated,
+            ..
+        } = committed
+        else {
+            panic!("expected committed locality elaboration")
+        };
+        assert_eq!(elaborated.locations["room"].id, original.id);
+        assert_eq!(elaborated.locations["room"].name, original.name);
+        assert_eq!(
+            elaborated.locations["room"].persistent_features,
+            original.persistent_features
+        );
+        assert_eq!(
+            elaborated.locations["civic-quarter"]
+                .container_id
+                .as_deref(),
+            Some("room")
+        );
+        assert_eq!(elaborated.institutions.len(), 2);
+        assert_eq!(elaborated.civic_systems["room"].version, 0);
+        assert!(
+            !elaborated.civic_systems["room"]
+                .semantic_verification_receipt_id
+                .is_empty()
+        );
+        assert_eq!(
+            elaborated.agency_relations["relation:mayor-assembly"].kind,
+            AgencyRelationKind::Rivalry
+        );
+        let selection = elaborated.facts["fact:room-selection"].statement.clone();
+        assert!(
+            elaborated.gestalts["room-residents"]
+                .shared_knowledge
+                .contains(&selection)
+        );
+
+        let named = kernel
+            .command(WorldCommand::IndividuateGestaltMember {
+                expected_revision: 1,
+                individuation: GestaltIndividuation {
+                    gestalt_id: "room-residents".into(),
+                    expected_gestalt_version: 0,
+                    member: GestaltMemberDelta {
+                        schema: "ghostlight.gestalt_member_delta.v1".into(),
+                        id: "iren-vale".into(),
+                        gestalt_id: "room-residents".into(),
+                        version: 0,
+                        name: "Iren Vale".into(),
+                        capability_additions: BTreeSet::new(),
+                        capability_removals: BTreeSet::new(),
+                        knowledge_additions: BTreeSet::new(),
+                        knowledge_removals: BTreeSet::new(),
+                        equipment: BTreeSet::new(),
+                        conditions: BTreeSet::new(),
+                        obligations: BTreeSet::new(),
+                        relationships: BTreeMap::new(),
+                        goals: vec!["make berth dues transparent".into()],
+                        memories: vec![
+                            "I voted for Oren Vale because he promised a public berth audit."
+                                .into(),
+                        ],
+                        last_location_id: Some("civic-quarter".into()),
+                        materialized_actor_id: None,
+                        last_relevant_revision: 0,
+                        relevance_lease_until_revision: 0,
+                    },
+                    location_id: "civic-quarter".into(),
+                },
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed {
+            campaign: individuated,
+            ..
+        } = named
+        else {
+            panic!("expected committed resident individuation")
+        };
+        let resident = &individuated.actors["member:iren-vale"];
+        assert!(resident.knowledge.contains(&selection));
+        assert!(resident.memories[0].contains("Oren Vale"));
+    }
+
+    #[tokio::test]
+    async fn invalid_civic_locality_leaves_the_coarse_city_untouched() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = campaign();
+        let campaign_id = seed.id;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let mut elaboration = civic_locality_elaboration();
+        elaboration.expansion.populations[0]
+            .shared_knowledge
+            .remove("Residents elected Selka Vey over Oren Vale at the last mayoral ballot.");
+
+        let error = kernel
+            .command(WorldCommand::ElaborateLocality {
+                expected_revision: 0,
+                elaboration,
+                evidence_receipts: vec![],
+                canon_candidates: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("public civic facts"));
+        let stored = store
+            .load::<Campaign>("campaign.v1", &campaign_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(stored.revision, 0);
+        assert_eq!(stored.locations.len(), 1);
+        assert!(stored.institutions.is_empty());
+        assert!(stored.gestalts.is_empty());
+    }
+
+    #[tokio::test]
+    async fn structurally_valid_civic_locality_requires_its_bound_semantic_receipt() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = campaign();
+        let campaign_id = seed.id;
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let error = kernel
+            .command(WorldCommand::ElaborateLocality {
+                expected_revision: 0,
+                elaboration: civic_locality_elaboration(),
+                evidence_receipts: vec![],
+                canon_candidates: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap_err();
+        assert!(
+            error.to_string().contains("semantic verifier receipt"),
+            "{error}"
+        );
+        let stored = store
+            .load::<Campaign>("campaign.v1", &campaign_id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(stored.revision, 0);
+        assert!(stored.civic_systems.is_empty());
+        assert!(stored.institutions.is_empty());
     }
 
     #[tokio::test]
@@ -8038,7 +8598,10 @@ mod tests {
         stage: &str,
         marker: char,
     ) -> crate::model::ModelStageReceipt {
-        let hash = format!("sha256:{}", marker.to_string().repeat(64));
+        let hash = test_action_digest(&format!(
+            "resolution-stage:{}:{}:{}:{}:{}",
+            campaign.id, campaign.revision, cell_id, stage, marker
+        ));
         crate::model::ModelStageReceipt {
             schema: "ghostlight.persona_stage_receipt.v1".into(),
             receipt_hash: hash.clone(),
@@ -8680,7 +9243,12 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let kernel = WorldKernel::start(store.clone());
-        let seed = hierarchical_refugee_campaign();
+        let mut seed = hierarchical_refugee_campaign();
+        seed.agency_profiles
+            .get_mut("refugees-east")
+            .unwrap()
+            .information_channels
+            .insert("storm-camp broadsheet".into());
         kernel
             .command(WorldCommand::CreateCampaign {
                 campaign: seed.clone(),
@@ -8712,13 +9280,15 @@ mod tests {
         let action = CellActionProposal {
             subject_id: "refugees-east".into(),
             intent: "appoint a named storm delegation broker".into(),
-            intended_effect: "make one person accountable for the camp negotiation".into(),
+            intended_effect: "make one accuser answer for the camp negotiation".into(),
             priority: 80,
             state_references: vec!["subject:refugees-east".into(), "location:camp".into()],
-            public_channels: vec![],
+            public_channels: vec!["storm-camp broadsheet".into()],
             effects: vec![StrategicCellEffect::Gestalt {
                 gestalt_id: "refugees-east".into(),
-                pressure_additions: vec!["the storm delegation needs an accountable broker".into()],
+                pressure_additions: vec![
+                    "Veska Rill says the east quartermasters sold the lower road twice".into(),
+                ],
                 pressure_resolutions: vec![],
             }],
         };
@@ -8728,7 +9298,8 @@ mod tests {
         wave.strategic_individuations = vec![StrategicGestaltIndividuation {
             schema: "ghostlight.strategic_gestalt_individuation.v1".into(),
             action_digest: action_digest.clone(),
-            rationale: "The camp needs one accountable storm broker.".into(),
+            rationale:
+                "She accused the east quartermasters of selling the broken lower road twice.".into(),
             individuation: GestaltIndividuation {
                 gestalt_id: "refugees-east".into(),
                 expected_gestalt_version: 0,
@@ -8809,7 +9380,10 @@ mod tests {
             })
             .await
             .unwrap_err();
-        assert!(error.to_string().contains("payload-bound selector receipt"));
+        assert!(
+            error.to_string().contains("payload-bound selector receipt"),
+            "{error}"
+        );
         let unchanged = store
             .load::<Campaign>("campaign.v1", &seed.id.to_string())
             .unwrap()
@@ -8843,11 +9417,103 @@ mod tests {
                 .iter()
                 .any(|event| event.kind == "gestalt_individuation")
         );
+        assert!(campaign.news.iter().any(|issue| {
+            issue.channel == "storm-camp broadsheet" && issue.headline.contains("Veska Rill")
+        }));
+        let newspaper =
+            crate::newspaper::compose_world_newspaper(&campaign, "The Underdeep Clarion", 8)
+                .unwrap();
+        let rendered = crate::newspaper::render_world_newspaper_markdown(&newspaper);
+        assert!(rendered.contains("Names to Know"));
+        assert!(rendered.contains("Veska Rill"));
+        assert!(
+            rendered.contains("selling the broken lower road twice"),
+            "{rendered}"
+        );
         let proposals = store
             .load_all::<StrategicGestaltIndividuation>("strategic_gestalt_individuation.v1")
             .unwrap();
         assert_eq!(proposals.len(), 1);
         assert_eq!(proposals[0].action_digest, action_digest);
+
+        let mut second_wave = inaction_wave(&campaign, &store);
+        let second_cell_id = second_wave
+            .cover
+            .cells
+            .iter()
+            .find(|cell| cell.subject_ids.contains("member:veska-rill"))
+            .unwrap()
+            .id
+            .clone();
+        let second_appraisal = second_wave
+            .appraisals
+            .iter_mut()
+            .find(|appraisal| appraisal.cell_id == second_cell_id)
+            .unwrap();
+        second_appraisal.considered_subject_ids = BTreeSet::from(["member:veska-rill".into()]);
+        let second_action = CellActionProposal {
+            subject_id: "member:veska-rill".into(),
+            intent: "cross the bay to confront the quartermasters".into(),
+            intended_effect: "arrive at the south docks without resolving the accusation".into(),
+            priority: 91,
+            state_references: vec![],
+            public_channels: vec![],
+            effects: vec![StrategicCellEffect::ActorMove {
+                actor_id: "member:veska-rill".into(),
+                destination_id: "docks".into(),
+            }],
+        };
+        second_appraisal.actions = vec![second_action.clone()];
+        second_appraisal.inactions.clear();
+        let second_base_binding = format!(
+            "campaign:{}:revision:{}:resolution:{}:cell:{}",
+            campaign.id,
+            campaign.revision,
+            campaign.resolution_policy.resolution_epoch,
+            second_cell_id
+        );
+        let mut second_verifier =
+            resolution_stage(&second_cell_id, &campaign, "cell_effect_verifier", 'v');
+        second_verifier.snapshot_binding = crate::persona::cell_effect_verification_binding(
+            &second_base_binding,
+            std::slice::from_ref(&second_action),
+        )
+        .unwrap();
+        store
+            .insert(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                second_verifier.storage_key(),
+                &second_verifier,
+            )
+            .unwrap();
+        second_wave
+            .model_receipt_hashes
+            .push(second_verifier.storage_key().to_owned());
+        let result = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: campaign.revision,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(test_action_digest("second-veska-wave")),
+                resolution_wave: Some(second_wave),
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed {
+            campaign: campaign_after_second_wave,
+            ..
+        } = result
+        else {
+            panic!()
+        };
+        assert_eq!(
+            campaign_after_second_wave.actors["member:veska-rill"].location_id,
+            "docks"
+        );
+        assert!(campaign_after_second_wave.events.iter().any(|event| {
+            event.kind == "actor_movement" && event.actor_ids.contains(&"member:veska-rill".into())
+        }));
     }
 
     #[tokio::test]

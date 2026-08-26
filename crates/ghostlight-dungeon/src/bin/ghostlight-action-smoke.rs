@@ -248,6 +248,7 @@ fn action_campaign() -> ghostlight_dungeon::domain::Campaign {
             },
         )]),
         facts: BTreeMap::new(),
+        civic_systems: BTreeMap::new(),
         transcript: vec![],
         last_player_activity: now,
         pending_ticks: 0,

@@ -262,6 +262,7 @@ fn scale_campaign(
             },
         )]),
         facts: BTreeMap::new(),
+        civic_systems: BTreeMap::new(),
         transcript: vec![],
         last_player_activity: now - Duration::hours(2),
         pending_ticks: 1,
