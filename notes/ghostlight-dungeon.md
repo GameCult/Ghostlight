@@ -197,7 +197,9 @@ stake prose alone never impersonates world mutation.
 - `ActorState`, `InstitutionState`, gestalt baselines, member deltas,
   relationships, possessions, and knowledge remain canonical. A
   `simulation_cell.v1` is a derived connected cover and may be discarded.
-- The player chooses 1–32 active Persona cells, default 8. Foreground subjects,
+- The campaign chooses 1–128 active Persona cells, default 8, within its pooled
+  entitlement. Provider parallelism is a separate control capped at 32.
+  Foreground subjects,
   active leases, initiative holders, explicit targets, and individual-detail
   pins may create a reported temporary overage.
 - Adjacent cells merge by the weighted loss specified in

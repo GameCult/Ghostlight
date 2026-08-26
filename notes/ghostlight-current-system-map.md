@@ -96,9 +96,9 @@ Vault evidence receipts + typed campaign snapshot
 Ghostlight owns the generalized projection organ. Epiphany and other consumers
 own their canonical Persona state and consequence commits.
 
-## DELVE/HOLD admitted target contract
+## DELVE/HOLD consumer profile
 
-DELVE/HOLD is admitted as a consumer of the live Ghostlight runtime for one
+DELVE/HOLD is admitted as a consumer of Ghostlight's generic API for one
 canonical world outside the Greathold. Its target contract supplies an authored
 ontology and fixed seed rather than invoking Session Zero world generation.
 That bypass ends at generation: publication and every later transition must
@@ -107,12 +107,18 @@ still enter `WorldKernel` through typed validation and atomic CultCache commit.
 Delvehold owns players, workshops, dungeons, civic state, contracts, and its
 quantitative economy. Ghostlight owns external actors, institutions, Gestalts,
 relationships, knowledge, pressures, and strategic decisions. The admitted
-target is one externally controlled `greathold` institution projecting only
-committed macro effects into Ghostlight and receiving no Persona or strategic
-turn. The current runtime does not yet implement that external-control policy
-or authored-seed admission seam; ordinary institution selection must not be
-mistaken for enforcement. External consequences will return as intents for
-Delvehold admission, not direct mutations.
+consumer configuration contains one externally owned boundary subject,
+`greathold`, projecting only committed macro effects into Ghostlight and
+receiving no Persona or strategic turn. Ghostlight currently lacks the generic
+subject-authority contract and shared consumer-seed admission primitive;
+ordinary institution selection is not enforcement. External consequences
+return as generic attributed proposals for Delvehold admission, not direct
+mutations.
+
+The Delvehold adapter remains Delvehold-owned. It lowers committed Greathold
+projections and realized effects into generic Ghostlight operations, then raises
+attributed Ghostlight intents, news, projections, and receipts into Delvehold's
+domain contract. It owns no truth on either side.
 
 The current `InstitutionState` and strategic resource vocabulary use named
 resource handles. They do not model quantities, prices, recipes, facilities,

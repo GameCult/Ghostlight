@@ -378,9 +378,7 @@ not carry live next-action lists.
 
 ## Deferred from the earlier fixture program
 
-- Full world simulation loop
 - Economy simulation loop
-- Long-horizon plot generation without author scaffolding
 - Fine-tuning before artifact schemas, review criteria, and evaluators stabilize
 
 ## Discipline

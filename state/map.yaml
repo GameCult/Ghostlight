@@ -22,13 +22,18 @@ mission:
     social consequences, and eventually storylines, consumer behavior,
     faction decisions, and technology/item manifests for Aetheria.
   near_term: >
-    Finish routing canonical world changes through the closed semantic mutation
-    algebra, then resume adversarial pressure on hosted Session Zero, world
-    compilation, fiction-first action resolution, and multiresolution Gestalt
-    agency. Expand the agency corpus with behaviorally distinct reviewed cases.
-    Preserve atomicity, actor custody, private knowledge, stable topology,
-    persistent identity, and offscreen agency while reducing provider retries
-    and token-heavy prompts that do little useful cognitive work.
+    Use Delvehold as the first whole-world proving consumer of Ghostlight's
+    generic simulation API. Admit a consumer-authored world seed through the
+    same WorldKernel publication contract used by compiled seeds; simulate
+    realm, institution, population, and person-scale politics under a cell
+    budget in the hundreds; and let named figures emerge durably from causally
+    relevant offscreen pressure. Consumer-supplied boundary subjects remain
+    externally owned through generic authority descriptors and typed proposal
+    and receipt exchange. Delvehold supplies the authored setting and retains
+    players, civic state, dungeons, and quantitative economy; no Delvehold ID,
+    schema, or policy becomes privileged Ghostlight core authority. Preserve
+    atomicity, scoped knowledge, identity, topology, no-puppeting, and
+    model-no-commit invariants. Kalsa remains regression evidence.
   voidbot_goal: >
     Keep the appraiser, relationship/perception updater, and memory machinery
     useful for VoidBot's core companion mission: reading specific humans over
@@ -83,7 +88,7 @@ live_architecture:
     - Mutation-scope and action-assessment proposals are content-addressed by the exact scope, assessor, and verifier models, stable instructions, scoped action-specific schema, and permitted typed packet. Private CultCache cache rows are derived inference evidence only. Revision and expiry bind the consumable assessment and roll but do not invalidate an otherwise identical semantic proposal; cache hits revalidate it, emit an explicit zero-token receipt linked to the source scope, assessment, and verifier receipts, and issue a fresh revision-bound digest. Changed actor state, occupancy, facts, institutions, permissions, contract, boundaries, schema, or model contract changes the key. Eve projections itemize every signed modifier and exact reference.
     - The hosted player story is the chronological lowering of exact committed NarrativeTurn rows. No narrator or verifier model rewrites those turns; historical narration projections are inert and never enter Eve or CultMesh player surfaces.
     - Epiphany consumes the extracted Ghostlight projection crate at an exact Git revision while retaining her canonical Mind, effect admission, and consequence authority.
-    - Gestalt Personas own shared population state; first-relevance individuation and later folding are revisioned WorldKernel commits, and durable member deltas preserve specific people between appearances.
+    - Gestalt Personas own shared population state; durable member deltas preserve specific people between appearances. Current new-person individuation is admitted only from exact immediately committed player speech, at most one person per event; strategic and offscreen first-relevance individuation are not yet implemented.
     - The multiresolution agency graph derives a connected cohesive/arena cell cover from canonical actors, institutions, and gestalt leaves under a campaign-selected 1–128 pooled entitlement budget; provider concurrency is separate.
     - Model-driven strategic cell waves can change remote actors, institutions, gestalts, clocks, and exact-channel news while the absent player remains outside their write authority; the entire wave validates and commits atomically.
     - Population activity effects represent exact attributed attempts to prepare, coordinate, investigate, recruit, obstruct, trade, or communicate; graph scope, locations, channels, and semantics validate before the kernel derives an event, and the effect never claims its own success.
@@ -188,13 +193,14 @@ live_architecture:
     - Institution, faction, and consumer decision models
 
 active_subgoals:
-  - Admit DELVE/HOLD through the forced-ontology boundary in `docs/architecture/delvehold-forced-ontology-integration.md`: one externally controlled `greathold` institution, consumer-owned quantitative economy, typed CultMesh exchange, and no compiler-bypass path around WorldKernel.
+  - Define and admit the generic consumer-authored world contract: one seed publication primitive shared with compiler output, generic externally owned boundary-subject descriptors, consumer-supplied effect schemas, and typed CultMesh proposals and receipts. Prove it with Delvehold's authored world and configured `greathold` subject without hard-coding either into Ghostlight.
+  - Specify strategic/offscreen named-person individuation, plotting, durable identity, and folding under WorldKernel authority; remote causal pressure must be able to make a person matter without granting a cell, arena, or model entity-creation authority.
+  - Prove the hundreds-class wave target using the existing parallel cell dispatcher and separately bounded provider concurrency. Measure the current 128-cell ceiling first; widen it only if the authored outside-world cover requires more, and only with an explicit scheduling, atomicity, and cost model.
   - Finish the semantic mutation migration: delete or demote remaining legacy model effect schemas and move aggregate campaign fields toward projection-only state. Seed publication and named-person presence now have explicit non-effect authority classifications.
   - Keep the selectable Kalsa Vault's Public player-safe and Spoilers GM-only evidence lanes intact through Git/Obsidian sync, retrieval, exact receipts, and player projection. Do not import it into the read-only Aetheria recovery index or create a rival Ghostlight semantic index.
   - Grow the 36-case candidate agency corpus toward 300 reviewed, behaviorally distinct attempts that either compose from existing primitives, produce an explicit bargain, or falsify the algebra.
   - Pressure live campaign compilation and play from exact Vault evidence; reject honest gaps instead of borrowing a nearby fixture, cast, or geography.
-  - Make strategic cells produce meaningful attributed activity while rivals in arenas retain separate knowledge, speech, resources, and authority.
-  - Preserve named-person continuity through materialization, folding, migration, nested Gestalt lineage, and later return encounters.
+  - Make large consumer-authored political hierarchies produce meaningful attributed activity while rivals retain separate knowledge, speech, resources, and authority and named people retain continuity through materialization, folding, migration, and return. Delvehold is the first proving fixture, not a special execution path.
   - Optimize stable-prefix cache reuse and work per token without removing context needed for goals, promises, relationships, knowledge, or exact permissions.
   - Keep every model stage proposal-only; malformed, stale, cross-slice, or semantically invalid waves must leave campaign state and fictional time unchanged.
   - Complete separate-account co-op privacy, actor-binding, unanimity, and restart proof when suitable testers or controlled account fixtures are available.
@@ -318,5 +324,5 @@ data_flow:
 
 current_status:
   summary: Yggdrasil serves immutable Ghostlight release fdb6352e0dfdd0eeb129020ea9dea0b6225eccf9 with Eve 672c0c1e9fc828b63752345385727b06c50491d0, daemon SHA-256 d4c57cc6df0e2743f2f444bbdf4c2c90961a41b74e2c92cf45fa52b4e63f5714, native-client SHA-256 0d54f75ce7fe66b876ae720cdf9d6314778972f2193410fe2979ec51b8d25aba, artifact sha256-feadb845bf999afb09e781f3e81a36fe5bc5b2d1d9eec06c028bbd81680a548a, and independent CodexConnector release 2f29b90eebd8fc1bbdc07cdd22ac4883f16849a5 using gpt-5.6-luna. Idunn passed 347 tests and left both services healthy with zero restarts. Kalsa campaign e99e8794-281f-4a82-8b2c-5e6954bd6b16 is at world revision 21, resolution epoch 3, and configured budget 1. Startup migration repaired Cal Rusk to exact canonical member:cal_rusk without advancing fiction; his learned knowledge and personal delta survived folding, travel, and rematerialisation. A budget-1 strategic wave advanced remote actors without puppeting Asha. Destination preview 9fa863a0-e1fc-4115-bb18-74d523a3c6de synthesized eight source-compatible branch assumptions and returned zero material gaps; it remains unapproved and the world is unchanged. The unpublished Mars preview also remains unapproved. Existing mutation, Gestalt, topology, knowledge, privacy, approval, no-puppeting, and atomicity invariants remain authoritative. Starfire remains retired as a writer and build host.
-  next_action: Continue adversarial play in the live Kalsa campaign without approving either retained preview unless the operator explicitly admits it. Pressure foreground consequence composition, knowledge gates, institutional self-interest, away-time news, rival arenas, and nested refugee continuity across budgets 1, 4, 8, and 32. Continue expanding the 36-case agency corpus toward 300 reviewed cases, remove remaining legacy model effect schemas, and run separate-account co-op proof. Preserve actor custody, privacy, approval, atomicity, topology, knowledge, no-puppeting, and model-no-commit invariants; use Idunn on Yggdrasil for every package build and deployment.
+  next_action: Map the generic Ghostlight API gaps exposed by Delvehold before implementation. Define the admitted seed contract shared by compiler and consumer producers; generic externally owned boundary-subject authority; realm-to-institution-to-population-to-person resolution; strategic and offscreen individuation and folding; and a separately scheduled hundreds-class cell budget. Then prove the API with a Delvehold consumer fixture: one admitted consumer event changes at least two simulated political layers, creates or advances an independently acting named figure, and returns an attributed generic proposal and receipt without mutating consumer-owned truth. Delvehold-specific IDs and document lowering remain in Delvehold.
   gestalt_population: Gestalt Personas own shared population baselines; persistent member deltas own named individuality; WorldKernel materialization and approval-gated fission preserve lineage and identity. Materialisation/folding changes only representation and the exact member delta, advances resolution epoch, and retires the old cover; it has no Gestalt-wide effect authority. Selected actionable member exceptions are mandatory Projector perspective owners, so aggregation cannot silently erase their decision. Presence projection is limited to nearby active leaves and exact-location dormant members, includes reciprocal player relationship evidence, and may propose an earned cast without committing it. Simulation cells are derived covers only.

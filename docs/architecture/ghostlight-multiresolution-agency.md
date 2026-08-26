@@ -211,7 +211,9 @@ gestalts, or fictional time.
 
 ## Budgeted connected cover
 
-The player selects an active Persona-cell budget from 1 through 32, default 8.
+The campaign selects an active Persona-cell budget from 1 through 128, default
+8, bounded by its pooled entitlement. Provider parallelism is a separate
+control capped at 32 concurrent cell pipelines.
 The partitioner:
 
 1. contracts valid `keep_together` pins;

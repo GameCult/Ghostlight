@@ -424,22 +424,34 @@ approved capability.
 
 ## Next action
 
-1. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
-   the operator explicitly chooses to admit either branch.
-2. Continue adversarial play in the Kalsa campaign through the authenticated
-   native CultMesh client: foreground assessment, consequence composition,
-   knowledge gates, institutional self-interest, away-time activity, accessible
-   news, and return continuity.
-3. Pressure the multiresolution cover at budgets 1, 4, 8, and 32 with real
-   provider output, including rival arenas, nested refugee dispersal, folding,
-   migration, and later rematerialisation.
-4. Expand and review the agency corpus from its current 36 candidate cases
-   toward 300 behaviorally distinct cases, and remove remaining legacy model
-   effect schemas.
-5. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
-   separate Heimdall accounts.
-6. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
-   unanimous-approval, unanimous-time/travel, stale-command, and restart smoke.
+The immediate gate is a Delvehold external-world architecture and scale pass.
+Delvehold is a consumer of Ghostlight's generic authored-world API, not a
+Ghostlight-owned organ or special runtime. Ghostlight owns the world beyond the
+Greathold as a persistent multiresolution political simulation, while Delvehold
+retains player sovereignty and quantitative economy. The first design cut must
+close two missing faculties:
+strategic/offscreen named-person emergence and proven hundreds-class cell waves.
+Do not begin by multiplying prompts or raising a constant; map resolution
+ownership, emergence triggers, causal propagation, folding, and provider-call
+amortization first.
+
+1. Map Delvehold's authored realm, institution, population, and person hierarchy
+   and identify the missing lore required for a whole-world seed.
+2. Specify a WorldKernel-owned offscreen individuation path that lets causal
+   political pressure produce durable named figures without granting entity
+   creation authority to a cell, arena, or model.
+3. Measure the existing parallel wave dispatcher at the current 128-cell ceiling
+   and design the hundreds-cell budget around bounded provider concurrency,
+   outcome resolution, atomic commit, fairness, and cost.
+4. Define and implement generic authored-seed, externally controlled subject,
+   inbound effect, outbound intent/news, and receipt operations in Ghostlight's
+   public API. Keep Delvehold projection and economy translation in a
+   Delvehold-owned adapter.
+5. Prove one Greathold effect crosses that public API, changes two foreign
+   political layers, and returns attributed news or intent without mutating
+   Delvehold-owned truth.
+6. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+   the operator explicitly admits either; retain Kalsa as regression evidence.
 7. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
