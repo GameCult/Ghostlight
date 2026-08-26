@@ -1654,7 +1654,7 @@ pub fn select_resolution_wave(
         let mut inaction_subject_ids = BTreeSet::new();
         for inaction in &appraisal.inactions {
             if inaction.reason.trim().is_empty()
-                || inaction.reason.len() > 240
+                || inaction.reason.chars().count() > 240
                 || action_subject_ids.contains(inaction.subject_id.as_str())
                 || !inaction_subject_ids.insert(inaction.subject_id.as_str())
                 || !cell_contains_attributed_subject(campaign, cell, &inaction.subject_id)
@@ -1926,7 +1926,7 @@ fn validate_cell_proposal(
                 if institution_id != &proposal.subject_id
                     || !campaign.institutions.contains_key(institution_id)
                     || posture.trim().is_empty()
-                    || posture.len() > 240
+                    || posture.chars().count() > 240
                     || !substantive_text_change(
                         &campaign.institutions[institution_id].posture,
                         posture,
@@ -2103,7 +2103,9 @@ fn is_human_controlled_actor(campaign: &Campaign, subject_id: &str) -> bool {
 pub fn substantive_text_change(current: &str, candidate: &str) -> bool {
     let current = current.trim();
     let candidate = candidate.trim();
-    !candidate.is_empty() && candidate.len() <= 240 && !current.eq_ignore_ascii_case(candidate)
+    !candidate.is_empty()
+        && candidate.chars().count() <= 240
+        && !current.eq_ignore_ascii_case(candidate)
 }
 
 pub fn validate_gestalt_pressure_transition(
@@ -2117,7 +2119,7 @@ pub fn validate_gestalt_pressure_transition(
         ));
     }
     let clean = |value: &String| {
-        !value.is_empty() && value.len() <= 240 && value.trim().len() == value.len()
+        !value.is_empty() && value.chars().count() <= 240 && value.trim().len() == value.len()
     };
     if additions.iter().any(|value| !clean(value)) || resolutions.iter().any(|value| !clean(value))
     {
@@ -3481,6 +3483,17 @@ pub(crate) mod tests {
         assert!(substantive_text_change(
             "holding position",
             "releasing the reserve"
+        ));
+        let schema_max_with_unicode = format!("{}’", "a".repeat(239));
+        assert_eq!(schema_max_with_unicode.chars().count(), 240);
+        assert!(schema_max_with_unicode.len() > 240);
+        assert!(substantive_text_change(
+            "holding position",
+            &schema_max_with_unicode
+        ));
+        assert!(!substantive_text_change(
+            "holding position",
+            &format!("{schema_max_with_unicode}a")
         ));
     }
 

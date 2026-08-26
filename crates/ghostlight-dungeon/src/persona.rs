@@ -2272,11 +2272,11 @@ fn validate_cell_appraisal(
                 inaction.subject_id
             ));
         }
-        if inaction.reason.len() > 240 {
+        if inaction.reason.chars().count() > 240 {
             return Err(anyhow!(
                 "inaction reason for subject {} is {} characters but permits at most 240",
                 inaction.subject_id,
-                inaction.reason.len()
+                inaction.reason.chars().count()
             ));
         }
         if !permitted_subject_ids.contains(inaction.subject_id.as_str()) {
@@ -2508,7 +2508,20 @@ fn validate_constituent_effect(
                     subject.subject_id
                 )
             })?;
-            if !crate::resolution::substantive_text_change(current, posture) {
+            if posture.trim().is_empty() {
+                return Err(anyhow!(
+                    "institution {} proposed an empty posture",
+                    subject.subject_id
+                ));
+            }
+            if posture.chars().count() > 240 {
+                return Err(anyhow!(
+                    "institution {} proposed a posture of {} characters; the exact maximum is 240",
+                    subject.subject_id,
+                    posture.chars().count()
+                ));
+            }
+            if current.trim().eq_ignore_ascii_case(posture.trim()) {
                 return Err(anyhow!(
                     "institution {} proposed posture {:?}, but its exact current posture is {:?}; emit a specific different commitment or choose inaction",
                     subject.subject_id,

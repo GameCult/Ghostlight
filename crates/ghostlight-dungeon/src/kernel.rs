@@ -2236,9 +2236,14 @@ fn apply_strategic_tick_plan(
                 "institution acts twice in one strategic tick".into(),
             ));
         }
-        if action.posture.trim().is_empty() || action.posture.len() > 240 {
+        if action.posture.trim().is_empty() {
             return Err(KernelError::Invalid(
                 "strategic institution posture is empty".into(),
+            ));
+        }
+        if action.posture.chars().count() > 240 {
+            return Err(KernelError::Invalid(
+                "strategic institution posture exceeds 240 characters".into(),
             ));
         }
         if action
