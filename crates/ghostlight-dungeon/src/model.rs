@@ -165,17 +165,44 @@ pub async fn run_validated_stage_with_timeout(
     let stage_started = Instant::now();
     let mut provider_attempts = Vec::new();
     for attempt in 0..2 {
-        let started = Instant::now();
-        let provider_output = tokio::time::timeout(timeout, port.run_observed(&attempt_request))
-            .await
-            .map_err(|_| {
-                anyhow!(
-                    "model stage {} timed out after {} seconds with {} input characters",
-                    request.stage,
-                    timeout.as_secs(),
-                    attempt_request.lived_stream.chars().count()
-                )
-            })??;
+        let (provider_output, provider_latency_ms) = {
+            let mut transport_attempt = 0;
+            loop {
+                let started = Instant::now();
+                match tokio::time::timeout(timeout, port.run_observed(&attempt_request)).await {
+                    Ok(Ok(output)) => break (output, started.elapsed().as_millis() as u64),
+                    Ok(Err(error)) => {
+                        let diagnostic = bounded_validation_error(&error);
+                        provider_attempts.push(ModelProviderAttemptReceipt {
+                            provider_request_id: None,
+                            system_fingerprint: None,
+                            finish_reason: Some("provider_error".into()),
+                            latency_ms: started.elapsed().as_millis() as u64,
+                            token_usage: None,
+                            transport_features: Vec::new(),
+                            local_validation_result: "provider_error".into(),
+                            local_validation_error: Some(diagnostic.clone()),
+                        });
+                        if transport_attempt == 0 {
+                            transport_attempt += 1;
+                            continue;
+                        }
+                        return Err(anyhow!(
+                            "model stage {} provider failed twice against the same snapshot: {diagnostic}",
+                            request.stage
+                        ));
+                    }
+                    Err(_) => {
+                        return Err(anyhow!(
+                            "model stage {} timed out after {} seconds with {} input characters",
+                            request.stage,
+                            timeout.as_secs(),
+                            attempt_request.lived_stream.chars().count()
+                        ));
+                    }
+                }
+            }
+        };
         let ModelProviderOutput {
             content: output,
             resolved_model,
@@ -189,7 +216,7 @@ pub async fn run_validated_stage_with_timeout(
             provider_request_id,
             system_fingerprint,
             finish_reason,
-            latency_ms: started.elapsed().as_millis() as u64,
+            latency_ms: provider_latency_ms,
             token_usage,
             transport_features,
             local_validation_result: "pending".into(),
@@ -506,6 +533,9 @@ mod tests {
     struct CorrectionAware {
         calls: AtomicUsize,
     }
+    struct TransportFailureThenValid {
+        calls: AtomicUsize,
+    }
     struct PhysicallyRoutedModel;
 
     #[async_trait]
@@ -583,6 +613,21 @@ mod tests {
     }
 
     #[async_trait]
+    impl ModelPort for TransportFailureThenValid {
+        async fn run(&self, _: &ModelStageRequest) -> Result<String> {
+            if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                Err(anyhow!("connection reset by fixture peer"))
+            } else {
+                Ok(r#"{"answer":"ready"}"#.into())
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "transient-fixture"
+        }
+    }
+
+    #[async_trait]
     impl ModelPort for PhysicallyRoutedModel {
         async fn run(&self, _: &ModelStageRequest) -> Result<String> {
             unreachable!("run_observed owns this fixture")
@@ -652,6 +697,48 @@ mod tests {
         assert_eq!(port.calls.load(Ordering::SeqCst), 2);
         assert_eq!(output.structured.unwrap()["answer"], "corrected");
         assert_eq!(output.receipt.snapshot_binding, request.snapshot_binding);
+    }
+
+    #[tokio::test]
+    async fn transient_provider_failure_retries_the_exact_request() {
+        let port = TransportFailureThenValid {
+            calls: AtomicUsize::new(0),
+        };
+        let request = ModelStageRequest {
+            stage: "typed-stage".into(),
+            model: "fixture".into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "fixture".into(),
+            output_schema: Some(serde_json::json!({
+                "type":"object",
+                "additionalProperties":false,
+                "required":["answer"],
+                "properties":{"answer":{"type":"string"}}
+            })),
+            source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: None,
+        };
+        let output = run_validated_stage(&port, &request).await.unwrap();
+        assert_eq!(port.calls.load(Ordering::SeqCst), 2);
+        assert_eq!(output.structured.unwrap()["answer"], "ready");
+        assert_eq!(output.receipt.snapshot_binding, request.snapshot_binding);
+        assert_eq!(output.receipt.provider_attempts.len(), 2);
+        assert_eq!(
+            output.receipt.provider_attempts[0].local_validation_result,
+            "provider_error"
+        );
+        assert!(
+            output.receipt.provider_attempts[0]
+                .local_validation_error
+                .as_deref()
+                .unwrap()
+                .contains("connection reset")
+        );
+        assert_eq!(
+            output.receipt.provider_attempts[1].local_validation_result,
+            "valid"
+        );
     }
 
     #[tokio::test]
