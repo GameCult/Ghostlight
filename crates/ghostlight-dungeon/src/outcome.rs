@@ -3408,7 +3408,7 @@ mod tests {
         assert!(
             requests[0]
                 .lived_stream
-                .contains("other_subject_id already identifies the target")
+                .contains("the target field already identifies the target")
         );
         assert!(
             requests[0]
