@@ -96,12 +96,11 @@ and an approval-visible branch assumption.
 Deterministic remote profiles keep unknown facets unknown. The Pro
 agency stage no longer spends output tokens restating remote profiles.
 
-Kalsa is the next fantasy compilation target. Its Obsidian-compatible repository
-already separates player-safe `Public` lore from GM-only `Spoilers`, but it is
-not a live Ghostlight entitlement or VoidBot index yet. The next Vault cut must
-make Vault selection, import/sync provenance, authority lanes, spoiler policy,
-and exact receipt filtering one typed provider path. Do not bolt Kalsa onto the
-read-only Aetheria recovery index or create a second Ghostlight semantic index.
+Kalsa is the live fantasy compilation canary. Its selectable typed Vault
+manifest preserves the Obsidian-compatible repository's player-safe `Public`
+and GM-only `Spoilers` lanes across Git provenance, retrieval, exact receipts,
+and player projection. It does not enter the read-only Aetheria recovery index
+or create a second Ghostlight semantic index.
 
 Current Idunn, Odin, Heimdall, and Epiphany release identity is operational
 truth owned by `gamecult-ops`; rehydrate there before touching the host.
@@ -223,13 +222,16 @@ leak. It used 90,030 tokens at a 76.3% prompt-cache-hit ratio; the retained
 invalid receipts expose one repeated institution posture and one repeated
 pressure without letting either mutate the world.
 
-The grounded Mars/Zhestokost compile now retains an approval preview with four
-strongly connected locations and no First Exodus borrowing. The next gate is an
-explicit host decision on its material branch assumptions; after publication,
-inspect the canonical agency profiles and first cover directly. Then grow the
-agency corpus beyond its 36 candidate
-cases without cosmetic reskins and remove the remaining legacy model effect
-schemas. Resume the 20-plus-power live Aetheria skeleton across budgets
+The grounded Mars/Zhestokost compile retains an unapproved preview with four
+strongly connected locations and no First Exodus borrowing. The Kalsa canary
+has since proved compiled play, stable named-member identity across folding and
+return, budget-1 offscreen agency without player puppeting, and source-bounded
+branch elaboration. A deliberately underspecified refuge expansion synthesized
+playable route, capacity, supply, custody, and doctrine assumptions with no
+false material gaps; its preview remains unapproved. Continue adversarial Kalsa
+play, then grow the agency corpus beyond its 36 candidate cases without
+cosmetic reskins and remove the remaining legacy model effect schemas. Resume
+the 20-plus-power live Aetheria skeleton across budgets
 `1`, `4`, `8`, and `32`, including nested refugee dispersal and later
 rematerialization. The large-document RUDP workstream is closed by the green
 five-runtime unit/interop/impairment run, Ghostlight's locked Linux build, and

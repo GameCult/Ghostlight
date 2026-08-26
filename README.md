@@ -20,8 +20,11 @@ multiresolution agency graph for keeping large settings active at finite cost.
   and population fission lower into one closed semantic world-mutation algebra.
   Means and intended effects remain proposals; only an admitted mutation batch
   can change canonical components. There is no model-authored JSON Patch path.
-- Vault evidence grounds world compilation; branch-local invention remains
-  distinct from canon.
+- Vault evidence constrains world compilation without pretending every playable
+  route, procedure, or local institution is already written down. The compiler
+  synthesizes the smallest compatible branch elaboration, exposes it for
+  approval, and keeps it distinct from canon. Details that must not vary belong
+  in the Vault.
 - Hosted lore Vaults are planned as Git-synchronized, Obsidian-compatible
   Markdown hierarchies. The Vault service owns their indexes; campaigns retain
   only manifest bindings and exact evidence receipts.
@@ -82,6 +85,8 @@ current acceptance surface covers:
   atomic publication;
 - source-grounded world compilation from an approved brief, with evidence gaps
   returned to negotiation instead of borrowing a nearby story;
+- selectable Aetheria and Kalsa Vaults, with Kalsa's player-safe `Public` and
+  GM-only `Spoilers` evidence lanes preserved through exact receipts;
 - persistent campaigns, forks, resets, exports, and Heimdall-account-isolated sessions;
 - parallel affected-character Projector/Persona/Interpreter waves;
 - impossible-action refusal, assessed stakes, server-side rolls, and receipted

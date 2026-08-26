@@ -96,25 +96,25 @@ Yggdrasil is production. The Starfire writer and its old tunnel are stopped.
 Do not start both writers.
 
 - Executable release:
-  `e89db8bcadcd6e32af8b0349a99f45777c031536`
+  `fdb6352e0dfdd0eeb129020ea9dea0b6225eccf9`
 - Executable SHA-256:
-  `eb79caa884ac324a5ac784fd872f785debe6c44cacea361539f0d8307a2bc29f`
+  `d4c57cc6df0e2743f2f444bbdf4c2c90961a41b74e2c92cf45fa52b4e63f5714`
 - Native client SHA-256:
-  `8be63daa65683e01561963d18a3303b998913b1c4b98b53fea31c9b4c663288b`
+  `0d54f75ce7fe66b876ae720cdf9d6314778972f2193410fe2979ec51b8d25aba`
 - Artifact SHA-256:
-  `sha256-9f526356193458aad58ad92121cccaba337dd9838ebbf766490bdccfc15eba8d`
-- Eve release: `19c3dcf9173dce848a6253e975324ea239a02d24`
+  `sha256-feadb845bf999afb09e781f3e81a36fe5bc5b2d1d9eec06c028bbd81680a548a`
+- Eve release: `672c0c1e9fc828b63752345385727b06c50491d0`
 - Service: `ghostlight-dungeon.service`, running as `ghostlight:ghostlight`
 - Listener: Yggdrasil loopback `127.0.0.1:8831`
 - Native player boundary: loopback RUDP `127.0.0.1:4102`
 - Public route: `https://yggdrasil.gamecult.org/ghostlight/`
 - Vault retrieval: local VoidBot at `127.0.0.1:17875/mcp`
-- Stored state at the last witness: nine campaigns and three Session Zero drafts
+- Stored state at the last witness: twelve campaigns and six Session Zero drafts
 - Model connector release:
-  `80de3acc18e058f649c3b25ce617f8869f038670`; binary SHA-256
-  `e8a909121e6bba56dfa4ebd4dec54b05ff8f463972118233556fb5db19858225`;
+  `2f29b90eebd8fc1bbdc07cdd22ac4883f16849a5`; binary SHA-256
+  `5db04f9132152bb75be6d5a40826302284b0a4e08fcd13bf49bbfab6f6937698`;
   provider `codex-connector`,
-  physical fast/capable model `gpt-5.4`. This is the independent
+  physical fast/capable model `gpt-5.6-luna`. This is the independent
   `codex-connector.service`; Epiphany is only another consumer.
 - Access witness: anonymous Eve gate 200; canonical `heimdall.auth.begin`
   accepted through Odin-discovered Heimdall; no actor or campaign state in the
@@ -170,12 +170,12 @@ messages.
 
 ## Current proof
 
-- Idunn admitted exact release `e89db8b…`; 313 locked Linux tests and the
+- Idunn admitted exact release `fdb6352…`; 347 locked Linux tests and the
   immutable release build completed before atomic activation. Typed health,
   manifest, embedded source, executable and native-client hashes, provider
-  readiness, nine campaigns, three Session Zero drafts, and zero daemon
+  readiness, twelve campaigns, six Session Zero drafts, and zero daemon
   restarts agree. `codex-connector.service` remained independently healthy at
-  `80de3ac…` throughout the successful deploy.
+  `2f29b90…` throughout the successful deploy.
 - Repeated native authentication exposed a client-side custody bug: a second
   begin replaced the only pending handle after Discord had completed it. The
   live client now refuses a second begin, clears terminal owned attempts, and
@@ -378,7 +378,7 @@ canonical maps. The topology validator still requires every supplied location
 to be reachable from the player and back; containment remains geometry, never
 movement authority. CodexConnector change
 `b6b5102cb96e919bc30664ecad9b4701d8207e35`, inherited by live release
-`80de3acc18e058f649c3b25ce617f8869f038670`, also gives streamed responses the
+`2f29b90eebd8fc1bbdc07cdd22ac4883f16849a5`, also gives streamed responses the
 full body deadline instead of accidentally capping them at the header timeout.
 
 The retained preview exposed an over-constrained remote-doctrine cut: it treated
@@ -391,40 +391,57 @@ mere source silence is not a rejection. Every anchored institution survives,
 its generated doctrine appears as an approval-visible branch assumption, and a
 second contradictory result aborts the whole compile without mutation.
 
-`F:\Projects\Kalsa` is a purpose-built fantasy Vault candidate with player-safe
-`Public` lore and GM-only `Spoilers`. It is not indexed or selectable yet. The
-next Vault implementation must preserve those lanes through a typed manifest,
-Git/Obsidian sync, retrieval, exact evidence receipts, and player projection;
-do not mix Kalsa into the read-only Aetheria recovery index.
+### 2026-08-26 Kalsa adversarial continuity and compiler boundary
+
+Kalsa is a selectable typed Vault with separate player-safe `Public` and
+GM-only `Spoilers` lanes. It retains Git/Obsidian provenance and exact evidence
+receipts without entering the read-only Aetheria recovery index.
+
+Session Zero `53c4e2ae-3620-42bc-9db7-7b345a544e55` published campaign
+`e99e8794-281f-4a82-8b2c-5e6954bd6b16`. Player Asha Vey is bound through
+member `member:42559dc743994576a8350528462488b0`. At the last witness the world
+was revision 21, resolution epoch 3, configured budget 1, and the player had
+returned to `loc:raincross_gate`.
+
+Startup migration repaired Cal Rusk's malformed doubled legacy identity to
+canonical `member:cal_rusk` without advancing fictional revision. Cal retained
+the exact bypass and warning-mark knowledge learned before folding, answered
+from it after rematerialisation, folded while Asha travelled to Veyr Run, and
+returned as the same individual with the same delta. A one-hour budget-1
+strategic wave advanced Ilya's investigation and Oren's movement without
+puppeting Asha.
+
+The live destination compiler then received a deliberately underspecified
+request for a defensible emergency refuge. It synthesized eight visible
+branch-local assumptions covering route geometry, capacity, supplies, repair,
+custody, doctrine, evacuation closure, and inspection procedure while returning
+zero material gaps. Its facts remain source-constrained by exact Kalsa receipts.
+Preview `9fa863a0-e1fc-4115-bb18-74d523a3c6de` is unapproved and has not mutated
+the world. This proves the live boundary: ordinary game-scale silence is
+compatible branch elaboration; a material gap is reserved for contradiction,
+an explicitly requested but unanchored canon baseline, or a conflict with an
+approved capability.
 
 ## Next action
 
-1. Have the host review the exact revision-60 Mars preview and its material
-   branch assumptions. Do not approve or publish digest
-   `sha256:6c79562d9a1399a3c9f63940c1c1968caa3a0d3644fe453aac6ab18babceb41c`
-   without that human decision.
-2. After publication, audit the compiled agency skeleton and first resolution
-   demand to prove all six axes survive the strict provider schema and every
-   active subject has exactly one cell.
-3. Resume away-time strategic activity and character-accessible news pressure
-   through the authenticated native CultMesh client. Prove no player puppeting
-   and no inaccessible remote-information leakage.
-4. Then fork or compile a denser 20-plus-power
-   Aetheria skeleton and pressure budgets 1, 4, 8, and 32 with real provider
-   output, including nested refugee dispersal and later rematerialization.
-5. Expand and review the agency corpus from its current 36 candidate cases
+1. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+   the operator explicitly chooses to admit either branch.
+2. Continue adversarial play in the Kalsa campaign through the authenticated
+   native CultMesh client: foreground assessment, consequence composition,
+   knowledge gates, institutional self-interest, away-time activity, accessible
+   news, and return continuity.
+3. Pressure the multiresolution cover at budgets 1, 4, 8, and 32 with real
+   provider output, including rival arenas, nested refugee dispersal, folding,
+   migration, and later rematerialisation.
+4. Expand and review the agency corpus from its current 36 candidate cases
    toward 300 behaviorally distinct cases, and remove remaining legacy model
    effect schemas.
-6. Implement selectable Vault manifests and use Kalsa as the first fantasy
-   import canary with separate Public and Spoilers evidence lanes.
-7. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
+5. Run a two-person Yggdrasil Session Zero and bounded shared-scene canary using
    separate Heimdall accounts.
-8. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
+6. Then run the eight-account roster, privacy, actor-binding, pooled-budget,
    unanimous-approval, unanimous-time/travel, stale-command, and restart smoke.
-9. Continue human pressure on multiresolution Gestalt agency: meaningful
-   background surprises, exact attributed rival activity inside arenas,
-   information boundaries, nested fission/folding, migration, and return
-   encounters.
+7. Keep `gamecult-ops` synchronized with every executable deployment and model
+   transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
 knowledge gates, no-puppeting, or atomic-wave invariants to make the smoke pass.

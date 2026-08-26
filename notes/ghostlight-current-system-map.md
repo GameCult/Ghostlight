@@ -491,15 +491,24 @@ revision and fictional time unchanged. Human separate-account co-op privacy and
 unanimity remain unproven; the expected D&D cohort dispersed before this pass,
 so no fixture or solo browser run may be presented as that acceptance.
 
-Campaign `34929b8d-7b04-49af-9936-1c798fd79760` is the current live strategic
-witness. Its revision-12-to-13 return catch-up preserved one eight-cell cover:
+Campaign `e99e8794-281f-4a82-8b2c-5e6954bd6b16` is the current live Kalsa
+witness. At revision 21 and resolution epoch 3 it runs with a configured
+one-cell budget. Startup migration repaired Cal Rusk's malformed doubled legacy
+identity to exact canonical `member:cal_rusk` without advancing fictional time
+or revision. Cal retained his learned bypass and warning-mark knowledge across
+materialisation, folding during travel to Veyr Run, and rematerialisation when
+Asha returned to Raincross gate. A budget-1 strategic wait advanced Ilya's
+investigation and Oren's movement without puppeting Asha.
+
+The earlier campaign `34929b8d-7b04-49af-9936-1c798fd79760` remains the
+eight-cell strategic receipt witness. Its revision-12-to-13 catch-up preserved
 five exact actor/institution cells, two Gestalt cells, and one arena containing
-three mutually distinct remote institutions. The arena acquired no actor ID.
-Zhestokost's exact repeated posture became attributed inaction; two named
-members made their own decisions; Reed kept the twelve-patient commitment; and
-the player plus Reed remained byte-identical. Five selected actions produced
-five bounded outcomes. Fourteen channel-aware reports remained absent from the
-player surface because that actor has no route to them.
+three distinct remote institutions. The arena acquired no actor ID. Zhestokost's
+repeated posture became attributed inaction; two named members made their own
+decisions; Reed kept the twelve-patient commitment; and the player plus Reed
+remained byte-identical. Five selected actions produced five bounded outcomes.
+Fourteen channel-aware reports remained absent because the player had no route
+to them.
 
 That tick used 34 stage receipts and 35 provider attempts: 83,838 prompt
 tokens, 64,000 cache-hit tokens, 6,192 completion tokens, and 90,030 total
@@ -869,14 +878,22 @@ object is never accepted as a substitute for route, relationship, assignment,
 or facet authority. Canonical campaign and resolution documents retain their
 map-shaped storage contracts.
 
-`F:\Projects\Kalsa` is the next bundled fantasy Vault candidate. Its `Public`
-tree is player-safe world knowledge and its `Spoilers` tree is GM-only canon;
-workshop material is non-canonical. Kalsa is not yet indexed by the live
-read-only VoidBot recovery body and Ghostlight still routes compilation through
-the Aetheria adapter. Admitting it requires a selectable Vault manifest plus
-source-lane filtering at retrieval and receipt projection. It must not be
-copied into the recovery index as an untyped corpus or allowed to leak spoiler
-evidence into player-facing surfaces.
+`F:\Projects\Kalsa` is the first bundled fantasy Vault canary. Its typed
+manifest makes the `Public` tree player-safe world knowledge and the `Spoilers`
+tree GM-only canon; workshop material is non-canonical. Selection, Git/Obsidian
+provenance, retrieval, exact receipts, and player projection preserve those
+lanes without copying Kalsa into the read-only Aetheria recovery index or
+creating a Ghostlight-owned semantic index.
+
+Bounded region expansion treats Vault evidence as canon constraints rather than
+an exhaustive game map. The compiler must synthesize the smallest compatible
+branch-local routes, geometry, people, supplies, procedures, capacity,
+responsibility, and doctrine needed for play. Those choices remain visible as
+`branch_assumptions`; they may vary between campaigns unless the Vault pins
+them. A `gap` is reserved for contradictory canon baselines, an explicitly
+requested exact canon baseline that cannot be anchored, or conflict with an
+approved capability. Ordinary source silence is not a gap. Preview approval
+remains the only path from this proposal into canonical world state.
 
 Session Zero compilation, expansion, and fission follow the same projection
 rule. Review projections expose topology, pressures, source-use coverage, gaps,
