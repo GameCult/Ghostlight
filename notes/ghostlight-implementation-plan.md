@@ -26,7 +26,7 @@ and run one private Ghostlight Persona membrane per cohesive or arena cell. The
 WorldKernel admits the whole cell wave atomically and forbids player puppeting,
 synthetic arena actors, borrowed secrets, invented IDs, unreachable movement,
 and unbounded information or population-pressure edits. The laboratory exposes
-a pooled 1–128 campaign cell budget supplied by a player entitlement port,
+a pooled 1–240 campaign cell budget supplied by a player entitlement port,
 persistent pins, approval-gated gestalt fission, graph and cover receipts, and
 a separate operator provider-concurrency limit. The
 specific authority map is

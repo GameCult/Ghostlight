@@ -251,7 +251,7 @@ direct mutation. Disconnection grants no proxy authority.
 
 Each active member contributes their entitlement-provided cell allowance. Test
 accounts currently contribute eight. The campaign starts at the pooled total,
-capped at 128; physical provider concurrency remains independent.
+capped at 240; physical provider concurrency remains independent.
 
 ## Realtime and interface
 

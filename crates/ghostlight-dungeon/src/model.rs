@@ -88,6 +88,29 @@ impl ModelStageReceipt {
         }
     }
 
+    /// Bind a structurally validated model output to a narrower local semantic
+    /// object without rerunning inference. The request and output hashes remain
+    /// the exact provider evidence; the content-addressed receipt changes to
+    /// cover the locally admitted binding.
+    pub fn rebind_snapshot(&mut self, snapshot_binding: String) {
+        self.snapshot_binding = snapshot_binding;
+        self.receipt_hash = format!(
+            "sha256:{:x}",
+            Sha256::digest(
+                format!(
+                    "{}|{}|{}|{}|{}|{}",
+                    self.provider,
+                    self.model,
+                    self.stage,
+                    self.snapshot_binding,
+                    self.request_hash,
+                    self.output_hash
+                )
+                .as_bytes()
+            )
+        );
+    }
+
     pub fn same_receipted_content(&self, other: &Self) -> bool {
         self.storage_key() == other.storage_key()
             && self.schema == other.schema

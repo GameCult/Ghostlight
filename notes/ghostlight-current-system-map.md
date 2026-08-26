@@ -652,7 +652,7 @@ unchanged.
 Population scale uses reversible individuation:
 
 ```text
-gestalt baseline + existing member delta, or a first-relevance identity proposal
+gestalt baseline + existing member delta, or an admitted foreground or system-owned identity proposal
   -> WorldKernel validates gestalt/member/revision/location
   -> atomic durable member delta + temporary ActorState
   -> ordinary Persona appraisal and world commands
@@ -681,6 +681,16 @@ the planner reason exactly matches the immediately committed player-speech
 turn. The generated schema closes the individuation lane for resolved attempts,
 and `WorldKernel` independently rejects any such plan. Outcome prose and
 narration are not entity-admission inputs.
+
+A separate strategic selector may propose one first-relevance identity only for
+an exact selected Gestalt-owned action in the current resolution wave. Its
+receipt binds the eligible Gestalt action digest set, exact locally admitted
+proposal digest, and world revision.
+WorldKernel revalidates the action/Gestalt pair, active simulation authority,
+location, version, lineage, bounded identity payload, and uniqueness, then calls
+the same `apply_individuation` primitive used by the system-only direct command.
+The proposal and strategic plan commit atomically; the selector cannot own
+entity creation, location, revision, materialization, or commit.
 
 Institution `already_committed_posture` is projected as durable state, distinct
 from unresolved pressure and fresh choice. Maintaining it is inaction. A model

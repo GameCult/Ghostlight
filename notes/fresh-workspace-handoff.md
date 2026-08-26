@@ -37,14 +37,13 @@ d20 resolution, persistent locations and institutions, multiresolution Gestalt
 agency, offscreen strategic activity, knowledge-filtered news, and actor-filtered
 Eve/CultMesh surfaces.
 
-The immediate gate is continued adversarial play through Ghostlight's native
-CultMesh boundary. The client has completed Heimdall OAuth, persists only an
-opaque Ghostlight app-session bearer, fetches the same actor-filtered
-`ghostlight.play` surface, and submits the same canonical Eve invocations as the
-browser. Server-side refresh preserves that grant between client launches. The
-36-case agency corpus remains only a candidate seed against a 300-reviewed-case
-target. Separate-account multiplayer privacy and unanimity proof also remains
-unproven.
+Hosted Dungeon adversarial play remains an active regression and
+context-discovery lane through Ghostlight's native CultMesh boundary. The client
+has completed Heimdall OAuth, persists only an opaque Ghostlight app-session
+bearer, fetches the same actor-filtered `ghostlight.play` surface, and submits
+the same canonical Eve invocations as the browser. The 36-case agency corpus
+and separate-account multiplayer proof remain open regression work; neither is
+the current consumer-fixture gate.
 
 ## Authority map
 
@@ -430,31 +429,26 @@ institutions or Gestalts enter through revisioned WorldKernel snapshots; and str
 actions aimed at them persist typed proposals for consumer acknowledgement over
 the existing loopback CultNet RUDP operation server.
 
-The immediate gate is now the scale and emergence pass.
+The scale and emergence gate is implemented and locally proven.
 Delvehold is a consumer of Ghostlight's generic authored-world API, not a
 Ghostlight-owned organ or special runtime. Ghostlight owns the world beyond the
 Greathold as a persistent multiresolution political simulation, while Delvehold
-retains player sovereignty and quantitative economy. The first design cut must
-close two missing faculties:
-strategic/offscreen named-person emergence and proven hundreds-class cell waves.
-Do not begin by multiplying prompts or raising a constant; map resolution
-ownership, emergence triggers, causal propagation, folding, and provider-call
-amortization first.
+retains player sovereignty and quantitative economy. WorldKernel now admits at
+most one action-bound strategic individuation per wave through the existing
+individuation commit primitive. The selector proposes identity content; the
+kernel retains revision, lineage, location, uniqueness, materialization, and
+atomic commit authority. The active budget ceiling is 240, independent of the
+32-call provider gate. A fixture proves 1,000 subjects across 200 cells and all
+200 membrane pipelines under a seven-call gate.
 
-1. Specify a WorldKernel-owned offscreen individuation path that lets causal
-   political pressure produce durable named figures without granting entity
-   creation authority to a cell, arena, or model.
-2. Measure the existing parallel wave dispatcher at the current 128-cell ceiling
-   and design the hundreds-cell budget around bounded provider concurrency,
-   outcome resolution, atomic commit, fairness, and cost.
-3. Have the game-side adapter lower its authored hierarchy into the published
+1. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-4. Prove one consumer-owned effect crosses that public API, changes two foreign
-   political layers, and returns attributed news or intent without mutating
-   Delvehold-owned truth.
-5. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+2. Prove one consumer-owned effect crosses that public API, changes two foreign
+   political layers, causes one durable named figure to emerge and later act,
+   and returns attributed news or intent without mutating Delvehold-owned truth.
+3. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-6. Keep `gamecult-ops` synchronized with every executable deployment and model
+4. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,

@@ -943,6 +943,21 @@ impl CampaignStore {
                     outcome,
                 )?);
             }
+            for individuation in &wave.strategic_individuations {
+                rows.push(envelope(
+                    "strategic_gestalt_individuation.v1",
+                    "ghostlight.strategic_gestalt_individuation.v1",
+                    &format!(
+                        "{}:{}:{}",
+                        next.revision,
+                        wave.resolution_epoch,
+                        crate::domain::canonical_gestalt_member_local_id(
+                            &individuation.individuation.member.id,
+                        )
+                    ),
+                    individuation,
+                )?);
+            }
         }
         self.append_external_proposals(&mut rows, external_proposals)?;
         if let Some((authority, batch, mutation_receipt)) = mutation {

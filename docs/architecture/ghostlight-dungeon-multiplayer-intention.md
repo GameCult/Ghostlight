@@ -84,7 +84,7 @@ initiative, or commit validation.
   one deterministic initiative/conflict pass. Arrival order at HTTP or CultNet
   transport is not fictional initiative.
 - Each active member contributes the allowance returned by the entitlement
-  port. The campaign pool is capped by the operator ceiling of 128. Human
+  port. The campaign pool is capped by the operator ceiling of 240. Human
   actors occupy mandatory cells without Persona inference; provider request
   concurrency remains independent of the chosen cover.
 - Reconnect and replay derive the player's view from committed receipts and

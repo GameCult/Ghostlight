@@ -211,9 +211,14 @@ gestalts, or fictional time.
 
 ## Budgeted connected cover
 
-The campaign selects an active Persona-cell budget from 1 through 128, default
+The campaign selects an active Persona-cell budget from 1 through 240, default
 8, bounded by its pooled entitlement. Provider parallelism is a separate
 control capped at 32 concurrent cell pipelines.
+The scale fixture covers 1,000 canonical subjects with 200 unique cells, then
+dispatches every cell membrane in one wave while a seven-permit semaphore
+bounds physical provider work. Wave width and provider pressure are therefore
+separate authorities; all terminals still join, sort, validate, and commit as
+one atomic resolution wave.
 The partitioner:
 
 1. contracts valid `keep_together` pins;

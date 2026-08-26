@@ -203,7 +203,7 @@ pub fn player_surface_for_actor(campaign: &Campaign, viewer_actor_id: &str) -> V
             json!({"expected_revision":campaign.revision}),
             &["time_advance_minutes"],
         ),
-        json!({"id":"dungeon.cells.budget","kind":"control.input.number","props":{"label":"Active Persona-cell budget","value":campaign.resolution_policy.active_cell_budget,"min":1,"max":128},"stateBindings":[local_draft("active_cell_budget","number")],"children":[]}),
+        json!({"id":"dungeon.cells.budget","kind":"control.input.number","props":{"label":"Active Persona-cell budget","value":campaign.resolution_policy.active_cell_budget,"min":1,"max":crate::resolution::MAX_ACTIVE_CELL_BUDGET},"stateBindings":[local_draft("active_cell_budget","number")],"children":[]}),
         command_control(
             "dungeon.cells.propose",
             "Propose cell budget",

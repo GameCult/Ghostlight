@@ -5,7 +5,10 @@ use std::cmp::{Ordering, Reverse};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, VecDeque};
 
 pub const MIN_ACTIVE_CELL_BUDGET: u8 = 1;
-pub const MAX_ACTIVE_CELL_BUDGET: u8 = 128;
+/// A wave can cover a hundreds-class world while provider concurrency remains
+/// independently bounded. Keep this below u8::MAX so malformed sentinel-like
+/// values never become an operator setting.
+pub const MAX_ACTIVE_CELL_BUDGET: u8 = 240;
 pub const MAX_PROVIDER_PARALLELISM: u8 = 32;
 
 pub(crate) fn information_channel_is_concrete(channel: &str) -> bool {
@@ -2150,8 +2153,88 @@ pub fn validate_and_resolve_wave(
         &selection.activity_proposals,
         &wave.activity_outcomes,
     )?;
+    validate_strategic_individuations(campaign, wave, &selection.plan.selected_actions)?;
     selection.plan.activity_outcomes = wave.activity_outcomes.clone();
     Ok(selection.plan)
+}
+
+fn validate_strategic_individuations(
+    campaign: &Campaign,
+    wave: &ResolutionWaveCommit,
+    selected_actions: &[CellActionProposal],
+) -> Result<()> {
+    if wave.strategic_individuations.len() > 1 {
+        return Err(anyhow!(
+            "one strategic wave can admit at most one new person"
+        ));
+    }
+    let selected = selected_actions
+        .iter()
+        .map(|action| Ok((cell_action_digest(action)?, action)))
+        .collect::<Result<BTreeMap<_, _>>>()?;
+    for proposal in &wave.strategic_individuations {
+        let action = selected
+            .get(&proposal.action_digest)
+            .ok_or_else(|| anyhow!("strategic individuation is not bound to a selected action"))?;
+        let individuation = &proposal.individuation;
+        let member = &individuation.member;
+        let profile = campaign
+            .agency_profiles
+            .get(&individuation.gestalt_id)
+            .ok_or_else(|| anyhow!("strategic individuation Gestalt has no agency profile"))?;
+        if proposal.schema != "ghostlight.strategic_gestalt_individuation.v1"
+            || proposal.rationale.trim().is_empty()
+            || proposal.rationale.chars().count() > 460
+            || action.subject_id != individuation.gestalt_id
+            || !campaign.gestalts.contains_key(&individuation.gestalt_id)
+            || !profile.active_leaf
+            || !profile.simulation_eligible
+            || !profile.location_ids.contains(&individuation.location_id)
+            || individuation.expected_gestalt_version
+                != campaign.gestalts[&individuation.gestalt_id].version
+            || member.schema != "ghostlight.gestalt_member_delta.v1"
+            || member.gestalt_id != individuation.gestalt_id
+            || member.version != 0
+            || member.materialized_actor_id.is_some()
+            || member.id.trim().is_empty()
+            || member.id.chars().count() > 80
+            || member.name.trim().is_empty()
+            || member.name.chars().count() > 160
+            || member.goals.len() > 8
+            || member.memories.len() > 8
+            || member.obligations.len() > 8
+            || serde_json::to_vec(member).is_ok_and(|encoded| encoded.len() > 16_384)
+            || campaign.gestalt_members.contains_key(
+                &crate::domain::canonical_gestalt_member_local_id(&member.id),
+            )
+            || campaign
+                .actors
+                .contains_key(&crate::domain::gestalt_member_subject_id(&member.id))
+            || campaign
+                .actors
+                .values()
+                .any(|actor| actor.name.trim().eq_ignore_ascii_case(member.name.trim()))
+            || campaign.gestalt_members.values().any(|existing| {
+                existing
+                    .name
+                    .trim()
+                    .eq_ignore_ascii_case(member.name.trim())
+            })
+            || member.relationships.keys().any(|subject_id| {
+                !campaign.actors.contains_key(subject_id)
+                    && !campaign.institutions.contains_key(subject_id)
+                    && !campaign.gestalts.contains_key(subject_id)
+                    && subject_id
+                        .strip_prefix("member:")
+                        .is_none_or(|member_id| !campaign.gestalt_members.contains_key(member_id))
+            })
+        {
+            return Err(anyhow!(
+                "strategic individuation exceeds its exact Gestalt action authority"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn validate_cell_proposal(
@@ -4075,6 +4158,21 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn partitions_one_thousand_subjects_into_a_two_hundred_cell_wave() {
+        let value = campaign(1_000, 200);
+        let cover = plan_cover(&value, default_demand(&value, "hundreds-class world")).unwrap();
+        assert_eq!(cover.configured_budget, 200);
+        assert_eq!(cover.effective_budget, 200);
+        assert_eq!(cover.cells.len(), 200);
+        let represented = cover
+            .cells
+            .iter()
+            .flat_map(|cell| cell.subject_ids.iter())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(represented.len(), 1_000);
+    }
+
+    #[test]
     fn arena_cannot_act_as_a_collective_or_borrow_a_constituents_secret() {
         let mut value = campaign(2, 1);
         value.agency_relations.insert(
@@ -4127,6 +4225,7 @@ pub(crate) mod tests {
                 }],
                 cover: cover.clone(),
                 activity_outcomes: vec![],
+                strategic_individuations: vec![],
                 model_receipt_hashes: vec![],
             }
         };
@@ -4332,6 +4431,7 @@ pub(crate) mod tests {
                 }],
                 cover: cover.clone(),
                 activity_outcomes: vec![],
+                strategic_individuations: vec![],
                 model_receipt_hashes: vec![],
             }
         };
@@ -4384,6 +4484,7 @@ pub(crate) mod tests {
             }],
             cover: cover.clone(),
             activity_outcomes: vec![],
+            strategic_individuations: vec![],
             model_receipt_hashes: vec![],
         };
         assert!(select_resolution_wave(&value, &same_member_wave).is_err());
@@ -4456,6 +4557,7 @@ pub(crate) mod tests {
             }],
             cover: cover.clone(),
             activity_outcomes: vec![],
+            strategic_individuations: vec![],
             model_receipt_hashes: vec![],
         };
         assert!(select_resolution_wave(&value, &same_subject_wave).is_err());
@@ -4539,6 +4641,7 @@ pub(crate) mod tests {
             }],
             cover,
             activity_outcomes: vec![],
+            strategic_individuations: vec![],
             model_receipt_hashes: vec![],
         };
         let plan = validate_and_resolve_wave(&value, &wave).unwrap();

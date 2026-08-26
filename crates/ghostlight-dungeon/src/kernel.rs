@@ -1240,6 +1240,40 @@ fn execute(
                         ));
                     }
                 }
+                if !wave.strategic_individuations.is_empty() {
+                    let selected_actions = resolved_plan
+                        .as_ref()
+                        .map(|plan| plan.selected_actions.as_slice())
+                        .unwrap_or_default();
+                    let candidate_digests =
+                        crate::scheduler::strategic_individuation_candidate_digests(
+                            &campaign,
+                            selected_actions,
+                        );
+                    for proposal in &wave.strategic_individuations {
+                        let proposal_digest =
+                            crate::scheduler::strategic_individuation_proposal_digest(proposal)
+                                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+                        let binding = crate::scheduler::strategic_individuation_binding(
+                            &campaign,
+                            &candidate_digests,
+                            Some(&proposal_digest),
+                        );
+                        if !stage_bindings
+                            .contains(&("strategic_individuation_selector".into(), binding))
+                        {
+                            return Err(KernelError::Invalid(
+                                "strategic individuation lacks a payload-bound selector receipt"
+                                    .into(),
+                            ));
+                        }
+                    }
+                }
+            }
+            if let Some(wave) = &resolution_wave {
+                for proposal in &wave.strategic_individuations {
+                    apply_individuation(&mut campaign, &proposal.individuation)?;
+                }
             }
             let applied_tick = match resolved_plan.or(plan) {
                 Some(plan) => apply_strategic_tick_plan(&mut campaign, plan)?,
@@ -1249,9 +1283,32 @@ fn execute(
                 }
             };
             let AppliedStrategicTickPlan {
-                events: tick_events,
+                events: mut tick_events,
                 mutation,
             } = applied_tick;
+            if let Some(wave) = &resolution_wave {
+                for proposal in &wave.strategic_individuations {
+                    let member = &proposal.individuation.member;
+                    tick_events.push(crate::domain::Event {
+                        id: format!(
+                            "strategic:{}:individuation:{}",
+                            campaign.strategic_tick_count.saturating_add(1),
+                            crate::domain::canonical_gestalt_member_local_id(&member.id)
+                        ),
+                        at: campaign.world_time,
+                        kind: "gestalt_individuation".into(),
+                        summary: format!(
+                            "{} becomes a consequential named figure: {}",
+                            member.name, proposal.rationale
+                        ),
+                        actor_ids: vec![crate::domain::gestalt_member_subject_id(&member.id)],
+                        institution_ids: vec![],
+                        gestalt_ids: vec![proposal.individuation.gestalt_id.clone()],
+                        location_ids: vec![proposal.individuation.location_id.clone()],
+                        public_channels: vec![],
+                    });
+                }
+            }
             if let Some(wave) = &resolution_wave {
                 crate::resolution::advance_detail_debt(&mut campaign, &wave.cover);
                 campaign.resolution_cover = Some(wave.cover.clone());
@@ -8068,6 +8125,7 @@ mod tests {
                 .collect(),
             cover,
             activity_outcomes: vec![],
+            strategic_individuations: vec![],
             model_receipt_hashes: hashes,
         }
     }
@@ -8615,6 +8673,181 @@ mod tests {
             store.keys("strategic_activity_outcome.v1").unwrap().len(),
             1
         );
+    }
+
+    #[tokio::test]
+    async fn strategic_wave_atomically_individuates_and_materializes_an_action_bound_person() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = hierarchical_refugee_campaign();
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        let mut wave = inaction_wave(&persisted, &store);
+        let cell_id = wave
+            .cover
+            .cells
+            .iter()
+            .find(|cell| cell.subject_ids.contains("refugees-east"))
+            .unwrap()
+            .id
+            .clone();
+        let appraisal = wave
+            .appraisals
+            .iter_mut()
+            .find(|appraisal| appraisal.cell_id == cell_id)
+            .unwrap();
+        appraisal.considered_subject_ids = BTreeSet::from(["refugees-east".into()]);
+        let action = CellActionProposal {
+            subject_id: "refugees-east".into(),
+            intent: "appoint a named storm delegation broker".into(),
+            intended_effect: "make one person accountable for the camp negotiation".into(),
+            priority: 80,
+            state_references: vec!["subject:refugees-east".into(), "location:camp".into()],
+            public_channels: vec![],
+            effects: vec![StrategicCellEffect::Gestalt {
+                gestalt_id: "refugees-east".into(),
+                pressure_additions: vec!["the storm delegation needs an accountable broker".into()],
+                pressure_resolutions: vec![],
+            }],
+        };
+        let action_digest = crate::resolution::cell_action_digest(&action).unwrap();
+        appraisal.actions = vec![action.clone()];
+        appraisal.inactions.clear();
+        wave.strategic_individuations = vec![StrategicGestaltIndividuation {
+            schema: "ghostlight.strategic_gestalt_individuation.v1".into(),
+            action_digest: action_digest.clone(),
+            rationale: "The camp needs one accountable storm broker.".into(),
+            individuation: GestaltIndividuation {
+                gestalt_id: "refugees-east".into(),
+                expected_gestalt_version: 0,
+                location_id: "camp".into(),
+                member: GestaltMemberDelta {
+                    schema: "ghostlight.gestalt_member_delta.v1".into(),
+                    id: "veska-rill".into(),
+                    gestalt_id: "refugees-east".into(),
+                    version: 0,
+                    name: "Veska Rill".into(),
+                    capability_additions: BTreeSet::new(),
+                    capability_removals: BTreeSet::new(),
+                    knowledge_additions: BTreeSet::new(),
+                    knowledge_removals: BTreeSet::new(),
+                    equipment: BTreeSet::new(),
+                    conditions: BTreeSet::new(),
+                    obligations: BTreeSet::from(["answer to the camp wards".into()]),
+                    relationships: BTreeMap::new(),
+                    goals: vec!["secure the storm route".into()],
+                    memories: vec!["the deep excavation broke the lower road".into()],
+                    last_location_id: Some("camp".into()),
+                    materialized_actor_id: None,
+                    last_relevant_revision: persisted.revision,
+                    relevance_lease_until_revision: persisted.revision + 4,
+                },
+            },
+        }];
+        let base_binding = format!(
+            "campaign:{}:revision:{}:resolution:{}:cell:{}",
+            persisted.id, persisted.revision, persisted.resolution_policy.resolution_epoch, cell_id
+        );
+        let mut verifier = resolution_stage(&cell_id, &persisted, "cell_effect_verifier", '7');
+        verifier.snapshot_binding = crate::persona::cell_effect_verification_binding(
+            &base_binding,
+            std::slice::from_ref(&action),
+        )
+        .unwrap();
+        let mut selector = resolution_stage(
+            &cell_id,
+            &persisted,
+            "strategic_individuation_selector",
+            '8',
+        );
+        selector.rebind_snapshot(crate::scheduler::strategic_individuation_binding(
+            &persisted,
+            std::slice::from_ref(&action_digest),
+            Some(
+                &crate::scheduler::strategic_individuation_proposal_digest(
+                    &wave.strategic_individuations[0],
+                )
+                .unwrap(),
+            ),
+        ));
+        for receipt in [verifier, selector] {
+            store
+                .insert(
+                    "persona_stage_receipt.v1",
+                    "ghostlight.persona_stage_receipt.v1",
+                    receipt.storage_key(),
+                    &receipt,
+                )
+                .unwrap();
+            wave.model_receipt_hashes
+                .push(receipt.storage_key().to_owned());
+        }
+        let mut substituted = wave.clone();
+        substituted.strategic_individuations[0]
+            .individuation
+            .member
+            .name = "Substituted Caller Payload".into();
+        let error = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: persisted.revision,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(format!("sha256:{}", "c".repeat(64))),
+                resolution_wave: Some(substituted),
+            })
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("payload-bound selector receipt"));
+        let unchanged = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(unchanged.revision, persisted.revision);
+        assert!(!unchanged.gestalt_members.contains_key("veska-rill"));
+        let result = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: persisted.revision,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(format!("sha256:{}", "b".repeat(64))),
+                resolution_wave: Some(wave),
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!()
+        };
+        let member = &campaign.gestalt_members["veska-rill"];
+        assert_eq!(
+            member.materialized_actor_id.as_deref(),
+            Some("member:veska-rill")
+        );
+        assert_eq!(campaign.actors["member:veska-rill"].name, "Veska Rill");
+        assert!(campaign.agency_profiles["member:veska-rill"].simulation_eligible);
+        assert!(
+            campaign
+                .events
+                .iter()
+                .any(|event| event.kind == "gestalt_individuation")
+        );
+        let proposals = store
+            .load_all::<StrategicGestaltIndividuation>("strategic_gestalt_individuation.v1")
+            .unwrap();
+        assert_eq!(proposals.len(), 1);
+        assert_eq!(proposals[0].action_digest, action_digest);
     }
 
     #[tokio::test]

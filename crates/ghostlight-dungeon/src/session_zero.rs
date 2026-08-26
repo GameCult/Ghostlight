@@ -19,7 +19,7 @@ use uuid::Uuid;
 
 pub const MAX_SESSION_ZERO_MEMBERS: usize = 8;
 pub const FIXTURE_CELL_ALLOWANCE: u8 = 8;
-pub const OPERATOR_CELL_CEILING: u8 = 128;
+pub const OPERATOR_CELL_CEILING: u8 = crate::resolution::MAX_ACTIVE_CELL_BUDGET;
 
 pub trait EntitlementPort: Send + Sync {
     fn persona_cell_allowance(&self, account_hash: &str) -> u8;
@@ -6254,7 +6254,7 @@ mod tests {
                     display_name: format!("P{index}"),
                     is_host: false,
                     active: true,
-                    cell_allowance: 32,
+                    cell_allowance: if index == 0 { 40 } else { 32 },
                     joined_at: Utc::now(),
                 },
             );

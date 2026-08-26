@@ -5546,8 +5546,13 @@ fn validate_player_http_command(command: &WorldCommand) -> Result<(), String> {
         }
         WorldCommand::SetResolutionBudget {
             active_cell_budget, ..
-        } if !(1..=128).contains(active_cell_budget) => {
-            Err("active Persona-cell budget must be between 1 and 128".into())
+        } if !(1..=ghostlight_dungeon::resolution::MAX_ACTIVE_CELL_BUDGET)
+            .contains(active_cell_budget) =>
+        {
+            Err(format!(
+                "active Persona-cell budget must be between 1 and {}",
+                ghostlight_dungeon::resolution::MAX_ACTIVE_CELL_BUDGET
+            ))
         }
         _ => Ok(()),
     }

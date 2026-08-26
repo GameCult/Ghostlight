@@ -1,7 +1,7 @@
 use crate::{
     domain::{
-        AgencyAxis, AgencySubjectKind, Campaign, ResolutionDemand, ResolutionWaveCommit,
-        SimulationCell,
+        AgencyAxis, AgencySubjectKind, Campaign, GestaltIndividuation, GestaltMemberDelta,
+        ResolutionDemand, ResolutionWaveCommit, SimulationCell, StrategicGestaltIndividuation,
     },
     model::{MODEL_FAST, ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
     outcome::{activity_outcome_binding, resolve_activity_outcomes},
@@ -39,6 +39,24 @@ struct DemandAxisWeights {
     economy_role: f32,
     species_body: f32,
     information: f32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+struct StrategicPersonDraft {
+    action_digest: String,
+    gestalt_id: String,
+    member_id: String,
+    name: String,
+    goals: Vec<String>,
+    obligations: BTreeSet<String>,
+    relationships: BTreeMap<String, String>,
+    memories: Vec<String>,
+    rationale: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+struct StrategicPersonSelection {
+    proposals: Vec<StrategicPersonDraft>,
 }
 
 impl DemandAxisWeights {
@@ -172,6 +190,7 @@ pub async fn propose_resolution_wave_with_policy(
         plan_receipt: receipt,
         appraisals,
         activity_outcomes: Vec::new(),
+        strategic_individuations: Vec::new(),
         model_receipt_hashes: cell_model_receipt_hashes,
     };
     let selection = select_resolution_wave(campaign, &wave)?;
@@ -212,6 +231,42 @@ pub async fn propose_resolution_wave_with_policy(
     }
     stages.extend(outcome_stages);
     wave.activity_outcomes = activity_outcomes;
+    let individuation_candidate_digests =
+        strategic_individuation_candidate_digests(campaign, &selection.plan.selected_actions);
+    if !individuation_candidate_digests.is_empty() {
+        outcome_permit
+            .require(
+                "strategic-individuation",
+                &strategic_individuation_binding(campaign, &individuation_candidate_digests, None),
+                "strategic_individuation_selector",
+            )
+            .await?;
+    }
+    let (strategic_individuations, individuation_stages) = propose_strategic_individuation(
+        outcome_model.as_ref(),
+        campaign,
+        &selection.plan.selected_actions,
+    )
+    .await;
+    if !individuation_candidate_digests.is_empty() {
+        let proposal_digest = strategic_individuations
+            .first()
+            .map(strategic_individuation_proposal_digest)
+            .transpose()?;
+        outcome_permit
+            .require(
+                "strategic-individuation",
+                &strategic_individuation_binding(
+                    campaign,
+                    &individuation_candidate_digests,
+                    proposal_digest.as_deref(),
+                ),
+                "strategic_individuation_terminal",
+            )
+            .await?;
+    }
+    stages.extend(individuation_stages);
+    wave.strategic_individuations = strategic_individuations;
     wave.model_receipt_hashes = distinct_model_receipt_hashes(&stages);
     validate_and_resolve_wave(campaign, &wave)?;
     let aggregate_receipt_hash = format!(
@@ -224,6 +279,212 @@ pub async fn propose_resolution_wave_with_policy(
         private_cell_traces,
         aggregate_receipt_hash,
     })
+}
+
+pub fn strategic_individuation_binding(
+    campaign: &Campaign,
+    action_digests: &[String],
+    proposal_digest: Option<&str>,
+) -> String {
+    format!(
+        "campaign:{}:revision:{}:resolution:{}:strategic-individuation:{}:proposal:{}",
+        campaign.id,
+        campaign.revision,
+        campaign.resolution_policy.resolution_epoch,
+        action_digests.join(","),
+        proposal_digest.unwrap_or("none")
+    )
+}
+
+pub fn strategic_individuation_candidate_digests(
+    campaign: &Campaign,
+    selected_actions: &[crate::domain::CellActionProposal],
+) -> Vec<String> {
+    selected_actions
+        .iter()
+        .filter(|action| {
+            campaign.gestalts.contains_key(&action.subject_id)
+                && campaign
+                    .agency_profiles
+                    .get(&action.subject_id)
+                    .is_some_and(|profile| {
+                        profile.active_leaf
+                            && profile.simulation_eligible
+                            && profile.location_ids.len() == 1
+                    })
+        })
+        .filter_map(|action| cell_action_digest(action).ok())
+        .collect()
+}
+
+pub fn strategic_individuation_proposal_digest(
+    proposal: &StrategicGestaltIndividuation,
+) -> Result<String> {
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(proposal)?)
+    ))
+}
+
+async fn propose_strategic_individuation(
+    model: &dyn ModelPort,
+    campaign: &Campaign,
+    selected_actions: &[crate::domain::CellActionProposal],
+) -> (Vec<StrategicGestaltIndividuation>, Vec<ModelStageOutput>) {
+    let candidates = selected_actions
+        .iter()
+        .filter_map(|action| {
+            let gestalt = campaign.gestalts.get(&action.subject_id)?;
+            let profile = campaign.agency_profiles.get(&action.subject_id)?;
+            (profile.active_leaf && profile.simulation_eligible && profile.location_ids.len() == 1)
+                .then(|| {
+                    (
+                        action,
+                        gestalt,
+                        profile.location_ids.iter().next().unwrap().clone(),
+                    )
+                })
+        })
+        .filter_map(|(action, gestalt, location_id)| {
+            cell_action_digest(action)
+                .ok()
+                .map(|digest| (digest, action, gestalt, location_id))
+        })
+        .collect::<Vec<_>>();
+    if candidates.is_empty() {
+        return (Vec::new(), Vec::new());
+    }
+    let digests = candidates
+        .iter()
+        .map(|(digest, ..)| digest.clone())
+        .collect::<Vec<_>>();
+    let context = candidates
+        .iter()
+        .map(|(digest, action, gestalt, location_id)| {
+            serde_json::json!({
+                "action_digest":digest,
+                "gestalt_id":gestalt.id,
+                "gestalt_name":gestalt.name,
+                "location_id":location_id,
+                "goals":gestalt.goals,
+                "pressures":gestalt.pressures,
+                "selected_action":action,
+            })
+        })
+        .collect::<Vec<_>>();
+    let mut schema = match serde_json::to_value(schema_for!(StrategicPersonSelection)) {
+        Ok(schema) => schema,
+        Err(_) => return (Vec::new(), Vec::new()),
+    };
+    if let Some(value) = schema.pointer_mut("/$defs/StrategicPersonDraft/properties/action_digest")
+    {
+        *value = serde_json::json!({"type":"string","enum":digests});
+    }
+    if let Some(value) = schema.pointer_mut("/$defs/StrategicPersonDraft/properties/gestalt_id") {
+        *value = serde_json::json!({"type":"string","enum":candidates.iter().map(|(_, _, gestalt, _)| gestalt.id.clone()).collect::<Vec<_>>()});
+    }
+    if let Some(proposals) = schema
+        .pointer_mut("/properties/proposals")
+        .and_then(serde_json::Value::as_object_mut)
+    {
+        proposals.insert("maxItems".into(), 1.into());
+    }
+    let request = ModelStageRequest {
+        stage: "strategic_individuation_selector".into(),
+        model: MODEL_FAST.into(),
+        snapshot_binding: strategic_individuation_binding(campaign, &digests, None),
+        lived_stream: format!(
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nReturn zero or one proposal. Choose one person only when a selected Gestalt action has created concrete political work that cannot remain anonymous: an envoy, organizer, claimant, conspirator, commander, broker, or dissident. Identity content is a proposal only. Use a short stable lowercase member_id without a member: prefix. Do not invent authority, location, or state beyond the supplied Gestalt. Return an empty proposals list when nobody needs to emerge.\nCANDIDATES:\n{}",
+            serde_json::to_string(&schema).unwrap_or_default(),
+            serde_json::to_string(&context).unwrap_or_default(),
+        ),
+        output_schema: Some(schema),
+        source_receipt_ids: campaign.branch_origin.evidence_receipt_ids.clone(),
+        temperature: Some(0.2),
+        max_output_tokens: Some(768),
+    };
+    let Ok(mut output) = run_validated_stage(model, &request).await else {
+        return (Vec::new(), Vec::new());
+    };
+    let Some(mut selection) = output
+        .structured
+        .clone()
+        .and_then(|value| serde_json::from_value::<StrategicPersonSelection>(value).ok())
+    else {
+        return (Vec::new(), vec![output]);
+    };
+    if selection.proposals.is_empty() {
+        return (Vec::new(), vec![output]);
+    }
+    if selection.proposals.len() != 1 {
+        output.receipt.validation_result = "semantic_invalid".into();
+        output.receipt.local_validation_error =
+            Some("strategic selector exceeded its one-person budget".into());
+        return (Vec::new(), vec![output]);
+    }
+    let draft = selection.proposals.remove(0);
+    let Some((_, _, gestalt, location_id)) = candidates.iter().find(|(digest, _, gestalt, _)| {
+        digest == &draft.action_digest && gestalt.id == draft.gestalt_id
+    }) else {
+        output.receipt.validation_result = "semantic_invalid".into();
+        output.receipt.local_validation_error =
+            Some("proposed person crossed the selected Gestalt action boundary".into());
+        return (Vec::new(), vec![output]);
+    };
+    let member_id = crate::domain::canonical_gestalt_member_local_id(&draft.member_id);
+    if member_id.is_empty()
+        || draft.name.trim().is_empty()
+        || campaign.gestalt_members.contains_key(&member_id)
+    {
+        output.receipt.validation_result = "semantic_invalid".into();
+        output.receipt.local_validation_error =
+            Some("proposed person has an empty or occupied identity".into());
+        return (Vec::new(), vec![output]);
+    }
+    let member = GestaltMemberDelta {
+        schema: "ghostlight.gestalt_member_delta.v1".into(),
+        id: member_id,
+        gestalt_id: gestalt.id.clone(),
+        version: 0,
+        name: draft.name,
+        capability_additions: BTreeSet::new(),
+        capability_removals: BTreeSet::new(),
+        knowledge_additions: BTreeSet::new(),
+        knowledge_removals: BTreeSet::new(),
+        equipment: BTreeSet::new(),
+        conditions: BTreeSet::new(),
+        obligations: draft.obligations,
+        relationships: draft.relationships,
+        goals: draft.goals,
+        memories: draft.memories,
+        last_location_id: Some(location_id.clone()),
+        materialized_actor_id: None,
+        last_relevant_revision: campaign.revision,
+        relevance_lease_until_revision: campaign.revision.saturating_add(4),
+    };
+    let proposal = StrategicGestaltIndividuation {
+        schema: "ghostlight.strategic_gestalt_individuation.v1".into(),
+        action_digest: draft.action_digest,
+        rationale: draft.rationale,
+        individuation: GestaltIndividuation {
+            gestalt_id: gestalt.id.clone(),
+            expected_gestalt_version: gestalt.version,
+            member,
+            location_id: location_id.clone(),
+        },
+    };
+    let proposal_digest = match strategic_individuation_proposal_digest(&proposal) {
+        Ok(digest) => digest,
+        Err(_) => return (Vec::new(), vec![output]),
+    };
+    output
+        .receipt
+        .rebind_snapshot(strategic_individuation_binding(
+            campaign,
+            &digests,
+            Some(&proposal_digest),
+        ));
+    (vec![proposal], vec![output])
 }
 
 fn distinct_model_receipt_hashes(stages: &[ModelStageOutput]) -> Vec<String> {
@@ -1044,6 +1305,8 @@ mod tests {
         malformed_cell: bool,
     }
 
+    struct PersonFixtureModel;
+
     #[test]
     fn gestalt_state_references_qualify_canonical_ids_exactly_once() {
         assert_eq!(
@@ -1188,6 +1451,44 @@ mod tests {
                 }
                 stage => Err(anyhow!("unexpected fixture stage {stage}")),
             }
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for PersonFixtureModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            let digest = request
+                .output_schema
+                .as_ref()
+                .and_then(|schema| {
+                    schema.pointer("/$defs/StrategicPersonDraft/properties/action_digest/enum/0")
+                })
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| anyhow!("person fixture lacks action digest"))?;
+            let gestalt_id = request
+                .output_schema
+                .as_ref()
+                .and_then(|schema| {
+                    schema.pointer("/$defs/StrategicPersonDraft/properties/gestalt_id/enum/0")
+                })
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| anyhow!("person fixture lacks Gestalt"))?;
+            Ok(serde_json::json!({"proposals":[{
+                "action_digest":digest,
+                "gestalt_id":gestalt_id,
+                "member_id":"veska-rill",
+                "name":"Veska Rill",
+                "goals":["control the grain delegation"],
+                "obligations":["answer to the river wards"],
+                "relationships":{},
+                "memories":["the lower road vanished after the dwarven excavation"],
+                "rationale":"The delegation needs one accountable broker."
+            }]})
+            .to_string())
         }
 
         fn provider(&self) -> &'static str {
@@ -1716,6 +2017,105 @@ mod tests {
         );
         assert!(model.maximum.load(Ordering::SeqCst) <= 2);
         validate_and_resolve_wave(&campaign, &output.wave).unwrap();
+    }
+
+    #[tokio::test]
+    async fn two_hundred_cell_wave_dispatches_in_parallel_under_one_provider_gate() {
+        let mut campaign = crate::resolution::tests::campaign(1_000, 200);
+        campaign.resolution_policy.provider_parallelism = 7;
+        let model = Arc::new(CellFixtureModel {
+            active: AtomicUsize::new(0),
+            maximum: AtomicUsize::new(0),
+            malformed_cell: false,
+        });
+        let output = propose_resolution_wave(model.clone(), Arc::new(AllowAllPermit), &campaign)
+            .await
+            .unwrap();
+        assert_eq!(output.wave.cover.cells.len(), 200);
+        assert_eq!(output.wave.appraisals.len(), 200);
+        assert_eq!(output.stages.len(), 601);
+        let maximum = model.maximum.load(Ordering::SeqCst);
+        assert!(maximum > 1, "the wave never dispatched concurrently");
+        assert!(
+            maximum <= 7,
+            "provider concurrency escaped its gate: {maximum}"
+        );
+        validate_and_resolve_wave(&campaign, &output.wave).unwrap();
+    }
+
+    #[tokio::test]
+    async fn strategic_gestalt_pressure_can_propose_one_action_bound_named_person() {
+        use crate::domain::{AgencySubjectKind, GestaltPersonaState, StrategicCellEffect};
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        let mut profile = campaign.agency_profiles["faction-0000"].clone();
+        profile.subject_id = "river-wards".into();
+        profile.subject_kind = AgencySubjectKind::Gestalt;
+        profile.location_ids = BTreeSet::from(["center".into()]);
+        let location_id = profile.location_ids.iter().next().unwrap().clone();
+        campaign
+            .agency_profiles
+            .insert(profile.subject_id.clone(), profile);
+        campaign.gestalts.insert(
+            "river-wards".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "river-wards".into(),
+                name: "River Wards".into(),
+                version: 0,
+                home_location_id: location_id.clone(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::from(["grain barges".into()]),
+                goals: vec!["keep the river wards fed".into()],
+                pressures: vec!["dwarven excavation diverted the lower road".into()],
+            },
+        );
+        let action = crate::domain::CellActionProposal {
+            subject_id: "river-wards".into(),
+            intent: "Send a grain delegation around the broken lower road.".into(),
+            intended_effect: "Negotiate a politically accountable detour.".into(),
+            priority: 80,
+            state_references: vec![],
+            public_channels: vec![],
+            effects: vec![StrategicCellEffect::Gestalt {
+                gestalt_id: "river-wards".into(),
+                pressure_additions: vec!["the delegation needs an accountable broker".into()],
+                pressure_resolutions: vec![],
+            }],
+        };
+        let digest = cell_action_digest(&action).unwrap();
+        let institution_action = crate::domain::CellActionProposal {
+            subject_id: "faction-0000".into(),
+            intent: "Publish the existing ration posture.".into(),
+            intended_effect: "Keep the institution legible.".into(),
+            priority: 20,
+            state_references: vec![],
+            public_channels: vec![],
+            effects: vec![StrategicCellEffect::Institution {
+                institution_id: "faction-0000".into(),
+                posture: "publishing ration posture".into(),
+                location_ids: vec![],
+            }],
+        };
+        let selected_actions = vec![action, institution_action];
+        let (proposals, stages) =
+            propose_strategic_individuation(&PersonFixtureModel, &campaign, &selected_actions)
+                .await;
+        assert_eq!(proposals.len(), 1);
+        assert_eq!(stages.len(), 1);
+        assert_eq!(proposals[0].action_digest, digest);
+        assert_eq!(proposals[0].individuation.gestalt_id, "river-wards");
+        assert_eq!(proposals[0].individuation.location_id, location_id);
+        assert_eq!(proposals[0].individuation.member.name, "Veska Rill");
+        assert_eq!(proposals[0].individuation.expected_gestalt_version, 0);
+        let candidate_digests =
+            strategic_individuation_candidate_digests(&campaign, &selected_actions);
+        assert_eq!(candidate_digests, vec![digest]);
+        let proposal_digest = strategic_individuation_proposal_digest(&proposals[0]).unwrap();
+        assert_eq!(
+            stages[0].receipt.snapshot_binding,
+            strategic_individuation_binding(&campaign, &candidate_digests, Some(&proposal_digest),)
+        );
     }
 
     #[tokio::test]

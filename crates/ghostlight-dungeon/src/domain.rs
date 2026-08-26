@@ -205,6 +205,16 @@ pub struct GestaltIndividuation {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct StrategicGestaltIndividuation {
+    pub schema: String,
+    /// Digest of the selected Gestalt-owned action whose pressure made this
+    /// individual strategically consequential.
+    pub action_digest: String,
+    pub rationale: String,
+    pub individuation: GestaltIndividuation,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct GestaltDemotion {
     pub actor_id: String,
 }
@@ -585,6 +595,8 @@ pub struct ResolutionWaveCommit {
     pub appraisals: Vec<CellAppraisal>,
     #[serde(default)]
     pub activity_outcomes: Vec<StrategicActivityOutcome>,
+    #[serde(default)]
+    pub strategic_individuations: Vec<StrategicGestaltIndividuation>,
     pub model_receipt_hashes: Vec<String>,
 }
 
