@@ -167,52 +167,6 @@ fn hub_keeps_independent_peer_sessions_and_exposes_connect_evidence() -> Result<
 }
 
 #[test]
-fn hub_delivers_a_large_response_after_a_long_keepalive_only_operation() -> Result<()> {
-    let server_socket = socket()?;
-    let server_addr = server_socket.local_addr()?;
-    let mut options = CultNetRudpServerHubOptions::new("ghostlight", server_socket, CONNECTION_ID);
-    options.max_fragment_bytes = Some(2_048);
-    options.max_pending_reliable_packets = Some(4_096);
-    let mut hub = CultNetRudpServerHub::new(options)?;
-    let mut player = client(server_addr)?;
-    let session = connect(&mut hub, &mut player, b"long-operation-session")?;
-
-    for heartbeat in 0..64_u32 {
-        player.ping(heartbeat.to_be_bytes().to_vec())?;
-        assert!(hub.receive_event_once()?.is_none());
-        assert!(player.receive_once()?.is_none());
-    }
-    assert_eq!(hub.session(session.remote_addr), Some(&session));
-
-    let payload = "x".repeat(256_000);
-    let response = CultNetMessage::OperationResponse {
-        message_id: "long-operation".into(),
-        service_id: "ghostlight.native.player".into(),
-        operation: "ghostlight.eve.invoke".into(),
-        status: "accepted".into(),
-        payload_schema: "gamecult.eve.command_result.v1".into(),
-        payload_encoding: "messagepack-base64".into(),
-        payload: payload.clone(),
-        diagnostics: vec![],
-        source_runtime_id: Some("ghostlight".into()),
-        target_runtime_id: Some("player".into()),
-    };
-    hub.send_schema_message(&session, &response)?;
-
-    let mut received = None;
-    for _ in 0..2_000 {
-        if let Some(message) = player.receive_schema_message_once()? {
-            received = Some(message);
-            break;
-        }
-        let _ = hub.receive_event_once()?;
-        hub.poll_resends()?;
-    }
-    assert_eq!(received, Some(response));
-    Ok(())
-}
-
-#[test]
 fn hub_fences_replaced_generations_and_does_not_replace_connect_retransmits() -> Result<()> {
     let server_socket = socket()?;
     let server_addr = server_socket.local_addr()?;

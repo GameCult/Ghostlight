@@ -126,14 +126,14 @@ fn run_server(
                 Some(active)
                     if active.session_generation == completed.session.session_generation =>
                 {
+                    hub.send_schema_message(&completed.session, &completed.response)?;
                     tracing::info!(
                         %message_id,
                         payload_bytes,
                         session_generation = completed.session.session_generation,
                         remote_addr = %completed.session.remote_addr,
-                        "Ghostlight native boundary delivered completed operation response"
+                        "Ghostlight native boundary queued completed operation response"
                     );
-                    hub.send_schema_message(&completed.session, &completed.response)?;
                 }
                 Some(active) => tracing::warn!(
                     %message_id,
@@ -406,6 +406,11 @@ fn message_id(request: &CultNetMessage) -> Result<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cultnet_rs::{
+        CULTNET_OPERATION_CONNECTION_ID, CultNetRudpSocketTransportConnection,
+        CultNetRudpSocketTransportOptions,
+    };
+    use std::time::Duration;
 
     #[test]
     fn native_session_payload_rejects_authority_fields() {
@@ -428,5 +433,73 @@ mod tests {
         assert!(super::super::contains_authority_field(
             &command.invocation["payload"]
         ));
+    }
+
+    #[test]
+    fn native_transport_delivers_large_response_after_long_keepalive_only_operation() {
+        let server_socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        server_socket
+            .set_read_timeout(Some(Duration::from_millis(5)))
+            .unwrap();
+        let server_addr = server_socket.local_addr().unwrap();
+        let mut hub_options = CultNetRudpServerHubOptions::new(
+            NATIVE_RUNTIME_ID,
+            server_socket,
+            CULTNET_OPERATION_CONNECTION_ID,
+        );
+        hub_options.max_fragment_bytes = Some(2_048);
+        hub_options.max_pending_reliable_packets = Some(4_096);
+        let mut hub = CultNetRudpServerHub::new(hub_options).unwrap();
+
+        let client_socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        client_socket
+            .set_read_timeout(Some(Duration::from_millis(5)))
+            .unwrap();
+        let mut client_options = CultNetRudpSocketTransportOptions::client(
+            "ghostlight-native-test",
+            client_socket,
+            server_addr,
+            CULTNET_OPERATION_CONNECTION_ID,
+        );
+        client_options.max_fragment_bytes = Some(2_048);
+        client_options.max_pending_reliable_packets = Some(4_096);
+        let mut client = CultNetRudpSocketTransportConnection::new(client_options).unwrap();
+        client.connect(b"long-operation-session".to_vec()).unwrap();
+        let session = (0..20)
+            .find_map(|_| match hub.receive_event_once().unwrap() {
+                Some(CultNetRudpServerEvent::Connected { session }) => Some(session),
+                _ => None,
+            })
+            .expect("server did not accept native test connection");
+        client.receive_once().unwrap();
+        assert!(client.connected());
+
+        for heartbeat in 0..64_u32 {
+            client.ping(heartbeat.to_be_bytes().to_vec()).unwrap();
+            assert!(hub.receive_event_once().unwrap().is_none());
+            assert!(client.receive_once().unwrap().is_none());
+        }
+        assert_eq!(hub.session(session.remote_addr), Some(&session));
+
+        let response = CultNetMessage::OperationResponse {
+            message_id: "long-operation".into(),
+            service_id: NATIVE_SERVICE_ID.into(),
+            operation: NATIVE_EVE_INVOKE.into(),
+            status: "accepted".into(),
+            payload_schema: "gamecult.eve.command_result.v1".into(),
+            payload_encoding: "messagepack-base64".into(),
+            payload: "x".repeat(256_000),
+            diagnostics: vec![],
+            source_runtime_id: Some(NATIVE_RUNTIME_ID.into()),
+        };
+        hub.send_schema_message(&session, &response).unwrap();
+
+        let received = (0..4_000).find_map(|_| {
+            let message = client.receive_schema_message_once().unwrap();
+            let _ = hub.receive_event_once().unwrap();
+            hub.poll_resends().unwrap();
+            message
+        });
+        assert_eq!(received, Some(response));
     }
 }
