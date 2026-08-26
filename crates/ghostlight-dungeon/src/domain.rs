@@ -1124,6 +1124,12 @@ pub struct RegionExpansionPreview {
     pub expected_revision: u64,
     pub expansion: RegionExpansion,
     pub evidence_receipts: Vec<VaultEvidenceReceipt>,
+    /// Consequential game-scale detail synthesized for this campaign because
+    /// the Vault constrains the destination without exhaustively specifying a
+    /// playable map. These assumptions are reviewable branch state, not canon
+    /// gaps or canon-candidate proposals.
+    #[serde(default)]
+    pub branch_assumptions: Vec<String>,
     pub gaps: Vec<String>,
     pub canon_candidates: Vec<CanonCandidate>,
     pub requires_approval: bool,

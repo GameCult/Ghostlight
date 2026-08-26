@@ -5388,6 +5388,7 @@ fn region_expansion_preview_projection(preview: &RegionExpansionPreview) -> serd
         "populations":preview.expansion.populations,
         "population_profiles":preview.expansion.population_profiles,
         "migration_relations":preview.expansion.migration_relations,
+        "branch_assumptions":preview.branch_assumptions,
         "gaps":preview.gaps,
         "requires_approval":preview.requires_approval,
     })

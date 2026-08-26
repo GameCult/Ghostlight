@@ -560,7 +560,17 @@ struct CompiledExpansionSeed {
     #[serde(default)]
     #[schemars(length(max = 32))]
     migration_relations: Vec<CompiledDestinationMigrationRelation>,
-    gaps: Vec<String>,
+    #[serde(default)]
+    #[schemars(
+        length(max = 32),
+        description = "Consequential compatible game-scale inventions admitted only for this campaign. Missing routes, geometry, ordinary procedures, supplies, local responsibilities, and operating doctrine belong here rather than in gaps."
+    )]
+    branch_assumptions: Vec<String>,
+    #[serde(default)]
+    #[schemars(
+        description = "Only premise-blocking material gaps for which no compatible branch-local elaboration can preserve the exact requested destination."
+    )]
+    gaps: Vec<CompiledMaterialGap>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -1573,7 +1583,7 @@ impl WorldCompiler {
             })
             .collect::<Vec<_>>();
         let base_prompt = format!(
-            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes records owned by origin id {} into the new region, and give every such destination a reciprocal route record back to the origin with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them.\n\nA playable inhabited destination also needs one to eight non-overlapping destination population leaves. Synthesize reversible branch-local names, capabilities, resources, goals, pressures, six-axis agency facets, and concrete information channels even when canon does not specify settlement-scale detail; record the unsupported canon detail in gaps rather than withholding the playable population. Each population home_location_id must be one new location. shared_fact_ids may contain only exact fact IDs returned in this same candidate, never free-text knowledge. collective_authority_id may be null or the exact ID of one new population and denotes real shared authority.\n\nA migration relation is a directed available path for a later voluntary strategic choice; it does not move anyone, establish that admission occurred, or erase destination-community agency. It may originate only from one exact co-located active population ID supplied below and may target only one new population ID. Emit a relation only when the request and supplied source population/member goals support that migration possibility. Never invent a source population or named member. The approval preview must make all branch-local assumptions and unresolved admission or capacity questions explicit.\n\nCAMPAIGN LOCATIONS:\n{}\nCO-LOCATED SOURCE POPULATIONS AND NAMED MEMBER DELTAS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            "Compile only the requested bounded destination region. Every new location id must be new. Return explicit origin_routes records owned by origin id {} into the new region, and give every such destination a reciprocal route record back to the origin with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them.\n\nUse evidence as canon constraints, not as an exhaustive game map. Missing game-scale routes, geometry, people, ordinary procedures, supplies, local responsibilities, capacity choices, and operating doctrine require the smallest coherent playable elaboration. Mark the resulting facts branch_local or provisional_local and disclose consequential inventions in branch_assumptions. Variation between campaigns is permitted; if a detail must not vary, it belongs in the Vault. Never put a compatible elaboration in gaps merely because the Vault is silent.\n\nA playable inhabited destination also needs one to eight non-overlapping destination population leaves. Synthesize reversible branch-local names, capabilities, resources, goals, pressures, six-axis agency facets, and concrete information channels even when canon does not specify settlement-scale detail. Each population home_location_id must be one new location. shared_fact_ids may contain only exact fact IDs returned in this same candidate, never free-text knowledge. collective_authority_id may be null or the exact ID of one new population and denotes real shared authority.\n\nThe gaps array is legal only when no compatible elaboration can preserve an exact clause of REQUEST without choosing between contradictory canon baselines, inventing an unanchored canon baseline explicitly required by the request, or exceeding an approved capability. Every gap must name that exact premise clause and the exact table choice blocking compilation. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the request.\n\nA migration relation is a directed available path for a later voluntary strategic choice; it does not move anyone, establish that admission occurred, or erase destination-community agency. It may originate only from one exact co-located active population ID supplied below and may target only one new population ID. Emit a relation only when the request and supplied source population/member goals support that migration possibility. Never invent a source population or named member. The approval preview must make all branch-local assumptions explicit without misclassifying them as canon gaps.\n\nCAMPAIGN LOCATIONS:\n{}\nCO-LOCATED SOURCE POPULATIONS AND NAMED MEMBER DELTAS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
             origin_location_id,
             serde_json::to_string(&campaign.locations)?,
             serde_json::to_string(&origin_population_context)?,
@@ -1597,6 +1607,25 @@ impl WorldCompiler {
                 .await?;
             compiler_receipts.push(output.1);
             let seed: CompiledExpansionSeed = serde_json::from_value(output.0)?;
+            if let Err(error) = validate_compiled_material_gaps(&seed.gaps, &receipts)
+                .and_then(|_| validate_branch_assumptions(&seed.branch_assumptions))
+            {
+                mark_semantic_invalid(
+                    compiler_receipts
+                        .last_mut()
+                        .expect("receipt was just stored"),
+                    &error,
+                );
+                if compiler_receipts.len() == 1 {
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CANDIDATE: {error}\nReturn a corrected complete candidate against the same CAMPAIGN, REQUEST, and EVIDENCE. Compatible game-scale invention belongs in branch_assumptions, not gaps."
+                    );
+                    continue;
+                }
+                return Err(anyhow!(
+                    "destination compiler failed local validation after one correction: {error}"
+                ));
+            }
             let fact_statements = seed
                 .facts
                 .iter()
@@ -1704,8 +1733,8 @@ impl WorldCompiler {
             .collect::<BTreeSet<_>>()
             .into_iter()
             .collect();
-        let candidates = seed
-            .gaps
+        let gap_texts = seed.gaps.iter().map(material_gap_text).collect::<Vec<_>>();
+        let candidates = gap_texts
             .iter()
             .enumerate()
             .map(|(index, gap)| crate::domain::CanonCandidate {
@@ -1732,7 +1761,8 @@ impl WorldCompiler {
                 expected_revision: campaign.revision,
                 expansion,
                 evidence_receipts: receipts,
-                gaps: seed.gaps,
+                branch_assumptions: seed.branch_assumptions,
+                gaps: gap_texts,
                 canon_candidates: candidates,
                 requires_approval: true,
             },
@@ -2374,6 +2404,20 @@ fn validate_compiled_material_gaps(
                 ));
             }
             _ => {}
+        }
+    }
+    Ok(())
+}
+
+fn validate_branch_assumptions(assumptions: &[String]) -> Result<()> {
+    if assumptions.len() > 32 {
+        return Err(anyhow!("branch assumptions may contain at most 32 entries"));
+    }
+    let mut seen = BTreeSet::new();
+    for assumption in assumptions {
+        validate_user_text("branch assumption", assumption, 2_000)?;
+        if !seen.insert(assumption.trim().to_lowercase()) {
+            return Err(anyhow!("branch assumptions must be unique"));
         }
     }
     Ok(())
@@ -4729,6 +4773,10 @@ mod tests {
         invalid_route: bool,
     }
 
+    struct DestinationElaborationModel {
+        saw_branch_assumption_boundary: AtomicBool,
+    }
+
     struct OversizedQueryModel;
 
     struct CorrectionAwareCompilerModel {
@@ -5132,6 +5180,90 @@ mod tests {
 
         fn provider(&self) -> &'static str {
             "correction-aware-compiler-fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for DestinationElaborationModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "destination_retrieval_plan" => Ok(serde_json::json!({
+                    "queries":["fixture storm refuge","fixture relief route"]
+                })
+                .to_string()),
+                "destination_compile" => {
+                    self.saw_branch_assumption_boundary.store(
+                        request
+                            .lived_stream
+                            .contains("Use evidence as canon constraints, not as an exhaustive game map")
+                            && request.lived_stream.contains(
+                                "Never put a compatible elaboration in gaps merely because the Vault is silent",
+                            )
+                            && request
+                                .lived_stream
+                                .contains("if a detail must not vary, it belongs in the Vault"),
+                        Ordering::SeqCst,
+                    );
+                    Ok(serde_json::json!({
+                        "origin_routes":[{
+                            "route_id":"route:yard_to_refuge",
+                            "destination_id":"refuge",
+                            "distance":"up the marked storm path",
+                            "travel_minutes":15
+                        }],
+                        "locations":[{
+                            "id":"refuge",
+                            "name":"Storm Refuge",
+                            "container_id":null,
+                            "routes":[{
+                                "route_id":"route:refuge_to_yard",
+                                "destination_id":"convoy-staging",
+                                "distance":"down the marked storm path",
+                                "travel_minutes":15
+                            }],
+                            "persistent_features":["braced roof","witnessed stores ledger"]
+                        }],
+                        "facts":[{
+                            "id":"fact:refuge_operating_leaf",
+                            "statement":"The refuge uses a witnessed operating leaf for repair and admission duty.",
+                            "scope":"branch_local",
+                            "evidence_receipt_ids":[],
+                            "discoverable_at_location_ids":["refuge"]
+                        }],
+                        "populations":[{
+                            "id":"refuge-wardens",
+                            "name":"Refuge wardens",
+                            "home_location_id":"refuge",
+                            "shared_capabilities":["brace ordinary storm damage"],
+                            "shared_fact_ids":["fact:refuge_operating_leaf"],
+                            "resources":["repair boards"],
+                            "goals":["keep the refuge usable"],
+                            "pressures":["capacity is finite"],
+                            "collective_authority_id":"refuge-wardens",
+                            "facets":{
+                                "geography":["storm path"],
+                                "ideology":["preserve consent"],
+                                "authority":["witnessed duty"],
+                                "economy_role":["repair labor"],
+                                "species_body":["mixed households"],
+                                "information":["operating leaf"]
+                            },
+                            "information_channels":["witnessed operating leaf"]
+                        }],
+                        "migration_relations":[],
+                        "branch_assumptions":[
+                            "The storm-path geometry and witnessed repair procedure are compatible campaign-local elaboration."
+                        ],
+                        "gaps":[]
+                    })
+                    .to_string())
+                }
+                _ => Err(anyhow!("unexpected destination elaboration stage")),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "destination-elaboration-fixture"
         }
     }
 
@@ -6162,6 +6294,45 @@ mod tests {
             preview.campaign.gestalt_members["john"]
                 .materialized_actor_id
                 .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn destination_compiler_surfaces_compatible_playability_inventions_as_branch_assumptions()
+    {
+        let model = Arc::new(DestinationElaborationModel {
+            saw_branch_assumption_boundary: AtomicBool::new(false),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let mut seed = private_actor_test_seed();
+        seed.player.location_id = "convoy-staging".into();
+        seed.opening_narration = "The convoy waits in the rain.".into();
+        let campaign = seed_to_campaign(seed, &[]).unwrap();
+
+        let (preview, receipts) = compiler
+            .compile_destination(
+                &campaign,
+                "convoy-staging",
+                "a playable storm refuge with ordinary repair and admission procedure",
+            )
+            .await
+            .unwrap();
+
+        assert!(model.saw_branch_assumption_boundary.load(Ordering::SeqCst));
+        assert!(preview.requires_approval);
+        assert!(preview.gaps.is_empty());
+        assert!(preview.canon_candidates.is_empty());
+        assert_eq!(preview.branch_assumptions.len(), 1);
+        assert!(preview.branch_assumptions[0].contains("campaign-local elaboration"));
+        assert_eq!(preview.expansion.locations[0].id, "refuge");
+        assert_eq!(preview.expansion.populations[0].id, "refuge-wardens");
+        assert_eq!(preview.expansion.facts[0].scope, FactScope::BranchLocal);
+        assert_eq!(
+            receipts
+                .iter()
+                .map(|receipt| receipt.stage.as_str())
+                .collect::<Vec<_>>(),
+            vec!["destination_retrieval_plan", "destination_compile"]
         );
     }
 
