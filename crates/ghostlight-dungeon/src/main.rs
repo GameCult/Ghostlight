@@ -5480,7 +5480,7 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         WorldCommand::Attempt { .. } => false,
         WorldCommand::Wait { .. } | WorldCommand::SetResolutionBudget { .. } => true,
         WorldCommand::CreateCampaign { .. }
-        | WorldCommand::ApplyExternalInstitutionSnapshot { .. }
+        | WorldCommand::ApplyExternalSubjectSnapshot { .. }
         | WorldCommand::ProposeTimeAdvance { .. }
         | WorldCommand::ApproveTimeAdvance { .. }
         | WorldCommand::ProposeGroupTravel { .. }

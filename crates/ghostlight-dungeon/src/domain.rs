@@ -978,8 +978,8 @@ pub enum WorldCommand {
         #[serde(default)]
         model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
     },
-    ApplyExternalInstitutionSnapshot {
-        snapshot: crate::consumer::ExternalInstitutionSnapshot,
+    ApplyExternalSubjectSnapshot {
+        snapshot: crate::consumer::ExternalSubjectSnapshot,
     },
     Speak {
         expected_revision: u64,

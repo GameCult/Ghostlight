@@ -188,7 +188,7 @@ pub struct WorldSeedAdmissionRequest {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
-pub struct ExternalInstitutionSnapshot {
+pub struct ExternalSubjectSnapshot {
     pub schema: String,
     pub campaign_id: Uuid,
     pub expected_world_revision: u64,
@@ -198,7 +198,30 @@ pub struct ExternalInstitutionSnapshot {
     pub source_revision: u64,
     pub idempotency_key: String,
     pub payload_digest: String,
-    pub projection: InstitutionState,
+    pub projection: ExternalSubjectProjection,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(tag = "subject_kind", content = "state", rename_all = "snake_case")]
+pub enum ExternalSubjectProjection {
+    Institution(InstitutionState),
+    Gestalt(GestaltPersonaState),
+}
+
+impl ExternalSubjectProjection {
+    pub fn subject_id(&self) -> &str {
+        match self {
+            Self::Institution(value) => &value.id,
+            Self::Gestalt(value) => &value.id,
+        }
+    }
+
+    pub fn subject_kind(&self) -> AgencySubjectKind {
+        match self {
+            Self::Institution(_) => AgencySubjectKind::Institution,
+            Self::Gestalt(_) => AgencySubjectKind::Gestalt,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -297,7 +320,7 @@ pub fn validate_authority_key(authority: &ExternalSubjectAuthority, supplied: &s
     Ok(())
 }
 
-pub fn snapshot_payload_digest(snapshot: &ExternalInstitutionSnapshot) -> Result<String> {
+pub fn snapshot_payload_digest(snapshot: &ExternalSubjectSnapshot) -> Result<String> {
     crate::legacy_transition::digest_serializable(&(
         snapshot.campaign_id,
         &snapshot.authority_id,
@@ -346,12 +369,12 @@ pub fn validate_seed_admission(
             .get_mut(&authority.subject_id)
             .filter(|profile| profile.subject_kind == authority.subject_kind)
             .ok_or_else(|| anyhow!("external authority subject or kind is unknown"))?;
-        if authority.subject_kind != AgencySubjectKind::Institution
-            || !campaign.institutions.contains_key(&authority.subject_id)
-        {
-            return Err(anyhow!(
-                "the first consumer API slice admits institution-shaped external subjects only"
-            ));
+        match authority.subject_kind {
+            AgencySubjectKind::Institution
+                if campaign.institutions.contains_key(&authority.subject_id) => {}
+            AgencySubjectKind::Gestalt if campaign.gestalts.contains_key(&authority.subject_id) => {
+            }
+            _ => return Err(anyhow!("external authority subject kind is unsupported")),
         }
         profile.simulation_eligible = false;
     }

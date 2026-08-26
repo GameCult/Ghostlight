@@ -262,19 +262,13 @@ async fn handle_operation_inner(
                 )
             }
             ghostlight_dungeon::consumer::APPLY_EXTERNAL_SNAPSHOT_OPERATION => {
-                require_schema(
-                    payload_schema,
-                    "ghostlight.external_institution_snapshot.v1",
-                )?;
-                let command: ghostlight_dungeon::consumer::ExternalInstitutionSnapshot =
+                require_schema(payload_schema, "ghostlight.external_subject_snapshot.v1")?;
+                let command: ghostlight_dungeon::consumer::ExternalSubjectSnapshot =
                     decode_request(request)?;
-                require_schema(
-                    &command.schema,
-                    "ghostlight.external_institution_snapshot.v1",
-                )?;
+                require_schema(&command.schema, "ghostlight.external_subject_snapshot.v1")?;
                 let receipt = state
                     .registry
-                    .apply_external_institution_snapshot(command)
+                    .apply_external_subject_snapshot(command)
                     .await?;
                 success_response(request, "ghostlight.external_snapshot_receipt.v1", &receipt)
             }

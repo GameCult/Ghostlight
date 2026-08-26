@@ -313,14 +313,14 @@ impl CampaignRegistry {
         }
     }
 
-    pub async fn apply_external_institution_snapshot(
+    pub async fn apply_external_subject_snapshot(
         &self,
-        snapshot: crate::consumer::ExternalInstitutionSnapshot,
+        snapshot: crate::consumer::ExternalSubjectSnapshot,
     ) -> Result<crate::consumer::ExternalSnapshotReceipt> {
         let runtime = self.runtime(snapshot.campaign_id).await?;
         match runtime
             .kernel
-            .command(crate::domain::WorldCommand::ApplyExternalInstitutionSnapshot { snapshot })
+            .command(crate::domain::WorldCommand::ApplyExternalSubjectSnapshot { snapshot })
             .await
             .map_err(|error| anyhow!(error.to_string()))?
         {
@@ -1145,7 +1145,22 @@ mod tests {
                 posture: "watchful".into(),
             },
         );
-        campaign.player_actor_id = "external-hold".into();
+        campaign.gestalts.insert(
+            "external-population".into(),
+            crate::domain::GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "external-population".into(),
+                name: "External Population".into(),
+                version: 1,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::from(["farming".into()]),
+                shared_knowledge: BTreeSet::from(["old road".into()]),
+                resources: BTreeSet::new(),
+                goals: vec!["endure".into()],
+                pressures: Vec::new(),
+            },
+        );
+        campaign.player_actor_id = "external-population".into();
         let seed = WorldSeed::from_campaign(&campaign).unwrap();
         let authority_key = "test-authority-key";
         let admission = WorldSeedAdmission {
@@ -1155,17 +1170,30 @@ mod tests {
             producer_kind: WorldSeedProducerKind::Consumer,
             seed_digest: seed.digest().unwrap(),
             idempotency_key: "admit-once".into(),
-            external_subjects: vec![ExternalSubjectAuthority {
-                schema: "ghostlight.external_subject_authority.v1".into(),
-                id: "authority:external-hold".into(),
-                campaign_id: campaign.id,
-                subject_id: "external-hold".into(),
-                subject_kind: crate::domain::AgencySubjectKind::Institution,
-                owner_id: "fixture-consumer".into(),
-                authority_key_sha256: crate::consumer::authority_key_digest(authority_key),
-                last_source_revision: None,
-                last_payload_digest: None,
-            }],
+            external_subjects: vec![
+                ExternalSubjectAuthority {
+                    schema: "ghostlight.external_subject_authority.v1".into(),
+                    id: "authority:external-hold".into(),
+                    campaign_id: campaign.id,
+                    subject_id: "external-hold".into(),
+                    subject_kind: crate::domain::AgencySubjectKind::Institution,
+                    owner_id: "fixture-consumer".into(),
+                    authority_key_sha256: crate::consumer::authority_key_digest(authority_key),
+                    last_source_revision: None,
+                    last_payload_digest: None,
+                },
+                ExternalSubjectAuthority {
+                    schema: "ghostlight.external_subject_authority.v1".into(),
+                    id: "authority:external-population".into(),
+                    campaign_id: campaign.id,
+                    subject_id: "external-population".into(),
+                    subject_kind: crate::domain::AgencySubjectKind::Gestalt,
+                    owner_id: "fixture-consumer".into(),
+                    authority_key_sha256: crate::consumer::authority_key_digest(authority_key),
+                    last_source_revision: None,
+                    last_payload_digest: None,
+                },
+            ],
         };
         let request = WorldSeedAdmissionRequest {
             schema: "ghostlight.world_seed_admission_request.v1".into(),
@@ -1174,7 +1202,10 @@ mod tests {
             authority_key: authority_key.into(),
         };
         let (runtime, receipt) = registry.admit_world_seed(request.clone()).await.unwrap();
-        assert_eq!(receipt.admitted_subject_ids, vec!["external-hold"]);
+        assert_eq!(
+            receipt.admitted_subject_ids,
+            vec!["external-hold", "external-population"]
+        );
         assert!(
             !runtime
                 .store
@@ -1188,8 +1219,8 @@ mod tests {
         let (_, repeated) = registry.admit_world_seed(request).await.unwrap();
         assert_eq!(repeated.seed_digest, receipt.seed_digest);
 
-        let mut snapshot = crate::consumer::ExternalInstitutionSnapshot {
-            schema: "ghostlight.external_institution_snapshot.v1".into(),
+        let mut snapshot = crate::consumer::ExternalSubjectSnapshot {
+            schema: "ghostlight.external_subject_snapshot.v1".into(),
             campaign_id: campaign.id,
             expected_world_revision: 0,
             authority_id: "authority:external-hold".into(),
@@ -1198,20 +1229,22 @@ mod tests {
             source_revision: 7,
             idempotency_key: "snapshot-seven".into(),
             payload_digest: String::new(),
-            projection: crate::domain::InstitutionState {
-                id: "external-hold".into(),
-                name: "External Hold".into(),
-                resources: vec!["ore".into(), "grain".into()],
-                goals: vec!["remain sovereign".into()],
-                posture: "mobilized".into(),
-            },
+            projection: crate::consumer::ExternalSubjectProjection::Institution(
+                crate::domain::InstitutionState {
+                    id: "external-hold".into(),
+                    name: "External Hold".into(),
+                    resources: vec!["ore".into(), "grain".into()],
+                    goals: vec!["remain sovereign".into()],
+                    posture: "mobilized".into(),
+                },
+            ),
         };
         snapshot.payload_digest = crate::consumer::snapshot_payload_digest(&snapshot).unwrap();
         let mut denied = snapshot.clone();
         denied.authority_key = "wrong-key".into();
         assert!(
             registry
-                .apply_external_institution_snapshot(denied)
+                .apply_external_subject_snapshot(denied)
                 .await
                 .is_err()
         );
@@ -1226,7 +1259,7 @@ mod tests {
             0
         );
         let snapshot_receipt = registry
-            .apply_external_institution_snapshot(snapshot.clone())
+            .apply_external_subject_snapshot(snapshot.clone())
             .await
             .unwrap();
         assert_eq!(snapshot_receipt.world_revision, 1);
@@ -1248,13 +1281,13 @@ mod tests {
         );
         assert_eq!(
             registry
-                .apply_external_institution_snapshot(snapshot)
+                .apply_external_subject_snapshot(snapshot)
                 .await
                 .unwrap(),
             snapshot_receipt
         );
-        let mut stale_snapshot = crate::consumer::ExternalInstitutionSnapshot {
-            schema: "ghostlight.external_institution_snapshot.v1".into(),
+        let mut stale_snapshot = crate::consumer::ExternalSubjectSnapshot {
+            schema: "ghostlight.external_subject_snapshot.v1".into(),
             campaign_id: campaign.id,
             expected_world_revision: 1,
             authority_id: "authority:external-hold".into(),
@@ -1263,13 +1296,15 @@ mod tests {
             source_revision: 6,
             idempotency_key: "snapshot-six".into(),
             payload_digest: String::new(),
-            projection: campaign.institutions["external-hold"].clone(),
+            projection: crate::consumer::ExternalSubjectProjection::Institution(
+                campaign.institutions["external-hold"].clone(),
+            ),
         };
         stale_snapshot.payload_digest =
             crate::consumer::snapshot_payload_digest(&stale_snapshot).unwrap();
         assert!(
             registry
-                .apply_external_institution_snapshot(stale_snapshot)
+                .apply_external_subject_snapshot(stale_snapshot)
                 .await
                 .is_err()
         );
@@ -1282,6 +1317,51 @@ mod tests {
                 .1
                 .revision,
             1
+        );
+        let mut gestalt_snapshot = crate::consumer::ExternalSubjectSnapshot {
+            schema: "ghostlight.external_subject_snapshot.v1".into(),
+            campaign_id: campaign.id,
+            expected_world_revision: 1,
+            authority_id: "authority:external-population".into(),
+            owner_id: "fixture-consumer".into(),
+            authority_key: authority_key.into(),
+            source_revision: 1,
+            idempotency_key: "population-one".into(),
+            payload_digest: String::new(),
+            projection: crate::consumer::ExternalSubjectProjection::Gestalt(
+                crate::domain::GestaltPersonaState {
+                    schema: "ghostlight.gestalt_persona_state.v1".into(),
+                    id: "external-population".into(),
+                    name: "External Population".into(),
+                    version: 2,
+                    home_location_id: "room".into(),
+                    shared_capabilities: BTreeSet::from(["farming".into(), "milling".into()]),
+                    shared_knowledge: BTreeSet::from(["old road".into(), "new levy".into()]),
+                    resources: BTreeSet::new(),
+                    goals: vec!["endure".into()],
+                    pressures: vec!["taxation".into()],
+                },
+            ),
+        };
+        gestalt_snapshot.payload_digest =
+            crate::consumer::snapshot_payload_digest(&gestalt_snapshot).unwrap();
+        let gestalt_receipt = registry
+            .apply_external_subject_snapshot(gestalt_snapshot)
+            .await
+            .unwrap();
+        assert_eq!(gestalt_receipt.world_revision, 2);
+        let updated = runtime
+            .store
+            .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(updated.gestalts["external-population"].version, 2);
+        assert!(!updated.agency_profiles["external-population"].simulation_eligible);
+        assert!(
+            updated.agency_profiles["external-population"].facets
+                [&crate::domain::AgencyAxis::EconomyRole]
+                .contains("milling")
         );
         let proposal = ExternalWorldProposal {
             schema: "ghostlight.external_world_proposal.v1".into(),

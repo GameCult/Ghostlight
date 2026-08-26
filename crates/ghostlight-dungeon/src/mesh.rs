@@ -586,7 +586,7 @@ fn schema_catalog() -> Value {
         "ghostlight.world_seed_admission_request.v1": schemars::schema_for!(crate::consumer::WorldSeedAdmissionRequest),
         "ghostlight.world_seed_admission_receipt.v1": schemars::schema_for!(crate::consumer::WorldSeedAdmissionReceipt),
         "ghostlight.external_subject_authority.v1": schemars::schema_for!(crate::consumer::ExternalSubjectAuthority),
-        "ghostlight.external_institution_snapshot.v1": schemars::schema_for!(crate::consumer::ExternalInstitutionSnapshot),
+        "ghostlight.external_subject_snapshot.v1": schemars::schema_for!(crate::consumer::ExternalSubjectSnapshot),
         "ghostlight.external_snapshot_receipt.v1": schemars::schema_for!(crate::consumer::ExternalSnapshotReceipt),
         "ghostlight.external_world_proposal.v1": schemars::schema_for!(crate::consumer::ExternalWorldProposal),
         "ghostlight.external_proposal_list_request.v1": schemars::schema_for!(crate::consumer::ExternalProposalListRequest),

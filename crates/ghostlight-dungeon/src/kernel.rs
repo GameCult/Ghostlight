@@ -222,8 +222,8 @@ fn execute(
         .map_err(persist)?
         .ok_or(KernelError::NotFound)?;
     match command {
-        WorldCommand::ApplyExternalInstitutionSnapshot { snapshot } => {
-            if snapshot.schema != "ghostlight.external_institution_snapshot.v1"
+        WorldCommand::ApplyExternalSubjectSnapshot { snapshot } => {
+            if snapshot.schema != "ghostlight.external_subject_snapshot.v1"
                 || snapshot.campaign_id != campaign.id
             {
                 return Err(KernelError::Invalid(
@@ -259,7 +259,8 @@ fn execute(
                 })?;
             if authority.campaign_id != snapshot.campaign_id
                 || authority.owner_id != snapshot.owner_id
-                || authority.subject_id != snapshot.projection.id
+                || authority.subject_id != snapshot.projection.subject_id()
+                || authority.subject_kind != snapshot.projection.subject_kind()
             {
                 return Err(KernelError::Invalid(
                     "external snapshot does not match its authority".into(),
@@ -283,21 +284,45 @@ fn execute(
                 ));
             }
             require_revision(&campaign, snapshot.expected_world_revision)?;
-            campaign
-                .institutions
-                .insert(snapshot.projection.id.clone(), snapshot.projection.clone());
-            if let Some(profile) = campaign.agency_profiles.get_mut(&snapshot.projection.id) {
-                profile.facets.insert(
-                    AgencyAxis::Authority,
-                    BTreeSet::from([
-                        snapshot.projection.id.clone(),
-                        snapshot.projection.posture.clone(),
-                    ]),
-                );
-                profile.facets.insert(
-                    AgencyAxis::EconomyRole,
-                    snapshot.projection.resources.iter().cloned().collect(),
-                );
+            let subject_id = snapshot.projection.subject_id().to_owned();
+            let mut institution_ids = Vec::new();
+            let mut gestalt_ids = Vec::new();
+            match &snapshot.projection {
+                crate::consumer::ExternalSubjectProjection::Institution(value) => {
+                    campaign
+                        .institutions
+                        .insert(value.id.clone(), value.clone());
+                    institution_ids.push(value.id.clone());
+                    if let Some(profile) = campaign.agency_profiles.get_mut(&value.id) {
+                        profile.facets.insert(
+                            AgencyAxis::Authority,
+                            BTreeSet::from([value.id.clone(), value.posture.clone()]),
+                        );
+                        profile.facets.insert(
+                            AgencyAxis::EconomyRole,
+                            value.resources.iter().cloned().collect(),
+                        );
+                    }
+                }
+                crate::consumer::ExternalSubjectProjection::Gestalt(value) => {
+                    campaign.gestalts.insert(value.id.clone(), value.clone());
+                    gestalt_ids.push(value.id.clone());
+                    if let Some(profile) = campaign.agency_profiles.get_mut(&value.id) {
+                        profile.location_ids = BTreeSet::from([value.home_location_id.clone()]);
+                        profile.facets.insert(
+                            AgencyAxis::Geography,
+                            BTreeSet::from([value.home_location_id.clone()]),
+                        );
+                        profile.facets.insert(
+                            AgencyAxis::EconomyRole,
+                            value.shared_capabilities.iter().cloned().collect(),
+                        );
+                        profile.facets.insert(
+                            AgencyAxis::Information,
+                            value.shared_knowledge.iter().cloned().collect(),
+                        );
+                    }
+                }
             }
             let previous_world_revision = campaign.revision;
             campaign.revision = campaign.revision.saturating_add(1);
@@ -308,14 +333,14 @@ fn execute(
                     snapshot.authority_id, snapshot.source_revision
                 ),
                 at: now,
-                kind: "external_institution_snapshot".into(),
+                kind: "external_subject_snapshot".into(),
                 summary: format!(
-                    "{} supplied an authoritative external institution snapshot.",
+                    "{} supplied an authoritative external subject snapshot.",
                     snapshot.owner_id
                 ),
                 actor_ids: Vec::new(),
-                institution_ids: vec![snapshot.projection.id.clone()],
-                gestalt_ids: Vec::new(),
+                institution_ids,
+                gestalt_ids,
                 location_ids: Vec::new(),
                 public_channels: Vec::new(),
             });
@@ -327,7 +352,7 @@ fn execute(
                 id: receipt_key,
                 campaign_id: snapshot.campaign_id,
                 authority_id: snapshot.authority_id,
-                subject_id: snapshot.projection.id,
+                subject_id,
                 owner_id: snapshot.owner_id,
                 source_revision: snapshot.source_revision,
                 payload_digest: snapshot.payload_digest,

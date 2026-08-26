@@ -193,7 +193,7 @@ live_architecture:
     - Institution, faction, and consumer decision models
 
 active_subgoals:
-  - Prove the admitted generic world-consumer contract with a game-side fixture: shared compiler/consumer WorldSeed admission, externally authoritative institution snapshots, and attributed proposal acknowledgement over typed CultNet, without consumer-specific IDs or schemas in Ghostlight.
+  - Prove the admitted generic world-consumer contract with a game-side fixture: shared compiler/consumer WorldSeed admission, externally authoritative institution-or-Gestalt snapshots, and attributed proposal acknowledgement over typed CultNet, without consumer-specific IDs or schemas in Ghostlight.
   - Specify strategic/offscreen named-person individuation, plotting, durable identity, and folding under WorldKernel authority; remote causal pressure must be able to make a person matter without granting a cell, arena, or model entity-creation authority.
   - Prove the hundreds-class wave target using the existing parallel cell dispatcher and separately bounded provider concurrency. Measure the current 128-cell ceiling first; widen it only if the authored outside-world cover requires more, and only with an explicit scheduling, atomicity, and cost model.
   - Finish the semantic mutation migration: delete or demote remaining legacy model effect schemas and move aggregate campaign fields toward projection-only state. Seed publication and named-person presence now have explicit non-effect authority classifications.

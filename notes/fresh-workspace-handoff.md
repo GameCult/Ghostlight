@@ -426,7 +426,7 @@ approved capability.
 
 The generic world-consumer boundary is implemented. Session Zero and external
 producers share one admitted `WorldSeed` transaction; externally authoritative
-institutions enter through revisioned WorldKernel snapshots; and strategic
+institutions or Gestalts enter through revisioned WorldKernel snapshots; and strategic
 actions aimed at them persist typed proposals for consumer acknowledgement over
 the existing loopback CultNet RUDP operation server.
 

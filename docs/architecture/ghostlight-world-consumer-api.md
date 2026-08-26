@@ -50,7 +50,7 @@ producer seed
 
 consumer-owned state
   -> consumer adapter
-  -> ExternalInstitutionSnapshot
+  -> ExternalSubjectSnapshot (institution or Gestalt projection)
   -> authority, digest, revision, and idempotency validation
   -> WorldKernel atomic campaign commit
   -> ExternalSnapshotReceipt
@@ -78,10 +78,10 @@ consumer boundary.
   cover state, and other already-authoritative campaign fields.
 - The seed digest binds the exact normalized seed. A campaign ID cannot be
   republished from another digest.
-- An external authority names one existing institution-shaped subject and one
-  owner. Its secret is persisted only as SHA-256.
+- An external authority names one existing institution or Gestalt subject and
+  one owner. Its secret is persisted only as SHA-256.
 - External subjects are active graph targets but never simulation-eligible.
-- A snapshot replaces only the exact externally owned institution projection.
+- A snapshot replaces only the exact externally owned institution or Gestalt projection.
   It cannot create subjects, routes, actors, Gestalts, relations, or private
   knowledge.
 - Source revisions increase monotonically. Exact idempotent replay returns the

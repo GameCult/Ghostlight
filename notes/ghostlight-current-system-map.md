@@ -107,8 +107,8 @@ still enter `WorldKernel` through typed validation and atomic CultCache commit.
 Delvehold owns players, workshops, dungeons, civic state, contracts, and its
 quantitative economy. Ghostlight owns external actors, institutions, Gestalts,
 relationships, knowledge, pressures, and strategic decisions. Consumer
-configurations may bind institution subjects through `ExternalSubjectAuthority`.
-Those institutions project committed revisioned snapshots into Ghostlight,
+configurations may bind institution or Gestalt subjects through
+`ExternalSubjectAuthority`. Those subjects project committed revisioned snapshots into Ghostlight,
 receive no Persona or strategic turn, and remain targets of foreign action.
 Such actions persist as attributed proposals in the same strategic-wave commit
 and return for consumer admission, not direct mutation. Compiler and consumer
