@@ -1886,7 +1886,6 @@ pub fn select_resolution_wave(
         let quota = cell_action_limit(cell);
         if appraisal.considered_subject_ids.is_empty()
             || appraisal.considered_subject_ids.len() > quota
-            || appraisal.actions.len() + appraisal.inactions.len() > quota
         {
             return Err(anyhow!("cell appraisal exceeds its action quota"));
         }
@@ -4100,6 +4099,16 @@ pub(crate) mod tests {
         assert_eq!(cell.mode, SimulationCellMode::Arena);
         let make_wave = |proposal: CellActionProposal| {
             let decision_owner = proposal.subject_id.clone();
+            let detail_focus = cover.cells[0].detail_focus_subject_id.clone();
+            let mut considered_subject_ids = BTreeSet::from([decision_owner.clone()]);
+            let mut inactions = Vec::new();
+            if let Some(detail_focus) = detail_focus.filter(|focus| focus != &decision_owner) {
+                considered_subject_ids.insert(detail_focus.clone());
+                inactions.push(CellInaction {
+                    subject_id: detail_focus,
+                    reason: "The detail-focus subject explicitly holds its current course.".into(),
+                });
+            }
             ResolutionWaveCommit {
                 schema: "ghostlight.resolution_wave_commit.v1".into(),
                 world_revision: value.revision,
@@ -4110,9 +4119,9 @@ pub(crate) mod tests {
                     cell_id: cell.id.clone(),
                     world_revision: value.revision,
                     resolution_epoch: value.resolution_policy.resolution_epoch,
-                    considered_subject_ids: BTreeSet::from([decision_owner]),
+                    considered_subject_ids,
                     actions: vec![proposal],
-                    inactions: vec![],
+                    inactions,
                 }],
                 cover: cover.clone(),
                 activity_outcomes: vec![],
@@ -4295,6 +4304,16 @@ pub(crate) mod tests {
         };
         let make_wave = |proposal: CellActionProposal| {
             let decision_owner = proposal.subject_id.clone();
+            let detail_focus = cover.cells[0].detail_focus_subject_id.clone();
+            let mut considered_subject_ids = BTreeSet::from([decision_owner.clone()]);
+            let mut inactions = Vec::new();
+            if let Some(detail_focus) = detail_focus.filter(|focus| focus != &decision_owner) {
+                considered_subject_ids.insert(detail_focus.clone());
+                inactions.push(CellInaction {
+                    subject_id: detail_focus,
+                    reason: "The detail-focus subject explicitly holds its current course.".into(),
+                });
+            }
             ResolutionWaveCommit {
                 schema: "ghostlight.resolution_wave_commit.v1".into(),
                 world_revision: value.revision,
@@ -4305,9 +4324,9 @@ pub(crate) mod tests {
                     cell_id: cover.cells[0].id.clone(),
                     world_revision: value.revision,
                     resolution_epoch: value.resolution_policy.resolution_epoch,
-                    considered_subject_ids: BTreeSet::from([decision_owner]),
+                    considered_subject_ids,
                     actions: vec![proposal],
-                    inactions: vec![],
+                    inactions,
                 }],
                 cover: cover.clone(),
                 activity_outcomes: vec![],

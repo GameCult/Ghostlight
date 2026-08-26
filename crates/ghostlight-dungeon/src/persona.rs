@@ -1981,13 +1981,6 @@ fn validate_cell_appraisal(
             "appraisal has a stale or incomplete runtime binding"
         ));
     }
-    if appraisal.actions.len() + appraisal.inactions.len() > slice.max_actions {
-        return Err(anyhow!(
-            "appraisal emitted {} attributed decisions but this cell permits at most {}",
-            appraisal.actions.len() + appraisal.inactions.len(),
-            slice.max_actions
-        ));
-    }
     if appraisal.actions.is_empty() && appraisal.inactions.is_empty() {
         return Err(anyhow!(
             "an appraisal with no actions requires one exact attributed inaction"
