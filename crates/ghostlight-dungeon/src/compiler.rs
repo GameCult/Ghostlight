@@ -20,7 +20,8 @@ use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    cmp::Reverse,
+    collections::{BTreeMap, BTreeSet, BinaryHeap},
     sync::Arc,
 };
 use uuid::Uuid;
@@ -120,6 +121,20 @@ struct RoleSet {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct RetrievalQueryPlan {
     queries: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum DestinationIdentityDecision {
+    Existing,
+    New,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+struct DestinationIdentityResolution {
+    decision: DestinationIdentityDecision,
+    existing_location_id: Option<String>,
+    rationale: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -1514,6 +1529,111 @@ impl WorldCompiler {
         unreachable!()
     }
 
+    async fn resolve_destination_identity(
+        &self,
+        campaign: &Campaign,
+        destination_request: &str,
+        snapshot_binding: &str,
+    ) -> Result<(Option<String>, Vec<ModelStageReceipt>)> {
+        let mut schema = serde_json::to_value(schema_for!(DestinationIdentityResolution))?;
+        schema["properties"]["existing_location_id"] = serde_json::json!({
+            "anyOf":[
+                {
+                    "type":"string",
+                    "enum":campaign.locations.keys().collect::<Vec<_>>()
+                },
+                {"type":"null"}
+            ]
+        });
+        let locations = campaign
+            .locations
+            .values()
+            .map(|location| {
+                serde_json::json!({
+                    "id":location.id,
+                    "name":location.name,
+                    "container_id":location.container_id,
+                })
+            })
+            .collect::<Vec<_>>();
+        let base_prompt = format!(
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nResolve only the identity of the player's primary requested destination. `existing` means the place they ultimately ask to reach, revisit, inspect, or materialize is one exact canonical location in KNOWN LOCATIONS, even when they also ask for missing route detail or a playable approach. Copy that exact ID. `new` means the requested primary destination is a genuinely new place; a new room, district, waystation, refuge, route feature, or site may be new even when its description mentions an existing location as context. Do not treat an existing place as new merely because the request asks the compiler to elaborate it. Do not infer aliases without strong support from the request and supplied names. This stage identifies only; it does not plan routes, compile facts, or change state. Keep rationale to one sentence.\n\nKNOWN LOCATIONS:\n{}\n\nREQUEST:\n{}",
+            serde_json::to_string(&schema)?,
+            serde_json::to_string(&locations)?,
+            destination_request,
+        );
+        let mut correction = String::new();
+        let mut receipts = Vec::new();
+        for attempt in 0..2 {
+            let output = run_validated_stage(
+                self.model.as_ref(),
+                &ModelStageRequest {
+                    stage: "destination_identity_resolution".into(),
+                    model: self.retrieval_model.clone(),
+                    snapshot_binding: snapshot_binding.into(),
+                    lived_stream: format!("{base_prompt}{correction}"),
+                    output_schema: Some(schema.clone()),
+                    source_receipt_ids: vec![],
+                    temperature: Some(0.0),
+                    max_output_tokens: Some(384),
+                },
+            )
+            .await?;
+            let mut receipt = output.receipt;
+            let resolution = output
+                .structured
+                .ok_or_else(|| {
+                    anyhow!("destination identity resolver returned no structured output")
+                })
+                .and_then(|value| {
+                    serde_json::from_value::<DestinationIdentityResolution>(value)
+                        .map_err(Into::into)
+                });
+            let validated = resolution.and_then(|resolution| {
+                let rationale_chars = resolution.rationale.trim().chars().count();
+                if rationale_chars == 0 || rationale_chars > 500 {
+                    return Err(anyhow!(
+                        "destination identity rationale must contain 1 to 500 characters"
+                    ));
+                }
+                match (&resolution.decision, &resolution.existing_location_id) {
+                    (DestinationIdentityDecision::Existing, Some(location_id))
+                        if campaign.locations.contains_key(location_id) =>
+                    {
+                        Ok(Some(location_id.clone()))
+                    }
+                    (DestinationIdentityDecision::New, None) => Ok(None),
+                    (DestinationIdentityDecision::Existing, _) => Err(anyhow!(
+                        "existing destination resolution must name one exact known location"
+                    )),
+                    (DestinationIdentityDecision::New, Some(_)) => Err(anyhow!(
+                        "new destination resolution must not name an existing location"
+                    )),
+                }
+            });
+            match validated {
+                Ok(location_id) => {
+                    receipts.push(receipt);
+                    return Ok((location_id, receipts));
+                }
+                Err(error) if attempt == 0 => {
+                    mark_semantic_invalid(&mut receipt, &error);
+                    receipts.push(receipt);
+                    correction = format!(
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS IDENTITY RESOLUTION: {error}\nReturn one corrected complete resolution against the same KNOWN LOCATIONS and REQUEST."
+                    );
+                }
+                Err(error) => {
+                    mark_semantic_invalid(&mut receipt, &error);
+                    return Err(anyhow!(
+                        "destination identity resolution failed local validation after one correction: {error}"
+                    ));
+                }
+            }
+        }
+        unreachable!()
+    }
+
     pub async fn compile_destination(
         &self,
         campaign: &Campaign,
@@ -1528,6 +1648,38 @@ impl WorldCompiler {
             .locations
             .get(origin_location_id)
             .ok_or_else(|| anyhow!("origin location is unknown"))?;
+        let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
+        let (existing_destination_id, identity_receipts) = self
+            .resolve_destination_identity(campaign, destination_request, &snapshot)
+            .await?;
+        if let Some(existing_destination_id) = existing_destination_id {
+            let destination = campaign
+                .locations
+                .get(&existing_destination_id)
+                .expect("destination identity resolver was locally validated");
+            let Some((path, travel_minutes)) =
+                shortest_location_path(campaign, origin_location_id, &existing_destination_id)
+            else {
+                return Err(anyhow!(
+                    "{} already exists in canonical campaign topology, but no committed route currently reaches it from {}. No substitute location or route preview was created; request a genuinely new intermediary place or resolve the missing topology explicitly.",
+                    destination.name,
+                    origin.name,
+                ));
+            };
+            let path = path
+                .iter()
+                .filter_map(|location_id| campaign.locations.get(location_id))
+                .map(|location| location.name.as_str())
+                .collect::<Vec<_>>()
+                .join(" → ");
+            return Err(anyhow!(
+                "{} already exists in canonical campaign topology and is reachable from {} via {} ({} minutes). Use the projected travel controls; no new destination preview was created.",
+                destination.name,
+                origin.name,
+                path,
+                travel_minutes,
+            ));
+        }
         let (queries, retrieval_receipt) = self
             .plan_queries(
                 "destination_retrieval_plan",
@@ -1543,7 +1695,6 @@ impl WorldCompiler {
         let receipts = self
             .retrieve_all(&queries, &campaign.branch_origin.canon_cutoff, 10)
             .await?;
-        let snapshot = format!("campaign:{}:revision:{}", campaign.id, campaign.revision);
         let source_population_ids = campaign
             .gestalts
             .values()
@@ -1766,7 +1917,9 @@ impl WorldCompiler {
                 canon_candidates: candidates,
                 requires_approval: true,
             },
-            std::iter::once(retrieval_receipt)
+            identity_receipts
+                .into_iter()
+                .chain(std::iter::once(retrieval_receipt))
                 .chain(compiler_receipts)
                 .collect(),
         ))
@@ -2337,6 +2490,58 @@ impl WorldCompiler {
             out.receipt,
         ))
     }
+}
+
+fn shortest_location_path(
+    campaign: &Campaign,
+    origin_location_id: &str,
+    destination_location_id: &str,
+) -> Option<(Vec<String>, u32)> {
+    if !campaign.locations.contains_key(origin_location_id)
+        || !campaign.locations.contains_key(destination_location_id)
+    {
+        return None;
+    }
+    let mut frontier = BinaryHeap::from([Reverse((0_u32, origin_location_id.to_owned()))]);
+    let mut distances = BTreeMap::from([(origin_location_id.to_owned(), 0_u32)]);
+    let mut previous = BTreeMap::<String, String>::new();
+    while let Some(Reverse((elapsed, location_id))) = frontier.pop() {
+        if location_id == destination_location_id {
+            let mut path = vec![location_id.clone()];
+            let mut cursor = location_id;
+            while let Some(parent) = previous.get(&cursor) {
+                path.push(parent.clone());
+                cursor = parent.clone();
+            }
+            path.reverse();
+            return Some((path, elapsed));
+        }
+        if distances
+            .get(&location_id)
+            .is_some_and(|best| elapsed > *best)
+        {
+            continue;
+        }
+        let location = campaign.locations.get(&location_id)?;
+        for route in location.routes.values() {
+            if !campaign.locations.contains_key(&route.destination_id) {
+                continue;
+            }
+            let Some(next_elapsed) = elapsed.checked_add(route.travel_minutes) else {
+                continue;
+            };
+            if distances
+                .get(&route.destination_id)
+                .is_some_and(|best| *best <= next_elapsed)
+            {
+                continue;
+            }
+            distances.insert(route.destination_id.clone(), next_elapsed);
+            previous.insert(route.destination_id.clone(), location_id.clone());
+            frontier.push(Reverse((next_elapsed, route.destination_id.clone())));
+        }
+    }
+    None
 }
 
 fn validate_user_text(label: &str, value: &str, max_chars: usize) -> Result<()> {
@@ -5187,6 +5392,12 @@ mod tests {
     impl ModelPort for DestinationElaborationModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
+                "destination_identity_resolution" => Ok(serde_json::json!({
+                    "decision":"new",
+                    "existing_location_id":null,
+                    "rationale":"The request asks for a new storm refuge."
+                })
+                .to_string()),
                 "destination_retrieval_plan" => Ok(serde_json::json!({
                     "queries":["fixture storm refuge","fixture relief route"]
                 })
@@ -5267,6 +5478,35 @@ mod tests {
         }
     }
 
+    struct ExistingDestinationModel {
+        calls: AtomicUsize,
+    }
+
+    #[async_trait]
+    impl ModelPort for ExistingDestinationModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            if request.stage != "destination_identity_resolution" {
+                return Err(anyhow!(
+                    "existing destination resolution must stop before stage {}",
+                    request.stage
+                ));
+            }
+            assert!(request.lived_stream.contains("Harrow Station"));
+            assert!(request.lived_stream.contains("loc:harrow_station"));
+            Ok(serde_json::json!({
+                "decision":"existing",
+                "existing_location_id":"loc:harrow_station",
+                "rationale":"The request's primary destination is the supplied Harrow Station."
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "existing-destination-fixture"
+        }
+    }
+
     #[async_trait]
     impl ModelPort for OversizedQueryModel {
         async fn run(&self, _: &ModelStageRequest) -> Result<String> {
@@ -5284,6 +5524,11 @@ mod tests {
                     "early_frame_query":"fixture earliest period ring strike",
                     "transition_frame_query":"fixture transition period moon siege",
                     "late_frame_query":"fixture latest period station election"
+                }).to_string(),
+                "destination_identity_resolution" => serde_json::json!({
+                    "decision":"new",
+                    "existing_location_id":null,
+                    "rationale":"The requested destination is not one of the supplied locations."
                 }).to_string(),
                 stage if stage.ends_with("_retrieval_plan") => {
                     let count = if stage == "role_retrieval_plan"
@@ -6332,8 +6577,76 @@ mod tests {
                 .iter()
                 .map(|receipt| receipt.stage.as_str())
                 .collect::<Vec<_>>(),
-            vec!["destination_retrieval_plan", "destination_compile"]
+            vec![
+                "destination_identity_resolution",
+                "destination_retrieval_plan",
+                "destination_compile"
+            ]
         );
+    }
+
+    #[tokio::test]
+    async fn destination_compiler_refuses_to_duplicate_a_reachable_canonical_place() {
+        let model = Arc::new(ExistingDestinationModel {
+            calls: AtomicUsize::new(0),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let mut seed = private_actor_test_seed();
+        seed.player.location_id = "convoy-staging".into();
+        seed.locations[0].routes.push(CompiledRoute {
+            route_id: "route:staging_to_run".into(),
+            destination_id: "loc:veyr_run".into(),
+            distance: "down the drainage bypass".into(),
+            travel_minutes: 35,
+        });
+        seed.locations.push(CompiledLocation {
+            id: "loc:veyr_run".into(),
+            name: "Lower Veyr Run".into(),
+            container_id: None,
+            routes: vec![
+                CompiledRoute {
+                    route_id: "route:run_to_staging".into(),
+                    destination_id: "convoy-staging".into(),
+                    distance: "up the drainage bypass".into(),
+                    travel_minutes: 35,
+                },
+                CompiledRoute {
+                    route_id: "route:run_to_station".into(),
+                    destination_id: "loc:harrow_station".into(),
+                    distance: "along the anchored ascent".into(),
+                    travel_minutes: 75,
+                },
+            ],
+            persistent_features: vec!["disturbed iron anchors".into()],
+        });
+        seed.locations.push(CompiledLocation {
+            id: "loc:harrow_station".into(),
+            name: "Harrow Station".into(),
+            container_id: None,
+            routes: vec![CompiledRoute {
+                route_id: "route:station_to_run".into(),
+                destination_id: "loc:veyr_run".into(),
+                distance: "back down the anchored ascent".into(),
+                travel_minutes: 75,
+            }],
+            persistent_features: vec!["abandoned road office".into()],
+        });
+        let campaign = seed_to_campaign(seed, &[]).unwrap();
+
+        let error = compiler
+            .compile_destination(
+                &campaign,
+                "convoy-staging",
+                "Harrow Station via the lower Veyr Run; compile its playable approach",
+            )
+            .await
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("already exists in canonical campaign topology"));
+        assert!(error.contains("Convoy Staging → Lower Veyr Run → Harrow Station (110 minutes)"));
+        assert!(error.contains("no new destination preview was created"));
+        assert_eq!(model.calls.load(Ordering::SeqCst), 1);
     }
 
     #[tokio::test]
