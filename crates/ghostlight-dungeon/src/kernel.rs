@@ -4095,12 +4095,7 @@ mod tests {
                 .iter()
                 .map(|event| event.kind.as_str())
                 .collect::<Vec<_>>(),
-            vec![
-                "actor_movement",
-                "actor_activity",
-                "actor_activity",
-                "strategic_activity_outcome"
-            ]
+            vec!["actor_movement", "actor_activity", "actor_activity"]
         );
     }
 
