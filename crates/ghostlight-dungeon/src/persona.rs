@@ -361,19 +361,13 @@ const CELL_PROJECTION_OUTPUT_CONTRACT: &str = r#"{
 
 const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
   "type":"object",
-  "required":["actions","inactions"],
+  "required":["decisions"],
   "properties":{
-    "actions":{"type":"array","items":{"type":"object","required":["subject_id","intent","intended_effect","priority","state_references","public_channels","effects"],"properties":{
-      "subject_id":{"type":"string"},"intent":{"type":"string"},"intended_effect":{"type":"string"},"priority":{"type":"integer"},
-      "state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},
-      "effects":{"type":"object","description":"Use only the exact subject-specific lane keys present in the supplied schema. Scalar lanes contain one typed effect. An activities lane is an object keyed by distinct activity kind, so each chosen means has exactly one slot. At least one lane must be present.","properties":{
-        "institution":{"type":["object","null"]},"gestalt_pressure":{"type":["object","null"]},
-        "gestalt_activities":{"type":"object"},"gestalt_migration":{"type":["object","null"]},
-        "actor_move":{"type":["object","null"]},"actor_activities":{"type":"object"},
-        "member_activities":{"type":"object"},"member_migration":{"type":["object","null"]}
-      }}
-    }}},
-    "inactions":{"type":"array","items":{"type":"object","required":["subject_id","reason"],"properties":{"subject_id":{"type":"string"},"reason":{"type":"string","minLength":1,"maxLength":240}}}}
+    "decisions":{"type":"object","description":"The supplied schema creates exactly one canonical subject-ID key per projected perspective. Never add, remove, or duplicate a subject key.","additionalProperties":{"oneOf":[
+      {"type":"object","required":["action"],"properties":{"action":{"type":"object","required":["subject_id","intent","intended_effect","priority","state_references","public_channels","effects"],"properties":{"subject_id":{"type":"string"},"intent":{"type":"string"},"intended_effect":{"type":"string"},"priority":{"type":"integer"},"state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},"effects":{"type":"object"}}}}},
+      {"type":"object","required":["inaction"],"properties":{"inaction":{"type":"object","required":["subject_id","reason"],"properties":{"subject_id":{"type":"string"},"reason":{"type":"string","minLength":1,"maxLength":240}}}}},
+      {"type":"object","required":["undecided"],"properties":{"undecided":{"type":"object","required":["reason"],"properties":{"reason":{"type":"string","minLength":1,"maxLength":240}}}}}
+    ]}}
   }
 }"#;
 
@@ -1350,7 +1344,7 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
-                "Every subject in exact_permissions owns a projected internal perspective and must appear exactly once across actions and inactions. Do not let a voiced constituent vanish during interpretation. ",
+                "Every subject in exact_permissions owns one schema-keyed decision slot. Fill that exact slot with one action or one inaction. Use undecided only when the Persona turn supplied no explicit choice or hold; runtime will retry the Persona rather than let the Interpreter invent one. Do not let a voiced constituent vanish during interpretation. ",
                 "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Scalar lanes contain one typed effect. An activities lane is one object keyed by up to three distinct chosen activity kinds; each kind occurs at most once and its value contains the union of that means' exact targets and locations. Top-level lane names are stable across subjects: use null for a null-only unavailable lane and for any schema-required optional lane or activity key the subject does not use. A non-null lane or activity key absent from its exact schema is structurally unavailable: do not emit it and do not invent a destination. Pressure and migration lanes each have one slot. Preserve every means of one chosen course in one action. With relocation, activities at the exact snapshot location occur before departure and activities at the exact admitted destination occur after arrival; activity keys inside each location phase are an atomic set. Field order is not chronology. Never split one subject's single choice into multiple actions. ",
                 "Use gestalt_activities or member_activities for concrete attempts that do not themselves change pressure. A cohesive Gestalt coordinating its own unnamed internal members uses coordinate with an empty target_subject_ids list; do not invent its containing population, a distant population, or another canonical subject as the target of internal coordination. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
@@ -1395,7 +1389,7 @@ impl CellProjectionEngine {
                 .structured
                 .clone()
                 .ok_or_else(|| anyhow!("cell interpreter produced no typed proposal"))
-                .and_then(|value| serde_json::from_value(value).map_err(Into::into));
+                .and_then(|value| decode_cell_appraisal_proposal(&slice.cell_id, value));
             match proposal.and_then(|proposal: CellAppraisalProposal| {
                 if proposal.actions.is_empty() && proposal.inactions.is_empty() {
                     return Err(anyhow::Error::new(MissingExplicitCellDecision {
@@ -1500,10 +1494,9 @@ impl CellProjectionEngine {
                                 append_cell_correction(
                                     &mut request,
                                     &error,
-                                    &serde_json::to_string(&serde_json::json!({
-                                        "actions":appraisal.actions,
-                                        "inactions":appraisal.inactions,
-                                    }))?,
+                                    &serde_json::to_string(&encode_cell_appraisal_decisions(
+                                        &appraisal,
+                                    ))?,
                                 );
                                 continue;
                             }
@@ -1973,6 +1966,79 @@ fn bind_cell_appraisal(
         actions,
         inactions: proposal.inactions,
     })
+}
+
+fn decode_cell_appraisal_proposal(
+    cell_id: &str,
+    value: serde_json::Value,
+) -> Result<CellAppraisalProposal> {
+    let decisions = value
+        .get("decisions")
+        .and_then(serde_json::Value::as_object)
+        .ok_or_else(|| anyhow!("cell interpreter proposal has no exact decision map"))?;
+    let mut actions = Vec::new();
+    let mut inactions = Vec::new();
+    for (subject_id, decision) in decisions {
+        let decision = decision
+            .as_object()
+            .ok_or_else(|| anyhow!("decision for subject {subject_id} is not an object"))?;
+        match (
+            decision.get("action"),
+            decision.get("inaction"),
+            decision.get("undecided"),
+        ) {
+            (Some(action), None, None) => {
+                let action: CellActionCandidate = serde_json::from_value(action.clone())?;
+                if action.subject_id != *subject_id {
+                    return Err(anyhow!(
+                        "decision key {subject_id} does not match action owner {}",
+                        action.subject_id
+                    ));
+                }
+                actions.push(action);
+            }
+            (None, Some(inaction), None) => {
+                let inaction: crate::domain::CellInaction =
+                    serde_json::from_value(inaction.clone())?;
+                if inaction.subject_id != *subject_id {
+                    return Err(anyhow!(
+                        "decision key {subject_id} does not match inaction owner {}",
+                        inaction.subject_id
+                    ));
+                }
+                inactions.push(inaction);
+            }
+            (None, None, Some(_)) => {
+                return Err(anyhow::Error::new(MissingExplicitCellDecision {
+                    cell_id: cell_id.into(),
+                    stage_receipts: Vec::new(),
+                }));
+            }
+            _ => {
+                return Err(anyhow!(
+                    "decision for subject {subject_id} must contain exactly one decision kind"
+                ));
+            }
+        }
+    }
+    Ok(CellAppraisalProposal { actions, inactions })
+}
+
+fn encode_cell_appraisal_decisions(appraisal: &crate::domain::CellAppraisal) -> serde_json::Value {
+    let mut decisions = serde_json::Map::new();
+    for action in &appraisal.actions {
+        decisions.insert(
+            action.subject_id.clone(),
+            serde_json::json!({"action":action}),
+        );
+    }
+    for inaction in &appraisal.inactions {
+        decisions.insert(
+            inaction.subject_id.clone(),
+            serde_json::json!({"inaction":inaction}),
+        );
+    }
+    serde_json::json!({"decisions":decisions})
 }
 
 fn validate_cell_appraisal(
@@ -2522,13 +2588,16 @@ fn constrain_cell_proposal_schema(
         .iter()
         .filter(|subject| active_subject_ids.contains(&subject.subject_id))
         .map(|subject| {
-            exact_cell_action_schema(
-                action_candidate.clone(),
-                &subject.subject_id,
-                exact_constituent_effect_bundle_schema(subject),
-                &subject.permitted_state_references,
-                &subject.information_channels,
-            )
+            Ok((
+                subject.subject_id.clone(),
+                exact_cell_action_schema(
+                    action_candidate.clone(),
+                    &subject.subject_id,
+                    exact_constituent_effect_bundle_schema(subject),
+                    &subject.permitted_state_references,
+                    &subject.information_channels,
+                )?,
+            ))
         })
         .chain(
             slice
@@ -2536,60 +2605,86 @@ fn constrain_cell_proposal_schema(
                 .iter()
                 .filter(|member| active_subject_ids.contains(&member.subject_id))
                 .map(|member| {
-                    exact_cell_action_schema(
-                        action_candidate.clone(),
-                        &member.subject_id,
-                        exact_member_effect_bundle_schema(member),
-                        &member.permitted_state_references,
-                        &member.information_channels,
-                    )
+                    Ok((
+                        member.subject_id.clone(),
+                        exact_cell_action_schema(
+                            action_candidate.clone(),
+                            &member.subject_id,
+                            exact_member_effect_bundle_schema(member),
+                            &member.permitted_state_references,
+                            &member.information_channels,
+                        )?,
+                    ))
                 }),
         )
-        .collect::<Result<Vec<_>>>()?;
+        .collect::<Result<BTreeMap<_, _>>>()?;
     if exact_subject_actions.is_empty() {
         return Err(anyhow!(
             "cell proposal schema requires at least one exact decision owner"
         ));
     }
-    let properties = schema
-        .pointer_mut("/properties")
-        .and_then(serde_json::Value::as_object_mut)
-        .ok_or_else(|| anyhow!("cell proposal schema has no properties"))?;
-    let actions = properties
-        .get_mut("actions")
-        .and_then(serde_json::Value::as_object_mut)
-        .ok_or_else(|| anyhow!("cell appraisal schema has no action array"))?;
-    actions.insert("maxItems".into(), slice.max_actions.into());
-    actions.insert(
-        "items".into(),
-        serde_json::json!({"anyOf":exact_subject_actions}),
-    );
-    let inactions = properties
-        .get_mut("inactions")
-        .and_then(serde_json::Value::as_object_mut)
-        .ok_or_else(|| anyhow!("cell appraisal schema has no inaction array"))?;
-    inactions.insert("maxItems".into(), slice.max_actions.into());
-    let subject_ids = slice
-        .constituents
-        .iter()
-        .filter(|value| active_subject_ids.contains(&value.subject_id))
-        .map(|value| value.subject_id.as_str())
-        .chain(
-            slice
-                .member_exceptions
-                .iter()
-                .filter(|value| active_subject_ids.contains(&value.subject_id))
-                .map(|value| value.subject_id.as_str()),
-        )
-        .collect::<Vec<_>>();
-    let inaction = schema
-        .pointer_mut("/$defs/CellInaction/properties")
-        .and_then(serde_json::Value::as_object_mut)
-        .ok_or_else(|| anyhow!("cell appraisal schema has no inaction properties"))?;
-    inaction.insert(
-        "subject_id".into(),
-        serde_json::json!({"type":"string","enum":subject_ids}),
-    );
+    if exact_subject_actions.len() > slice.max_actions {
+        return Err(anyhow!("cell proposal schema exceeds its decision budget"));
+    }
+    let definitions = schema.get("$defs").cloned().unwrap_or_default();
+    let mut decision_properties = serde_json::Map::new();
+    let mut required_subjects = Vec::new();
+    for (subject_id, action_schema) in exact_subject_actions {
+        required_subjects.push(subject_id.clone());
+        decision_properties.insert(
+            subject_id.clone(),
+            serde_json::json!({
+                "anyOf":[
+                    {
+                        "type":"object",
+                        "additionalProperties":false,
+                        "required":["action"],
+                        "properties":{"action":action_schema}
+                    },
+                    {
+                        "type":"object",
+                        "additionalProperties":false,
+                        "required":["inaction"],
+                        "properties":{"inaction":{
+                            "type":"object",
+                            "additionalProperties":false,
+                            "required":["subject_id","reason"],
+                            "properties":{
+                                "subject_id":{"type":"string","const":subject_id},
+                                "reason":{"type":"string","minLength":1,"maxLength":240}
+                            }
+                        }}
+                    },
+                    {
+                        "type":"object",
+                        "additionalProperties":false,
+                        "required":["undecided"],
+                        "properties":{"undecided":{
+                            "type":"object",
+                            "additionalProperties":false,
+                            "required":["reason"],
+                            "properties":{"reason":{"type":"string","minLength":1,"maxLength":240}}
+                        }}
+                    }
+                ]
+            }),
+        );
+    }
+    *schema = serde_json::json!({
+        "$schema":"https://json-schema.org/draft/2020-12/schema",
+        "$defs":definitions,
+        "type":"object",
+        "additionalProperties":false,
+        "required":["decisions"],
+        "properties":{
+            "decisions":{
+                "type":"object",
+                "additionalProperties":false,
+                "required":required_subjects,
+                "properties":decision_properties
+            }
+        }
+    });
     Ok(())
 }
 
@@ -3115,7 +3210,7 @@ mod tests {
                     assert!(request.lived_stream.contains("is investigate, not prepare"));
                     if call == 0 {
                         return Ok(serde_json::json!({
-                            "actions":[{
+                            "decisions":{"faction-06":{"action":{
                                 "subject_id":"faction-06",
                                 "intent":"continue weighing the position",
                                 "intended_effect":"retain the posture already in force",
@@ -3123,13 +3218,12 @@ mod tests {
                                 "state_references":["institution:faction-06"],
                                 "public_channels":["public bulletin"],
                                 "effects":{"institution":{"posture":"weighing whether to publish a position","location_ids":["forum"]}}
-                            }],
-                            "inactions":[]
+                            }}}
                         })
                         .to_string());
                     }
                     let repeated = serde_json::json!({
-                        "actions":[{
+                        "decisions":{"faction-06":{"action":{
                             "subject_id":"faction-06",
                             "intent":"continue weighing the position",
                             "intended_effect":"retain the posture already in force",
@@ -3140,8 +3234,7 @@ mod tests {
                                 "posture":"weighing whether to publish a position",
                                 "location_ids":["forum"]
                             }}
-                        }],
-                        "inactions":[]
+                        }}}
                     });
                     assert!(
                         jsonschema::validator_for(
@@ -3163,7 +3256,7 @@ mod tests {
                         Ordering::SeqCst,
                     );
                     Ok(serde_json::json!({
-                        "actions":[{
+                        "decisions":{"faction-06":{"action":{
                             "subject_id":"faction-06",
                             "intent":"publish a position",
                             "intended_effect":"state its bounded institutional posture",
@@ -3171,8 +3264,7 @@ mod tests {
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
                             "effects":{"institution":{"posture":"published a bounded position","location_ids":["forum"]}}
-                        }],
-                        "inactions":[]
+                        }}}
                     }).to_string())
                 }
                 "cell_effect_verifier" => {
@@ -3289,17 +3381,17 @@ mod tests {
                     let call = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
                     if call == 0 {
                         return Ok(serde_json::json!({
-                            "actions":[],
-                            "inactions":[]
+                            "decisions":{"faction-06":{"undecided":{
+                                "reason":"The Persona supplied no explicit action or hold."
+                            }}}
                         })
                         .to_string());
                     }
                     Ok(serde_json::json!({
-                        "actions":[],
-                        "inactions":[{
+                        "decisions":{"faction-06":{"inaction":{
                             "subject_id":"faction-06",
                             "reason":"Faction Six explicitly holds its existing posture for this horizon."
-                        }]
+                        }}}
                     })
                     .to_string())
                 }
@@ -3411,7 +3503,7 @@ mod tests {
                             .contains("no exact permitted destination"));
                     }
                     Ok(serde_json::json!({
-                        "actions":[{
+                        "decisions":{"faction-06":{"action":{
                             "subject_id":"faction-06",
                             "intent":"state the reserve decision",
                             "intended_effect":if correction {"withhold release pending a verified count"} else {"release the reserve immediately"},
@@ -3422,8 +3514,7 @@ mod tests {
                                 "posture":if correction {"withholding reserve commitment pending a verified public count"} else {"releases the reserve immediately"},
                                 "location_ids":["forum"]
                             }}
-                        }],
-                        "inactions":[]
+                        }}}
                     }).to_string())
                 }
                 "cell_effect_verifier" => {
@@ -3620,11 +3711,18 @@ mod tests {
     fn compact_cell_prompt_contract_is_valid_json() {
         serde_json::from_str::<serde_json::Value>(CELL_APPRAISAL_OUTPUT_CONTRACT).unwrap();
         assert!(CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"maxLength\":240"));
-        assert!(
-            serde_json::to_string(&schema_for!(CellAppraisalProposal))
-                .unwrap()
-                .contains("\"maxLength\":240")
-        );
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(
+            &mut schema,
+            &fixture_cell_slice(),
+            &BTreeSet::from(["faction-06".into()]),
+        )
+        .unwrap();
+        let schema_text = serde_json::to_string(&schema).unwrap();
+        assert!(schema_text.contains("\"maxLength\":240"));
+        assert!(schema.pointer("/properties/decisions").is_some());
+        assert!(schema.pointer("/properties/actions").is_none());
+        assert!(schema.pointer("/properties/inactions").is_none());
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"institution_id\""));
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"gestalt_id\""));
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"actor_id\""));
@@ -3661,7 +3759,7 @@ mod tests {
         let validator = jsonschema::validator_for(&schema).unwrap();
         let action = |effects| {
             serde_json::json!({
-                "actions":[{
+                "decisions":{"relationship-anchor:reed":{"action":{
                     "subject_id":"relationship-anchor:reed",
                     "intent":"keep the patients together",
                     "intended_effect":"make one bounded local attempt",
@@ -3669,8 +3767,7 @@ mod tests {
                     "state_references":["subject:relationship-anchor:reed"],
                     "public_channels":[],
                     "effects":effects
-                }],
-                "inactions":[]
+                }}}
             })
         };
 
@@ -3680,6 +3777,28 @@ mod tests {
                 "location_ids":["forum"]
             }}
         }))));
+        assert!(!validator.is_valid(&serde_json::json!({"decisions":{}})));
+        let mut conflicting_decision = action(serde_json::json!({
+            "actor_activities":{"prepare":{
+                "target_subject_ids":[],
+                "location_ids":["forum"]
+            }}
+        }));
+        conflicting_decision
+            .pointer_mut("/decisions/relationship-anchor:reed")
+            .and_then(serde_json::Value::as_object_mut)
+            .unwrap()
+            .insert(
+                "inaction".into(),
+                serde_json::json!({
+                    "subject_id":"relationship-anchor:reed",
+                    "reason":"Reed explicitly waits."
+                }),
+            );
+        assert!(
+            !validator.is_valid(&conflicting_decision),
+            "one exact subject slot cannot encode both action and inaction"
+        );
         assert!(validator.is_valid(&action(serde_json::json!({
             "actor_activities":{
                 "investigate":{
@@ -3772,7 +3891,7 @@ mod tests {
         let mut strict_schema = schema;
         crate::model_connector::project_strict_responses_schema(&mut strict_schema).unwrap();
         let strict_effect_properties = strict_schema
-            .pointer("/properties/actions/items/anyOf/0/properties/effects/properties")
+            .pointer("/properties/decisions/properties/relationship-anchor:reed/anyOf/0/properties/action/properties/effects/properties")
             .and_then(serde_json::Value::as_object)
             .unwrap();
         assert_eq!(strict_effect_properties.len(), 8);
@@ -3780,7 +3899,7 @@ mod tests {
         assert!(strict_validator.is_valid(&strict_shaped_action));
         let mut unauthorized_move = strict_shaped_action;
         *unauthorized_move
-            .pointer_mut("/actions/0/effects/actor_move")
+            .pointer_mut("/decisions/relationship-anchor:reed/action/effects/actor_move")
             .unwrap() = serde_json::json!({"destination_id":"forum"});
         assert!(!strict_validator.is_valid(&unauthorized_move));
     }
@@ -3834,9 +3953,10 @@ mod tests {
             .iter()
             .cloned()
             .collect::<Vec<_>>();
+        let subject_id = slice.constituents[0].subject_id.clone();
         let appraisal = serde_json::json!({
-            "actions":[{
-                "subject_id":slice.constituents[0].subject_id,
+            "decisions":{(subject_id.clone()):{"action":{
+                "subject_id":subject_id,
                 "intent":"hold the exact supplied footing",
                 "intended_effect":"prepare locally",
                 "priority":80,
@@ -3846,8 +3966,7 @@ mod tests {
                     "posture":"withhold action pending an exact count",
                     "location_ids":[]
                 }}
-            }],
-            "inactions":[]
+            }}}
         });
 
         assert!(validator.is_valid(&appraisal));
@@ -4793,7 +4912,7 @@ mod tests {
         append_cell_correction(
             &mut request,
             &anyhow::anyhow!("the typed effect was unsupported"),
-            r#"{"actions":[{"effects":{"gestalt_pressure":{"pressure_additions":[],"pressure_resolutions":[]}}}]}"#,
+            r#"{"decisions":{"crowd":{"action":{"effects":{"gestalt_pressure":{"pressure_additions":[],"pressure_resolutions":[]}}}}}}"#,
         );
         assert!(
             request
@@ -4838,11 +4957,11 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            schema.pointer("/properties/actions/items/anyOf/0/properties/priority/minimum"),
+            schema.pointer("/properties/decisions/properties/faction-06/anyOf/0/properties/action/properties/priority/minimum"),
             Some(&serde_json::json!(0))
         );
         assert_eq!(
-            schema.pointer("/properties/actions/items/anyOf/0/properties/priority/maximum"),
+            schema.pointer("/properties/decisions/properties/faction-06/anyOf/0/properties/action/properties/priority/maximum"),
             Some(&serde_json::json!(100))
         );
     }
@@ -5011,7 +5130,7 @@ mod tests {
         constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
         assert_eq!(
             schema
-                .pointer("/properties/actions/items/anyOf/0/properties/subject_id/const")
+                .pointer("/properties/decisions/properties/faction-06/anyOf/0/properties/action/properties/subject_id/const")
                 .unwrap(),
             &serde_json::json!("faction-06")
         );
