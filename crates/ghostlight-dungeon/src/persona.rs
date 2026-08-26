@@ -1470,13 +1470,6 @@ impl CellProjectionEngine {
                                     .map(|verification| verification.output.receipt),
                             );
                             if attempt == 0 {
-                                exclude_rejected_cell_effects(
-                                    request.output_schema.as_mut().ok_or_else(|| {
-                                        anyhow!("cell correction lost its output schema")
-                                    })?,
-                                    &appraisal.actions,
-                                    &rejected_action_indices,
-                                )?;
                                 append_cell_correction(
                                     &mut request,
                                     &error,
@@ -1531,30 +1524,6 @@ impl CellProjectionEngine {
                     interpreted.receipt.local_validation_error =
                         Some(error.to_string().chars().take(1_000).collect());
                     stage_receipts.push(interpreted.receipt);
-                    if let Some(structured) = interpreted.structured
-                        && let Ok(proposal) =
-                            serde_json::from_value::<CellAppraisalProposal>(structured)
-                        && let Ok(appraisal) = bind_cell_appraisal(&slice, proposal)
-                    {
-                        let rejected_action_indices = appraisal
-                            .actions
-                            .iter()
-                            .enumerate()
-                            .filter_map(|(index, action)| {
-                                validate_cell_action(&slice, action)
-                                    .is_err()
-                                    .then_some(index)
-                            })
-                            .collect::<Vec<_>>();
-                        exclude_rejected_cell_effects(
-                            request
-                                .output_schema
-                                .as_mut()
-                                .ok_or_else(|| anyhow!("cell correction lost its output schema"))?,
-                            &appraisal.actions,
-                            &rejected_action_indices,
-                        )?;
-                    }
                     append_cell_correction(&mut request, &error, &rejected_appraisal);
                 }
                 Err(error) => {
@@ -1713,249 +1682,6 @@ fn rejected_action_diagnostic(
     .collect()
 }
 
-fn exclude_rejected_cell_effects(
-    schema: &mut serde_json::Value,
-    actions: &[crate::domain::CellActionProposal],
-    rejected_action_indices: &[usize],
-) -> Result<()> {
-    let candidates = schema
-        .pointer_mut("/properties/actions/items/anyOf")
-        .and_then(serde_json::Value::as_array_mut)
-        .ok_or_else(|| anyhow!("cell correction schema has no exact action alternatives"))?;
-    for index in rejected_action_indices {
-        let Some(action) = actions.get(*index) else {
-            continue;
-        };
-        let candidate = candidates
-            .iter_mut()
-            .find(|candidate| {
-                candidate.pointer("/properties/subject_id/const")
-                    == Some(&serde_json::Value::String(action.subject_id.clone()))
-            })
-            .and_then(serde_json::Value::as_object_mut)
-            .ok_or_else(|| {
-                anyhow!(
-                    "cell correction schema has no action alternative for subject {}",
-                    action.subject_id
-                )
-            })?;
-        let compact_effects = cell_effect_candidate_values(&action.effects);
-        let effect_properties = candidate
-            .get("properties")
-            .and_then(serde_json::Value::as_object)
-            .and_then(|properties| properties.get("effects"))
-            .and_then(|effects| effects.get("properties"))
-            .and_then(serde_json::Value::as_object)
-            .ok_or_else(|| anyhow!("cell correction action has no exact effect slots"))?;
-        let strict_effects = strict_cell_effect_candidate_values(
-            effect_properties,
-            compact_effects
-                .as_object()
-                .expect("cell effect candidate values are an object"),
-        )?;
-        candidate
-            .entry("allOf")
-            .or_insert_with(|| serde_json::json!([]))
-            .as_array_mut()
-            .ok_or_else(|| anyhow!("cell correction action constraints are not an array"))?
-            .push(serde_json::json!({
-                "not":{
-                    "anyOf":[
-                        {
-                            "type":"object",
-                            "required":["effects"],
-                            "properties":{"effects":{"const":compact_effects}}
-                        },
-                        {
-                            "type":"object",
-                            "required":["effects"],
-                            "properties":{"effects":{"const":strict_effects}}
-                        }
-                    ]
-                }
-            }));
-    }
-    Ok(())
-}
-
-fn strict_cell_effect_candidate_values(
-    effect_properties: &serde_json::Map<String, serde_json::Value>,
-    compact_effects: &serde_json::Map<String, serde_json::Value>,
-) -> Result<serde_json::Map<String, serde_json::Value>> {
-    let mut strict = serde_json::Map::new();
-    for (lane, lane_schema) in effect_properties {
-        if lane.ends_with("_activities")
-            && let Some(activity_properties) = lane_schema
-                .get("properties")
-                .and_then(serde_json::Value::as_object)
-        {
-            strict.insert(
-                lane.clone(),
-                serde_json::Value::Object(
-                    activity_properties
-                        .keys()
-                        .cloned()
-                        .map(|activity| (activity, serde_json::Value::Null))
-                        .collect(),
-                ),
-            );
-        } else {
-            strict.insert(lane.clone(), serde_json::Value::Null);
-        }
-    }
-    for (lane, value) in compact_effects {
-        if lane.ends_with("_activities") {
-            strict
-                .get_mut(lane)
-                .and_then(serde_json::Value::as_object_mut)
-                .ok_or_else(|| anyhow!("cell correction activity lane is unavailable"))?
-                .extend(
-                    value
-                        .as_object()
-                        .ok_or_else(|| anyhow!("cell correction activity value is malformed"))?
-                        .clone(),
-                );
-        } else {
-            strict.insert(lane.clone(), value.clone());
-        }
-    }
-    Ok(strict)
-}
-
-fn cell_effect_candidate_values(
-    effects: &[crate::domain::StrategicCellEffect],
-) -> serde_json::Value {
-    let mut values = serde_json::Map::new();
-    for effect in effects {
-        let (lane, value) = cell_effect_candidate_value(effect);
-        if lane.ends_with("_activities") {
-            values
-                .entry(lane.to_owned())
-                .or_insert_with(|| serde_json::json!({}))
-                .as_object_mut()
-                .expect("activity candidate lane is an object")
-                .insert(
-                    strategic_activity_key(
-                        strategic_effect_activity_kind(effect)
-                            .expect("activity lane contains an activity effect"),
-                    )
-                    .to_owned(),
-                    value,
-                );
-        } else {
-            values.insert(lane.to_owned(), value);
-        }
-    }
-    serde_json::Value::Object(values)
-}
-
-fn cell_effect_candidate_value(
-    effect: &crate::domain::StrategicCellEffect,
-) -> (&'static str, serde_json::Value) {
-    match effect {
-        crate::domain::StrategicCellEffect::Institution {
-            posture,
-            location_ids,
-            ..
-        } => (
-            "institution",
-            serde_json::json!({
-                "posture":posture,
-                "location_ids":location_ids,
-            }),
-        ),
-        crate::domain::StrategicCellEffect::Gestalt {
-            pressure_additions,
-            pressure_resolutions,
-            ..
-        } => (
-            "gestalt_pressure",
-            serde_json::json!({
-                "pressure_additions":pressure_additions,
-                "pressure_resolutions":pressure_resolutions,
-            }),
-        ),
-        crate::domain::StrategicCellEffect::GestaltActivity {
-            target_subject_ids,
-            location_ids,
-            ..
-        } => (
-            "gestalt_activities",
-            serde_json::json!({
-                "target_subject_ids":target_subject_ids,
-                "location_ids":location_ids,
-            }),
-        ),
-        crate::domain::StrategicCellEffect::GestaltMigration {
-            destination_gestalt_id,
-        } => (
-            "gestalt_migration",
-            serde_json::json!({
-                "destination_gestalt_id":destination_gestalt_id,
-            }),
-        ),
-        crate::domain::StrategicCellEffect::ActorMove { destination_id, .. } => (
-            "actor_move",
-            serde_json::json!({
-                "destination_id":destination_id,
-            }),
-        ),
-        crate::domain::StrategicCellEffect::ActorActivity {
-            target_subject_ids,
-            location_ids,
-            ..
-        } => (
-            "actor_activities",
-            serde_json::json!({
-                "target_subject_ids":target_subject_ids,
-                "location_ids":location_ids,
-            }),
-        ),
-        crate::domain::StrategicCellEffect::MemberActivity {
-            target_subject_ids,
-            location_ids,
-            ..
-        } => (
-            "member_activities",
-            serde_json::json!({
-                "target_subject_ids":target_subject_ids,
-                "location_ids":location_ids,
-            }),
-        ),
-        crate::domain::StrategicCellEffect::MemberMigration {
-            destination_gestalt_id,
-        } => (
-            "member_migration",
-            serde_json::json!({
-                "destination_gestalt_id":destination_gestalt_id,
-            }),
-        ),
-    }
-}
-
-fn strategic_activity_key(activity: &crate::domain::StrategicActivityKind) -> &'static str {
-    match activity {
-        crate::domain::StrategicActivityKind::Prepare => "prepare",
-        crate::domain::StrategicActivityKind::Coordinate => "coordinate",
-        crate::domain::StrategicActivityKind::Investigate => "investigate",
-        crate::domain::StrategicActivityKind::Recruit => "recruit",
-        crate::domain::StrategicActivityKind::Obstruct => "obstruct",
-        crate::domain::StrategicActivityKind::Trade => "trade",
-        crate::domain::StrategicActivityKind::Communicate => "communicate",
-    }
-}
-
-fn strategic_effect_activity_kind(
-    effect: &crate::domain::StrategicCellEffect,
-) -> Option<&crate::domain::StrategicActivityKind> {
-    match effect {
-        crate::domain::StrategicCellEffect::GestaltActivity { activity, .. }
-        | crate::domain::StrategicCellEffect::ActorActivity { activity, .. }
-        | crate::domain::StrategicCellEffect::MemberActivity { activity, .. } => Some(activity),
-        _ => None,
-    }
-}
-
 fn cell_correction_guidance(error: &anyhow::Error) -> &'static str {
     if error
         .to_string()
@@ -1965,7 +1691,7 @@ fn cell_correction_guidance(error: &anyhow::Error) -> &'static str {
     } else if error.to_string().contains("duplicate strategic actions") {
         "The named subject may own exactly one strategic choice in this horizon. Merge all faithful chosen means into one action and use its orthogonal effect slots together; remove any separate alternative, deliberation, or unreachable choice rather than emitting a second action."
     } else {
-        "A rejected action is forbidden unchanged: remove it or replace it with a different, faithful, permitted typed consequence. Do not repeat its subject, intended_effect, and typed effect together."
+        "Repair the semantic mismatch named by the verifier while preserving every unaffected faithful effect. A correction may retain exact unaffected values; do not alter text merely to make it bytewise different. Compress bounded text into complete clauses rather than truncating its meaning."
     }
 }
 
@@ -3605,7 +3331,9 @@ mod tests {
                                 && request.lived_stream.contains("releases the reserve"),
                             Ordering::SeqCst,
                         );
-                        assert!(request.lived_stream.contains("forbidden unchanged"));
+                        assert!(request
+                            .lived_stream
+                            .contains("do not alter text merely to make it bytewise different"));
                         assert!(request
                             .lived_stream
                             .contains("no exact permitted destination"));
@@ -3771,6 +3499,13 @@ mod tests {
         ));
         assert!(duplicate_action_guidance.contains("exactly one strategic choice"));
         assert!(duplicate_action_guidance.contains("orthogonal effect slots together"));
+
+        let semantic_guidance = cell_correction_guidance(&anyhow!(
+            "effect verifier rejected action 0 because its bounded posture ended mid-clause"
+        ));
+        assert!(semantic_guidance.contains("preserving every unaffected faithful effect"));
+        assert!(semantic_guidance.contains("complete clauses"));
+        assert!(!semantic_guidance.contains("forbidden unchanged"));
     }
 
     #[test]
@@ -4067,142 +3802,6 @@ mod tests {
         assert!(diagnostic.contains("member_migration"));
         assert!(diagnostic.contains("refugee-encampment"));
         assert_eq!(rejected_action_diagnostic(&[], &[4]), "[]");
-    }
-
-    #[test]
-    fn semantic_retry_schema_forbids_the_exact_rejected_effect_but_not_a_faithful_lane() {
-        let mut slice = fixture_cell_slice();
-        let actor_id = {
-            let actor = &mut slice.constituents[0];
-            actor.subject_kind = AgencySubjectKind::Actor;
-            actor.current_posture = None;
-            actor.reachable_destinations =
-                BTreeMap::from([("encampment".into(), "Refugee Encampment".into())]);
-            actor.subject_id.clone()
-        };
-        let active = BTreeSet::from([actor_id.clone()]);
-        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
-        constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
-        let rejected = crate::domain::CellActionProposal {
-            subject_id: actor_id.clone(),
-            intent: "move the patients now".into(),
-            intended_effect: "lead the patients out".into(),
-            priority: 80,
-            state_references: vec!["institution:faction-06".into()],
-            public_channels: vec![],
-            effects: vec![StrategicCellEffect::ActorMove {
-                actor_id,
-                destination_id: "encampment".into(),
-            }],
-        };
-        exclude_rejected_cell_effects(&mut schema, &[rejected], &[0]).unwrap();
-        let validator = jsonschema::validator_for(&schema).unwrap();
-        let appraisal = |effects| {
-            serde_json::json!({
-                "actions":[{
-                    "subject_id":"faction-06",
-                    "intent":"announce the departure plan",
-                    "intended_effect":"tell the patients the plan",
-                    "priority":80,
-                    "state_references":["institution:faction-06"],
-                    "public_channels":[],
-                    "effects":effects,
-                }],
-                "inactions":[],
-            })
-        };
-
-        assert!(!validator.is_valid(&appraisal(serde_json::json!({
-            "actor_move":{"destination_id":"encampment"},
-        }))));
-        assert!(validator.is_valid(&appraisal(serde_json::json!({
-            "actor_activities":{"communicate":{
-                "target_subject_ids":[],
-                "location_ids":["forum"]
-            }}
-        }))));
-    }
-
-    #[test]
-    fn semantic_retry_schema_forbids_the_exact_strict_keyed_activity_set() {
-        let mut slice = fixture_cell_slice();
-        let actor = &mut slice.constituents[0];
-        actor.subject_kind = AgencySubjectKind::Actor;
-        actor.current_posture = None;
-        actor.activity_targets = BTreeMap::from([(
-            "inst_zhestokost".into(),
-            CellActivityTargetSlice {
-                name: "Zhestokost".into(),
-                locations: BTreeMap::from([("forum".into(), "Forum".into())]),
-            },
-        )]);
-        let actor_id = actor.subject_id.clone();
-        let active = BTreeSet::from([actor_id.clone()]);
-        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
-        constrain_cell_proposal_schema(&mut schema, &slice, &active).unwrap();
-        let rejected = crate::domain::CellActionProposal {
-            subject_id: actor_id.clone(),
-            intent: "record and announce the inspection".into(),
-            intended_effect: "prepare the record and communicate the notice".into(),
-            priority: 80,
-            state_references: vec!["institution:faction-06".into()],
-            public_channels: vec![],
-            effects: vec![
-                StrategicCellEffect::ActorActivity {
-                    actor_id: actor_id.clone(),
-                    activity: StrategicActivityKind::Prepare,
-                    target_subject_ids: vec![],
-                    location_ids: vec!["forum".into()],
-                },
-                StrategicCellEffect::ActorActivity {
-                    actor_id,
-                    activity: StrategicActivityKind::Communicate,
-                    target_subject_ids: vec![],
-                    location_ids: vec!["forum".into()],
-                },
-            ],
-        };
-        exclude_rejected_cell_effects(&mut schema, &[rejected], &[0]).unwrap();
-        let validator = jsonschema::validator_for(&schema).unwrap();
-        let action = |effects| {
-            serde_json::json!({
-                "actions":[{
-                    "subject_id":"faction-06",
-                    "intent":"record and announce the inspection",
-                    "intended_effect":"prepare the record and communicate the notice",
-                    "priority":80,
-                    "state_references":["institution:faction-06"],
-                    "public_channels":[],
-                    "effects":effects,
-                }],
-                "inactions":[],
-            })
-        };
-        let exact_strict_set = serde_json::json!({
-            "institution":null,
-            "gestalt_pressure":null,
-            "gestalt_activities":null,
-            "gestalt_migration":null,
-            "actor_move":null,
-            "actor_activities":{
-                "prepare":{"target_subject_ids":[],"location_ids":["forum"]},
-                "coordinate":null,
-                "investigate":null,
-                "recruit":null,
-                "obstruct":null,
-                "trade":null,
-                "communicate":{"target_subject_ids":[],"location_ids":["forum"]}
-            },
-            "member_activities":null,
-            "member_migration":null
-        });
-        assert!(!validator.is_valid(&action(exact_strict_set.clone())));
-
-        let mut faithful_superset = exact_strict_set;
-        *faithful_superset
-            .pointer_mut("/actor_activities/investigate")
-            .unwrap() = serde_json::json!({"target_subject_ids":[],"location_ids":["forum"]});
-        assert!(validator.is_valid(&action(faithful_superset)));
     }
 
     #[test]
@@ -5118,40 +4717,6 @@ mod tests {
         assert!(exact_target_properties.contains_key("coordinate"));
         assert!(exact_target_properties.contains_key("recruit"));
         assert!(exact_target_properties.contains_key("trade"));
-    }
-
-    #[test]
-    fn activity_effects_project_as_one_keyed_slot_per_kind() {
-        let effects = vec![
-            StrategicCellEffect::ActorActivity {
-                actor_id: "liaison".into(),
-                activity: StrategicActivityKind::Communicate,
-                target_subject_ids: vec!["clinic".into()],
-                location_ids: vec!["forum".into()],
-            },
-            StrategicCellEffect::ActorActivity {
-                actor_id: "liaison".into(),
-                activity: StrategicActivityKind::Investigate,
-                target_subject_ids: vec![],
-                location_ids: vec!["forum".into()],
-            },
-        ];
-
-        assert_eq!(
-            cell_effect_candidate_values(&effects),
-            serde_json::json!({
-                "actor_activities":{
-                    "communicate":{
-                        "target_subject_ids":["clinic"],
-                        "location_ids":["forum"]
-                    },
-                    "investigate":{
-                        "target_subject_ids":[],
-                        "location_ids":["forum"]
-                    }
-                }
-            })
-        );
     }
 
     #[test]
