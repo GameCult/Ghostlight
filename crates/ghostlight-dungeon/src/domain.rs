@@ -1203,7 +1203,9 @@ pub struct WorldEffectDelta {
     pub actor_knowledge_additions: BTreeMap<String, BTreeSet<String>>,
     /// New branch-local propositions established by the acting actor's exact
     /// means in this outcome. These are observations, measurements, or test
-    /// results—not pre-existing facts selected from the campaign catalog.
+    /// results—not pre-existing facts selected from the campaign catalog. Each
+    /// value is the concrete proposition learned, never a report that an
+    /// inquiry occurred or an unresolved placeholder for a later resolver.
     #[serde(default)]
     pub actor_observations: BTreeMap<String, BTreeSet<String>>,
     pub actor_relationship_updates: BTreeMap<String, BTreeMap<String, String>>,
