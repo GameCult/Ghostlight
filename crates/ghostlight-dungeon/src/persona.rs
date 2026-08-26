@@ -3919,23 +3919,13 @@ mod tests {
             .and_then(serde_json::Value::as_object)
             .unwrap();
         assert_eq!(strict_effect_properties.len(), 8);
-        assert_eq!(
-            strict_effect_properties
-                .get("actor_move")
-                .and_then(|schema| schema.get("type")),
-            Some(&serde_json::json!("null"))
-        );
-        assert_eq!(
-            strict_effect_properties
-                .get("member_migration")
-                .and_then(|schema| schema.get("type")),
-            Some(&serde_json::json!("null"))
-        );
-        assert!(
-            jsonschema::validator_for(&strict_schema)
-                .unwrap()
-                .is_valid(&strict_shaped_action)
-        );
+        let strict_validator = jsonschema::validator_for(&strict_schema).unwrap();
+        assert!(strict_validator.is_valid(&strict_shaped_action));
+        let mut unauthorized_move = strict_shaped_action;
+        *unauthorized_move
+            .pointer_mut("/actions/0/effects/actor_move")
+            .unwrap() = serde_json::json!({"destination_id":"forum"});
+        assert!(!strict_validator.is_valid(&unauthorized_move));
     }
 
     #[test]
@@ -4160,7 +4150,7 @@ mod tests {
         };
         exclude_rejected_cell_effects(&mut schema, &[rejected], &[0]).unwrap();
         let validator = jsonschema::validator_for(&schema).unwrap();
-        let action = |activities| {
+        let action = |effects| {
             serde_json::json!({
                 "actions":[{
                     "subject_id":"faction-06",
@@ -4169,28 +4159,36 @@ mod tests {
                     "priority":80,
                     "state_references":["institution:faction-06"],
                     "public_channels":[],
-                    "effects":{"actor_activities":activities},
+                    "effects":effects,
                 }],
                 "inactions":[],
             })
         };
         let exact_strict_set = serde_json::json!({
-            "prepare":{"target_subject_ids":[],"location_ids":["forum"]},
-            "coordinate":null,
-            "investigate":null,
-            "recruit":null,
-            "obstruct":null,
-            "trade":null,
-            "communicate":{"target_subject_ids":[],"location_ids":["forum"]}
+            "institution":null,
+            "gestalt_pressure":null,
+            "gestalt_activities":null,
+            "gestalt_migration":null,
+            "actor_move":null,
+            "actor_activities":{
+                "prepare":{"target_subject_ids":[],"location_ids":["forum"]},
+                "coordinate":null,
+                "investigate":null,
+                "recruit":null,
+                "obstruct":null,
+                "trade":null,
+                "communicate":{"target_subject_ids":[],"location_ids":["forum"]}
+            },
+            "member_activities":null,
+            "member_migration":null
         });
         assert!(!validator.is_valid(&action(exact_strict_set.clone())));
 
-        let mut faithful_superset = exact_strict_set.as_object().unwrap().clone();
-        faithful_superset.insert(
-            "investigate".into(),
-            serde_json::json!({"target_subject_ids":[],"location_ids":["forum"]}),
-        );
-        assert!(validator.is_valid(&action(serde_json::Value::Object(faithful_superset))));
+        let mut faithful_superset = exact_strict_set;
+        *faithful_superset
+            .pointer_mut("/actor_activities/investigate")
+            .unwrap() = serde_json::json!({"target_subject_ids":[],"location_ids":["forum"]});
+        assert!(validator.is_valid(&action(faithful_superset)));
     }
 
     #[test]
