@@ -1086,20 +1086,31 @@ mod tests {
                 "cell_persona" => Ok("Each constituent watches and deliberately holds.".into()),
                 "cell_interpreter" if self.malformed_cell => Ok("not-json".into()),
                 "cell_interpreter" => {
-                    let subject_id = request
+                    let subject_ids = request
                         .output_schema
                         .as_ref()
                         .and_then(|schema| {
-                            schema.pointer("/$defs/CellInaction/properties/subject_id/enum/0")
+                            schema
+                                .pointer("/properties/decisions/properties")
+                                .and_then(serde_json::Value::as_object)
                         })
-                        .and_then(serde_json::Value::as_str)
+                        .map(|properties| properties.keys().cloned().collect::<Vec<_>>())
+                        .filter(|subject_ids| !subject_ids.is_empty())
                         .ok_or_else(|| anyhow!("fixture Interpreter lacks a bound subject"))?;
+                    let decisions = subject_ids
+                        .into_iter()
+                        .map(|subject_id| {
+                            (
+                                subject_id.clone(),
+                                serde_json::json!({"inaction":{
+                                    "subject_id":subject_id,
+                                    "reason":"No justified move this horizon."
+                                }}),
+                            )
+                        })
+                        .collect::<serde_json::Map<_, _>>();
                     Ok(serde_json::json!({
-                        "actions": [],
-                        "inactions": [{
-                            "subject_id":subject_id,
-                            "reason":"No justified move this horizon."
-                        }]
+                        "decisions":decisions
                     })
                     .to_string())
                 }
