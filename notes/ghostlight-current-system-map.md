@@ -96,6 +96,31 @@ Vault evidence receipts + typed campaign snapshot
 Ghostlight owns the generalized projection organ. Epiphany and other consumers
 own their canonical Persona state and consequence commits.
 
+## DELVE/HOLD admitted target contract
+
+DELVE/HOLD is admitted as a consumer of the live Ghostlight runtime for one
+canonical world outside the Greathold. Its target contract supplies an authored
+ontology and fixed seed rather than invoking Session Zero world generation.
+That bypass ends at generation: publication and every later transition must
+still enter `WorldKernel` through typed validation and atomic CultCache commit.
+
+Delvehold owns players, workshops, dungeons, civic state, contracts, and its
+quantitative economy. Ghostlight owns external actors, institutions, Gestalts,
+relationships, knowledge, pressures, and strategic decisions. The admitted
+target is one externally controlled `greathold` institution projecting only
+committed macro effects into Ghostlight and receiving no Persona or strategic
+turn. The current runtime does not yet implement that external-control policy
+or authored-seed admission seam; ordinary institution selection must not be
+mistaken for enforcement. External consequences will return as intents for
+Delvehold admission, not direct mutations.
+
+The current `InstitutionState` and strategic resource vocabulary use named
+resource handles. They do not model quantities, prices, recipes, facilities,
+capacity, inventories, orders, contracts, or conservation. Those remain
+consumer-owned unless Ghostlight later admits a deliberate economic component
+and mutation algebra. The complete contract is
+`docs/architecture/delvehold-forced-ontology-integration.md`.
+
 The current checkout admits one to eight campaign members into one shared
 scene. `campaign_membership.v1` maps each authenticated account to one exact
 actor; HTTP, Eve, assessment confirmation, and CultMesh publication derive from

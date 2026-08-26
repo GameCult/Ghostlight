@@ -46,6 +46,8 @@ mission:
 
 hard_boundaries:
   - Prompt text is projection, not truth storage.
+  - A consumer-supplied ontology or fixed seed may bypass Session Zero world generation; it may never bypass WorldKernel validation, closed mutation authority, or atomic CultCache commit.
+  - Delvehold retains quantitative economy authority. Ghostlight string resource handles and strategic resource effects must not impersonate quantities, prices, recipes, production capacity, inventories, orders, contracts, or conservation semantics.
   - Canonical agent state and per-agent perceived state must remain distinct.
   - Characters act from local knowledge, local perception, local pressure, and bounded affordances.
   - Aetheria prose must support tonal range and ordinary life, not only crisis pressure. Wit, warmth, domesticity, ritual, boredom, wonder, and quiet dread are valid state-grounded modes when they fit the scene.
@@ -186,6 +188,7 @@ live_architecture:
     - Institution, faction, and consumer decision models
 
 active_subgoals:
+  - Admit DELVE/HOLD through the forced-ontology boundary in `docs/architecture/delvehold-forced-ontology-integration.md`: one externally controlled `greathold` institution, consumer-owned quantitative economy, typed CultMesh exchange, and no compiler-bypass path around WorldKernel.
   - Finish the semantic mutation migration: delete or demote remaining legacy model effect schemas and move aggregate campaign fields toward projection-only state. Seed publication and named-person presence now have explicit non-effect authority classifications.
   - Admit Kalsa through a selectable typed Vault manifest with Public player-safe and Spoilers GM-only evidence lanes, Git/Obsidian sync provenance, and exact receipt filtering. Do not import it into the read-only Aetheria recovery index or create a rival Ghostlight semantic index.
   - Grow the 36-case candidate agency corpus toward 300 reviewed, behaviorally distinct attempts that either compose from existing primitives, produce an explicit bargain, or falsify the algebra.
@@ -211,6 +214,7 @@ coverage_targets:
 
 current_artifacts:
   canonical_docs:
+    - docs/architecture/delvehold-forced-ontology-integration.md
     - notes/documentation-inventory.md
     - docs/architecture/corpus-coverage-ledger.md
     - docs/architecture/prompt-projection-contract.md
