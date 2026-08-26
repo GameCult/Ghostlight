@@ -463,18 +463,37 @@ action-bound named person can emerge publicly, retain identity, enter the next
 resolution cover, and act from her own authority. The generated newspaper
 contains her public appointment but does not expose her later private movement.
 
-1. Restore provider credit and rerun the provider-backed fantasy strategic
-   smoke. The 2026-08-26 run reached the first real cell pipeline and stopped at
-   DeepSeek with HTTP 402 before committing any event or newspaper; retain no
-   fabricated substitute for that missing live witness.
-2. Have the game-side adapter lower its authored hierarchy into the published
+The completed Codex Connector-backed Rainless Marches witness used exact
+Ghostlight source `8940efca0ff669f4681c99a7ff371fa8f0b76516`, connector
+`2f29b90eebd8fc1bbdc07cdd22ac4883f16849a5`, `gpt-5.6-luna`, and admitted
+caller `ghostlight-dungeon-yggdrasil`. The 65.2456-second run selected four
+actions across four cell pipelines and 22 stages; one semantic-invalid verifier
+result corrected validly. It committed two institution actions, one actor
+communication, one Gestalt communication, two outcomes, six events, and five
+newspaper articles; `thornweald-assembly-convenor` emerged and materialized;
+the player remained unchanged. Local witnesses:
+`F:\GameCult\GhostlightDungeon\acceptance\rainless-codex-20260827\{result.json,newspaper.md,campaign.cc,SHA256SUMS}`.
+Remote witnesses:
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/rainless-codex-20260827/`.
+SHA-256: result
+`964a306287da03c7c92f41eb025d8049c63673e2dd8e1bffdd29490fe61315c5`;
+newspaper
+`6577b4abea3cc5e9ddd625676c3b4728d1dd8b25e3974f2f5112dc4dafd076ca`;
+campaign
+`dd19ee14e2a014a02cf142ebcbde224e3034f2e11a4f34721ef00471005c6569`;
+binary
+`35e62eb71d0ead30e7e7aa860b04e7757e6f3d9f83b034f8fee6bc06cc38332f`.
+The earlier DeepSeek 402 remains historical route evidence, not a current
+blocker.
+
+1. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-3. Prove one consumer-owned effect crosses that public API, changes two foreign
+2. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-4. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+3. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-5. Keep `gamecult-ops` synchronized with every executable deployment and model
+4. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
