@@ -1265,6 +1265,32 @@ fn push_strategic_outcome_mutations(
                 channel: None,
             });
         }
+        StrategicOutcomeEffect::KnowledgeCommunicated {
+            from_subject_id,
+            to_subject_ids,
+            fact_id,
+        } => {
+            let speaker = resolve_subject(campaign, from_subject_id)
+                .ok_or_else(|| anyhow!("strategic knowledge speaker is unknown"))?;
+            let recipients = to_subject_ids
+                .iter()
+                .map(|subject_id| {
+                    resolve_subject(campaign, subject_id)
+                        .ok_or_else(|| anyhow!("strategic knowledge recipient is unknown"))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            if !campaign.facts.contains_key(fact_id) {
+                return Err(anyhow!("strategic proposition is unknown"));
+            }
+            mutations.push(WorldMutation::ChangeKnowledge {
+                operation: KnowledgeMutationOperation::Communicate,
+                proposition: proposition_subject(fact_id),
+                knower: None,
+                speaker: Some(speaker),
+                recipients,
+                channel: None,
+            });
+        }
     }
     Ok(())
 }

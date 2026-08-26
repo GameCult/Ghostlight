@@ -2943,6 +2943,14 @@ fn collect_outcome_subject_ids(
             subjects.insert(from_subject_id.clone());
             subjects.insert(to_subject_id.clone());
         }
+        StrategicOutcomeEffect::KnowledgeCommunicated {
+            from_subject_id,
+            to_subject_ids,
+            ..
+        } => {
+            subjects.insert(from_subject_id.clone());
+            subjects.extend(to_subject_ids.iter().cloned());
+        }
         StrategicOutcomeEffect::GestaltPressure { gestalt_id, .. } => {
             subjects.insert(gestalt_id.clone());
         }

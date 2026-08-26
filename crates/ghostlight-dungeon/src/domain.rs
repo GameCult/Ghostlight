@@ -654,6 +654,12 @@ pub enum StrategicOutcomeEffect {
         owner_subject_id: String,
         fact_id: String,
     },
+    KnowledgeCommunicated {
+        from_subject_id: String,
+        #[schemars(length(min = 1, max = 4))]
+        to_subject_ids: Vec<String>,
+        fact_id: String,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]

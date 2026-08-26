@@ -792,6 +792,11 @@ fn member_outcome_kind(
         StrategicOutcomeEffect::KnowledgeLearned {
             owner_subject_id, ..
         } if owner_subject_id == &member_subject_id => Some("knowledge"),
+        StrategicOutcomeEffect::KnowledgeCommunicated { to_subject_ids, .. }
+            if to_subject_ids.contains(&member_subject_id) =>
+        {
+            Some("knowledge")
+        }
         StrategicOutcomeEffect::ResourceCreated {
             owner_subject_id, ..
         }
