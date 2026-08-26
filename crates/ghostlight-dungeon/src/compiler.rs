@@ -1992,17 +1992,31 @@ impl WorldCompiler {
                 .ok_or_else(|| anyhow!("evidence classifier returned no structured output"))
                 .and_then(|value| serde_json::from_value::<EvidenceUsePlan>(value).map_err(Into::into))
                 .and_then(|plan| {
-                    let actual = plan
+                    let mut counts = BTreeMap::<String, usize>::new();
+                    for item in &plan.coverage {
+                        *counts.entry(item.source_id.clone()).or_default() += 1;
+                    }
+                    let actual = counts.keys().cloned().collect::<BTreeSet<_>>();
+                    let missing = expected.difference(&actual).cloned().collect::<Vec<_>>();
+                    let unexpected = actual.difference(&expected).cloned().collect::<Vec<_>>();
+                    let duplicates = counts
+                        .iter()
+                        .filter(|(_, count)| **count > 1)
+                        .map(|(source_id, count)| format!("{source_id} ({count} times)"))
+                        .collect::<Vec<_>>();
+                    let empty_rationales = plan
                         .coverage
                         .iter()
+                        .filter(|item| item.rationale.trim().is_empty())
                         .map(|item| item.source_id.clone())
-                        .collect::<BTreeSet<_>>();
-                    if plan.coverage.len() != expected.len()
-                        || actual != expected
-                        || plan.coverage.iter().any(|item| item.rationale.trim().is_empty())
+                        .collect::<Vec<_>>();
+                    if !missing.is_empty()
+                        || !unexpected.is_empty()
+                        || !duplicates.is_empty()
+                        || !empty_rationales.is_empty()
                     {
                         return Err(anyhow!(
-                            "evidence classifier must cover every exact source once with a rationale"
+                            "evidence classifier must cover every exact source once with a rationale; missing={missing:?}; unexpected={unexpected:?}; duplicates={duplicates:?}; empty_rationales={empty_rationales:?}"
                         ));
                     }
                     if let Some(item) = plan.coverage.iter().find(|item| {
@@ -2031,7 +2045,13 @@ impl WorldCompiler {
                     mark_semantic_invalid(&mut receipt, &error);
                     stage_receipts.push(receipt);
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CLASSIFICATION: {error}\nReturn one corrected complete classification against the same START and SOURCES."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS CLASSIFICATION: {error}\nPREVIOUS_REJECTED_CLASSIFICATION:\n{}\nReturn one corrected complete classification against the same START and SOURCES. Preserve valid records, add every missing literal source_id, remove unexpected or duplicate records, and supply every missing rationale.",
+                        output
+                            .structured
+                            .as_ref()
+                            .map(serde_json::to_string)
+                            .transpose()?
+                            .unwrap_or_else(|| "null".into())
                     );
                 }
                 Err(error) => {
