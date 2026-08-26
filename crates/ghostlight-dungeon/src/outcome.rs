@@ -246,7 +246,7 @@ async fn resolve_activity_outcome(
                 stages.push(stage);
                 let semantic_outcomes = outcomes
                     .iter()
-                    .filter(|outcome| requires_semantic_outcome_verifier(&outcome.effect))
+                    .filter(|outcome| is_material_outcome(&outcome.effect))
                     .cloned()
                     .collect::<Vec<_>>();
                 if semantic_outcomes.is_empty() {
@@ -312,16 +312,8 @@ async fn resolve_activity_outcome(
     unreachable!()
 }
 
-fn requires_semantic_outcome_verifier(effect: &StrategicOutcomeEffect) -> bool {
-    matches!(
-        effect,
-        StrategicOutcomeEffect::ResourceConsumed { .. }
-            | StrategicOutcomeEffect::ResourceTransferred { .. }
-            | StrategicOutcomeEffect::AgencyRelationShift { .. }
-            | StrategicOutcomeEffect::MemberMemory { .. }
-            | StrategicOutcomeEffect::MemberObligation { .. }
-            | StrategicOutcomeEffect::MemberRelationship { .. }
-    )
+fn is_material_outcome(effect: &StrategicOutcomeEffect) -> bool {
+    !matches!(effect, StrategicOutcomeEffect::NoMaterialChange { .. })
 }
 
 async fn verify_outcomes(
@@ -351,7 +343,7 @@ async fn verify_outcomes(
             )
         ),
         lived_stream: format!(
-            "You are Ghostlight's independent semantic verifier for high-risk strategic outcomes. The local validator has already proved IDs, custody, scope, and bounds. Judge only whether each proposed resource expenditure, transfer, relation shift, or named-member private delta is causally entailed by that exact subject's attempt and supplied state. Return one verdict per action_digest in supplied order. A resource_consumed must be an exact resource the attempt actually uses, spends, gives up, damages, or transforms; reject unrelated inventory charges. A resource_transferred requires the attempt to give that exact resource to that exact recipient. A relation shift requires an interaction capable of changing that relationship, not merely a message, proximity, or unrelated work. Member memory, obligation, and relationship effects require an event in the attempt that could create that exact personal delta. Do not review low-risk resource creation, pressure, knowledge, or no-change outcomes here. result is match or mismatch. match requires null repair_guidance; mismatch requires one concrete correction sentence of at most 240 characters. Return JSON only.\n\nOUTPUT CONTRACT:\n{OUTCOME_VERIFIER_OUTPUT_CONTRACT}\n\nACTION_CONTEXT:\n{}\n\nPROPOSED_OUTCOMES:\n{}",
+            "You are Ghostlight's independent semantic verifier for material strategic outcomes. The local validator has already proved IDs, custody, scope, and bounds. Judge only whether each proposed durable mutation is causally entailed by that exact subject's attempt and supplied state. Return one verdict per action_digest in supplied order. Resource creation requires concrete making, repair, or preparation that establishes the named durable result. A resource_consumed must be an exact resource the attempt actually uses, spends, gives up, damages, or transforms; reject unrelated inventory charges. A resource_transferred requires the attempt to give that exact resource to that exact recipient. A pressure addition or resolution must follow from the attempted activity rather than merely naming a current pressure. A relation shift requires an interaction capable of changing that relationship, not merely a message, proximity, or unrelated work. Member memory, obligation, and relationship effects require an event in the attempt that could create that exact personal delta. Knowledge learned requires an investigation, observation, or communication that can actually teach the source that exact fact; the fact merely appearing in supplied state or references is not enough. result is match or mismatch. match requires null repair_guidance; mismatch requires one concrete correction sentence of at most 240 characters. Return JSON only.\n\nOUTPUT CONTRACT:\n{OUTCOME_VERIFIER_OUTPUT_CONTRACT}\n\nACTION_CONTEXT:\n{}\n\nPROPOSED_OUTCOMES:\n{}",
             serde_json::to_string(context)?,
             serde_json::to_string(outcomes)?,
         ),
@@ -2172,6 +2164,12 @@ mod tests {
         resolver_calls: Mutex<usize>,
     }
 
+    struct CorrectingKnowledgeModel {
+        action_digest: String,
+        resolver_calls: Mutex<usize>,
+        requests: Mutex<Vec<ModelStageRequest>>,
+    }
+
     struct RepeatingPressureModel {
         action_digest: String,
         requests: Mutex<Vec<ModelStageRequest>>,
@@ -2304,6 +2302,59 @@ mod tests {
 
         fn provider(&self) -> &'static str {
             "correcting-outcome-model"
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl ModelPort for CorrectingKnowledgeModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.requests.lock().unwrap().push(request.clone());
+            if request.stage == "strategic_outcome_verifier" {
+                let rejects_uncommunicated_fact = request
+                    .lived_stream
+                    .contains("\"type\":\"knowledge_learned\"");
+                return Ok(serde_json::json!({
+                    "verdicts":[{
+                        "action_digest":self.action_digest,
+                        "result":if rejects_uncommunicated_fact {"mismatch"} else {"match"},
+                        "repair_guidance":if rejects_uncommunicated_fact {
+                            Some("The attempt does not observe, investigate, or communicate the proposed fact; choose no_material_change.")
+                        } else {
+                            None
+                        }
+                    }]
+                })
+                .to_string());
+            }
+            let mut calls = self.resolver_calls.lock().unwrap();
+            *calls += 1;
+            if *calls == 1 {
+                return Ok(serde_json::json!({
+                    "outcomes":[{
+                        "action_digest":self.action_digest,
+                        "band":"mixed",
+                        "effect_kind":"knowledge_learned",
+                        "supporting_state_references":["fact:fact:safe-route"],
+                        "owner_subject_id":"dockers",
+                        "fact_id":"fact:safe-route"
+                    }]
+                })
+                .to_string());
+            }
+            Ok(serde_json::json!({
+                "outcomes":[{
+                    "action_digest":self.action_digest,
+                    "band":"mixed",
+                    "effect_kind":"no_material_change",
+                    "supporting_state_references":[],
+                    "reason":"The coordination attempt does not establish or communicate a durable fact."
+                }]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "correcting-knowledge-model"
         }
     }
 
@@ -3013,10 +3064,11 @@ mod tests {
             outcomes[0].summary,
             "Dockers learns: the western causeway remains open."
         );
-        assert_eq!(stages.len(), 1);
+        assert_eq!(stages.len(), 2);
         let requests = model.requests.lock().unwrap();
-        assert_eq!(requests.len(), 1);
+        assert_eq!(requests.len(), 2);
         assert_eq!(requests[0].stage, "strategic_outcome_resolver");
+        assert_eq!(requests[1].stage, "strategic_outcome_verifier");
         assert!(
             requests[0]
                 .lived_stream
@@ -3054,6 +3106,9 @@ mod tests {
                 &[digest]
             )
         );
+        assert!(requests[1].lived_stream.contains(
+            "Knowledge learned requires an investigation, observation, or communication"
+        ));
     }
 
     #[tokio::test]
@@ -3277,5 +3332,45 @@ mod tests {
             StrategicOutcomeEffect::NoMaterialChange { .. }
         ));
         assert_eq!(*model.resolver_calls.lock().unwrap(), 2);
+    }
+
+    #[tokio::test]
+    async fn verifier_rejects_a_fact_that_the_attempt_did_not_learn_or_communicate() {
+        let value = campaign();
+        let mut action = proposal();
+        action.intent =
+            "ask the dock watch to confirm the next rotation without discussing the western route"
+                .into();
+        action.intended_effect = "receive the watchkeeper's answer about the next rotation".into();
+        action.effects = vec![StrategicCellEffect::GestaltActivity {
+            gestalt_id: "dockers".into(),
+            activity: StrategicActivityKind::Communicate,
+            target_subject_ids: vec![],
+            location_ids: vec!["dock".into()],
+        }];
+        let digest = cell_action_digest(&action).unwrap();
+        let model = Arc::new(CorrectingKnowledgeModel {
+            action_digest: digest,
+            resolver_calls: Mutex::new(0),
+            requests: Mutex::new(Vec::new()),
+        });
+
+        let (outcomes, stages) = resolve_activity_outcomes(model.clone(), &value, &[action])
+            .await
+            .unwrap();
+
+        assert_eq!(stages.len(), 3);
+        assert!(matches!(
+            outcomes[0].effect,
+            StrategicOutcomeEffect::NoMaterialChange { .. }
+        ));
+        assert_eq!(*model.resolver_calls.lock().unwrap(), 2);
+        let requests = model.requests.lock().unwrap();
+        assert_eq!(requests[1].stage, "strategic_outcome_verifier");
+        assert!(
+            requests[2]
+                .lived_stream
+                .contains("does not observe, investigate, or communicate the proposed fact")
+        );
     }
 }
