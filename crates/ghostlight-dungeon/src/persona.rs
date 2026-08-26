@@ -784,6 +784,7 @@ fn constituent_permission_context(subject: &CellConstituentSlice) -> serde_json:
 fn member_permission_context(member: &CellMemberSlice) -> serde_json::Value {
     serde_json::json!({
         "subject_id": member.subject_id,
+        "subject_kind": "gestalt_member",
         "member_id": member.member_id,
         "name": member.name,
         "allowed_effect_types": allowed_member_effect_types(member),
@@ -817,6 +818,28 @@ fn cell_action_verifier_permission(
     Err(anyhow!(
         "cell effect verifier cannot find exact authority for {subject_id}"
     ))
+}
+
+fn coordination_target_contract(exact_subject_permission: &serde_json::Value) -> serde_json::Value {
+    if let Some(source_gestalt_id) = exact_subject_permission
+        .get("source_gestalt_id")
+        .and_then(serde_json::Value::as_str)
+    {
+        return serde_json::json!({
+            "owner_kind":"gestalt_member",
+            "internal_population_target_subject_ids":[source_gestalt_id]
+        });
+    }
+    if exact_subject_permission.get("subject_kind") == Some(&serde_json::json!("gestalt")) {
+        return serde_json::json!({
+            "owner_kind":"gestalt",
+            "internal_population_target_subject_ids":[]
+        });
+    }
+    serde_json::json!({
+        "owner_kind":exact_subject_permission.get("subject_kind"),
+        "internal_population_target_subject_ids":null
+    })
 }
 
 fn cell_scene_boundaries(
@@ -1551,6 +1574,7 @@ async fn run_cell_effect_verifier_wave(
     let mut jobs = tokio::task::JoinSet::new();
     for (action_index, action) in actions.iter().enumerate() {
         let exact_subject_permission = cell_action_verifier_permission(slice, &action.subject_id)?;
+        let coordination_target_contract = coordination_target_contract(&exact_subject_permission);
         let verifier_context = serde_json::json!({
             "effect_order_contract":{
                 "activity_effects_within_one_location":"unordered_atomic_set",
@@ -1559,6 +1583,7 @@ async fn run_cell_effect_verifier_wave(
             },
             "local_attempt_contract":"A targetless local communicate at the source's exact current location faithfully records speech, an offer, a permission request, or a notice directed to an unnamed ordinary role. A targetless local obstruct there faithfully records attempted interference with unnamed infrastructure, terrain, traffic, or another local feature. Both record only the source's attempt—never a listener, reply, damage, disruption, acceptance, or outcome—and must not be rejected merely because target_subject_ids is empty.",
             "spatial_effect_contract":"A prepare, investigate, or other activity may include incidental walking, approaching, queuing, carrying, or repositioning around an unnamed local feature while the source remains inside the effect's supplied canonical location. The activity records the attempt and need not serialize every footstep. Reject omitted movement only when the Persona clearly commits the subject to a different supplied canonical location or population destination; local texture does not create topology or establish arrival.",
+            "coordination_target_contract":coordination_target_contract,
             "exact_subject_permission":exact_subject_permission,
             "lived_stream":lived_stream,
             "persona_turn":persona_turn,
@@ -1579,7 +1604,7 @@ async fn run_cell_effect_verifier_wave(
                 std::slice::from_ref(action),
             )?,
             lived_stream: format!(
-                "{CELL_EFFECT_VERIFIER_INSTRUCTIONS}\n\nEFFECT ORDER CONTRACT: Exact activity locations derive the course. Snapshot-location activity precedes relocation; exact-destination activity follows arrival. Distinct activity kinds inside one location phase are an unordered atomic set. Serialized field and array order is not chronology and cannot support an effect_reversal verdict.\n\nCONTEXT:\n{}",
+                "{CELL_EFFECT_VERIFIER_INSTRUCTIONS}\n\nCOORDINATION TARGET CONTRACT: coordination_target_contract.internal_population_target_subject_ids is the exact owner-specific target array for internal-population coordination. Preserve it; never apply a Gestalt owner's empty array to a named member.\n\nEFFECT ORDER CONTRACT: Exact activity locations derive the course. Snapshot-location activity precedes relocation; exact-destination activity follows arrival. Distinct activity kinds inside one location phase are an unordered atomic set. Serialized field and array order is not chronology and cannot support an effect_reversal verdict.\n\nCONTEXT:\n{}",
                 serde_json::to_string(&verifier_context)?
             ),
             output_schema: Some(verifier_schema.clone()),
@@ -3816,6 +3841,26 @@ mod tests {
         assert!(CELL_EFFECT_VERIFIER_INSTRUCTIONS.contains(
             "A cohesive Gestalt coordinating its own unnamed members uses a targetless local coordinate effect"
         ));
+    }
+
+    #[test]
+    fn effect_verifier_distinguishes_member_coordination_from_gestalt_coordination() {
+        let member = coordination_target_contract(&serde_json::json!({
+            "subject_kind":"gestalt_member",
+            "source_gestalt_id":"raincross-households"
+        }));
+        assert_eq!(
+            member.get("internal_population_target_subject_ids"),
+            Some(&serde_json::json!(["raincross-households"]))
+        );
+
+        let gestalt = coordination_target_contract(&serde_json::json!({
+            "subject_kind":"gestalt"
+        }));
+        assert_eq!(
+            gestalt.get("internal_population_target_subject_ids"),
+            Some(&serde_json::json!([]))
+        );
     }
 
     #[test]
