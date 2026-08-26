@@ -4150,7 +4150,7 @@ mod tests {
             "investigate".into(),
             serde_json::json!({"target_subject_ids":[],"location_ids":["forum"]}),
         );
-        assert!(validator.is_valid(&action(faithful_superset)));
+        assert!(validator.is_valid(&action(serde_json::Value::Object(faithful_superset))));
     }
 
     #[test]
